@@ -9,7 +9,6 @@ from pathlib import Path
 from sentry_sdk.integrations.django import DjangoIntegration
 
 load_dotenv()
-print(os.getenv("TEST"))
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
