@@ -44,6 +44,7 @@ jobs:
       - name: "Coverage"
         working-directory: app
         run: |
+          pwd
           coverage run manage.py test
           coverage xml
           coverage report
