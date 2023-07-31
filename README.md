@@ -1,6 +1,6 @@
 [![Discord](https://img.shields.io/discord/899171661457293343?color=31c754&label=Discord&logo=discord&logoColor=white&color=4cc61f)](https://discord.gg/wXy6m2X8wY)
-[![Status](https://uptime-nj.hosted-domains.com/api/badge/11/status?style=flat&upColor=4cc61f)](https://status.hosted-domains.com/)
-[![Drone](https://img.shields.io/drone/build/smashedr/django-files?server=https%3A%2F%2Fdrone.hosted-domains.com&logo=drone&label=Deploy)](https://drone.hosted-domains.com/smashedr/django-files)
+[![Test](https://github.com/smashedr/django-files/actions/workflows/test.yaml/badge.svg)](https://github.com/smashedr/django-files/actions/workflows/test.yaml)
+[![Deploy](https://img.shields.io/drone/build/smashedr/django-files?server=https%3A%2F%2Fdrone.hosted-domains.com&logo=drone&label=Deploy)](https://drone.hosted-domains.com/smashedr/django-files)
 [![](https://i.cssnr.com/r/20230725-000221868.jpg)](https://hosted-domains.com/)
 # Django Files
 
