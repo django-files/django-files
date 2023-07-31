@@ -2,9 +2,11 @@ import sentry_sdk
 import sys
 # from celery.schedules import crontab
 from decouple import config, Csv
+from dotenv import load_dotenv
 from django.contrib.messages import constants as message_constants
 from pathlib import Path
 from sentry_sdk.integrations.django import DjangoIntegration
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
