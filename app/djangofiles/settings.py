@@ -7,6 +7,7 @@ from django.contrib.messages import constants as message_constants
 from pathlib import Path
 from sentry_sdk.integrations.django import DjangoIntegration
 
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
