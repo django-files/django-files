@@ -9,7 +9,9 @@ django-redis
 gunicorn
 httpx
 mysqlclient
+psycopg[binary]
 python-decouple
+python-dotenv
 sentry-sdk
 uvicorn[standard]
 Werkzeug
