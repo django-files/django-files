@@ -43,5 +43,12 @@ jobs:
         run: |
           coverage run manage.py test
           coverage report
-          export CODACY_PROJECT_TOKEN=${{ secrets.CODACY_PROJECT_TOKEN }}
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r .coverage
+#          export CODACY_PROJECT_TOKEN=${{ secrets.CODACY_PROJECT_TOKEN }}
+#          bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r .coverage
+
+      - name: Run codacy-coverage-reporter
+        uses: codacy/codacy-coverage-reporter-action@v1
+        working-directory: app
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: .coverage
