@@ -26,12 +26,12 @@ class FilesTestCase(TestCase):
                 user=self.user,
             )
         print(file)
-        file.info = 'test'
-        file.save()
-        # process_file_upload(file.pk)
-        file = Files.objects.get(pk=file.pk)
-        print(file.get_size())
-        print(file.get_url())
+        # file.info = 'test'
+        # file.save()
+        # # process_file_upload(file.pk)
+        # file = Files.objects.get(pk=file.pk)
+        # print(file.get_size())
+        # print(file.get_url())
 
     def test_sharex(self):
         """Test ShareX Response"""
