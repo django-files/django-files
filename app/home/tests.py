@@ -4,7 +4,7 @@ from django.core.files import File
 from django.urls import reverse
 
 from oauth.models import CustomUser
-from .tasks import process_file_upload
+# from .tasks import process_file_upload
 from .models import Files
 
 
