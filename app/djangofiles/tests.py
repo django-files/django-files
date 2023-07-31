@@ -10,7 +10,8 @@ class TestViews(TestCase):
             'oauth:start': 302,
             'home:index': 302,
             'home:files': 302,
-            'home:news': 302,
+            'home:settings': 302,
+            'home:upload': 405,
         }
 
     def test_views(self):

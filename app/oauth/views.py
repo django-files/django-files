@@ -6,7 +6,7 @@ from decouple import config, Csv
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import HttpResponseRedirect, redirect, render, reverse
+from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
