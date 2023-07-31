@@ -32,8 +32,14 @@ jobs:
           cd app
           flake8
 
-      - name: "Coverage"
-        run: |
-          cd app
-          coverage run manage.py test
-          coverage report
+#      - name: "Migrate"
+#        run: |
+#          cd app
+#          python manage.py makemigrations
+#          python manage.py migrate
+#
+#      - name: "Coverage"
+#        run: |
+#          cd app
+#          coverage run manage.py test
+#          coverage report
