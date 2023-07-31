@@ -11,8 +11,8 @@ trigger:
     - promote
 
 environment:
-  PROD_HOST: "`django-files.cssnr.com`"
-  DEV_HOST: "`django-files-dev.cssnr.com`"
+  PROD_HOST: "`f.cssnr.com`"
+  DEV_HOST: "`f-dev.cssnr.com`"
   REGISTRY_GROUP: smashedr
   REGISTRY_HOST: registry.hosted-domains.com
   COMPOSE_FILE: docker-compose-swarm.yaml

@@ -7,3 +7,4 @@
 *.log
 *.sqlite3
 settings.env
+app/.env

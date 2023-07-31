@@ -2,17 +2,33 @@ import sentry_sdk
 import sys
 # from celery.schedules import crontab
 from decouple import config, Csv
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 from django.contrib.messages import constants as message_constants
 from pathlib import Path
 from sentry_sdk.integrations.django import DjangoIntegration
 
-load_dotenv()
+
 if 'test' in sys.argv or 'test_coverage' in sys.argv:
-    load_dotenv('test.env')
+    dotenv_path = find_dotenv('test.env', usecwd=True)
+    print(f'TEST dotenv_path: {dotenv_path}')
+    env = load_dotenv(dotenv_path=dotenv_path)
+    print(f'TEST env: {env}')
+else:
+    dotenv_path = find_dotenv('settings.env', usecwd=True) or find_dotenv(usecwd=True)
+    print(f'dotenv_path: {dotenv_path}')
+    env = load_dotenv(dotenv_path=dotenv_path)
+    print(f'env: {env}')
+
+database_type = config('DATABASE_TYPE', 'sqlite3')
+print(f'database_type: {database_type}')
+db_location = config('DATABSE_LOCATION', '/data/media/db/database.sqlite3')
+print(f'db_location: {db_location}')
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 SECRET_KEY = config('SECRET_KEY')
+SITE_URL = config('SITE_URL')
+
 DEBUG = config('DEBUG', 'False', bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '*', Csv())
 SESSION_COOKIE_AGE = config('SESSION_COOKIE_AGE', 3600 * 24 * 14, int)
@@ -25,14 +41,14 @@ LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/oauth/'
 STATIC_URL = '/static/'
 MEDIA_URL = '/u/'
-STATIC_ROOT = config('STATIC_ROOT')
-MEDIA_ROOT = config('MEDIA_ROOT')
+STATIC_ROOT = config('STATIC_ROOT', '/data/static')
+MEDIA_ROOT = config('MEDIA_ROOT', '/data/media/files')
 STATICFILES_DIRS = [BASE_DIR / 'static']
 TEMPLATES_DIRS = [BASE_DIR / 'templates']
 
 LANGUAGE_CODE = config('LANGUAGE_CODE', 'en-us')
-USE_TZ = config('USE_TZ', 'True', bool)
 TIME_ZONE = config('TZ', 'UTC')
+USE_TZ = True
 USE_I18N = True
 USE_L10N = True
 
@@ -47,10 +63,6 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 X_FRAME_OPTIONS = 'SAMEORIGIN'
-
-SITE_URL = config('SITE_URL', 'http://localhost:8000')
-DISCORD_WEBHOOK = config('DISCORD_WEBHOOK')
-DISCORD_INVITE = config('DISCORD_INVITE')
 
 # CSRF_TRUSTED_ORIGINS = config('CSRF_ORIGINS', '', Csv())
 # SECURE_REFERRER_POLICY = config('SECURE_REFERRER_POLICY', 'no-referrer')
@@ -82,27 +94,63 @@ CHANNEL_LAYERS = {
 CACHES = {
     'default': {
         'BACKEND': config('CACHE_BACKEND', 'django.core.cache.backends.dummy.DummyCache'),
-        'LOCATION': config('CACHE_LOCATION'),
+        'LOCATION': config('CACHE_LOCATION', None),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },
     },
 }
+# if 'test' in sys.argv or 'test_coverage' in sys.argv:
+#     print('IMPORTANT: Test Run Detected! Using TEST Cache...')
+#     CACHES = {
+#         "default": {
+#             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+#             "LOCATION": "unique-snowflake",
+#         }
+#     }
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DATABASE_NAME'),
-        'USER': config('DATABASE_USER'),
-        'PASSWORD': config('DATABASE_PASS'),
-        'HOST': config('DATABASE_HOST'),
-        'PORT': config('DATABASE_PORT'),
-        'OPTIONS': {
-            'isolation_level': 'repeatable read',
-            'init_command': "SET sql_mode='STRICT_ALL_TABLES'",
+
+if database_type == 'sqlite3':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': db_location,
+        }
+    }
+elif database_type == 'mysql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': config('DATABASE_NAME'),
+            'USER': config('DATABASE_USER'),
+            'PASSWORD': config('DATABASE_PASS'),
+            'HOST': config('DATABASE_HOST'),
+            'PORT': config('DATABASE_PORT', '3306'),
+            'OPTIONS': {
+                'isolation_level': 'repeatable read',
+                'init_command': "SET sql_mode='STRICT_ALL_TABLES'",
+            },
         },
-    },
-}
+    }
+elif database_type == 'postgresql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DATABASE_NAME'),
+            'USER': config('DATABASE_USER'),
+            'PASSWORD': config('DATABASE_PASS'),
+            'HOST': config('DATABASE_HOST'),
+            'PORT': config('DATABASE_PORT', '5432'),
+            'OPTIONS': {
+            },
+        },
+    }
+else:
+    raise ValueError(f"Unknown DATABASE_TYPE: {database_type}")
+
+# if 'test' in sys.argv or 'test_coverage' in sys.argv:
+#     print('IMPORTANT: Test Run Detected! Using TEST Database...')
+#     DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3'}}
 
 INSTALLED_APPS = [
     'channels',
@@ -215,13 +263,3 @@ if DEBUG:
         'debug_toolbar.panels.logging.LoggingPanel',
         'debug_toolbar.panels.redirects.RedirectsPanel',
     ]
-
-if 'test' in sys.argv or 'test_coverage' in sys.argv:
-    print('IMPORTANT: Test Run Detected! Using TEST Database and Cache...')
-    DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3'}}
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }

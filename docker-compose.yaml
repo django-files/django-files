@@ -6,16 +6,28 @@ services:
     image: djangofiles-nginx:${VERSION:-latest}
     deploy:
       mode: global
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.constraint-label=traefik-public"
+        - "traefik.http.routers.STACK_NAME-http.rule=Host(${TRAEFIK_HOST:-``})"
+        - "traefik.http.routers.STACK_NAME-http.entrypoints=http"
+        - "traefik.http.routers.STACK_NAME-http.middlewares=https-redirect"
+        - "traefik.http.routers.STACK_NAME-https.rule=Host(${TRAEFIK_HOST:-``})"
+        - "traefik.http.routers.STACK_NAME-https.entrypoints=https"
+        - "traefik.http.routers.STACK_NAME-https.tls=true"
+        - "traefik.http.services.STACK_NAME.loadbalancer.server.port=80"
+        - "traefik.http.services.STACK_NAME.loadbalancer.server.scheme=http"
     volumes:
-      - data_dir:/data
-    secrets:
-      - source: cssnr_basic_http_auth
-        target: /etc/nginx/auth.users
+      - static_dir:/data/static
+#    secrets:
+#      - source: cssnr_basic_http_auth
+#        target: /etc/nginx/auth.users
     depends_on:
       - app
-      - flower
-      - redis-commander
-      - phpmyadmin
+#      - flower
+#      - redis-commander
+#      - phpmyadmin
     ports:
       - "80:80"
 
@@ -33,7 +45,8 @@ services:
     deploy:
       mode: global
     volumes:
-      - data_dir:/data
+      - static_dir:/data/static
+      - media_dir:/data/media
     depends_on:
       - redis
 
@@ -44,7 +57,7 @@ services:
     deploy:
       replicas: 1
     volumes:
-      - data_dir:/data
+      - media_dir:/data/media
     depends_on:
       - app
       - redis
@@ -55,6 +68,8 @@ services:
     command: "celery -A djangofiles beat -l INFO -S django"
     deploy:
       replicas: 1
+    volumes:
+      - media_dir:/data/media
     depends_on:
       - app
       - redis
@@ -67,47 +82,52 @@ services:
     volumes:
       - redis_data:/data
 
-  redis-commander:
-    image: ghcr.io/joeferner/redis-commander:latest
-    environment:
-      - REDIS_HOSTS=local:redis:6379:0,local:redis:6379:1
-      - URL_PREFIX=/redis
-      - TRUST_PROXY=true
-    deploy:
-      replicas: 1
-    depends_on:
-      - redis
-
-  flower:
-    image: mher/flower:1.2
-    env_file: settings.env
-    deploy:
-      replicas: 1
-    volumes:
-      - flower_data:/data
-    depends_on:
-      - app
-      - redis
-      - worker
-
-  phpmyadmin:
-    image: phpmyadmin:latest
-    env_file: settings.env
-    environment:
-      - APACHE_PORT=8082
-      - PMA_ABSOLUTE_URI=/phpmyadmin/
-      - PMA_HOST=${DATABASE_HOST}
-      - PMA_PORT=${DATABASE_PORT}
-      - PMA_USER=${DATABASE_USER}
-      - PMA_PASSWORD=${DATABASE_PASS}
-    deploy:
-      replicas: 1
-
-secrets:
-  cssnr_basic_http_auth:
-    file: ~/basic_http_auth
+#  redis-commander:
+#    image: ghcr.io/joeferner/redis-commander:latest
+#    environment:
+#      - REDIS_HOSTS=local:redis:6379:0,local:redis:6379:1
+#      - URL_PREFIX=/redis
+#      - TRUST_PROXY=true
+#    deploy:
+#      replicas: 1
+#    depends_on:
+#      - redis
+#
+#  flower:
+#    image: mher/flower:1.2
+#    env_file: settings.env
+#    deploy:
+#      replicas: 1
+#    volumes:
+#      - flower_data:/data
+#    depends_on:
+#      - app
+#      - redis
+#      - worker
+#
+#  phpmyadmin:
+#    image: phpmyadmin:latest
+#    env_file: settings.env
+#    environment:
+#      - APACHE_PORT=8082
+#      - PMA_ABSOLUTE_URI=/phpmyadmin/
+#      - PMA_HOST=${DATABASE_HOST}
+#      - PMA_PORT=${DATABASE_PORT}
+#      - PMA_USER=${DATABASE_USER}
+#      - PMA_PASSWORD=${DATABASE_PASS}
+#    deploy:
+#      replicas: 1
+#
+#secrets:
+#  cssnr_basic_http_auth:
+#    file: ~/basic_http_auth
 
 volumes:
-  data_dir:
-  flower_data:
+  static_dir:
+#  flower_data:
   redis_data:
+  media_dir:
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/docker/django-files

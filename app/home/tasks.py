@@ -52,7 +52,9 @@ def process_file_upload(pk):
     logger.debug(file)
     if file and file.file:
         file.name = os.path.basename(file.file.name)
-        file.mime, _ = mimetypes.guess_type(file.file.path)
+        file.mime, _ = mimetypes.guess_type(file.file.path, strict=False)
+        if not file.mime:
+            file.mime = mimetypes.guess_type(file.file.name, strict=False)
         file.size = file.file.size
         file.save()
         send_discord_message.delay(file.pk)

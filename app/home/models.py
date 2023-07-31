@@ -11,9 +11,12 @@ class Files(models.Model):
     file = models.FileField(upload_to=upload_to)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     size = models.IntegerField(default=0, verbose_name='File Size', help_text='File Size in Bytes.')
-    mime = models.CharField(max_length=255, blank=True, verbose_name='File MIME', help_text='File MIME Type.')
-    name = models.CharField(max_length=255, blank=True, verbose_name='File Name', help_text='File Name Basename.')
-    info = models.CharField(max_length=255, blank=True, verbose_name='File Info', help_text='File Information.')
+    mime = models.CharField(max_length=255, null=True, blank=True,
+                            verbose_name='File MIME', help_text='File MIME Type.')
+    name = models.CharField(max_length=255, null=True, blank=True,
+                            verbose_name='File Name', help_text='File Name Basename.')
+    info = models.CharField(max_length=255, null=True, blank=True,
+                            verbose_name='File Info', help_text='File Information.')
     date = models.DateTimeField(auto_now_add=True, verbose_name='Date Created', help_text='File Created Date.')
     edit = models.DateTimeField(auto_now=True, verbose_name='Date Edited', help_text='File Edited Date.')
     objects = FilesManager()

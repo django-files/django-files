@@ -21,25 +21,25 @@ jobs:
           python-version: "3.11"
 
       - name: "Dependencies ${{ matrix.version }}"
+        working-directory: app
         run: |
           python -m pip install --upgrade pip
           pip install flake8 coverage
-          cd app
           pip install -r requirements.txt
 
       - name: "Flake8"
+        working-directory: app
         run: |
-          cd app
           flake8
 
-#      - name: "Migrate"
-#        run: |
-#          cd app
-#          python manage.py makemigrations
-#          python manage.py migrate
-#
-#      - name: "Coverage"
-#        run: |
-#          cd app
-#          coverage run manage.py test
-#          coverage report
+      - name: "Migrate"
+        working-directory: app
+        run: |
+          python manage.py makemigrations
+          python manage.py migrate
+
+      - name: "Coverage"
+        working-directory: app
+        run: |
+          coverage run manage.py test
+          coverage report
