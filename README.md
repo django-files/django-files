@@ -18,6 +18,7 @@ or submit an [Issue](https://github.com/cssnr/zipline-cli/issues/new) for any bu
 git clone https://github.com/django-files/django-files
 cd django-files
 cp settings.env.example settings.env
+
 vim settings.env
 vim docker-compose.yaml
 ```
