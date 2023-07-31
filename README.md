@@ -1,7 +1,7 @@
 [![Discord](https://img.shields.io/discord/899171661457293343?label=Discord&color=31c754&logo=discord&logoColor=white)](https://discord.gg/wXy6m2X8wY)
 [![Test](https://github.com/smashedr/django-files/actions/workflows/test.yaml/badge.svg)](https://github.com/smashedr/django-files/actions/workflows/test.yaml)
 [![Codacy](https://img.shields.io/codacy/grade/7c41f4f6526c4233ba1304bfb45981c4?label=Codacy&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/dashboard)
-[![Coverage](https://img.shields.io/codacy/coverage/7c41f4f6526c4233ba1304bfb45981c4?label=Coverage&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/dashboard)
+[![Coverage](https://img.shields.io/codacy/coverage/7c41f4f6526c4233ba1304bfb45981c4?label=Coverage&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/coverage/dashboard)
 [![](https://repository-images.githubusercontent.com/672712475/52cf00a8-31de-4b0a-8522-63670bb4314a)](https://github.com/django-files/django-files)
 # Django Files
 
