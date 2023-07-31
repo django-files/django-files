@@ -4,7 +4,7 @@ from django.core.files import File
 from django.urls import reverse
 
 from oauth.models import CustomUser
-from .tasks import *
+from .tasks import clear_home_cache, flush_template_cache, process_file_upload
 from .models import Files
 
 
@@ -35,13 +35,13 @@ class FilesTestCase(TestCase):
 
     def test_sharex(self):
         """Test ShareX Response"""
-        print(f'Testing view "home:gen-sharex" for code "200"')
+        print('Testing view "home:gen-sharex" for code "200"')
         response = self.client.get(reverse('home:gen-sharex'))
         print(response)
         self.assertEqual(response.status_code, 200)
 
     def test_tasks(self):
         """Test ShareX Response"""
-        print(f'Testing Tasks')
+        print('Testing Tasks')
         flush_template_cache()
         clear_home_cache()
