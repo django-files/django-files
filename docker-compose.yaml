@@ -20,6 +20,7 @@ services:
         - "traefik.http.services.STACK_NAME.loadbalancer.server.scheme=http"
     volumes:
       - static_dir:/data/static
+      - media_dir:/data/media
 #    secrets:
 #      - source: cssnr_basic_http_auth
 #        target: /etc/nginx/auth.users
