@@ -13,7 +13,7 @@ trigger:
 environment:
   PROD_HOST: "`f.cssnr.com`"
   DEV_HOST: "`f-dev.cssnr.com`"
-  REGISTRY_GROUP: smashedr
+  REGISTRY_GROUP: shane
   REGISTRY_HOST: registry.hosted-domains.com
   COMPOSE_FILE: docker-compose-swarm.yaml
   CONFIG_FILE: settings.env

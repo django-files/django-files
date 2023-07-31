@@ -1,11 +1,16 @@
 [![Discord](https://img.shields.io/discord/899171661457293343?label=Discord&color=31c754&logo=discord&logoColor=white)](https://discord.gg/wXy6m2X8wY)
 [![Test](https://github.com/smashedr/django-files/actions/workflows/test.yaml/badge.svg)](https://github.com/smashedr/django-files/actions/workflows/test.yaml)
 [![Codacy](https://img.shields.io/codacy/grade/7c41f4f6526c4233ba1304bfb45981c4?label=Codacy&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/dashboard)
-[![Coverage](https://img.shields.io/codacy/coverage/7c41f4f6526c4233ba1304bfb45981c4?label=Coverage&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/coverage/dashboard)
+[![Coverage](https://img.shields.io/codacy/coverage/7c41f4f6526c4233ba1304bfb45981c4?label=Coverage&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/dashboard)
 [![](https://repository-images.githubusercontent.com/672712475/52cf00a8-31de-4b0a-8522-63670bb4314a)](https://github.com/django-files/django-files)
 # Django Files
 
-You Put File!
+A Self-Hosted Django File Manager for Uploading and Sharing; 
+designed to work with client apps such as [ShareX](https://github.com/ShareX/ShareX).  
+Django Files is currently functional but **Under Active Development**. Expect breaking changes
+until an official [release](https://github.com/django-files/django-files/releases) is made.  
+Please open a [Feature Request](https://github.com/django-files/django-files/discussions/new?category=feature-requests)
+or submit an [Issue](https://github.com/cssnr/zipline-cli/issues/new) for any bugs.
 
 ## Deploy
 
@@ -17,10 +22,10 @@ vim settings.env
 vim docker-compose.yaml
 ```
 
--   `settings.env`
-  -   edit the stuff outlined at the top
--   `docker-compose.yaml`
-  -   edit the volume at the bottom to your preference
+*   `settings.env`
+    -   edit the stuff outlined at the top
+*   `docker-compose.yaml` or `-swarm`
+    -   edit the volume at the bottom to your preference
 
 ### Frameworks
 
@@ -28,3 +33,4 @@ vim docker-compose.yaml
 - Celery (5.x) https://docs.celeryproject.org/
 - Font Awesome (6.x) http://fontawesome.io/
 - Bootstrap (5.3) http://getbootstrap.com/
+- UppyJS (3.x) https://uppy.io/
