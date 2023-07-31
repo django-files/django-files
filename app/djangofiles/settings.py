@@ -1,6 +1,5 @@
 import sentry_sdk
 import sys
-import os
 # from celery.schedules import crontab
 from decouple import config, Csv
 from dotenv import load_dotenv
