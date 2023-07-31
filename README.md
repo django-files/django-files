@@ -17,10 +17,10 @@ vim settings.env
 vim docker-compose.yaml
 ```
 
-- `settings.env`
-  - edit the stuff outlined at the top
-- `docker-compose.yaml`
-  - edit the volume at the bottom to your preference
+-   `settings.env`
+    - edit the stuff outlined at the top
+-   `docker-compose.yaml`
+    - edit the volume at the bottom to your preference
 
 ### Frameworks
 
