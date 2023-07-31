@@ -18,9 +18,9 @@ vim docker-compose.yaml
 ```
 
 -   `settings.env`
-    - edit the stuff outlined at the top
+  -   edit the stuff outlined at the top
 -   `docker-compose.yaml`
-    - edit the volume at the bottom to your preference
+  -   edit the volume at the bottom to your preference
 
 ### Frameworks
 
