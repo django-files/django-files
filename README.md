@@ -29,8 +29,8 @@ vim docker-compose.yaml
 
 ### Frameworks
 
-- Django (4.x) https://www.djangoproject.com/
-- Celery (5.x) https://docs.celeryproject.org/
-- Font Awesome (6.x) http://fontawesome.io/
-- Bootstrap (5.3) http://getbootstrap.com/
-- UppyJS (3.x) https://uppy.io/
+*   Django (4.x) https://www.djangoproject.com/
+*   Celery (5.x) https://docs.celeryproject.org/
+*   Font Awesome (6.x) http://fontawesome.io/
+*   Bootstrap (5.3) http://getbootstrap.com/
+*   UppyJS (3.x) https://uppy.io/
