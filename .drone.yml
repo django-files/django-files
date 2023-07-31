@@ -1,0 +1,99 @@
+---
+kind: pipeline
+name: "Deploy"
+
+platform:
+  arch: arm64
+
+trigger:
+  event:
+    - push
+    - promote
+
+environment:
+  PROD_HOST: "`djangofiles.cssnr.com`"
+  DEV_HOST: "`djangofiles-dev.cssnr.com`"
+  REGISTRY_GROUP: smashedr
+  REGISTRY_HOST: registry.hosted-domains.com
+  COMPOSE_FILE: docker-compose-swarm.yaml
+  CONFIG_FILE: settings.env
+  SERVICE_CONFIGS: git@github.com:hosted-domains/service-configs.git
+  CONFIGS_DIR: service-configs
+
+volumes:
+  - name: docker
+    host:
+      path: /var/run/docker.sock
+
+steps:
+  - name: "Flake8"
+    image: alpine/flake8
+    commands:
+      - flake8 .
+
+  - name: "Variables"
+    image: alpine
+    commands:
+      - echo DRONE_DEPLOY_TO $${DRONE_DEPLOY_TO}
+      - echo DRONE_SOURCE_BRANCH $${DRONE_SOURCE_BRANCH}
+      - export ENV_NAME=$(if [ "$${DRONE_DEPLOY_TO}" = prod ];then echo 'prod';else echo 'dev';fi)
+      - echo "ENV_NAME=$${ENV_NAME}" >> ./.environment
+      - export TRAEFIK_HOST=$(if [ "$${DRONE_DEPLOY_TO}" = prod ];then echo $${PROD_HOST};else echo $${DEV_HOST};fi)
+      - echo "TRAEFIK_HOST='$${TRAEFIK_HOST}'" >> ./.environment
+      - echo "VERSION=$${DRONE_SOURCE_BRANCH}" >> ./.environment
+      - echo "STACK_NAME=$${ENV_NAME}_$${DRONE_REPO_OWNER}_$${DRONE_REPO_NAME}" >> ./.environment
+      - echo  "ENV_FILE=$${CONFIGS_DIR}/services/$${DRONE_REPO_OWNER}/$${DRONE_REPO_NAME}/$${ENV_NAME}/$${CONFIG_FILE}" >> ./.environment
+
+  - name: "Service Configs"
+    image: alpine/git
+    environment:
+      SERVICE_CONFIGS_KEY:
+        from_secret: SERVICE_CONFIGS_KEY
+    commands:
+      - set -a; . ./.environment
+      - echo "$${SERVICE_CONFIGS_KEY}" > ./.ssh_key
+      - chmod 0600 ./.ssh_key
+      - mkdir $${CONFIGS_DIR}
+      - cd $${CONFIGS_DIR}
+      - git init
+      - git config core.sshCommand "ssh -i ../.ssh_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+      - git remote add origin $${SERVICE_CONFIGS}
+      - git config core.sparseCheckout true
+      - echo "services/$${DRONE_REPO_OWNER}/$${DRONE_REPO_NAME}/$${ENV_NAME}/$${CONFIG_FILE}" >> .git/info/sparse-checkout
+      - git pull origin master
+
+  - name: "Update Compose"
+    image: alpine
+    commands:
+      - set -a; . ./.environment
+      - sed -i "s/STACK_NAME/$${STACK_NAME}/g" $${COMPOSE_FILE}
+      - cat $${COMPOSE_FILE}
+
+  - name: "Build and Deploy"
+    image: docker:dind
+    volumes:
+      - name: docker
+        path: /var/run/docker.sock
+    environment:
+      REGISTRY_USER:
+        from_secret: REGISTRY_USER
+      REGISTRY_PASS:
+        from_secret: REGISTRY_PASS
+    commands:
+      - set -a; . ./.environment
+      - set -a; . $${ENV_FILE}
+
+      - echo DRONE_DEPLOY_TO $${DRONE_DEPLOY_TO}
+      - echo ENV_NAME $${ENV_NAME}
+      - echo TRAEFIK_HOST $${TRAEFIK_HOST}
+      - echo STACK_NAME $${STACK_NAME}
+      - echo VERSION $${VERSION}
+      - echo ENV_FILE $${ENV_FILE}
+      - echo COMPOSE_FILE $${COMPOSE_FILE}
+      - echo REGISTRY_HOST $${REGISTRY_HOST}
+      - echo REGISTRY_GROUP $${REGISTRY_GROUP}
+
+      - docker compose -f $${COMPOSE_FILE} build --force-rm
+      - docker login --username "$${REGISTRY_USER}" --password "$${REGISTRY_PASS}" $${REGISTRY_HOST}
+      - docker compose -f $${COMPOSE_FILE} push
+      - docker stack deploy -c $${COMPOSE_FILE} --with-registry-auth --resolve-image always $${STACK_NAME}

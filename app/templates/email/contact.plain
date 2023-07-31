@@ -1,0 +1,12 @@
+{% load home_tags %}
+Contact Form
+
+From: {{ contact.email }}
+Subject: {{ contact.subject }}
+
+{{ contact.message }}
+
+View in Browser: {% get_config 'SITE_URL' %}{% url 'home:contact_html' 'view' contact.uuid %}
+View Raw Message: {% get_config 'SITE_URL' %}{% url 'home:contact_html' 'browser' contact.uuid %}
+
+Django Files

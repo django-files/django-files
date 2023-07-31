@@ -1,0 +1,9 @@
+.idea/
+*.iml
+**/__pycache__/
+**/venv/
+*.pyc
+.coverage
+*.log
+*.sqlite3
+settings.env

@@ -1,0 +1,15 @@
+celery>=5,<6
+channels
+channels-redis
+django>=4,<5
+django-debug-toolbar>=4,<5
+django-celery-beat
+django-extensions
+django-redis
+gunicorn
+httpx
+mysqlclient
+python-decouple
+sentry-sdk
+uvicorn[standard]
+Werkzeug

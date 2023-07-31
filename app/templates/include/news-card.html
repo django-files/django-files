@@ -1,0 +1,9 @@
+{% load home_tags %}
+
+<div class="card bg-transparent">
+    <h5 class="card-header">{{ news.title }}</h5>
+    <div class="card-body">
+        <p class="card-text">{{ news.description|linebreaksbr|urlize }}</p>
+    </div>
+    <div class="card-footer text-muted">by {{ news.display_name }} on {{ news.created_at }}</div>
+</div>

@@ -1,0 +1,73 @@
+{% extends "main.html" %}
+{% block files_active %}active{% endblock %}
+{% block title %}Files{% endblock %}
+{% load home_tags %}
+{% load static %}
+
+{% block meta %}
+    <meta name="author" content="Shane"/>
+    <meta name="title" content="Django Files - Files"/>
+    <meta name="description" content="Upload files securely up to 1GB in size."/>
+
+    <meta property="og:author" content="Shane">
+    <meta property="og:title" content="Django Files - Files">
+    <meta property="og:description" content="Upload files securely up to 1GB in size.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo.png' %}">
+{#    <meta property="og:url" content="{{ request.META|get_scheme }}://{{ request.META.HTTP_HOST }}{% url 'home:files' %}">#}
+{#    <meta property="og:image" content="{{ request.META|get_scheme }}://{{ request.META.HTTP_HOST }}{% static 'images/logo.png' %}">#}
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'uppy/uppy.min.css' %}">
+{% endblock %}
+
+{% block body %}
+    <div class="container-fluid mt-2">
+
+        <h1 class="h1">Upload Files</h1>
+        <div id="drag-drop-area"></div>
+
+    </div>
+{% endblock %}
+
+{% block tail %}
+    {% csrf_token %}
+    <script src="{% static 'uppy/uppy.min.js' %}"></script>
+    <script>
+        var uppy = new Uppy.Core({
+            debug: true,
+            autoProceed: false,
+            restrictions: {
+                maxFileSize: 1048576000,
+                {#requiredMetaFields: ['info'],#}
+            }
+        })
+        .use(Uppy.Dashboard, {
+            inline: true,
+            theme: 'dark',
+            target: '#drag-drop-area',
+            showProgressDetails: true,
+            note: 'Generic Files Upload',
+            height: 380,
+            width: '100%',
+            metaFields: [
+                {id: 'name', name: 'Name', placeholder: 'File Name'},
+                {id: 'info', name: 'Info', placeholder: 'Information about the file.'}
+            ],
+            browserBackButtonClose: false
+        })
+        .use(Uppy.XHRUpload, {
+            endpoint: "{% url 'home:files' %}",
+            headers: {
+                "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
+            },
+        })
+
+        uppy.on('complete', result => {
+          console.log('successful files:', result.successful)
+          console.log('failed files:', result.failed)
+        })
+    </script>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% load home_tags %}New File Upload: **{{ file.name }}**
+{{ file.get_url }}
+```ini
+[Name] {{ file.name }}
+[MIME] {{ file.mime }}
+[Size] {{ file.get_size }}{% if file.info %}
+[Info] {{ file.info }}{% endif %}
+```

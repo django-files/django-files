@@ -1,0 +1,18 @@
+{% extends "main.html" %}
+{% block title %}400 - Bad Request{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block body %}
+    <div class="container mt-2">
+
+        {% block main %}{% endblock %}
+
+        <p>From here you can <a href="javascript:history.back()">Go Back</a> or
+            <a href="{% url 'home:index' %}">Go Home</a>.</p>
+
+    </div>
+
+{% endblock %}
+
+{% block tail %}{% endblock %}

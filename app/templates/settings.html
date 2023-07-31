@@ -1,0 +1,84 @@
+{% extends "main.html" %}
+{% load home_tags %}
+{% load static %}
+{% load cache %}
+{% block settings_active %}active{% endblock %}
+{% block title %}Settings{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block body %}
+    <div class="container-fluid mt-2">
+
+        <h1>Settings</h1>
+
+        <h3>Webhooks</h3>
+        <p><a href="{% url 'oauth:webhook' %}" class="btn btn-outline-primary btn-lg" role="button">
+            <i class="fab fa-discord me-2"></i> Add Webhook to Discord</a></p>
+        {% if not webhooks %}
+            <p class="lead">No Webhooks Found. Perhaps you forgot to add one?</p>
+        {% else %}
+            <table class="table table-responsive" id="webhooks-table">
+                <thead>
+                <tr>
+                    <th scope="col" class="d-none d-sm-table-cell">ID</th>
+                    <th scope="col" class="d-none d-sm-table-cell">Guild ID</th>
+                    <th scope="col">Channel ID</th>
+                    <th scope="col" class="d-none d-md-table-cell">Date</th>
+                    <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for data in webhooks reversed %}
+                    <tr id="webhook-{{ data.id }}">
+                        <th scope="row" class="d-none d-sm-table-cell">{{ data.id }}</th>
+                        <td><a class="clip text-white text-decoration-none" role="button"
+                               data-clipboard-text="{{ data.guild_id }}">{{ data.guild_id }}</a></td>
+                        <td class="d-none d-sm-table-cell">
+                            <a class="clip text-white text-decoration-none" role="button"
+                               data-clipboard-text="{{ data.channel_id }}">{{ data.channel_id }}</a></td>
+                        <td class="d-none d-md-table-cell">
+                            <a class="clip text-white text-decoration-none" role="button"
+                               data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a></td>
+                        <td class="text-center"><a role="button" class="delete-webhook-btn" data-hook-id="{{ data.id }}" title="Delete">
+                            <i class="fa-regular fa-trash-can link-danger"></i></a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="modal fade" id="delete-hook-modal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalLabel">Delete Webhook</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">Are you sure you want to delete this webhook?</div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" id="confirm-delete-hook-btn">Delete <i
+                                    class="fa-regular fa-trash-can ms-1"></i></button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <h3>Uploaders</h3>
+        <p><a href="{% url 'home:gen-sharex' %}" class="btn btn-outline-primary btn-lg">
+            <img src="{% static 'images/assets/sharex.svg' %}" alt="ShareX" width="24" class="me-2">
+            Download ShareX Configuration</a></p>
+
+        <h3>Authorization Token</h3>
+        <p><a class="btn btn-outline-dark btn-lg clip" role="button" data-clipboard-text="{{ user.authorization }}">
+            <i class="fa-solid fa-link me-2"></i> Copy Token</a></p>
+        <p><kbd>{{ user.authorization }}</kbd></p>
+
+    </div>
+{% endblock %}
+
+{% block tail %}
+    <script type="text/javascript" src="{% static 'main/js/settings.js' %}"></script>
+{% endblock %}

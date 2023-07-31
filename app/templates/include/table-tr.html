@@ -1,0 +1,32 @@
+{% load tz %}
+{% load home_tags %}
+
+{% if file.file %}
+<tr id="file-{{ file.id }}">
+    <td class="d-none d-sm-table-cell text-center">{{ file.id }}</td>
+
+    <td class="">
+        <span class="d-none d-sm-inline">
+            <a class="clip" role="button" data-clipboard-text="{{ file.get_url }}">
+                <i class="fa-regular fa-clipboard text-white ms-2"></i></a></span>
+        <a class="" role="button" target="_blank" href="{{ file.file.url }}">
+            {{ file.name }}</a></td>
+
+    <td class="d-none d-md-table-cell">
+        <a class="clip text-white text-decoration-none" role="button"
+           data-clipboard-text="{{ file.get_size }}">{{ file.get_size }}</a>
+    </td>
+
+    <td class="d-none d-lg-table-cell">
+        <a class="clip text-white text-decoration-none" role="button"
+           data-clipboard-text="{{ file.mime }}">{{ file.mime }}</a></td>
+
+    <td class="d-none d-xl-table-cell">
+        <a class="clip text-white text-decoration-none" role="button"
+           data-clipboard-text="{{ file.date|localtime }}">{{ file.date|localtime }}</a></td>
+
+    <td class="text-center">
+        <a role="button" class="delete-file-btn" data-hook-id="{{ file.id }}" title="Delete">
+            <i class="fa-regular fa-trash-can link-danger"></i></a></td>
+</tr>
+{% endif %}
