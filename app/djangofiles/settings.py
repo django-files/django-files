@@ -8,6 +8,8 @@ from pathlib import Path
 from sentry_sdk.integrations.django import DjangoIntegration
 
 load_dotenv()
+if 'test' in sys.argv or 'test_coverage' in sys.argv:
+    load_dotenv('test.env')
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')

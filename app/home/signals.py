@@ -26,4 +26,3 @@ def clear_settings_cache_signal(sender, instance, **kwargs):
 def send_success_message_signal(sender, instance, **kwargs):
     if 'created' in kwargs and kwargs['created']:
         send_success_message.delay(instance.id)
-
