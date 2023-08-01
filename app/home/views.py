@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render, reverse
+from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
@@ -60,7 +61,7 @@ def files_view(request):
 @require_http_methods(['POST'])
 def upload_view(request):
     """
-    View  /upload/
+    View  /upload/ and /api/upload
     """
     logger.debug(request.headers)
     logger.debug(request.POST)
@@ -83,6 +84,7 @@ def upload_view(request):
             return JsonResponse({'error': 'File Not Created'}, status=400)
         process_file_upload.delay(file.pk)
         data = {
+            'files': [file.get_url()],
             'url': file.get_url(),
             'name': file.name,
             'size': file.size,
@@ -151,6 +153,20 @@ def gen_sharex(request):
     filename = f'{request.get_host()} - Files.sxcu'
     response = JsonResponse(data, json_dumps_params={'indent': 4})
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
+@require_http_methods(['GET'])
+def gen_flameshot(request):
+    """
+    View  /gen/flameshot/
+    """
+    context = {'site_url': settings.SITE_URL, 'token': request.user.authorization}
+    message = render_to_string('scripts/flameshot.sh', context)
+    logger.debug(message)
+    response = HttpResponse(message)
+    response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
     return response
 
 

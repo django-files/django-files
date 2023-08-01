@@ -67,9 +67,14 @@
         {% endif %}
 
         <h3>Uploaders</h3>
-        <p><a href="{% url 'home:gen-sharex' %}" class="btn btn-outline-primary btn-lg">
-            <img src="{% static 'images/assets/sharex.svg' %}" alt="ShareX" width="24" class="me-2">
-            Download ShareX Configuration</a></p>
+        <div class="col p-1">
+            <a href="{% url 'home:gen-sharex' %}" class="btn btn-outline-primary btn-lg m-1">
+                <img src="{% static 'images/assets/sharex.svg' %}" alt="ShareX" width="24" class="me-2">
+                Download ShareX Configuration</a>
+            <a href="{% url 'home:gen-flameshot' %}" class="btn btn-outline-info btn-lg m-1">
+                <img src="{% static 'images/assets/flameshot.svg' %}" alt="ShareX" width="24" class="me-2">
+                Download Flameshot Configuration</a>
+        </div>
 
         <h3>Authorization Token</h3>
         <p><a class="btn btn-outline-dark btn-lg clip" role="button" data-clipboard-text="{{ user.authorization }}">
