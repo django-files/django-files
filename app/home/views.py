@@ -166,7 +166,7 @@ def gen_flameshot(request):
     message = render_to_string('scripts/flameshot.sh', context)
     logger.debug(message)
     response = HttpResponse(message)
-    response['Content-Disposition'] = f'attachment; filename="flameshot.sh"'
+    response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
     return response
 
 
