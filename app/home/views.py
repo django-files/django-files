@@ -70,7 +70,6 @@ def files_view(request):
     log.debug(request.headers)
     log.debug(request.POST)
     log.debug(request.FILES)
-    expr = request.POST.get('ExpiresAt') or request.POST.get('expires-at')
     file = Files.objects.create(
         file=request.FILES.get('file'),
         user=request.user,
@@ -219,8 +218,15 @@ def google_verify(request: HttpRequest) -> bool:
 
 def parse_expire(request) -> str:
     # Get Expiration from POST or Default
-    expr = request.POST.get('ExpiresAt') or request.POST.get('expires-at') or ''
-    if parse(expr.strip()):
-        return expr.strip()
-    else:
-        return request.user.default_expire or ''
+    expr = ''
+    if request.POST.get('ExpiresAt') is not None:
+        expr = request.POST.get('ExpiresAt').strip()
+    elif request.POST.get('expires-at') is not None:
+        expr = request.POST.get('expires-at').strip()
+    if expr == '0':
+        return ''
+    if parse(expr) is not None:
+        return expr
+    if expr.lower() == ['never', 'none', 'null']:
+        return ''
+    return request.user.default_expire or ''
