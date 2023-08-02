@@ -33,7 +33,7 @@ def settings_view(request):
     View  /settings/
     """
     log.debug('settings_view: %s', request.method)
-    site_settings, created = SiteSettings.objects.get_or_create(pk=1)
+    site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
     if request.method in ['GET', 'HEAD']:
         log.debug(0)
         context = {
@@ -75,7 +75,7 @@ def files_view(request):
         file=request.FILES.get('file'),
         user=request.user,
         info=request.POST.get('info', ''),
-        expr=parse(expr or request.user.default_expire) or '',
+        expr=parse_expire(request),
     )
     if not file:
         return HttpResponse(status=400)
@@ -101,12 +101,11 @@ def upload_view(request):
         if not user:
             return JsonResponse({'error': 'Invalid Authorization'}, status=401)
 
-        expr = request.POST.get('ExpiresAt') or request.POST.get('expires-at')
         file = Files.objects.create(
             file=request.FILES.get('file'),
             user=user,
             info=request.POST.get('info', ''),
-            expr=parse(expr or request.user.default_expire) or '',
+            expr=parse_expire(request),
         )
         if not file:
             return JsonResponse({'error': 'File Not Created'}, status=400)
@@ -216,3 +215,12 @@ def google_verify(request: HttpRequest) -> bool:
     except Exception as error:
         log.exception(error)
         return False
+
+
+def parse_expire(request) -> str:
+    # Get Expiration from POST or Default
+    expr = request.POST.get('ExpiresAt') or request.POST.get('expires-at') or ''
+    if parse(expr.strip()):
+        return expr.strip()
+    else:
+        return request.user.default_expire or ''
