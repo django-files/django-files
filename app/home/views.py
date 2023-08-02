@@ -74,7 +74,7 @@ def files_view(request):
         file=request.FILES.get('file'),
         user=request.user,
         info=request.POST.get('info', ''),
-        expr=parse_expire(request),
+        expr=parse_expire(request, request.user),
     )
     if not file:
         return HttpResponse(status=400)
@@ -104,7 +104,7 @@ def upload_view(request):
             file=request.FILES.get('file'),
             user=user,
             info=request.POST.get('info', ''),
-            expr=parse_expire(request),
+            expr=parse_expire(request, user),
         )
         if not file:
             return JsonResponse({'error': 'File Not Created'}, status=400)
@@ -216,7 +216,7 @@ def google_verify(request: HttpRequest) -> bool:
         return False
 
 
-def parse_expire(request) -> str:
+def parse_expire(request, user) -> str:
     # Get Expiration from POST or Default
     expr = ''
     if request.POST.get('ExpiresAt') is not None:
@@ -229,4 +229,4 @@ def parse_expire(request) -> str:
         return expr
     if expr.lower() == ['never', 'none', 'null']:
         return ''
-    return request.user.default_expire or ''
+    return user.default_expire or ''
