@@ -3,7 +3,7 @@ $(document).ready(function() {
     // Get and set the csrf_token
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    // Define Hook Modal and Delete handlers
+    // Define Delete Modal and Delete Button class handler
     const deleteHookModal = new bootstrap.Modal('#delete-hook-modal', {});
     let hookID;
     $('.delete-webhook-btn').click(function () {
@@ -11,6 +11,8 @@ $(document).ready(function() {
         console.log(hookID);
         deleteHookModal.show();
     });
+
+    // Handle Confirm Delete Clicks id handler
     $('#confirm-delete-hook-btn').click(function () {
         if ($('#confirm-delete-hook-btn').hasClass('disabled')) { return; }
         console.log(hookID);
@@ -48,6 +50,63 @@ $(document).ready(function() {
                 $('#confirm-delete-hook-btn').removeClass('disabled');
             }
         });
+    });
+
+    // Remove .is-invalid when clicking on a filed
+    $(".form-control").focus(function() {
+        $(this).removeClass('is-invalid');
+    });
+
+    // Handle profile save button click and response
+    $('#settings-form').on('submit', function(event){
+        event.preventDefault();
+        if ($('#submit-app-btn').hasClass('disabled')) { return; }
+        var formData = new FormData($(this)[0]);
+        $.ajax({
+            url: window.location.pathname,
+            // url: $('#settings-form').attr('action'),
+            type: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            data: formData,
+            beforeSend: function( jqXHR ){
+                $('#save-settings').addClass('disabled');
+            },
+            complete: function(){
+                $('#save-settings').removeClass('disabled');
+            },
+            success: function(data, textStatus, jqXHR){
+                console.log('Status: '+jqXHR.status+', Data: '+JSON.stringify(data));
+                let message = 'Settings Saved Successfully.';
+                show_toast(message,'success', '6000');
+                // $("#message-success").show();
+            },
+            error: function (data, status, error) {
+                console.log('Status: '+data.status+', Response: '+data.responseText);
+                let message = data.status + ': ' + error
+                show_toast(message,'danger', '6000');
+                try {
+                    console.log(data.responseJSON);
+                    if (data.responseJSON.hasOwnProperty('error_message')) {
+                        alert(data.responseJSON['error_message'])
+                    } else {
+                        $($('#settings-form').prop('elements')).each(function () {
+                            if (data.responseJSON.hasOwnProperty(this.name)) {
+                                $('#' + this.name + '-invalid').empty().append(data.responseJSON[this.name]);
+                                $(this).addClass('is-invalid');
+                            }
+                        });
+                    }
+                }
+                catch(error){
+                    console.log(error);
+                    alert('Fatal Error: ' + error)
+                }
+            },
+            cache: false,
+            contentType: false,
+            processData: false
+        });
+        return false;
     });
 
 });

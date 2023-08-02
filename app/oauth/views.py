@@ -14,7 +14,7 @@ from home.models import Webhooks
 from .forms import LoginForm
 from .models import CustomUser
 
-logger = logging.getLogger('app')
+log = logging.getLogger('app')
 
 
 def oauth_show(request):
@@ -25,7 +25,7 @@ def oauth_show(request):
         request.session['login_redirect_url'] = get_next_url(request)
         form = LoginForm(request.POST)
         if not form.is_valid():
-            logger.debug(form.errors)
+            log.debug(form.errors)
             return HttpResponse(status=400)
         user = authenticate(request,
                             username=form.cleaned_data['username'],
@@ -48,7 +48,7 @@ def oauth_start(request):
     View  /oauth/start/
     """
     request.session['login_redirect_url'] = get_next_url(request)
-    logger.debug('oauth_start: login_redirect_url: %s', request.session.get('login_redirect_url'))
+    log.debug('oauth_start: login_redirect_url: %s', request.session.get('login_redirect_url'))
     params = {
         'redirect_uri': config('OAUTH_REDIRECT_URL'),
         'client_id': config('OAUTH_CLIENT_ID'),
@@ -58,7 +58,7 @@ def oauth_start(request):
     }
     url_params = urllib.parse.urlencode(params)
     url = f'https://discord.com/api/oauth2/authorize?{url_params}'
-    logger.debug('url: %s', url)
+    log.debug('url: %s', url)
     return HttpResponseRedirect(url)
 
 
@@ -66,27 +66,27 @@ def oauth_callback(request):
     """
     View  /oauth/callback/
     """
-    logger.debug('oauth_callback: login_next_url: %s', request.session.get('login_next_url'))
+    log.debug('oauth_callback: login_next_url: %s', request.session.get('login_next_url'))
     if 'code' not in request.GET:
         messages.warning(request, 'User aborted or no code in response...')
         return HttpResponseRedirect(get_login_redirect_url(request))
     try:
-        logger.debug('code: %s', request.GET['code'])
+        log.debug('code: %s', request.GET['code'])
         auth_data = get_access_token(request.GET['code'])
-        logger.debug('auth_data: %s', auth_data)
+        log.debug('auth_data: %s', auth_data)
         profile = get_user_profile(auth_data)
-        logger.debug('profile: %s', profile)
+        log.debug('profile: %s', profile)
         user, _ = CustomUser.objects.get_or_create(username=profile['id'])
         update_profile(user, profile)
         login(request, user)
         if 'webhook' in auth_data:
-            logger.debug('webhook in profile')
+            log.debug('webhook in profile')
             webhook = add_webhook(request, auth_data)
             messages.info(request, f'Webhook successfully added: {webhook.id}')
         else:
             messages.info(request, f'Successfully logged in. {user.first_name}.')
     except Exception as error:
-        logger.exception(error)
+        log.exception(error)
         messages.error(request, f'Exception during login: {error}')
     return HttpResponseRedirect(get_login_redirect_url(request))
 
@@ -97,12 +97,12 @@ def oauth_logout(request):
     View  /oauth/logout/
     """
     next_url = get_next_url(request)
-    logger.debug('oauth_logout: next_url: %s', next_url)
+    log.debug('oauth_logout: next_url: %s', next_url)
 
     # # We are not redirecting directly to oauth here, so this is not needed
     # # Hack to prevent login loop when logging out on a secure page
     # if len(next_url.split('/')) > 1:
-    #     logger.debug('next_url: %s', next_url.split('/')[1])
+    #     log.debug('next_url: %s', next_url.split('/')[1])
     #     secure_views_list = ['profile']
     #     if next_url.split('/')[1] in secure_views_list:
     #         next_url = '/'
@@ -110,7 +110,7 @@ def oauth_logout(request):
     logout(request)
     request.session['login_next_url'] = next_url
     messages.info(request, 'Successfully logged out.')
-    logger.debug('oauth_logout: login_next_url: %s', request.session.get('login_next_url'))
+    log.debug('oauth_logout: login_next_url: %s', request.session.get('login_next_url'))
     return redirect(next_url)
 
 
@@ -119,7 +119,7 @@ def oauth_webhook(request):
     View  /oauth/webhook/
     """
     request.session['login_redirect_url'] = get_next_url(request)
-    logger.debug('oauth_webhook: login_redirect_url: %s', request.session.get('login_redirect_url'))
+    log.debug('oauth_webhook: login_redirect_url: %s', request.session.get('login_redirect_url'))
     params = {
         'redirect_uri': config('OAUTH_REDIRECT_URL'),
         'client_id': config('OAUTH_CLIENT_ID'),
@@ -150,7 +150,7 @@ def get_access_token(code: str) -> dict:
     """
     Post OAuth code and Return access_token
     """
-    logger.debug('get_access_token')
+    log.debug('get_access_token')
     url = 'https://discord.com/api/v8/oauth2/token'
     data = {
         'redirect_uri': config('OAUTH_REDIRECT_URL'),
@@ -162,8 +162,8 @@ def get_access_token(code: str) -> dict:
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     r = httpx.post(url, data=data, headers=headers, timeout=10)
     if not r.is_success:
-        logger.info('status_code: %s', r.status_code)
-        logger.error('content: %s', r.content)
+        log.info('status_code: %s', r.status_code)
+        log.error('content: %s', r.content)
         r.raise_for_status()
     return r.json()
 
@@ -172,15 +172,15 @@ def get_user_profile(token_data: dict) -> dict:
     """
     Get Profile for Authenticated User
     """
-    logger.debug('get_user_profile')
+    log.debug('get_user_profile')
     url = 'https://discord.com/api/v8/users/@me'
     headers = {'Authorization': f"Bearer {token_data['access_token']}"}
     r = httpx.get(url, headers=headers, timeout=10)
     if not r.is_success:
-        logger.info('status_code: %s', r.status_code)
-        logger.error('content: %s', r.content)
+        log.info('status_code: %s', r.status_code)
+        log.error('content: %s', r.content)
         r.raise_for_status()
-    logger.debug('r.json(): %s', r.json())
+    log.debug('r.json(): %s', r.json())
     p = r.json()
     # profile - Custom user data from oauth provider
     return {
@@ -198,7 +198,7 @@ def update_profile(user: CustomUser, profile: dict) -> None:
     """
     Update Django user profile with provided data
     """
-    logger.debug('update_profile')
+    log.debug('update_profile')
     user.first_name = profile['username']
     user.last_name = profile['discriminator']
     user.avatar_hash = profile['avatar']
@@ -206,7 +206,7 @@ def update_profile(user: CustomUser, profile: dict) -> None:
     user.refresh_token = profile['refresh_token']
     user.expires_in = profile['expires_in']
     if profile['id'] in config('SUPER_USERS', '', Csv()):
-        logger.info('Super user login: %s', profile['id'])
+        log.info('Super user login: %s', profile['id'])
         user.is_staff, user.is_admin, user.is_superuser = True, True, True
     user.save()
 
@@ -215,23 +215,23 @@ def get_next_url(request: HttpRequest) -> str:
     """
     Determine 'next' parameter
     """
-    logger.debug('get_next_url')
+    log.debug('get_next_url')
     if 'next' in request.GET:
-        logger.debug('next in request.GET: %s', str(request.GET['next']))
+        log.debug('next in request.GET: %s', str(request.GET['next']))
         return str(request.GET['next'])
     if 'next' in request.POST:
-        logger.debug('next in request.POST: %s', str(request.POST['next']))
+        log.debug('next in request.POST: %s', str(request.POST['next']))
         return str(request.POST['next'])
     if 'login_next_url' in request.session:
-        logger.debug('login_next_url in request.session: %s', request.session['login_next_url'])
+        log.debug('login_next_url in request.session: %s', request.session['login_next_url'])
         url = request.session['login_next_url']
         del request.session['login_next_url']
         request.session.modified = True
         return url
     if 'HTTP_REFERER' in request.META:
-        logger.debug('HTTP_REFERER in request.META: %s', request.META['HTTP_REFERER'])
+        log.debug('HTTP_REFERER in request.META: %s', request.META['HTTP_REFERER'])
         return request.META['HTTP_REFERER']
-    logger.info('----- get_next_url FAILED -----')
+    log.info('----- get_next_url FAILED -----')
     return reverse('home:index')
 
 
@@ -239,7 +239,7 @@ def get_login_redirect_url(request: HttpRequest) -> str:
     """
     Determine 'login_redirect_url' parameter
     """
-    logger.debug('get_login_redirect_url: login_redirect_url: %s', request.session.get('login_redirect_url'))
+    log.debug('get_login_redirect_url: login_redirect_url: %s', request.session.get('login_redirect_url'))
     if 'login_redirect_url' in request.session:
         url = request.session['login_redirect_url']
         del request.session['login_redirect_url']

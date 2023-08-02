@@ -12,9 +12,14 @@
         <a class="" role="button" target="_blank" href="{{ file.file.url }}">
             {{ file.name }}</a></td>
 
-    <td class="d-none d-md-table-cell">
+    <td class="d-none d-sm-table-cell">
         <a class="clip text-white text-decoration-none" role="button"
            data-clipboard-text="{{ file.get_size }}">{{ file.get_size }}</a>
+    </td>
+
+    <td class="d-none d-md-table-cell">
+        <a class="clip text-white text-decoration-none" role="button"
+           data-clipboard-text="{{ file.expr|default:'Never' }}">{{ file.expr|default:'Never' }}</a>
     </td>
 
     <td class="d-none d-lg-table-cell">

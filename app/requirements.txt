@@ -12,6 +12,8 @@ mysqlclient
 psycopg[binary]
 python-decouple
 python-dotenv
+pytimeparse2
 sentry-sdk
 uvicorn[standard]
+validators
 Werkzeug

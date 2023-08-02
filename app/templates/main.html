@@ -167,6 +167,14 @@
                             <th>Discord Username</th>
                             <td>{{ user.first_name }}#{{ user.last_name }}</td>
                         </tr>
+                        <tr>
+                            <th>Default Expire</th>
+                            <td>{{ user.default_expire|default:'Never' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Default Color</th>
+                            <td style="color: #{{ user.default_color|default:'111111' }}">#{{ user.default_color|default:"Not Set" }}</td>
+                        </tr>
 {#                        <tr>#}
 {#                            <th>Authorization Token</th>#}
 {#                            <td>{{ user.authorization }}#{{ user.authorization }}</td>#}
