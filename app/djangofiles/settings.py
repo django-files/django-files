@@ -1,3 +1,4 @@
+import datetime
 import sentry_sdk
 import sys
 # from celery.schedules import crontab
@@ -75,12 +76,16 @@ MESSAGE_TAGS = {
     message_constants.ERROR: 'danger',
 }
 
-# CELERY_BEAT_SCHEDULE = {
-#     'clear_sessions': {
-#         'task': 'home.tasks.clear_sessions',
-#         'schedule': crontab(minute=0, hour=0),
-#     },
-# }
+CELERY_BEAT_SCHEDULE = {
+    'delete_expired_files': {
+        'task': 'home.tasks.delete_expired_files',
+        'schedule': datetime.timedelta(minutes=config('DELETE_EXPIRED_MIN', 60, int)),
+    },
+    # 'process_stats': {
+    #     'task': 'home.tasks.process_stats',
+    #     'schedule': crontab(minute=0, hour=0),
+    # },
+}
 
 CHANNEL_LAYERS = {
     'default': {

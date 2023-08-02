@@ -4,5 +4,6 @@
 [Name] {{ file.name }}
 [MIME] {{ file.mime }}
 [Size] {{ file.get_size }}{% if file.info %}
-[Info] {{ file.info }}{% endif %}
+[Info] {{ file.info }}{% endif %}{% if file.expr %}
+[Expire] {{ file.expr }}{% endif %}
 ```

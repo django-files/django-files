@@ -19,6 +19,7 @@ class Files(models.Model):
                             verbose_name='File Info', help_text='File Information.')
     date = models.DateTimeField(auto_now_add=True, verbose_name='Date Created', help_text='File Created Date.')
     edit = models.DateTimeField(auto_now=True, verbose_name='Date Edited', help_text='File Edited Date.')
+    expr = models.CharField(default='', max_length=32,  verbose_name='Expire Time', help_text='File Expire Time.')
     objects = FilesManager()
 
     def __str__(self):
@@ -58,3 +59,20 @@ class Webhooks(models.Model):
     class Meta:
         verbose_name = 'Webhook'
         verbose_name_plural = 'Webhooks'
+
+
+class SiteSettings(models.Model):
+    id = models.AutoField(primary_key=True)
+    site_url = models.URLField(max_length=128, unique=True, verbose_name='Site URL')
+
+    def __str__(self):
+        return f'<Settings(site_url={self.site_url})>'
+
+    def save(self, *args, **kwargs):
+        if self.__class__.objects.count():
+            self.pk = self.__class__.objects.first().pk
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Settings'
+        verbose_name_plural = 'Settings'

@@ -7,12 +7,14 @@ from django.shortcuts import render, reverse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from pytimeparse2 import parse
 
 from oauth.models import CustomUser
-from .models import Files, Webhooks
+from .forms import SettingsForm
+from .models import Files, Webhooks, SiteSettings
 from .tasks import process_file_upload
 
-logger = logging.getLogger('app')
+log = logging.getLogger('app')
 
 
 @login_required
@@ -20,7 +22,7 @@ def home_view(request):
     """
     View  /
     """
-    logger.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
+    log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
     context = {'files': Files.objects.get_request(request)}
     return render(request, 'home.html', context)
 
@@ -30,9 +32,30 @@ def settings_view(request):
     """
     View  /settings/
     """
-    logger.debug('settings_view')
-    context = {'webhooks': Webhooks.objects.filter(owner=request.user)}
-    return render(request, 'settings.html', context)
+    log.debug('settings_view: %s', request.method)
+    site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+    if request.method in ['GET', 'HEAD']:
+        log.debug(0)
+        context = {
+            'webhooks': Webhooks.objects.filter(owner=request.user),
+            'site_url': site_settings.site_url or settings.SITE_URL,
+        }
+        log.debug(context)
+        return render(request, 'settings.html', context)
+
+    log.debug(request.POST)
+    form = SettingsForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse(form.errors, status=400)
+    log.debug(form.cleaned_data)
+    # site_settings, created = SiteSettings.objects.get_or_create(pk=1)
+    site_settings.site_url = form.cleaned_data['site_url']
+    site_settings.save()
+    request.user.default_color = form.cleaned_data['default_color']
+    request.user.default_expire = form.cleaned_data['default_expire']
+    request.user.save()
+    return HttpResponse(status=204)
+    # return JsonResponse({}, status=200)
 
 
 @login_required
@@ -43,13 +66,15 @@ def files_view(request):
     """
     if request.method in ['GET', 'HEAD']:
         return render(request, 'files.html')
-    logger.debug(request.headers)
-    logger.debug(request.POST)
-    logger.debug(request.FILES)
+
+    log.debug(request.headers)
+    log.debug(request.POST)
+    log.debug(request.FILES)
     file = Files.objects.create(
         file=request.FILES.get('file'),
         user=request.user,
         info=request.POST.get('info', ''),
+        expr=parse_expire(request),
     )
     if not file:
         return HttpResponse(status=400)
@@ -63,9 +88,9 @@ def upload_view(request):
     """
     View  /upload/ and /api/upload
     """
-    logger.debug(request.headers)
-    logger.debug(request.POST)
-    logger.debug(request.FILES)
+    log.debug(request.headers)
+    log.debug(request.POST)
+    log.debug(request.FILES)
     try:
         authorization = request.headers.get('Authorization') or request.headers.get('Token')
         if not authorization:
@@ -79,6 +104,7 @@ def upload_view(request):
             file=request.FILES.get('file'),
             user=user,
             info=request.POST.get('info', ''),
+            expr=parse_expire(request),
         )
         if not file:
             return JsonResponse({'error': 'File Not Created'}, status=400)
@@ -91,7 +117,7 @@ def upload_view(request):
         }
         return JsonResponse(data)
     except Exception as error:
-        logger.exception(error)
+        log.exception(error)
         return JsonResponse({'error': str(error)}, status=500)
 
 
@@ -103,11 +129,11 @@ def delete_file_ajax(request, pk):
     View  /ajax/delete/file/<int:pk>/
     TODO: Implement into /files/ using DELETE method
     """
-    logger.debug('del_hook_view_a: %s', pk)
+    log.debug('del_hook_view_a: %s', pk)
     file = Files.objects.get(pk=pk)
     if file.user != request.user:
         return HttpResponse(status=401)
-    logger.debug(file)
+    log.debug(file)
     file.delete()
     return HttpResponse(status=204)
 
@@ -119,11 +145,11 @@ def delete_hook_ajax(request, pk):
     """
     View  /ajax/delete/hook/<int:pk>/
     """
-    logger.debug('delete_hook_ajax: %s', pk)
+    log.debug('delete_hook_ajax: %s', pk)
     webhook = Webhooks.objects.get(pk=pk)
     if webhook.owner != request.user:
         return HttpResponse(status=401)
-    logger.debug(webhook)
+    log.debug(webhook)
     webhook.delete()
     return HttpResponse(status=204)
 
@@ -134,7 +160,7 @@ def gen_sharex(request):
     """
     View  /gen/sharex/
     """
-    logger.debug('gen_sharex')
+    log.debug('gen_sharex')
     data = {
         'Version': '14.1.0',
         'Name': f'Django Files - {request.get_host()} - File',
@@ -164,7 +190,7 @@ def gen_flameshot(request):
     """
     context = {'site_url': settings.SITE_URL, 'token': request.user.authorization}
     message = render_to_string('scripts/flameshot.sh', context)
-    logger.debug(message)
+    log.debug(message)
     response = HttpResponse(message)
     response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
     return response
@@ -186,5 +212,21 @@ def google_verify(request: HttpRequest) -> bool:
                 return True
         return False
     except Exception as error:
-        logger.exception(error)
+        log.exception(error)
         return False
+
+
+def parse_expire(request) -> str:
+    # Get Expiration from POST or Default
+    expr = ''
+    if request.POST.get('ExpiresAt') is not None:
+        expr = request.POST.get('ExpiresAt').strip()
+    elif request.POST.get('expires-at') is not None:
+        expr = request.POST.get('expires-at').strip()
+    if expr == '0':
+        return ''
+    if parse(expr) is not None:
+        return expr
+    if expr.lower() == ['never', 'none', 'null']:
+        return ''
+    return request.user.default_expire or ''

@@ -12,6 +12,33 @@
 
         <h1>Settings</h1>
 
+        <form class="row g-2" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings' %}">
+            <div class="col-12">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="site_url" name="site_url" placeholder=""
+                           value="{{ site_url }}" aria-describedby="site_url-invalid">
+                    <label for="site_url">Site URL</label>
+                    <div id="site_url-invalid" class="invalid-feedback"></div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <label for="default_expire" class="form-label">Default Expire</label>
+                <input type="text" class="form-control" id="default_expire" name="default_expire"
+                       value="{{ user.default_expire }}" aria-describedby="default_expire-invalid">
+                <div id="default_expire-invalid" class="invalid-feedback"></div>
+            </div>
+            <div class="col-sm-6">
+                <label for="default_color" class="form-label">Default Color</label>
+                <input type="color" class="form-control form-control-color" id="default_color" name="default_color"
+                       value="#{{ user.default_color }}" title="Default Color" aria-describedby="default_color-invalid">
+                <div id="default_color-invalid" class="invalid-feedback"></div>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-lg btn-outline-success" id="save-settings">
+                    <i class="fa-solid fa-floppy-disk me-2"></i> Save Settings</button>
+            </div>
+        </form>
+
         <h3>Webhooks</h3>
         <p><a href="{% url 'oauth:webhook' %}" class="btn btn-outline-primary btn-lg" role="button">
             <i class="fab fa-discord me-2"></i> Add Webhook to Discord</a></p>
@@ -46,24 +73,6 @@
                 {% endfor %}
                 </tbody>
             </table>
-
-            <div class="modal fade" id="delete-hook-modal" tabindex="-1" aria-labelledby="exampleModalLabel"
-                 aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="exampleModalLabel">Delete Webhook</h1>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">Are you sure you want to delete this webhook?</div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-danger" id="confirm-delete-hook-btn">Delete <i
-                                    class="fa-regular fa-trash-can ms-1"></i></button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
         {% endif %}
 
         <h3>Uploaders</h3>
@@ -81,6 +90,24 @@
             <i class="fa-solid fa-link me-2"></i> Copy Token</a></p>
         <p><kbd>{{ user.authorization }}</kbd></p>
 
+    </div>
+
+    <div class="modal fade" id="delete-hook-modal" tabindex="-1" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Delete Webhook</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">Are you sure you want to delete this webhook?</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="confirm-delete-hook-btn">Delete <i
+                            class="fa-regular fa-trash-can ms-1"></i></button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}
 
