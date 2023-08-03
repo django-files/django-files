@@ -28,6 +28,16 @@ def home_view(request):
 
 
 @login_required
+def gallery_view(request):
+    """
+    View  /gallery/
+    """
+    log.debug('%s - gallery_view: is_secure: %s', request.method, request.is_secure())
+    context = {'files': Files.objects.get_request(request)}
+    return render(request, 'gallery.html', context)
+
+
+@login_required
 def settings_view(request):
     """
     View  /settings/

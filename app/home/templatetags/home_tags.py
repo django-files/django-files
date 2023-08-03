@@ -13,12 +13,6 @@ def get_config(value):
     return getattr(settings, value, None)
 
 
-@register.filter(name='absolute_url')
-def absolute_url(absolute_uri):
-    # returns the absolute_url from the absolute_uri
-    return '{0}//{2}'.format(*absolute_uri.split('/'))
-
-
 @register.filter(name='avatar_url')
 def avatar_url(user):
     # return discord avatar url from user model
@@ -29,14 +23,10 @@ def avatar_url(user):
         return static('images/assets/default.png')
 
 
-@register.filter(name='get_scheme')
-def get_scheme(meta):
-    # TODO: Deprecate this Shit
-    if 'HTTP_X_FORWARDED_PROTO' in meta:
-        return meta['HTTP_X_FORWARDED_PROTO']
-    if 'HTTP_REFERER' in meta:
-        return meta['HTTP_REFERER'].split(':')[0]
-    return 'http'
+@register.filter(name='single_type')
+def single_type(mime_type):
+    # returns the absolute_url from the absolute_uri
+    return str(mime_type.split('/', 1)[0]).lower()
 
 
 # @register.filter(name='bytes_human')

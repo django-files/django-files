@@ -7,6 +7,7 @@ app_name = 'home'
 
 urlpatterns = [
     path('', views.home_view, name='index'),
+    path('gallery/', views.gallery_view, name='gallery'),
     path('files/', views.files_view, name='files'),
     path('settings/', views.settings_view, name='settings'),
     re_path(r'^upload/?$', views.upload_view, name='upload'),

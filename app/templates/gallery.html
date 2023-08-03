@@ -2,36 +2,23 @@
 {% load static %}
 {% load home_tags %}
 {% load cache %}
-{% block home_active %}active{% endblock %}
-{% block title %}Home{% endblock %}
+{% block gallery_active %}active{% endblock %}
+{% block title %}Gallery{% endblock %}
 
 {% block head %}{% endblock %}
 
 {% block body %}
     <div class="container-fluid mt-2">
 
-        <h1>Django Files</h1>
-        <p>New files will show up here.</p>
+        <h1>Gallery</h1>
 
-        <div class="d-flex align-items-center">
-            <span class="h3" id="files">Files</span>
-            <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#files"
-                     role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2"></i></a></span>
-        </div>
-
-        {% cache 86400 files_home request.user %}
+        {% cache 86400 files_gallery request.user %}
             {% if files %}
-                <p class="d-xl-none text-muted mb-0"><em>Some columns hidden due to narrow viewport.</em></p>
-                <table class="table table-hover table-responsive" id="files-table">
-                    <thead>
-                        {% include 'include/table-head.html' %}
-                    </thead>
-                    <tbody>
-                        {% for file in files %}
-                            {% include 'include/table-tr.html' with file=file %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="row justify-content-center">
+                    {% for file in files %}
+                        {% include 'include/gallery-div.html' with file=file %}
+                    {% endfor %}
+                </div>
             {% else %}
                 <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:files' %}">upload some files</a>...</p>
             {% endif %}
@@ -58,6 +45,4 @@
     </div>
 {% endblock %}
 
-{% block tail %}
-    <script type="text/javascript" src="{% static 'main/js/home.js' %}"></script>
-{% endblock %}
+{% block tail %}{% endblock %}
