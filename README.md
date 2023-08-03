@@ -88,6 +88,10 @@ mkdir -p /data/docker/django-files
 
 docker compose up --build --remove-orphans --force-recreate --detach
 docker compose logs -f
+
+# expect errors on first run - wait for migration to finish, then restart
+docker compose down --remove-orphans
+docker compose up --build --remove-orphans --force-recreate --detach
 ```
 
 *   `settings.env`
