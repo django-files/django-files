@@ -24,6 +24,12 @@ iframe {
     bottom: 24px;
     right: 24px;
     display: none;
+    z-index: 1005;
+}
+
+/* Bring Menu Above Uppy Menu */
+.dropdown-menu {
+    z-index: 1005;
 }
 
 /* Modal Fix */
