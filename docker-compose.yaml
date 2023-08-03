@@ -128,7 +128,4 @@ volumes:
 #  flower_data:
   redis_data:
   media_dir:
-    driver_opts:
-      type: none
-      o: bind
-      device: /data/docker/django-files
+  
