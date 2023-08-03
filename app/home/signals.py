@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
 
-from .tasks import clear_home_cache, clear_settings_cache, send_success_message
+from .tasks import clear_files_cache, send_success_message
 from .models import Files, Webhooks
 
 
@@ -12,15 +12,15 @@ def files_delete_signal(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Files)
 @receiver(post_delete, sender=Files)
-def clear_home_cache_signal(sender, instance, **kwargs):
-    clear_home_cache.delay()
+def clear_files_cache_signal(sender, instance, **kwargs):
+    clear_files_cache.delay()
 
 
-# Not Implemented
-@receiver(post_save, sender=Webhooks)
-@receiver(post_delete, sender=Webhooks)
-def clear_settings_cache_signal(sender, instance, **kwargs):
-    clear_settings_cache.delay()
+# # Not Implemented
+# @receiver(post_save, sender=SiteSettings)
+# @receiver(post_delete, sender=SiteSettings)
+# def clear_settings_cache_signal(sender, instance, **kwargs):
+#     clear_settings_cache.delay()
 
 
 @receiver(post_save, sender=Webhooks)

@@ -51,12 +51,14 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-sm-0">
-                    <li class="nav-item"><a class="nav-link {% block home_active %}{% endblock %}" href="{% url 'home:index' %}">
-                        Home</a></li>
-                    <li class="nav-item"><a class="nav-link {% block files_active %}{% endblock %}" href="{% url 'home:files' %}">
-                        Files</a></li>
-                    <li class="nav-item"><a class="nav-link {% block settings_active %}{% endblock %}" href="{% url 'home:settings' %}">
-                        Settings</a></li>
+                    <li class="nav-item"><a class="nav-link {% block home_active %}{% endblock %}"
+                                            href="{% url 'home:index' %}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link {% block gallery_active %}{% endblock %}"
+                                            href="{% url 'home:gallery' %}">Gallery</a></li>
+                    <li class="nav-item"><a class="nav-link {% block files_active %}{% endblock %}"
+                                            href="{% url 'home:files' %}">Files</a></li>
+                    <li class="nav-item"><a class="nav-link {% block settings_active %}{% endblock %}"
+                                            href="{% url 'home:settings' %}">Settings</a></li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     {% if not request.user.is_authenticated %}
@@ -72,6 +74,11 @@
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown2">
                                 <li><a class="dropdown-item" role="button" data-bs-toggle="modal" data-bs-target="#user-info-modal">
                                     <i class="fas fa-user-circle me-2"></i> Profile</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-dark clip" data-clipboard-text="{% get_config 'SITE_URL' %}" href="javascript:">
+                                    <i class="fa-solid fa-globe me-2"></i> Copy URL</a></li>
+                                <li><a class="dropdown-item text-dark clip" data-clipboard-text="{{ user.authorization }}" href="javascript:">
+                                    <i class="fa-solid fa-key me-2"></i> Copy Token</a></li>
                                 {% if request.user.is_staff or request.user.is_superuser %}
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-success" href="{% url 'admin:index' %}">
@@ -86,11 +93,11 @@
 {#                                    <li><a class="dropdown-item text-primary" href="{% url 'phpmyadmin' %}" target="_blank">#}
 {#                                        <i class="fa-solid fa-server me-2"></i> MySQL <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i></a></li>#}
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger" role="button" target="_blank" id="flush-cache">
+                                    <li><a class="dropdown-item text-warning" role="button" target="_blank" id="flush-cache">
                                         <i class="fa-solid fa-toilet me-2"></i> Flush Cache</a></li>
                                 {% endif %}
                                 <div class="dropdown-divider"></div>
-                                <li><a class="dropdown-item log-out text-warning" role="button">
+                                <li><a class="dropdown-item log-out text-danger" role="button">
                                     <i class="fas fa-sign-out-alt me-2"></i> Log Out</a></li>
                             </ul>
                         </li>
@@ -126,6 +133,8 @@
                 <ul class="list-inline">
                     <li class="list-inline-item"><a href="{% url 'home:index' %}" class="">Home</a></li>
                     <li class="list-inline-item">|</li>
+                    <li class="list-inline-item"><a href="{% url 'home:gallery' %}" class="">Gallery</a></li>
+                    <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:files' %}" class="">Files</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:settings' %}" class="">Settings</a></li>
@@ -154,8 +163,13 @@
                     <img src="{{ user|avatar_url }}" alt="Profile Picture"
                          class="rounded float-end m-2" style="max-height:128px;max-width:128px;">
                     <h4 class="modal-title">{% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}</h4>
-                    <p>Information provided by Discord.</p>
-                    <p></p>
+                    <p><a class="btn btn-outline-success" role="button" href="{% url 'home:settings' %}">
+                        <i class="fa-solid fa-list-check me-2"></i> Edit Settings</a></p>
+{#                    <p>Copy <a class="clip" role="button" data-clipboard-text="{{ user.authorization }}">#}
+{#                        Authorization Token</a>.</p>#}
+{#                    <a class="clip" role="button" data-clipboard-text="{{ user.authorization }}">#}
+{#                        <i class="fa-regular fa-clipboard ms-2"></i> Copy Token</a>#}
+
                     <div class="clearfix"></div>
                     <table class="table mt-2">
                         <tbody>
@@ -168,6 +182,10 @@
                             <td>{{ user.first_name }}#{{ user.last_name }}</td>
                         </tr>
                         <tr>
+                            <th>Site URL</th>
+                            <td>{% get_config 'SITE_URL' %}</td>
+                        </tr>
+                        <tr>
                             <th>Default Expire</th>
                             <td>{{ user.default_expire|default:'Never' }}</td>
                         </tr>
@@ -175,10 +193,6 @@
                             <th>Default Color</th>
                             <td style="color: #{{ user.default_color|default:'111111' }}">#{{ user.default_color|default:"Not Set" }}</td>
                         </tr>
-{#                        <tr>#}
-{#                            <th>Authorization Token</th>#}
-{#                            <td>{{ user.authorization }}#{{ user.authorization }}</td>#}
-{#                        </tr>#}
                         </tbody>
                     </table>
                 </div>

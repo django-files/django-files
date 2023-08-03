@@ -76,3 +76,22 @@ class SiteSettings(models.Model):
     class Meta:
         verbose_name = 'Settings'
         verbose_name_plural = 'Settings'
+
+
+# class FileStats(models.Model):
+#     id = models.AutoField(primary_key=True)
+#     site_url = models.URLField(max_length=128, unique=True, verbose_name='Site URL')
+#     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+#     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Date Created', help_text='Hook Created Date.')
+#
+#     def __str__(self):
+#         return f'<FileStats(user={self.site_url})>'
+#
+#     def save(self, *args, **kwargs):
+#         if self.__class__.objects.count():
+#             self.pk = self.__class__.objects.first().pk
+#         super().save(*args, **kwargs)
+#
+#     class Meta:
+#         verbose_name = 'Settings'
+#         verbose_name_plural = 'Settings'

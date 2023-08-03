@@ -23,7 +23,9 @@ or submit an [Issue](https://github.com/cssnr/zipline-cli/issues/new) for any bu
 
 ## Overview
 
-This should be backwards compatible with any Zipline client uploader.  
+Django Files is backwards compatible with 
+[Zipline](https://zipline.diced.vercel.app/docs/api/upload) 
+client upload settings.  
 
 ### Upload
 
@@ -83,16 +85,16 @@ By default, sqlite3 is used. Available options are:
 
 *   sqlite3 - zero configuration, works out of the box
 *   mysql - must set up and maintain your own database
-*   postgres - must set up and maintain your own database
+*   postgresql - must set up and maintain your own database
 
-| Variable      | Description                        |
-|---------------|------------------------------------|
-| DATABASE_TYPE | `sqlite3` or `mysql` or `postgres` |
-| DATABASE_NAME | Database name.                     |
-| DATABASE_USER | Database username.                 |
-| DATABASE_PASS | Database password.                 |
-| DATABASE_HOST | Database hostname.                 |
-| DATABASE_PORT | Optional if default.               |
+| Variable      | Description                          |
+|---------------|--------------------------------------|
+| DATABASE_TYPE | `sqlite3` or `mysql` or `postgresql` |
+| DATABASE_NAME | Database name.                       |
+| DATABASE_USER | Database username.                   |
+| DATABASE_PASS | Database password.                   |
+| DATABASE_HOST | Database hostname.                   |
+| DATABASE_PORT | Optional if default.                 |
 
 Note: sqlite3 is stored by default in `media_dir/db` 
 based on what is set in the `docker-compose.yaml` file.
