@@ -24,7 +24,9 @@
                     <div id="site_url-invalid" class="invalid-feedback"></div>
                 </div>
             </div>
-            <div class="col-10">
+
+            <div class="row">
+            <div class="col-auto">
                 <label for="default_expire" class="form-label">Default Expire</label>
                 <input type="text" class="form-control" id="default_expire" name="default_expire"
                        value="{{ user.default_expire }}" aria-describedby="default_expire-help default_expire-invalid">
@@ -33,12 +35,26 @@
                 </div>
                 <div id="default_expire-invalid" class="invalid-feedback"></div>
             </div>
-            <div class="col-2">
+            <div class="col-auto">
                 <label for="default_color" class="form-label">Color</label>
                 <input type="color" class="form-control form-control-color" id="default_color" name="default_color"
-                       value="#{{ user.default_color }}" title="Default Color" aria-describedby="default_color-invalid">
+                       value="{{ user.default_color }}" title="Default Color" aria-describedby="default_color-invalid">
                 <div id="default_color-invalid" class="invalid-feedback"></div>
             </div>
+            <div class="col-auto">
+                <label for="nav_color_1" class="form-label">Nav 1</label>
+                <input type="color" class="form-control form-control-color" id="nav_color_1" name="nav_color_1"
+                       value="{{ user.nav_color_1 }}" title="Default Color" aria-describedby="nav_color_1-invalid">
+                <div id="nav_color_1-invalid" class="invalid-feedback"></div>
+            </div>
+            <div class="col-auto">
+                <label for="nav_color_2" class="form-label">Nav 2</label>
+                <input type="color" class="form-control form-control-color" id="nav_color_2" name="nav_color_2"
+                       value="{{ user.nav_color_2 }}" title="Default Color" aria-describedby="nav_color_2-invalid">
+                <div id="nav_color_2-invalid" class="invalid-feedback"></div>
+            </div>
+            </div>
+
             <div class="col-12">
                 <button type="submit" class="btn btn-lg btn-outline-success" id="save-settings">
                     <i class="fa-solid fa-floppy-disk me-2"></i> Save Settings</button>
@@ -96,7 +112,7 @@
                     Download Flameshot Script</a>
             </div>
             <div class="col-12">
-                {% get_config 'SITE_URL' as site_url %}
+                {% get_site_url as site_url %}
                 <ul class="nav nav-tabs" id="myTab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="home-tab" data-bs-toggle="tab" type="button"

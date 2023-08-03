@@ -15,7 +15,7 @@
                 <p class="card-text">{{ contact.message|linebreaksbr }}</p>
             </div>
         </div>
-        <a href="{% get_config 'SITE_URL' %}{% url 'home:contact_html' 'browser' contact.uuid %}"
+        <a href="{% get_site_url %}{% url 'home:contact_html' 'browser' contact.uuid %}"
            class="btn btn-primary">View in Browser</a>
     </div>
 {% endblock %}

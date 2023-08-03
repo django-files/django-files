@@ -1,6 +1,7 @@
 import httpx
 import logging
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render, reverse
@@ -57,15 +58,28 @@ def settings_view(request):
     form = SettingsForm(request.POST)
     if not form.is_valid():
         return JsonResponse(form.errors, status=400)
+    data = {'reload': False}
     log.debug(form.cleaned_data)
     # site_settings, created = SiteSettings.objects.get_or_create(pk=1)
     site_settings.site_url = form.cleaned_data['site_url']
     site_settings.save()
-    request.user.default_color = form.cleaned_data['default_color']
     request.user.default_expire = form.cleaned_data['default_expire']
+
+    if request.user.default_color != form.cleaned_data['default_color']:
+        request.user.default_color = form.cleaned_data['default_color']
+        # data['reload'] = True
+
+    if request.user.nav_color_1 != form.cleaned_data['nav_color_1']:
+        request.user.nav_color_1 = form.cleaned_data['nav_color_1']
+        data['reload'] = True
+
+    if request.user.nav_color_2 != form.cleaned_data['nav_color_2']:
+        request.user.nav_color_2 = form.cleaned_data['nav_color_2']
+        data['reload'] = True
     request.user.save()
-    return HttpResponse(status=204)
-    # return JsonResponse({}, status=200)
+    if data['reload']:
+        messages.success(request, 'Settings Saved Successfully.')
+    return JsonResponse(data, status=200)
 
 
 @login_required
@@ -198,7 +212,9 @@ def gen_flameshot(request):
     """
     View  /gen/flameshot/
     """
-    context = {'site_url': settings.SITE_URL, 'token': request.user.authorization}
+    site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+    context = {'site_url': site_settings.site_url, 'token': request.user.authorization}
+    # context = {'site_url': settings.SITE_URL, 'token': request.user.authorization}
     message = render_to_string('scripts/flameshot.sh', context)
     log.debug(message)
     response = HttpResponse(message)

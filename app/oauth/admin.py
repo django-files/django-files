@@ -12,5 +12,5 @@ class CustomUserAdmin(UserAdmin):
     ordering = ('first_name',)
     readonly_fields = ('username', 'first_name', 'last_name',)
     fieldsets = UserAdmin.fieldsets + (
-        ('OAuth', {'fields': ('avatar_hash',)}),
+        ('OAuth', {'fields': ('default_color', 'default_expire',)}),
     )

@@ -3,6 +3,8 @@ from django import template
 from django.conf import settings
 from django.templatetags.static import static
 
+from home.models import SiteSettings
+
 logger = logging.getLogger('app')
 register = template.Library()
 
@@ -11,6 +13,13 @@ register = template.Library()
 def get_config(value):
     # get django setting value or return none
     return getattr(settings, value, None)
+
+
+@register.simple_tag(name='get_site_url')
+def get_site_url():
+    # get django setting value or return none
+    site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+    return site_settings.site_url
 
 
 @register.filter(name='avatar_url')

@@ -71,14 +71,23 @@ $(document).ready(function() {
             beforeSend: function( jqXHR ){
                 $('#save-settings').addClass('disabled');
             },
-            complete: function(){
-                $('#save-settings').removeClass('disabled');
-            },
             success: function(data, textStatus, jqXHR){
                 console.log('Status: '+jqXHR.status+', Data: '+JSON.stringify(data));
-                let message = 'Settings Saved Successfully.';
-                show_toast(message,'success', '6000');
+                if (data['reload']) {
+                    alert('Settings changed require reload to take effect.\n' +
+                        'The page will now refresh...');
+                } else {
+                    let message = 'Settings Saved Successfully.';
+                    show_toast(message,'success', '6000');
+                }
                 // $("#message-success").show();
+            },
+            complete: function(data, textStatus ){
+                $('#save-settings').removeClass('disabled');
+                console.log(data.responseJSON);
+                if (data.responseJSON['reload']) {
+                    location.reload();
+                }
             },
             error: function (data, status, error) {
                 console.log('Status: '+data.status+', Response: '+data.responseText);

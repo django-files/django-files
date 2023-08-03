@@ -28,7 +28,7 @@ print(f'db_location: {db_location}')
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY')
-SITE_URL = config('SITE_URL')
+SITE_URL = config('SITE_URL', 'http://localhost')
 
 DEBUG = config('DEBUG', 'False', bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '*', Csv())

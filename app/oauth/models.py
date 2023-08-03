@@ -11,7 +11,7 @@ def rand_string(length=32):
 
 def rand_color_hex():
     # TODO: Add distinctipy
-    colors = ['483D8B', '8A2BE2', 'DC143C', '9932CC', '228B22', 'ADFF2F']
+    colors = ['#483D8B', '#8A2BE2', '#DC143C', '#9932CC', '#228B22', '#ADFF2F']
     return random.choice(colors).lower()
 
 
@@ -30,8 +30,10 @@ class CustomUser(AbstractUser):
     refresh_token = models.CharField(null=True, blank=True, max_length=32)
     expires_in = models.DateTimeField(null=True, blank=True)
     authorization = models.CharField(default=rand_string, max_length=32)
-    default_color = models.CharField(default=rand_color_hex, max_length=6)
-    default_expire = models.CharField(default='', max_length=32)
+    default_expire = models.CharField(default='', blank=True, max_length=32)
+    default_color = models.CharField(default=rand_color_hex, max_length=7)
+    nav_color_1 = models.CharField(default='#130e36', max_length=7)
+    nav_color_2 = models.CharField(default='#1e1c21', max_length=7)
 
     def __str__(self):
         return self.username
