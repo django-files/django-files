@@ -49,7 +49,7 @@ def settings_view(request):
         log.debug(0)
         context = {
             'webhooks': Webhooks.objects.filter(owner=request.user),
-            'site_url': site_settings.site_url or settings.SITE_URL,
+            'site_settings': site_settings,
         }
         log.debug(context)
         return render(request, 'settings.html', context)

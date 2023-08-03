@@ -9,14 +9,16 @@
 
 {% block body %}
     <div class="container-fluid mt-2">
+    {% cache 86400 settings request.user %}
 
         <h1>Settings</h1>
+
 
         <form class="row g-2" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings' %}">
             <div class="col-12">
                 <div class="form-floating mb-3">
                     <input type="text" class="form-control" id="site_url" name="site_url" placeholder=""
-                           value="{{ site_url }}" aria-describedby="site_url-help site_url-invalid">
+                           value="{{ site_settings.site_url }}" aria-describedby="site_url-help site_url-invalid">
                     <label for="site_url">Site URL</label>
                     <div id="site_url-help" class="form-text">
                         This feature is currently NOT Implemented.
@@ -112,7 +114,6 @@
                     Download Flameshot Script</a>
             </div>
             <div class="col-12">
-                {% get_site_url as site_url %}
                 <ul class="nav nav-tabs" id="myTab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="home-tab" data-bs-toggle="tab" type="button"
@@ -135,7 +136,7 @@
                     <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
                         <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#upload-url">
                             <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
-                        <p><kbd id="upload-url">{{ site_url }}/upload/</kbd></p>
+                        <p><kbd id="upload-url">{{ site_settings.site_url }}/upload/</kbd></p>
                         <p>Uploads accept the following parameters. Click a tab above to view full examples.</p>
 {#                        <h4>Upload URL <a class="clip" role="button" data-clipboard-text="{{ site_url }}/upload/">#}
 {#                            <i class="fa-regular fa-clipboard text-white ms-2 fs-6 mb-1"></i></a></h4>#}
@@ -176,12 +177,12 @@
                     <div class="tab-pane fade" id="shell-tab-pane" role="tabpanel" aria-labelledby="shell-tab" tabindex="0">
                         <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#shell-code">
                             <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
-                        <pre><code id="shell-code">{% include 'scripts/shell-example.sh' with auth=user.authorization expire=user.default_expire site_url=site_url  %}</code></pre>
+                        <pre><code id="shell-code">{% include 'scripts/shell-example.sh' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url  %}</code></pre>
                     </div>
                     <div class="tab-pane fade" id="python-tab-pane" role="tabpanel" aria-labelledby="python-tab" tabindex="0">
                         <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#python-code">
                             <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
-                        <pre><code id="python-code">{% include 'scripts/python-example.py' with auth=user.authorization expire=user.default_expire site_url=site_url  %}</code></pre>
+                        <pre><code id="python-code">{% include 'scripts/python-example.py' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url  %}</code></pre>
                     </div>
                     <div class="tab-pane fade" id="cli-tab-pane" role="tabpanel" aria-labelledby="cli-tab" tabindex="0">
                         <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#cli-code">
@@ -200,6 +201,7 @@
             <i class="fa-solid fa-key me-2"></i> Copy Token</a></p>
         <p><kbd>{{ user.authorization }}</kbd></p>
 
+    {% endcache %}
     </div>
 
     <div class="modal fade" id="delete-hook-modal" tabindex="-1" aria-labelledby="exampleModalLabel"
