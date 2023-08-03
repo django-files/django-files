@@ -63,21 +63,37 @@ Technically you only need either Discord Variables or Local Variables.
 
 ## Deploy
 
+Command included below to generate the required `SECRET_KEY`.  
+The `SITE_URL` you are using is required for proper functionality.  
+
+To make a [Discord Application](https://discord.com/developers/applications), 
+go to the OAuth2 section for Client ID, Client Secret, and to Set Callback URL.  
+This is your SITE_URL + `/oauth/callback/`.  
+Example: `https://example.com` would be `https://example.com/oauth/callback/`
+
+Local Auth may also be used. No need to set Discord variables if so.  
+**Known issues:** you can not add a Discord Webhook to a Local Auth user account.
+
 ```text
 git clone https://github.com/django-files/django-files
 cd django-files
 cp settings.env.example settings.env
 
+cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 50
+# copy above output for SECRET_KEY variable
 vim settings.env
 vim docker-compose.yaml
+# create the volume you set in the docker-compose
+mkdir -p /data/docker/django-files
 
 docker compose up --build --remove-orphans --force-recreate --detach
+docker compose logs -f
 ```
 
 *   `settings.env`
-    -   edit the stuff outlined at the top, see above for more info
+    -   edit the stuff outlined at the top, see above for more info.
 *   `docker-compose.yaml` or `-swarm`
-    -   edit the volume at the bottom and make sure it exist
+    -   edit the volume at the bottom and make sure it exist.
 
 ## Database
 
