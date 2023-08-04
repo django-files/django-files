@@ -30,6 +30,5 @@ if settings.DEBUG:
 
 try:
     _, _ = SiteSettings.objects.get_or_create(pk=1)
-except Exception as error:
-    print(error)
+except Exception:
     pass

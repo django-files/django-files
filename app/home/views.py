@@ -44,7 +44,8 @@ def settings_view(request):
     View  /settings/
     """
     log.debug('settings_view: %s', request.method)
-    site_settings = SiteSettings.objects.get(pk=1)
+    # site_settings = SiteSettings.objects.get(pk=1)
+    site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
     log.debug('site_settings: %s', site_settings)
     if request.method in ['GET', 'HEAD']:
         log.debug(0)
