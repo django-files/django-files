@@ -16,7 +16,7 @@
             <div class="col-12">
                 <div class="form-floating mb-3">
                     <input type="text" class="form-control" id="site_url" name="site_url" placeholder=""
-                           value="{{ site_url }}" aria-describedby="site_url-help site_url-invalid">
+                           value="{{ site_settings.site_url }}" aria-describedby="site_url-help site_url-invalid">
                     <label for="site_url">Site URL</label>
                     <div id="site_url-help" class="form-text">
                         This feature is currently NOT Implemented.
@@ -24,7 +24,9 @@
                     <div id="site_url-invalid" class="invalid-feedback"></div>
                 </div>
             </div>
-            <div class="col-10">
+
+            <div class="row">
+            <div class="col-auto">
                 <label for="default_expire" class="form-label">Default Expire</label>
                 <input type="text" class="form-control" id="default_expire" name="default_expire"
                        value="{{ user.default_expire }}" aria-describedby="default_expire-help default_expire-invalid">
@@ -33,12 +35,26 @@
                 </div>
                 <div id="default_expire-invalid" class="invalid-feedback"></div>
             </div>
-            <div class="col-2">
+            <div class="col-auto">
                 <label for="default_color" class="form-label">Color</label>
                 <input type="color" class="form-control form-control-color" id="default_color" name="default_color"
-                       value="#{{ user.default_color }}" title="Default Color" aria-describedby="default_color-invalid">
+                       value="{{ user.default_color }}" title="Default Color" aria-describedby="default_color-invalid">
                 <div id="default_color-invalid" class="invalid-feedback"></div>
             </div>
+            <div class="col-auto">
+                <label for="nav_color_1" class="form-label">Nav 1</label>
+                <input type="color" class="form-control form-control-color" id="nav_color_1" name="nav_color_1"
+                       value="{{ user.nav_color_1 }}" title="Default Color" aria-describedby="nav_color_1-invalid">
+                <div id="nav_color_1-invalid" class="invalid-feedback"></div>
+            </div>
+            <div class="col-auto">
+                <label for="nav_color_2" class="form-label">Nav 2</label>
+                <input type="color" class="form-control form-control-color" id="nav_color_2" name="nav_color_2"
+                       value="{{ user.nav_color_2 }}" title="Default Color" aria-describedby="nav_color_2-invalid">
+                <div id="nav_color_2-invalid" class="invalid-feedback"></div>
+            </div>
+            </div>
+
             <div class="col-12">
                 <button type="submit" class="btn btn-lg btn-outline-success" id="save-settings">
                     <i class="fa-solid fa-floppy-disk me-2"></i> Save Settings</button>
@@ -48,6 +64,7 @@
         <h3>Webhooks</h3>
         <p><a href="{% url 'oauth:webhook' %}" class="btn btn-lg btn-outline-primary" role="button">
             <i class="fab fa-discord me-2"></i> Add Webhook to Discord</a></p>
+        {% cache 86400 settings request.user %}
         {% if not webhooks %}
             <p class="lead">No Webhooks Found. Perhaps you forgot to add one?</p>
         {% else %}
@@ -80,6 +97,7 @@
                 </tbody>
             </table>
         {% endif %}
+        {% endcache %}
 
         <h3>Uploaders</h3>
         <p class="lead">Django Files is backwards compatible with <a href="https://zipline.diced.vercel.app/docs/api/upload" target="_blank">
@@ -96,7 +114,6 @@
                     Download Flameshot Script</a>
             </div>
             <div class="col-12">
-                {% get_config 'SITE_URL' as site_url %}
                 <ul class="nav nav-tabs" id="myTab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="home-tab" data-bs-toggle="tab" type="button"
@@ -119,11 +136,8 @@
                     <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
                         <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#upload-url">
                             <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
-                        <p><kbd id="upload-url">{{ site_url }}/upload/</kbd></p>
+                        <p><kbd id="upload-url">{{ site_settings.site_url }}{% url 'home:upload' %}</kbd></p>
                         <p>Uploads accept the following parameters. Click a tab above to view full examples.</p>
-{#                        <h4>Upload URL <a class="clip" role="button" data-clipboard-text="{{ site_url }}/upload/">#}
-{#                            <i class="fa-regular fa-clipboard text-white ms-2 fs-6 mb-1"></i></a></h4>#}
-{#                        <p><kbd>{{ site_url }}/upload/</kbd></p>#}
                         <table class="table table-sm table-striped">
                             <thead>
                             <tr>
@@ -147,7 +161,7 @@
                                 <td class="d-none d-md-table-cell">Authorization Token</td>
                             </tr>
                             <tr>
-                                <th scope="row">ExpiresAt</th>
+                                <th scope="row">Expires-At</th>
                                 <th scope="row">header</th>
                                 <td>{{ user.default_expire }}</td>
                                 <td class="d-none d-md-table-cell">Expire Value. To override default use <kbd>0</kbd> or <kbd>never</kbd>.
@@ -160,12 +174,12 @@
                     <div class="tab-pane fade" id="shell-tab-pane" role="tabpanel" aria-labelledby="shell-tab" tabindex="0">
                         <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#shell-code">
                             <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
-                        <pre><code id="shell-code">{% include 'scripts/shell-example.sh' with auth=user.authorization expire=user.default_expire site_url=site_url  %}</code></pre>
+                        <pre><code id="shell-code">{% include 'scripts/shell-example.sh' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url  %}</code></pre>
                     </div>
                     <div class="tab-pane fade" id="python-tab-pane" role="tabpanel" aria-labelledby="python-tab" tabindex="0">
                         <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#python-code">
                             <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
-                        <pre><code id="python-code">{% include 'scripts/python-example.py' with auth=user.authorization expire=user.default_expire site_url=site_url  %}</code></pre>
+                        <pre><code id="python-code">{% include 'scripts/python-example.py' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url  %}</code></pre>
                     </div>
                     <div class="tab-pane fade" id="cli-tab-pane" role="tabpanel" aria-labelledby="cli-tab" tabindex="0">
                         <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#cli-code">

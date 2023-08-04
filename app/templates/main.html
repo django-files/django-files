@@ -41,7 +41,7 @@
 {% block navbar %}
 <header>
     <nav class="navbar navbar-expand-md navbar-dark"
-         style="background-image: linear-gradient(15deg, #130e36 0%, #1e1c21 100%);">
+         style="background-image: linear-gradient(15deg, {{ user.nav_color_1 }} 0%, {{ user.nav_color_2 }} 100%);">
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'home:index' %}">
                 <img src="{% static 'images/logo.png' %}" width="30" height="30" alt="logo"></a>
@@ -192,7 +192,7 @@
                         </tr>
                         <tr>
                             <th>Default Color</th>
-                            <td style="color: #{{ user.default_color|default:'111111' }}">#{{ user.default_color|default:"Not Set" }}</td>
+                            <td style="color: {{ user.default_color|default:'#111111' }}">{{ user.default_color|default:"Not Set" }}</td>
                         </tr>
                         </tbody>
                     </table>

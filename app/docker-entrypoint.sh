@@ -7,6 +7,7 @@ if echo "${*}" | grep -q "gun";then
     python manage.py migrate
     python manage.py collectstatic --noinput
     python manage.py clearcache
+#    python manage.py loaddata sitesettings
 
     if [ -n "${DJANGO_SUPERUSER_PASSWORD}" ] &&
     [ -n "${DJANGO_SUPERUSER_USERNAME}" ] &&

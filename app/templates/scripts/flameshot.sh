@@ -7,7 +7,7 @@ _log_file="/tmp/django-files.log"
 _cwd=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Configure Script Variables
-_hostname="{{ site_url }}"  # NO Trailing /
+_upload_url="{{ site_url }}{% url 'home:upload' %}"
 _token="{{ token }}"
 #_success="${_cwd}/success.ogg"  # Unset to not use
 #_failure="${_cwd}/error.ogg"  # Unset to not use
@@ -49,7 +49,7 @@ fi
 _curl=$(curl -s -m "${_timeout:=10}" -F file=@"${_save_dir:=/tmp}/${_file_name}" \
     -H "authorization: ${_token}" \
     -H "Content-Type: multipart/form-data" \
-"${_hostname}/upload/")
+    "${_upload_url}" )
 
 # Parse URL and Copy to Clipboard
 _url=$(echo "${_curl}" | jq -r '.url' | tr -d '\n')

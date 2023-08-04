@@ -3,7 +3,7 @@ import mimetypes
 import os
 import httpx
 from celery import shared_task
-from django.conf import settings
+# from django.conf import settings
 from django.core import management
 from django.core.cache import cache
 # from django.core.cache.utils import make_template_fragment_key
@@ -11,7 +11,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from pytimeparse2 import parse
 
-from .models import Files, Webhooks
+from .models import Files, Webhooks, SiteSettings
 
 log = logging.getLogger('celery')
 
@@ -86,11 +86,13 @@ def clear_files_cache():
     return cache.delete_pattern('template.cache.files_*')
 
 
-# @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
-# def clear_settings_cache():
-#     # Clear Settings cache on model update
-#     log.info('clear_settings_cache')
-#     return cache.delete(make_template_fragment_key('settings_body'))
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
+def clear_settings_cache():
+    # Clear Settings cache on model update
+    log.info('clear_settings_cache')
+    # Not sure how to make fragment key with addition user key
+    # return cache.delete(make_template_fragment_key('settings'))
+    return cache.delete_pattern('template.cache.settings*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 5})
@@ -102,14 +104,9 @@ def process_file_upload(pk):
     log.info('-'*40)
     if file and file.file:
         file.name = os.path.basename(file.file.name)
-        log.info('file.file.name: %s', file.file.name)
-        log.info('file.file.path: %s', file.file.path)
-        log.info('INITIAL file.mime: %s', file.mime)
         file.mime, _ = mimetypes.guess_type(file.file.path, strict=False)
-        log.info('PATH file.mime: %s', file.mime)
         if not file.mime:
             file.mime, _ = mimetypes.guess_type(file.file.name, strict=False)
-            log.info('NAME file.mime: %s', file.mime)
         file.size = file.file.size
         file.save()
         send_discord_message.delay(file.pk)
@@ -132,8 +129,9 @@ def send_discord_message(pk):
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')
 def send_success_message(hook_pk):
     # Send a success message for new webhook
+    site_settings = SiteSettings.objects.get(pk=1)
     log.info('send_success_message: %s', hook_pk)
-    context = {'site_url': settings.SITE_URL}
+    context = {'site_url': site_settings.site_url}
     message = render_to_string('message/welcome.html', context)
     send_discord.delay(hook_pk, message)
 

@@ -1,6 +1,7 @@
 import httpx
 import logging
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render, reverse
@@ -43,29 +44,42 @@ def settings_view(request):
     View  /settings/
     """
     log.debug('settings_view: %s', request.method)
+    # site_settings = SiteSettings.objects.get(pk=1)
     site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+    log.debug('site_settings: %s', site_settings)
     if request.method in ['GET', 'HEAD']:
         log.debug(0)
-        context = {
-            'webhooks': Webhooks.objects.filter(owner=request.user),
-            'site_url': site_settings.site_url or settings.SITE_URL,
-        }
-        log.debug(context)
+        # webhooks = Webhooks.objects.all()
+        webhooks = Webhooks.objects.filter(owner=request.user)
+        context = {'webhooks': webhooks, 'site_settings': site_settings}
+        log.debug('context: %s', context)
         return render(request, 'settings.html', context)
 
     log.debug(request.POST)
     form = SettingsForm(request.POST)
     if not form.is_valid():
         return JsonResponse(form.errors, status=400)
+    data = {'reload': False}
     log.debug(form.cleaned_data)
-    # site_settings, created = SiteSettings.objects.get_or_create(pk=1)
     site_settings.site_url = form.cleaned_data['site_url']
     site_settings.save()
-    request.user.default_color = form.cleaned_data['default_color']
     request.user.default_expire = form.cleaned_data['default_expire']
+
+    if request.user.default_color != form.cleaned_data['default_color']:
+        request.user.default_color = form.cleaned_data['default_color']
+        # data['reload'] = True
+
+    if request.user.nav_color_1 != form.cleaned_data['nav_color_1']:
+        request.user.nav_color_1 = form.cleaned_data['nav_color_1']
+        data['reload'] = True
+
+    if request.user.nav_color_2 != form.cleaned_data['nav_color_2']:
+        request.user.nav_color_2 = form.cleaned_data['nav_color_2']
+        data['reload'] = True
     request.user.save()
-    return HttpResponse(status=204)
-    # return JsonResponse({}, status=200)
+    if data['reload']:
+        messages.success(request, 'Settings Saved Successfully.')
+    return JsonResponse(data, status=200)
 
 
 @login_required
@@ -198,9 +212,12 @@ def gen_flameshot(request):
     """
     View  /gen/flameshot/
     """
-    context = {'site_url': settings.SITE_URL, 'token': request.user.authorization}
+    # site_settings = SiteSettings.objects.get(pk=1)
+    context = {'site_url': request.build_absolute_uri(reverse('home:upload')), 'token': request.user.authorization}
+    log.debug('context: %s', context)
+    # context = {'site_url': settings.SITE_URL, 'token': request.user.authorization}
     message = render_to_string('scripts/flameshot.sh', context)
-    log.debug(message)
+    log.debug('message: %s', message)
     response = HttpResponse(message)
     response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
     return response
@@ -229,14 +246,13 @@ def google_verify(request: HttpRequest) -> bool:
 def parse_expire(request, user) -> str:
     # Get Expiration from POST or Default
     expr = ''
-    if request.POST.get('ExpiresAt') is not None:
-        expr = request.POST.get('ExpiresAt').strip()
-    elif request.POST.get('expires-at') is not None:
+    if request.POST.get('expires-at') is not None:
         expr = request.POST.get('expires-at').strip()
-    if expr == '0':
+    elif request.POST.get('ExpiresAt') is not None:
+        expr = request.POST.get('ExpiresAt').strip()
+
+    if expr.lower() in ['', '0', 'never', 'none', 'null']:
         return ''
     if parse(expr) is not None:
         return expr
-    if expr.lower() == ['never', 'none', 'null']:
-        return ''
     return user.default_expire or ''
