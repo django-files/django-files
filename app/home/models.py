@@ -32,7 +32,7 @@ class Files(models.Model):
         verbose_name_plural = 'Files'
 
     def get_url(self):
-        site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+        site_settings = SiteSettings.objects.get(pk=1)
         return site_settings.site_url + self.file.url
 
     def get_size(self):
@@ -79,6 +79,8 @@ class SiteSettings(models.Model):
         verbose_name = 'Settings'
         verbose_name_plural = 'Settings'
 
+
+_, _ = SiteSettings.objects.get_or_create(pk=1)
 
 # class FileStats(models.Model):
 #     id = models.AutoField(primary_key=True)

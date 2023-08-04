@@ -7,7 +7,7 @@
 
     <td class="">
         <span class="d-none d-sm-inline">
-            <a class="clip" role="button" data-clipboard-text="{{ file.get_url }}">
+            <a class="clip" role="button" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
                 <i class="fa-regular fa-clipboard text-white ms-2"></i></a></span>
         <a class="" role="button" target="_blank" href="{{ file.file.url }}">
             {{ file.name }}</a></td>

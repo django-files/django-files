@@ -15,13 +15,6 @@ def get_config(value):
     return getattr(settings, value, None)
 
 
-@register.simple_tag(name='get_site_url')
-def get_site_url():
-    # get django setting value or return none
-    site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
-    return site_settings.site_url
-
-
 @register.filter(name='avatar_url')
 def avatar_url(user):
     # return discord avatar url from user model

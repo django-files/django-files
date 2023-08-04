@@ -44,14 +44,14 @@ def settings_view(request):
     View  /settings/
     """
     log.debug('settings_view: %s', request.method)
-    site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+    site_settings = SiteSettings.objects.get(pk=1)
+    log.debug('site_settings: %s', site_settings)
     if request.method in ['GET', 'HEAD']:
         log.debug(0)
-        context = {
-            'webhooks': Webhooks.objects.filter(owner=request.user),
-            'site_settings': site_settings,
-        }
-        log.debug(context)
+        # webhooks = Webhooks.objects.all()
+        webhooks = Webhooks.objects.filter(owner=request.user)
+        context = {'webhooks': webhooks, 'site_settings': site_settings}
+        log.debug('context: %s', context)
         return render(request, 'settings.html', context)
 
     log.debug(request.POST)
@@ -60,7 +60,6 @@ def settings_view(request):
         return JsonResponse(form.errors, status=400)
     data = {'reload': False}
     log.debug(form.cleaned_data)
-    # site_settings, created = SiteSettings.objects.get_or_create(pk=1)
     site_settings.site_url = form.cleaned_data['site_url']
     site_settings.save()
     request.user.default_expire = form.cleaned_data['default_expire']
@@ -212,11 +211,12 @@ def gen_flameshot(request):
     """
     View  /gen/flameshot/
     """
-    site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
-    context = {'site_url': site_settings.site_url, 'token': request.user.authorization}
+    # site_settings = SiteSettings.objects.get(pk=1)
+    context = {'site_url': request.build_absolute_uri(reverse('home:upload')), 'token': request.user.authorization}
+    log.debug('context: %s', context)
     # context = {'site_url': settings.SITE_URL, 'token': request.user.authorization}
     message = render_to_string('scripts/flameshot.sh', context)
-    log.debug(message)
+    log.debug('message: %s', message)
     response = HttpResponse(message)
     response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
     return response

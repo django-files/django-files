@@ -86,11 +86,13 @@ def clear_files_cache():
     return cache.delete_pattern('template.cache.files_*')
 
 
-# @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
-# def clear_settings_cache():
-#     # Clear Settings cache on model update
-#     log.info('clear_settings_cache')
-#     return cache.delete(make_template_fragment_key('settings_body'))
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
+def clear_settings_cache():
+    # Clear Settings cache on model update
+    log.info('clear_settings_cache')
+    # Not sure how to make fragment key with addition user key
+    # return cache.delete(make_template_fragment_key('settings'))
+    return cache.delete_pattern('template.cache.settings*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 5})
@@ -127,7 +129,7 @@ def send_discord_message(pk):
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')
 def send_success_message(hook_pk):
     # Send a success message for new webhook
-    site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+    site_settings = SiteSettings.objects.get(pk=1)
     log.info('send_success_message: %s', hook_pk)
     context = {'site_url': site_settings.site_url}
     message = render_to_string('message/welcome.html', context)

@@ -3,7 +3,7 @@ set -e
 
 _file_name="example-file-name.txt"
 
-_hostname='{{ site_url }}'
+_upload_url='{{ site_url }}{% url "home:upload" %}'
 _auth='{{ auth }}'
 _expire='{{ expire }}'
 
@@ -12,7 +12,7 @@ _curl=$(curl -s -m "${_timeout:=10}" -F file=@"${_file_name}"  \
     -H "Content-Type: multipart/form-data"  \
     -H "Authorization: ${_auth}"  \
     -H "ExpiresAt: ${_expire}"  \
-    "${_hostname}/upload/")
+    "${_upload_url}" )
 
 # Parse URL - Requires: jq
 _url=$(echo "${_curl}" | jq -r '.url' | tr -d '\n')
