@@ -246,14 +246,13 @@ def google_verify(request: HttpRequest) -> bool:
 def parse_expire(request, user) -> str:
     # Get Expiration from POST or Default
     expr = ''
-    if request.POST.get('ExpiresAt') is not None:
-        expr = request.POST.get('ExpiresAt').strip()
-    elif request.POST.get('expires-at') is not None:
+    if request.POST.get('expires-at') is not None:
         expr = request.POST.get('expires-at').strip()
-    if expr == '0':
+    elif request.POST.get('ExpiresAt') is not None:
+        expr = request.POST.get('ExpiresAt').strip()
+
+    if expr.lower() in ['', '0', 'never', 'none', 'null']:
         return ''
     if parse(expr) is not None:
         return expr
-    if expr.lower() == ['never', 'none', 'null']:
-        return ''
     return user.default_expire or ''

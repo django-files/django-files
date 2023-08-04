@@ -98,15 +98,6 @@ def oauth_logout(request):
     """
     next_url = get_next_url(request)
     log.debug('oauth_logout: next_url: %s', next_url)
-
-    # # We are not redirecting directly to oauth here, so this is not needed
-    # # Hack to prevent login loop when logging out on a secure page
-    # if len(next_url.split('/')) > 1:
-    #     log.debug('next_url: %s', next_url.split('/')[1])
-    #     secure_views_list = ['profile']
-    #     if next_url.split('/')[1] in secure_views_list:
-    #         next_url = '/'
-
     logout(request)
     request.session['login_next_url'] = next_url
     messages.info(request, 'Successfully logged out.')

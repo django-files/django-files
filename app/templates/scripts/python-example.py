@@ -7,7 +7,7 @@ upload_url = '{{ site_url }}{% url "home:upload" %}'
 auth = '{{ auth }}'
 expire = '{{ expire }}'
 
-headers = {'Authorization': auth, 'ExpiresAt': expire}
+headers = {'Authorization': auth, 'Expires-At': expire}
 
 with open(file_name) as file_object:
     files = {'file': (file_name, file_object)}

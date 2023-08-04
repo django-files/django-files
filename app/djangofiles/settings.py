@@ -105,15 +105,6 @@ CACHES = {
         },
     },
 }
-# if 'test' in sys.argv or 'test_coverage' in sys.argv:
-#     print('IMPORTANT: Test Run Detected! Using TEST Cache...')
-#     CACHES = {
-#         "default": {
-#             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-#             "LOCATION": "unique-snowflake",
-#         }
-#     }
-
 
 if database_type == 'sqlite3':
     DATABASES = {
@@ -152,10 +143,6 @@ elif database_type == 'postgresql':
     }
 else:
     raise ValueError(f"Unknown DATABASE_TYPE: {database_type}")
-
-# if 'test' in sys.argv or 'test_coverage' in sys.argv:
-#     print('IMPORTANT: Test Run Detected! Using TEST Database...')
-#     DATABASES = {'default': {'ENGINE': 'django.db.backends.sqlite3'}}
 
 INSTALLED_APPS = [
     'channels',

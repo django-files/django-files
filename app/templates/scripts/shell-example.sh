@@ -11,7 +11,7 @@ _expire='{{ expire }}'
 _curl=$(curl -s -m "${_timeout:=10}" -F file=@"${_file_name}"  \
     -H "Content-Type: multipart/form-data"  \
     -H "Authorization: ${_auth}"  \
-    -H "ExpiresAt: ${_expire}"  \
+    -H "Expires-At: ${_expire}"  \
     "${_upload_url}" )
 
 # Parse URL - Requires: jq
