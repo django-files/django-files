@@ -40,11 +40,11 @@ jobs:
         run: |
           python manage.py makemigrations
           python manage.py migrate
+#          python manage.py loaddata sitesettings
 
       - name: "Coverage"
         working-directory: app
         run: |
-          python manage.py loaddata sitesettings
           coverage run manage.py test
           coverage xml
           coverage report

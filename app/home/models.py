@@ -80,8 +80,6 @@ class SiteSettings(models.Model):
         verbose_name_plural = 'Settings'
 
 
-_, _ = SiteSettings.objects.get_or_create(pk=1)
-
 # class FileStats(models.Model):
 #     id = models.AutoField(primary_key=True)
 #     site_url = models.URLField(max_length=128, unique=True, verbose_name='Site URL')
