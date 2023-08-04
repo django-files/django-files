@@ -44,7 +44,6 @@ jobs:
       - name: "Coverage"
         working-directory: app
         run: |
-          python manage.py loaddata sitesettings
           coverage run manage.py test
           coverage xml
           coverage report
