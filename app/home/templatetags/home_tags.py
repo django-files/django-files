@@ -3,8 +3,6 @@ from django import template
 from django.conf import settings
 from django.templatetags.static import static
 
-from home.models import SiteSettings
-
 logger = logging.getLogger('app')
 register = template.Library()
 
