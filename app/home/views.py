@@ -193,6 +193,7 @@ def gen_sharex(request):
         'RequestURL': request.build_absolute_uri(reverse('home:upload')),
         'Headers': {
             'Authorization': request.user.authorization,
+            'Expires-At': request.user.default_expire,
         },
         'Body': 'MultipartFormData',
         'FileFormName': 'file',
@@ -246,12 +247,16 @@ def google_verify(request: HttpRequest) -> bool:
 def parse_expire(request, user) -> str:
     # Get Expiration from POST or Default
     expr = ''
-    if request.POST.get('expires-at') is not None:
-        expr = request.POST.get('expires-at').strip()
+    if request.POST.get('Expires-At') is not None:
+        expr = request.POST['Expires-At'].strip()
     elif request.POST.get('ExpiresAt') is not None:
-        expr = request.POST.get('ExpiresAt').strip()
+        expr = request.POST['ExpiresAt'].strip()
+    elif request.headers.get('Expires-At') is not None:
+        expr = request.headers['Expires-At'].strip()
+    elif request.headers.get('ExpiresAt') is not None:
+        expr = request.headers['ExpiresAt'].strip()
 
-    if expr.lower() in ['', '0', 'never', 'none', 'null']:
+    if expr.lower() in ['0', 'never', 'none', 'null']:
         return ''
     if parse(expr) is not None:
         return expr

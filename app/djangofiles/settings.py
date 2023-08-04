@@ -79,7 +79,7 @@ MESSAGE_TAGS = {
 CELERY_BEAT_SCHEDULE = {
     'delete_expired_files': {
         'task': 'home.tasks.delete_expired_files',
-        'schedule': datetime.timedelta(minutes=config('DELETE_EXPIRED_MIN', 60, int)),
+        'schedule': datetime.timedelta(minutes=config('DELETE_EXPIRED_MIN', 15, int)),
     },
     # 'process_stats': {
     #     'task': 'home.tasks.process_stats',
