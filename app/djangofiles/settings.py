@@ -9,6 +9,7 @@ from pathlib import Path
 from sentry_sdk.integrations.django import DjangoIntegration
 
 
+
 if 'test' in sys.argv or 'test_coverage' in sys.argv:
     dotenv_path = find_dotenv('test.env', usecwd=True)
     print(f'TEST dotenv_path: {dotenv_path}')

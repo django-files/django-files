@@ -8,9 +8,20 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-    <div class="container-fluid mt-2">
+    <div class="container-fluid mt-2 p-5">
 
-        <h1>Settings</h1>
+
+        <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">General</a></li>
+              <li class="breadcrumb-item"><a href="#webhooks">Webhooks</a></li>
+              <li class="breadcrumb-item"><a href="#uploaders">Uploaders</a></li>
+              <li class="breadcrumb-item"><a href="#tokens">Tokens</a></li>
+            </ol>
+          </nav>
+
+        <h1 class="pt-3">Settings</h1>
+
 
         <form class="row g-2" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings' %}">
             <div class="col-12">
@@ -26,178 +37,187 @@
             </div>
 
             <div class="row">
-            <div class="col-auto">
-                <label for="default_expire" class="form-label">Default Expire</label>
-                <input type="text" class="form-control" id="default_expire" name="default_expire"
-                       value="{{ user.default_expire }}" aria-describedby="default_expire-help default_expire-invalid">
-                <div id="default_expire-help" class="form-text">
-                    For examples, see <a href="https://github.com/onegreyonewhite/pytimeparse2" target="_blank">this README.md</a>.
+                <div class="col-auto">
+                    <label for="default_expire" class="form-label">Default Expire</label>
+                    <input type="text" class="form-control" id="default_expire" name="default_expire"
+                        value="{{ user.default_expire }}" aria-describedby="default_expire-help default_expire-invalid">
+                    <div id="default_expire-help" class="form-text">
+                        For examples, see <a href="https://github.com/onegreyonewhite/pytimeparse2" target="_blank">this README.md</a>.
+                    </div>
+                    <div id="default_expire-invalid" class="invalid-feedback"></div>
                 </div>
-                <div id="default_expire-invalid" class="invalid-feedback"></div>
             </div>
-            <div class="col-auto">
-                <label for="default_color" class="form-label">Color</label>
-                <input type="color" class="form-control form-control-color" id="default_color" name="default_color"
-                       value="{{ user.default_color }}" title="Default Color" aria-describedby="default_color-invalid">
-                <div id="default_color-invalid" class="invalid-feedback"></div>
+            <div class="row pt-3">
+                <div class="col-auto">
+                    <label for="default_color" class="form-label">Color</label>
+                    <input type="color" class="form-control form-control-color" id="default_color" name="default_color"
+                        value="{{ user.default_color }}" title="Default Color" aria-describedby="default_color-invalid">
+                    <div id="default_color-invalid" class="invalid-feedback"></div>
+                </div>
             </div>
-            <div class="col-auto">
-                <label for="nav_color_1" class="form-label">Nav 1</label>
-                <input type="color" class="form-control form-control-color" id="nav_color_1" name="nav_color_1"
-                       value="{{ user.nav_color_1 }}" title="Default Color" aria-describedby="nav_color_1-invalid">
-                <div id="nav_color_1-invalid" class="invalid-feedback"></div>
-            </div>
-            <div class="col-auto">
-                <label for="nav_color_2" class="form-label">Nav 2</label>
-                <input type="color" class="form-control form-control-color" id="nav_color_2" name="nav_color_2"
-                       value="{{ user.nav_color_2 }}" title="Default Color" aria-describedby="nav_color_2-invalid">
-                <div id="nav_color_2-invalid" class="invalid-feedback"></div>
-            </div>
+            <div class="row pt-3">
+                <div class="col-auto">
+                    <label for="nav_color_1" class="form-label">Nav 1</label>
+                    <input type="color" class="form-control form-control-color" id="nav_color_1" name="nav_color_1"
+                        value="{{ user.nav_color_1 }}" title="Default Color" aria-describedby="nav_color_1-invalid">
+                    <div id="nav_color_1-invalid" class="invalid-feedback"></div>
+                </div>
+                <div class="col-auto">
+                    <label for="nav_color_2" class="form-label">Nav 2</label>
+                    <input type="color" class="form-control form-control-color" id="nav_color_2" name="nav_color_2"
+                        value="{{ user.nav_color_2 }}" title="Default Color" aria-describedby="nav_color_2-invalid">
+                    <div id="nav_color_2-invalid" class="invalid-feedback"></div>
+                </div>
             </div>
 
-            <div class="col-12">
+            <div class="col-12 pt-3">
                 <button type="submit" class="btn btn-lg btn-outline-success" id="save-settings">
                     <i class="fa-solid fa-floppy-disk me-2"></i> Save Settings</button>
             </div>
         </form>
-
-        <h3>Webhooks</h3>
-        <p><a href="{% url 'oauth:webhook' %}" class="btn btn-lg btn-outline-primary" role="button">
-            <i class="fab fa-discord me-2"></i> Add Webhook to Discord</a></p>
-        {% cache 86400 settings request.user %}
-        {% if not webhooks %}
-            <p class="lead">No Webhooks Found. Perhaps you forgot to add one?</p>
-        {% else %}
-            <table class="table table-responsive" id="webhooks-table">
-                <thead>
-                <tr>
-                    <th scope="col" class="d-none d-sm-table-cell">ID</th>
-                    <th scope="col" class="d-none d-sm-table-cell">Guild ID</th>
-                    <th scope="col">Channel ID</th>
-                    <th scope="col" class="d-none d-md-table-cell">Date</th>
-                    <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for data in webhooks %}
-                    <tr id="webhook-{{ data.id }}">
-                        <th scope="row" class="d-none d-sm-table-cell">{{ data.id }}</th>
-                        <td><a class="clip text-white text-decoration-none" role="button"
-                               data-clipboard-text="{{ data.guild_id }}">{{ data.guild_id }}</a></td>
-                        <td class="d-none d-sm-table-cell">
-                            <a class="clip text-white text-decoration-none" role="button"
-                               data-clipboard-text="{{ data.channel_id }}">{{ data.channel_id }}</a></td>
-                        <td class="d-none d-md-table-cell">
-                            <a class="clip text-white text-decoration-none" role="button"
-                               data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a></td>
-                        <td class="text-center"><a role="button" class="delete-webhook-btn" data-hook-id="{{ data.id }}" title="Delete">
-                            <i class="fa-regular fa-trash-can link-danger"></i></a></td>
+        <div class="pt-4 my-md-5 border-top">
+            <h3 id="webhooks">Webhooks</h3>
+            <div class="pt-3">
+                <p><a href="{% url 'oauth:webhook' %}" class="btn btn-lg btn-outline-primary" role="button">
+                    <i class="fab fa-discord me-2"></i> Add Webhook to Discord</a></p>
+            </div>
+            {% cache 86400 settings request.user %}
+            {% if not webhooks %}
+                <p class="lead">No Webhooks Found. Perhaps you forgot to add one?</p>
+            {% else %}
+                <table class="table table-responsive" id="webhooks-table">
+                    <thead>
+                    <tr>
+                        <th scope="col" class="d-none d-sm-table-cell">ID</th>
+                        <th scope="col" class="d-none d-sm-table-cell">Guild ID</th>
+                        <th scope="col">Channel ID</th>
+                        <th scope="col" class="d-none d-md-table-cell">Date</th>
+                        <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>
                     </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        {% endif %}
-        {% endcache %}
+                    </thead>
+                    <tbody>
+                    {% for data in webhooks %}
+                        <tr id="webhook-{{ data.id }}">
+                            <th scope="row" class="d-none d-sm-table-cell">{{ data.id }}</th>
+                            <td><a class="clip text-white text-decoration-none" role="button"
+                                data-clipboard-text="{{ data.guild_id }}">{{ data.guild_id }}</a></td>
+                            <td class="d-none d-sm-table-cell">
+                                <a class="clip text-white text-decoration-none" role="button"
+                                data-clipboard-text="{{ data.channel_id }}">{{ data.channel_id }}</a></td>
+                            <td class="d-none d-md-table-cell">
+                                <a class="clip text-white text-decoration-none" role="button"
+                                data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a></td>
+                            <td class="text-center"><a role="button" class="delete-webhook-btn" data-hook-id="{{ data.id }}" title="Delete">
+                                <i class="fa-regular fa-trash-can link-danger"></i></a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+            {% endcache %}
+        </div>
+        <div class="pt-4 my-md-5 border-top">
+            <h3 id="uploaders">Uploaders</h3>
+            <p class="lead">Django Files is backwards compatible with <a href="https://zipline.diced.vercel.app/docs/api/upload" target="_blank">
+                Zipline</a> client upload settings.</p>
+            <div class="row g-2">
+                <div class="col-sm-6 pt-3">
+                    <a href="{% url 'home:gen-sharex' %}" class="btn btn-lg btn-outline-primary d-block">
+                        <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="24">
+                        Download ShareX Settings</a>
+                </div>
+                <div class="col-sm-6 pt-3">
+                    <a href="{% url 'home:gen-flameshot' %}" class="btn btn-lg btn-outline-info d-block">
+                        <img src="{% static 'images/assets/flameshot.svg' %}" class="me-2" alt="Flameshot" width="24">
+                        Download Flameshot Script</a>
+                </div>
+                <div class="col-12 pt-5">
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="home-tab" data-bs-toggle="tab" type="button"
+                                    data-bs-target="#home-tab-pane" role="tab" aria-controls="home-tab-pane" aria-selected="true">Custom</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="shell-tab" data-bs-toggle="tab" type="button"
+                                    data-bs-target="#shell-tab-pane" role="tab" aria-controls="shell-tab-pane" aria-selected="false">Shell</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="python-tab" data-bs-toggle="tab" type="button"
+                                    data-bs-target="#python-tab-pane" role="tab" aria-controls="python-tab-pane" aria-selected="false">Python</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="cli-tab" data-bs-toggle="tab" type="button"
+                                    data-bs-target="#cli-tab-pane" role="tab" aria-controls="cli-tab-pane" aria-selected="false">CLI</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+                            <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#upload-url">
+                                <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
+                            <p><kbd id="upload-url">{{ site_settings.site_url }}{% url 'home:upload' %}</kbd></p>
+                            <p>Uploads accept the following parameters. Click a tab above to view full examples.</p>
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                <tr>
+                                    <th scope="col">Key</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Value</th>
+                                    <th scope="col" class="d-none d-md-table-cell">Description</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <th scope="row">File</th>
+                                    <th scope="row">file</th>
+                                    <td>@file</td>
+                                    <td class="d-none d-md-table-cell">File Object to Upload</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Authorization</th>
+                                    <th scope="row">header</th>
+                                    <td>&lt;see below&gt;</td>
+                                    <td class="d-none d-md-table-cell">Authorization Token</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Expires-At</th>
+                                    <th scope="row">header</th>
+                                    <td>{{ user.default_expire }}</td>
+                                    <td class="d-none d-md-table-cell">Expire Value. To override default use <kbd>0</kbd> or <kbd>never</kbd>.
+                                        For values <a href="https://github.com/onegreyonewhite/pytimeparse2" target="_blank">read this</a>.</td>
+                                </tr>
+                                </tbody>
 
-        <h3>Uploaders</h3>
-        <p class="lead">Django Files is backwards compatible with <a href="https://zipline.diced.vercel.app/docs/api/upload" target="_blank">
-            Zipline</a> client upload settings.</p>
-        <div class="row g-2">
-            <div class="col-sm-12 col-md-6">
-                <a href="{% url 'home:gen-sharex' %}" class="btn btn-lg btn-outline-primary d-block">
-                    <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="24">
-                    Download ShareX Settings</a>
-            </div>
-            <div class="col-sm-12 col-md-6">
-                <a href="{% url 'home:gen-flameshot' %}" class="btn btn-lg btn-outline-info d-block">
-                    <img src="{% static 'images/assets/flameshot.svg' %}" class="me-2" alt="Flameshot" width="24">
-                    Download Flameshot Script</a>
-            </div>
-            <div class="col-12">
-                <ul class="nav nav-tabs" id="myTab" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="home-tab" data-bs-toggle="tab" type="button"
-                                data-bs-target="#home-tab-pane" role="tab" aria-controls="home-tab-pane" aria-selected="true">Custom</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="shell-tab" data-bs-toggle="tab" type="button"
-                                data-bs-target="#shell-tab-pane" role="tab" aria-controls="shell-tab-pane" aria-selected="false">Shell</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="python-tab" data-bs-toggle="tab" type="button"
-                                data-bs-target="#python-tab-pane" role="tab" aria-controls="python-tab-pane" aria-selected="false">Python</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="cli-tab" data-bs-toggle="tab" type="button"
-                                data-bs-target="#cli-tab-pane" role="tab" aria-controls="cli-tab-pane" aria-selected="false">CLI</button>
-                    </li>
-                </ul>
-                <div class="tab-content" id="myTabContent">
-                    <div class="tab-pane fade show active" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
-                        <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#upload-url">
-                            <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
-                        <p><kbd id="upload-url">{{ site_settings.site_url }}{% url 'home:upload' %}</kbd></p>
-                        <p>Uploads accept the following parameters. Click a tab above to view full examples.</p>
-                        <table class="table table-sm table-striped">
-                            <thead>
-                            <tr>
-                                <th scope="col">Key</th>
-                                <th scope="col">Type</th>
-                                <th scope="col">Value</th>
-                                <th scope="col" class="d-none d-md-table-cell">Description</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <th scope="row">File</th>
-                                <th scope="row">file</th>
-                                <td>@file</td>
-                                <td class="d-none d-md-table-cell">File Object to Upload</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Authorization</th>
-                                <th scope="row">header</th>
-                                <td>&lt;see below&gt;</td>
-                                <td class="d-none d-md-table-cell">Authorization Token</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Expires-At</th>
-                                <th scope="row">header</th>
-                                <td>{{ user.default_expire }}</td>
-                                <td class="d-none d-md-table-cell">Expire Value. To override default use <kbd>0</kbd> or <kbd>never</kbd>.
-                                    For values <a href="https://github.com/onegreyonewhite/pytimeparse2" target="_blank">read this</a>.</td>
-                            </tr>
-                            </tbody>
-
-                        </table>
-                    </div>
-                    <div class="tab-pane fade" id="shell-tab-pane" role="tabpanel" aria-labelledby="shell-tab" tabindex="0">
-                        <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#shell-code">
-                            <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
-                        <pre><code id="shell-code">{% include 'scripts/shell-example.sh' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url  %}</code></pre>
-                    </div>
-                    <div class="tab-pane fade" id="python-tab-pane" role="tabpanel" aria-labelledby="python-tab" tabindex="0">
-                        <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#python-code">
-                            <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
-                        <pre><code id="python-code">{% include 'scripts/python-example.py' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url  %}</code></pre>
-                    </div>
-                    <div class="tab-pane fade" id="cli-tab-pane" role="tabpanel" aria-labelledby="cli-tab" tabindex="0">
-                        <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#cli-code">
-                            <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
-                        <p><kbd id="cli-code">python3 -m pip install zipline-cli</kbd></p>
-                        <p>For more information and usage visit
-                            <a href="https://github.com/cssnr/zipline-cli" target="_blank">
-                                Zipline CLI on GitHub</a></p>
+                            </table>
+                        </div>
+                        <div class="tab-pane fade" id="shell-tab-pane" role="tabpanel" aria-labelledby="shell-tab" tabindex="0">
+                            <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#shell-code">
+                                <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
+                            <pre><code id="shell-code">{% include 'scripts/shell-example.sh' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url  %}</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="python-tab-pane" role="tabpanel" aria-labelledby="python-tab" tabindex="0">
+                            <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#python-code">
+                                <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
+                            <pre><code id="python-code">{% include 'scripts/python-example.py' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url  %}</code></pre>
+                        </div>
+                        <div class="tab-pane fade" id="cli-tab-pane" role="tabpanel" aria-labelledby="cli-tab" tabindex="0">
+                            <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#cli-code">
+                                <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
+                            <p><kbd id="cli-code">python3 -m pip install zipline-cli</kbd></p>
+                            <p>For more information and usage visit
+                                <a href="https://github.com/cssnr/zipline-cli" target="_blank">
+                                    Zipline CLI on GitHub</a></p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <h3>Authorization Token</h3>
-        <p><a class="btn btn-lg btn-outline-light clip" role="button" data-clipboard-text="{{ user.authorization }}">
-            <i class="fa-solid fa-key me-2"></i> Copy Token</a></p>
-        <p><kbd>{{ user.authorization }}</kbd></p>
-
+        <div class="pt-4 my-md-5 border-top">
+            <h3 id="tokens">Authorization Token</h3>
+            <p>Treat this token like a password.</p>
+            <p><a class="btn btn-lg btn-outline-light clip" role="button" data-clipboard-text="{{ user.authorization }}">
+                <i class="fa-solid fa-key me-2"></i> Copy Token</a></p>
+            <p><kbd>{{ user.authorization }}</kbd></p>
+        </div>
     </div>
 
     <div class="modal fade" id="delete-hook-modal" tabindex="-1" aria-labelledby="exampleModalLabel"

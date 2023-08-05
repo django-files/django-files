@@ -36,7 +36,8 @@ services:
     build: ./app
     image: djangofiles-app:${VERSION:-latest}
     env_file: settings.env
-    command: "gunicorn djangofiles.asgi:application -b 0.0.0.0:9000 -w 2 -k uvicorn.workers.UvicornWorker"
+    # command: "gunicorn djangofiles.asgi:application -b 0.0.0.0:9000 -w 2 -k uvicorn.workers.UvicornWorker"
+    command: "python manage.py runserver_plus 0.0.0.0:9000"
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:9000/app-health-check/"]
       interval: 1m
@@ -48,6 +49,7 @@ services:
     volumes:
       - static_dir:/data/static
       - media_dir:/data/media
+      - ./app:/app
     depends_on:
       - redis
 
