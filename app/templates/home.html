@@ -1,5 +1,6 @@
 {% extends "main.html" %}
 {% load static %}
+{% load tz %}
 {% load home_tags %}
 {% load cache %}
 {% block home_active %}active{% endblock %}
@@ -12,15 +13,45 @@
 
         <h1>Django Files</h1>
 
-        {% cache 86400 stats request.user %}
-            {% include 'include/stats.html' with stats=stats|first %}
-        {% endcache %}
+{#        {% cache 86400 stats request.user %}#}
+            {% if not stats %}
+                <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
+            {% else %}
+                {% with stats=stats|first  %}
+                    <div class="row">
+                        {% include 'include/stats-card.html' with title="Total Files" data=stats.stats.count %}
+                        {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
+                        {% include 'include/stats-card.html' with title="Total Shorts" data=shorts|length %}
+                    </div>
+                    {% include 'include/stats-table.html' with stats=stats %}
 
-        {% cache 86400 shorts request.user %}
-            {% include 'include/shorts.html' %}
-        {% endcache %}
+                    <p><a class="btn btn-sm btn-outline-light" role="button" id="update-stats-btn"
+                          data-target-url="{% url 'home:update-stats' %}">
+                        <i class="fa-solid fa-chart-bar"></i> Process Stats</a>{% if stats %}
+                        Updated: {{ stats.created_at|localtime }}{% endif %}</p>
 
-        <span class="h2" id="files">File List</span>
+                {% endwith %}
+            {% endif %}
+{#        {% endcache %}#}
+
+{#        {% cache 86400 shorts request.user %}#}
+            <span class="h2" id="shorts">Shorts</span>
+            <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#shorts"
+                     role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2 mb-1"></i></a></span>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
+                       aria-label="Recipient's username" aria-describedby="create-short-btn">
+                <button class="btn btn-outline-success" type="button" id="create-short-btn"
+                        data-target-url="{% url 'home:shorten' %}">Short It</button>
+            </div>
+            {% if not shorts %}
+                <p class="lead">Short URLs will show up here once created...</p>
+            {% else %}
+                {% include 'include/shorts-table.html' with shorts=shorts|slice:":10"  %}
+            {% endif %}
+{#        {% endcache %}#}
+
+        <span class="h2" id="files">Files</span>
         <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#files"
                  role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2 mb-1"></i></a></span>
 
@@ -39,7 +70,7 @@
                     </tbody>
                 </table>
             {% else %}
-                <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:files' %}">upload some files</a>...</p>
+                <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
             {% endif %}
         {% endcache %}
 

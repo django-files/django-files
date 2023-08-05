@@ -90,12 +90,12 @@ def settings_view(request):
 
 @login_required
 @csrf_exempt
-def files_view(request):
+def uppy_view(request):
     """
-    View  /files/
+    View  /uppy/
     """
     if request.method in ['GET', 'HEAD']:
-        return render(request, 'files.html')
+        return render(request, 'uppy.html')
 
     log.debug(request.headers)
     log.debug(request.POST)

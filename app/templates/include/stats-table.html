@@ -1,0 +1,22 @@
+{% load home_tags %}
+
+<table class="table table-sm table-striped table-hover">
+    <thead>
+    <tr>
+        <th scope="col">Type</th>
+        <th scope="col">Count</th>
+        <th scope="col">Size</th>
+        <th scope="col" class="d-none d-sm-table-cell">Bytes</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for type, data in stats.stats.types.items %}
+    <tr>
+        <th scope="row">{{ type }}</th>
+        <td>{{ data.count }}</td>
+        <td>{{ data.size|bytes_human }}</td>
+        <td class="d-none d-sm-table-cell">{{ data.size }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
