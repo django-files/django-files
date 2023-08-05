@@ -202,11 +202,14 @@ def shorten_short_view(request, short):
     """
     View  /s/{short}
     """
-    url = ShortURLs.objects.get_object_or_404(short=short)
-    url_url = url.url
-    url.views += 1
-    url.delete() if url.max and url.views >= url.max else url.save()
-    return HttpResponseRedirect(url_url)
+    q = get_object_or_404(ShortURLs, short=short)
+    url = q.url
+    q.views += 1
+    if q.max and q.views >= q.max:
+        q.delete()
+    else:
+        q.save()
+    return HttpResponseRedirect(url)
 
 
 def gen_short(vanity, length=4):
