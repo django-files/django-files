@@ -1,9 +1,10 @@
 import httpx
+import json
 import logging
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
@@ -13,9 +14,9 @@ from pytimeparse2 import parse
 # import plotly.express as px
 # import plotly.io as pio
 
-from oauth.models import CustomUser
+from oauth.models import CustomUser, rand_string
 from .forms import SettingsForm
-from .models import Files, FileStats, SiteSettings, Webhooks
+from .models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
 from .tasks import process_file_upload
 
 log = logging.getLogger('app')
@@ -121,14 +122,9 @@ def upload_view(request):
     log.debug(request.POST)
     log.debug(request.FILES)
     try:
-        authorization = request.headers.get('Authorization') or request.headers.get('Token')
-        if not authorization:
-            return JsonResponse({'error': 'Missing Authorization'}, status=401)
-
-        user = CustomUser.objects.get(authorization=authorization)
+        user = get_auth_user(request)
         if not user:
             return JsonResponse({'error': 'Invalid Authorization'}, status=401)
-
         file = Files.objects.create(
             file=request.FILES.get('file'),
             user=user,
@@ -149,6 +145,76 @@ def upload_view(request):
         log.exception(error)
         return JsonResponse({'error': str(error)}, status=500)
 
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def shorten_view(request):
+    """
+    View  /shorten/ and /api/shorten
+    """
+    log.debug('-'*40)
+    log.debug(request.headers)
+    log.debug('-'*40)
+    log.debug(request.POST)
+    log.debug('-'*40)
+    log.debug(request.body)
+    log.debug('-'*40)
+    try:
+        user = get_auth_user(request)
+        if not user:
+            return JsonResponse({'error': 'Invalid Authorization'}, status=401)
+
+        # We Are Go
+        views = request.headers.get('max-views')
+        url = request.headers.get('url')
+        vanity = request.headers.get('vanity')
+        if not url:
+            try:
+                body = json.loads(request.body.decode())
+                log.debug('body: %s', body)
+                views = body.get('max-views')
+                url = body.get('url')
+                vanity = body.get('vanity')
+            except:
+                pass
+        if not url:
+            return JsonResponse({'error': 'Missing Required Value: url'}, status=400)
+        log.debug('url: %s', url)
+        short = gen_short(vanity)
+        log.debug('short: %s', short)
+        url = ShortURLs.objects.create(
+            url=url,
+            short=short,
+        )
+        return JsonResponse({'url': url}, safe=False)
+
+    except Exception as error:
+        log.exception(error)
+        return JsonResponse({'error': str(error)}, status=500)
+
+
+def shorten_short_view(request, short):
+    """
+    View  /s/{short}
+    """
+    url = ShortURLs.objects.get(short=short)
+    return HttpResponseRedirect({'url': url}, safe=False)
+
+
+def gen_short(vanity):
+    if vanity:
+        # check that vanity does not exist
+        return vanity
+    rand = rand_string(length=6)
+    # check if random string does not exist
+    return rand
+
+
+def get_auth_user(request):
+    authorization = request.headers.get('Authorization') or request.headers.get('Token')
+    if not authorization:
+        return
+    return CustomUser.objects.get(authorization=authorization)
 
 # @csrf_exempt
 # def get_graph_ajax(request):

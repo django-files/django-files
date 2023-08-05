@@ -28,7 +28,7 @@ class Files(models.Model):
 
     class Meta:
         ordering = ['-date']
-        verbose_name = 'Files'
+        verbose_name = 'File'
         verbose_name_plural = 'Files'
 
     def get_url(self):
@@ -60,8 +60,25 @@ class FileStats(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'FileStats'
+        verbose_name = 'FileStat'
         verbose_name_plural = 'FileStats'
+
+
+class ShortURLs(models.Model):
+    id = models.AutoField(primary_key=True)
+    url = models.URLField(unique=True, verbose_name='Short URL', help_text='ShortURL Short URL.')
+    views = models.IntegerField(verbose_name='ShortURL Views')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='ShortURL Created',
+                                      help_text='ShortURL Created Date.')
+
+    def __str__(self):
+        return f'<ShortURLs(id={self.id}, user_id={self.user_id})>'
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Short URL'
+        verbose_name_plural = 'Short URLs'
 
 
 class SiteSettings(models.Model):
@@ -77,7 +94,7 @@ class SiteSettings(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        verbose_name = 'Settings'
+        verbose_name = 'Setting'
         verbose_name_plural = 'Settings'
 
 
