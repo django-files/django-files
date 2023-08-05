@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
-from django.shortcuts import render, reverse
+from django.shortcuts import render, reverse, get_object_or_404
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -17,7 +17,7 @@ from pytimeparse2 import parse
 from oauth.models import CustomUser, rand_string
 from .forms import SettingsForm
 from .models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
-from .tasks import process_file_upload
+from .tasks import process_file_upload, process_stats
 
 log = logging.getLogger('app')
 
@@ -29,9 +29,10 @@ def home_view(request):
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
     files = Files.objects.get_request(request)
-    # stats = Files.objects.get_request(request)
-    stats = FileStats.objects.filter(user=request.user)
-    context = {'files': files, 'stats': stats}
+    stats = FileStats.objects.get_request(request)
+    # stats = FileStats.objects.filter(user=request.user)
+    shorts = ShortURLs.objects.get_request(request)
+    context = {'files': files, 'stats': stats, 'shorts': shorts}
     return render(request, 'home.html', context)
 
 
@@ -54,8 +55,7 @@ def settings_view(request):
     # site_settings = SiteSettings.objects.get(pk=1)
     site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
     if request.method in ['GET', 'HEAD']:
-        # webhooks = Webhooks.objects.all()
-        webhooks = Webhooks.objects.filter(owner=request.user)
+        webhooks = Webhooks.objects.get_request(request)
         context = {'webhooks': webhooks, 'site_settings': site_settings}
         log.debug('context: %s', context)
         return render(request, 'settings.html', context)
@@ -175,18 +175,23 @@ def shorten_view(request):
                 views = body.get('max-views')
                 url = body.get('url')
                 vanity = body.get('vanity')
-            except:
+            except Exception:
                 pass
         if not url:
             return JsonResponse({'error': 'Missing Required Value: url'}, status=400)
+
         log.debug('url: %s', url)
         short = gen_short(vanity)
         log.debug('short: %s', short)
         url = ShortURLs.objects.create(
             url=url,
             short=short,
+            views=views or 0,
+            user=user,
         )
-        return JsonResponse({'url': url}, safe=False)
+        site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+        full_url = site_settings.site_url + reverse('home:short', kwargs={'short': url.short})
+        return JsonResponse({'url': full_url}, safe=False)
 
     except Exception as error:
         log.exception(error)
@@ -197,16 +202,21 @@ def shorten_short_view(request, short):
     """
     View  /s/{short}
     """
-    url = ShortURLs.objects.get(short=short)
-    return HttpResponseRedirect({'url': url}, safe=False)
+    url = ShortURLs.objects.get_object_or_404(short=short)
+    url_url = url.url
+    url.views += 1
+    url.delete() if url.max and url.views >= url.max else url.save()
+    return HttpResponseRedirect(url_url)
 
 
-def gen_short(vanity):
+def gen_short(vanity, length=4):
     if vanity:
-        # check that vanity does not exist
+        # TODO: check that vanity does not exist
         return vanity
-    rand = rand_string(length=6)
-    # check if random string does not exist
+    rand = rand_string(length=length)
+    while ShortURLs.objects.filter(short=rand):
+        rand = rand_string(length=length)
+        continue
     return rand
 
 
@@ -248,6 +258,19 @@ def get_auth_user(request):
 @login_required
 @csrf_exempt
 @require_http_methods(['POST'])
+def update_stats_ajax(request):
+    """
+    View  /ajax/update/stats/
+    """
+    log.debug('update_stats_ajax')
+    process_stats.delay()
+    messages.success(request, 'Stats Processing Queued.')
+    return HttpResponse(status=204)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(['POST'])
 def delete_file_ajax(request, pk):
     """
     View  /ajax/delete/file/<int:pk>/
@@ -272,7 +295,7 @@ def delete_hook_ajax(request, pk):
     log.debug('delete_hook_ajax: %s', pk)
     webhook = Webhooks.objects.get(pk=pk)
     if webhook.owner != request.user:
-        return HttpResponse(status=401)
+        return HttpResponse(status=404)
     log.debug(webhook)
     webhook.delete()
     return HttpResponse(status=204)
@@ -314,9 +337,9 @@ def gen_flameshot(request):
     View  /gen/flameshot/
     """
     # site_settings = SiteSettings.objects.get(pk=1)
+    # context = {'site_url': settings.SITE_URL, 'token': request.user.authorization}
     context = {'site_url': request.build_absolute_uri(reverse('home:upload')), 'token': request.user.authorization}
     log.debug('context: %s', context)
-    # context = {'site_url': settings.SITE_URL, 'token': request.user.authorization}
     message = render_to_string('scripts/flameshot.sh', context)
     log.debug('message: %s', message)
     response = HttpResponse(message)
@@ -355,7 +378,6 @@ def parse_expire(request, user) -> str:
         expr = request.headers['Expires-At'].strip()
     elif request.headers.get('ExpiresAt') is not None:
         expr = request.headers['ExpiresAt'].strip()
-
     if expr.lower() in ['0', 'never', 'none', 'null']:
         return ''
     if parse(expr) is not None:

@@ -40,6 +40,13 @@ def clear_files_cache():
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
+def clear_shorts_cache():
+    # Clear Files cache on model update
+    log.info('clear_shorts_cache')
+    return cache.delete_pattern('template.cache.shorts*')
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_stats_cache():
     # Clear Files cache on model update
     log.info('clear_stats_cache')

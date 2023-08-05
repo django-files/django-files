@@ -1,0 +1,34 @@
+{% load home_tags %}
+
+<span class="h2" id="shorts">Short URL</span>
+<span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#shorts"
+         role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2 mb-1"></i></a></span>
+
+{% if not shorts %}
+    <p class="lead">Short URLs will show up here once created...</p>
+{% else %}
+    <table class="table table-sm table-striped table-hover">
+        <thead>
+        <tr>
+            <th scope="col">Short</th>
+            <th scope="col">URL</th>
+            <th scope="col" class="text-center"><i class="fa-solid fa-gears"></i></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for short in shorts %}
+        <tr>
+            <th scope="row">
+                <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'home:short' short=short.short %}" target="_blank">
+                    {{ short.short }}</a></th>
+            <td><a href="{{ short.url }}" target="_blank">{{ short.url }}</a></td>
+            <td class="text-center">
+                <a class="clip text-white mx-1" role="button" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{% url 'home:short' short=short.short %}">
+                <i class="fa-regular fa-clipboard"></i></a>
+                <a role="button" class="delete-short-btn link-danger mx-1" data-short-id="{{ short.id }}" title="Delete">
+                    <i class="fa-regular fa-trash-can"></i></a></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endif %}

@@ -1,4 +1,5 @@
 {% load home_tags %}
+{% load tz %}
 {% if not stats %}
     <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
 {% else %}
@@ -28,4 +29,8 @@
         {% endfor %}
         </tbody>
     </table>
+    <p><a class="btn btn-sm btn-outline-light" role="button" id="update-stats-btn"
+          data-target-url="{% url 'home:update-stats' %}">
+        <i class="fa-solid fa-chart-bar"></i> Process Stats</a>{% if stats %}
+        Updated: {{ stats.created_at|localtime }}{% endif %}</p>
 {% endif %}

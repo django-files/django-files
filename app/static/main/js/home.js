@@ -74,4 +74,38 @@ $(document).ready(function() {
         });
     });
 
+    // Handle profile save button click and response
+    $('#update-stats-btn').click(function () {
+        console.log('CLICKY CLICKY');
+        if ($('#update-stats-btn').hasClass('disabled')) { return; }
+        $.ajax({
+            // url: window.location.pathname,
+            url: $('#update-stats-btn').attr('data-target-url'),
+            type: 'POST',
+            headers: {'X-CSRFToken': csrftoken},
+            beforeSend: function( jqXHR ){
+                $('#update-stats-btn').addClass('disabled');
+                console.log('url: ' + $('#update-stats-btn').attr('data-target-url'));
+            },
+            success: function(data, textStatus, jqXHR){
+                console.log('Status: '+jqXHR.status+', Data: '+JSON.stringify(data));
+                alert('Stats Update Submitted. Page will now Reload...');
+            },
+            complete: function(data, textStatus ){
+                $('#update-stats-btn').removeClass('disabled');
+                console.log(data);
+                location.reload();
+            },
+            error: function (data, status, error) {
+                console.log('Status: '+data.status+', Response: '+data.responseText);
+                // let message = data.status + ': ' + error
+                // show_toast(message,'danger', '6000');
+                alert(data.responseText)
+            },
+            cache: false,
+            contentType: false,
+            processData: false
+        });
+    });
+
 });

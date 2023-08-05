@@ -16,11 +16,9 @@
             {% include 'include/stats.html' with stats=stats|first %}
         {% endcache %}
 
-{#        <div class="d-flex align-items-center">#}
-{#            <span class="h3" id="files">Files</span>#}
-{#            <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#files"#}
-{#                     role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2"></i></a></span>#}
-{#        </div>#}
+        {% cache 86400 shorts request.user %}
+            {% include 'include/shorts.html' %}
+        {% endcache %}
 
         <span class="h2" id="files">File List</span>
         <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#files"
