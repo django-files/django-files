@@ -1,73 +1,100 @@
 {% extends "main.html" %}
-{% block files_active %}active{% endblock %}
-{% block title %}Files{% endblock %}
-{% load home_tags %}
 {% load static %}
+{% load tz %}
+{% load home_tags %}
+{% load cache %}
+{% block home_active %}active{% endblock %}
+{% block title %}Home{% endblock %}
 
-{% block meta %}
-    <meta name="author" content="Shane"/>
-    <meta name="title" content="Django Files - Files"/>
-    <meta name="description" content="Upload files securely up to 1GB in size."/>
-
-    <meta property="og:author" content="Shane">
-    <meta property="og:title" content="Django Files - Files">
-    <meta property="og:description" content="Upload files securely up to 1GB in size.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo.png' %}">
-{% endblock %}
-
-{% block head %}
-    <link rel="stylesheet" href="{% static 'uppy/uppy.min.css' %}">
-{#    <link rel="stylesheet" href="{% static 'main/css/files.css' %}">#}
-{% endblock %}
+{% block head %}{% endblock %}
 
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
-        <h1 class="h1">Upload Files</h1>
-        <div id="drag-drop-area"></div>
+        <h1>Django Files</h1>
+
+        {% cache 86400 stats request.user %}
+            {% if not stats %}
+                <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
+            {% else %}
+                {% with stats=stats|first  %}
+                    <div class="row">
+                        {% include 'include/stats-card.html' with title="Total Files" data=stats.stats.count %}
+                        {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
+                        {% include 'include/stats-card.html' with title="Total Shorts" data=shorts|length %}
+                    </div>
+                    {% include 'include/stats-table.html' with stats=stats %}
+
+                    <p><a class="btn btn-sm btn-outline-light" role="button" id="update-stats-btn"
+                          data-target-url="{% url 'home:update-stats' %}">
+                        <i class="fa-solid fa-chart-bar"></i> Process Stats</a>{% if stats %}
+                        Updated: {{ stats.created_at|localtime }}{% endif %}</p>
+
+                {% endwith %}
+            {% endif %}
+        {% endcache %}
+
+        {% cache 86400 shorts request.user %}
+            <span class="h2" id="shorts">Shorts</span>
+            <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#shorts"
+                     role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2 mb-1"></i></a></span>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
+                       aria-label="Recipient's username" aria-describedby="create-short-btn">
+                <button class="btn btn-outline-success" type="button" id="create-short-btn"
+                        data-target-url="{% url 'home:shorten' %}">Short It</button>
+            </div>
+            {% if not shorts %}
+                <p class="lead">Short URLs will show up here once created...</p>
+            {% else %}
+                {% include 'include/shorts-table.html' with shorts=shorts|slice:":10"  %}
+            {% endif %}
+        {% endcache %}
+
+        <span class="h2" id="files">Files</span>
+        <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#files"
+                 role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2 mb-1"></i></a></span>
+
+        {% cache 86400 files_home request.user %}
+            {% if files %}
+                <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
+                <p class="d-xl-none text-muted mb-0"><em>Some columns hidden due to narrow viewport.</em></p>
+                <table class="table table-hover table-responsive" id="files-table">
+                    <thead>
+                        {% include 'include/table-head.html' %}
+                    </thead>
+                    <tbody>
+                        {% for file in files %}
+                            {% include 'include/table-tr.html' with file=file %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
+            {% endif %}
+        {% endcache %}
+
+        <div class="modal fade" id="delete-file-modal" tabindex="-1" aria-labelledby="exampleModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">Delete File</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">Are you sure you want to delete this file?</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" id="confirm-delete-hook-btn">Delete <i
+                                class="fa-regular fa-trash-can ms-1"></i></button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 {% endblock %}
 
 {% block tail %}
-    {% csrf_token %}
-    <script src="{% static 'uppy/uppy.min.js' %}"></script>
-    <script>
-        var uppy = new Uppy.Core({
-            debug: true,
-            autoProceed: false,
-            restrictions: {
-                maxFileSize: 1048576000,
-                {#requiredMetaFields: ['info'],#}
-            }
-        })
-        .use(Uppy.Dashboard, {
-            inline: true,
-            theme: 'dark',
-            target: '#drag-drop-area',
-            showProgressDetails: true,
-            note: 'Generic Files Upload',
-            height: 380,
-            width: '100%',
-            metaFields: [
-                {id: 'name', name: 'Name', placeholder: 'File Name'},
-                {id: 'Expires-At', name: 'Expires At', placeholder: 'File Expiration Time.'},
-                {id: 'info', name: 'Info', placeholder: 'Information about the file.'}
-            ],
-            browserBackButtonClose: false
-        })
-        .use(Uppy.XHRUpload, {
-            endpoint: "{% url 'home:files' %}",
-            headers: {
-                "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
-            },
-        })
-
-        uppy.on('complete', result => {
-          console.log('successful files:', result.successful)
-          console.log('failed files:', result.failed)
-        })
-    </script>
+    <script type="text/javascript" src="{% static 'main/js/home.js' %}"></script>
 {% endblock %}

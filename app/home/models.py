@@ -2,7 +2,7 @@ from django.db import models
 from django.conf import settings
 from oauth.models import CustomUser
 
-from .managers import FilesManager
+from .managers import FilesManager, FileStatsManager, ShortURLsManager, WebhooksManager
 
 
 class Files(models.Model):
@@ -10,25 +10,21 @@ class Files(models.Model):
     id = models.AutoField(primary_key=True)
     file = models.FileField(upload_to=upload_to)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    size = models.IntegerField(default=0, verbose_name='File Size', help_text='File Size in Bytes.')
-    mime = models.CharField(max_length=255, null=True, blank=True,
-                            verbose_name='File MIME', help_text='File MIME Type.')
-    name = models.CharField(max_length=255, null=True, blank=True,
-                            verbose_name='File Name', help_text='File Name Basename.')
-    info = models.CharField(max_length=255, null=True, blank=True,
-                            verbose_name='File Info', help_text='File Information.')
-    date = models.DateTimeField(auto_now_add=True, verbose_name='Date Created', help_text='File Created Date.')
-    edit = models.DateTimeField(auto_now=True, verbose_name='Date Edited', help_text='File Edited Date.')
-    expr = models.CharField(default='', max_length=32, blank=True,
-                            verbose_name='Expire Time', help_text='File Expire Time.')
+    size = models.IntegerField(default=0, verbose_name='Size', help_text='File Size in Bytes.')
+    mime = models.CharField(max_length=255, null=True, blank=True, verbose_name='MIME', help_text='File MIME Type.')
+    name = models.CharField(max_length=255, null=True, blank=True, verbose_name='Name', help_text='File Name.')
+    info = models.CharField(max_length=255, null=True, blank=True, verbose_name='Info', help_text='File Information.')
+    expr = models.CharField(default='', max_length=32, blank=True, verbose_name='Expiration', help_text='File Expire.')
+    date = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='File Created Date.')
+    edit = models.DateTimeField(auto_now=True, verbose_name='Edited', help_text='File Edited Date.')
     objects = FilesManager()
 
     def __str__(self):
-        return f'<Files(id={self.id} size={self.size} name={self.name})>'
+        return f'<File(id={self.id} size={self.size} name={self.name})>'
 
     class Meta:
         ordering = ['-date']
-        verbose_name = 'Files'
+        verbose_name = 'File'
         verbose_name_plural = 'Files'
 
     def get_url(self):
@@ -51,17 +47,37 @@ class Files(models.Model):
 class FileStats(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, blank=True, null=True, on_delete=models.CASCADE)
-    stats = models.JSONField(verbose_name='Stats JSON')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Stats Created', help_text='Stats Created Date.')
-    # objects = FileStatsManager()
+    stats = models.JSONField(verbose_name='Stats JSON', help_text='Stats JSON Data.')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Updated', help_text='Stats Updated Date.')
+    objects = FileStatsManager()
 
     def __str__(self):
-        return f'<FileStats(id={self.id}, user_id={self.user_id})>'
+        return f'<FileStat(id={self.id}, user_id={self.user_id})>'
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'FileStats'
+        verbose_name = 'FileStat'
         verbose_name_plural = 'FileStats'
+
+
+class ShortURLs(models.Model):
+    id = models.AutoField(primary_key=True)
+    short = models.CharField(max_length=255, unique=True, verbose_name='Short', help_text='Short Link ID.')
+    url = models.URLField(verbose_name='Destination URL', help_text='Target URL for the ShortURL.')
+    max = models.IntegerField(default=0, verbose_name='Max', help_text='Max ShortURL Views')
+    views = models.IntegerField(default=0, verbose_name='Views', help_text='Total ShortURL Views')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='ShortURL Created Date.')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='ShortURL Updated Date.')
+    objects = ShortURLsManager()
+
+    def __str__(self):
+        return f'<ShortURL(id={self.id}, user_id={self.user_id})>'
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Short URL'
+        verbose_name_plural = 'Short URLs'
 
 
 class SiteSettings(models.Model):
@@ -69,7 +85,7 @@ class SiteSettings(models.Model):
     site_url = models.URLField(default=settings.SITE_URL, max_length=128, verbose_name='Site URL')
 
     def __str__(self):
-        return f'<Settings(site_url={self.site_url})>'
+        return f'<SiteSettings(site_url={self.site_url})>'
 
     def save(self, *args, **kwargs):
         if self.__class__.objects.count():
@@ -77,7 +93,7 @@ class SiteSettings(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        verbose_name = 'Settings'
+        verbose_name = 'Setting'
         verbose_name_plural = 'Settings'
 
 
@@ -88,10 +104,10 @@ class Webhooks(models.Model):
     guild_id = models.CharField(max_length=32, blank=True, null=True)
     channel_id = models.CharField(max_length=32, blank=True, null=True)
     active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Date Created', help_text='Hook Created Date.')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Date Edited', help_text='Hook Edited Date.')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Hook Created Date.')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='Hook Updated Date.')
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    # objects = WebhooksManager()
+    objects = WebhooksManager()
 
     def __str__(self):
         return f'<Webhook(id={self.id} hook_id={self.hook_id} owner={self.owner.id})>'

@@ -1,10 +1,8 @@
 from django.contrib import admin
 
-from .models import Files, FileStats, SiteSettings, Webhooks
-
+from .models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 
 # admin.site.register(SiteSettings)
-# admin.site.register(Webhooks)
 
 
 @admin.register(Files)
@@ -32,12 +30,23 @@ class FileStatsAdmin(admin.ModelAdmin):
         return obj.user
 
 
+@admin.register(ShortURLs)
+class ShortURLsAdmin(admin.ModelAdmin):
+    model = ShortURLs
+    list_display = ('id', 'short', 'views', 'max', 'url', 'user', 'created_at',)
+    list_filter = ('user',)
+    readonly_fields = ('id', 'short', 'views', 'user', 'created_at',)
+    search_fields = ('id', 'short', 'user',)
+    ordering = ('-created_at',)
+
+
 @admin.register(Webhooks)
 class WebhooksAdmin(admin.ModelAdmin):
     model = Webhooks
     list_display = ('id', 'hook_id', 'guild_id', 'channel_id', 'owner', 'created_at',)
+    list_filter = ('owner',)
     readonly_fields = ('id', 'hook_id', 'guild_id', 'channel_id', 'owner', 'created_at',)
-    search_fields = ('id', 'hook_id', 'guild_id', 'channel_id', 'owner', 'created_at',)
+    search_fields = ('id', 'hook_id', 'guild_id', 'channel_id', 'owner',)
     ordering = ('-created_at',)
 
 

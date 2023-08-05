@@ -6,11 +6,16 @@ class FilesManager(models.Manager):
         return self.filter(user=request.user, **kwargs)
 
 
-# class FileStatsManager(models.Manager):
-#     def get_request(self, request, **kwargs):
-#         return self.filter(user=request.user, **kwargs)
+class FileStatsManager(models.Manager):
+    def get_request(self, request, **kwargs):
+        return self.filter(user=request.user, **kwargs)
 
 
-# class WebhooksManager(models.Manager):
-#     def get_request(self, request, **kwargs):
-#         return self.filter(user=request.user, **kwargs)
+class ShortURLsManager(models.Manager):
+    def get_request(self, request, **kwargs):
+        return self.filter(user=request.user, **kwargs)
+
+
+class WebhooksManager(models.Manager):
+    def get_request(self, request, **kwargs):
+        return self.filter(owner=request.user, **kwargs)

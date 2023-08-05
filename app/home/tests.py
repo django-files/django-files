@@ -15,7 +15,7 @@
 #             'oauth:login': 302,
 #             'home:index': 200,
 #             'home:gallery': 200,
-#             'home:files': 200,
+#             'home:uppy': 200,
 #             'home:settings': 200,
 #             'home:gen-sharex': 200,
 #             'home:gen-flameshot': 200,

@@ -3,7 +3,7 @@ import requests
 
 file_name = 'example-file-name.txt'
 
-upload_url = '{{ site_url }}{% url "home:upload" %}'
+upload_url = '{{ site_url }}{% url "home:api-upload" %}'
 auth = '{{ auth }}'
 expire = '{{ expire }}'
 
