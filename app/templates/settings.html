@@ -18,26 +18,22 @@
               <li class="breadcrumb-item"><a href="#token">Token</a></li>
             </ol>
           </nav>
-
         <h1>Settings</h1>
         <div class="pt-4 my-md-2">
             <h3 id="general">General</h3>
 
-            <form class="row g-2" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings' %}">
-                <div class="col-12">
-                    <div class="form-floating mb-3">
+            <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings' %}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="site_url" class="form-label">Site URL</label>
                         <input type="text" class="form-control" id="site_url" name="site_url" placeholder=""
                             value="{{ site_settings.site_url }}" aria-describedby="site_url-help site_url-invalid">
-                        <label for="site_url">Site URL</label>
                         <div id="site_url-help" class="form-text">
                             This feature is currently NOT Implemented.
                         </div>
                         <div id="site_url-invalid" class="invalid-feedback"></div>
                     </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-auto">
+                    <div class="col-md-6">
                         <label for="default_expire" class="form-label">Default Expire</label>
                         <input type="text" class="form-control" id="default_expire" name="default_expire"
                             value="{{ user.default_expire }}" aria-describedby="default_expire-help default_expire-invalid">
