@@ -28,8 +28,8 @@ def home_view(request):
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
     files = Files.objects.get_request(request)
+    # stats = Files.objects.get_request(request)
     stats = FileStats.objects.filter(user=request.user)
-    log.debug(stats)
     context = {'files': files, 'stats': stats}
     return render(request, 'home.html', context)
 
@@ -52,9 +52,7 @@ def settings_view(request):
     log.debug('settings_view: %s', request.method)
     # site_settings = SiteSettings.objects.get(pk=1)
     site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
-    log.debug('site_settings: %s', site_settings)
     if request.method in ['GET', 'HEAD']:
-        log.debug(0)
         # webhooks = Webhooks.objects.all()
         webhooks = Webhooks.objects.filter(owner=request.user)
         context = {'webhooks': webhooks, 'site_settings': site_settings}
@@ -82,6 +80,7 @@ def settings_view(request):
     if request.user.nav_color_2 != form.cleaned_data['nav_color_2']:
         request.user.nav_color_2 = form.cleaned_data['nav_color_2']
         data['reload'] = True
+
     request.user.save()
     if data['reload']:
         messages.success(request, 'Settings Saved Successfully.')

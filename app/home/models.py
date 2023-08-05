@@ -53,6 +53,7 @@ class FileStats(models.Model):
     user = models.ForeignKey(CustomUser, blank=True, null=True, on_delete=models.CASCADE)
     stats = models.JSONField(verbose_name='Stats JSON')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Stats Created', help_text='Stats Created Date.')
+    # objects = FileStatsManager()
 
     def __str__(self):
         return f'<FileStats(id={self.id}, user_id={self.user_id})>'
@@ -90,6 +91,7 @@ class Webhooks(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Date Created', help_text='Hook Created Date.')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Date Edited', help_text='Hook Edited Date.')
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    # objects = WebhooksManager()
 
     def __str__(self):
         return f'<Webhook(id={self.id} hook_id={self.hook_id} owner={self.owner.id})>'
