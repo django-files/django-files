@@ -62,6 +62,7 @@ def settings_view(request):
 
     log.debug(request.POST)
     form = SettingsForm(request.POST)
+    print(form['remove_exif_geo'])
     if not form.is_valid():
         return JsonResponse(form.errors, status=400)
     data = {'reload': False}
@@ -81,6 +82,10 @@ def settings_view(request):
     if request.user.nav_color_2 != form.cleaned_data['nav_color_2']:
         request.user.nav_color_2 = form.cleaned_data['nav_color_2']
         data['reload'] = True
+
+    print(form.cleaned_data['remove_exif_geo'])
+    request.user.remove_exif_geo = form.cleaned_data['remove_exif_geo']
+    request.user.show_exif_preview = form.cleaned_data['show_exif_preview']
 
     request.user.save()
     if data['reload']:

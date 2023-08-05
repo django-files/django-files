@@ -19,7 +19,7 @@ services:
         - "traefik.http.services.STACK_NAME.loadbalancer.server.port=80"
         - "traefik.http.services.STACK_NAME.loadbalancer.server.scheme=http"
     volumes:
-      - ${APP_FILES:-./app/static}:/data/static
+      - static_dir:/data/static
       - media_dir:/data/media
       - ${APP_FILES:-./app}:/app
 #    secrets:
@@ -38,8 +38,7 @@ services:
     image: djangofiles-app:${VERSION:-latest}
     env_file: settings.env
     command: >
-      sh -c "python manage.py migrate &&
-      python manage.py runserver_plus 0.0.0.0:9000"
+      sh -c "python manage.py runserver_plus 0.0.0.0:9000"
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:9000/app-health-check/"]
       interval: 1m

@@ -11,6 +11,8 @@ class SettingsForm(forms.Form):
     default_color = forms.CharField(max_length=7)
     nav_color_1 = forms.CharField(max_length=7)
     nav_color_2 = forms.CharField(max_length=7)
+    remove_exif_geo = forms.BooleanField(required=False)
+    show_exif_preview = forms.BooleanField(required=False)
 
     def clean_default_color(self):
         data = self.cleaned_data['default_color'].strip().lower()
