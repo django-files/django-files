@@ -8,20 +8,18 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-    <div class="container-fluid mt-2 p-5">
+    <div class="container-fluid py-3 px-4">
 
-
-        <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+        <nav class="py-2" aria-label="breadcrumb" style="--bs-breadcrumb-divider: '|';">
             <ol class="breadcrumb">
               <li class="breadcrumb-item"><a href="#">General</a></li>
               <li class="breadcrumb-item"><a href="#webhooks">Webhooks</a></li>
-              <li class="breadcrumb-item"><a href="#uploaders">Uploaders</a></li>
-              <li class="breadcrumb-item"><a href="#tokens">Tokens</a></li>
+              <li class="breadcrumb-item"><a href="#upload">Upload</a></li>
+              <li class="breadcrumb-item"><a href="#token">Token</a></li>
             </ol>
           </nav>
 
-        <h1 class="pt-3">Settings</h1>
-
+        <h1>Settings</h1>
 
         <form class="row g-2" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings' %}">
             <div class="col-12">
@@ -49,7 +47,7 @@
             </div>
             <div class="row pt-3">
                 <div class="col-auto">
-                    <label for="default_color" class="form-label">Color</label>
+                    <label for="default_color" class="form-label">Embed</label>
                     <input type="color" class="form-control form-control-color" id="default_color" name="default_color"
                         value="{{ user.default_color }}" title="Default Color" aria-describedby="default_color-invalid">
                     <div id="default_color-invalid" class="invalid-feedback"></div>
@@ -117,7 +115,7 @@
             {% endcache %}
         </div>
         <div class="pt-4 my-md-5 border-top">
-            <h3 id="uploaders">Uploaders</h3>
+            <h3 id="upload">Upload</h3>
             <p class="lead">Django Files is backwards compatible with <a href="https://zipline.diced.vercel.app/docs/api/upload" target="_blank">
                 Zipline</a> client upload settings.</p>
             <div class="row g-2">
@@ -203,6 +201,8 @@
                             <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#cli-code">
                                 <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
                             <p><kbd id="cli-code">python3 -m pip install zipline-cli</kbd></p>
+                            <p>or alternatively from GitHub:</p>
+                            <p><kbd id="cli-code">python3 -m pip install git+https://github.com/cssnr/zipline-cli.git</kbd></p>
                             <p>For more information and usage visit
                                 <a href="https://github.com/cssnr/zipline-cli" target="_blank">
                                     Zipline CLI on GitHub</a></p>
@@ -212,7 +212,7 @@
             </div>
         </div>
         <div class="pt-4 my-md-5 border-top">
-            <h3 id="tokens">Authorization Token</h3>
+            <h3 id="token">Authorization Token</h3>
             <p>Treat this token like a password.</p>
             <p><a class="btn btn-lg btn-outline-light clip" role="button" data-clipboard-text="{{ user.authorization }}">
                 <i class="fa-solid fa-key me-2"></i> Copy Token</a></p>
