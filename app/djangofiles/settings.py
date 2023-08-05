@@ -81,10 +81,15 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'home.tasks.delete_expired_files',
         'schedule': datetime.timedelta(minutes=config('DELETE_EXPIRED_MIN', 15, int)),
     },
-    # 'process_stats': {
-    #     'task': 'home.tasks.process_stats',
-    #     'schedule': crontab(minute=0, hour=0),
-    # },
+    'process_stats': {
+        'task': 'home.tasks.process_stats',
+        'schedule': datetime.timedelta(minutes=config('PROCESS_STATS_MIN', 30, int)),
+    },
+    'cleanup_old_stats': {
+        'task': 'home.tasks.cleanup_old_stats',
+        'schedule': datetime.timedelta(hours=config('CLEANUP_STATS_HOUR', 24, int)),
+        # 'schedule': crontab(minute=0, hour=0),
+    },
 }
 
 CHANNEL_LAYERS = {

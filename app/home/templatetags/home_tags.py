@@ -29,11 +29,12 @@ def single_type(mime_type):
     return str(mime_type.split('/', 1)[0]).lower()
 
 
-# @register.filter(name='bytes_human')
-# def bytes_human(num):
-#     suffix = 'B'
-#     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
-#         if abs(num) < 1024.0:
-#             return f"{num:3.1f}{unit}{suffix}"
-#         num /= 1024.0
-#     return f"{num:.1f}Yi{suffix}"
+@register.filter(name='bytes_human')
+def bytes_human(num):
+    # TODO: Update JSON to Include this...
+    suffix = 'B'
+    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
+        if abs(num) < 1024.0:
+            return f"{num:3.1f}{unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}Yi{suffix}"
