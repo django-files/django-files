@@ -224,6 +224,8 @@ def gen_short(vanity, length=4):
 
 
 def get_auth_user(request):
+    if request.user.is_authenticated:
+        return request.user
     authorization = request.headers.get('Authorization') or request.headers.get('Token')
     if not authorization:
         return

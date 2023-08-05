@@ -1,4 +1,5 @@
 {% load home_tags %}
+{% load tz %}
 
 <span class="h2" id="shorts">Short URL</span>
 <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#shorts"
@@ -7,6 +8,12 @@
 {% if not shorts %}
     <p class="lead">Short URLs will show up here once created...</p>
 {% else %}
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
+               aria-label="Recipient's username" aria-describedby="create-short-btn">
+        <button class="btn btn-outline-success" type="button" id="create-short-btn"
+                data-target-url="{% url 'home:shorten' %}">Short It</button>
+    </div>
     <table class="table table-sm table-striped table-hover">
         <thead>
         <tr>
