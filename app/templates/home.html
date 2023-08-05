@@ -11,16 +11,24 @@
     <div class="container-fluid mt-2">
 
         <h1>Django Files</h1>
-        <p>New files will show up here.</p>
 
-        <div class="d-flex align-items-center">
-            <span class="h3" id="files">Files</span>
-            <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#files"
-                     role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2"></i></a></span>
-        </div>
+        {% cache 86400 stats request.user %}
+            {% include 'include/stats.html' with stats=stats|first %}
+        {% endcache %}
+
+{#        <div class="d-flex align-items-center">#}
+{#            <span class="h3" id="files">Files</span>#}
+{#            <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#files"#}
+{#                     role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2"></i></a></span>#}
+{#        </div>#}
+
+        <span class="h2" id="files">File List</span>
+        <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#files"
+                 role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2 mb-1"></i></a></span>
 
         {% cache 86400 files_home request.user %}
             {% if files %}
+                <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
                 <p class="d-xl-none text-muted mb-0"><em>Some columns hidden due to narrow viewport.</em></p>
                 <table class="table table-hover table-responsive" id="files-table">
                     <thead>

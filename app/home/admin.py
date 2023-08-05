@@ -1,16 +1,50 @@
 from django.contrib import admin
 
-from .models import Files, Webhooks, SiteSettings
+from .models import Files, FileStats, SiteSettings, Webhooks
 
 
-admin.site.register(Webhooks)
-admin.site.register(SiteSettings)
+# admin.site.register(SiteSettings)
+# admin.site.register(Webhooks)
 
 
 @admin.register(Files)
 class FilesAdmin(admin.ModelAdmin):
     model = Files
-    list_display = ('id', 'name', 'size', 'mime', 'date', 'user',)
-    readonly_fields = ('id', 'name', 'size', 'mime', 'date', 'user',)
-    search_fields = ('id', 'name', 'size', 'mime', 'date', 'user',)
+    list_display = ('id', 'file', 'size', 'expr', 'mime', 'user', 'date',)
+    # list_editable = ('expr',)
+    list_filter = ('user', 'expr', 'mime',)
+    readonly_fields = ('id', 'file', 'size', 'mime', 'user', 'date',)
+    search_fields = ('id', 'file', 'size', 'expr', 'mime', 'user', 'date',)
     ordering = ('-date',)
+
+
+@admin.register(FileStats)
+class FileStatsAdmin(admin.ModelAdmin):
+    model = FileStats
+    list_display = ('id', 'user', 'created_at',)
+    list_filter = ('user',)
+    readonly_fields = ('id', 'user', 'created_at', 'stats')
+    search_fields = ('id', 'user', 'created_at',)
+    ordering = ('-created_at',)
+
+    @admin.display(empty_value="Total")
+    def view_user(self, obj):
+        return obj.user
+
+
+@admin.register(Webhooks)
+class WebhooksAdmin(admin.ModelAdmin):
+    model = Webhooks
+    list_display = ('id', 'hook_id', 'guild_id', 'channel_id', 'owner', 'created_at',)
+    readonly_fields = ('id', 'hook_id', 'guild_id', 'channel_id', 'owner', 'created_at',)
+    search_fields = ('id', 'hook_id', 'guild_id', 'channel_id', 'owner', 'created_at',)
+    ordering = ('-created_at',)
+
+
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(admin.ModelAdmin):
+    model = SiteSettings
+    list_display = ('id', 'site_url',)
+    readonly_fields = ('id',)
+    # search_fields = ('id', 'site_url',)
+    # ordering = ('-created_at',)

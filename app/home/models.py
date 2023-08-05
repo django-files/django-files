@@ -37,6 +37,10 @@ class Files(models.Model):
 
     def get_size(self):
         num = self.size
+        return self.get_size_of(num)
+
+    @staticmethod
+    def get_size_of(num):
         for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
             if abs(num) < 1024.0:
                 return f"{num:3.1f} {unit}B"
@@ -44,23 +48,20 @@ class Files(models.Model):
         return f"{num:.1f} YiB"
 
 
-class Webhooks(models.Model):
+class FileStats(models.Model):
     id = models.AutoField(primary_key=True)
-    url = models.URLField(unique=True, verbose_name='Webhook URL')
-    hook_id = models.CharField(max_length=32, blank=True, null=True)
-    guild_id = models.CharField(max_length=32, blank=True, null=True)
-    channel_id = models.CharField(max_length=32, blank=True, null=True)
-    active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Date Created', help_text='Hook Created Date.')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Date Edited', help_text='Hook Edited Date.')
-    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, blank=True, null=True, on_delete=models.CASCADE)
+    stats = models.JSONField(verbose_name='Stats JSON')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Stats Created', help_text='Stats Created Date.')
+    # objects = FileStatsManager()
 
     def __str__(self):
-        return f'<Webhook(id={self.id} hook_id={self.hook_id} owner={self.owner.id})>'
+        return f'<FileStats(id={self.id}, user_id={self.user_id})>'
 
     class Meta:
-        verbose_name = 'Webhook'
-        verbose_name_plural = 'Webhooks'
+        ordering = ['-created_at']
+        verbose_name = 'FileStats'
+        verbose_name_plural = 'FileStats'
 
 
 class SiteSettings(models.Model):
@@ -80,20 +81,22 @@ class SiteSettings(models.Model):
         verbose_name_plural = 'Settings'
 
 
-# class FileStats(models.Model):
-#     id = models.AutoField(primary_key=True)
-#     site_url = models.URLField(max_length=128, unique=True, verbose_name='Site URL')
-#     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-#     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Date Created', help_text='Hook Created Date.')
-#
-#     def __str__(self):
-#         return f'<FileStats(user={self.site_url})>'
-#
-#     def save(self, *args, **kwargs):
-#         if self.__class__.objects.count():
-#             self.pk = self.__class__.objects.first().pk
-#         super().save(*args, **kwargs)
-#
-#     class Meta:
-#         verbose_name = 'Settings'
-#         verbose_name_plural = 'Settings'
+class Webhooks(models.Model):
+    id = models.AutoField(primary_key=True)
+    url = models.URLField(unique=True, verbose_name='Webhook URL')
+    hook_id = models.CharField(max_length=32, blank=True, null=True)
+    guild_id = models.CharField(max_length=32, blank=True, null=True)
+    channel_id = models.CharField(max_length=32, blank=True, null=True)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Date Created', help_text='Hook Created Date.')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Date Edited', help_text='Hook Edited Date.')
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    # objects = WebhooksManager()
+
+    def __str__(self):
+        return f'<Webhook(id={self.id} hook_id={self.hook_id} owner={self.owner.id})>'
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Webhook'
+        verbose_name_plural = 'Webhooks'

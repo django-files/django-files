@@ -9,10 +9,13 @@ from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from pytimeparse2 import parse
+# import plotly.graph_objects as go
+# import plotly.express as px
+# import plotly.io as pio
 
 from oauth.models import CustomUser
 from .forms import SettingsForm
-from .models import Files, Webhooks, SiteSettings
+from .models import Files, FileStats, SiteSettings, Webhooks
 from .tasks import process_file_upload
 
 log = logging.getLogger('app')
@@ -24,7 +27,10 @@ def home_view(request):
     View  /
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
-    context = {'files': Files.objects.get_request(request)}
+    files = Files.objects.get_request(request)
+    # stats = Files.objects.get_request(request)
+    stats = FileStats.objects.filter(user=request.user)
+    context = {'files': files, 'stats': stats}
     return render(request, 'home.html', context)
 
 
@@ -46,9 +52,7 @@ def settings_view(request):
     log.debug('settings_view: %s', request.method)
     # site_settings = SiteSettings.objects.get(pk=1)
     site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
-    log.debug('site_settings: %s', site_settings)
     if request.method in ['GET', 'HEAD']:
-        log.debug(0)
         # webhooks = Webhooks.objects.all()
         webhooks = Webhooks.objects.filter(owner=request.user)
         context = {'webhooks': webhooks, 'site_settings': site_settings}
@@ -76,6 +80,7 @@ def settings_view(request):
     if request.user.nav_color_2 != form.cleaned_data['nav_color_2']:
         request.user.nav_color_2 = form.cleaned_data['nav_color_2']
         data['reload'] = True
+
     request.user.save()
     if data['reload']:
         messages.success(request, 'Settings Saved Successfully.')
@@ -143,6 +148,35 @@ def upload_view(request):
     except Exception as error:
         log.exception(error)
         return JsonResponse({'error': str(error)}, status=500)
+
+
+# @csrf_exempt
+# def get_graph_ajax(request):
+#     # View: /ajax/graph/
+#     log.debug('get_graph_ajax')
+#     stats = FileStats.objects.all()
+#     fig = render_graph_fig(stats)
+#     fig.update_layout(margin=dict(t=10, l=16, b=10, r=10))
+#     fig_html = fig.to_html(
+#         include_plotlyjs=False,
+#         full_html=False,
+#         config={'displaylogo': False},
+#     )
+#     return HttpResponse(fig_html)
+#
+#
+# def render_graph_fig(stats: FileStats.stats) -> go.Figure:
+#     dates, files = [], []
+#     for stat in stats:
+#         dates.append(stat)
+#         files.append(stat)
+#     lines = [('Files', files)]
+#     pio.templates.default = "plotly_dark"
+#     fig = go.Figure()
+#     for name, data in lines:
+#         fig.add_trace(go.Scatter(x=dates, y=data, name=name))
+#     fig.update_layout(xaxis_title='Date', yaxis_title='Count')
+#     return fig
 
 
 @login_required
