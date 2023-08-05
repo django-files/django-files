@@ -1,0 +1,135 @@
+version: '3.7'
+
+services:
+  nginx:
+    build: ./nginx
+    image: djangofiles-nginx:${VERSION:-latest}
+    deploy:
+      mode: global
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.constraint-label=traefik-public"
+        - "traefik.http.routers.STACK_NAME-http.rule=Host(${TRAEFIK_HOST:-``})"
+        - "traefik.http.routers.STACK_NAME-http.entrypoints=http"
+        - "traefik.http.routers.STACK_NAME-http.middlewares=https-redirect"
+        - "traefik.http.routers.STACK_NAME-https.rule=Host(${TRAEFIK_HOST:-``})"
+        - "traefik.http.routers.STACK_NAME-https.entrypoints=https"
+        - "traefik.http.routers.STACK_NAME-https.tls=true"
+        - "traefik.http.services.STACK_NAME.loadbalancer.server.port=80"
+        - "traefik.http.services.STACK_NAME.loadbalancer.server.scheme=http"
+    volumes:
+      - ${APP_FILES:-./app/static}:/data/static
+      - media_dir:/data/media
+      - ${APP_FILES:-./app}:/app
+#    secrets:
+#      - source: cssnr_basic_http_auth
+#        target: /etc/nginx/auth.users
+    depends_on:
+      - app
+#      - flower
+#      - redis-commander
+#      - phpmyadmin
+    ports:
+      - "80:80"
+
+  app:
+    build: ./app
+    image: djangofiles-app:${VERSION:-latest}
+    env_file: settings.env
+    command: >
+      sh -c "python manage.py migrate &&
+      python manage.py runserver_plus 0.0.0.0:9000"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9000/app-health-check/"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    deploy:
+      mode: global
+    volumes:
+      - static_dir:/data/static
+      - media_dir:/data/media
+      - ${APP_FILES:-./app}:/app
+    depends_on:
+      - redis
+
+  worker:
+    image: djangofiles-app:${VERSION:-latest}
+    env_file: settings.env
+    command: "celery -A djangofiles worker -l INFO -c 2"
+    deploy:
+      replicas: 1
+    volumes:
+      - media_dir:/data/media
+    depends_on:
+      - app
+      - redis
+
+  beat:
+    image: djangofiles-app:${VERSION:-latest}
+    env_file: settings.env
+    command: "celery -A djangofiles beat -l INFO -S django"
+    deploy:
+      replicas: 1
+    volumes:
+      - media_dir:/data/media
+    depends_on:
+      - app
+      - redis
+
+  redis:
+    image: redis:6-alpine
+    command: "redis-server --appendonly yes"
+    deploy:
+      replicas: 1
+    volumes:
+      - redis_data:/data
+
+#  redis-commander:
+#    image: ghcr.io/joeferner/redis-commander:latest
+#    environment:
+#      - REDIS_HOSTS=local:redis:6379:0,local:redis:6379:1
+#      - URL_PREFIX=/redis
+#      - TRUST_PROXY=true
+#    deploy:
+#      replicas: 1
+#    depends_on:
+#      - redis
+#
+#  flower:
+#    image: mher/flower:1.2
+#    env_file: settings.env
+#    deploy:
+#      replicas: 1
+#    volumes:
+#      - flower_data:/data
+#    depends_on:
+#      - app
+#      - redis
+#      - worker
+#
+#  phpmyadmin:
+#    image: phpmyadmin:latest
+#    env_file: settings.env
+#    environment:
+#      - APACHE_PORT=8082
+#      - PMA_ABSOLUTE_URI=/phpmyadmin/
+#      - PMA_HOST=${DATABASE_HOST}
+#      - PMA_PORT=${DATABASE_PORT}
+#      - PMA_USER=${DATABASE_USER}
+#      - PMA_PASSWORD=${DATABASE_PASS}
+#    deploy:
+#      replicas: 1
+#
+#secrets:
+#  cssnr_basic_http_auth:
+#    file: ~/basic_http_auth
+
+volumes:
+  static_dir:
+#  flower_data:
+  redis_data:
+  media_dir:
+  

@@ -35,12 +35,12 @@ steps:
     image: alpine
     commands:
       - echo DRONE_DEPLOY_TO $${DRONE_DEPLOY_TO}
-      - echo DRONE_SOURCE_BRANCH $${DRONE_SOURCE_BRANCH}
+      - echo DRONE_SOURCE_BRANCH $${DRONE_SOURCE_BRANCH\/\\/\/\-}
       - export ENV_NAME=$(if [ "$${DRONE_DEPLOY_TO}" = prod ];then echo 'prod';else echo 'dev';fi)
       - echo "ENV_NAME=$${ENV_NAME}" >> ./.environment
       - export TRAEFIK_HOST=$(if [ "$${DRONE_DEPLOY_TO}" = prod ];then echo $${PROD_HOST};else echo $${DEV_HOST};fi)
       - echo "TRAEFIK_HOST='$${TRAEFIK_HOST}'" >> ./.environment
-      - echo "VERSION=$${DRONE_SOURCE_BRANCH}" >> ./.environment
+      - echo "VERSION=$${DRONE_SOURCE_BRANCH\/\\/\/\-}" >> ./.environment
       - echo "STACK_NAME=$${ENV_NAME}_$${DRONE_REPO_OWNER}_$${DRONE_REPO_NAME}" >> ./.environment
       - echo  "ENV_FILE=$${CONFIGS_DIR}/services/$${DRONE_REPO_OWNER}/$${DRONE_REPO_NAME}/$${ENV_NAME}/$${CONFIG_FILE}" >> ./.environment
 
