@@ -27,54 +27,7 @@ $(document).ready(function() {
     // Get and set the csrf_token
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    // Define Hook Modal and Delete handlers
-    const deleteHookModal = new bootstrap.Modal('#delete-file-modal', {});
-    let hookID;
-    $('.delete-file-btn').click(function () {
-        hookID = $(this).data('hook-id');
-        console.log(hookID);
-        deleteHookModal.show();
-    });
-    $('#confirm-delete-hook-btn').click(function () {
-        if ($('#confirm-delete-hook-btn').hasClass('disabled')) { return; }
-        console.log(hookID);
-        $.ajax({
-            type: 'POST',
-            url: `/ajax/delete/file/${hookID}/`,
-            headers: {'X-CSRFToken': csrftoken},
-            beforeSend: function () {
-                console.log('beforeSend');
-                $('#confirm-delete-hook-btn').addClass('disabled');
-            },
-            success: function (response) {
-                console.log('response: ' + response);
-                deleteHookModal.hide();
-                console.log('removing #file-' + hookID);
-                let count = $('#files-table tr').length;
-                $('#file-' +hookID).remove();
-                if (count<=2) {
-                    console.log('removing #files-table@ #files-table');
-                    $('#files-table').remove();
-                }
-                let message = 'File ' + hookID + ' Successfully Removed.';
-                show_toast(message,'success');
-            },
-            error: function (xhr, status, error) {
-                console.log('xhr status: ' + xhr.status);
-                console.log('status: ' + status);
-                console.log('error: ' + error);
-                deleteHookModal.hide();
-                let message = xhr.status + ': ' + error
-                show_toast(message,'danger', '15000');
-            },
-            complete: function () {
-                console.log('complete');
-                $('#confirm-delete-hook-btn').removeClass('disabled');
-            }
-        });
-    });
-
-    // Handle profile save button click and response
+    // Handle update stats click
     $('#update-stats-btn').click(function () {
         $.ajax({
             url: $('#update-stats-btn').attr('data-target-url'),
@@ -101,9 +54,12 @@ $(document).ready(function() {
         });
     });
 
-    // Generate Short URLs
+    // Generate Short URLs BUTTON
     $('#create-short-btn').click(function () {
         let data= { url: $("#long-url").val()};
+        if (!data) {
+            alert(data.responseText);
+        }
         $.ajax({
             url: $('#create-short-btn').attr('data-target-url'),
             type: 'POST',
@@ -114,15 +70,17 @@ $(document).ready(function() {
             },
             success: function(data, textStatus, jqXHR){
                 console.log('Status: '+jqXHR.status+', Data: '+JSON.stringify(data));
-                alert('Stats Update Submitted. Page will now Reload...');
+                alert('Short Created: ' + data['url']);
+                location.reload();
             },
             complete: function(data, textStatus ){
-                console.log(data.responseJSON['url']);
-                location.reload();
+                //
             },
             error: function (data, status, error) {
                 console.log('Status: '+data.status+', Response: '+data.responseText);
-                alert(data.responseText)
+                // alert(data.responseText);
+                let message = data.status + ': ' + data.responseJSON['error']
+                show_toast(message,'danger', '6000');
             },
             cache: false,
             contentType: false,

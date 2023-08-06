@@ -179,31 +179,29 @@ def shorten_view(request):
     """
     View  /shorten/ and /api/shorten
     """
+    body = request.body.decode()
+    log.debug(body)
     log.debug('-'*40)
     log.debug(request.headers)
     log.debug('-'*40)
     log.debug(request.POST)
-    log.debug('-'*40)
-    log.debug(request.body)
-    log.debug('-'*40)
     try:
         user = get_auth_user(request)
         if not user:
             return JsonResponse({'error': 'Invalid Authorization'}, status=401)
 
-        # We Are Go
-        views = request.headers.get('max-views')
         url = request.headers.get('url')
         vanity = request.headers.get('vanity')
+        max_views = request.headers.get('max-views')
         if not url:
             try:
-                body = json.loads(request.body.decode())
-                log.debug('body: %s', body)
-                views = body.get('max-views')
-                url = body.get('url')
-                vanity = body.get('vanity')
-            except Exception:
-                pass
+                data = json.loads(body)
+                log.debug('data: %s', data)
+                url = data.get('url', url)
+                vanity = data.get('vanity', vanity)
+                max_views = data.get('max-views', max_views)
+            except Exception as error:
+                log.debug(error)
         if not url:
             return JsonResponse({'error': 'Missing Required Value: url'}, status=400)
 
@@ -215,7 +213,7 @@ def shorten_view(request):
         url = ShortURLs.objects.create(
             url=url,
             short=short,
-            views=views or 0,
+            max=max_views or 0,
             user=user,
         )
         site_settings, _ = SiteSettings.objects.get_or_create(pk=1)

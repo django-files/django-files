@@ -3,28 +3,39 @@ $(document).ready(function() {
     // Get and set the csrf_token
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    // Generate Short URLs
-    $('#create-short-btn').click(function () {
-        let data= { url: $("#long-url").val()};
+    // Handle Shorts FORM Submit
+    $('#shorts-form').on('submit', function(event){
+        event.preventDefault();
+        let formData = new FormData($(this)[0]);
+
+        formData.forEach((value, key) => formData[key] = value);
+        // let json = JSON.stringify(formData);
+
         $.ajax({
-            url: $('#create-short-btn').attr('data-target-url'),
+            // url: window.location.pathname,
+            url: $('#shorts-form').attr('action'),
             type: 'POST',
             headers: {'X-CSRFToken': csrftoken},
-            data: JSON.stringify(data),
+            // data: formData,
+            data: JSON.stringify(formData),
             beforeSend: function( jqXHR ){
                 //
             },
             success: function(data, textStatus, jqXHR){
                 console.log('Status: '+jqXHR.status+', Data: '+JSON.stringify(data));
-                alert('Stats Update Submitted. Page will now Reload...');
+                alert('Short Created: ' + data['url']);
+                location.reload();
+                // let message = 'Short Created: ' + data['url'];
+                // show_toast(message,'success', '6000');
             },
             complete: function(data, textStatus ){
-                console.log(data.responseJSON['url']);
-                location.reload();
+                //
             },
             error: function (data, status, error) {
                 console.log('Status: '+data.status+', Response: '+data.responseText);
-                alert(data.responseText)
+                // TODO: Replace this with real error handling
+                let message = data.status + ': ' + data.responseJSON['error']
+                show_toast(message,'danger', '6000');
             },
             cache: false,
             contentType: false,

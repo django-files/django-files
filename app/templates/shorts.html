@@ -10,25 +10,37 @@
 
 {% block body %}
     <div class="container-fluid py-3 px-4">
+{#        {% cache 86400 shorts_shorts request.user %}#}
 
-        <h1 id="shorts">URL Shorts</h1>
+        <h1>Shorts</h1>
 
-        {% cache 86400 shorts_shorts request.user %}
             {% if not shorts %}
                 <p class="lead">Short URLs will show up here once created...</p>
             {% else %}
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
-                           aria-label="Recipient's username" aria-describedby="create-short-btn">
-                    <button class="btn btn-outline-success" type="button" id="create-short-btn"
-                            data-target-url="{% url 'home:shorten' %}">Short It</button>
-                </div>
+                <form name="shorts-form" id="shorts-form" action="{% url 'home:shorten' %}" data-target-url="{% url 'home:shorten' %}">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <input type="text" class="form-control" placeholder="Reeeaaalllyyy Long URL" aria-label="URL"
+                                   id="url" name="url" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <input type="text" class="form-control" placeholder="Vanity Name" aria-label="Vanity"
+                                   id="vanity" name="vanity">
+                        </div>
+                        <div class="col-sm-3">
+                            <input type="text" class="form-control" placeholder="Max Views" aria-label="Max-Views"
+                                   id="max-views" name="max-views">
+                        </div>
+                        <div class="col-sm-3 d-grid">
+                            <button class="btn btn-outline-success" type="submit">Create</button>
+                        </div>
+                    </div>
+                </form>
                 <p class="lead">Total Shorts: <strong>{{ shorts|length }}</strong></p>
-                {% include 'include/shorts-table.html' with shorts=shorts|slice:":10"  %}
-
+                {% include 'include/shorts-table.html' with shorts=shorts  %}
             {% endif %}
-        {% endcache %}
 
+{#    {% endcache %}#}
     </div>
 {% endblock %}
 

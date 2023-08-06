@@ -33,12 +33,10 @@
         {% endcache %}
 
         {% cache 86400 shorts_home request.user %}
-            <span class="h2" id="shorts">Shorts</span>
-            <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#shorts"
-                     role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2 mb-1"></i></a></span>
-            <div class="input-group mb-3">
+            <h2 id="shorts">Shorts</h2>
+            <div class="input-group my-2">
                 <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
-                       aria-label="Recipient's username" aria-describedby="create-short-btn">
+                       aria-label="Recipient's username" aria-describedby="create-short-btn" required>
                 <button class="btn btn-outline-success" type="button" id="create-short-btn"
                         data-target-url="{% url 'home:shorten' %}">Short It</button>
             </div>
@@ -54,9 +52,7 @@
         {% endcache %}
 
         {% cache 86400 files_home request.user %}
-            <span class="h2" id="files">Files</span>
-            <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#files"
-                     role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2 mb-1"></i></a></span>
+            <h2 id="files">Files</h2>
             {% if files %}
                 <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
                 {% include 'include/files-table.html' with files=files|slice:":10"  %}
@@ -75,5 +71,5 @@
 {% block tail %}
     <script type="text/javascript" src="{% static 'main/js/home.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/shorts.js' %}"></script>
-    <script type="text/javascript" src="{% static 'main/js/files.js' %}"></script>
+{#    <script type="text/javascript" src="{% static 'main/js/files.js' %}"></script>#}
 {% endblock %}
