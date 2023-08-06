@@ -6,9 +6,9 @@ $(document).ready(function() {
     // Handle Shorts FORM Submit
     $('#shorts-form').on('submit', function(event){
         event.preventDefault();
-        let formData = new FormData($(this)[0]);
+        let data = new FormData($(this)[0]);
 
-        formData.forEach((value, key) => formData[key] = value);
+        data.forEach((value, key) => data[key] = value);
         // let json = JSON.stringify(formData);
 
         $.ajax({
@@ -17,7 +17,7 @@ $(document).ready(function() {
             type: 'POST',
             headers: {'X-CSRFToken': csrftoken},
             // data: formData,
-            data: JSON.stringify(formData),
+            data: JSON.stringify(data),
             beforeSend: function( jqXHR ){
                 //
             },

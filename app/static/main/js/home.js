@@ -55,15 +55,19 @@ $(document).ready(function() {
     });
 
     // Generate Short URLs BUTTON
-    $('#create-short-btn').click(function () {
+    // $('#create-short-btn').click(function () {
+    $('#quick-short-form').on('submit', function(event){
         let data= { url: $("#long-url").val()};
-        if (!data) {
-            alert(data.responseText);
-        }
+        event.preventDefault();
+        // if (!data) {
+        //     alert('Missing URL');
+        // }
         $.ajax({
-            url: $('#create-short-btn').attr('data-target-url'),
+            // url: $('#create-short-btn').attr('data-target-url'),
+            url: $('#quick-short-form').attr('action'),
             type: 'POST',
             headers: {'X-CSRFToken': csrftoken},
+            // data: JSON.stringify(data),
             data: JSON.stringify(data),
             beforeSend: function( jqXHR ){
                 //

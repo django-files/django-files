@@ -34,12 +34,14 @@
 
         {% cache 86400 shorts_home request.user %}
             <h2 id="shorts">Shorts</h2>
-            <div class="input-group my-2">
-                <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
-                       aria-label="Recipient's username" aria-describedby="create-short-btn" required>
-                <button class="btn btn-outline-success" type="button" id="create-short-btn"
-                        data-target-url="{% url 'home:shorten' %}">Short It</button>
-            </div>
+            <form id="quick-short-form" action="{% url 'home:shorten' %}">
+                <div class="input-group my-2">
+                    <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
+                           aria-label="Recipient's username" aria-describedby="create-short-btn" required>
+                    <button class="btn btn-outline-success" type="submit" id="create-short-btn"
+                            data-target-url="{% url 'home:shorten' %}">Short It</button>
+                </div>
+            </form>
             {% if not shorts %}
                 <p class="lead">Short URLs will show up here once created...</p>
             {% else %}
