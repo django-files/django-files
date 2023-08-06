@@ -27,7 +27,7 @@
                     <p><a class="btn btn-sm btn-outline-light" role="button" id="update-stats-btn"
                           data-target-url="{% url 'home:update-stats' %}">
                         <i class="fa-solid fa-chart-bar"></i> Process Stats</a>{% if stats %}
-                        Updated: {{ stats.created_at|localtime }}{% endif %}</p>
+                        <span class="d-inline-block">Updated: {{ stats.created_at|localtime }}</span>{% endif %}</p>
                 {% endwith %}
             {% endif %}
         {% endcache %}
