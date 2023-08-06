@@ -63,7 +63,7 @@ def clear_settings_cache():
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 0, 'countdown': 5})
-def process_file_upload(pk, strip_geo=False, strip_exif=False):
+def process_file_upload(pk):
     # Process new file upload
     log.info('process_file_upload: %s', pk)
     file = Files.objects.get(pk=pk)
@@ -79,7 +79,7 @@ def process_file_upload(pk, strip_geo=False, strip_exif=False):
         file.size = file.file.size
         if file.mime in ['image/jpeg', 'image/png']:
             image = Image.open(file.file.path)
-            if strip_exif:
+            if file.user.remove_exif:
                 log.debug("Stripping EXIF metadata %s", pk)
                 new = Image.new(image.mode, image.size)
                 new.putdata(image.getdata())
@@ -93,7 +93,7 @@ def process_file_upload(pk, strip_geo=False, strip_exif=False):
                     ExifTags.TAGS[k]: v for k, v in exif.items()
                     if k in ExifTags.TAGS and type(v) not in [bytes, TiffImagePlugin.IFDRational]
                     }
-                if strip_geo:
+                if file.user.remove_exif_geo:
                     log.debug("Stripping EXIF GEO metadata %s", pk)
                     exif[0x8825] = None
                     image.save(file.file.path, exif=exif)

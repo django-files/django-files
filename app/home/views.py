@@ -112,7 +112,7 @@ def uppy_view(request):
     )
     if not file:
         return HttpResponse(status=400)
-    process_file_upload.delay(file.pk, strip_geo=request.user.remove_exif_geo, strip_exif=request.user.remove_exif)
+    process_file_upload.delay(file.pk)
     return HttpResponse()
 
 
@@ -137,7 +137,7 @@ def upload_view(request):
         )
         if not file:
             return JsonResponse({'error': 'File Not Created'}, status=400)
-        process_file_upload.delay(file.pk, strip_geo=request.user.remove_exif_geo, strip_exif=request.user.remove_exif)
+        process_file_upload.delay(file.pk)
         data = {
             'files': [file.get_url()],
             'url': file.get_url(),
