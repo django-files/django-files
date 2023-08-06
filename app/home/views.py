@@ -208,6 +208,10 @@ def shorten_view(request):
         log.debug('url: %s', url)
         if not validators.url(url):
             return JsonResponse({'error': 'Unable to Validate URL'}, status=400)
+        if max_views and not str(max_views).isdigit():
+            return JsonResponse({'error': 'max-views Must be an Integer'}, status=400)
+        if vanity and not validators.slug(vanity):
+            return JsonResponse({'error': 'vanity Must be a Slug'}, status=400)
         short = gen_short(vanity)
         log.debug('short: %s', short)
         url = ShortURLs.objects.create(
