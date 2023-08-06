@@ -18,7 +18,7 @@ from pytimeparse2 import parse
 from oauth.models import CustomUser, rand_string
 from .forms import SettingsForm
 from .models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
-from .tasks import process_file_upload, process_stats
+from .tasks import clear_shorts_cache, process_file_upload, process_stats
 
 log = logging.getLogger('app')
 
@@ -238,6 +238,7 @@ def shorten_short_view(request, short):
         q.delete()
     else:
         q.save()
+    clear_shorts_cache.delay()
     return HttpResponseRedirect(url)
 
 
