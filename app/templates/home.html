@@ -13,7 +13,7 @@
 
         <h1>Django Files</h1>
 
-{#        {% cache 86400 stats request.user %}#}
+        {% cache 86400 stats_home request.user %}
             {% if not stats %}
                 <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
             {% else %}
@@ -24,77 +24,55 @@
                         {% include 'include/stats-card.html' with title="Total Shorts" data=shorts|length %}
                     </div>
                     {% include 'include/stats-table.html' with stats=stats %}
-
-                    <p><a class="btn btn-sm btn-outline-light" role="button" id="update-stats-btn"
+                    <p><a class="btn btn-sm btn-outline-light me-2" role="button" id="update-stats-btn"
                           data-target-url="{% url 'home:update-stats' %}">
                         <i class="fa-solid fa-chart-bar"></i> Process Stats</a>{% if stats %}
-                        Updated: {{ stats.created_at|localtime }}{% endif %}</p>
-
+                        <span class="d-inline-block my-1">Updated: {{ stats.created_at|localtime }}</span>{% endif %}</p>
                 {% endwith %}
             {% endif %}
-{#        {% endcache %}#}
+        {% endcache %}
 
-{#        {% cache 86400 shorts request.user %}#}
-            <span class="h2" id="shorts">Shorts</span>
-            <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#shorts"
-                     role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2 mb-1"></i></a></span>
-            <div class="input-group mb-3">
-                <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
-                       aria-label="Recipient's username" aria-describedby="create-short-btn">
-                <button class="btn btn-outline-success" type="button" id="create-short-btn"
-                        data-target-url="{% url 'home:shorten' %}">Short It</button>
-            </div>
+        {% cache 86400 files_home request.user %}
+            <h2 id="files">Files</h2>
+            {% if not files %}
+                <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
+            {% else %}
+                <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
+                {% include 'include/files-table.html' with files=files|slice:":10"  %}
+                {% if files|length > 10 %}
+                    <p><em>This list is truncated to 10 files. <span class="d-inline-block">
+                        <a href="{% url 'home:files' %}">View All Files</a></span></em></p>
+                {% endif %}
+            {% endif %}
+        {% endcache %}
+
+        {% cache 86400 shorts_home request.user %}
+            <h2 id="shorts">Shorts</h2>
+            <form id="quick-short-form" action="{% url 'home:shorten' %}">
+                <div class="input-group my-2">
+                    <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
+                           aria-label="Recipient's username" aria-describedby="create-short-btn" required>
+                    <button class="btn btn-outline-success" type="submit" id="create-short-btn"
+                            data-target-url="{% url 'home:shorten' %}"><i class="fa-solid fa-hammer me-2"></i> Shorten</button>
+                </div>
+            </form>
+            <p><em><a href="{% url 'home:shorts' %}">More Short Options</a></em></p>
             {% if not shorts %}
                 <p class="lead">Short URLs will show up here once created...</p>
             {% else %}
                 {% include 'include/shorts-table.html' with shorts=shorts|slice:":10"  %}
-            {% endif %}
-{#        {% endcache %}#}
-
-        <span class="h2" id="files">Files</span>
-        <span><a class="clip" data-clipboard-text="{{ request.build_absolute_uri }}#files"
-                 role="button"><i class="fa-regular fa-clipboard text-white fs-5 ms-2 mb-1"></i></a></span>
-
-        {% cache 86400 files_home request.user %}
-            {% if files %}
-                <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
-                <p class="d-xl-none text-muted mb-0"><em>Some columns hidden due to narrow viewport.</em></p>
-                <table class="table table-hover table-responsive" id="files-table">
-                    <thead>
-                        {% include 'include/table-head.html' %}
-                    </thead>
-                    <tbody>
-                        {% for file in files %}
-                            {% include 'include/table-tr.html' with file=file %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
+                {% if shorts|length > 10 %}
+                    <p><em>This list is truncated to 10 shorts. <span class="d-inline-block">
+                        <a href="{% url 'home:shorts' %}">View All Shorts</a></span></em></p>
+                {% endif %}
             {% endif %}
         {% endcache %}
-
-        <div class="modal fade" id="delete-file-modal" tabindex="-1" aria-labelledby="exampleModalLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="exampleModalLabel">Delete File</h1>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">Are you sure you want to delete this file?</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-danger" id="confirm-delete-hook-btn">Delete <i
-                                class="fa-regular fa-trash-can ms-1"></i></button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
 
     </div>
 {% endblock %}
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'main/js/home.js' %}"></script>
+    <script type="text/javascript" src="{% static 'main/js/shorts.js' %}"></script>
+{#    <script type="text/javascript" src="{% static 'main/js/files.js' %}"></script>#}
 {% endblock %}

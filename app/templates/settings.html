@@ -72,6 +72,7 @@
                 </div>
             </form>
         </div>
+
         <div class="pt-4 my-md-5 border-top">
             <h3 id="webhooks">Webhooks</h3>
             <div class="pt-3">
@@ -113,21 +114,29 @@
             {% endif %}
             {% endcache %}
         </div>
+
         <div class="pt-4 my-md-5 border-top">
             <h3 id="upload">Upload Methods</h3>
             <p class="lead">Django Files is backwards compatible with <a href="https://zipline.diced.vercel.app/docs/api/upload" target="_blank">
                 Zipline</a> client upload settings.</p>
-            <div class="row g-2">
-                <div class="col-sm-6 pt-3">
+            <div class="row g-3">
+                <div class="col-sm-6">
                     <a href="{% url 'home:gen-sharex' %}" class="btn btn-lg btn-outline-primary d-block">
                         <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="24">
-                        Download ShareX Settings</a>
+                        ShareX Files</a>
                 </div>
-                <div class="col-sm-6 pt-3">
+                <div class="col-sm-6">
+                    <a href="{% url 'home:gen-sharex-url' %}" class="btn btn-lg btn-outline-primary d-block">
+                        <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="24">
+                        ShareX URL Shorts</a>
+                </div>
+                <div class="col-sm-12">
                     <a href="{% url 'home:gen-flameshot' %}" class="btn btn-lg btn-outline-info d-block">
                         <img src="{% static 'images/assets/flameshot.svg' %}" class="me-2" alt="Flameshot" width="24">
-                        Download Flameshot Script</a>
+                        Flameshot Script</a>
                 </div>
+            </div>
+            <div class="row">
                 <div class="col-12 pt-5">
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                         <li class="nav-item" role="presentation">

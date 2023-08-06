@@ -1,6 +1,7 @@
 import httpx
 import json
 import logging
+import validators
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -17,7 +18,7 @@ from pytimeparse2 import parse
 from oauth.models import CustomUser, rand_string
 from .forms import SettingsForm
 from .models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
-from .tasks import process_file_upload, process_stats
+from .tasks import clear_shorts_cache, process_file_upload, process_stats
 
 log = logging.getLogger('app')
 
@@ -37,6 +38,19 @@ def home_view(request):
 
 
 @login_required
+def files_view(request):
+    """
+    View  /files/
+    """
+    log.debug('%s - files_view: is_secure: %s', request.method, request.is_secure())
+    files = Files.objects.get_request(request)
+    # stats = FileStats.objects.get_request(request)
+    # shorts = ShortURLs.objects.get_request(request)
+    context = {'files': files}
+    return render(request, 'files.html', context)
+
+
+@login_required
 def gallery_view(request):
     """
     View  /gallery/
@@ -44,6 +58,19 @@ def gallery_view(request):
     log.debug('%s - gallery_view: is_secure: %s', request.method, request.is_secure())
     context = {'files': Files.objects.get_request(request)}
     return render(request, 'gallery.html', context)
+
+
+@login_required
+def shorts_view(request):
+    """
+    View  /shorts/
+    """
+    log.debug('%s - shorts_view: is_secure: %s', request.method, request.is_secure())
+    # files = Files.objects.get_request(request)
+    # stats = FileStats.objects.get_request(request)
+    shorts = ShortURLs.objects.get_request(request)
+    context = {'shorts': shorts}
+    return render(request, 'shorts.html', context)
 
 
 @login_required
@@ -152,41 +179,45 @@ def shorten_view(request):
     """
     View  /shorten/ and /api/shorten
     """
+    body = request.body.decode()
+    log.debug(body)
     log.debug('-'*40)
     log.debug(request.headers)
     log.debug('-'*40)
     log.debug(request.POST)
-    log.debug('-'*40)
-    log.debug(request.body)
-    log.debug('-'*40)
     try:
         user = get_auth_user(request)
         if not user:
             return JsonResponse({'error': 'Invalid Authorization'}, status=401)
 
-        # We Are Go
-        views = request.headers.get('max-views')
         url = request.headers.get('url')
         vanity = request.headers.get('vanity')
+        max_views = request.headers.get('max-views')
         if not url:
             try:
-                body = json.loads(request.body.decode())
-                log.debug('body: %s', body)
-                views = body.get('max-views')
-                url = body.get('url')
-                vanity = body.get('vanity')
-            except Exception:
-                pass
+                data = json.loads(body)
+                log.debug('data: %s', data)
+                url = data.get('url', url)
+                vanity = data.get('vanity', vanity)
+                max_views = data.get('max-views', max_views)
+            except Exception as error:
+                log.debug(error)
         if not url:
             return JsonResponse({'error': 'Missing Required Value: url'}, status=400)
 
         log.debug('url: %s', url)
+        if not validators.url(url):
+            return JsonResponse({'error': 'Unable to Validate URL'}, status=400)
+        if max_views and not str(max_views).isdigit():
+            return JsonResponse({'error': 'max-views Must be an Integer'}, status=400)
+        if vanity and not validators.slug(vanity):
+            return JsonResponse({'error': 'vanity Must be a Slug'}, status=400)
         short = gen_short(vanity)
         log.debug('short: %s', short)
         url = ShortURLs.objects.create(
             url=url,
             short=short,
-            views=views or 0,
+            max=max_views or 0,
             user=user,
         )
         site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
@@ -209,6 +240,7 @@ def shorten_short_view(request, short):
         q.delete()
     else:
         q.save()
+    clear_shorts_cache.delay()
     return HttpResponseRedirect(url)
 
 
@@ -314,22 +346,50 @@ def gen_sharex(request):
     """
     log.debug('gen_sharex')
     data = {
-        'Version': '14.1.0',
+        'Version': '15.0.0',
         'Name': f'Django Files - {request.get_host()} - File',
         'DestinationType': 'ImageUploader, FileUploader',
         'RequestMethod': 'POST',
-        'RequestURL': request.build_absolute_uri(reverse('home:upload')),
+        'RequestURL': request.build_absolute_uri(reverse('home:api-upload')),
         'Headers': {
             'Authorization': request.user.authorization,
             'Expires-At': request.user.default_expire,
         },
         'Body': 'MultipartFormData',
-        'FileFormName': 'file',
         'URL': '{json:url}',
+        'FileFormName': 'file',
         'ErrorMessage': '{json:error}'
     }
     # Create the HttpResponse object with the appropriate headers.
     filename = f'{request.get_host()} - Files.sxcu'
+    response = JsonResponse(data, json_dumps_params={'indent': 4})
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
+@require_http_methods(['GET'])
+def gen_sharex_url(request):
+    """
+    View  /gen/sharex-url/
+    """
+    log.debug('gen_sharex_url')
+    data = {
+        'Version': '15.0.0',
+        'Name': f'Django Files - {request.get_host()} - URL Shorts',
+        'DestinationType': 'URLShortener,URLSharingService',
+        'RequestMethod': 'POST',
+        'RequestURL': request.build_absolute_uri(reverse('home:api-shorten')),
+        'Headers': {
+            'Authorization': request.user.authorization,
+        },
+        'Body': 'JSON',
+        'URL': '{json:url}',
+        "Data": '{"url":"{input}"}',
+        'ErrorMessage': '{json:error}',
+    }
+    # Create the HttpResponse object with the appropriate headers.
+    filename = f'{request.get_host()} - URL.sxcu'
     response = JsonResponse(data, json_dumps_params={'indent': 4})
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response

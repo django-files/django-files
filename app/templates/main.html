@@ -55,12 +55,14 @@
                 <ul class="navbar-nav me-auto mb-2 mb-sm-0">
                     <li class="nav-item"><a class="nav-link {% block home_active %}{% endblock %}"
                                             href="{% url 'home:index' %}">Home</a></li>
-{#                    <li class="nav-item"><a class="nav-link {% block files_active %}{% endblock %}"#}
-{#                                            href="{% url 'home:gallery' %}">Files</a></li>#}
                     <li class="nav-item"><a class="nav-link {% block gallery_active %}{% endblock %}"
                                             href="{% url 'home:gallery' %}">Gallery</a></li>
                     <li class="nav-item"><a class="nav-link {% block uppy_active %}{% endblock %}"
                                             href="{% url 'home:uppy' %}">Upload</a></li>
+                    <li class="nav-item"><a class="nav-link {% block files_active %}{% endblock %}"
+                                            href="{% url 'home:files' %}">Files</a></li>
+                    <li class="nav-item"><a class="nav-link {% block shorts_active %}{% endblock %}"
+                                            href="{% url 'home:shorts' %}">Shorts</a></li>
                     <li class="nav-item"><a class="nav-link {% block settings_active %}{% endblock %}"
                                             href="{% url 'home:settings' %}">Settings</a></li>
                 </ul>
@@ -78,6 +80,8 @@
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown2">
                                 <li><a class="dropdown-item" role="button" data-bs-toggle="modal" data-bs-target="#user-info-modal">
                                     <i class="fas fa-user-circle me-2"></i> Profile</a></li>
+                                <li><a class="dropdown-item" href="{% url 'home:settings' %}">
+                                    <i class="fa-solid fa-gears me-2"></i> Settings</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item clip" data-clipboard-text="{% get_config 'SITE_URL' %}" href="javascript:">
                                     <i class="fa-solid fa-globe me-2"></i> Copy URL</a></li>
@@ -128,18 +132,22 @@
     <div class="container-fluid">
         <div class="row">
 
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-4">
                 <p>Join us <a class="" href="https://github.com/smashedr/django-files" target="_blank">
                     on <i class="fab fa-github"></i> GitHub</a></p>
             </div>
 
-            <div class="col-12 col-md-6 text-md-end">
+            <div class="col-12 col-md-8 text-md-end">
                 <ul class="list-inline">
                     <li class="list-inline-item"><a href="{% url 'home:index' %}" class="">Home</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:gallery' %}" class="">Gallery</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:uppy' %}" class="">Upload</a></li>
+                    <li class="list-inline-item">|</li>
+                    <li class="list-inline-item"><a href="{% url 'home:files' %}" class="">Files</a></li>
+                    <li class="list-inline-item">|</li>
+                    <li class="list-inline-item"><a href="{% url 'home:shorts' %}" class="">Shorts</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:settings' %}" class="">Settings</a></li>
                 </ul>
