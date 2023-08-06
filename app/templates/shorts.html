@@ -9,8 +9,8 @@
 {% block head %}{% endblock %}
 
 {% block body %}
+{% cache 86400 shorts_shorts request.user %}
     <div class="container-fluid py-3 px-4">
-{#        {% cache 86400 shorts_shorts request.user %}#}
 
         <h1>Shorts</h1>
 
@@ -36,12 +36,12 @@
                         </div>
                     </div>
                 </form>
-                <p class="lead">Total Shorts: <strong>{{ shorts|length }}</strong></p>
+                <p class="lead mt-2">Total Shorts: <strong>{{ shorts|length }}</strong></p>
                 {% include 'include/shorts-table.html' with shorts=shorts  %}
             {% endif %}
 
-{#    {% endcache %}#}
     </div>
+{% endcache %}
 {% endblock %}
 
 {% block tail %}

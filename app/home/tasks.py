@@ -36,7 +36,7 @@ def flush_template_cache():
 def clear_files_cache():
     # Clear Files cache on model update
     log.info('clear_files_cache')
-    return cache.delete_pattern('template.cache.files_*')
+    return cache.delete_pattern('template.cache.files*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})

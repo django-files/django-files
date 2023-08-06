@@ -9,23 +9,21 @@
 {% block head %}{% endblock %}
 
 {% block body %}
+{% cache 86400 files_files request.user %}
     <div class="container-fluid py-3 px-4">
 
         <h1>Files</h1>
 
-        {% cache 86400 files_files request.user %}
-
-            {% if files %}
-                <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
-                <p><em><a href="{% url 'home:uppy' %}">Click Here</a> to upload files.</em></p>
-                {% include 'include/files-table.html' with files=files  %}
-            {% else %}
-                <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
-            {% endif %}
-
-        {% endcache %}
+        {% if files %}
+            <p><em><a href="{% url 'home:uppy' %}">Click Here</a> to upload files.</em></p>
+            <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
+            {% include 'include/files-table.html' with files=files  %}
+        {% else %}
+            <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
+        {% endif %}
 
     </div>
+{% endcache %}
 {% endblock %}
 
 {% block tail %}

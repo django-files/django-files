@@ -54,7 +54,7 @@
         {% cache 86400 files_home request.user %}
             <h2 id="files">Files</h2>
             {% if files %}
-                <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
+{#                <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>#}
                 {% include 'include/files-table.html' with files=files|slice:":10"  %}
                 {% if files|length > 10 %}
                     <p><em>This list is truncated to 10 files.
