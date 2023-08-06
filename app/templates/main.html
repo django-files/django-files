@@ -57,12 +57,12 @@
                                             href="{% url 'home:index' %}">Home</a></li>
                     <li class="nav-item"><a class="nav-link {% block gallery_active %}{% endblock %}"
                                             href="{% url 'home:gallery' %}">Gallery</a></li>
+                    <li class="nav-item"><a class="nav-link {% block uppy_active %}{% endblock %}"
+                                            href="{% url 'home:uppy' %}">Upload</a></li>
                     <li class="nav-item"><a class="nav-link {% block files_active %}{% endblock %}"
                                             href="{% url 'home:files' %}">Files</a></li>
                     <li class="nav-item"><a class="nav-link {% block shorts_active %}{% endblock %}"
                                             href="{% url 'home:shorts' %}">Shorts</a></li>
-                    <li class="nav-item"><a class="nav-link {% block uppy_active %}{% endblock %}"
-                                            href="{% url 'home:uppy' %}">Upload</a></li>
                     <li class="nav-item"><a class="nav-link {% block settings_active %}{% endblock %}"
                                             href="{% url 'home:settings' %}">Settings</a></li>
                 </ul>
@@ -143,11 +143,11 @@
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:gallery' %}" class="">Gallery</a></li>
                     <li class="list-inline-item">|</li>
+                    <li class="list-inline-item"><a href="{% url 'home:uppy' %}" class="">Upload</a></li>
+                    <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:files' %}" class="">Files</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:shorts' %}" class="">Shorts</a></li>
-                    <li class="list-inline-item">|</li>
-                    <li class="list-inline-item"><a href="{% url 'home:uppy' %}" class="">Upload</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:settings' %}" class="">Settings</a></li>
                 </ul>
