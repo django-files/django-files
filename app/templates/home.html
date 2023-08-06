@@ -32,6 +32,20 @@
             {% endif %}
         {% endcache %}
 
+        {% cache 86400 files_home request.user %}
+            <h2 id="files">Files</h2>
+            {% if not files %}
+                <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
+            {% else %}
+                <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
+                {% include 'include/files-table.html' with files=files|slice:":10"  %}
+                {% if files|length > 10 %}
+                    <p><em>This list is truncated to 10 files. <span class="d-inline-block">
+                        <a href="{% url 'home:files' %}">View All Files</a></span></em></p>
+                {% endif %}
+            {% endif %}
+        {% endcache %}
+
         {% cache 86400 shorts_home request.user %}
             <h2 id="shorts">Shorts</h2>
             <form id="quick-short-form" action="{% url 'home:shorten' %}">
@@ -39,30 +53,17 @@
                     <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
                            aria-label="Recipient's username" aria-describedby="create-short-btn" required>
                     <button class="btn btn-outline-success" type="submit" id="create-short-btn"
-                            data-target-url="{% url 'home:shorten' %}">Short It</button>
+                            data-target-url="{% url 'home:shorten' %}"><i class="fa-solid fa-hammer me-2"></i> Shorten</button>
                 </div>
             </form>
+            <p><em><a href="{% url 'home:shorts' %}">More Short Options</a></em></p>
             {% if not shorts %}
                 <p class="lead">Short URLs will show up here once created...</p>
             {% else %}
                 {% include 'include/shorts-table.html' with shorts=shorts|slice:":10"  %}
                 {% if shorts|length > 10 %}
                     <p><em>This list is truncated to 10 shorts. <span class="d-inline-block">
-                        <a href="{% url 'home:shorts' %}">Click Here</a> to view all shorts.</span></em></p>
-                {% endif %}
-            {% endif %}
-        {% endcache %}
-
-        {% cache 86400 files_home request.user %}
-            <h2 id="files">Files</h2>
-            {% if not files %}
-                <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
-            {% else %}
-{#                <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>#}
-                {% include 'include/files-table.html' with files=files|slice:":10"  %}
-                {% if files|length > 10 %}
-                    <p><em>This list is truncated to 10 files. <span class="d-inline-block">
-                        <a href="{% url 'home:files' %}">Click Here</a> to view all files.</span></em></p>
+                        <a href="{% url 'home:shorts' %}">View All Shorts</a></span></em></p>
                 {% endif %}
             {% endif %}
         {% endcache %}
