@@ -24,10 +24,10 @@
                         {% include 'include/stats-card.html' with title="Total Shorts" data=shorts|length %}
                     </div>
                     {% include 'include/stats-table.html' with stats=stats %}
-                    <p><a class="btn btn-sm btn-outline-light" role="button" id="update-stats-btn"
+                    <p><a class="btn btn-sm btn-outline-light me-2" role="button" id="update-stats-btn"
                           data-target-url="{% url 'home:update-stats' %}">
                         <i class="fa-solid fa-chart-bar"></i> Process Stats</a>{% if stats %}
-                        <span class="d-inline-block">Updated: {{ stats.created_at|localtime }}</span>{% endif %}</p>
+                        <span class="d-inline-block my-1">Updated: {{ stats.created_at|localtime }}</span>{% endif %}</p>
                 {% endwith %}
             {% endif %}
         {% endcache %}
@@ -47,23 +47,23 @@
             {% else %}
                 {% include 'include/shorts-table.html' with shorts=shorts|slice:":10"  %}
                 {% if shorts|length > 10 %}
-                    <p><em>This list is truncated to 10 shorts.
-                        <a href="{% url 'home:shorts' %}">Click Here</a> to view all shorts.</em></p>
+                    <p><em>This list is truncated to 10 shorts. <span class="d-inline-block">
+                        <a href="{% url 'home:shorts' %}">Click Here</a> to view all shorts.</span></em></p>
                 {% endif %}
             {% endif %}
         {% endcache %}
 
         {% cache 86400 files_home request.user %}
             <h2 id="files">Files</h2>
-            {% if files %}
+            {% if not files %}
+                <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
+            {% else %}
 {#                <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>#}
                 {% include 'include/files-table.html' with files=files|slice:":10"  %}
                 {% if files|length > 10 %}
-                    <p><em>This list is truncated to 10 files.
-                        <a href="{% url 'home:files' %}">Click Here</a> to view all files.</em></p>
+                    <p><em>This list is truncated to 10 files. <span class="d-inline-block">
+                        <a href="{% url 'home:files' %}">Click Here</a> to view all files.</span></em></p>
                 {% endif %}
-            {% else %}
-                <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
             {% endif %}
         {% endcache %}
 
