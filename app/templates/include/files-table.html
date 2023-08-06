@@ -1,0 +1,31 @@
+{% load home_tags %}
+
+<p class="d-xl-none text-muted mb-0"><em>Some columns hidden due to narrow viewport.</em></p>
+<table class="table table-hover table-responsive" id="files-table">
+    <thead>
+        {% include 'include/table-head.html' %}
+    </thead>
+    <tbody>
+    {% for file in files %}
+        {% include 'include/table-tr.html' with file=file %}
+    {% endfor %}
+    </tbody>
+</table>
+
+<div class="modal fade" id="delete-file-modal" tabindex="-1" aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Delete File</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">Are you sure you want to delete this file?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="confirm-delete-hook-btn">Delete <i
+                        class="fa-regular fa-trash-can ms-1"></i></button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

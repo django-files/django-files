@@ -5,6 +5,8 @@
     <tr>
         <th scope="col">Short</th>
         <th scope="col">URL</th>
+        <th scope="col" class="d-none d-sm-table-cell"><i class="fa-solid fa-eye"></i></th>
+        <th scope="col" class="d-none d-sm-table-cell"><i class="fa-solid fa-bomb"></i></th>
         <th scope="col" class="text-center"><i class="fa-solid fa-gears"></i></th>
     </tr>
     </thead>
@@ -15,6 +17,8 @@
             <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'home:short' short=short.short %}" target="_blank">
                 {{ short.short }}</a></th>
         <td><a href="{{ short.url }}" target="_blank">{{ short.url }}</a></td>
+        <td class="d-none d-sm-table-cell">{{ short.views }}</td>
+        <td class="d-none d-sm-table-cell">{{ short.max|default:"-" }}</td>
         <td class="text-center">
             <a class="clip text-white mx-1" role="button" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{% url 'home:short' short=short.short %}">
             <i class="fa-regular fa-clipboard"></i></a>
