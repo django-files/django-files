@@ -12,7 +12,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from itertools import count
 from pytimeparse2 import parse
-from PIL import Image, ExifTags
+from PIL import Image
 
 from .models import Files, Webhooks, SiteSettings, FileStats
 

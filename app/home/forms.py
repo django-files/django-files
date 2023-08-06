@@ -47,4 +47,3 @@ class SettingsForm(forms.Form):
         if not validators.url(data):
             raise ValidationError('Invalid Site URL.')
         return data.rstrip('/')
-
