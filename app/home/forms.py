@@ -12,6 +12,7 @@ class SettingsForm(forms.Form):
     nav_color_1 = forms.CharField(max_length=7)
     nav_color_2 = forms.CharField(max_length=7)
     remove_exif_geo = forms.BooleanField(required=False)
+    remove_exif = forms.BooleanField(required=False)
     show_exif_preview = forms.BooleanField(required=False)
 
     def clean_default_color(self):
@@ -46,3 +47,4 @@ class SettingsForm(forms.Form):
         if not validators.url(data):
             raise ValidationError('Invalid Site URL.')
         return data.rstrip('/')
+

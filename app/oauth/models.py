@@ -39,6 +39,11 @@ class CustomUser(AbstractUser):
         verbose_name="No EXIF Geo",
         help_text="Removes geo exif data from images on upload.",
     )
+    remove_exif = models.BooleanField(
+        default=False,
+        verbose_name="No EXIF",
+        help_text="Removes exif data from images on upload.",
+    )
     show_exif_preview = models.BooleanField(
         default=False,
         verbose_name="EXIF Preview",

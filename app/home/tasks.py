@@ -12,6 +12,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from itertools import count
 from pytimeparse2 import parse
+from PIL import Image, ExifTags
 
 from .models import Files, Webhooks, SiteSettings, FileStats
 
@@ -60,8 +61,8 @@ def clear_settings_cache():
     return cache.delete_pattern('template.cache.settings*')
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})
-def process_file_upload(pk):
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 0, 'countdown': 5})
+def process_file_upload(pk, strip_geo=False, strip_exif=False):
     # Process new file upload
     log.info('process_file_upload: %s', pk)
     file = Files.objects.get(pk=pk)
@@ -72,8 +73,23 @@ def process_file_upload(pk):
         file.mime, _ = mimetypes.guess_type(file.file.path, strict=False)
         if not file.mime:
             file.mime, _ = mimetypes.guess_type(file.file.name, strict=False)
+        exif = None
         file.size = file.file.size
         file.save()
+        if file.mime in ['image/jpeg', 'image/png'] and (strip_geo or strip_exif):
+            image = Image.open(file.file.path)
+            if strip_exif:
+                log.debug("Stripping EXIF metadata %s", pk)
+                new = Image.new(image.mode, image.size)
+                new.putdata(image.getdata())
+                if 'P' in image.mode:
+                    new.putpalette(image.getpalette())
+                new.save(file.file.path)
+            elif strip_geo:
+                log.debug("Stripping EXIF GEO metadata %s", pk)
+                exif = image.getexif()
+                exif[0x8825] = None
+                image.save(file.file.path, exif=exif)
         send_discord_message.delay(file.pk)
         return file.pk
 

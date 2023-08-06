@@ -62,7 +62,6 @@ def settings_view(request):
 
     log.debug(request.POST)
     form = SettingsForm(request.POST)
-    print(form['remove_exif_geo'])
     if not form.is_valid():
         return JsonResponse(form.errors, status=400)
     data = {'reload': False}
@@ -83,8 +82,8 @@ def settings_view(request):
         request.user.nav_color_2 = form.cleaned_data['nav_color_2']
         data['reload'] = True
 
-    print(form.cleaned_data['remove_exif_geo'])
     request.user.remove_exif_geo = form.cleaned_data['remove_exif_geo']
+    request.user.remove_exif = form.cleaned_data['remove_exif']
     request.user.show_exif_preview = form.cleaned_data['show_exif_preview']
 
     request.user.save()
@@ -113,7 +112,7 @@ def uppy_view(request):
     )
     if not file:
         return HttpResponse(status=400)
-    process_file_upload.delay(file.pk)
+    process_file_upload.delay(file.pk, strip_geo=request.user.remove_exif_geo, strip_exif=request.user.remove_exif)
     return HttpResponse()
 
 
@@ -138,7 +137,7 @@ def upload_view(request):
         )
         if not file:
             return JsonResponse({'error': 'File Not Created'}, status=400)
-        process_file_upload.delay(file.pk)
+        process_file_upload.delay(file.pk, strip_geo=request.user.remove_exif_geo, strip_exif=request.user.remove_exif)
         data = {
             'files': [file.get_url()],
             'url': file.get_url(),
