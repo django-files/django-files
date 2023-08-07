@@ -75,7 +75,6 @@ def process_file_upload(pk):
         if not file.mime:
             file.mime, _ = mimetypes.guess_type(file.file.name, strict=False)
         file.mime = file.mime or 'application/octet-stream'
-        exif = None
         file.size = file.file.size
         if file.mime in ['image/jpeg', 'image/png']:
             image = Image.open(file.file.path)

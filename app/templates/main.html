@@ -32,13 +32,13 @@
     <link rel="stylesheet" href="{% static 'font-awesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'main/css/main.css' %}">
     <link rel="stylesheet" href="{% static 'animate/animate.min.css' %}">
+    <script type="text/javascript" src="{% static "bootstrap/theme.js" %}"></script>
 
     {% block head %}{% endblock %}
 
 </head>
 <body class="d-flex flex-column h-100">
 
-    
 {% block navbar %}
 <header>
     <nav class="navbar navbar-expand-md navbar-dark border-bottom"
@@ -235,7 +235,6 @@
 {% block js %}
     <script type="text/javascript" src="{% static 'jquery/jquery.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-    <script type="text/javascript" src="{% static "bootstrap/theme.js" %}"></script>
     <script type="text/javascript" src="{% static 'font-awesome/js/all.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'clipboardjs/clipboard.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'jscookie/js.cookie.min.js' %}"></script>
