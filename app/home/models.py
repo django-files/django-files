@@ -17,6 +17,7 @@ class Files(models.Model):
     expr = models.CharField(default='', max_length=32, blank=True, verbose_name='Expiration', help_text='File Expire.')
     date = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='File Created Date.')
     edit = models.DateTimeField(auto_now=True, verbose_name='Edited', help_text='File Edited Date.')
+    exif = models.JSONField(default={}, verbose_name="EXIF Metadata", help_text="JSON formatted exif metadata.")
     objects = FilesManager()
 
     def __str__(self):

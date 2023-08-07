@@ -3,6 +3,7 @@ import logging
 import mimetypes
 import os
 import httpx
+import json
 from celery import shared_task
 # from django.conf import settings
 # from django.core import management
@@ -12,6 +13,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from itertools import count
 from pytimeparse2 import parse
+from PIL import Image, ExifTags, TiffImagePlugin
 
 from .models import Files, Webhooks, SiteSettings, FileStats
 
@@ -60,7 +62,7 @@ def clear_settings_cache():
     return cache.delete_pattern('template.cache.settings*')
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 0, 'countdown': 5})
 def process_file_upload(pk):
     # Process new file upload
     log.info('process_file_upload: %s', pk)
@@ -72,8 +74,33 @@ def process_file_upload(pk):
         file.mime, _ = mimetypes.guess_type(file.file.path, strict=False)
         if not file.mime:
             file.mime, _ = mimetypes.guess_type(file.file.name, strict=False)
+        file.mime = file.mime or 'application/octet-stream'
+        exif = None
         file.size = file.file.size
-        file.save()
+        if file.mime in ['image/jpeg', 'image/png']:
+            image = Image.open(file.file.path)
+            if file.user.remove_exif:
+                log.debug("Stripping EXIF metadata %s", pk)
+                new = Image.new(image.mode, image.size)
+                new.putdata(image.getdata())
+                if 'P' in image.mode:
+                    new.putpalette(image.getpalette())
+                new.save(file.file.path)
+            else:
+                exif = image.getexif()
+                log.debug("Parsing and storing EXIF metadata %s", pk)
+                cleaned_exif = {
+                    ExifTags.TAGS[k]: v for k, v in exif.items()
+                    if k in ExifTags.TAGS and type(v) not in [bytes, TiffImagePlugin.IFDRational]
+                    }
+                if file.user.remove_exif_geo:
+                    log.debug("Stripping EXIF GEO metadata %s", pk)
+                    exif[0x8825] = None
+                    image.save(file.file.path, exif=exif)
+                else:
+                    cleaned_exif["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
+                file.exif = json.dumps(cast(cleaned_exif))
+            file.save()
         send_discord_message.delay(file.pk)
         return file.pk
 
@@ -208,3 +235,18 @@ def send_discord(hook_pk, message):
     except Exception as error:
         log.exception(error)
         raise
+
+
+def cast(v):
+    if isinstance(v, TiffImagePlugin.IFDRational):
+        return float(v)
+    elif isinstance(v, tuple):
+        return tuple(cast(t) for t in v)
+    elif isinstance(v, bytes):
+        return v.decode(errors="replace")
+    elif isinstance(v, dict):
+        for kk, vv in v.items():
+            v[kk] = cast(vv)
+        return v
+    else:
+        return v

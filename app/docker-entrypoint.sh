@@ -2,7 +2,7 @@
 
 set -ex
 
-if echo "${*}" | grep -q "gun";then
+if echo "${*}" | grep -q "gun\|runserver";then
     python manage.py makemigrations
     python manage.py migrate
     python manage.py collectstatic --noinput

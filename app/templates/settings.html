@@ -43,6 +43,26 @@
                         <div id="default_expire-invalid" class="invalid-feedback"></div>
                     </div>
                 </div>
+                <div class="row pt-4 mx-5 fs-5">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="remove_exif" name="remove_exif" {% if user.remove_exif %}checked{% endif %}>
+                        <label class="form-check-label" for="remove_exif">
+                          Remove all image EXIF metadata automatically on upload.
+                        </label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="remove_exif_geo" name="remove_exif_geo" {% if user.remove_exif_geo %}checked{% endif %}>
+                        <label class="form-check-label" for="remove_exif_geo">
+                          Remove image EXIF geolocation metadata automatically on upload.
+                        </label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="show_exif_preview" name="show_exif_preview" {% if user.show_exif_preview %}checked{% endif %}>
+                        <label class="form-check-label" for="show_exif_preview">
+                          Show image EXIF metadata details on unfurled previews.
+                        </label>
+                    </div>
+                </div>
                 <div class="row pt-3">
                     <div class="col-auto">
                         <label for="default_color" class="form-label">Embed</label>

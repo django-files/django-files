@@ -9,6 +9,7 @@ django-redis
 gunicorn
 httpx
 mysqlclient
+Pillow
 psycopg[binary]
 python-decouple
 python-dotenv

@@ -109,6 +109,10 @@ def settings_view(request):
         request.user.nav_color_2 = form.cleaned_data['nav_color_2']
         data['reload'] = True
 
+    request.user.remove_exif_geo = form.cleaned_data['remove_exif_geo']
+    request.user.remove_exif = form.cleaned_data['remove_exif']
+    request.user.show_exif_preview = form.cleaned_data['show_exif_preview']
+
     request.user.save()
     if data['reload']:
         messages.success(request, 'Settings Saved Successfully.')
