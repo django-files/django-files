@@ -67,41 +67,48 @@ def process_file_upload(pk):
     # Process new file upload
     log.info('process_file_upload: %s', pk)
     file = Files.objects.get(pk=pk)
-    log.info(file)
     log.info('-'*40)
-    if file and file.file:
-        file.name = os.path.basename(file.file.name)
-        file.mime, _ = mimetypes.guess_type(file.file.path, strict=False)
-        if not file.mime:
-            file.mime, _ = mimetypes.guess_type(file.file.name, strict=False)
-        file.mime = file.mime or 'application/octet-stream'
-        file.size = file.file.size
-        if file.mime in ['image/jpeg', 'image/png']:
-            image = Image.open(file.file.path)
-            if file.user.remove_exif:
-                log.debug("Stripping EXIF metadata %s", pk)
-                new = Image.new(image.mode, image.size)
-                new.putdata(image.getdata())
-                if 'P' in image.mode:
-                    new.putpalette(image.getpalette())
-                new.save(file.file.path)
+    log.info(file)
+    log.info(file.file)
+    log.info('-'*40)
+    if not file or file.file:
+        return log.warning('WARNING NO FILE -- file or file.file is None --')
+    file.name = os.path.basename(file.file.name)
+    log.info('file.name: %s', file.name)
+    file.mime, _ = mimetypes.guess_type(file.file.path, strict=False)
+    if not file.mime:
+        file.mime, _ = mimetypes.guess_type(file.file.name, strict=False)
+    file.mime = file.mime or 'application/octet-stream'
+    log.info('file.mime: %s', file.mime)
+    file.size = file.file.size
+    log.info('file.size: %s', file.size)
+    if file.mime in ['image/jpeg', 'image/png']:
+        image = Image.open(file.file.path)
+        if file.user.remove_exif:
+            log.debug("Stripping EXIF metadata %s", pk)
+            new = Image.new(image.mode, image.size)
+            new.putdata(image.getdata())
+            if 'P' in image.mode:
+                new.putpalette(image.getpalette())
+            new.save(file.file.path)
+        else:
+            exif = image.getexif()
+            log.debug("Parsing and storing EXIF metadata %s", pk)
+            cleaned_exif = {
+                ExifTags.TAGS[k]: v for k, v in exif.items()
+                if k in ExifTags.TAGS and type(v) not in [bytes, TiffImagePlugin.IFDRational]
+                }
+            if file.user.remove_exif_geo:
+                log.debug("Stripping EXIF GEO metadata %s", pk)
+                exif[0x8825] = None
+                image.save(file.file.path, exif=exif)
             else:
-                exif = image.getexif()
-                log.debug("Parsing and storing EXIF metadata %s", pk)
-                cleaned_exif = {
-                    ExifTags.TAGS[k]: v for k, v in exif.items()
-                    if k in ExifTags.TAGS and type(v) not in [bytes, TiffImagePlugin.IFDRational]
-                    }
-                if file.user.remove_exif_geo:
-                    log.debug("Stripping EXIF GEO metadata %s", pk)
-                    exif[0x8825] = None
-                    image.save(file.file.path, exif=exif)
-                else:
-                    cleaned_exif["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
-                file.exif = json.dumps(cast(cleaned_exif))
-            file.save()
-        send_discord_message.delay(file.pk)
-        return file.pk
+                cleaned_exif["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
+            file.exif = json.dumps(cast(cleaned_exif))
+        file.save()
+    log.info('-'*40)
+    send_discord_message.delay(file.pk)
+    return file.pk
 
 
 @shared_task()
