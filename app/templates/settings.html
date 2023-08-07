@@ -10,15 +10,18 @@
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
-        <nav class="py-2" aria-label="breadcrumb" style="--bs-breadcrumb-divider: '|';">
-            <ol class="breadcrumb">
-              <li class="breadcrumb-item"><a href="#general">General</a></li>
-              <li class="breadcrumb-item"><a href="#webhooks">Webhooks</a></li>
-              <li class="breadcrumb-item"><a href="#upload">Upload Methods</a></li>
-              <li class="breadcrumb-item"><a href="#token">Token</a></li>
-            </ol>
-          </nav>
         <h1>Settings</h1>
+        <div class="row mt-2">
+            <nav class="" aria-label="breadcrumb" style="--bs-breadcrumb-divider: '|';">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="#general">General</a></li>
+                    <li class="breadcrumb-item"><a href="#webhooks">Webhooks</a></li>
+                    <li class="breadcrumb-item"><a href="#upload">Upload</a></li>
+                    <li class="breadcrumb-item"><a href="#token">Token</a></li>
+                </ol>
+            </nav>
+        </div>
+
         <div class="pt-4 my-md-2">
             <h3 id="general">General</h3>
 
@@ -29,7 +32,7 @@
                         <input type="text" class="form-control" id="site_url" name="site_url" placeholder=""
                             value="{{ site_settings.site_url }}" aria-describedby="site_url-help site_url-invalid">
                         <div id="site_url-help" class="form-text">
-                            This feature is currently NOT Implemented.
+                            Used for Uploads and Discord Messages.
                         </div>
                         <div id="site_url-invalid" class="invalid-feedback"></div>
                     </div>
@@ -43,25 +46,27 @@
                         <div id="default_expire-invalid" class="invalid-feedback"></div>
                     </div>
                 </div>
-                <div class="row pt-4 mx-5 fs-5">
-                    <div class="form-check form-switch">
+                <div class="row my-2">
+                <div class="col mx-sm-4 fs-5">
+                    <div class="form-check form-switch px-lg-5">
                         <input class="form-check-input" type="checkbox" id="remove_exif" name="remove_exif" {% if user.remove_exif %}checked{% endif %}>
                         <label class="form-check-label" for="remove_exif">
-                          Remove all image EXIF metadata automatically on upload.
+                          Remove All EXIF Data from Upload.
                         </label>
                     </div>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="remove_exif_geo" name="remove_exif_geo" {% if user.remove_exif_geo %}checked{% endif %}>
                         <label class="form-check-label" for="remove_exif_geo">
-                          Remove image EXIF geolocation metadata automatically on upload.
+                          Remove GPS EXIF Data from Upload.
                         </label>
                     </div>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="show_exif_preview" name="show_exif_preview" {% if user.show_exif_preview %}checked{% endif %}>
                         <label class="form-check-label" for="show_exif_preview">
-                          Show image EXIF metadata details on unfurled previews.
+                          Display EXIF Data on Embeds.
                         </label>
                     </div>
+                </div>
                 </div>
                 <div class="row pt-3">
                     <div class="col-auto">
@@ -93,7 +98,7 @@
             </form>
         </div>
 
-        <div class="pt-4 my-md-5 border-top">
+        <div class="pt-4 my-3 my-md-5 border-top">
             <h3 id="webhooks">Webhooks</h3>
             <div class="pt-3">
                 <p><a href="{% url 'oauth:webhook' %}" class="btn btn-lg btn-outline-primary" role="button">
@@ -185,8 +190,8 @@
                             <p>Or alternatively from GitHub:</p>
                             <p><kbd id="cli-code">python3 -m pip install git+https://github.com/cssnr/zipline-cli.git</kbd></p>
                             <p>For more information and usage visit
-                                <a href="https://github.com/cssnr/zipline-cli" target="_blank">
-                                    Zipline CLI on GitHub</a></p>
+                                <span class="d-inline-block"><a href="https://github.com/cssnr/zipline-cli" target="_blank">
+                                    Zipline CLI on GitHub</a></span></p>
                         </div>
                         <div class="tab-pane fade col-md-8" id="shell-tab-pane" role="tabpanel" aria-labelledby="shell-tab" tabindex="0">
                             <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#shell-code">
