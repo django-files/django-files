@@ -1,7 +1,7 @@
 import datetime
 import sentry_sdk
 import sys
-# from celery.schedules import crontab
+from celery.schedules import crontab
 from decouple import config, Csv
 from dotenv import find_dotenv, load_dotenv
 from django.contrib.messages import constants as message_constants
@@ -87,8 +87,8 @@ CELERY_BEAT_SCHEDULE = {
     },
     'cleanup_old_stats': {
         'task': 'home.tasks.cleanup_old_stats',
-        'schedule': datetime.timedelta(hours=config('CLEANUP_STATS_HOUR', 24, int)),
-        # 'schedule': crontab(minute=0, hour=0),
+        # 'schedule': datetime.timedelta(hours=config('CLEANUP_STATS_HOUR', 24, int)),
+        'schedule': crontab(minute='0', hour='8'),
     },
 }
 
