@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" class="h-100">
+<head>
+    <title></title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div>
+    <canvas id="myChart"></canvas>
+</div>
+
+<script>
+    const ctx = document.getElementById('myChart');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [1,2,3,4,5,6,7],
+            datasets: [{
+                label: 'Stats',
+                data: [2, 12, 30, 45, 47, 55, 70],
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    stacked: true
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

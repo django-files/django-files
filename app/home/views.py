@@ -1,3 +1,4 @@
+import datetime
 import httpx
 import json
 import logging
@@ -8,8 +9,10 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from itertools import count
 from pytimeparse2 import parse
 # import plotly.graph_objects as go
 # import plotly.express as px
@@ -35,6 +38,47 @@ def home_view(request):
     shorts = ShortURLs.objects.get_request(request)
     context = {'files': files, 'stats': stats, 'shorts': shorts}
     return render(request, 'home.html', context)
+
+
+@login_required
+def stats_view(request):
+    """
+    View  /stats/
+    """
+    log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
+    # files = Files.objects.get_request(request)
+    stats = FileStats.objects.get_request(request)
+    # # stats = FileStats.objects.filter(user=request.user)
+    # shorts = ShortURLs.objects.get_request(request)
+    # context = {'files': files, 'stats': stats, 'shorts': shorts}
+    return render(request, 'stats.html')
+
+
+# def generate_stats():
+#     log.info('generate_stats')
+#     # now = timezone.now()
+#     # ft_filter = now - datetime.timedelta(days=1)
+#     file_stats = FileStats.objects.all()
+#     start_date = file_stats.last().created_at
+#     last_date = file_stats.first().created_at
+#     day = start_date
+#     extra = 0
+#     for i in count(1):
+#         day = now - datetime.timedelta(days=i)
+#         stats = file_stats.filter(created_at__day=day.day)
+#         log.info('stats: %s', stats)
+#         if len(stats) > 1:
+#             log.info('--- process stats for day: %s', day.day)
+#             log.info(stats.first())
+#             all_but_last = stats.exclude(pk=stats.first().pk)
+#             log.info(all_but_last)
+#             all_but_last.delete()
+#             log.info('--- process stats for day: %s', day.day)
+#         else:
+#             extra += 1
+#             log.info('extra: %s, day: %s', extra, day.day)
+#             if extra >= extra_days:
+#                 break
 
 
 @login_required

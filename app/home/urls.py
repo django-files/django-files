@@ -12,6 +12,7 @@ urlpatterns = [
     path('uppy/', views.uppy_view, name='uppy'),
     path('shorts/', views.shorts_view, name='shorts'),
     path('settings/', views.settings_view, name='settings'),
+    path('stats/', views.stats_view, name='stats'),
     re_path(r'^upload/?$', views.upload_view, name='upload'),
     re_path(r'^api/upload/?$', views.upload_view, name='api-upload'),
     re_path(r'^shorten/?$', views.shorten_view, name='shorten'),
