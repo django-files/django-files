@@ -3,7 +3,7 @@
 set -ex
 
 if echo "${*}" | grep -q "gun\|runserver";then
-    python manage.py makemigrations
+#    python manage.py makemigrations
     python manage.py migrate
     python manage.py collectstatic --noinput
     python manage.py clearcache

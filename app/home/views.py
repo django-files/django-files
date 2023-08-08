@@ -137,7 +137,7 @@ def uppy_view(request):
         info=request.POST.get('info', ''),
         expr=parse_expire(request, request.user),
     )
-    if not file:
+    if not file.file:
         return HttpResponse(status=400)
     process_file_upload.delay(file.pk)
     return HttpResponse()
@@ -162,7 +162,7 @@ def upload_view(request):
             info=request.POST.get('info', ''),
             expr=parse_expire(request, user),
         )
-        if not file:
+        if not file.file:
             return JsonResponse({'error': 'File Not Created'}, status=400)
         process_file_upload.delay(file.pk)
         data = {
@@ -414,6 +414,32 @@ def gen_flameshot(request):
     response = HttpResponse(message)
     response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
     return response
+
+
+@require_http_methods(['GET'])
+def url_route_view(request, filename):
+    """
+    View  /u/<path:filename>
+    """
+    # log.debug('context: %s', context)
+    # message = render_to_string('scripts/flameshot.sh', context)
+    file = Files.objects.get(name=filename)
+    log.debug('file: %s', file)
+    mime = file.mime.split('/', 1)[0]
+    raw_url = request.build_absolute_uri(reverse('home:url-raw', kwargs={'filename': filename}))
+    context = {
+        'file': file,
+        'mime': mime,
+        'site_url': request.build_absolute_uri(),
+        'raw_url': raw_url,
+    }
+    # response = HttpResponse(message)
+    # response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
+    # return response
+    if mime == 'image':
+        return render(request, 'routes/image.html', context=context)
+    else:
+        return HttpResponseRedirect(raw_url)
 
 
 def google_verify(request: HttpRequest) -> bool:
