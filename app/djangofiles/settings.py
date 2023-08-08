@@ -1,7 +1,7 @@
 import datetime
 import sentry_sdk
 import sys
-from celery.schedules import crontab
+# from celery.schedules import crontab
 from decouple import config, Csv
 from dotenv import find_dotenv, load_dotenv
 from django.contrib.messages import constants as message_constants
