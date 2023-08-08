@@ -101,7 +101,7 @@ services:
     build:
       context: ./vector
       network: host
-    image: djangofiles-vector:${VERSION:-latest}
+    image: ${REGISTRY_HOST}/${REGISTRY_GROUP}/djangofiles-vector:${VERSION:-latest}
     environment:
       - X_TEST=true
     deploy:
