@@ -87,8 +87,8 @@ CELERY_BEAT_SCHEDULE = {
     },
     'cleanup_old_stats': {
         'task': 'home.tasks.cleanup_old_stats',
-        'schedule': datetime.timedelta(hours=config('CLEANUP_STATS_HOUR', 24, int)),
-        # 'schedule': crontab(minute=0, hour=0),
+        'schedule': datetime.timedelta(hours=config('CLEANUP_STATS_HOUR', 1, int)),
+        # 'schedule': crontab(minute='0', hour='0'),
     },
 }
 

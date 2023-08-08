@@ -15,54 +15,48 @@ from itertools import count
 from pytimeparse2 import parse
 from PIL import Image, ExifTags, TiffImagePlugin
 
-from .models import Files, Webhooks, SiteSettings, FileStats
+from home.models import Files, Webhooks, SiteSettings, FileStats
+from oauth.models import CustomUser
 
 log = logging.getLogger('celery')
 
 
-# @shared_task()
-# def clear_sessions():
-#     # Cleanup session data for supported backends
-#     log.info('clear_sessions')
-#     return management.call_command('clearsessions')
-
-
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def flush_template_cache():
-    # Flush template cache on request
+    # Flush all template cache on request
     log.info('flush_template_cache')
     return cache.delete_pattern('template.cache.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_files_cache():
-    # Clear Files cache on model update
+    # Clear Files cache
     log.info('clear_files_cache')
     return cache.delete_pattern('template.cache.files*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_shorts_cache():
-    # Clear Files cache on model update
+    # Clear Shorts cache
     log.info('clear_shorts_cache')
     return cache.delete_pattern('template.cache.shorts*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_stats_cache():
-    # Clear Files cache on model update
+    # Clear Stats cache
     log.info('clear_stats_cache')
     return cache.delete_pattern('template.cache.stats*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_settings_cache():
-    # Clear Settings cache on model update
+    # Clear Settings cache
     log.info('clear_settings_cache')
     return cache.delete_pattern('template.cache.settings*')
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 0, 'countdown': 5})
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})
 def process_file_upload(pk):
     # Process new file upload
     log.info('process_file_upload: %s', pk)
@@ -129,10 +123,11 @@ def delete_expired_files():
     return f'Deleted/Processed: {i}/{len(files)}'
 
 
-@shared_task()
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 2, 'countdown': 30})
 def process_stats():
     # Process file stats
-    log.info('process_stats')
+    log.info('----- START process_stats -----')
+    now = timezone.now()
     files = Files.objects.all()
     data = {'_totals': {'types': {}, 'size': 0, 'count': 0}}
     for file in files:
@@ -157,45 +152,64 @@ def process_stats():
         else:
             data[file.user_id]['types'][file.mime] = {'size': file.size, 'count': 1}
 
+    users = CustomUser.objects.all()
+    for user in users:
+        if user.id not in data:
+            data[user.id] = {'types': {}, 'size': 0, 'count': 0}
+
     for user_id, _data in data.items():
         _data['human_size'] = Files.get_size_of(_data['size'])
         log.info('user_id: %s', user_id)
         user_id = None if str(user_id) == '_totals' else user_id
         log.info('user_id: %s', user_id)
-        log.info('_data.type: %s', type(_data))
         log.info('_data: %s', _data)
-        stats = FileStats.objects.create(
-            user_id=user_id,
-            stats=_data,
-        )
+        stats = FileStats.objects.filter(user_id=user_id, created_at__day=now.day)
+        if stats:
+            stats = stats[0]
+            stats.stats = _data
+            stats.save()
+        else:
+            stats = FileStats.objects.create(
+                user_id=user_id,
+                stats=_data,
+            )
         log.info('stats.pk: %s', stats.pk)
+    log.info('----- END process_stats -----')
     log.info(data)
 
 
 @shared_task()
 def cleanup_old_stats():
     # Delete Old Stats
+    # TODO: DEPRECATED: To be removed
     log.info('cleanup_old_stats')
     now = timezone.now()
-    ft_filter = now - datetime.timedelta(days=1)
-    file_stats = FileStats.objects.filter(created_at__gt=ft_filter)
+    # ft_filter = now - datetime.timedelta(days=1)
+    # file_stats = FileStats.objects.filter(created_at__lt=ft_filter)
+    file_stats = FileStats.objects.all()
     log.info('file_stats: %s', file_stats)
     extra_days = 10
-    extra = 0
-    for i in count(1):
-        day = now - datetime.timedelta(days=i)
-        stats = file_stats.filter(created_at__day=day.day)
-        log.info('stats: %s', stats)
-        if len(stats) > 1:
-            log.info('--- process stats for day: %s', day.day)
-            log.info(stats.first())
-            all_but_last = stats.exclude(pk=stats.first().pk)
-            log.info(all_but_last)
-            all_but_last.delete()
-            log.info('--- process stats for day: %s', day.day)
-        else:
-            extra += 1
-            log.info('extra: %s, day: %s', extra, day.day)
+    users = CustomUser.objects.all()
+    # users = CustomUser.objects.all().values_list('id', flat=True)
+    id_list = [user.id for user in users] + [0]
+    for user_id in id_list:
+        extra = 0
+        log.info('-'*40)
+        log.info('user_id: %s', user_id)
+        for i in count(0):
+            day = now - datetime.timedelta(days=i)
+            day_stats = file_stats.filter(created_at__day=day.day)
+            # log.info('day_stats: %s', day_stats)
+            stats = day_stats.filter(user_id=user_id or None)
+            # log.info('stats: %s', stats)
+            if len(stats) > 1:
+                log.info('--- start process stats for day -- %s --', day.day)
+                all_but_last = stats.exclude(pk=stats.first().pk)
+                log.info('all_but_last: %s', all_but_last)
+                all_but_last.delete()
+            else:
+                extra += 1
+                log.info('extra: %s, day: %s', extra, day.day)
             if extra >= extra_days:
                 break
 
