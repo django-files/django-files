@@ -22,6 +22,7 @@ services:
         - "traefik.http.services.STACK_NAME.loadbalancer.server.scheme=http"
     volumes:
       - static_dir:/data/static
+      - logs_dir:/logs
       - media_dir:/data/media
 #    secrets:
 #      - source: cssnr_basic_http_auth
@@ -96,6 +97,25 @@ services:
     networks:
       - net-internal
 
+  vector:
+    build:
+      context: ./vector
+      network: host
+    image: djangofiles-vector:${VERSION:-latest}
+    environment:
+      - X_TEST=true
+    deploy:
+      replicas: 1
+    depends_on:
+      - app
+      - nginx
+      - redis
+    volumes:
+      - logs_dir:/logs
+#    ports:
+#      - "8686:8686"
+
+
 #  redis-commander:
 #    image: ghcr.io/joeferner/redis-commander:latest
 #    environment:
@@ -151,6 +171,7 @@ volumes:
   static_dir:
 #  flower_data:
   redis_data:
+  logs_dir:
   media_dir:
 #    driver_opts:
 #      type: none

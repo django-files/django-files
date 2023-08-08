@@ -1,0 +1,14 @@
+[api]
+enabled = true
+address = "0.0.0.0:8686"
+
+[sources.demo_logs]
+type = "demo_logs"
+interval = 30.0
+format = "json"
+
+[sinks.console]
+inputs = ["demo_logs"]
+target = "stdout"
+type = "console"
+encoding.codec = "json"
