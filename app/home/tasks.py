@@ -23,40 +23,40 @@ log = logging.getLogger('celery')
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def flush_template_cache():
-    # Flush template cache on request
+    # Flush all template cache on request
     log.info('flush_template_cache')
     return cache.delete_pattern('template.cache.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_files_cache():
-    # Clear Files cache on model update
+    # Clear Files cache
     log.info('clear_files_cache')
     return cache.delete_pattern('template.cache.files*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_shorts_cache():
-    # Clear Files cache on model update
+    # Clear Shorts cache
     log.info('clear_shorts_cache')
     return cache.delete_pattern('template.cache.shorts*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_stats_cache():
-    # Clear Files cache on model update
+    # Clear Stats cache
     log.info('clear_stats_cache')
     return cache.delete_pattern('template.cache.stats*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_settings_cache():
-    # Clear Settings cache on model update
+    # Clear Settings cache
     log.info('clear_settings_cache')
     return cache.delete_pattern('template.cache.settings*')
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 0, 'countdown': 5})
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})
 def process_file_upload(pk):
     # Process new file upload
     log.info('process_file_upload: %s', pk)
@@ -123,15 +123,13 @@ def delete_expired_files():
     return f'Deleted/Processed: {i}/{len(files)}'
 
 
-@shared_task()
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 2, 'countdown': 30})
 def process_stats():
     # Process file stats
     log.info('----- START process_stats -----')
     now = timezone.now()
     files = Files.objects.all()
     data = {'_totals': {'types': {}, 'size': 0, 'count': 0}}
-    # TODO: Loop through users not files
-    log.info('----- for file in files:')
     for file in files:
         if file.user_id not in data:
             data[file.user_id] = {'types': {}, 'size': 0, 'count': 0}
@@ -155,12 +153,10 @@ def process_stats():
             data[file.user_id]['types'][file.mime] = {'size': file.size, 'count': 1}
 
     users = CustomUser.objects.all()
-    log.info('----- for user in users:')
     for user in users:
         if user.id not in data:
             data[user.id] = {'types': {}, 'size': 0, 'count': 0}
 
-    log.info('----- for user_id, _data in data.items():')
     for user_id, _data in data.items():
         _data['human_size'] = Files.get_size_of(_data['size'])
         log.info('user_id: %s', user_id)
