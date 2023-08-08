@@ -68,10 +68,11 @@ def process_file_upload(pk):
     log.info('process_file_upload: %s', pk)
     file = Files.objects.get(pk=pk)
     log.info('-'*40)
-    log.info(file)
-    log.info(file.file)
+    log.info('file: %s', file)
+    log.info('file.file: %s', file.file)
+    log.info('file.file.path: %s', file.file.path)
     log.info('-'*40)
-    if not file or file.file:
+    if not file or not file.file:
         return log.warning('WARNING NO FILE -- file or file.file is None --')
     file.name = os.path.basename(file.file.name)
     log.info('file.name: %s', file.name)
@@ -105,7 +106,7 @@ def process_file_upload(pk):
             else:
                 cleaned_exif["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
             file.exif = json.dumps(cast(cleaned_exif))
-        file.save()
+    file.save()
     log.info('-'*40)
     send_discord_message.delay(file.pk)
     return file.pk

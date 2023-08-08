@@ -1,34 +1,59 @@
 <!doctype html>
-<html lang="en" class="h-100">
+<html lang="en">
 <head>
 
     <meta charset="utf-8">
-    <title>Django Files - {% block title %}{% endblock %}</title>
+    <title>{{ file.name }}</title>
+
+    <meta name="theme-color" content="{{ file.user.default_color }}">
 
     <meta name="author" content="{{ file.user.username }}"/>
     <meta name="title" content="{{ file.name }}"/>
-{#    <meta name="description" content="Django Files - A Django File, plural style."/>#}
+    <meta name="description" content="{{ file.info }}"/>
 
     <meta property="og:author" content="{{ file.user.username }}">
     <meta property="og:title" content="{{ file.name }}">
-{#    <meta property="og:description" content="Django Files - A Django File, plural style.">#}
-    <meta property="og:type" content="image">
+    <meta property="og:description" content="{{ file.info }}">
+
+    <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="og:image" content="{{ raw_url }}">
+
+    <meta property="twitter:title" content="{{ file.name }}">
+    <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+    <meta property="twitter:card" content="summary_large_image">
+
     <style>
-        body {
-            background-color: #2b2a33;
-            margin: 0 !important;
+        html, body
+        {
+            background-color: #0e0e0e;
+            height: 100%;
+            margin:0;
+            padding:0;
         }
-        img {max-height: 100vh; max-width: 100vw}
+        div {
+            position:relative;
+            height: 100%;
+            width:100%;
+        }
+        div img {
+            position:absolute;
+            top:0;
+            left:0;
+            right:0;
+            bottom:0;
+            margin:auto;
+            max-height: 100vh;
+            max-width: 100vw;
+        }
     </style>
 
 </head>
-
 <body>
 
-<img src="{{ raw_url }}" alt="{{ file.name }}">
+<div>
+    <img src="{{ raw_url }}" alt="{{ file.name }}">
+</div>
 
 </body>
-
 </html>

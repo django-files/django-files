@@ -416,7 +416,6 @@ def gen_flameshot(request):
     return response
 
 
-@login_required
 @require_http_methods(['GET'])
 def url_route_view(request, filename):
     """
