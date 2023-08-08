@@ -126,9 +126,12 @@ def delete_expired_files():
 @shared_task()
 def process_stats():
     # Process file stats
-    log.info('process_stats')
+    log.info('----- START process_stats -----')
+    now = timezone.now()
     files = Files.objects.all()
     data = {'_totals': {'types': {}, 'size': 0, 'count': 0}}
+    # TODO: Loop through users not files
+    log.info('----- for file in files:')
     for file in files:
         if file.user_id not in data:
             data[file.user_id] = {'types': {}, 'size': 0, 'count': 0}
@@ -151,29 +154,43 @@ def process_stats():
         else:
             data[file.user_id]['types'][file.mime] = {'size': file.size, 'count': 1}
 
+    users = CustomUser.objects.all()
+    log.info('----- for user in users:')
+    for user in users:
+        if user.id not in data:
+            data[user.id] = {'types': {}, 'size': 0, 'count': 0}
+
+    log.info('----- for user_id, _data in data.items():')
     for user_id, _data in data.items():
         _data['human_size'] = Files.get_size_of(_data['size'])
         log.info('user_id: %s', user_id)
         user_id = None if str(user_id) == '_totals' else user_id
         log.info('user_id: %s', user_id)
-        log.info('_data.type: %s', type(_data))
         log.info('_data: %s', _data)
-        stats = FileStats.objects.create(
-            user_id=user_id,
-            stats=_data,
-        )
+        stats = FileStats.objects.filter(user_id=user_id, created_at__day=now.day)
+        if stats:
+            stats = stats[0]
+            stats.stats = _data
+            stats.save()
+        else:
+            stats = FileStats.objects.create(
+                user_id=user_id,
+                stats=_data,
+            )
         log.info('stats.pk: %s', stats.pk)
+    log.info('----- END process_stats -----')
     log.info(data)
 
 
 @shared_task()
 def cleanup_old_stats():
     # Delete Old Stats
+    # TODO: DEPRECATED: To be removed
     log.info('cleanup_old_stats')
     now = timezone.now()
-    ft_filter = now - datetime.timedelta(days=1)
-    file_stats = FileStats.objects.filter(created_at__lt=ft_filter)
-    # TODO: Set start date to file_stats.last() and end date to file_stats.first()
+    # ft_filter = now - datetime.timedelta(days=1)
+    # file_stats = FileStats.objects.filter(created_at__lt=ft_filter)
+    file_stats = FileStats.objects.all()
     log.info('file_stats: %s', file_stats)
     extra_days = 10
     users = CustomUser.objects.all()
@@ -183,7 +200,7 @@ def cleanup_old_stats():
         extra = 0
         log.info('-'*40)
         log.info('user_id: %s', user_id)
-        for i in count(1):
+        for i in count(0):
             day = now - datetime.timedelta(days=i)
             day_stats = file_stats.filter(created_at__day=day.day)
             # log.info('day_stats: %s', day_stats)
