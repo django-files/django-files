@@ -15,16 +15,10 @@ from itertools import count
 from pytimeparse2 import parse
 from PIL import Image, ExifTags, TiffImagePlugin
 
-from .models import Files, Webhooks, SiteSettings, FileStats
+from home.models import Files, Webhooks, SiteSettings, FileStats
+from oauth.models import CustomUser
 
 log = logging.getLogger('celery')
-
-
-# @shared_task()
-# def clear_sessions():
-#     # Cleanup session data for supported backends
-#     log.info('clear_sessions')
-#     return management.call_command('clearsessions')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
@@ -178,24 +172,31 @@ def cleanup_old_stats():
     log.info('cleanup_old_stats')
     now = timezone.now()
     ft_filter = now - datetime.timedelta(days=1)
-    file_stats = FileStats.objects.filter(created_at__gt=ft_filter)
+    file_stats = FileStats.objects.filter(created_at__lt=ft_filter)
+    # TODO: Set start date to file_stats.last() and end date to file_stats.first()
     log.info('file_stats: %s', file_stats)
     extra_days = 10
-    extra = 0
-    for i in count(1):
-        day = now - datetime.timedelta(days=i)
-        stats = file_stats.filter(created_at__day=day.day)
-        log.info('stats: %s', stats)
-        if len(stats) > 1:
-            log.info('--- process stats for day: %s', day.day)
-            log.info(stats.first())
-            all_but_last = stats.exclude(pk=stats.first().pk)
-            log.info(all_but_last)
-            all_but_last.delete()
-            log.info('--- process stats for day: %s', day.day)
-        else:
-            extra += 1
-            log.info('extra: %s, day: %s', extra, day.day)
+    users = CustomUser.objects.all()
+    # users = CustomUser.objects.all().values_list('id', flat=True)
+    id_list = [user.id for user in users] + [0]
+    for user_id in id_list:
+        extra = 0
+        log.info('-'*40)
+        log.info('user_id: %s', user_id)
+        for i in count(1):
+            day = now - datetime.timedelta(days=i)
+            day_stats = file_stats.filter(created_at__day=day.day)
+            # log.info('day_stats: %s', day_stats)
+            stats = day_stats.filter(user_id=user_id or None)
+            # log.info('stats: %s', stats)
+            if len(stats) > 1:
+                log.info('--- start process stats for day -- %s --', day.day)
+                all_but_last = stats.exclude(pk=stats.first().pk)
+                log.info('all_but_last: %s', all_but_last)
+                all_but_last.delete()
+            else:
+                extra += 1
+                log.info('extra: %s, day: %s', extra, day.day)
             if extra >= extra_days:
                 break
 
