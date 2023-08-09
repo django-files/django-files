@@ -49,7 +49,8 @@ class FileStats(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, blank=True, null=True, on_delete=models.CASCADE)
     stats = models.JSONField(verbose_name='Stats JSON', help_text='Stats JSON Data.')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Updated', help_text='Stats Updated Date.')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Stats Updated Date.')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='Stats Updated Date.')
     objects = FileStatsManager()
 
     def __str__(self):
