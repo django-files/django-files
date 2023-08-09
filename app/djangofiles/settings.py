@@ -83,7 +83,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     'process_stats': {
         'task': 'home.tasks.process_stats',
-        'schedule': datetime.timedelta(minutes=config('PROCESS_STATS_MIN', 30, int)),
+        'schedule': datetime.timedelta(minutes=config('PROCESS_STATS_MIN', 15, int)),
     },
     # 'cleanup_old_stats': {
     #     'task': 'home.tasks.cleanup_old_stats',
