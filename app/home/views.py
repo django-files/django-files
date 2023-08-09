@@ -40,13 +40,14 @@ def home_view(request):
     return render(request, 'home.html', context)
 
 
-@login_required
+# @login_required
 def stats_view(request):
     """
     View  /stats/
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
-    stats = FileStats.objects.get_request(request)
+    # stats = FileStats.objects.get_request(request)
+    stats = FileStats.objects.filter(user_id=2)
     log.debug('stats: %s', stats)
     days, files, size = [], [], []
     # {"types": {}, "size": 0, "count": 0, "human_size": "0.0 B"}
@@ -54,7 +55,7 @@ def stats_view(request):
         days.append(f'{stat.created_at.month}/{stat.created_at.day}')
         files.append(stat.stats['count'])
         size.append(stat.stats['size'])
-    context = {'days': days, 'files': files, 'size': size}
+    context = {'stats': stats, 'days': days, 'files': files, 'size': size}
     log.debug('context: %s', context)
     return render(request, 'stats.html', context=context)
 

@@ -1,68 +1,100 @@
-<!doctype html>
-<html lang="en" class="h-100">
-<head>
-    <title></title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% extends "main.html" %}
+{% load static %}
+{% load tz %}
+{% load home_tags %}
+{% load cache %}
+{% block contact_active %}active{% endblock %}
+{% block title %}Stats{% endblock %}
+
+{% block head %}
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.js"></script>
     {{ days|json_script:"days" }}
     {{ files|json_script:"files" }}
     {{ size|json_script:"size" }}
-</head>
-<body>
+{% endblock %}
 
-<div>
-    <canvas id="myChart"></canvas>
-</div>
+{% block body %}
+<div class="container-fluid py-3 px-4">
 
-<script>
-    const ctx = document.getElementById('myChart');
+    {% if not stats %}
+        <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
+    {% else %}
+        {% with stats=stats|first  %}
 
-    const labels = JSON.parse(document.getElementById('days').textContent);
-    console.log(labels);
-    const files = JSON.parse(document.getElementById('files').textContent);
-    console.log(files);
-    const size = JSON.parse(document.getElementById('size').textContent);
-    console.log(size);
+            <div class="row">
+                {% include 'include/stats-card.html' with title="Total Files" data=stats.stats.count %}
+                {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
+                {% include 'include/stats-card.html' with title="Total Shorts" data=shorts|length %}
+            </div>
 
-    ctx.style.backgroundColor = 'rgb(21,20,20)';
+            {% include 'include/stats-table.html' with stats=stats %}
 
-    new Chart(ctx, {
-        mode: 'dark',
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Files',
-                    data: files,
-                    fill: false,
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1
-                },
-                //{
-                //    label: 'Size',
-                //    data: size,
-                //    fill: false,
-                //    borderColor: 'rgb(75, 192, 192)',
-                //    tension: 0.1
-                //},
-            ]
-        },
-        options: {
-            scales: {
-                y: {
-                    grid: {
-                        color: 'rgba(255,255,255)',
-                    },
-                },
-                x: {
-                    grid: {
-                        color: 'rgba(255,255,255)',
-                    },
-                },
+            <p><a class="btn btn-sm btn-outline-light me-2" role="button" id="update-stats-btn"
+                  data-target-url="{% url 'home:update-stats' %}">
+                <i class="fa-solid fa-chart-bar"></i> Process Stats</a>{% if stats %}
+                <span class="d-inline-block my-1">Updated: {{ stats.created_at|localtime }}</span>{% endif %}</p>
+
+            <div class="row">
+                <div class="col">
+                    <!-- Prepare a DOM with a defined width and height for ECharts -->
+                    <div id="stats" class="w-100" style="min-width: 340px;height: 400px;"></div>
+                </div>
+            </div>
+
+        {% endwith %}
+    {% endif %}
+
+    <script type="text/javascript">
+        // Django Data
+        const labels = JSON.parse(document.getElementById('days').textContent);
+        console.log(labels);
+        const files = JSON.parse(document.getElementById('files').textContent);
+        console.log(files);
+        const size = JSON.parse(document.getElementById('size').textContent);
+        console.log(size);
+
+        // Initialize the echarts instance based on the prepared dom
+        let chart = echarts.init(document.getElementById('stats'));
+
+        // Specify the configuration items and data for the chart
+        let option = {
+            title: {
+                text: 'Stats',
+                textStyle: {
+                    color: '#fff'
+                }
             },
-        }
-    });
-</script>
+            tooltip: {},
+            legend: {
+                data: ['Files']
+            },
+            xAxis: {
+                type: 'category',
+                data: labels
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {
+                    name: 'Files',
+                    type: 'line',
+                    data: files
+                }
+            ]
+        };
 
-</body>
-</html>
+        // Display the chart using the configuration items and data just specified.
+        chart.setOption(option);
+    </script>
+
+</div>
+{% endblock %}
+
+{% block tail %}
+    <script>
+        $(window).on('resize', function(){
+            if ( chart != null ){ chart.resize(); }
+        });
+    </script>
+{% endblock %}
