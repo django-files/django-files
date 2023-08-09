@@ -85,11 +85,11 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'home.tasks.process_stats',
         'schedule': datetime.timedelta(minutes=config('PROCESS_STATS_MIN', 30, int)),
     },
-    'cleanup_old_stats': {
-        'task': 'home.tasks.cleanup_old_stats',
-        'schedule': datetime.timedelta(hours=config('CLEANUP_STATS_HOUR', 1, int)),
-        # 'schedule': crontab(minute='0', hour='0'),
-    },
+    # 'cleanup_old_stats': {
+    #     'task': 'home.tasks.cleanup_old_stats',
+    #     'schedule': datetime.timedelta(hours=config('CLEANUP_STATS_HOUR', 1, int)),
+    #     # 'schedule': crontab(minute='0', hour='0'),
+    # },
 }
 
 CHANNEL_LAYERS = {

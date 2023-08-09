@@ -11,8 +11,8 @@
 {% endblock %}
 
 {% block body %}
-<div class="container-fluid py-3 px-4">
 {% cache 86400 stats_stats request.user %}
+<div class="container-fluid py-3 px-4">
 
     <h1>Stats</h1>
 
@@ -24,7 +24,7 @@
             <div class="row">
                 {% include 'include/stats-card.html' with title="Total Files" data=stats.stats.count %}
                 {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
-                {% include 'include/stats-card.html' with title="Total Shorts" data=shorts|length %}
+                {% include 'include/stats-card.html' with title="Total Shorts" data=stats.stats.shorts %}
             </div>
 
             {% include 'include/stats-table.html' with stats=stats %}
@@ -32,7 +32,7 @@
             <p><a class="btn btn-sm btn-outline-warning me-2" role="button" id="update-stats-btn"
                   data-target-url="{% url 'home:update-stats' %}">
                 <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>{% if stats %}
-                <span class="d-inline-block my-1">Updated: {{ stats.created_at|localtime }}</span>{% endif %}</p>
+                <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>{% endif %}</p>
 
             <div class="row">
                 <div class="col">
@@ -41,59 +41,59 @@
                 </div>
             </div>
 
+            <!-- TODO: Use Something Else? Or Fix! -->
+            {{ days|json_script:"days" }}
+            {{ files|json_script:"files" }}
+            {{ size|json_script:"size" }}
+            <script type="text/javascript">
+                // Django Data
+                const labels = JSON.parse(document.getElementById('days').textContent);
+                console.log(labels);
+                const files = JSON.parse(document.getElementById('files').textContent);
+                console.log(files);
+                const size = JSON.parse(document.getElementById('size').textContent);
+                console.log(size);
+
+                // Initialize the echarts instance based on the prepared dom
+                let chart = echarts.init(document.getElementById('stats'));
+
+                // Specify the configuration items and data for the chart
+                let option = {
+                    title: {
+                        text: 'Stats',
+                        textStyle: {
+                            color: '#fff'
+                        }
+                    },
+                    tooltip: {},
+                    legend: {
+                        data: ['Files']
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: labels
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [
+                        {
+                            name: 'Files',
+                            type: 'line',
+                            data: files
+                        }
+                    ]
+                };
+
+                // Display the chart using the configuration items and data just specified.
+                chart.setOption(option);
+            </script>
+
         {% endwith %}
     {% endif %}
 
-    <!-- TODO: Use Something Else? Or Fix! -->
-    {{ days|json_script:"days" }}
-    {{ files|json_script:"files" }}
-    {{ size|json_script:"size" }}
-    <script type="text/javascript">
-        // Django Data
-        const labels = JSON.parse(document.getElementById('days').textContent);
-        console.log(labels);
-        const files = JSON.parse(document.getElementById('files').textContent);
-        console.log(files);
-        const size = JSON.parse(document.getElementById('size').textContent);
-        console.log(size);
-
-        // Initialize the echarts instance based on the prepared dom
-        let chart = echarts.init(document.getElementById('stats'));
-
-        // Specify the configuration items and data for the chart
-        let option = {
-            title: {
-                text: 'Stats',
-                textStyle: {
-                    color: '#fff'
-                }
-            },
-            tooltip: {},
-            legend: {
-                data: ['Files']
-            },
-            xAxis: {
-                type: 'category',
-                data: labels
-            },
-            yAxis: {
-                type: 'value'
-            },
-            series: [
-                {
-                    name: 'Files',
-                    type: 'line',
-                    data: files
-                }
-            ]
-        };
-
-        // Display the chart using the configuration items and data just specified.
-        chart.setOption(option);
-    </script>
-
-{% endcache %}
 </div>
+{% endcache %}
 {% endblock %}
 
 {% block tail %}

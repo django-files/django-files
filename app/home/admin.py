@@ -12,7 +12,7 @@ class FilesAdmin(admin.ModelAdmin):
     # list_editable = ('expr',)
     list_filter = ('user', 'expr', 'mime',)
     readonly_fields = ('id', 'file', 'size', 'mime', 'user', 'date',)
-    search_fields = ('id', 'file', 'size', 'expr', 'mime', 'user', 'date',)
+    search_fields = ('id', 'file', 'size', 'expr', 'mime', 'date',)
     ordering = ('-date',)
 
 
@@ -22,7 +22,7 @@ class FileStatsAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'created_at',)
     list_filter = ('user',)
     readonly_fields = ('id', 'user', 'created_at', 'stats')
-    search_fields = ('id', 'user', 'created_at',)
+    search_fields = ('id',)
     ordering = ('-created_at',)
 
     @admin.display(empty_value="Total")
@@ -36,7 +36,7 @@ class ShortURLsAdmin(admin.ModelAdmin):
     list_display = ('id', 'short', 'views', 'max', 'url', 'user', 'created_at',)
     list_filter = ('user',)
     readonly_fields = ('id', 'short', 'views', 'user', 'created_at',)
-    search_fields = ('id', 'short', 'user',)
+    search_fields = ('id', 'short', 'url',)
     ordering = ('-created_at',)
 
 

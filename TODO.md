@@ -1,11 +1,7 @@
 # TODO
 
 ## Issues
-- [ ] fix admin search: remove user from search_fields
-- [ ] fix stats task: include shorts
-- [ ] add updated_at to FileStats model
-- [ ] new
-- [ ] new
+- [ ] Move Stats Generation to Template Tag for Caching
 
 ## Core
 - [ ] Add File Viewing Endpoints for Stats and Embeds

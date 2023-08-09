@@ -21,16 +21,16 @@
                     <div class="row">
                         {% include 'include/stats-card.html' with title="Total Files" data=stats.stats.count %}
                         {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
-                        {% include 'include/stats-card.html' with title="Total Shorts" data=shorts|length %}
+                        {% include 'include/stats-card.html' with title="Total Shorts" data=stats.stats.shorts %}
                     </div>
                     {% include 'include/stats-table.html' with stats=stats %}
-                    <p><a class="btn btn-sm btn-outline-light me-2" role="button"
-                          href="{% url 'home:stats' %}">
-                            <i class="fa-solid fa-chart-bar"></i> View Stats</a>
-                        <a class="btn btn-sm btn-outline-warning me-2" role="button" id="update-stats-btn"
-                           data-target-url="{% url 'home:update-stats' %}">
-                            <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>{% if stats %}
-                            <span class="d-inline-block my-1">Updated: {{ stats.created_at|localtime }}</span>{% endif %}</p>
+                    <p><a class="btn btn-sm btn-outline-warning me-2" role="button" id="update-stats-btn"
+                          data-target-url="{% url 'home:update-stats' %}">
+                            <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>
+                        <a class="btn btn-sm btn-outline-light me-2" role="button"
+                           href="{% url 'home:stats' %}">
+                            <i class="fa-solid fa-chart-bar"></i> View Stats</a>{% if stats %}
+                            <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>{% endif %}</p>
                 {% endwith %}
             {% endif %}
         {% endcache %}
