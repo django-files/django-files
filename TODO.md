@@ -1,5 +1,8 @@
 # TODO
 
+## Issues
+- [ ] Move Stats Generation to Template Tag for Caching
+
 ## Core
 - [ ] Add File Viewing Endpoints for Stats and Embeds
 - [ ] Create Stats Page and Add Graphs
@@ -20,7 +23,6 @@
 - [ ] Custom Site Title Feature
 - [ ] Custom Favicon Feature
 - [ ] Custom Login Screen Feature
-- [ ] new
 
 ## API
 - [ ] Files - GET files

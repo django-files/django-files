@@ -1,3 +1,4 @@
+# import datetime
 import httpx
 import json
 import logging
@@ -8,17 +9,19 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
 from django.template.loader import render_to_string
+# from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+# from itertools import count
 from pytimeparse2 import parse
 # import plotly.graph_objects as go
 # import plotly.express as px
 # import plotly.io as pio
 
 from oauth.models import CustomUser, rand_string
-from .forms import SettingsForm
-from .models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
-from .tasks import clear_shorts_cache, process_file_upload, process_stats
+from home.forms import SettingsForm
+from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
+from home.tasks import clear_shorts_cache, process_file_upload, process_stats
 
 log = logging.getLogger('app')
 
@@ -35,6 +38,29 @@ def home_view(request):
     shorts = ShortURLs.objects.get_request(request)
     context = {'files': files, 'stats': stats, 'shorts': shorts}
     return render(request, 'home.html', context)
+
+
+@login_required
+def stats_view(request):
+    """
+    View  /stats/
+    """
+    log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
+    # TODO: Add ShortURLs to FileStats data and task
+    shorts = ShortURLs.objects.get_request(request)
+    # stats = FileStats.objects.filter(user_id=2)
+    stats = FileStats.objects.get_request(request)
+    log.debug('stats: %s', stats)
+    days, files, size = [], [], []
+    # {"types": {}, "size": 0, "count": 0, "human_size": "0.0 B"}
+    # TODO: Move to Template Tag for Template Fragment Caching
+    for stat in reversed(stats):
+        days.append(f'{stat.created_at.month}/{stat.created_at.day}')
+        files.append(stat.stats['count'])
+        size.append(stat.stats['size'])
+    context = {'stats': stats, 'days': days, 'files': files, 'size': size, 'shorts': shorts}
+    log.debug('context: %s', context)
+    return render(request, 'stats.html', context=context)
 
 
 @login_required
