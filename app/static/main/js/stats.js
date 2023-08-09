@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
 
     // Get and set the csrf_token
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -9,19 +9,19 @@ $(document).ready(function() {
             url: $('#update-stats-btn').attr('data-target-url'),
             type: 'POST',
             headers: {'X-CSRFToken': csrftoken},
-            beforeSend: function( jqXHR ){
+            beforeSend: function (jqXHR) {
                 //
             },
-            success: function(data, textStatus, jqXHR){
-                console.log('Status: '+jqXHR.status+', Data: '+JSON.stringify(data));
+            success: function (data, textStatus, jqXHR) {
+                console.log('Status: ' + jqXHR.status + ', Data: ' + JSON.stringify(data));
                 alert('Stats Update Submitted. Page will now Reload...');
             },
-            complete: function(data, textStatus ){
+            complete: function (data, textStatus) {
                 console.log(data);
                 location.reload();
             },
             error: function (data, status, error) {
-                console.log('Status: '+data.status+', Response: '+data.responseText);
+                console.log('Status: ' + data.status + ', Response: ' + data.responseText);
                 alert(data.responseText)
             },
             cache: false,
