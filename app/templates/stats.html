@@ -8,9 +8,6 @@
 
 {% block head %}
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.js"></script>
-    {{ days|json_script:"days" }}
-    {{ files|json_script:"files" }}
-    {{ size|json_script:"size" }}
 {% endblock %}
 
 {% block body %}
@@ -47,6 +44,10 @@
         {% endwith %}
     {% endif %}
 
+    <!-- TODO: Use Something Else? Or Fix! -->
+    {{ days|json_script:"days" }}
+    {{ files|json_script:"files" }}
+    {{ size|json_script:"size" }}
     <script type="text/javascript">
         // Django Data
         const labels = JSON.parse(document.getElementById('days').textContent);

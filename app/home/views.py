@@ -46,16 +46,19 @@ def stats_view(request):
     View  /stats/
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
-    stats = FileStats.objects.get_request(request)
+    # TODO: Add ShortURLs to FileStats data and task
+    shorts = ShortURLs.objects.get_request(request)
     # stats = FileStats.objects.filter(user_id=2)
+    stats = FileStats.objects.get_request(request)
     log.debug('stats: %s', stats)
     days, files, size = [], [], []
     # {"types": {}, "size": 0, "count": 0, "human_size": "0.0 B"}
+    # TODO: Move to Template Tag for Template Fragment Caching
     for stat in reversed(stats):
         days.append(f'{stat.created_at.month}/{stat.created_at.day}')
         files.append(stat.stats['count'])
         size.append(stat.stats['size'])
-    context = {'stats': stats, 'days': days, 'files': files, 'size': size}
+    context = {'stats': stats, 'days': days, 'files': files, 'size': size, 'shorts': shorts}
     log.debug('context: %s', context)
     return render(request, 'stats.html', context=context)
 
