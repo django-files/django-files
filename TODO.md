@@ -1,5 +1,12 @@
 # TODO
 
+## Issues
+- [ ] fix admin search: remove user from search_fields
+- [ ] fix stats task: include shorts
+- [ ] add updated_at to FileStats model
+- [ ] new
+- [ ] new
+
 ## Core
 - [ ] Add File Viewing Endpoints for Stats and Embeds
 - [ ] Create Stats Page and Add Graphs
@@ -20,7 +27,6 @@
 - [ ] Custom Site Title Feature
 - [ ] Custom Favicon Feature
 - [ ] Custom Login Screen Feature
-- [ ] new
 
 ## API
 - [ ] Files - GET files
