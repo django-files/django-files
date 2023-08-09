@@ -15,6 +15,9 @@
 
 {% block body %}
 <div class="container-fluid py-3 px-4">
+{% cache 86400 stats_stats request.user %}
+
+    <h1>Stats</h1>
 
     {% if not stats %}
         <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
@@ -29,9 +32,9 @@
 
             {% include 'include/stats-table.html' with stats=stats %}
 
-            <p><a class="btn btn-sm btn-outline-light me-2" role="button" id="update-stats-btn"
+            <p><a class="btn btn-sm btn-outline-warning me-2" role="button" id="update-stats-btn"
                   data-target-url="{% url 'home:update-stats' %}">
-                <i class="fa-solid fa-chart-bar"></i> Process Stats</a>{% if stats %}
+                <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>{% if stats %}
                 <span class="d-inline-block my-1">Updated: {{ stats.created_at|localtime }}</span>{% endif %}</p>
 
             <div class="row">
@@ -88,6 +91,7 @@
         chart.setOption(option);
     </script>
 
+{% endcache %}
 </div>
 {% endblock %}
 
@@ -97,4 +101,5 @@
             if ( chart != null ){ chart.resize(); }
         });
     </script>
+    <script type="text/javascript" src="{% static 'main/js/stats.js' %}"></script>
 {% endblock %}

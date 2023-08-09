@@ -24,10 +24,13 @@
                         {% include 'include/stats-card.html' with title="Total Shorts" data=shorts|length %}
                     </div>
                     {% include 'include/stats-table.html' with stats=stats %}
-                    <p><a class="btn btn-sm btn-outline-light me-2" role="button" id="update-stats-btn"
-                          data-target-url="{% url 'home:update-stats' %}">
-                        <i class="fa-solid fa-chart-bar"></i> Process Stats</a>{% if stats %}
-                        <span class="d-inline-block my-1">Updated: {{ stats.created_at|localtime }}</span>{% endif %}</p>
+                    <p><a class="btn btn-sm btn-outline-light me-2" role="button"
+                          href="{% url 'home:stats' %}">
+                            <i class="fa-solid fa-chart-bar"></i> View Stats</a>
+                        <a class="btn btn-sm btn-outline-warning me-2" role="button" id="update-stats-btn"
+                           data-target-url="{% url 'home:update-stats' %}">
+                            <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>{% if stats %}
+                            <span class="d-inline-block my-1">Updated: {{ stats.created_at|localtime }}</span>{% endif %}</p>
                 {% endwith %}
             {% endif %}
         {% endcache %}
@@ -75,4 +78,5 @@
     <script type="text/javascript" src="{% static 'main/js/home.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/shorts.js' %}"></script>
     <script type="text/javascript" src="{% static 'main/js/files.js' %}"></script>
+    <script type="text/javascript" src="{% static 'main/js/stats.js' %}"></script>
 {% endblock %}

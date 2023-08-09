@@ -40,14 +40,14 @@ def home_view(request):
     return render(request, 'home.html', context)
 
 
-# @login_required
+@login_required
 def stats_view(request):
     """
     View  /stats/
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
-    # stats = FileStats.objects.get_request(request)
-    stats = FileStats.objects.filter(user_id=2)
+    stats = FileStats.objects.get_request(request)
+    # stats = FileStats.objects.filter(user_id=2)
     log.debug('stats: %s', stats)
     days, files, size = [], [], []
     # {"types": {}, "size": 0, "count": 0, "human_size": "0.0 B"}
@@ -58,33 +58,6 @@ def stats_view(request):
     context = {'stats': stats, 'days': days, 'files': files, 'size': size}
     log.debug('context: %s', context)
     return render(request, 'stats.html', context=context)
-
-
-# def generate_stats():
-#     log.info('generate_stats')
-#     # now = timezone.now()
-#     # ft_filter = now - datetime.timedelta(days=1)
-#     file_stats = FileStats.objects.all()
-#     start_date = file_stats.last().created_at
-#     last_date = file_stats.first().created_at
-#     day = start_date
-#     extra = 0
-#     for i in count(1):
-#         day = now - datetime.timedelta(days=i)
-#         stats = file_stats.filter(created_at__day=day.day)
-#         log.info('stats: %s', stats)
-#         if len(stats) > 1:
-#             log.info('--- process stats for day: %s', day.day)
-#             log.info(stats.first())
-#             all_but_last = stats.exclude(pk=stats.first().pk)
-#             log.info(all_but_last)
-#             all_but_last.delete()
-#             log.info('--- process stats for day: %s', day.day)
-#         else:
-#             extra += 1
-#             log.info('extra: %s, day: %s', extra, day.day)
-#             if extra >= extra_days:
-#                 break
 
 
 @login_required
