@@ -19,9 +19,9 @@ from pytimeparse2 import parse
 # import plotly.io as pio
 
 from oauth.models import CustomUser, rand_string
-from .forms import SettingsForm
-from .models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
-from .tasks import clear_shorts_cache, process_file_upload, process_stats
+from home.forms import SettingsForm
+from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
+from home.tasks import clear_shorts_cache, process_file_upload, process_stats
 
 log = logging.getLogger('app')
 
@@ -46,12 +46,17 @@ def stats_view(request):
     View  /stats/
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
-    # files = Files.objects.get_request(request)
     stats = FileStats.objects.get_request(request)
-    # # stats = FileStats.objects.filter(user=request.user)
-    # shorts = ShortURLs.objects.get_request(request)
-    # context = {'files': files, 'stats': stats, 'shorts': shorts}
-    return render(request, 'stats.html')
+    log.debug('stats: %s', stats)
+    days, files, size = [], [], []
+    # {"types": {}, "size": 0, "count": 0, "human_size": "0.0 B"}
+    for stat in reversed(stats):
+        days.append(f'{stat.created_at.month}/{stat.created_at.day}')
+        files.append(stat.stats['count'])
+        size.append(stat.stats['size'])
+    context = {'days': days, 'files': files, 'size': size}
+    log.debug('context: %s', context)
+    return render(request, 'stats.html', context=context)
 
 
 # def generate_stats():

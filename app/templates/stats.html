@@ -3,6 +3,9 @@
 <head>
     <title></title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {{ days|json_script:"days" }}
+    {{ files|json_script:"files" }}
+    {{ size|json_script:"size" }}
 </head>
 <body>
 
@@ -13,24 +16,50 @@
 <script>
     const ctx = document.getElementById('myChart');
 
+    const labels = JSON.parse(document.getElementById('days').textContent);
+    console.log(labels);
+    const files = JSON.parse(document.getElementById('files').textContent);
+    console.log(files);
+    const size = JSON.parse(document.getElementById('size').textContent);
+    console.log(size);
+
+    ctx.style.backgroundColor = 'rgb(21,20,20)';
+
     new Chart(ctx, {
+        mode: 'dark',
         type: 'line',
         data: {
-            labels: [1,2,3,4,5,6,7],
-            datasets: [{
-                label: 'Stats',
-                data: [2, 12, 30, 45, 47, 55, 70],
-                fill: false,
-                borderColor: 'rgb(75, 192, 192)',
-                tension: 0.1
-            }]
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Files',
+                    data: files,
+                    fill: false,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                },
+                //{
+                //    label: 'Size',
+                //    data: size,
+                //    fill: false,
+                //    borderColor: 'rgb(75, 192, 192)',
+                //    tension: 0.1
+                //},
+            ]
         },
         options: {
             scales: {
                 y: {
-                    stacked: true
-                }
-            }
+                    grid: {
+                        color: 'rgba(255,255,255)',
+                    },
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(255,255,255)',
+                    },
+                },
+            },
         }
     });
 </script>
