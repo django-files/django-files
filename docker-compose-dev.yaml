@@ -102,8 +102,6 @@ services:
     volumes:
       - logs_dir:/logs
       - vector_data:/data
-#    ports:
-#      - "8686:8686"
 
 
 #  redis-commander:
