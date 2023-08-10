@@ -58,6 +58,14 @@ def clear_settings_cache():
     return cache.delete_pattern('template.cache.settings*')
 
 
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 300})
+def app_cleanup():
+    # Clear Settings cache
+    log.info('app_cleanup')
+    with open(settings.NGINX_ACCESS_LOGS, 'a') as f:
+        f.truncate(0)
+
+
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})
 def process_file_upload(pk):
     # Process new file upload
@@ -190,7 +198,7 @@ def process_vector_stats():
     # TODO: Add try, expect, finally for deleting keys
     log.info('process_vector_stats')
     client = get_redis_connection('vector')
-    keys = client.keys('*')
+    count, keys = client.scan(0, '*', 1000)
     i = 0
     for key in keys:
         log.info('Processing Key: %s', key)
@@ -230,9 +238,6 @@ def process_vector_stats():
         file.save()
         client.delete(key)
         i += 1
-    # TODO: Possibly move this to a backend cleanup task to run daily
-    with open(settings.NGINX_ACCESS_LOGS, 'a') as f:
-        f.truncate(0)
     return f'Processed {i}/{len(keys)} Files/Keys'
 
 

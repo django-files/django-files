@@ -1,7 +1,8 @@
 # TODO
 
 ## Issues
-- [ ] Move Stats Generation to Template Tag for Caching
+- [ ] Users: Fix Local User to allow Discord Webhook
+- [ ] Stats: Move Stats Generation to Template Tag for Caching
 
 ## Core
 - [ ] Add File Viewing Endpoints for Stats and Embeds
@@ -30,4 +31,4 @@
 - [ ] Users - GET PUT DELETE users
 
 ## Miscellaneous
-- [ ] new
+- [ ] Add Demo Mode and launch Demo
