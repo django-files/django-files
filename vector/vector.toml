@@ -2,13 +2,41 @@
 enabled = true
 address = "0.0.0.0:8686"
 
-[sources.demo_logs]
-type = "demo_logs"
-interval = 30.0
-format = "json"
+[sources.django_files_nginx]
+type = "file"
+include = ["/logs/nginx.access"]
 
-[sinks.console]
-inputs = ["demo_logs"]
+[transforms.nginx_json]
+type = "remap"
+inputs = ["django_files_nginx"]
+source = """
+. = parse_json!(.message)
+.id = encode_base64(random_bytes(16))
+"""
+
+[transforms.get_user_file]
+type = "filter"
+inputs = ["nginx_json"]
+condition = """
+starts_with(string!(.uri), "/r/")
+"""
+
+[transforms.get_views]
+type = "filter"
+inputs = ["get_user_file"]
+condition = """
+.status == \"200\"
+"""
+
+[sinks.console2]
+inputs = ["get_views"]
 target = "stdout"
 type = "console"
 encoding.codec = "json"
+
+[sinks.redis_views]
+type = "redis"
+inputs = [ "get_views" ]
+endpoint = "redis://redis:6379/2"
+encoding.codec = "json"
+key = "{{ .id }}"
