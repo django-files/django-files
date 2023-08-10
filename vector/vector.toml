@@ -5,6 +5,7 @@ address = "0.0.0.0:8686"
 [sources.django_files_nginx]
 type = "file"
 include = ["/logs/nginx.access"]
+data_dir = "/data"
 
 [transforms.nginx_json]
 type = "remap"

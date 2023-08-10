@@ -100,6 +100,7 @@ services:
       - redis
     volumes:
       - logs_dir:/logs
+      - vector_data:/data
 #    ports:
 #      - "8686:8686"
 
@@ -150,3 +151,4 @@ volumes:
   redis_data:
   logs_dir:
   media_dir:
+  vector_data:
