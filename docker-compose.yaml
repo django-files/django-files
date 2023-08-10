@@ -60,6 +60,7 @@ services:
       replicas: 1
     volumes:
       - media_dir:/data/media
+      - logs_dir:/logs
     depends_on:
       - app
       - redis
@@ -97,6 +98,7 @@ services:
       - redis
     volumes:
       - logs_dir:/logs
+      - vector_data:/data
 #    ports:
 #      - "8686:8686"
 
@@ -146,4 +148,5 @@ volumes:
 #  flower_data:
   redis_data:
   logs_dir:
+  vector_data:
   media_dir:
