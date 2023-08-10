@@ -1,5 +1,5 @@
-FROM timberio/vector:latest-debian
-#FROM timberio/vector:latest-alpine
+FROM timberio/vector:latest-alpine
+#FROM timberio/vector:latest-debian
 
 ENV TZ=UTC
 
