@@ -22,9 +22,12 @@ COPY --from=base /usr/local/bin/ /usr/local/bin/
 
 RUN addgroup -g 1000 app  &&\
     adduser -S -H -h /app -s /sbin/nologin -u 1000 -G app app  &&\
-    mkdir -p /app /data/media/db /data/media/files /data/static /logs  && touch /logs/nginx.access  &&\
-    chown app:app /app /data/media/db /data/media/files /data/static /logs /logs/nginx.access  &&\
+    mkdir -p /app /data/media/db /data/media/files /data/static  &&\
+    chown app:app /app /data/media/db /data/media/files /data/static  &&\
     apk add --no-cache curl mysql-dev mailcap
+#    mkdir -p /app /data/media/db /data/media/files /data/static /logs  && touch /logs/nginx.access  &&\
+#    chown app:app /app /data/media/db /data/media/files /data/static /logs /logs/nginx.access  &&\
+#    apk add --no-cache curl mysql-dev mailcap
 
 #RUN groupadd -g 1000 app  &&\
 #    useradd -r -d /app -M -u 1000 -g 1000 -G video -s /usr/sbin/nologin app  &&\
