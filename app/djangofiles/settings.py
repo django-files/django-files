@@ -1,7 +1,7 @@
 import datetime
 import sentry_sdk
 import sys
-from celery.schedules import crontab
+# from celery.schedules import crontab
 from decouple import config, Csv
 from dotenv import find_dotenv, load_dotenv
 from django.contrib.messages import constants as message_constants
@@ -81,7 +81,8 @@ MESSAGE_TAGS = {
 CELERY_BEAT_SCHEDULE = {
     'app_cleanup': {
         'task': 'home.tasks.app_cleanup',
-        'schedule': crontab(minute='0', hour='0'),
+        'schedule': datetime.timedelta(hours=config('APP_CLEANUP_HOUR', 1, int)),
+        # 'schedule': crontab(minute='0', hour='0'),
     },
     'delete_expired_files': {
         'task': 'home.tasks.delete_expired_files',
