@@ -2,21 +2,16 @@
 
 ## Issues
 - [ ] Users: Fix Local User to allow Discord Webhook
-- [ ] Stats: Move Stats Generation to Template Tag for Caching
 
-## Core
-- [ ] Add File Viewing Endpoints for Stats and Embeds
-- [ ] Create Stats Page and Add Graphs
-- [ ] Add API Endpoints
+## General/UI
 - [ ] Gallery Overhaul
-- [ ] Overhaul FileStats cleanup task
-- [ ] Add Shorts Stats to Stats task
-- [ ] Overhaul /shorten and /upload URL Endpoints
 
 ## Files and Upload
+- [ ] Add File Viewing Endpoints for Stats and Embeds
 - [ ] Password Protection Feature
 - [ ] Max Views Feature
 - [ ] Filename Options Feature
+- [ ] Overhaul /shorten and /upload URL Endpoints
 
 ## Site Settings
 - [ ] Full Settings Interface Overhaul
@@ -24,6 +19,12 @@
 - [ ] Custom Site Title Feature
 - [ ] Custom Favicon Feature
 - [ ] Custom Login Screen Feature
+
+## Stats
+- [ ] Add File Views to Stats
+- [ ] Add Shorts Views to Stats
+- [ ] Move Stats Generation to Template Tag for Caching
+- [ ] Update Stats Graphs and Genreate More
 
 ## API
 - [ ] Files - GET files
