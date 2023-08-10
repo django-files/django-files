@@ -198,7 +198,7 @@ def process_vector_stats():
     # TODO: Add try, expect, finally for deleting keys
     log.info('process_vector_stats')
     client = get_redis_connection('vector')
-    count, keys = client.scan(0, '*', 1000)
+    _, keys = client.scan(0, '*', 1000)
     i = 0
     for key in keys:
         log.info('Processing Key: %s', key)

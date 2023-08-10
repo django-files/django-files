@@ -163,10 +163,11 @@ docker compose -f docker-compose-dev.yaml up --build --remove-orphans --force-re
 ## Variables
 
 You must configure one of the following authentication methods:
-1.   Local Authentication with `DJANGO_SUPERUSER_*` Variables
-2.   Discord Authentication with `OAUTH_*` Variables
-     -   Variables acquired by [Creating a Discord App](#frameworks).
-*   **Bold:** _Required_
+1.  Local Authentication with `DJANGO_SUPERUSER_*` Variables
+2.  Discord Authentication with `OAUTH_*` Variables
+    -   Variables acquired by [Creating a Discord App](#frameworks).
+
+**Bold:** _Required_
 
 | Variable                  | Description       | Example                                              |
 |---------------------------|-------------------|------------------------------------------------------|
