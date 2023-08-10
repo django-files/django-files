@@ -58,9 +58,9 @@ def clear_settings_cache():
     return cache.delete_pattern('template.cache.settings*')
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 300})
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 300})
 def app_cleanup():
-    # Clear Settings cache
+    # App Cleanup Task
     log.info('app_cleanup')
     with open(settings.NGINX_ACCESS_LOGS, 'a') as f:
         f.truncate(0)
