@@ -427,6 +427,7 @@ def url_route_view(request, filename):
         'mime': mime,
         'site_url': request.build_absolute_uri(),
         'raw_url': raw_url,
+        'exif': json.loads(file.exif),
     }
     # response = HttpResponse(message)
     # response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'

@@ -1,3 +1,5 @@
+{% load home_tags %}
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -13,9 +15,10 @@
 
     <meta property="og:author" content="{{ file.user.username }}">
     <meta property="og:title" content="{{ file.name }}">
-    <meta property="og:description" content="{{ file.info }}">
+    <meta property="og:description" content="{{ file.info }} {% if file.user.show_exif_preview %} Taken By: {{ exif.Make }} {{ exif.Model }} On: {{ exif.DateTime|convert_str_date }}{% endif %}">
 
     <meta property="og:type" content="website">
+
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="og:image" content="{{ raw_url }}">
 
