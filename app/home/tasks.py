@@ -87,29 +87,41 @@ def process_file_upload(pk):
     log.info('file.mime: %s', file.mime)
     file.size = file.file.size
     log.info('file.size: %s', file.size)
-    if file.mime in ['image/jpeg', 'image/png']:
-        image = Image.open(file.file.path)
-        if file.user.remove_exif:
-            log.debug("Stripping EXIF metadata %s", pk)
-            new = Image.new(image.mode, image.size)
-            new.putdata(image.getdata())
-            if 'P' in image.mode:
-                new.putpalette(image.getpalette())
-            new.save(file.file.path)
-        else:
-            exif = image.getexif()
-            log.debug("Parsing and storing EXIF metadata %s", pk)
-            cleaned_exif = {
-                ExifTags.TAGS[k]: v for k, v in exif.items()
-                if k in ExifTags.TAGS and type(v) not in [bytes, TiffImagePlugin.IFDRational]
-                }
-            if file.user.remove_exif_geo:
-                log.debug("Stripping EXIF GEO metadata %s", pk)
-                exif[0x8825] = None
-                image.save(file.file.path, exif=exif)
+    mimes = ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']
+    # mimes = ['image/png']  # image._getexif() returns None
+    # mimes = ['image/tiff']  # image._getexif() does not exist
+    if file.mime in mimes:
+        with Image.open(file.file.path) as image:
+            if file.user.remove_exif:
+                log.info("Stripping EXIF metadata %s", pk)
+                with Image.new(image.mode, image.size) as new:
+                    new.putdata(image.getdata())
+                    if 'P' in image.mode:
+                        new.putpalette(image.getpalette())
+                    new.save(file.file.path)
             else:
-                cleaned_exif["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
-            file.exif = json.dumps(cast(cleaned_exif))
+                log.info("Parsing and storing EXIF metadata %s", pk)
+                # -> old code
+                # cleaned_exif = {
+                #     ExifTags.TAGS[k]: v for k, v in exif.items()
+                #     if k in ExifTags.TAGS and type(v) not in [bytes, TiffImagePlugin.IFDRational]
+                # }
+                # -> new code not using image._getexif()
+                # data = {}
+                # for tag, value in exif.items():
+                #     data[ExifTags.TAGS.get(tag, tag)] = value
+                # data["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
+                exif_data = {ExifTags.TAGS[k]: v for k, v in image._getexif().items() if k in ExifTags.TAGS}
+                exif_clean = {}
+                for k, v in exif_data.items():
+                    exif_clean[k] = v.decode() if isinstance(v, bytes) else str(v)
+                if file.user.remove_exif_geo:
+                    log.info("Stripping EXIF GEO metadata %s", pk)
+                    exif = image.getexif()  # needed above if not using image._getexif()
+                    del exif[0x8825]
+                    del exif_clean['GPSInfo']
+                    image.save(file.file.path, exif=exif)
+                file.exif = json.dumps(cast(exif_clean))
     file.save()
     log.info('-'*40)
     send_discord_message.delay(file.pk)
