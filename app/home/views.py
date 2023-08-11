@@ -14,9 +14,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 # from itertools import count
 from pytimeparse2 import parse
-# import plotly.graph_objects as go
-# import plotly.express as px
-# import plotly.io as pio
 
 from oauth.models import CustomUser, rand_string
 from home.forms import SettingsForm
@@ -292,34 +289,6 @@ def get_auth_user(request):
     if not authorization:
         return
     return CustomUser.objects.get(authorization=authorization)
-
-# @csrf_exempt
-# def get_graph_ajax(request):
-#     # View: /ajax/graph/
-#     log.debug('get_graph_ajax')
-#     stats = FileStats.objects.all()
-#     fig = render_graph_fig(stats)
-#     fig.update_layout(margin=dict(t=10, l=16, b=10, r=10))
-#     fig_html = fig.to_html(
-#         include_plotlyjs=False,
-#         full_html=False,
-#         config={'displaylogo': False},
-#     )
-#     return HttpResponse(fig_html)
-#
-#
-# def render_graph_fig(stats: FileStats.stats) -> go.Figure:
-#     dates, files = [], []
-#     for stat in stats:
-#         dates.append(stat)
-#         files.append(stat)
-#     lines = [('Files', files)]
-#     pio.templates.default = "plotly_dark"
-#     fig = go.Figure()
-#     for name, data in lines:
-#         fig.add_trace(go.Scatter(x=dates, y=data, name=name))
-#     fig.update_layout(xaxis_title='Date', yaxis_title='Count')
-#     return fig
 
 
 @login_required

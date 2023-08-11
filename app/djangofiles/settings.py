@@ -65,6 +65,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
+NGINX_ACCESS_LOGS = config('NGINX_ACCESS_LOGS', '/logs/nginx.access')
+
 # CSRF_TRUSTED_ORIGINS = config('CSRF_ORIGINS', '', Csv())
 # SECURE_REFERRER_POLICY = config('SECURE_REFERRER_POLICY', 'no-referrer')
 
@@ -77,6 +79,11 @@ MESSAGE_TAGS = {
 }
 
 CELERY_BEAT_SCHEDULE = {
+    'app_cleanup': {
+        'task': 'home.tasks.app_cleanup',
+        'schedule': datetime.timedelta(hours=config('APP_CLEANUP_HOUR', 1, int)),
+        # 'schedule': crontab(minute='0', hour='0'),
+    },
     'delete_expired_files': {
         'task': 'home.tasks.delete_expired_files',
         'schedule': datetime.timedelta(minutes=config('DELETE_EXPIRED_MIN', 15, int)),
@@ -85,11 +92,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'home.tasks.process_stats',
         'schedule': datetime.timedelta(minutes=config('PROCESS_STATS_MIN', 15, int)),
     },
-    # 'cleanup_old_stats': {
-    #     'task': 'home.tasks.cleanup_old_stats',
-    #     'schedule': datetime.timedelta(hours=config('CLEANUP_STATS_HOUR', 1, int)),
-    #     # 'schedule': crontab(minute='0', hour='0'),
-    # },
+    'process_vector_stats': {
+        'task': 'home.tasks.process_vector_stats',
+        'schedule': datetime.timedelta(minutes=config('PROCESS_VECTOR_STATS', 1, int)),
+    },
 }
 
 CHANNEL_LAYERS = {
@@ -105,6 +111,13 @@ CACHES = {
     'default': {
         'BACKEND': config('CACHE_BACKEND', 'django.core.cache.backends.dummy.DummyCache'),
         'LOCATION': config('CACHE_LOCATION', None),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+    },
+    'vector': {
+        'BACKEND': config('CACHE_BACKEND'),
+        'LOCATION': config('VECTOR_LOCATION', 'redis://redis:6379/2'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },

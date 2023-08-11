@@ -3,7 +3,7 @@
 <div class="col-auto m-2 align-self-center align-middle align-items-center text-center d-flex">
     {% if file.mime|single_type == 'image' %}
         <a href="{{ file.file.url }}" target="_blank">
-            <img src="{{ file.file.url }}" class="img-responsive" alt="{{ file.file.name }}"
+            <img src="{{ file.file.url }}?view=gallery" class="img-responsive" alt="{{ file.file.name }}"
                  style="max-height: 256px; max-width: 256px"></a>
     {% elif file.mime|single_type == 'video' %}
         <video width="256" height="256" controls>

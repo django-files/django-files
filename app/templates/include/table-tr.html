@@ -30,6 +30,10 @@
         <a class="clip text-white text-decoration-none" role="button"
            data-clipboard-text="{{ file.date|localtime }}">{{ file.date|localtime }}</a></td>
 
+    <td class="d-none d-sm-table-cell">
+        <a class="clip text-white text-decoration-none" role="button"
+           data-clipboard-text="{{ file.view }}">{{ file.view }}</a></td>
+
     <td class="text-center">
         <a role="button" class="delete-file-btn" data-hook-id="{{ file.id }}" title="Delete">
             <i class="fa-regular fa-trash-can link-danger"></i></a></td>

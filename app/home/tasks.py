@@ -4,8 +4,10 @@ import mimetypes
 import os
 import httpx
 import json
+import urllib.parse
 from celery import shared_task
-# from django.conf import settings
+from django_redis import get_redis_connection
+from django.conf import settings
 # from django.core import management
 from django.core.cache import cache
 # from django.core.cache.utils import make_template_fragment_key
@@ -54,6 +56,14 @@ def clear_settings_cache():
     # Clear Settings cache
     log.info('clear_settings_cache')
     return cache.delete_pattern('template.cache.settings*')
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 300})
+def app_cleanup():
+    # App Cleanup Task
+    log.info('app_cleanup')
+    with open(settings.NGINX_ACCESS_LOGS, 'a') as f:
+        f.truncate(0)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})
@@ -182,40 +192,53 @@ def process_stats():
     log.info(data)
 
 
-# @shared_task()
-# def cleanup_old_stats():
-#     # Delete Old Stats
-#     # TODO: DEPRECATED: To be removed
-#     log.info('cleanup_old_stats')
-#     now = timezone.now()
-#     # ft_filter = now - datetime.timedelta(days=1)
-#     # file_stats = FileStats.objects.filter(created_at__lt=ft_filter)
-#     file_stats = FileStats.objects.all()
-#     log.info('file_stats: %s', file_stats)
-#     extra_days = 10
-#     users = CustomUser.objects.all()
-#     # users = CustomUser.objects.all().values_list('id', flat=True)
-#     id_list = [user.id for user in users] + [0]
-#     for user_id in id_list:
-#         extra = 0
-#         log.info('-'*40)
-#         log.info('user_id: %s', user_id)
-#         for i in count(0):
-#             day = now - datetime.timedelta(days=i)
-#             day_stats = file_stats.filter(created_at__day=day.day)
-#             # log.info('day_stats: %s', day_stats)
-#             stats = day_stats.filter(user_id=user_id or None)
-#             # log.info('stats: %s', stats)
-#             if len(stats) > 1:
-#                 log.info('--- start process stats for day -- %s --', day.day)
-#                 all_but_last = stats.exclude(pk=stats.first().pk)
-#                 log.info('all_but_last: %s', all_but_last)
-#                 all_but_last.delete()
-#             else:
-#                 extra += 1
-#                 log.info('extra: %s, day: %s', extra, day.day)
-#             if extra >= extra_days:
-#                 break
+@shared_task()
+def process_vector_stats():
+    # Process Vector Stats
+    # TODO: Add try, expect, finally for deleting keys
+    log.info('process_vector_stats')
+    client = get_redis_connection('vector')
+    _, keys = client.scan(0, '*', 1000)
+    i = 0
+    for key in keys:
+        log.info('Processing Key: %s', key)
+        raw = client.lrange(key, 0, -1)
+        if not raw:
+            log.warning('No Data for Key: %s', key)
+            client.delete(key)
+            continue
+        try:
+            data = json.loads(raw[0])
+        except Exception as error:
+            log.warning('Error Loading JSON for Key: %s: %s', key, error)
+            client.delete(key)
+            continue
+        log.info(data)
+        full_uri = data['request'].split()[1]
+        log.info('full_uri: %s', full_uri)
+        if '?' in full_uri:
+            uri, query = full_uri.split('?', 1)
+        else:
+            uri, query = full_uri, None
+        log.info('query: %s', query)
+        if query:
+            qs = urllib.parse.parse_qs(query) or {}
+            log.info('qs: %s', qs)
+            if qs.get('view'):
+                log.info('Not Processing due to QS: %s: %s', uri, qs)
+                client.delete(key)
+                continue
+        name = uri.replace('/r/', '')
+        file = Files.objects.get(name=name)
+        if not file:
+            log.warning('404 File Not Found: %s', name)
+            client.delete(key)
+            continue
+        file.view += 1
+        file.save()
+        client.delete(key)
+        i += 1
+    return f'Processed {i}/{len(keys)} Files/Keys'
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')

@@ -20,6 +20,7 @@ services:
         - "traefik.http.services.STACK_NAME.loadbalancer.server.scheme=http"
     volumes:
       - static_dir:/data/static
+      - logs_dir:/logs
       - media_dir:/data/media
       - ${APP_FILES:-./app}:/app
 #    secrets:
@@ -62,6 +63,7 @@ services:
       replicas: 1
     volumes:
       - media_dir:/data/media
+      - logs_dir:/logs
     depends_on:
       - app
       - redis
@@ -85,6 +87,22 @@ services:
       replicas: 1
     volumes:
       - redis_data:/data
+
+  vector:
+    build: ./vector
+    image: djangofiles-vector:${VERSION:-latest}
+    environment:
+      - X_TEST=true
+    deploy:
+      replicas: 1
+    depends_on:
+      - app
+      - nginx
+      - redis
+    volumes:
+      - logs_dir:/logs
+      - vector_data:/data
+
 
 #  redis-commander:
 #    image: ghcr.io/joeferner/redis-commander:latest
@@ -130,5 +148,6 @@ volumes:
   static_dir:
 #  flower_data:
   redis_data:
+  logs_dir:
+  vector_data:
   media_dir:
-  
