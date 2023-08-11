@@ -111,7 +111,7 @@ def process_file_upload(pk):
                 # for tag, value in exif.items():
                 #     data[ExifTags.TAGS.get(tag, tag)] = value
                 # data["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
-                _getexif = image._getexif() if hasattr(image, '_getexif') else None or {}
+                _getexif = (image._getexif() if hasattr(image, '_getexif') else None) or {}
                 exif_data = {ExifTags.TAGS[k]: v for k, v in _getexif.items() if k in ExifTags.TAGS}
                 exif_clean = {}
                 for k, v in exif_data.items():
