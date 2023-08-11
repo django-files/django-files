@@ -61,4 +61,6 @@ def bytes_human(num):
 
 @register.filter(name="convert_str_date")
 def convert_str_date(value):
+    if not value:
+        return ''
     return str(datetime.datetime.strptime(value, '%Y:%m:%d %H:%M:%S').strftime('%m/%d/%Y %H:%M:%S'))

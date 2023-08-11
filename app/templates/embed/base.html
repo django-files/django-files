@@ -1,0 +1,29 @@
+{% load static %}
+{% load home_tags %}
+{% load cache %}
+
+<!doctype html>
+<html lang="en">
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" sizes="any">
+
+    {% block meta %}
+        <title>Django Files - {% block title %}{% endblock %}</title>
+    {% endblock %}
+
+    {% block head %}{% endblock %}
+
+</head>
+<body class="d-flex flex-column h-100">
+
+{% block body %}{% endblock %}
+
+{% block tail %}{% endblock %}
+
+</body>
+</html>
