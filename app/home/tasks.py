@@ -93,30 +93,31 @@ def process_file_upload(pk):
     if file.mime in mimes:
         with Image.open(file.file.path) as image:
             if file.user.remove_exif:
-                log.info("Stripping EXIF metadata %s", pk)
+                log.info("Stripping EXIF: %s", pk)
                 with Image.new(image.mode, image.size) as new:
                     new.putdata(image.getdata())
                     if 'P' in image.mode:
                         new.putpalette(image.getpalette())
                     new.save(file.file.path)
             else:
-                log.info("Parsing and storing EXIF metadata %s", pk)
-                # -> old code
+                log.info("Parsing and storing EXIF: %s", pk)
+                # # # old code
                 # cleaned_exif = {
                 #     ExifTags.TAGS[k]: v for k, v in exif.items()
                 #     if k in ExifTags.TAGS and type(v) not in [bytes, TiffImagePlugin.IFDRational]
                 # }
-                # -> new code not using image._getexif()
+                # # # new code not using image._getexif()
                 # data = {}
                 # for tag, value in exif.items():
                 #     data[ExifTags.TAGS.get(tag, tag)] = value
                 # data["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
-                exif_data = {ExifTags.TAGS[k]: v for k, v in image._getexif().items() if k in ExifTags.TAGS}
+                _getexif = image._getexif() if hasattr(image, '_getexif') else None or {}
+                exif_data = {ExifTags.TAGS[k]: v for k, v in _getexif.items() if k in ExifTags.TAGS}
                 exif_clean = {}
                 for k, v in exif_data.items():
                     exif_clean[k] = v.decode() if isinstance(v, bytes) else str(v)
                 if file.user.remove_exif_geo:
-                    log.info("Stripping EXIF GEO metadata %s", pk)
+                    log.info("Stripping EXIF GPS: %s", pk)
                     exif = image.getexif()  # needed above if not using image._getexif()
                     del exif[0x8825]
                     del exif_clean['GPSInfo']
