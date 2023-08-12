@@ -488,22 +488,24 @@ def parse_expire(request, user) -> str:
 
 
 def city_state_from_exif(gps_ifd: dict) -> str:
+    geolocator = Nominatim(user_agent="django-files")
     try:
-        dn, mn, sn = gps_ifd["2"]
-        dw, mw, sw = gps_ifd["4"]
-        return dms_to_city_state(int(dn), int(mn), sn, int(dw), int(mw), sw)
+        dn, mn, sn, dw, mw, sw = strip_dms(gps_ifd)
+        dms_string = f"{int(dn)}°{int(mn)}'{sn}\" N, \
+        {int(dw) if dw is not None else ''}°{int(mw) if mw is not None else ''}'{sw if sw is not None else ''}\" W"
+        location = geolocator.reverse(dms_string)
+        if area := location.raw['address'].get('city') is None:
+            area = location.raw['address'].get('county')
+        state = location.raw['address'].get('state', '')
+        return f"{area}, {state}"
     except Exception as error:
         log.error(error)
 
 
-def dms_to_city_state(dn, mn, sn, dw, mw, sw):
-    geolocator = Nominatim(user_agent="django-files")
-    dms = f"{dn}°{mn}'{sn}\" N, \
-    {dw if dw is not None else ''}°{mw if mw is not None else ''}'{sw if sw is not None else ''}\" W"
-    location = geolocator.reverse(dms)
-    address = location.raw['address']
-    area = address.get('city')
-    if not area:
-        area = address.get('county')
-    state = address.get('state', '')
-    return f"{area}, {state}"
+def strip_dms(gps_ifd: dict) -> list:
+    try:
+        dn, mn, sn = gps_ifd["2"]
+        dw, mw, sw = gps_ifd["4"]
+        return [dn, mn, sn, dw, mw, sw]
+    except Exception as error:
+        log.error(error)

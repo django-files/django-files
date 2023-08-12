@@ -17,12 +17,12 @@
     <meta property="og:description" content="{{ file.info }}{% if file.user.show_exif_preview %}
     Camera: {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}
     {{ exif.DateTime|convert_str_date }}{% if city_state %}
-    {{ city_state }}{% endif %}
+    {{ city_state }}{% endif %}{% if exif.GPSInfo.6 %}
+    Elevation: {{ exif.GPSInfo.6|floatformat:1 }} m{% endif %}
 
-    {% if exif.LensModel %}Lens: {{ exif.LensModel }}{% endif %}
-    {% if exif.FocalLength %}{{ exif.FocalLength|floatformat:"0" }}mm{% endif %}{% if exif.FNumber %} 𝑓{{ exif.FNumber }}{% endif %}
-    {% if exif.ISOSpeedRatings %}ISO-{{ exif.ISOSpeedRatings }}{% endif %}
-    {% if exif.ExposureTime %}{{ exif.ExposureTime }} s{% endif %}
+    {% if exif.FocalLength %}{{ exif.FocalLength|floatformat:"0" }}mm{% endif %}{% if exif.FNumber %}  𝑓 {{ exif.FNumber }}{% endif %}
+    {% if exif.ISOSpeedRatings %}ISO Speed: {{ exif.ISOSpeedRatings }}{% endif %}
+    {% if exif.ExposureTime %}Exposure Time: {{ exif.ExposureTime }} s{% endif %}
     {% endif %}">
 
     <meta property="og:type" content="website">
@@ -73,12 +73,14 @@
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                     <p class="card-text">{{ file.info }}</p>
                     <p class="card-text"><b>Views:</b> {{ file.view }}</p>
-                    <p class="card-text mb-auto text-body-secondary">
+                    <p class="card-text text-body-secondary">
                         {% if file.user.show_exif_preview %}<br>
                         <b>Taken On:</b> {{ exif.DateTime|convert_str_date }}<br>
                         <b>Camera:</b> {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}<br>
                         {% if city_state %}<b>Location:</b> {{ city_state }}<br>{% endif %}
-                        <br>
+                        {% if exif.GPSInfo.6 %}<b>Elevation:</b> {{ exif.GPSInfo.6|floatformat:1 }} m{% endif %}
+                    </p>
+                    <p class="card-text text-body-secondary">
                         {% if exif.LensModel %}<b>Lens: </b>{{ exif.LensModel }}<br>{% endif %}
                         {% if exif.FocalLength %}<b>Focal Length:</b> {{ exif.FocalLength|floatformat:"0" }}mm<br>{% endif %}
                         {% if exif.FNumber %}<b>Aperature:</b> 𝑓{{ exif.FNumber }}<br>{% endif %}
@@ -92,4 +94,5 @@
     </div>
 {% endblock %}
 
-{% block tail %}{% endblock %}
+{% block tail %}
+{% endblock %}
