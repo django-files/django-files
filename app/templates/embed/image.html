@@ -1,4 +1,4 @@
-{% extends "embed/base.html" %}
+{% extends "main.html" %}
 {% load home_tags %}
 
 {% block title %}{{ file.name }}{% endblock %}
@@ -94,6 +94,8 @@
         </div>
     </div>
 {% endblock %}
+
+{% block footer %}{% endblock %}
 
 {% block tail %}
 {% endblock %}

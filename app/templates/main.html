@@ -52,6 +52,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                {% if request.user.is_authenticated %}
                 <ul class="navbar-nav me-auto mb-2 mb-sm-0">
                     <li class="nav-item"><a class="nav-link {% block home_active %}{% endblock %}"
                                             href="{% url 'home:index' %}">Home</a></li>
@@ -66,6 +67,7 @@
                     <li class="nav-item"><a class="nav-link {% block settings_active %}{% endblock %}"
                                             href="{% url 'home:settings' %}">Settings</a></li>
                 </ul>
+                {% endif %}
                 <ul class="navbar-nav ms-auto">
                     {% if not request.user.is_authenticated %}
                         <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="btn btn-outline-info" role="button">
