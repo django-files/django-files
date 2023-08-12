@@ -418,15 +418,15 @@ def url_route_view(request, filename):
     """
     View  /u/<path:filename>
     """
-    # log.debug('context: %s', context)
-    # message = render_to_string('scripts/flameshot.sh', context)
     file = Files.objects.get(name=filename)
     log.debug('file: %s', file)
     raw_url = request.build_absolute_uri(reverse('home:url-raw', kwargs={'filename': filename}))
+    preview_url = request.build_absolute_uri(reverse('home:url-route', kwargs={'filename': filename}))
     context = {
         'file': file,
         'site_url': request.build_absolute_uri(),
         'raw_url': raw_url,
+        'preview_url': preview_url,
     }
     if file.mime.startswith('image'):
         if file.exif and isinstance(file.exif, str):
@@ -442,16 +442,11 @@ def url_route_view(request, filename):
                 context['exif']['LensModel'] = lm_model_stripped
         else:
             context['exif'] = {}
-        return render(request, 'embed/image.html', context=context)
     elif file.mime == 'text/markdown':
         # process MD here and add to context
         context['markdown'] = None
         return render(request, 'embed/markdown.html', context=context)
-    else:
-        return HttpResponseRedirect(raw_url)
-    # response = HttpResponse(message)
-    # response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
-    # return response
+    return render(request, 'embed/preview.html', context=context)
 
 
 def google_verify(request: HttpRequest) -> bool:

@@ -65,17 +65,18 @@
         <div class="card">
             <div class="row g-0">
                 <div class="col-md-9">
-                    <img src="{{ raw_url }}" alt="{{ file.name }}" class="card-img-left img-fluid">
+                    {% if 'image' in file.mime %}<img src="{{ raw_url }}" alt="{{ file.name }}" class="card-img-left img-fluid">{% else %}
+                    <div class="container card-body text-center align-items-center d-flex justify-content-center"><img class="fa-10x fa-solid fa-file mx-auto"></i></div>{% endif %}
                 </div>
             <div class="col-md-3">
                 <div class="card-body">
                     <h3 class="card-title">{{ file.name }}</h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                     <p class="card-text">{{ file.info }}</p>
-                    <p class="card-text"><i class="fa-solid fa-eye"></i> {{ file.view }}</p>
+                    <p class="card-text">{% if 'image' in file.mime %}<i class="fa-solid fa-eye">{% else %}<i class="fa-solid fa-eye fa-download">{% endif %}</i> {{ file.view }}</p>
                     <p class="card-text">Uploaded {{ file.date }}</p>
                     <p class="card-text text-body-secondary">
-                        {% if file.user.show_exif_preview %}<br>
+                        {% if file.user.show_exif_preview and file.exif %}<br>
                         <b>Taken On:</b> {{ exif.DateTime|convert_str_date }}<br>
                         <b>Camera:</b> {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}<br>
                         {% if city_state %}<b>Location:</b> {{ city_state }}<br>{% endif %}
@@ -89,6 +90,12 @@
                         {% if exif.ExposureTime %}<b>Exposure Time:</b> {{ exif.ExposureTime }} s<br>{% endif %}
                         {% endif %}
                     </p>
+                    <div class="grid gap-3">
+                        <div class="p-2 g-col-4"><a class="btn btn-primary btn-lg" role="button" href="{{ raw_url }}" download="{{ file.name }}"><i class="fa-solid fa-download"></i> Download</a></div>
+                        <div class="p-2 g-col-4"><a class="btn btn-secondary btn-lg" role="button" href="{{ raw_url }}"><i class="fa-solid fa-eye"></i> View Raw</a></div>
+                        <div class="p-2 g-col-4"><a class="btn btn-info btn-lg" role="button" data-clipboard-text="{{ preview_url }}" download="{{ file.name }}"><i class="fa-solid fa-copy"></i> Preview</a></div>
+                        <div class="p-2 g-col-4"><a class="btn btn-info btn-lg" role="button" data-clipboard-text="{{ raw_url }}"><i class="fa-solid fa-copy"></i> Raw</a></div>
+                    </div>
                 </div>
             </div>
         </div>
