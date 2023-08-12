@@ -489,12 +489,8 @@ def parse_expire(request, user) -> str:
 
 def city_state_from_exif(gps_ifd: dict) -> str:
     try:
-        print("test")
-        print(gps_ifd["2"])
         dn, mn, sn = gps_ifd["2"]
         dw, mw, sw = gps_ifd["4"]
-        print("test")
-        print(int(dn), int(mn), sn, int(dw), int(mw), sw)
         return dms_to_city_state(int(dn), int(mn), sn, int(dw), int(mw), sw)
     except Exception as error:
         log.error(error)
