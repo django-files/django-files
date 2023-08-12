@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 # from itertools import count
 from pytimeparse2 import parse
+from geopy.geocoders import Nominatim
 
 from oauth.models import CustomUser, rand_string
 from home.forms import SettingsForm
@@ -427,7 +428,11 @@ def url_route_view(request, filename):
         'raw_url': raw_url,
     }
     if file.mime.startswith('image'):
-        context['exif'] = file.exif
+        if file.exif and isinstance(file.exif, str):
+            context['exif'] = json.loads(file.exif)
+            context['city_state'] = city_state_from_exif(context['exif']["GPSInfo"])
+        else:
+            context['exif'] = {}
         return render(request, 'embed/image.html', context=context)
     elif file.mime == 'text/markdown':
         # process MD here and add to context
@@ -476,3 +481,24 @@ def parse_expire(request, user) -> str:
     if parse(expr) is not None:
         return expr
     return user.default_expire or ''
+
+
+def city_state_from_exif(gps_ifd: dict) -> str:
+    try:
+        dn, mn, sn = gps_ifd["2"]
+        dw, mw, sw = gps_ifd["4"]
+        return dms_to_city_state(int(dn), int(mn), sn, int(dw), int(mw), sw)
+    except Exception as error:
+        log.error(error)
+
+
+def dms_to_city_state(dn, mn, sn, dw, mw, sw):
+    geolocator = Nominatim(user_agent="django-files")
+    dms = f"{dn}°{mn}'{sn}\" N, {dw if dw is not None else ''}°{mw if mw is not None else ''}'{sw if sw is not None else ''}\" W"
+    location = geolocator.reverse(dms)
+    address = location.raw['address']
+    area = address.get('city')
+    if not area:
+        area = address.get('county')
+    state = address.get('state', '')
+    return f"{area}, {state}"
