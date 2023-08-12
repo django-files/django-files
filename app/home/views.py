@@ -1,4 +1,5 @@
 # import datetime
+from pathlib import Path
 import httpx
 import json
 import logging
@@ -442,10 +443,22 @@ def url_route_view(request, filename):
                 context['exif']['LensModel'] = lm_model_stripped
         else:
             context['exif'] = {}
-    elif file.mime == 'text/markdown':
+    elif file.mime.startswith('text'):
+        # if not md send text preview
+        text_preview = Path(file.file.path).read_text()
+        text_preview = open(file.file.path, 'r').read()
+        # with open(file.file.path) as input_file:
+        #     print("file open")
+        #     num_lines = sum(1 for _ in input_file)
+        #     preview_limit = 400
+        #     if num_lines <= num_lines:
+        #         text_preview = input_file.read()
+        #     else:
+        #         text_preview = [next(input_file) for _ in range(preview_limit)]
+        context['text_preview'] = text_preview
+        print(text_preview)
         # process MD here and add to context
         context['markdown'] = None
-        return render(request, 'embed/markdown.html', context=context)
     return render(request, 'embed/preview.html', context=context)
 
 
