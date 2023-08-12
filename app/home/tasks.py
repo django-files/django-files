@@ -245,11 +245,13 @@ def process_vector_stats():
                 client.delete(key)
                 continue
         name = uri.replace('/r/', '')
-        file = Files.objects.get(name=name)
+        file = Files.objects.filter(name=name)
         if not file:
             log.warning('404 File Not Found: %s', name)
             client.delete(key)
             continue
+        else:
+            file = file[0]
         file.view += 1
         file.save()
         client.delete(key)
