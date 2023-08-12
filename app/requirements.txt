@@ -9,9 +9,11 @@ django-redis
 geopy
 gunicorn
 httpx
+markdown
 mysqlclient
 Pillow
 psycopg[binary]
+Pygments
 python-decouple
 python-dotenv
 pytimeparse2

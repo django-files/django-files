@@ -3,6 +3,7 @@ from pathlib import Path
 import httpx
 import json
 import logging
+import markdown
 import validators
 from django.conf import settings
 from django.contrib import messages
@@ -14,6 +15,9 @@ from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 # from itertools import count
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name, get_lexer_for_mimetype
+from pygments.formatters import HtmlFormatter
 from pytimeparse2 import parse
 from geopy.geocoders import Nominatim
 
@@ -419,8 +423,8 @@ def url_route_view(request, filename):
     """
     View  /u/<path:filename>
     """
-    file = Files.objects.get(name=filename)
-    log.debug('file: %s', file)
+    log.debug('url_route_view: %s', filename)
+    file = get_object_or_404(Files, name=filename)
     raw_url = request.build_absolute_uri(reverse('home:url-raw', kwargs={'filename': filename}))
     preview_url = request.build_absolute_uri(reverse('home:url-route', kwargs={'filename': filename}))
     context = {
@@ -443,7 +447,8 @@ def url_route_view(request, filename):
                 context['exif']['LensModel'] = lm_model_stripped
         else:
             context['exif'] = {}
-    elif file.mime.startswith('text'):
+        return render(request, 'embed/preview.html', context=context)
+    elif file.mime == 'text/plain':
         # if not md send text preview
         text_preview = Path(file.file.path).read_text()
         text_preview = open(file.file.path, 'r').read()
@@ -456,10 +461,25 @@ def url_route_view(request, filename):
         #     else:
         #         text_preview = [next(input_file) for _ in range(preview_limit)]
         context['text_preview'] = text_preview
-        print(text_preview)
-        # process MD here and add to context
-        context['markdown'] = None
-    return render(request, 'embed/preview.html', context=context)
+        log.debug(text_preview)
+        return render(request, 'embed/preview.html', context=context)
+    elif file.mime == 'text/markdown':
+        with open(file.file.path, 'r', encoding="utf-8") as f:
+            context['markdown'] = markdown.markdown(f.read(), extensions=['extra', 'toc'])
+        return render(request, 'embed/markdown.html', context=context)
+    elif file.mime.startswith('text/'):
+        with open(file.file.path, 'r', encoding="utf-8") as f:
+            code = f.read()
+        # lexer = get_lexer_by_name("python", stripall=True)
+        lexer = get_lexer_for_mimetype(file.mime, stripall=True)
+        formatter = HtmlFormatter(style='github-dark')
+        # css = formatter.get_style_defs()
+        # html = highlight(code, lexer, formatter)
+        context = {
+            'css': formatter.get_style_defs(),
+            'html': highlight(code, lexer, formatter),
+        }
+        return render(request, 'embed/code.html', context=context)
 
 
 def google_verify(request: HttpRequest) -> bool:
