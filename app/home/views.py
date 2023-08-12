@@ -435,20 +435,17 @@ def url_route_view(request, filename):
     if file.mime.startswith('image'):
         if file.exif and isinstance(file.exif, str):
             context['exif'] = json.loads(file.exif)
-            if context['exif'].get('ExposureTime'):
-                context['exif']['ExposureTime'] = Fraction(context['exif']['ExposureTime']).limit_denominator(5000)
-            if context['exif'].get("GPSInfo"):
-                context['city_state'] = city_state_from_exif(context['exif']["GPSInfo"])
+            if exposure_time := context['exif'].get('ExposureTime'):
+                context['exif']['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
+            if gps_info := context['exif'].get("GPSInfo"):
+                context['city_state'] = city_state_from_exif(gps_info)
             if lens_model := context['exif'].get('LensModel'):
                 # handle cases where lensmodel is relevant but some values redunant
                 lm_f_stripped = lens_model.replace(f"f/{context['exif'].get('FNumber', '')}", "")
                 lm_model_stripped = lm_f_stripped.replace(f"{context['exif'].get('Model')}", "")
                 context['exif']['LensModel'] = lm_model_stripped
-        else:
-            context['exif'] = {}
         return render(request, 'embed/preview.html', context=context)
     elif file.mime == 'text/plain':
-        # if not md send text preview
         with open(file.file.path, 'r') as text:
             text_preview = text.read()
         context['text_preview'] = text_preview
@@ -459,11 +456,8 @@ def url_route_view(request, filename):
     elif file.mime.startswith('text/'):
         with open(file.file.path, 'r', encoding="utf-8") as f:
             code = f.read()
-        # lexer = get_lexer_by_name("python", stripall=True)
         lexer = get_lexer_for_mimetype(file.mime, stripall=True)
         formatter = HtmlFormatter(style='github-dark')
-        # css = formatter.get_style_defs()
-        # html = highlight(code, lexer, formatter)
         context['css'] = formatter.get_style_defs()
         context['html'] = highlight(code, lexer, formatter)
     return render(request, 'embed/preview.html', context=context)
