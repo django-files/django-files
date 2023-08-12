@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 # from itertools import count
 from pygments import highlight
-from pygments.lexers import get_lexer_by_name, get_lexer_for_mimetype
+from pygments.lexers import get_lexer_for_mimetype
 from pygments.formatters import HtmlFormatter
 from pytimeparse2 import parse
 from geopy.geocoders import Nominatim
