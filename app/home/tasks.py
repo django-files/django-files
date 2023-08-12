@@ -101,25 +101,12 @@ def process_file_upload(pk):
                     new.save(file.file.path)
             else:
                 log.info("Parsing and storing EXIF: %s", pk)
-                # # # old code
-                # cleaned_exif = {
-                #     ExifTags.TAGS[k]: v for k, v in exif.items()
-                #     if k in ExifTags.TAGS and type(v) not in [bytes, TiffImagePlugin.IFDRational]
-                # }
                 exif = image.getexif()
-                try:
-                    _getexif = (image._getexif() if hasattr(image, '_getexif') else None) or {}
-                    exif_data = {ExifTags.TAGS[k]: v for k, v in _getexif.items() if k in ExifTags.TAGS}
-                    exif_clean = {}
-                    for k, v in exif_data.items():
-                        exif_clean[k] = v.decode() if isinstance(v, bytes) else str(v)
-                except Exception as error:
-                    log.info(error)
-                    exif_clean = {}
-                    for tag, value in exif.items():
-                        exif_clean[ExifTags.TAGS.get(tag, tag)] = value
-                    exif_clean["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
-
+                exif_clean = {
+                    ExifTags.TAGS[k]: v for k, v in exif.items()
+                    if k in ExifTags.TAGS and type(v) not in [bytes, TiffImagePlugin.IFDRational]
+                }
+                exif_clean["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
                 if file.user.remove_exif_geo:
                     log.info("Stripping EXIF GPS: %s", pk)
                     del exif[0x8825]
