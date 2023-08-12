@@ -1,5 +1,7 @@
-{% extends "embed/base.html" %}
+{% extends "main.html" %}
 {% load home_tags %}
+
+{% block title %}{{ file.name }}{% endblock %}
 
 {% block meta %}
     <title>{{ file.name }}</title>
@@ -12,16 +14,15 @@
 
     <meta property="og:author" content="{{ file.user.username }}">
     <meta property="og:title" content="{{ file.name }}">
-    <meta property="og:description" content="{{ file.info }}
-    {% if file.user.show_exif_preview %}
+    <meta property="og:description" content="{{ file.info }}{% if file.user.show_exif_preview %}
     Camera: {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}
-    {{ exif.DateTime|convert_str_date }}
-    {{ city_state }}
+    {{ exif.DateTime|convert_str_date }}{% if city_state %}
+    {{ city_state }}{% endif %}{% if exif.GPSInfo.6 %}
+    Elevation: {{ exif.GPSInfo.6|floatformat:1 }} m{% endif %}
 
-    {% if exif.LensModel %}Lens: {{ exif.LensModel }}{% endif %}
-    {% if exif.FocalLength %}{{ exif.FocalLength|floatformat:"0" }}mm{% endif %}{% if exif.FNumber %} 𝑓{{ exif.FNumber }}{% endif %}
-    {% if exif.ISOSpeedRatings %}ISO-{{ exif.ISOSpeedRatings }}{% endif %}
-    {% if exif.ExposureTime %}{{ exif.ExposureTime }} s{% endif %}
+    {% if exif.FocalLength %}{{ exif.FocalLength|floatformat:"0" }}mm{% endif %}{% if exif.FNumber %}  𝑓 {{ exif.FNumber }}{% endif %}
+    {% if exif.ISOSpeedRatings %}ISO Speed: {{ exif.ISOSpeedRatings }}{% endif %}
+    {% if exif.ExposureTime %}Exposure Time: {{ exif.ExposureTime }} s{% endif %}
     {% endif %}">
 
     <meta property="og:type" content="website">
@@ -33,7 +34,7 @@
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:card" content="summary_large_image">
 
-    <style>
+    {% comment %} <style>
         html, body
         {
             background-color: #0e0e0e;
@@ -56,13 +57,45 @@
             max-height: 100vh;
             max-width: 100vw;
         }
-    </style>
+    </style> {% endcomment %}
 {% endblock %}
 
 {% block body %}
-    <div>
-        <img src="{{ raw_url }}" alt="{{ file.name }}">
+    <div class="container-fluid py-2 px-2">
+        <div class="card">
+            <div class="row g-0">
+                <div class="col-md-9">
+                    <img src="{{ raw_url }}" alt="{{ file.name }}" class="card-img-left img-fluid">
+                </div>
+            <div class="col-md-3">
+                <div class="card-body">
+                    <h3 class="card-title">{{ file.name }}</h3>
+                    <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
+                    <p class="card-text">{{ file.info }}</p>
+                    <p class="card-text"><i class="fa-solid fa-eye"></i> {{ file.view }}</p>
+                    <p class="card-text">Uploaded {{ file.date }}</p>
+                    <p class="card-text text-body-secondary">
+                        {% if file.user.show_exif_preview %}<br>
+                        <b>Taken On:</b> {{ exif.DateTime|convert_str_date }}<br>
+                        <b>Camera:</b> {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}<br>
+                        {% if city_state %}<b>Location:</b> {{ city_state }}<br>{% endif %}
+                        {% if exif.GPSInfo.6 %}<b>Elevation:</b> {{ exif.GPSInfo.6|floatformat:1 }} m{% endif %}
+                    </p>
+                    <p class="card-text text-body-secondary">
+                        {% if exif.LensModel %}<b>Lens: </b>{{ exif.LensModel }}<br>{% endif %}
+                        {% if exif.FocalLength %}<b>Focal Length:</b> {{ exif.FocalLength|floatformat:"0" }}mm<br>{% endif %}
+                        {% if exif.FNumber %}<b>Aperature:</b> 𝑓 {{ exif.FNumber }}<br>{% endif %}
+                        {% if exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ exif.ISOSpeedRatings }}<br>{% endif %}
+                        {% if exif.ExposureTime %}<b>Exposure Time:</b> {{ exif.ExposureTime }} s<br>{% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}
 
-{% block tail %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block tail %}
+{% endblock %}

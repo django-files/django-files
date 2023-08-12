@@ -16,7 +16,7 @@ from django.utils import timezone
 # from itertools import count
 from pytimeparse2 import parse
 from PIL import Image, ExifTags, TiffImagePlugin
-# from fractions import Fraction
+
 
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 from oauth.models import CustomUser
