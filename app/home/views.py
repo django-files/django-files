@@ -494,7 +494,8 @@ def city_state_from_exif(gps_ifd: dict) -> str:
 
 def dms_to_city_state(dn, mn, sn, dw, mw, sw):
     geolocator = Nominatim(user_agent="django-files")
-    dms = f"{dn}°{mn}'{sn}\" N, {dw if dw is not None else ''}°{mw if mw is not None else ''}'{sw if sw is not None else ''}\" W"
+    dms = f"{dn}°{mn}'{sn}\" N, \
+    {dw if dw is not None else ''}°{mw if mw is not None else ''}'{sw if sw is not None else ''}\" W"
     location = geolocator.reverse(dms)
     address = location.raw['address']
     area = address.get('city')
