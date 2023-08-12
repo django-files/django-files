@@ -1,0 +1,90 @@
+{% extends "embed/base.html" %}
+{% load home_tags %}
+{% load static %}
+
+{% block meta %}
+    <title>{{ file.name }}</title>
+
+    <meta name="theme-color" content="{{ file.user.default_color }}">
+
+    <meta name="author" content="{{ file.user.username }}"/>
+    <meta name="title" content="{{ file.name }}"/>
+    <meta name="description" content="{{ file.info }}"/>
+
+    <meta property="og:author" content="{{ file.user.username }}">
+    <meta property="og:title" content="{{ file.name }}">
+    <meta property="og:description" content="{{ file.info }}">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+
+    <meta property="twitter:title" content="{{ file.name }}">
+    <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+{#    <meta property="twitter:card" content="summary_large_image">#}
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
+    <script type="text/javascript" src="{% static "bootstrap/theme.js" %}"></script>
+
+    <style>
+        body {
+            max-width: 960px;
+            margin: auto;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            padding: 2px;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <main class="flex-shrink-0">
+        <div class="container-fluid py-3 px-4">
+            {{ markdown|safe }}
+        </div>
+    </main>
+{% endblock %}
+
+{% block tail %}
+    <script type="text/javascript" src="{% static 'jquery/jquery.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("table").addClass("table table-sm table-responsive table-hover");
+        });
+
+        $('a').each(function() {
+            var a = new RegExp('/' + window.location.host + '/');
+            if(!a.test(this.href)) {
+                $(this).click(function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    window.open(this.href, '_blank');
+                });
+            }
+        });
+        //$("#content a[href^='http://']").attr("target","_blank");
+
+        //$("a").attr("target", "_blank");
+
+        //$(document).ready(function() {
+        //    $('a[href^="http://"]').on('click', function(e) {
+        //        e.preventDefault();
+        //        window.open($(this).attr('href'), '_new');
+        //    });
+        //});
+
+        //const imgElements = document.querySelectorAll('img');
+        //imgElements.forEach(img => {
+        //    img.className = 'img-responsive';
+        //});
+
+        //document.addEventListener('DOMContentLoaded', function() {
+        //    const imgElement = document.querySelector('img');
+        //    imgElement.classList.add('img-responsive');
+        //});
+    </script>
+{% endblock %}

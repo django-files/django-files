@@ -2,6 +2,7 @@
 import httpx
 import json
 import logging
+import markdown
 import validators
 from django.conf import settings
 from django.contrib import messages
@@ -418,9 +419,8 @@ def url_route_view(request, filename):
     """
     View  /u/<path:filename>
     """
-    # log.debug('context: %s', context)
-    # message = render_to_string('scripts/flameshot.sh', context)
-    file = Files.objects.get(name=filename)
+    log.debug('url_route_view: %s', filename)
+    file = get_object_or_404(Files, name=filename)
     log.debug('file: %s', file)
     raw_url = request.build_absolute_uri(reverse('home:url-raw', kwargs={'filename': filename}))
     context = {
@@ -429,6 +429,7 @@ def url_route_view(request, filename):
         'raw_url': raw_url,
     }
     if file.mime.startswith('image'):
+        log.debug('image')
         if file.exif and isinstance(file.exif, str):
             context['exif'] = json.loads(file.exif)
             if context['exif']['ExposureTime']:
@@ -439,14 +440,12 @@ def url_route_view(request, filename):
             context['exif'] = {}
         return render(request, 'embed/image.html', context=context)
     elif file.mime == 'text/markdown':
-        # process MD here and add to context
-        context['markdown'] = None
+        log.debug('text/markdown')
+        with open(file.file.path, 'r', encoding="utf-8") as f:
+            context['markdown'] = markdown.markdown(f.read(), extensions=['extra', 'toc'])
         return render(request, 'embed/markdown.html', context=context)
     else:
         return HttpResponseRedirect(raw_url)
-    # response = HttpResponse(message)
-    # response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
-    # return response
 
 
 def google_verify(request: HttpRequest) -> bool:
