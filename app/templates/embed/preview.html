@@ -1,6 +1,9 @@
 {% extends "main.html" %}
 {% load home_tags %}
 
+{% block nav1color %}{{ file.user.nav_color_1 }}{% endblock %}
+{% block nav2color %}{{ file.user.nav_color_2 }}{% endblock %}
+
 {% block head %}
 <style>
     {{ css|safe }}
