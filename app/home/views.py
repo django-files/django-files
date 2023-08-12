@@ -450,19 +450,8 @@ def url_route_view(request, filename):
         return render(request, 'embed/preview.html', context=context)
     elif file.mime == 'text/plain':
         # if not md send text preview
-        text_preview = Path(file.file.path).read_text()
         text_preview = open(file.file.path, 'r').read()
-        # with open(file.file.path) as input_file:
-        #     print("file open")
-        #     num_lines = sum(1 for _ in input_file)
-        #     preview_limit = 400
-        #     if num_lines <= num_lines:
-        #         text_preview = input_file.read()
-        #     else:
-        #         text_preview = [next(input_file) for _ in range(preview_limit)]
         context['text_preview'] = text_preview
-        log.debug(text_preview)
-        return render(request, 'embed/preview.html', context=context)
     elif file.mime == 'text/markdown':
         with open(file.file.path, 'r', encoding="utf-8") as f:
             context['markdown'] = markdown.markdown(f.read(), extensions=['extra', 'toc'])
@@ -475,11 +464,9 @@ def url_route_view(request, filename):
         formatter = HtmlFormatter(style='github-dark')
         # css = formatter.get_style_defs()
         # html = highlight(code, lexer, formatter)
-        context = {
-            'css': formatter.get_style_defs(),
-            'html': highlight(code, lexer, formatter),
-        }
-        return render(request, 'embed/code.html', context=context)
+        context['css'] = formatter.get_style_defs(),
+        context['html'] = highlight(code, lexer, formatter)
+    return render(request, 'embed/preview.html', context=context)
 
 
 def google_verify(request: HttpRequest) -> bool:

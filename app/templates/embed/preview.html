@@ -1,6 +1,12 @@
 {% extends "main.html" %}
 {% load home_tags %}
 
+{% block head %}
+<style>
+    {{ css|safe }}
+</style>
+{% endblock %}
+
 {% block title %}{{ file.name }}{% endblock %}
 
 {% block meta %}
@@ -14,8 +20,8 @@
 
     <meta property="og:author" content="{{ file.user.username }}">
     <meta property="og:title" content="{{ file.name }}">
-    <meta property="og:description" content="{{ file.info }}{% if file.user.show_exif_preview %}
-    Camera: {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}
+    <meta property="og:description" content="{{ file.info }}{% if file.user.show_exif_preview %}{% if exif.Model %}
+    Camera: {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}{% endif %}
     {{ exif.DateTime|convert_str_date }}{% if city_state %}
     {{ city_state }}{% endif %}{% if exif.GPSInfo.6 %}
     Elevation: {{ exif.GPSInfo.6|floatformat:1 }} m{% endif %}
@@ -64,9 +70,12 @@
     <div class="container-fluid py-2 px-2">
         <div class="card">
             <div class="row g-0">
-                <div class="col-lg-9 mt-5">
-                    {% if 'image' in file.mime %}<img src="{{ raw_url }}" alt="{{ file.name }}" class="card-img-left img-fluid">{% elif 'text' in file.mime%}
-                    <code class="container"><pre class="ps-5">{{ text_preview }}</pre></code>{% else %}
+                <div class="col-lg-9">
+                    {% if 'image' in file.mime %}<img src="{{ raw_url }}" alt="{{ file.name }}" class="card-img-left img-fluid">{% elif 'text' in file.mime %}{% if html %}
+                    <div class="container-fluid py-3 px-4">
+                        {{ html|safe }}
+                    </div>{% else %}
+                    <code class="container"><pre class="ps-5">{{ text_preview }}</pre></code>{% endif %}{% else %}
                     <div class="container card-body text-center"><img class="fa-10x fa-solid fa-file mx-auto"></i></div>{% endif %}
                 </div>
             <div class="col-lg-3 d-flex flex-column">
