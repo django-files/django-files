@@ -46,7 +46,6 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 ### Core
 *   Multiple Users, Local, and OAuth
 *   Ready-to-use ShareX and Flameshot scripts
-*   
 
 ### UI Features
 *   Home Page; with Overview and Stats
@@ -57,6 +56,7 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 *   Short URLs; View, Create, and Delete Shorts
 *   Settings; Configure Settings via UI
 *   Django Admin to Manage all data for Superusers
+*   Preview Page with optional file metadata
 
 ### Site Settings
 *   ShareX File and URL Configuration
@@ -64,7 +64,7 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 *   Example Scripts
 *   Site URL
 *   Default Expiration for Files
-*   Remove GPS EXIF Data on Upload
+*   Remove EXIF Data on Upload OR Remove EXIF GPS Only
 *   Custom Embed Color
 *   Custom Navbar Colors
 
@@ -72,6 +72,7 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 *   File Expiration
 *   View Counting
 *   Max Views (WIP)
+*   EXIF Metadata Preview
 
 ### FileStats
 *   Total Files
@@ -179,7 +180,7 @@ You must configure one of the following authentication methods:
 | OAUTH_REDIRECT_URL        | Discord Redirect  | `https://example.com/oauth/callback/`                |
 | DJANGO_SUPERUSER_USERNAME | Local Username    | `admin`                                              |
 | DJANGO_SUPERUSER_PASSWORD | Local Password    | `PSZX7TgiSg6aB6sZ`                                   |
-| DJANGO_SUPERUSER_EMAIL    | Local E-Mail      | `abuse@aol.com`                                      |
+| DJANGO_SUPERUSER_EMAIL    | Local E-Mail      | `user@example.com`                                  |
 
 ## Database
 

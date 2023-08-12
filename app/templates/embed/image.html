@@ -83,7 +83,7 @@
                     <p class="card-text text-body-secondary">
                         {% if exif.LensModel %}<b>Lens: </b>{{ exif.LensModel }}<br>{% endif %}
                         {% if exif.FocalLength %}<b>Focal Length:</b> {{ exif.FocalLength|floatformat:"0" }}mm<br>{% endif %}
-                        {% if exif.FNumber %}<b>Aperature:</b> 𝑓{{ exif.FNumber }}<br>{% endif %}
+                        {% if exif.FNumber %}<b>Aperature:</b> 𝑓 {{ exif.FNumber }}<br>{% endif %}
                         {% if exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ exif.ISOSpeedRatings }}<br>{% endif %}
                         {% if exif.ExposureTime %}<b>Exposure Time:</b> {{ exif.ExposureTime }} s<br>{% endif %}
                         {% endif %}
