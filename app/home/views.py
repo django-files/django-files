@@ -20,6 +20,7 @@ from oauth.models import CustomUser, rand_string
 from home.forms import SettingsForm
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
 from home.tasks import clear_shorts_cache, process_file_upload, process_stats
+from fractions import Fraction
 
 log = logging.getLogger('app')
 
@@ -430,7 +431,10 @@ def url_route_view(request, filename):
     if file.mime.startswith('image'):
         if file.exif and isinstance(file.exif, str):
             context['exif'] = json.loads(file.exif)
-            context['city_state'] = city_state_from_exif(context['exif']["GPSInfo"])
+            if context['exif']['ExposureTime']:
+                context['exif']['ExposureTime'] = Fraction(context['exif']['ExposureTime']).limit_denominator(5000)
+            if context['exif'].get("GPSInfo"):
+                context['city_state'] = city_state_from_exif(context['exif']["GPSInfo"])
         else:
             context['exif'] = {}
         return render(request, 'embed/image.html', context=context)
@@ -485,8 +489,12 @@ def parse_expire(request, user) -> str:
 
 def city_state_from_exif(gps_ifd: dict) -> str:
     try:
+        print("test")
+        print(gps_ifd["2"])
         dn, mn, sn = gps_ifd["2"]
         dw, mw, sw = gps_ifd["4"]
+        print("test")
+        print(int(dn), int(mn), sn, int(dw), int(mw), sw)
         return dms_to_city_state(int(dn), int(mn), sn, int(dw), int(mw), sw)
     except Exception as error:
         log.error(error)

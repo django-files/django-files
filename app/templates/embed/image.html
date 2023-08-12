@@ -12,9 +12,17 @@
 
     <meta property="og:author" content="{{ file.user.username }}">
     <meta property="og:title" content="{{ file.name }}">
-    <meta property="og:description" content="{{ file.info }} {% if file.user.show_exif_preview %} Camera: {{ exif.Make }} {{ exif.Model }}
-    Taken: {{ exif.DateTime|convert_str_date }}
-    At: {{ city_state }} {% endif %}">
+    <meta property="og:description" content="{{ file.info }}
+    {% if file.user.show_exif_preview %}
+    Camera: {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}
+    {{ exif.DateTime|convert_str_date }}
+    {{ city_state }}
+
+    {% if exif.LensModel %}Lens: {{ exif.LensModel }}{% endif %}
+    {% if exif.FocalLength %}{{ exif.FocalLength|floatformat:"0" }}mm{% endif %}{% if exif.FNumber %} 𝑓{{ exif.FNumber }}{% endif %}
+    {% if exif.ISOSpeedRatings %}ISO-{{ exif.ISOSpeedRatings }}{% endif %}
+    {% if exif.ExposureTime %}{{ exif.ExposureTime }} s{% endif %}
+    {% endif %}">
 
     <meta property="og:type" content="website">
 

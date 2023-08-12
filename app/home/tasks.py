@@ -16,6 +16,7 @@ from django.utils import timezone
 # from itertools import count
 from pytimeparse2 import parse
 from PIL import Image, ExifTags, TiffImagePlugin
+from fractions import Fraction
 
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 from oauth.models import CustomUser
@@ -113,6 +114,7 @@ def process_file_upload(pk):
                     exif_clean = {}
                     for k, v in exif_data.items():
                         exif_clean[k] = v.decode() if isinstance(v, bytes) else str(v)
+                    exif_clean["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
                 except Exception as error:
                     log.info(error)
                     exif_clean = {}
