@@ -33,3 +33,5 @@
 
 ## Miscellaneous
 - [ ] Add Demo Mode and launch Demo
+- [ ] Exif for PNG
+- [ ] Exif for TIFF
