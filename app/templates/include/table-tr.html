@@ -7,9 +7,9 @@
 
     <td class="">
         <span class="d-none d-sm-inline">
-            <a class="clip" role="button" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+            <a class="clip" role="button" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.get_preview }}">
                 <i class="fa-regular fa-clipboard text-white ms-2"></i></a></span>
-        <a class="" role="button" target="_blank" href="{{ file.file.url }}">
+        <a class="" role="button" target="_blank" href="{{ file.get_preview }}">
             {{ file.name }}</a></td>
 
     <td class="d-none d-sm-table-cell">
