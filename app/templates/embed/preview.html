@@ -29,7 +29,9 @@
     {% if exif.FocalLength %}{{ exif.FocalLength|floatformat:"0" }}mm{% endif %}{% if exif.FNumber %}  𝑓 {{ exif.FNumber }}{% endif %}
     {% if exif.ISOSpeedRatings %}ISO Speed: {{ exif.ISOSpeedRatings }}{% endif %}
     {% if exif.ExposureTime %}Exposure Time: {{ exif.ExposureTime }} s{% endif %}
-    {% endif %}">
+    {% endif %}
+    {{ file.mime }} uploaded by {{ file.user.username }} on {{ file.date }}
+    ">
 
     <meta property="og:type" content="website">
 

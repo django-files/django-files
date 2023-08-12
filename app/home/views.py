@@ -1,5 +1,4 @@
 # import datetime
-from pathlib import Path
 import httpx
 import json
 import logging
@@ -450,7 +449,8 @@ def url_route_view(request, filename):
         return render(request, 'embed/preview.html', context=context)
     elif file.mime == 'text/plain':
         # if not md send text preview
-        text_preview = open(file.file.path, 'r').read()
+        with open(file.file.path, 'r') as text:
+            text_preview = text.read()
         context['text_preview'] = text_preview
     elif file.mime == 'text/markdown':
         with open(file.file.path, 'r', encoding="utf-8") as f:
@@ -464,7 +464,7 @@ def url_route_view(request, filename):
         formatter = HtmlFormatter(style='github-dark')
         # css = formatter.get_style_defs()
         # html = highlight(code, lexer, formatter)
-        context['css'] = formatter.get_style_defs(),
+        context['css'] = formatter.get_style_defs()
         context['html'] = highlight(code, lexer, formatter)
     return render(request, 'embed/preview.html', context=context)
 
