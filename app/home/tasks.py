@@ -99,6 +99,8 @@ def process_file_upload(pk):
                     if 'P' in image.mode:
                         new.putpalette(image.getpalette())
                     new.save(file.file.path)
+                # we still want size metadata even if exif is stripped
+                file.exif = json.dumps({"PILImageWidth": image.size[0], "PILImageHeight": image.size[1]})
             else:
                 log.info("Parsing and storing EXIF: %s", pk)
                 # # # old code
@@ -120,7 +122,6 @@ def process_file_upload(pk):
                     for tag, value in exif.items():
                         exif_clean[ExifTags.TAGS.get(tag, tag)] = value
                     exif_clean["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
-
                 if file.user.remove_exif_geo:
                     log.info("Stripping EXIF GPS: %s", pk)
                     if 0x8825 in exif:
@@ -128,6 +129,7 @@ def process_file_upload(pk):
                     if 'GPSInfo' in exif_clean:
                         del exif_clean['GPSInfo']
                     image.save(file.file.path, exif=exif)
+                exif_clean["PILImageWidth"], exif_clean["PILImageHeight"] = image.size
                 file.exif = json.dumps(cast(exif_clean))
     file.save()
     log.info('-'*40)
