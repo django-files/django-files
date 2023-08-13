@@ -98,7 +98,7 @@
                         {% if code or text_preview %}
                             <div class="col-12 ">
                                 <a class="clip btn btn-success btn-lg d-block" role="button"
-                                   data-clipboard-text="{{ code|default:text_preview }}">
+                                   data-clipboard-text="{% if code %}{{ code }}{% else %}{{ text_preview }}{% endif %}">
                                     <i class="fa-regular fa-file-lines me-2"></i> Copy Text</a></div>
                         {% endif %}
                         <div class="col-12 ">

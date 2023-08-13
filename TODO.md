@@ -26,7 +26,7 @@
 - [ ] Add File Views to Stats
 - [ ] Add Shorts Views to Stats
 - [ ] Move Stats Generation to Template Tag for Caching
-- [ ] Update Stats Graphs and Genreate More
+- [ ] Update Stats Graphs and Generate More
 
 ## API
 - [ ] Files - GET files
