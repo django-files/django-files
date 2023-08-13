@@ -1,20 +1,9 @@
 {% extends "main.html" %}
 {% load home_tags %}
 
-{% block nav1color %}{{ file.user.nav_color_1 }}{% endblock %}
-{% block nav2color %}{{ file.user.nav_color_2 }}{% endblock %}
-
-{% block head %}
-<style>
-    {{ css|safe }}
-</style>
-{% endblock %}
-
 {% block title %}{{ file.name }}{% endblock %}
 
 {% block meta %}
-    <title>{{ file.name }}</title>
-
     <meta name="theme-color" content="{{ file.user.default_color }}">
 
     <meta name="author" content="{{ file.user.username }}"/>
@@ -29,7 +18,7 @@
     {{ city_state }}{% endif %}{% if exif.GPSInfo.6 %}
     Elevation: {{ exif.GPSInfo.6|floatformat:1 }} m{% endif %}
 
-    {% if exif.FocalLength %}{{ exif.FocalLength|floatformat:"0" }}mm{% endif %}{% if exif.FNumber %}  𝑓 {{ exif.FNumber }}{% endif %}
+    {% if exif.FocalLength %}{{ exif.FocalLength|floatformat:"0" }}mm{% endif %}{% if exif.FNumber %} &fnof; {{ exif.FNumber }}{% endif %}
     {% if exif.ISOSpeedRatings %}ISO Speed: {{ exif.ISOSpeedRatings }}{% endif %}
     {% if exif.ExposureTime %}Exposure Time: {{ exif.ExposureTime }} s{% endif %}
     {% endif %}
@@ -39,78 +28,91 @@
     <meta property="og:type" content="website">
 
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:image" content="{{ raw_url }}">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
 
     <meta property="twitter:title" content="{{ file.name }}">
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:card" content="summary_large_image">
-
-    {% comment %} <style>
-        html, body
-        {
-            background-color: #0e0e0e;
-            height: 100%;
-            margin:0;
-            padding:0;
-        }
-        div {
-            position:relative;
-            height: 100%;
-            width:100%;
-        }
-        div img {
-            position:absolute;
-            top:0;
-            left:0;
-            right:0;
-            bottom:0;
-            margin:auto;
-            max-height: 100vh;
-            max-width: 100vw;
-        }
-    </style> {% endcomment %}
 {% endblock %}
+
+{% block head %}
+    <style>
+        {{ css|safe }}
+    </style>
+{% endblock %}
+
+{% block nav1color %}{{ file.user.nav_color_1 }}{% endblock %}
+{% block nav2color %}{{ file.user.nav_color_2 }}{% endblock %}
 
 {% block body %}
     <div class="container-fluid py-2 px-2">
         <div class="card">
             <div class="row g-0">
                 <div class="col-lg-9">
-                    {% if 'image' in file.mime %}<img src="{{ raw_url }}" alt="{{ file.name }}" class="card-img-left img-fluid">{% elif 'text' in file.mime %}{% if html %}
-                    <div class="container-fluid py-3 px-4">
-                        {{ html|safe }}
-                    </div>{% else %}
-                    <code class="container"><pre class="ps-5">{{ text_preview }}</pre></code>{% endif %}{% else %}
-                    <div class="container card-body text-center"><img class="fa-10x fa-solid fa-file mx-auto"></i></div>{% endif %}
+                    {% if 'image' in file.mime %}
+                        <img src="{% url 'home:url-raw' file.file.name %}" alt="{{ file.name }}" class="card-img-left img-fluid">
+                    {% elif 'text' in file.mime %}
+                        {% if html %}
+                            <div class="container-fluid py-3 px-4">
+                                {{ html|safe }}
+                            </div>
+                        {% else %}
+                            <pre class="p-3"><code>{{ text_preview }}</code></pre>
+                        {% endif %}
+                    {% else %}
+                        <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
+                    {% endif %}
                 </div>
             <div class="col-lg-3 d-flex flex-column">
                 <div class="card-body">
                     <h3 class="card-title">{{ file.name }}</h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                     <p class="card-text">{{ file.info }}</p>
-                    <p class="card-text">{% if 'image' in file.mime %}<i class="fa-solid fa-eye">{% else %}<i class="fa-solid fa-eye fa-download">{% endif %}</i> {{ file.view }}</p>
-                    <p class="card-text mx-0 mb-0">Uploader: {% if file.user.first_name %}{{ file.user.first_name }}{% else %}{{ file.user.username }}{% endif %}</p>
-                    <p class="card-text">Uploaded {{ file.date }}</p>
-                    <p class="card-text text-body-secondary">
-                        {% if file.user.show_exif_preview and file.exif %}<br>
-                        <b>Taken On:</b> {{ exif.DateTime|convert_str_date }}<br>
-                        <b>Camera:</b> {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}<br>
-                        {% if city_state %}<b>Location:</b> {{ city_state }}<br>{% endif %}
-                        {% if exif.GPSInfo.6 %}<b>Elevation:</b> {{ exif.GPSInfo.6|floatformat:1 }} m{% endif %}
-                    </p>
-                    <p class="card-text text-body-secondary me-auto">
-                        {% if exif.LensModel %}<b>Lens: </b>{{ exif.LensModel }}<br>{% endif %}
-                        {% if exif.FocalLength %}<b>Focal Length:</b> {{ exif.FocalLength|floatformat:"0" }}mm<br>{% endif %}
-                        {% if exif.FNumber %}<b>Aperature:</b> 𝑓 {{ exif.FNumber }}<br>{% endif %}
-                        {% if exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ exif.ISOSpeedRatings }}<br>{% endif %}
-                        {% if exif.ExposureTime %}<b>Exposure Time:</b> {{ exif.ExposureTime }} s<br>{% endif %}
+                    <p class="card-text">
+                        {% if 'image' in file.mime %}
+                            <i class="fa-solid fa-eye"></i> {{ file.view }}
+                        {% else %}
+                            <i class="fa-solid fa-eye fa-download"></i> {{ file.view }}
                         {% endif %}
-                    </p>
+                        <i class="fa-solid fa-scale-balanced ms-3"></i>  {{ file.get_size }}</p>
+                    <p class="card-text mx-0 mb-0">Uploader: {{ file.user.first_name|default:file.user.username }}</p>
+                    <p class="card-text">Uploaded {{ file.date }}</p>
+                    {% if file.user.show_exif_preview and file.exif %}
+                        <p class="card-text text-body-secondary">
+                            <b>Taken On:</b> {{ exif.DateTime|convert_str_date }}<br>
+                            <b>Camera:</b> {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}<br>
+                            {% if city_state %}<b>Location:</b> {{ city_state }}<br>{% endif %}
+                            {% if exif.GPSInfo.6 %}<b>Elevation:</b> {{ exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
+                        <p class="card-text text-body-secondary me-auto">
+                            {% if exif.LensModel %}<b>Lens: </b>{{ exif.LensModel }}<br>{% endif %}
+                            {% if exif.FocalLength %}<b>Focal Length:</b> {{ exif.FocalLength|floatformat:"0" }}mm<br>{% endif %}
+                            {% if exif.FNumber %}<b>Aperture:</b> 𝑓 {{ exif.FNumber }}<br>{% endif %}
+                            {% if exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ exif.ISOSpeedRatings }}<br>{% endif %}
+                            {% if exif.ExposureTime %}<b>Exposure Time:</b> {{ exif.ExposureTime }} s{% endif %}</p>
+                    {% endif %}
                     <div class="row g-2 text-center mt-auto">
-                        <div class="col-sm-6 col-md-12"><a class="btn btn-primary btn-lg d-block" role="button" href="{{ raw_url }}" download="{{ file.name }}"><i class="fa-solid fa-download"></i> Download</a></div>
-                        <div class="col-sm-6 col-md-12"><a class="btn btn-secondary btn-lg d-block" role="button" href="{{ raw_url }}"><i class="fa-solid fa-eye"></i> View Raw</a></div>
-                        <div class="col-sm-6 col-md-12"><a class="clip btn btn-outline-info btn-lg d-block" role="button" data-clipboard-text="{{ preview_url }}"><i class="fa-solid fa-copy"></i> Preview</a></div>
-                        <div class="col-sm-6 col-md-12"><a class="clip btn btn-outline-info btn-lg d-block" role="button" data-clipboard-text="{{ raw_url }}"><i class="fa-solid fa-copy"></i> Raw</a></div>
+                        <div class="col-12 ">
+                            <a class="btn btn-primary btn-lg d-block" role="button"
+                               href="{% url 'home:url-raw' file.file.name %}" download="{{ file.name }}">
+                                <i class="fa-solid fa-download me-2"></i> Download</a></div>
+                        {% if code or text_preview %}
+                            <div class="col-12 ">
+                                <a class="clip btn btn-success btn-lg d-block" role="button"
+                                   data-clipboard-text="{{ code|default:text_preview }}">
+                                    <i class="fa-regular fa-file-lines me-2"></i> Copy Text</a></div>
+                        {% endif %}
+                        <div class="col-12 ">
+                            <a class="btn btn-secondary btn-lg d-block" role="button"
+                               href="{% url 'home:url-raw' file.file.name %}">
+                                <i class="fa-solid fa-eye me-2"></i> View Raw</a></div>
+                        <div class="col-12 ">
+                            <a class="clip btn btn-outline-light btn-lg d-block" role="button"
+                               data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
+                                <i class="fa-solid fa-link me-2"></i> Preview URL</a></div>
+                        <div class="col-12 ">
+                            <a class="clip btn btn-outline-light btn-lg d-block" role="button"
+                               data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}}">
+                                <i class="fa-solid fa-link me-2"></i> Raw URL</a></div>
                     </div>
                 </div>
             </div>
@@ -120,5 +122,4 @@
 
 {% block footer %}{% endblock %}
 
-{% block tail %}
-{% endblock %}
+{% block tail %}{% endblock %}

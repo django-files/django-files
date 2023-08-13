@@ -195,8 +195,9 @@ def upload_view(request):
             return JsonResponse({'error': 'File Not Created'}, status=400)
         process_file_upload.delay(file.pk)
         data = {
-            'files': [file.get_url()],
-            'url': file.get_url(),
+            'files': [file.preview_url()],
+            'url': file.preview_url(),
+            'raw': file.get_url(),
             'name': file.name,
             'size': file.size,
         }
@@ -424,43 +425,48 @@ def url_route_view(request, filename):
     """
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
-    raw_url = request.build_absolute_uri(reverse('home:url-raw', kwargs={'filename': filename}))
-    preview_url = request.build_absolute_uri(reverse('home:url-route', kwargs={'filename': filename}))
-    context = {
-        'file': file,
-        'site_url': request.build_absolute_uri(),
-        'raw_url': raw_url,
-        'preview_url': preview_url,
-    }
+    ctx = {'file': file}
+    log.debug(0)
     if file.mime.startswith('image'):
+        log.debug(1)
         if file.exif and isinstance(file.exif, str):
-            context['exif'] = json.loads(file.exif)
-            if exposure_time := context['exif'].get('ExposureTime'):
-                context['exif']['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
-            if gps_info := context['exif'].get("GPSInfo"):
-                context['city_state'] = city_state_from_exif(gps_info)
-            if lens_model := context['exif'].get('LensModel'):
+            # TODO: Move Exif Parsing into ONE Function
+            ctx['exif'] = json.loads(file.exif)
+            if exposure_time := ctx['exif'].get('ExposureTime'):
+                ctx['exif']['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
+            if gps_info := ctx['exif'].get("GPSInfo"):
+                ctx['city_state'] = city_state_from_exif(gps_info)
+            if lens_model := ctx['exif'].get('LensModel'):
                 # handle cases where lensmodel is relevant but some values redunant
-                lm_f_stripped = lens_model.replace(f"f/{context['exif'].get('FNumber', '')}", "")
-                lm_model_stripped = lm_f_stripped.replace(f"{context['exif'].get('Model')}", "")
-                context['exif']['LensModel'] = lm_model_stripped
-        return render(request, 'embed/preview.html', context=context)
+                lm_f_stripped = lens_model.replace(f"f/{ctx['exif'].get('FNumber', '')}", "")
+                lm_model_stripped = lm_f_stripped.replace(f"{ctx['exif'].get('Model')}", "")
+                ctx['exif']['LensModel'] = lm_model_stripped
+        return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/plain':
+        log.debug(2)
         with open(file.file.path, 'r') as text:
             text_preview = text.read()
-        context['text_preview'] = text_preview
+        ctx['text_preview'] = text_preview
+        return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
+        log.debug(3)
         with open(file.file.path, 'r', encoding="utf-8") as f:
-            context['markdown'] = markdown.markdown(f.read(), extensions=['extra', 'toc'])
-        return render(request, 'embed/markdown.html', context=context)
+            ctx['markdown'] = markdown.markdown(f.read(), extensions=['extra', 'toc'])
+        return render(request, 'embed/markdown.html', context=ctx)
     elif file.mime.startswith('text/'):
+        log.debug(4)
         with open(file.file.path, 'r', encoding="utf-8") as f:
             code = f.read()
+        log.debug('code: %s', code)
         lexer = get_lexer_for_mimetype(file.mime, stripall=True)
         formatter = HtmlFormatter(style='github-dark')
-        context['css'] = formatter.get_style_defs()
-        context['html'] = highlight(code, lexer, formatter)
-    return render(request, 'embed/preview.html', context=context)
+        ctx['css'] = formatter.get_style_defs()
+        ctx['html'] = highlight(code, lexer, formatter)
+        ctx['code'] = code
+        return render(request, 'embed/preview.html', context=ctx)
+    else:
+        return render(request, 'embed/preview.html', context=ctx)
+    log.error(99)
 
 
 def google_verify(request: HttpRequest) -> bool:

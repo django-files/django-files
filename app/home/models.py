@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
-from oauth.models import CustomUser
+from django.shortcuts import reverse
 
-from .managers import FilesManager, FileStatsManager, ShortURLsManager, WebhooksManager
+from home.managers import FilesManager, FileStatsManager, ShortURLsManager, WebhooksManager
+from oauth.models import CustomUser
 
 
 class Files(models.Model):
@@ -34,8 +35,13 @@ class Files(models.Model):
         site_settings = SiteSettings.objects.get(pk=1)
         return site_settings.site_url + self.file.url
 
-    def get_preview(self):
-        return '/u/' + self.file.name
+    def preview_url(self):
+        site_settings = SiteSettings.objects.get(pk=1)
+        uri = reverse('home:url-route', kwargs={'filename': self.file.name})
+        return site_settings.site_url + uri
+
+    def preview_uri(self):
+        return reverse('home:url-route', kwargs={'filename': self.file.name})
 
     def get_size(self):
         num = self.size
