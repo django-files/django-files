@@ -26,14 +26,23 @@
     {{ file.mime }} uploaded by {% if file.user.first_name %}{{ file.user.first_name }}{% else %}{{ file.user.username }}{% endif %} on {{ file.date }}
     ">
 
-    <meta property="og:type" content="website">
-
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
-
+    {% if render == 'image' %}
+        <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:type" content="website">
+        <meta property="twitter:card" content="summary_large_image">
+    {% elif render == 'video' %}
+        <meta property="og:video" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:type" content="video.other">
+        <meta property="twitter:card" content="player">
+    {% elif render == 'audio' %}
+        <meta property="og:audio" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:type" content="music.song">
+    {% else %}
+        <meta property="og:type" content="website">
+    {% endif %}
     <meta property="twitter:title" content="{{ file.name }}">
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
-    <meta property="twitter:card" content="summary_large_image">
 {% endblock %}
 
 {% block head %}
@@ -51,15 +60,25 @@
             <div class="row g-0">
                 <div class="col-lg-9">
                     {# TODO: Fix this so that we dont check mime type in the template and the view #}
-                    {% if 'image' in file.mime %}
+                    {% if render == 'image' %}
                         <img src="{% url 'home:url-raw' file.file.name %}" alt="{{ file.name }}" class="card-img-left img-fluid">
-                    {% elif 'text' in file.mime %}
+                    {% elif render == 'video' %}
+                        <video class="mw-100" controls>
+                            <source src="{{ file.file.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% elif render == 'audio' %}
+                        <audio class="w-100" controls>
+                            <source src="{{ file.file.url }}" type="{{ file.mime }}">
+                            Your browser does not support the audio tag.
+                        </audio>
+                    {% elif render == 'text' %}
+                        <pre class="p-3"><code>{{ text_preview }}</code></pre>
+                    {% elif render == 'code' %}
                         {% if html %}
                             <div class="container-fluid py-3 px-4">
                                 {{ html|safe }}
                             </div>
-                        {% else %}
-                            <pre class="p-3"><code>{{ text_preview }}</code></pre>
                         {% endif %}
                     {% else %}
                         <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>

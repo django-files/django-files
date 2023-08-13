@@ -432,21 +432,23 @@ def url_route_view(request, filename):
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
     log.debug('file.mime: %s', file.mime)
-    ctx = {'file': file}
+    ctx = {'file': file, 'render': file.mime.split('/', 1)[0]}
+    log.debug('ctx: %s', ctx)
     if file.mime.startswith('image'):
         log.debug('IMAGE')
-        if file.exif and isinstance(file.exif, str):
-            # TODO: Move Exif Parsing into ONE Function
-            ctx['exif'] = json.loads(file.exif)
-            if exposure_time := ctx['exif'].get('ExposureTime'):
-                ctx['exif']['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
-            if gps_info := ctx['exif'].get("GPSInfo"):
+        if file.exif:
+            # noinspection PyTypeChecker
+            exif = json.loads(file.exif)
+            if exposure_time := exif.get('ExposureTime'):
+                exif['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
+            if gps_info := exif.get("GPSInfo"):
                 ctx['city_state'] = city_state_from_exif(gps_info)
-            if lens_model := ctx['exif'].get('LensModel'):
+            if lens_model := exif.get('LensModel'):
                 # handle cases where lensmodel is relevant but some values redunant
-                lm_f_stripped = lens_model.replace(f"f/{ctx['exif'].get('FNumber', '')}", "")
-                lm_model_stripped = lm_f_stripped.replace(f"{ctx['exif'].get('Model')}", "")
-                ctx['exif']['LensModel'] = lm_model_stripped
+                lm_f_stripped = lens_model.replace(f"f/{exif.get('FNumber', '')}", "")
+                lm_model_stripped = lm_f_stripped.replace(f"{exif.get('Model')}", "")
+                exif['LensModel'] = lm_model_stripped
+            ctx['exif'] = exif
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/plain':
         log.debug('TEXT')
@@ -455,6 +457,7 @@ def url_route_view(request, filename):
         ctx['text_preview'] = text_preview
         file.view += 1
         file.save()
+        ctx['render'] = 'text'
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
         log.debug('MARKDOWN')
@@ -475,6 +478,7 @@ def url_route_view(request, filename):
         ctx['code'] = code
         file.view += 1
         file.save()
+        ctx['render'] = 'code'
         return render(request, 'embed/preview.html', context=ctx)
     else:
         log.debug('UNKNOWN')
