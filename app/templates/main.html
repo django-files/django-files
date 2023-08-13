@@ -42,7 +42,7 @@
 {% block navbar %}
 <header>
     <nav class="navbar navbar-expand-md navbar-dark border-bottom"
-         style="background-image: linear-gradient(15deg, {{ user.nav_color_1 }} 0%, {{ user.nav_color_2 }} 100%);">
+    style="background-image: linear-gradient(15deg, {% block nav1color %}{{ user.nav_color_1 }}{% endblock %} 0%, {% block nav2color %}{{ user.nav_color_2 }}{% endblock %} 100%);">
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'home:index' %}">
                 <img src="{% static 'images/logo.png' %}" width="30" height="30" alt="logo"></a>
@@ -52,6 +52,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                {% if request.user.is_authenticated %}
                 <ul class="navbar-nav me-auto mb-2 mb-sm-0">
                     <li class="nav-item"><a class="nav-link {% block home_active %}{% endblock %}"
                                             href="{% url 'home:index' %}">Home</a></li>
@@ -66,6 +67,7 @@
                     <li class="nav-item"><a class="nav-link {% block settings_active %}{% endblock %}"
                                             href="{% url 'home:settings' %}">Settings</a></li>
                 </ul>
+                {% endif %}
                 <ul class="navbar-nav ms-auto">
                     {% if not request.user.is_authenticated %}
                         <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="btn btn-outline-info" role="button">

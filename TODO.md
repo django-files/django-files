@@ -12,6 +12,7 @@
 - [ ] Max Views Feature
 - [ ] Filename Options Feature
 - [ ] Overhaul /shorten and /upload URL Endpoints
+- [ ] Option to strip exif on upload regardless of user settings.
 
 ## Site Settings
 - [ ] Full Settings Interface Overhaul

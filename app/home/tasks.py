@@ -113,6 +113,7 @@ def process_file_upload(pk):
                     exif_clean = {}
                     for k, v in exif_data.items():
                         exif_clean[k] = v.decode() if isinstance(v, bytes) else str(v)
+                    exif_clean["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
                 except Exception as error:
                     log.info(error)
                     exif_clean = {}

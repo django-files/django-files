@@ -1,4 +1,5 @@
 import logging
+import datetime
 from django import template
 from django.conf import settings
 from django.templatetags.static import static
@@ -56,3 +57,10 @@ def bytes_human(num):
 #     context = {'stats': stats, 'days': days, 'files': files, 'size': size, 'shorts': shorts}
 #     log.debug('context: %s', context)
 #     return render(request, 'stats.html', context=context)
+
+
+@register.filter(name="convert_str_date")
+def convert_str_date(value):
+    if not value:
+        return ''
+    return str(datetime.datetime.strptime(value, '%Y:%m:%d %H:%M:%S').strftime('%m/%d/%Y %H:%M:%S'))

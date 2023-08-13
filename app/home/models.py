@@ -34,6 +34,9 @@ class Files(models.Model):
         site_settings = SiteSettings.objects.get(pk=1)
         return site_settings.site_url + self.file.url
 
+    def get_preview(self):
+        return '/u/' + self.file.name
+
     def get_size(self):
         num = self.size
         return self.get_size_of(num)

@@ -2,6 +2,7 @@
 import httpx
 import json
 import logging
+import markdown
 import validators
 from django.conf import settings
 from django.contrib import messages
@@ -13,12 +14,17 @@ from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 # from itertools import count
+from pygments import highlight
+from pygments.lexers import get_lexer_for_mimetype
+from pygments.formatters import HtmlFormatter
 from pytimeparse2 import parse
+from geopy.geocoders import Nominatim
 
 from oauth.models import CustomUser, rand_string
 from home.forms import SettingsForm
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
 from home.tasks import clear_shorts_cache, process_file_upload, process_stats
+from fractions import Fraction
 
 log = logging.getLogger('app')
 
@@ -416,25 +422,45 @@ def url_route_view(request, filename):
     """
     View  /u/<path:filename>
     """
-    # log.debug('context: %s', context)
-    # message = render_to_string('scripts/flameshot.sh', context)
-    file = Files.objects.get(name=filename)
-    log.debug('file: %s', file)
-    mime = file.mime.split('/', 1)[0]
+    log.debug('url_route_view: %s', filename)
+    file = get_object_or_404(Files, name=filename)
     raw_url = request.build_absolute_uri(reverse('home:url-raw', kwargs={'filename': filename}))
+    preview_url = request.build_absolute_uri(reverse('home:url-route', kwargs={'filename': filename}))
     context = {
         'file': file,
-        'mime': mime,
         'site_url': request.build_absolute_uri(),
         'raw_url': raw_url,
+        'preview_url': preview_url,
     }
-    # response = HttpResponse(message)
-    # response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
-    # return response
-    if mime == 'image':
-        return render(request, 'routes/image.html', context=context)
-    else:
-        return HttpResponseRedirect(raw_url)
+    if file.mime.startswith('image'):
+        if file.exif and isinstance(file.exif, str):
+            context['exif'] = json.loads(file.exif)
+            if exposure_time := context['exif'].get('ExposureTime'):
+                context['exif']['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
+            if gps_info := context['exif'].get("GPSInfo"):
+                context['city_state'] = city_state_from_exif(gps_info)
+            if lens_model := context['exif'].get('LensModel'):
+                # handle cases where lensmodel is relevant but some values redunant
+                lm_f_stripped = lens_model.replace(f"f/{context['exif'].get('FNumber', '')}", "")
+                lm_model_stripped = lm_f_stripped.replace(f"{context['exif'].get('Model')}", "")
+                context['exif']['LensModel'] = lm_model_stripped
+        return render(request, 'embed/preview.html', context=context)
+    elif file.mime == 'text/plain':
+        with open(file.file.path, 'r') as text:
+            text_preview = text.read()
+        context['text_preview'] = text_preview
+    elif file.mime == 'text/markdown':
+        with open(file.file.path, 'r', encoding="utf-8") as f:
+            context['markdown'] = markdown.markdown(f.read(), extensions=['extra', 'toc'])
+        return render(request, 'embed/markdown.html', context=context)
+    elif file.mime.startswith('text/'):
+        with open(file.file.path, 'r', encoding="utf-8") as f:
+            code = f.read()
+        lexer = get_lexer_for_mimetype(file.mime, stripall=True)
+        formatter = HtmlFormatter(style='github-dark')
+        context['css'] = formatter.get_style_defs()
+        context['html'] = highlight(code, lexer, formatter)
+    return render(request, 'embed/preview.html', context=context)
 
 
 def google_verify(request: HttpRequest) -> bool:
@@ -473,3 +499,27 @@ def parse_expire(request, user) -> str:
     if parse(expr) is not None:
         return expr
     return user.default_expire or ''
+
+
+def city_state_from_exif(gps_ifd: dict) -> str:
+    geolocator = Nominatim(user_agent="django-files")
+    try:
+        dn, mn, sn, dw, mw, sw = strip_dms(gps_ifd)
+        dms_string = f"{int(dn)}°{int(mn)}'{sn}\" N, \
+        {int(dw) if dw is not None else ''}°{int(mw) if mw is not None else ''}'{sw if sw is not None else ''}\" W"
+        location = geolocator.reverse(dms_string)
+        if not (area := location.raw['address'].get('city')):
+            area = location.raw['address'].get('county')
+        state = location.raw['address'].get('state', '')
+        return f"{area}, {state}"
+    except Exception as error:
+        log.error(error)
+
+
+def strip_dms(gps_ifd: dict) -> list:
+    try:
+        dn, mn, sn = gps_ifd["2"]
+        dw, mw, sw = gps_ifd["4"]
+        return [dn, mn, sn, dw, mw, sw]
+    except Exception as error:
+        log.error(error)
