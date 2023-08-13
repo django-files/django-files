@@ -123,8 +123,10 @@ def process_file_upload(pk):
 
                 if file.user.remove_exif_geo:
                     log.info("Stripping EXIF GPS: %s", pk)
-                    del exif[0x8825]
-                    del exif_clean['GPSInfo']
+                    if 0x8825 in exif:
+                        del exif[0x8825]
+                    if 'GPSInfo' in exif_clean:
+                        del exif_clean['GPSInfo']
                     image.save(file.file.path, exif=exif)
                 file.exif = json.dumps(cast(exif_clean))
     file.save()
