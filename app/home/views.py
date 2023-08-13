@@ -426,9 +426,7 @@ def url_route_view(request, filename):
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
     ctx = {'file': file}
-    log.debug(0)
     if file.mime.startswith('image'):
-        log.debug(1)
         if file.exif and isinstance(file.exif, str):
             # TODO: Move Exif Parsing into ONE Function
             ctx['exif'] = json.loads(file.exif)
@@ -443,30 +441,26 @@ def url_route_view(request, filename):
                 ctx['exif']['LensModel'] = lm_model_stripped
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/plain':
-        log.debug(2)
         with open(file.file.path, 'r') as text:
             text_preview = text.read()
         ctx['text_preview'] = text_preview
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
-        log.debug(3)
         with open(file.file.path, 'r', encoding="utf-8") as f:
             ctx['markdown'] = markdown.markdown(f.read(), extensions=['extra', 'toc'])
         return render(request, 'embed/markdown.html', context=ctx)
     elif file.mime.startswith('text/'):
-        log.debug(4)
         with open(file.file.path, 'r', encoding="utf-8") as f:
             code = f.read()
         log.debug('code: %s', code)
         lexer = get_lexer_for_mimetype(file.mime, stripall=True)
-        formatter = HtmlFormatter(style='github-dark')
+        formatter = HtmlFormatter(style='one-dark')
         ctx['css'] = formatter.get_style_defs()
         ctx['html'] = highlight(code, lexer, formatter)
         ctx['code'] = code
         return render(request, 'embed/preview.html', context=ctx)
     else:
         return render(request, 'embed/preview.html', context=ctx)
-    log.error(99)
 
 
 def google_verify(request: HttpRequest) -> bool:
