@@ -18,6 +18,8 @@ types {
     video/x-ms-wmv                                   wmv;
     video/x-msvideo                                  avi;
 
+    image/gif                                        gif;
+    image/jpeg                                       jpeg jpg;
     image/avif                                       avif;
     image/png                                        png;
     image/svg+xml                                    svg svgz;
