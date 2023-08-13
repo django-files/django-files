@@ -14,17 +14,17 @@ from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 # from itertools import count
+from fractions import Fraction
+from geopy.geocoders import Nominatim
 from pygments import highlight
 from pygments.lexers import get_lexer_for_mimetype
 from pygments.formatters import HtmlFormatter
 from pytimeparse2 import parse
-from geopy.geocoders import Nominatim
 
-from oauth.models import CustomUser, rand_string
 from home.forms import SettingsForm
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
 from home.tasks import clear_shorts_cache, process_file_upload, process_stats
-from fractions import Fraction
+from oauth.models import CustomUser, rand_string
 
 log = logging.getLogger('app')
 

@@ -17,7 +17,6 @@
         </audio>
     {% else %}
         <a href="{{ file.preview_uri }}" class="text-decoration-none">
-            {{ file.name }}<br><i class="fa-solid fa-download"></i>
-            <em>{{ file.mime }}</em> {{ file.get_size }}<br></a>
+            {{ file.name }}<br><em>{{ file.mime }}</em> {{ file.get_size }}<br></a>
     {% endif %}
 </div>
