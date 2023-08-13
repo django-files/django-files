@@ -33,7 +33,7 @@
     {% if exif.ISOSpeedRatings %}ISO Speed: {{ exif.ISOSpeedRatings }}{% endif %}
     {% if exif.ExposureTime %}Exposure Time: {{ exif.ExposureTime }} s{% endif %}
     {% endif %}
-    {{ file.mime }} uploaded by {{ file.user.username }} on {{ file.date }}
+    {{ file.mime }} uploaded by {% if file.user.first_name %}{{ file.user.first_name }}{% else %}{{ file.user.username }}{% endif %} on {{ file.date }}
     ">
 
     <meta property="og:type" content="website">
