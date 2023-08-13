@@ -106,11 +106,11 @@
                                href="{% url 'home:url-raw' file.file.name %}">
                                 <i class="fa-solid fa-eye me-2"></i> View Raw</a></div>
                         <div class="col-12 ">
-                            <a class="clip btn btn-outline-light btn-lg d-block" role="button"
+                            <a class="clip btn btn-outline-secondary btn-lg d-block" role="button"
                                data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
                                 <i class="fa-solid fa-link me-2"></i> Preview URL</a></div>
                         <div class="col-12 ">
-                            <a class="clip btn btn-outline-light btn-lg d-block" role="button"
+                            <a class="clip btn btn-outline-secondary btn-lg d-block" role="button"
                                data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}}">
                                 <i class="fa-solid fa-link me-2"></i> Raw URL</a></div>
                     </div>
