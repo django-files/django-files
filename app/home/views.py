@@ -441,23 +441,29 @@ def url_route_view(request, filename):
                 ctx['exif']['LensModel'] = lm_model_stripped
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/plain':
-        with open(file.file.path, 'r') as text:
-            text_preview = text.read()
+        with open(file.file.path, 'r') as f:
+            text_preview = f.read()
         ctx['text_preview'] = text_preview
+        file.view += 1
+        file.save()
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
-        with open(file.file.path, 'r', encoding="utf-8") as f:
-            ctx['markdown'] = markdown.markdown(f.read(), extensions=['extra', 'toc'])
+        with open(file.file.path, 'r') as f:
+            md_text = f.read()
+        ctx['markdown'] = markdown.markdown(md_text, extensions=['extra', 'toc'])
+        file.view += 1
+        file.save()
         return render(request, 'embed/markdown.html', context=ctx)
     elif file.mime.startswith('text/'):
-        with open(file.file.path, 'r', encoding="utf-8") as f:
+        with open(file.file.path, 'r') as f:
             code = f.read()
-        log.debug('code: %s', code)
         lexer = get_lexer_for_mimetype(file.mime, stripall=True)
         formatter = HtmlFormatter(style='one-dark')
         ctx['css'] = formatter.get_style_defs()
         ctx['html'] = highlight(code, lexer, formatter)
         ctx['code'] = code
+        file.view += 1
+        file.save()
         return render(request, 'embed/preview.html', context=ctx)
     else:
         return render(request, 'embed/preview.html', context=ctx)
