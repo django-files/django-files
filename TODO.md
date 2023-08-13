@@ -13,7 +13,11 @@
 - [ ] Filename Options Feature
 - [ ] Overhaul /shorten and /upload URL Endpoints
 - [ ] Option to strip exif on upload regardless of user settings.
+
+## Preview Page
 - [ ] Overhaul EXIF Parsing to be a re-usable function
+- [ ] Add hit counter for mime types that do not include raw urls
+- [ ] Fix Pygments Code for Light Mode
 
 ## Site Settings
 - [ ] Full Settings Interface Overhaul
