@@ -9,7 +9,10 @@ types {
     text/plain      php;
     text/plain      pl pm;
     text/plain      ps eps ai;
+    text/plain      py;
     text/plain      rst;
+    text/plain      sh bash;
     text/plain      text;
     text/plain      tcl tk;
+    text/plain      xml;
 }

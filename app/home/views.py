@@ -423,10 +423,18 @@ def url_route_view(request, filename):
     """
     View  /u/<path:filename>
     """
+    # TODO: Fix the todo in the Template so this will work
+    code_mimes = [
+        'application/json',
+        'application/x-perl',
+        'application/x-sh',
+    ]
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
+    log.debug('file.mime: %s', file.mime)
     ctx = {'file': file}
     if file.mime.startswith('image'):
+        log.debug('IMAGE')
         if file.exif and isinstance(file.exif, str):
             # TODO: Move Exif Parsing into ONE Function
             ctx['exif'] = json.loads(file.exif)
@@ -441,6 +449,7 @@ def url_route_view(request, filename):
                 ctx['exif']['LensModel'] = lm_model_stripped
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/plain':
+        log.debug('TEXT')
         with open(file.file.path, 'r') as f:
             text_preview = f.read()
         ctx['text_preview'] = text_preview
@@ -448,13 +457,15 @@ def url_route_view(request, filename):
         file.save()
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
+        log.debug('MARKDOWN')
         with open(file.file.path, 'r') as f:
             md_text = f.read()
         ctx['markdown'] = markdown.markdown(md_text, extensions=['extra', 'toc'])
         file.view += 1
         file.save()
         return render(request, 'embed/markdown.html', context=ctx)
-    elif file.mime.startswith('text/'):
+    elif file.mime.startswith('text/') or file.mime in code_mimes:
+        log.debug('CODE')
         with open(file.file.path, 'r') as f:
             code = f.read()
         lexer = get_lexer_for_mimetype(file.mime, stripall=True)
@@ -466,6 +477,7 @@ def url_route_view(request, filename):
         file.save()
         return render(request, 'embed/preview.html', context=ctx)
     else:
+        log.debug('UNKNOWN')
         return render(request, 'embed/preview.html', context=ctx)
 
 
