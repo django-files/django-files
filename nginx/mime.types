@@ -1,0 +1,15 @@
+types {
+    text/plain      css;
+    text/plain      html htm shtml xhtml;
+    text/plain      js;
+    text/plain      json;
+    text/plain      log;
+    text/plain      md markdown me readme;
+    text/plain      m3u8 m3u;
+    text/plain      php;
+    text/plain      pl pm;
+    text/plain      ps eps ai;
+    text/plain      rst;
+    text/plain      text;
+    text/plain      tcl tk;
+}
