@@ -89,6 +89,7 @@
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                     <p class="card-text">{{ file.info }}</p>
                     <p class="card-text">{% if 'image' in file.mime %}<i class="fa-solid fa-eye">{% else %}<i class="fa-solid fa-eye fa-download">{% endif %}</i> {{ file.view }}</p>
+                    <p class="card-text mx-0 mb-0">Uploader: {% if file.user.first_name %}{{ file.user.first_name }}{% else %}{{ file.user.username }}{% endif %}</p>
                     <p class="card-text">Uploaded {{ file.date }}</p>
                     <p class="card-text text-body-secondary">
                         {% if file.user.show_exif_preview and file.exif %}<br>
