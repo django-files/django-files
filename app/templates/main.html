@@ -42,7 +42,9 @@
 {% block navbar %}
 <header>
     <nav class="navbar navbar-expand-md navbar-dark border-bottom"
-    style="background-image: linear-gradient(15deg, {% block nav1color %}{{ user.nav_color_1 }}{% endblock %} 0%, {% block nav2color %}{{ user.nav_color_2 }}{% endblock %} 100%);">
+         style="background-image: linear-gradient(15deg,
+                 {% block nav1color %}{{ user.nav_color_1 }}{% endblock %} 0%,
+                 {% block nav2color %}{{ user.nav_color_2 }}{% endblock %} 100%);">
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'home:index' %}">
                 <img src="{% static 'images/logo.png' %}" width="30" height="30" alt="logo"></a>
@@ -135,7 +137,7 @@
         <div class="row">
 
             <div class="col-12 col-md-4">
-                <p>Join us <a class="" href="https://github.com/smashedr/django-files" target="_blank">
+                <p>Join us <a class="" href="https://github.com/django-files/django-files" target="_blank">
                     on <i class="fab fa-github"></i> GitHub</a></p>
             </div>
 

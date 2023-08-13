@@ -14,6 +14,10 @@
 - [ ] Overhaul /shorten and /upload URL Endpoints
 - [ ] Option to strip exif on upload regardless of user settings.
 
+## Preview Page
+- [ ] Overhaul EXIF Parsing to be a re-usable function
+- [ ] Fix Pygments Code for Light Mode
+
 ## Site Settings
 - [ ] Full Settings Interface Overhaul
 - [ ] Remove GPS metadata Feature
@@ -25,7 +29,7 @@
 - [ ] Add File Views to Stats
 - [ ] Add Shorts Views to Stats
 - [ ] Move Stats Generation to Template Tag for Caching
-- [ ] Update Stats Graphs and Genreate More
+- [ ] Update Stats Graphs and Generate More
 
 ## API
 - [ ] Files - GET files

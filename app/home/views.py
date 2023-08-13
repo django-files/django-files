@@ -14,17 +14,17 @@ from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 # from itertools import count
+from fractions import Fraction
+from geopy.geocoders import Nominatim
 from pygments import highlight
 from pygments.lexers import get_lexer_for_mimetype
 from pygments.formatters import HtmlFormatter
 from pytimeparse2 import parse
-from geopy.geocoders import Nominatim
 
-from oauth.models import CustomUser, rand_string
 from home.forms import SettingsForm
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
 from home.tasks import clear_shorts_cache, process_file_upload, process_stats
-from fractions import Fraction
+from oauth.models import CustomUser, rand_string
 
 log = logging.getLogger('app')
 
@@ -195,8 +195,9 @@ def upload_view(request):
             return JsonResponse({'error': 'File Not Created'}, status=400)
         process_file_upload.delay(file.pk)
         data = {
-            'files': [file.get_url()],
-            'url': file.get_url(),
+            'files': [file.preview_url()],
+            'url': file.preview_url(),
+            'raw': file.get_url(),
             'name': file.name,
             'size': file.size,
         }
@@ -422,45 +423,62 @@ def url_route_view(request, filename):
     """
     View  /u/<path:filename>
     """
+    # TODO: Fix the todo in the Template so this will work
+    code_mimes = [
+        'application/json',
+        'application/x-perl',
+        'application/x-sh',
+    ]
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
-    raw_url = request.build_absolute_uri(reverse('home:url-raw', kwargs={'filename': filename}))
-    preview_url = request.build_absolute_uri(reverse('home:url-route', kwargs={'filename': filename}))
-    context = {
-        'file': file,
-        'site_url': request.build_absolute_uri(),
-        'raw_url': raw_url,
-        'preview_url': preview_url,
-    }
+    log.debug('file.mime: %s', file.mime)
+    ctx = {'file': file}
     if file.mime.startswith('image'):
+        log.debug('IMAGE')
         if file.exif and isinstance(file.exif, str):
-            context['exif'] = json.loads(file.exif)
-            if exposure_time := context['exif'].get('ExposureTime'):
-                context['exif']['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
-            if gps_info := context['exif'].get("GPSInfo"):
-                context['city_state'] = city_state_from_exif(gps_info)
-            if lens_model := context['exif'].get('LensModel'):
+            # TODO: Move Exif Parsing into ONE Function
+            ctx['exif'] = json.loads(file.exif)
+            if exposure_time := ctx['exif'].get('ExposureTime'):
+                ctx['exif']['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
+            if gps_info := ctx['exif'].get("GPSInfo"):
+                ctx['city_state'] = city_state_from_exif(gps_info)
+            if lens_model := ctx['exif'].get('LensModel'):
                 # handle cases where lensmodel is relevant but some values redunant
-                lm_f_stripped = lens_model.replace(f"f/{context['exif'].get('FNumber', '')}", "")
-                lm_model_stripped = lm_f_stripped.replace(f"{context['exif'].get('Model')}", "")
-                context['exif']['LensModel'] = lm_model_stripped
-        return render(request, 'embed/preview.html', context=context)
+                lm_f_stripped = lens_model.replace(f"f/{ctx['exif'].get('FNumber', '')}", "")
+                lm_model_stripped = lm_f_stripped.replace(f"{ctx['exif'].get('Model')}", "")
+                ctx['exif']['LensModel'] = lm_model_stripped
+        return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/plain':
-        with open(file.file.path, 'r') as text:
-            text_preview = text.read()
-        context['text_preview'] = text_preview
+        log.debug('TEXT')
+        with open(file.file.path, 'r') as f:
+            text_preview = f.read()
+        ctx['text_preview'] = text_preview
+        file.view += 1
+        file.save()
+        return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
-        with open(file.file.path, 'r', encoding="utf-8") as f:
-            context['markdown'] = markdown.markdown(f.read(), extensions=['extra', 'toc'])
-        return render(request, 'embed/markdown.html', context=context)
-    elif file.mime.startswith('text/'):
-        with open(file.file.path, 'r', encoding="utf-8") as f:
+        log.debug('MARKDOWN')
+        with open(file.file.path, 'r') as f:
+            md_text = f.read()
+        ctx['markdown'] = markdown.markdown(md_text, extensions=['extra', 'toc'])
+        file.view += 1
+        file.save()
+        return render(request, 'embed/markdown.html', context=ctx)
+    elif file.mime.startswith('text/') or file.mime in code_mimes:
+        log.debug('CODE')
+        with open(file.file.path, 'r') as f:
             code = f.read()
         lexer = get_lexer_for_mimetype(file.mime, stripall=True)
-        formatter = HtmlFormatter(style='github-dark')
-        context['css'] = formatter.get_style_defs()
-        context['html'] = highlight(code, lexer, formatter)
-    return render(request, 'embed/preview.html', context=context)
+        formatter = HtmlFormatter(style='one-dark')
+        ctx['css'] = formatter.get_style_defs()
+        ctx['html'] = highlight(code, lexer, formatter)
+        ctx['code'] = code
+        file.view += 1
+        file.save()
+        return render(request, 'embed/preview.html', context=ctx)
+    else:
+        log.debug('UNKNOWN')
+        return render(request, 'embed/preview.html', context=ctx)
 
 
 def google_verify(request: HttpRequest) -> bool:
