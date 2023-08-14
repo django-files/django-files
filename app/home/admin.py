@@ -4,6 +4,7 @@ from .models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 
 # admin.site.register(SiteSettings)
 
+admin.site.site_header = 'Django Files Administration'
 
 @admin.register(Files)
 class FilesAdmin(admin.ModelAdmin):
