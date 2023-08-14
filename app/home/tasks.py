@@ -93,16 +93,16 @@ def process_file_upload(pk):
     if file.mime in mimes:
         with Image.open(file.file.path) as image:
             if file.user.remove_exif:
-                log.info("Stripping EXIF: %s", pk)
+                log.info('Stripping EXIF: %s', pk)
                 with Image.new(image.mode, image.size) as new:
                     new.putdata(image.getdata())
                     if 'P' in image.mode:
                         new.putpalette(image.getpalette())
                     new.save(file.file.path)
                 # we still want size metadata even if exif is stripped
-                file.exif = json.dumps({"PILImageWidth": image.size[0], "PILImageHeight": image.size[1]})
+                file.exif = {'PILImageWidth': image.size[0], 'PILImageHeight': image.size[1]}
             else:
-                log.info("Parsing and storing EXIF: %s", pk)
+                log.info('Parsing and storing EXIF: %s', pk)
                 # # # old code
                 # cleaned_exif = {
                 #     ExifTags.TAGS[k]: v for k, v in exif.items()
@@ -115,22 +115,22 @@ def process_file_upload(pk):
                     exif_clean = {}
                     for k, v in exif_data.items():
                         exif_clean[k] = v.decode() if isinstance(v, bytes) else str(v)
-                    exif_clean["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
+                    exif_clean['GPSInfo'] = exif.get_ifd(ExifTags.IFD.GPSInfo)
                 except Exception as error:
                     log.info(error)
                     exif_clean = {}
                     for tag, value in exif.items():
                         exif_clean[ExifTags.TAGS.get(tag, tag)] = value
-                    exif_clean["GPSInfo"] = exif.get_ifd(ExifTags.IFD.GPSInfo)
+                    exif_clean['GPSInfo'] = exif.get_ifd(ExifTags.IFD.GPSInfo)
                 if file.user.remove_exif_geo:
-                    log.info("Stripping EXIF GPS: %s", pk)
+                    log.info('Stripping EXIF GPS: %s', pk)
                     if 0x8825 in exif:
                         del exif[0x8825]
                     if 'GPSInfo' in exif_clean:
                         del exif_clean['GPSInfo']
                     image.save(file.file.path, exif=exif)
-                exif_clean["PILImageWidth"], exif_clean["PILImageHeight"] = image.size
-                file.exif = json.dumps(cast(exif_clean))
+                exif_clean['PILImageWidth'], exif_clean['PILImageHeight'] = image.size
+                file.exif = cast(exif_clean)
     file.save()
     log.info('-'*40)
     send_discord_message.delay(file.pk)
@@ -314,7 +314,7 @@ def cast(v):
     elif isinstance(v, tuple):
         return tuple(cast(t) for t in v)
     elif isinstance(v, bytes):
-        return v.decode(errors="replace")
+        return v.decode(errors='replace')
     elif isinstance(v, dict):
         for kk, vv in v.items():
             v[kk] = cast(vv)

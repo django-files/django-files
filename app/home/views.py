@@ -49,13 +49,11 @@ def stats_view(request):
     View  /stats/
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
-    # TODO: Add ShortURLs to FileStats data and task
     shorts = ShortURLs.objects.get_request(request)
     # stats = FileStats.objects.filter(user_id=2)
     stats = FileStats.objects.get_request(request)
     log.debug('stats: %s', stats)
     days, files, size = [], [], []
-    # {"types": {}, "size": 0, "count": 0, "human_size": "0.0 B"}
     # TODO: Move to Template Tag for Template Fragment Caching
     for stat in reversed(stats):
         days.append(f'{stat.created_at.month}/{stat.created_at.day}')
@@ -354,7 +352,7 @@ def gen_sharex(request):
     data = {
         'Version': '15.0.0',
         'Name': f'Django Files - {request.get_host()} - File',
-        'DestinationType': 'ImageUploader, FileUploader',
+        'DestinationType': 'ImageUploader, FileUploader, TextUploader',
         'RequestMethod': 'POST',
         'RequestURL': request.build_absolute_uri(reverse('home:api-upload')),
         'Headers': {
@@ -382,8 +380,8 @@ def gen_sharex_url(request):
     log.debug('gen_sharex_url')
     data = {
         'Version': '15.0.0',
-        'Name': f'Django Files - {request.get_host()} - URL Shorts',
-        'DestinationType': 'URLShortener,URLSharingService',
+        'Name': f'Django Files - {request.get_host()} - URL',
+        'DestinationType': 'URLShortener, URLSharingService',
         'RequestMethod': 'POST',
         'RequestURL': request.build_absolute_uri(reverse('home:api-shorten')),
         'Headers': {
@@ -391,7 +389,7 @@ def gen_sharex_url(request):
         },
         'Body': 'JSON',
         'URL': '{json:url}',
-        "Data": '{"url":"{input}"}',
+        'Data': '{"url":"{input}"}',
         'ErrorMessage': '{json:error}',
     }
     # Create the HttpResponse object with the appropriate headers.
@@ -437,18 +435,15 @@ def url_route_view(request, filename):
     if file.mime.startswith('image'):
         log.debug('IMAGE')
         if file.exif:
-            # noinspection PyTypeChecker
-            exif = json.loads(file.exif)
-            if exposure_time := exif.get('ExposureTime'):
-                exif['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
-            if gps_info := exif.get("GPSInfo"):
+            if exposure_time := file.exif.get('ExposureTime'):
+                file.exif['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
+            if gps_info := file.exif.get("GPSInfo"):
                 ctx['city_state'] = city_state_from_exif(gps_info)
-            if lens_model := exif.get('LensModel'):
+            if lens_model := file.exif.get('LensModel'):
                 # handle cases where lensmodel is relevant but some values redunant
-                lm_f_stripped = lens_model.replace(f"f/{exif.get('FNumber', '')}", "")
-                lm_model_stripped = lm_f_stripped.replace(f"{exif.get('Model')}", "")
-                exif['LensModel'] = lm_model_stripped
-            ctx['exif'] = exif
+                lm_f_stripped = lens_model.replace(f"f/{file.exif.get('FNumber', '')}", "")
+                lm_model_stripped = lm_f_stripped.replace(f"{file.exif.get('Model')}", "")
+                file.exif['LensModel'] = lm_model_stripped
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/plain':
         log.debug('TEXT')
