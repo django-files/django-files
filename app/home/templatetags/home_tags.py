@@ -70,6 +70,6 @@ def convert_str_date(value):
 def sort_mimes(mimes, count=0):
     srt = sorted(mimes.items(), key=lambda x: x[1]['count'])
     if count:
-        return list(reversed(srt[:count]))
+        return list(reversed(srt))[:count]
     else:
         return list(reversed(srt))

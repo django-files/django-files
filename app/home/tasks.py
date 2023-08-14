@@ -20,7 +20,7 @@ from PIL import Image, ExifTags, TiffImagePlugin
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 from oauth.models import CustomUser
 
-log = logging.getLogger('celery')
+log = logging.getLogger('app')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
