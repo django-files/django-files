@@ -59,11 +59,13 @@ services:
     image: djangofiles-app:${VERSION:-latest}
     env_file: settings.env
     command: "celery -A djangofiles worker -l INFO -c 2"
+#    command: "watchmedo auto-restart -d /app -p '*.py' -R -- celery -A djangofiles worker -l INFO -c 2"
     deploy:
       replicas: 1
     volumes:
       - media_dir:/data/media
       - logs_dir:/logs
+      - ${APP_FILES:-./app}:/app
     depends_on:
       - app
       - redis

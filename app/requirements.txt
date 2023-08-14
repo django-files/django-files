@@ -20,4 +20,5 @@ pytimeparse2
 sentry-sdk
 uvicorn[standard]
 validators
+watchdog
 Werkzeug
