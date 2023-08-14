@@ -20,8 +20,6 @@ from PIL import Image, ExifTags, TiffImagePlugin
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 from oauth.models import CustomUser
 
-from .util.metadata import city_state_from_exif
-
 log = logging.getLogger('celery')
 
 
@@ -131,8 +129,6 @@ def process_file_upload(pk):
                     if 'GPSInfo' in exif_clean:
                         del exif_clean['GPSInfo']
                     image.save(file.file.path, exif=exif)
-                print(city_state_from_exif(exif_clean['GPSInfo']))
-                file.meta['GPSArea'] = city_state_from_exif(exif_clean['GPSInfo'])
                 exif_clean['PILImageWidth'], exif_clean['PILImageHeight'] = image.size
                 file.exif = cast(exif_clean)
     file.save()
