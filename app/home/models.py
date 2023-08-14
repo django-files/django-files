@@ -21,7 +21,6 @@ class Files(models.Model):
     exif = models.JSONField(default=dict, verbose_name="EXIF Metadata", help_text="JSON formatted exif metadata.")
     date = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='File Created Date.')
     edit = models.DateTimeField(auto_now=True, verbose_name='Edited', help_text='File Edited Date.')
-    meta = models.JSONField(default=dict, verbose_name="Metadata", help_text="JSON formatted metadata.")
     objects = FilesManager()
 
     def __str__(self):
