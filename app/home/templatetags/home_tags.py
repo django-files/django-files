@@ -64,3 +64,10 @@ def convert_str_date(value):
     if not value:
         return ''
     return str(datetime.datetime.strptime(value, '%Y:%m:%d %H:%M:%S').strftime('%m/%d/%Y %H:%M:%S'))
+
+
+@register.filter(name="sort_mimes")
+def sort_mimes(mimes):
+    rsl = reversed(sorted(mimes.items(), key=lambda x: x[1]['count']))
+    return list(rsl)
+    # return sorted(mimes.items(), key=lambda x: x[1]['count'])

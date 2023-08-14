@@ -12,28 +12,38 @@
 
     <meta property="og:author" content="{{ file.user.username }}">
     <meta property="og:title" content="{{ file.name }}">
-    <meta property="og:description" content="{{ file.info|default:"" }}{% if file.user.show_exif_preview %}{% if exif.Model %}
-    Camera: {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}{% endif %}
-    {{ exif.DateTime|convert_str_date }}{% if city_state %}
-    {{ city_state }}{% endif %}{% if exif.GPSInfo.6 %}
-    Elevation: {{ exif.GPSInfo.6|floatformat:1 }} m{% endif %}
+    <meta property="og:description" content="{{ file.info|default:"" }}{% if file.user.show_exif_preview %}{% if file.exif.Model %}
+    Camera: {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}{% endif %}
+    {{ file.exif.DateTime|convert_str_date }}{% if city_state %}
+    {{ city_state }}{% endif %}{% if file.exif.GPSInfo.6 %}
+    Elevation: {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}
 
-    {% if exif.FocalLength %}{{ exif.FocalLength|floatformat:'0' }}mm{% endif %}{% if exif.FNumber %} &fnof; {{ exif.FNumber }}{% endif %}
-    {% if exif.ISOSpeedRatings %}ISO Speed: {{ exif.ISOSpeedRatings }}{% endif %}
-    {% if exif.ExposureTime %}Exposure Time: {{ exif.ExposureTime }} s{% endif %}
-    {% endif %}{% if exif.PILImageWidth %}
-    Resolution: {{ exif.PILImageWidth }} x {{ exif.PILImageHeight }}{% endif %}
+    {% if file.exif.FocalLength %}{{ file.exif.FocalLength|floatformat:'0' }}mm{% endif %}{% if file.exif.FNumber %} &fnof; {{ file.exif.FNumber }}{% endif %}
+    {% if file.exif.ISOSpeedRatings %}ISO Speed: {{ file.exif.ISOSpeedRatings }}{% endif %}
+    {% if file.exif.ExposureTime %}Exposure Time: {{ file.exif.ExposureTime }} s{% endif %}
+    {% endif %}{% if file.exif.PILImageWidth %}
+    Resolution: {{ file.exif.PILImageWidth }} x {{ file.exif.PILImageHeight }}{% endif %}
     {{ file.mime }} uploaded by {% if file.user.first_name %}{{ file.user.first_name }}{% else %}{{ file.user.username }}{% endif %} on {{ file.date }}
     ">
 
-    <meta property="og:type" content="website">
-
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
-
-    <meta property="twitter:title" content="{{ file.name }}">
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
-    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="{{ file.name }}">
+    {% if render == 'image' %}
+        <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:type" content="website">
+        <meta property="twitter:card" content="summary_large_image">
+    {% elif render == 'video' %}
+        <meta property="og:video" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:type" content="video.other">
+        <meta property="twitter:card" content="player">
+    {% elif render == 'audio' %}
+        <meta property="og:audio" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:type" content="music.song">
+        <meta property="twitter:card" content="player">
+    {% else %}
+        <meta property="og:type" content="website">
+    {% endif %}
 {% endblock %}
 
 {% block head %}
@@ -51,15 +61,25 @@
             <div class="row g-0">
                 <div class="col-lg-9">
                     {# TODO: Fix this so that we dont check mime type in the template and the view #}
-                    {% if 'image' in file.mime %}
+                    {% if render == 'image' %}
                         <img src="{% url 'home:url-raw' file.file.name %}" alt="{{ file.name }}" class="card-img-left img-fluid">
-                    {% elif 'text' in file.mime %}
+                    {% elif render == 'video' %}
+                        <video class="mw-100 pt-2 ps-2 pe-2" controls>
+                            <source src="{{ file.file.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% elif render == 'audio' %}
+                        <audio class="w-100" controls>
+                            <source src="{{ file.file.url }}" type="{{ file.mime }}">
+                            Your browser does not support the audio tag.
+                        </audio>
+                    {% elif render == 'text' %}
+                        <pre class="p-3"><code>{{ text_preview }}</code></pre>
+                    {% elif render == 'code' %}
                         {% if html %}
                             <div class="container-fluid py-3 px-4">
                                 {{ html|safe }}
                             </div>
-                        {% else %}
-                            <pre class="p-3"><code>{{ text_preview }}</code></pre>
                         {% endif %}
                     {% else %}
                         <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
@@ -69,8 +89,8 @@
                 <div class="card-body">
                     <h3 class="card-title">{{ file.name }}</h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
-                    {% if exif.PILImageWidth %}
-                    <p><strong class="d-inline-block text-secondary-emphasis">{{ exif.PILImageWidth }} x {{ exif.PILImageHeight }}</strong></p>
+                    {% if file.exif.PILImageWidth %}
+                    <p><strong class="d-inline-block text-secondary-emphasis">{{ file.exif.PILImageWidth }} x {{ file.exif.PILImageHeight }}</strong></p>
                     {% endif %}
                     {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
                     <p class="card-text mt-0">
@@ -84,16 +104,16 @@
                     <p class="card-text">Uploaded {{ file.date }}</p>
                     {% if file.user.show_exif_preview and file.exif %}
                         <p class="card-text text-body-secondary">
-                            {% if exif.DateTime %}<b>Taken On:</b> {{ exif.DateTime|convert_str_date }}<br>{% endif %}
-                            {% if exif.Model %}<b>Camera:</b> {% if exif.Make not in exif.Model %}{{ exif.Make }} {% endif %}{{ exif.Model }}<br>{% endif %}
+                            {% if file.exif.DateTime %}<b>Taken On:</b> {{ file.exif.DateTime|convert_str_date }}<br>{% endif %}
+                            {% if file.exif.Model %}<b>Camera:</b> {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}<br>{% endif %}
                             {% if city_state %}<b>Location:</b> {{ city_state }}<br>{% endif %}
-                            {% if exif.GPSInfo.6 %}<b>Elevation:</b> {{ exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
+                            {% if file.exif.GPSInfo.6 %}<b>Elevation:</b> {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
                         <p class="card-text text-body-secondary me-auto">
-                            {% if exif.LensModel %}<b>Lens: </b>{{ exif.LensModel }}<br>{% endif %}
-                            {% if exif.FocalLength %}<b>Focal Length:</b> {{ exif.FocalLength|floatformat:"0" }}mm<br>{% endif %}
-                            {% if exif.FNumber %}<b>Aperture:</b> 𝑓 {{ exif.FNumber }}<br>{% endif %}
-                            {% if exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ exif.ISOSpeedRatings }}<br>{% endif %}
-                            {% if exif.ExposureTime %}<b>Exposure Time:</b> {{ exif.ExposureTime }} s{% endif %}</p>
+                            {% if file.exif.LensModel %}<b>Lens: </b>{{ file.exif.LensModel }}<br>{% endif %}
+                            {% if file.exif.FocalLength %}<b>Focal Length:</b> {{ file.exif.FocalLength|floatformat:"0" }}mm<br>{% endif %}
+                            {% if file.exif.FNumber %}<b>Aperture:</b> 𝑓 {{ file.exif.FNumber }}<br>{% endif %}
+                            {% if file.exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ file.exif.ISOSpeedRatings }}<br>{% endif %}
+                            {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s{% endif %}</p>
                     {% endif %}
                     <div class="row g-2 text-center mt-auto">
                         <div class="col-12 ">
