@@ -10,13 +10,19 @@
     </tr>
     </thead>
     <tbody>
-    {% for type, data in stats.stats.types|sort_mimes  %}
+    {% for type, data in stats.stats.types|sort_mimes:count  %}
     <tr>
         <th scope="row">{{ type }}</th>
         <td>{{ data.count }}</td>
         <td>{{ data.size|bytes_human }}</td>
         <td class="d-none d-sm-table-cell">{{ data.size }}</td>
     </tr>
+    {% if forloop.counter == count %}
+        <tr>
+            <td colspan="4" class="text-center"><em>Only Top {{ count }} shown.
+                <a href="{% url 'home:stats' %}">View All Stats</a>.</em></td>
+        </tr>
+    {% endif %}
     {% endfor %}
     </tbody>
 </table>
