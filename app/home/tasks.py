@@ -133,7 +133,7 @@ def process_file_upload(pk):
                     image.save(file.file.path, exif=exif)
                 if area := city_state_from_exif(exif_clean.get('GPSInfo')):
                     file.meta['GPSArea'] = area
-                exif_clean['PILImageWidth'], exif_clean['PILImageHeight'] = image.size
+                file.meta['PILImageWidth'], file.meta['PILImageHeight'] = image.size
                 file.exif = cast(exif_clean)
     file.save()
     log.info('-'*40)
