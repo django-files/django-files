@@ -101,8 +101,6 @@ def process_file_upload(pk):
                     if 'P' in image.mode:
                         new.putpalette(image.getpalette())
                     new.save(file.file.path)
-                # we still want size metadata even if exif is stripped
-                file.exif = {'PILImageWidth': image.size[0], 'PILImageHeight': image.size[1]}
             else:
                 log.info('Parsing and storing EXIF: %s', pk)
                 # # # old code
