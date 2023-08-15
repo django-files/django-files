@@ -2,6 +2,7 @@ celery>=5,<6
 channels
 channels-redis
 django>=4,<5
+django-cors-headers
 django-debug-toolbar>=4,<5
 django-celery-beat
 django-extensions

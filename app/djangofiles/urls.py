@@ -15,6 +15,7 @@ handler500 = 'djangofiles.views.handler500_view'
 
 urlpatterns = [
     path('', include('home.urls')),
+    path('api/', include('api.urls')),
     path('oauth/', include('oauth.urls')),
     path('admin/', admin.site.urls),
     # path('flower/', RedirectView.as_view(url='/flower/'), name='flower'),
