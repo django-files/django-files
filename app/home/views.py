@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 # from itertools import count
 from fractions import Fraction
-from geopy.geocoders import Nominatim
+
 from pygments import highlight
 from pygments.lexers import get_lexer_for_mimetype
 from pygments.formatters import HtmlFormatter
@@ -437,8 +437,6 @@ def url_route_view(request, filename):
         if file.exif:
             if exposure_time := file.exif.get('ExposureTime'):
                 file.exif['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
-            if gps_info := file.exif.get("GPSInfo"):
-                ctx['city_state'] = city_state_from_exif(gps_info)
             if lens_model := file.exif.get('LensModel'):
                 # handle cases where lensmodel is relevant but some values redunant
                 lm_f_stripped = lens_model.replace(f"f/{file.exif.get('FNumber', '')}", "")
@@ -516,27 +514,3 @@ def parse_expire(request, user) -> str:
     if parse(expr) is not None:
         return expr
     return user.default_expire or ''
-
-
-def city_state_from_exif(gps_ifd: dict) -> str:
-    geolocator = Nominatim(user_agent="django-files")
-    try:
-        dn, mn, sn, dw, mw, sw = strip_dms(gps_ifd)
-        dms_string = f"{int(dn)}°{int(mn)}'{sn}\" N, \
-        {int(dw) if dw is not None else ''}°{int(mw) if mw is not None else ''}'{sw if sw is not None else ''}\" W"
-        location = geolocator.reverse(dms_string)
-        if not (area := location.raw['address'].get('city')):
-            area = location.raw['address'].get('county')
-        state = location.raw['address'].get('state', '')
-        return f"{area}, {state}"
-    except Exception as error:
-        log.error(error)
-
-
-def strip_dms(gps_ifd: dict) -> list:
-    try:
-        dn, mn, sn = gps_ifd["2"]
-        dw, mw, sw = gps_ifd["4"]
-        return [dn, mn, sn, dw, mw, sw]
-    except Exception as error:
-        log.error(error)
