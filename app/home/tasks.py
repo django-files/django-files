@@ -133,8 +133,8 @@ def process_file_upload(pk):
                     image.save(file.file.path, exif=exif)
                 if area := city_state_from_exif(exif_clean.get('GPSInfo')):
                     file.meta['GPSArea'] = area
-                file.meta['PILImageWidth'], file.meta['PILImageHeight'] = image.size
                 file.exif = cast(exif_clean)
+            file.meta['PILImageWidth'], file.meta['PILImageHeight'] = image.size
     file.save()
     log.info('-'*40)
     send_discord_message.delay(file.pk)
