@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import validators
-from django.contrib.auth.decorators import login_required
 from django.core.files import File
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
