@@ -26,20 +26,32 @@ def api_view(request):
 
 
 @csrf_exempt
+def recent_view(request):
+    """
+    View  /api/recent/
+    """
+    count = 10
+    log.debug('%s - recent_view: is_secure: %s', request.method, request.is_secure())
+    user = get_auth_user(request)
+    log.debug('user: %s', user)
+    if not user:
+        return JsonResponse({'error': 'Invalid Authorization'}, status=401)
+    log.debug('LIVE')
+    files = Files.objects.filter(user=user).order_by('-id')[:count]
+    data = [file.preview_url() for file in files]
+    log.debug(data)
+    return JsonResponse(data, safe=False)
+
+
+@csrf_exempt
 def remote_view(request):
     """
     View  /api/remote/
     """
-    log.debug('-'*20)
-    log.debug('remote_view: %s - is_secure: %s', request.method, request.is_secure())
-    if request.method == 'OPTIONS':
-        log.debug(0)
-        return cors_resp()
-
+    log.debug('%s - remote_view: is_secure: %s', request.method, request.is_secure())
     user = get_auth_user(request)
     if not user:
-        log.debug(1)
-        return cors_resp({'error': 'Invalid Authorization'}, 401)
+        return JsonResponse({'error': 'Invalid Authorization'}, status=401)
 
     body = request.body.decode()
     log.debug('body: %s', body)
@@ -47,17 +59,16 @@ def remote_view(request):
         data = json.loads(body)
     except Exception as error:
         log.debug(error)
-        return cors_resp({'error': f'{error}'}, 400)
+        return JsonResponse({'error': f'{error}'}, status=400)
 
     url = data.get('url')
     log.debug('url: %s', url)
     if not validators.url(url):
-        log.debug(2)
-        return cors_resp({'error': 'Missing/Invalid URL'}, 400)
+        return JsonResponse({'error': 'Missing/Invalid URL'}, status=400)
 
     r = httpx.get(url)
     if not r.is_success:
-        return cors_resp({'error': f'{r.status_code} Fetching {url}'}, 400)
+        return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
     f = File(io.BytesIO(r.content), name=os.path.basename(url))
     file = Files.objects.create(
@@ -69,15 +80,7 @@ def remote_view(request):
     log.debug(file)
     log.debug(file.preview_url())
     response = {'url': f'{file.preview_url()}'}
-    return cors_resp(response)
-
-
-def cors_resp(data=None, status=200):
-    resp = JsonResponse(data, status=status, safe=False)
-    resp['Access-Control-Allow-Origin'] = '*'
-    resp['Access-Control-Allow-Credentials'] = "true"
-    resp['Access-Control-Allow-Headers'] = 'Authorization'
-    return resp
+    return JsonResponse(response)
 
 
 def get_auth_user(request):
