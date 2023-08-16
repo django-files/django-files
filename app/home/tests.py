@@ -7,18 +7,22 @@ from django.urls import reverse
 from oauth.models import CustomUser
 from home.tasks import process_file_upload
 from home.models import Files
-# from home.tasks import app_init
 
 
 class TestAuthViews(TestCase):
+    """Test Auth Views"""
     def setUp(self):
         self.views = {
             'oauth:login': 302,
             'home:index': 200,
+            'home:files': 200,
             'home:gallery': 200,
             'home:uppy': 200,
+            'home:shorts': 200,
             'home:settings': 200,
+            'home:stats': 200,
             'home:gen-sharex': 200,
+            'home:gen-sharex-url': 200,
             'home:gen-flameshot': 200,
         }
         print('Creating Test User: testuser')
@@ -45,22 +49,22 @@ class FilesTestCase(TestCase):
 
     def test_files(self):
         """Test Files Object"""
-        print('Creating Files Object from file: manage.py')
-        path = Path('manage.py')
+        print('Creating Files Object from file: ../app/static/video/loop.jpg')
+        path = Path('../app/static/video/loop.jpg')
         with path.open(mode='rb') as f:
             file = Files.objects.create(
                 file=File(f, name=path.name),
                 user=self.user,
             )
         print(file)
-        file.info = 'test'
         file.save()
         process_file_upload(file.pk)
         file = Files.objects.get(pk=file.pk)
         print(file.mime)
-        print(file.get_size())
         print(file.get_url())
         print(file.preview_url())
+        print(file.preview_uri())
+        print(file.get_size())
 
     # def test_sharex(self):
     #     """Test ShareX Response"""
