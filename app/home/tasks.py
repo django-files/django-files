@@ -102,8 +102,9 @@ def process_file_upload(pk):
     file.size = file.file.size
     log.debug('file.size: %s', file.size)
     if file.mime.startswith('image'):
-        proc = ImageProcessor(file)
-        file = proc.process_file(file)
+        if file.mime in img_mimes:
+            processor = ImageProcessor(file)
+            processor.process_file()
     file.save()
     log.info('-'*40)
     send_discord_message.delay(file.pk)

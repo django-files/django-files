@@ -2,36 +2,33 @@ import logging
 from PIL import Image, ExifTags, TiffImagePlugin
 
 from home.models import Files
-from home.util.metadata import city_state_from_exif
-
+from home.util.geolocation import city_state_from_exif
 
 log = logging.getLogger('celery')
-
-# TODO: This should be a Class or proper Functions
 
 
 class ImageProcessor(object):
     def __init__(self, file: Files):
         self.file = file
 
-    def process_file(self, file: Files) -> Files:
+    def process_file(self):
         # processes image files, collects or strips exif, sets metadata
-        with Image.open(file.file.path) as image:
-            file.meta['PILImageWidth'], file.meta['PILImageHeight'] = image.size
-            if file.user.remove_exif:
-                self.strip_exif(image, file)
-                return file
-            log.info('Parsing and storing EXIF: %s', file.pk)
-            image, exif_clean, exif = self.handle_exif(image, file.user.remove_exif_geo)
+        with Image.open(self.file.file.path) as image:
+            self.file.meta['PILImageWidth'], self.file.meta['PILImageHeight'] = image.size
+            if self.file.user.remove_exif:
+                self.strip_exif(image, self.file)
+                # return self.file
+            log.info('Parsing and storing EXIF: %s', self.file.pk)
+            image, exif_clean, exif = self._handle_exif(image, self.file.user.remove_exif_geo)
             # write exif in case exif modified
-            image.save(file.file.path, exif=exif)
+            image.save(self.file.file.path, exif=exif)
             # determine photo area from gps and store in metadata
             if area := city_state_from_exif(exif_clean.get('GPSInfo')):
-                file.meta['GPSArea'] = area
-            file.exif = self.cast(exif_clean)
-            return file
+                self.file.meta['GPSArea'] = area
+            self.file.exif = self.cast(exif_clean)
+            # return self.file
 
-    def handle_exif(self, image: Image, strip_gps: bool) -> tuple:
+    def _handle_exif(self, image: Image, strip_gps: bool) -> tuple:
         # takes an image, returns image, dictionary of exif data, and modified exif data
         # does not collect gps data if strip_gps true
         exif_clean = {}
