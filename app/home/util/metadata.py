@@ -1,10 +1,14 @@
 import logging
 from geopy.geocoders import Nominatim
+
+
 log = logging.getLogger('app')
+
+# TODO: Fix this mess
 
 
 def city_state_from_exif(gps_ifd: dict) -> str:
-    geolocator = Nominatim(user_agent="django-files")
+    geolocator = Nominatim(user_agent='django-files')
     try:
         dn, mn, sn, dw, mw, sw = strip_dms(gps_ifd)
         dms_string = f"{int(dn)}°{int(mn)}'{sn}\" N, \
@@ -16,6 +20,7 @@ def city_state_from_exif(gps_ifd: dict) -> str:
         return f"{area}, {state}"
     except Exception as error:
         log.error(error)
+        return ''
 
 
 def strip_dms(gps_ifd: dict) -> list:
@@ -25,3 +30,4 @@ def strip_dms(gps_ifd: dict) -> list:
         return [dn, mn, sn, dw, mw, sw]
     except Exception as error:
         log.error(error)
+        return []

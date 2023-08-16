@@ -80,6 +80,11 @@ MESSAGE_TAGS = {
 }
 
 CELERY_BEAT_SCHEDULE = {
+    'app_init': {
+        'task': 'home.tasks.app_init',
+        'schedule': datetime.timedelta(seconds=1),
+        'one_off': True,
+    },
     'app_cleanup': {
         'task': 'home.tasks.app_cleanup',
         'schedule': datetime.timedelta(hours=config('APP_CLEANUP_HOUR', 1, int)),

@@ -86,6 +86,9 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 *   View Counting
 *   Max Views
 
+### External
+*   Chrome Extension: https://github.com/django-files/chrome-extension
+
 ## Screen Shots
 
 Coming Soon...

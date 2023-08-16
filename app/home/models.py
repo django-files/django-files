@@ -1,5 +1,4 @@
 from django.db import models
-from django.conf import settings
 from django.shortcuts import reverse
 
 from home.managers import FilesManager, FileStatsManager, ShortURLsManager, WebhooksManager
@@ -96,7 +95,7 @@ class ShortURLs(models.Model):
 
 class SiteSettings(models.Model):
     id = models.AutoField(primary_key=True)
-    site_url = models.URLField(default=settings.SITE_URL, max_length=128, verbose_name='Site URL')
+    site_url = models.URLField(max_length=128, blank=True, null=True, verbose_name='Site URL')
 
     def __str__(self):
         return f'<SiteSettings(site_url={self.site_url})>'

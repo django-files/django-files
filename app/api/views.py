@@ -107,11 +107,10 @@ def get_auth_user(request):
     if request.user.is_authenticated:
         return request.user
     authorization = request.headers.get('Authorization') or request.headers.get('Token')
-    if not authorization:
-        return
-    user = CustomUser.objects.filter(authorization=authorization)
-    if user:
-        return user[0]
+    if authorization:
+        user = CustomUser.objects.filter(authorization=authorization)
+        if user:
+            return user[0]
 
 
 def parse_expire(request, user) -> str:

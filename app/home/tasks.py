@@ -1,4 +1,3 @@
-# import datetime
 import logging
 import mimetypes
 import os
@@ -13,16 +12,35 @@ from django.core.cache import cache
 # from django.core.cache.utils import make_template_fragment_key
 from django.template.loader import render_to_string
 from django.utils import timezone
-# from itertools import count
 from pytimeparse2 import parse
 
-
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
+from home.util import upload_processor
 from oauth.models import CustomUser
 
-from .util import upload_processor
+log = logging.getLogger('app')
 
-log = logging.getLogger('celery')
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 20, 'countdown': 3})
+def app_init():
+    # App Init Task
+    log.info('app_init')
+    site_settings, created = SiteSettings.objects.get_or_create(pk=1)
+    if created:
+        if not site_settings.site_url:
+            site_settings.site_url = settings.SITE_URL
+            site_settings.save()
+        log.info('site_settings created')
+    else:
+        log.warning('site_settings already created')
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 300})
+def app_cleanup():
+    # App Cleanup Task
+    log.info('app_cleanup')
+    with open(settings.NGINX_ACCESS_LOGS, 'a') as f:
+        f.truncate(0)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
@@ -60,37 +78,30 @@ def clear_settings_cache():
     return cache.delete_pattern('template.cache.settings*')
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 300})
-def app_cleanup():
-    # App Cleanup Task
-    log.info('app_cleanup')
-    with open(settings.NGINX_ACCESS_LOGS, 'a') as f:
-        f.truncate(0)
-
-
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})
 def process_file_upload(pk):
     # Process new file upload
+    # TODO: Fix all the sub functions/classes
     log.info('process_file_upload: %s', pk)
     file = Files.objects.get(pk=pk)
-    log.info('-'*40)
-    log.info('file: %s', file)
-    log.info('file.file: %s', file.file)
-    log.info('file.file.path: %s', file.file.path)
-    log.info('-'*40)
+    log.debug('-'*40)
+    log.debug('file: %s', file)
+    log.debug('file.file: %s', file.file)
+    log.debug('file.file.path: %s', file.file.path)
+    log.debug('-'*40)
     if not file or not file.file:
         return log.warning('WARNING NO FILE -- file or file.file is None --')
     file.name = os.path.basename(file.file.name)
-    log.info('file.name: %s', file.name)
+    log.debug('file.name: %s', file.name)
     #####################
     # determine mime type
     file.mime, _ = mimetypes.guess_type(file.file.path, strict=False)
     if not file.mime:
         file.mime, _ = mimetypes.guess_type(file.file.name, strict=False)
     file.mime = file.mime or 'application/octet-stream'
-    log.info('file.mime: %s', file.mime)
+    log.debug('file.mime: %s', file.mime)
     file.size = file.file.size
-    log.info('file.size: %s', file.size)
+    log.debug('file.size: %s', file.size)
     #############################
     # process mime specific tasks
     file = upload_processor.route(file)
@@ -157,10 +168,10 @@ def process_stats():
 
     for user_id, _data in data.items():
         _data['human_size'] = Files.get_size_of(_data['size'])
-        log.info('user_id: %s', user_id)
+        log.debug('user_id: %s', user_id)
         user_id = None if str(user_id) == '_totals' else user_id
-        log.info('user_id: %s', user_id)
-        log.info('_data: %s', _data)
+        log.debug('user_id: %s', user_id)
+        log.debug('_data: %s', _data)
         stats = FileStats.objects.filter(user_id=user_id, created_at__day=now.day)
         if stats:
             stats = stats[0]
@@ -171,9 +182,9 @@ def process_stats():
                 user_id=user_id,
                 stats=_data,
             )
-        log.info('stats.pk: %s', stats.pk)
+        log.debug('stats.pk: %s', stats.pk)
+    log.debug(data)
     log.info('----- END process_stats -----')
-    log.info(data)
 
 
 @shared_task()
