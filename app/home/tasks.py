@@ -20,7 +20,6 @@ from pytimeparse2 import parse
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 from oauth.models import CustomUser
 
-from .util.metadata import city_state_from_exif
 from .util import upload_processor
 
 log = logging.getLogger('celery')
@@ -270,4 +269,3 @@ def send_discord(hook_pk, message):
     except Exception as error:
         log.exception(error)
         raise
-
