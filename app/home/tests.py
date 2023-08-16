@@ -5,8 +5,8 @@ from django.core.files import File
 from django.urls import reverse
 
 from oauth.models import CustomUser
-from home.tasks import process_file_upload
 from home.models import Files
+from home.tasks import process_file_upload, delete_expired_files, process_stats, app_init
 
 
 class TestAuthViews(TestCase):
@@ -24,6 +24,8 @@ class TestAuthViews(TestCase):
             'home:gen-sharex': 200,
             'home:gen-sharex-url': 200,
             'home:gen-flameshot': 200,
+            'api:index': 200,
+            'api:recent': 200,
         }
         print('Creating Test User: testuser')
         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
@@ -66,9 +68,18 @@ class FilesTestCase(TestCase):
         print(file.preview_uri())
         print(file.get_size())
 
-    # def test_sharex(self):
-    #     """Test ShareX Response"""
-    #     print('Testing view "home:gen-sharex" for code "200"')
-    #     response = self.client.get(reverse('home:gen-sharex'))
-    #     # print(response)
-    #     self.assertEqual(response.status_code, 200)
+    def test_api(self):
+        """Test API"""
+        print('Testing view "api:remote" for code "200"')
+        body = {'url': 'https://f.cssnr.com/r/jeep.jpg'}
+        response = self.client.post(reverse('api:remote'), body, content_type='application/json', follow=True)
+        print(response.json())
+        self.assertEqual(response.status_code, 200)
+
+    @staticmethod
+    def test_tasks():
+        """Test Tasks"""
+        print('Testing Tasks')
+        app_init()
+        delete_expired_files()
+        process_stats()

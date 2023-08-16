@@ -410,7 +410,7 @@ def gen_flameshot(request):
     context = {'site_url': request.build_absolute_uri(reverse('home:upload')), 'token': request.user.authorization}
     log.debug('context: %s', context)
     message = render_to_string('scripts/flameshot.sh', context)
-    log.debug('message: %s', message)
+    # log.debug('message: %s', message)
     response = HttpResponse(message)
     response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
     return response

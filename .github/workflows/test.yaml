@@ -50,7 +50,7 @@ jobs:
       - name: "Coverage"
         working-directory: app
         run: |
-          coverage run manage.py test
+          coverage run manage.py test --keepdb
           coverage xml
           coverage report
 #          export CODACY_PROJECT_TOKEN=${{ secrets.CODACY_PROJECT_TOKEN }}
