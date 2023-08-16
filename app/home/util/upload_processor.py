@@ -20,15 +20,11 @@ def process_image(file: object) -> object:
     with Image.open(file.file.path) as image:
         file.meta['PILImageWidth'], file.meta['PILImageHeight'] = image.size
         if file.user.remove_exif:
-            log.info('Stripping EXIF: %s', file.pk)
-            with Image.new(image.mode, image.size) as new:
-                new.putdata(image.getdata())
-                if 'P' in image.mode:
-                    new.putpalette(image.getpalette())
-                new.save(file.file.path)
+            strip_exif(image, file)
         else:
             log.info('Parsing and storing EXIF: %s', file.pk)
             image, exif_clean, exif = handle_exif(image, file.user.remove_exif_geo)
+            # write exif in case exif modified
             image.save(file.file.path, exif=exif)
             # determine photo area from gps and store in metadata
             if area := city_state_from_exif(exif_clean.get('GPSInfo')):
@@ -38,13 +34,15 @@ def process_image(file: object) -> object:
 
 
 def handle_exif(image: object, strip_gps: bool) -> list:
-    # takes an image, returns dictionary of exif data
+    # takes an image, returns image, dictionary of exif data, and modified exif data
     # does not collect gps data if strip_gps true
     exif_clean = {}
     exif = image.getexif()
     if strip_gps:
         image, exif = strip_gps_raw_exif(image, exif)
     try:
+        # get_exif tends to not have all data we need, so we call _get_exif, if that fails
+        # we fail back to get_exif for all exif attrs
         _getexif = (image._getexif() if hasattr(image, '_getexif') else None) or {}
         exif_data = {ExifTags.TAGS[k]: v for k, v in _getexif.items() if k in ExifTags.TAGS}
         for k, v in exif_data.items():
@@ -79,3 +77,13 @@ def cast(v):
         return v
     else:
         return v
+
+
+def strip_exif(image: object, file: object) -> None:
+    # accepts image and file, rewrites image file without exif
+    log.info('Stripping EXIF: %s', file.pk)
+    with Image.new(image.mode, image.size) as new:
+        new.putdata(image.getdata())
+        if 'P' in image.mode:
+            new.putpalette(image.getpalette())
+        new.save(file.file.path)
