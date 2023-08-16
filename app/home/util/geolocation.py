@@ -10,19 +10,13 @@ log = logging.getLogger('app')
 def city_state_from_exif(gps_ifd: dict) -> str:
     try:
         geolocator = Nominatim(user_agent='django-files')
-        lat, lon = dms_to_degrees(gps_ifd)
-        log.debug('lat: %s', lat)
-        log.debug('lon: %s', lon)
-        location = geolocator.reverse((lat, lon))
-        log.info('-'*20)
-        log.info(location)
-        log.info('-'*20)
+        location = geolocator.reverse(dms_to_degrees(gps_ifd))
         if not (area := location.raw['address'].get('city')):
             area = location.raw['address'].get('county')
         state = location.raw['address'].get('state', '')
-        return f"{area}, {state}"
+        return f'{area}, {state}'
     except Exception as error:
-        log.error(error)
+        log.warning(error)
         return ''
 
 
