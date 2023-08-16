@@ -1,6 +1,6 @@
 import logging
 from geopy.geocoders import Nominatim
-from typing import Optional
+
 
 log = logging.getLogger('app')
 

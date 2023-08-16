@@ -5,8 +5,7 @@ from django.contrib import admin
 from django.urls import path
 # from django.views.generic.base import RedirectView
 
-from home.models import SiteSettings
-from . import views
+from djangofiles import views
 
 handler400 = 'djangofiles.views.handler400_view'
 handler403 = 'djangofiles.views.handler403_view'
