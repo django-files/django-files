@@ -43,7 +43,7 @@ types {
     text/plain                                       py;
     text/plain                                       rst;
     text/plain                                       sh bash;
-    text/plain                                       text;
+    text/plain                                       txt text;
     text/plain                                       tcl tk;
     text/plain                                       xml;
 }
