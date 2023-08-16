@@ -9,7 +9,7 @@ img_mimes = ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']
 
 
 def route(file: object) -> object:
-    # Accepts a file and routes file to appropriate upload processor
+    # Accepts a file and routes file to appropriate parser
     if file.mime in img_mimes:
         file = process_image(file)
     return file

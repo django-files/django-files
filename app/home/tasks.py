@@ -20,7 +20,7 @@ from pytimeparse2 import parse
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 from oauth.models import CustomUser
 
-from .util import upload_processor
+from .util import upload_handler
 
 log = logging.getLogger('celery')
 
@@ -93,7 +93,7 @@ def process_file_upload(pk):
     log.info('file.size: %s', file.size)
     #############################
     # process mime specific tasks
-    file = upload_processor.route(file)
+    file = upload_handler.route(file)
     file.save()
     log.info('-'*40)
     send_discord_message.delay(file.pk)
