@@ -23,7 +23,7 @@
                         {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
                         {% include 'include/stats-card.html' with title="Total Shorts" data=stats.stats.shorts %}
                     </div>
-                    {% include 'include/stats-table.html' with stats=stats %}
+                    {% include 'include/stats-table.html' with stats=stats count=6 %}
                     <p><a class="btn btn-sm btn-outline-warning me-2" role="button" id="update-stats-btn"
                           data-target-url="{% url 'home:update-stats' %}">
                             <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>

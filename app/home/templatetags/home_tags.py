@@ -67,7 +67,9 @@ def convert_str_date(value):
 
 
 @register.filter(name="sort_mimes")
-def sort_mimes(mimes):
-    rsl = reversed(sorted(mimes.items(), key=lambda x: x[1]['count']))
-    return list(rsl)
-    # return sorted(mimes.items(), key=lambda x: x[1]['count'])
+def sort_mimes(mimes, count=0):
+    srt = sorted(mimes.items(), key=lambda x: x[1]['count'])
+    if count:
+        return list(reversed(srt))[:count]
+    else:
+        return list(reversed(srt))
