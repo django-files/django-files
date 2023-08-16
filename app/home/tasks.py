@@ -15,7 +15,7 @@ from django.utils import timezone
 from pytimeparse2 import parse
 
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
-from home.util import upload_processor
+from home.util.processors import ImageProcessor
 from oauth.models import CustomUser
 
 log = logging.getLogger('app')
@@ -82,6 +82,7 @@ def clear_settings_cache():
 def process_file_upload(pk):
     # Process new file upload
     # TODO: Fix all the sub functions/classes
+    img_mimes = ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']
     log.info('process_file_upload: %s', pk)
     file = Files.objects.get(pk=pk)
     log.debug('-'*40)
@@ -93,8 +94,6 @@ def process_file_upload(pk):
         return log.warning('WARNING NO FILE -- file or file.file is None --')
     file.name = os.path.basename(file.file.name)
     log.debug('file.name: %s', file.name)
-    #####################
-    # determine mime type
     file.mime, _ = mimetypes.guess_type(file.file.path, strict=False)
     if not file.mime:
         file.mime, _ = mimetypes.guess_type(file.file.name, strict=False)
@@ -102,9 +101,9 @@ def process_file_upload(pk):
     log.debug('file.mime: %s', file.mime)
     file.size = file.file.size
     log.debug('file.size: %s', file.size)
-    #############################
-    # process mime specific tasks
-    file = upload_processor.route(file)
+    if file.mime.startswith('image'):
+        proc = ImageProcessor(file)
+        file = proc.process_file(file)
     file.save()
     log.info('-'*40)
     send_discord_message.delay(file.pk)
