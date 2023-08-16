@@ -1,7 +1,6 @@
 from django.urls import path, re_path
 
-from . import views
-
+from home import views
 
 app_name = 'home'
 

@@ -10,12 +10,9 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
 from django.template.loader import render_to_string
-# from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-# from itertools import count
 from fractions import Fraction
-
 from pygments import highlight
 from pygments.lexers import get_lexer_for_mimetype
 from pygments.formatters import HtmlFormatter
@@ -287,15 +284,6 @@ def gen_short(vanity, length=4):
     return rand
 
 
-def get_auth_user(request):
-    if request.user.is_authenticated:
-        return request.user
-    authorization = request.headers.get('Authorization') or request.headers.get('Token')
-    if not authorization:
-        return
-    return CustomUser.objects.get(authorization=authorization)
-
-
 @login_required
 @csrf_exempt
 @require_http_methods(['POST'])
@@ -496,6 +484,16 @@ def google_verify(request: HttpRequest) -> bool:
     except Exception as error:
         log.exception(error)
         return False
+
+
+def get_auth_user(request):
+    if request.user.is_authenticated:
+        return request.user
+    authorization = request.headers.get('Authorization') or request.headers.get('Token')
+    if authorization:
+        user = CustomUser.objects.filter(authorization=authorization)
+        if user:
+            return user[0]
 
 
 def parse_expire(request, user) -> str:

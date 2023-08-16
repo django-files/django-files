@@ -24,6 +24,7 @@ urlpatterns = [
     path('app-health-check/', views.health_check, name='health_check'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+
 if settings.DEBUG:
     import debug_toolbar
     urlpatterns = [path('debug/', include(debug_toolbar.urls))] + urlpatterns

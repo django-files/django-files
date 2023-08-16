@@ -2,8 +2,6 @@ from django.contrib import admin
 
 from .models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 
-# admin.site.register(SiteSettings)
-
 admin.site.site_header = 'Django Files Administration'
 
 
@@ -11,7 +9,6 @@ admin.site.site_header = 'Django Files Administration'
 class FilesAdmin(admin.ModelAdmin):
     model = Files
     list_display = ('id', 'file', 'size', 'expr', 'mime', 'user', 'date',)
-    # list_editable = ('expr',)
     list_filter = ('user', 'expr', 'mime',)
     readonly_fields = ('id', 'file', 'size', 'mime', 'user', 'date',)
     search_fields = ('id', 'file', 'size', 'expr', 'mime', 'date',)
@@ -57,5 +54,3 @@ class SiteSettingsAdmin(admin.ModelAdmin):
     model = SiteSettings
     list_display = ('id', 'site_url',)
     readonly_fields = ('id',)
-    # search_fields = ('id', 'site_url',)
-    # ordering = ('-created_at',)
