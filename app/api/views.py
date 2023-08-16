@@ -6,7 +6,10 @@ import os
 import validators
 from django.core.files import File
 from django.http import JsonResponse
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.vary import vary_on_cookie
 from pytimeparse2 import parse
 
 from home.models import Files
@@ -16,6 +19,7 @@ from oauth.models import CustomUser
 log = logging.getLogger('app')
 
 
+@require_http_methods(['OPTIONS', 'GET'])
 @csrf_exempt
 def api_view(request):
     """
@@ -25,6 +29,22 @@ def api_view(request):
     return JsonResponse({'status': 'online'})
 
 
+@require_http_methods(['OPTIONS', 'GET', 'POST'])
+@cache_page(None, key_prefix="users")
+@vary_on_cookie
+@csrf_exempt
+def users_view(request):
+    """
+    View  /api/users/
+    """
+    # TODO: Add signals to CustomUser model to flush cache
+    log.debug('NOT CACHED')
+    return JsonResponse({'error': 'Not Implemented'}, safe=False, status=400)
+
+
+@require_http_methods(['OPTIONS', 'GET'])
+@cache_page(None, key_prefix="files")
+@vary_on_cookie
 @csrf_exempt
 def recent_view(request):
     """
@@ -36,13 +56,13 @@ def recent_view(request):
     log.debug('user: %s', user)
     if not user:
         return JsonResponse({'error': 'Invalid Authorization'}, status=401)
-    log.debug('LIVE')
     files = Files.objects.filter(user=user).order_by('-id')[:count]
     data = [file.preview_url() for file in files]
-    log.debug(data)
+    log.debug('data: %s', data)
     return JsonResponse(data, safe=False)
 
 
+@require_http_methods(['OPTIONS', 'POST'])
 @csrf_exempt
 def remote_view(request):
     """
