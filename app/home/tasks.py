@@ -15,12 +15,12 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 # from itertools import count
 from pytimeparse2 import parse
-from PIL import Image, ExifTags, TiffImagePlugin
+
 
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 from oauth.models import CustomUser
 
-from .util.metadata import city_state_from_exif
+from .util import upload_processor
 
 log = logging.getLogger('celery')
 
@@ -82,6 +82,8 @@ def process_file_upload(pk):
         return log.warning('WARNING NO FILE -- file or file.file is None --')
     file.name = os.path.basename(file.file.name)
     log.info('file.name: %s', file.name)
+    #####################
+    # determine mime type
     file.mime, _ = mimetypes.guess_type(file.file.path, strict=False)
     if not file.mime:
         file.mime, _ = mimetypes.guess_type(file.file.name, strict=False)
@@ -89,50 +91,9 @@ def process_file_upload(pk):
     log.info('file.mime: %s', file.mime)
     file.size = file.file.size
     log.info('file.size: %s', file.size)
-    mimes = ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']
-    # mimes = ['image/png']  # image._getexif() returns None
-    # mimes = ['image/tiff']  # image._getexif() does not exist
-    if file.mime in mimes:
-        with Image.open(file.file.path) as image:
-            if file.user.remove_exif:
-                log.info('Stripping EXIF: %s', pk)
-                with Image.new(image.mode, image.size) as new:
-                    new.putdata(image.getdata())
-                    if 'P' in image.mode:
-                        new.putpalette(image.getpalette())
-                    new.save(file.file.path)
-            else:
-                log.info('Parsing and storing EXIF: %s', pk)
-                # # # old code
-                # cleaned_exif = {
-                #     ExifTags.TAGS[k]: v for k, v in exif.items()
-                #     if k in ExifTags.TAGS and type(v) not in [bytes, TiffImagePlugin.IFDRational]
-                # }
-                exif = image.getexif()
-                try:
-                    _getexif = (image._getexif() if hasattr(image, '_getexif') else None) or {}
-                    exif_data = {ExifTags.TAGS[k]: v for k, v in _getexif.items() if k in ExifTags.TAGS}
-                    exif_clean = {}
-                    for k, v in exif_data.items():
-                        exif_clean[k] = v.decode() if isinstance(v, bytes) else str(v)
-                    exif_clean['GPSInfo'] = exif.get_ifd(ExifTags.IFD.GPSInfo)
-                except Exception as error:
-                    log.info(error)
-                    exif_clean = {}
-                    for tag, value in exif.items():
-                        exif_clean[ExifTags.TAGS.get(tag, tag)] = value
-                    exif_clean['GPSInfo'] = exif.get_ifd(ExifTags.IFD.GPSInfo)
-                if file.user.remove_exif_geo:
-                    log.info('Stripping EXIF GPS: %s', pk)
-                    if 0x8825 in exif:
-                        del exif[0x8825]
-                    if 'GPSInfo' in exif_clean:
-                        del exif_clean['GPSInfo']
-                    image.save(file.file.path, exif=exif)
-                if area := city_state_from_exif(exif_clean.get('GPSInfo')):
-                    file.meta['GPSArea'] = area
-                file.exif = cast(exif_clean)
-            file.meta['PILImageWidth'], file.meta['PILImageHeight'] = image.size
+    #############################
+    # process mime specific tasks
+    file = upload_processor.route(file)
     file.save()
     log.info('-'*40)
     send_discord_message.delay(file.pk)
@@ -308,18 +269,3 @@ def send_discord(hook_pk, message):
     except Exception as error:
         log.exception(error)
         raise
-
-
-def cast(v):
-    if isinstance(v, TiffImagePlugin.IFDRational):
-        return float(v)
-    elif isinstance(v, tuple):
-        return tuple(cast(t) for t in v)
-    elif isinstance(v, bytes):
-        return v.decode(errors='replace')
-    elif isinstance(v, dict):
-        for kk, vv in v.items():
-            v[kk] = cast(vv)
-        return v
-    else:
-        return v
