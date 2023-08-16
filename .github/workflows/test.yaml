@@ -47,7 +47,7 @@ jobs:
           python manage.py makemigrations
           python manage.py migrate
 
-      - name: "Coverage"
+      - name: "Test & Coverage"
         working-directory: app
         run: |
           coverage run manage.py test --keepdb
