@@ -11,34 +11,34 @@ class ImageProcessor(object):
     def __init__(self, file: Files):
         self.file = file
 
-    def process_file(self):
+    def process_file(self) -> None:
+        # TODO: Concatenate Logic to This Function
         # processes image files, collects or strips exif, sets metadata
         with Image.open(self.file.file.path) as image:
             self.file.meta['PILImageWidth'], self.file.meta['PILImageHeight'] = image.size
             if self.file.user.remove_exif:
-                self.strip_exif(image, self.file)
-                # return self.file
+                return self.strip_exif(image, self.file)
             log.info('Parsing and storing EXIF: %s', self.file.pk)
-            image, exif_clean, exif = self._handle_exif(image, self.file.user.remove_exif_geo)
+            image, exif_clean, exif = self._handle_exif(image)
             # write exif in case exif modified
             image.save(self.file.file.path, exif=exif)
             # determine photo area from gps and store in metadata
             if area := city_state_from_exif(exif_clean.get('GPSInfo')):
                 self.file.meta['GPSArea'] = area
             self.file.exif = self.cast(exif_clean)
-            # return self.file
 
-    def _handle_exif(self, image: Image, strip_gps: bool) -> tuple:
+    def _handle_exif(self, image: Image) -> tuple:
+        # TODO: Remove Basic Logic from here and put it all in one function
         # takes an image, returns image, dictionary of exif data, and modified exif data
         # does not collect gps data if strip_gps true
         exif_clean = {}
         exif = image.getexif()
-        if strip_gps:
+        if self.file.user.remove_exif_geo:
             image, exif = self.strip_gps_raw_exif(image, exif)
         try:
             # get_exif tends to not have all data we need, so we call _get_exif, if that fails
             # we fail back to get_exif for all exif attrs
-            _getexif = (image._getexif() if hasattr(image, '_getexif') else None) or {}
+            _getexif = image._getexif() if hasattr(image, '_getexif') else {}
             exif_data = {ExifTags.TAGS[k]: v for k, v in _getexif.items() if k in ExifTags.TAGS}
             for k, v in exif_data.items():
                 exif_clean[k] = v.decode() if isinstance(v, bytes) else str(v)

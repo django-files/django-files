@@ -18,7 +18,7 @@ from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 from home.util.processors import ImageProcessor
 from oauth.models import CustomUser
 
-log = logging.getLogger('app')
+log = logging.getLogger('celery')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 20, 'countdown': 3})
@@ -80,31 +80,29 @@ def clear_settings_cache():
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})
 def process_file_upload(pk):
-    # Process new file upload
     # TODO: Fix all the sub functions/classes
-    img_mimes = ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']
+    # Process new file upload
     log.info('process_file_upload: %s', pk)
     file = Files.objects.get(pk=pk)
-    log.debug('-'*40)
-    log.debug('file: %s', file)
-    log.debug('file.file: %s', file.file)
-    log.debug('file.file.path: %s', file.file.path)
-    log.debug('-'*40)
+    log.info('-'*40)
+    log.info('file: %s', file)
+    log.info('file.file: %s', file.file)
+    log.info('file.file.path: %s', file.file.path)
+    log.info('-'*40)
     if not file or not file.file:
         return log.warning('WARNING NO FILE -- file or file.file is None --')
     file.name = os.path.basename(file.file.name)
-    log.debug('file.name: %s', file.name)
+    log.info('file.name: %s', file.name)
     file.mime, _ = mimetypes.guess_type(file.file.path, strict=False)
     if not file.mime:
         file.mime, _ = mimetypes.guess_type(file.file.name, strict=False)
     file.mime = file.mime or 'application/octet-stream'
-    log.debug('file.mime: %s', file.mime)
+    log.info('file.mime: %s', file.mime)
     file.size = file.file.size
-    log.debug('file.size: %s', file.size)
-    if file.mime.startswith('image'):
-        if file.mime in img_mimes:
-            processor = ImageProcessor(file)
-            processor.process_file()
+    log.info('file.size: %s', file.size)
+    if file.mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
+        processor = ImageProcessor(file)
+        processor.process_file()
     file.save()
     log.info('-'*40)
     send_discord_message.delay(file.pk)
@@ -168,10 +166,10 @@ def process_stats():
 
     for user_id, _data in data.items():
         _data['human_size'] = Files.get_size_of(_data['size'])
-        log.debug('user_id: %s', user_id)
+        log.info('user_id: %s', user_id)
         user_id = None if str(user_id) == '_totals' else user_id
-        log.debug('user_id: %s', user_id)
-        log.debug('_data: %s', _data)
+        log.info('user_id: %s', user_id)
+        log.info('_data: %s', _data)
         stats = FileStats.objects.filter(user_id=user_id, created_at__day=now.day)
         if stats:
             stats = stats[0]
@@ -182,8 +180,8 @@ def process_stats():
                 user_id=user_id,
                 stats=_data,
             )
-        log.debug('stats.pk: %s', stats.pk)
-    log.debug(data)
+        log.info('stats.pk: %s', stats.pk)
+    log.info(data)
     log.info('----- END process_stats -----')
 
 
