@@ -1,21 +1,24 @@
 import logging
 from PIL import Image, ExifTags, TiffImagePlugin
 
-from .metadata import city_state_from_exif
+from home.models import Files
+from home.util.metadata import city_state_from_exif
+
 
 log = logging.getLogger('celery')
 
-img_mimes = ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']
+# TODO: This should be a Class or proper Functions
 
 
-def route(file: object) -> object:
+def route(file: Files) -> Files:
     # Accepts a file and routes file to appropriate upload processor
+    img_mimes = ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']
     if file.mime in img_mimes:
         file = process_image(file)
     return file
 
 
-def process_image(file: object) -> object:
+def process_image(file: Files) -> Files:
     # processes image files, collects or strips exif, sets metadata
     with Image.open(file.file.path) as image:
         file.meta['PILImageWidth'], file.meta['PILImageHeight'] = image.size
@@ -33,7 +36,7 @@ def process_image(file: object) -> object:
     return file
 
 
-def handle_exif(image: object, strip_gps: bool) -> list:
+def handle_exif(image: Image, strip_gps: bool) -> tuple:
     # takes an image, returns image, dictionary of exif data, and modified exif data
     # does not collect gps data if strip_gps true
     exif_clean = {}
@@ -55,7 +58,7 @@ def handle_exif(image: object, strip_gps: bool) -> list:
     return image, exif_clean, exif
 
 
-def strip_gps_raw_exif(image: object, exif: object) -> list:
+def strip_gps_raw_exif(image: Image, exif: dict) -> tuple:
     # accepts raw exif object from PIL, returns object with no GPS data
     log.info('Stripping EXIF GPS')
     if 0x8825 in exif:
@@ -79,7 +82,7 @@ def cast(v):
         return v
 
 
-def strip_exif(image: object, file: object) -> None:
+def strip_exif(image: Image, file: Files) -> None:
     # accepts image and file, rewrites image file without exif
     log.info('Stripping EXIF: %s', file.pk)
     with Image.new(image.mode, image.size) as new:

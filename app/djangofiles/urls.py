@@ -28,8 +28,3 @@ urlpatterns = [
 if settings.DEBUG:
     import debug_toolbar
     urlpatterns = [path('debug/', include(debug_toolbar.urls))] + urlpatterns
-
-try:
-    _, _ = SiteSettings.objects.get_or_create(pk=1)
-except Exception:
-    pass

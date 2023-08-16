@@ -2,6 +2,7 @@
 
 ## Issues
 - [ ] Users: Fix Local User to allow Discord Webhook
+- [ ] Overhaul Image Processing Tasks in `util`
 
 ## General/UI
 - [ ] Gallery Overhaul
@@ -17,6 +18,7 @@
 ## Preview Page
 - [ ] Overhaul EXIF Parsing to be a re-usable function
 - [ ] Fix Pygments Code for Light Mode
+- [ ] Fix Image Preview for Images not Browser Compatible
 
 ## Site Settings
 - [ ] Full Settings Interface Overhaul
