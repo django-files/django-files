@@ -35,7 +35,7 @@
             {% endif %}
 {#        {% endcache %}#}
 
-        {% cache 86400 files_home request.user %}
+{#        {% cache 86400 files_home request.user %}#}
             <h2 id="files">Files</h2>
             {% if not files %}
                 <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
@@ -47,9 +47,9 @@
                         <a href="{% url 'home:files' %}">View All Files</a></span></em></p>
                 {% endif %}
             {% endif %}
-        {% endcache %}
+{#        {% endcache %}#}
 
-        {% cache 86400 shorts_home request.user %}
+{#        {% cache 86400 shorts_home request.user %}#}
             <h2 id="shorts">Shorts</h2>
             <form id="quick-short-form" action="{% url 'home:shorten' %}">
                 <div class="input-group my-2">
@@ -69,7 +69,7 @@
                         <a href="{% url 'home:shorts' %}">View All Shorts</a></span></em></p>
                 {% endif %}
             {% endif %}
-        {% endcache %}
+{#        {% endcache %}#}
 
     </div>
 {% endblock %}
