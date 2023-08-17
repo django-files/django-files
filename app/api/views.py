@@ -4,13 +4,14 @@ import json
 import logging
 import os
 import validators
+import functools
 from django.core.files import File
-from django.http import JsonResponse
 from django.core import serializers
+from django.http import JsonResponse
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.vary import vary_on_cookie
+from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from pytimeparse2 import parse
 
 from home.models import Files, FileStats
@@ -18,8 +19,26 @@ from home.tasks import process_file_upload
 from oauth.models import CustomUser
 
 log = logging.getLogger('app')
+cache_seconds = 60*60*4
 
 
+def auth_from_token(view):
+    @functools.wraps(view)
+    def wrapper(request, *args, **kwargs):
+        # TODO: Only Allow Token Auth, or else cache will prevent user switching
+        if request.user.is_authenticated:
+            return view(request, *args, **kwargs)
+        authorization = request.headers.get('Authorization') or request.headers.get('Token')
+        if authorization:
+            user = CustomUser.objects.filter(authorization=authorization)
+            if user:
+                request.user = user[0]
+                return view(request, *args, **kwargs)
+        return JsonResponse({'error': 'Invalid Authorization'}, status=401)
+    return wrapper
+
+
+@auth_from_token
 @require_http_methods(['OPTIONS', 'GET'])
 @csrf_exempt
 def api_view(request):
@@ -27,52 +46,52 @@ def api_view(request):
     View  /api/
     """
     log.debug('%s - api_view: is_secure: %s', request.method, request.is_secure())
-    return JsonResponse({'status': 'online'})
+    return JsonResponse({'status': 'online', 'user': request.user.id})
 
 
-@require_http_methods(['OPTIONS', 'GET', 'POST'])
+@auth_from_token
+@require_http_methods(['OPTIONS', 'GET'])
 @cache_control(no_cache=True)
-@cache_page(60*60*4, key_prefix="stats")
+@cache_page(cache_seconds, key_prefix="stats")
+@vary_on_headers('Authorization')
 @vary_on_cookie
 @csrf_exempt
 def stats_view(request):
     """
     View  /api/stats/
     """
-    # TODO: Make get_auth_user a view decorator
-    log.debug('%s - remote_view: is_secure: %s', request.method, request.is_secure())
-    user = get_auth_user(request)
-    if not user:
-        return JsonResponse({'error': 'Invalid Authorization'}, status=401)
+    log.debug('%s - stats_view: is_secure: %s', request.method, request.is_secure())
     amount = int(request.GET.get('amount', 10))
     log.debug('amount: %s', amount)
     # TODO: Format Stats
-    stats = FileStats.objects.filter(user=user)[:amount]
+    stats = FileStats.objects.filter(user=request.user)[:amount]
     data = serializers.serialize('json', stats)
     return JsonResponse(json.loads(data), safe=False)
 
 
+@auth_from_token
 @require_http_methods(['OPTIONS', 'GET'])
 @cache_control(no_cache=True)
-@cache_page(60*60*4, key_prefix="files")
+@cache_page(cache_seconds, key_prefix="files")
+@vary_on_headers('Authorization')
 @vary_on_cookie
 @csrf_exempt
 def recent_view(request):
     """
     View  /api/recent/
     """
-    log.debug('%s - remote_view: is_secure: %s', request.method, request.is_secure())
-    user = get_auth_user(request)
-    if not user:
-        return JsonResponse({'error': 'Invalid Authorization'}, status=401)
+    log.debug('request.user: %s', request.user)
+    log.debug('%s - recent_view: is_secure: %s', request.method, request.is_secure())
     amount = int(request.GET.get('amount', 10))
     log.debug('amount: %s', amount)
-    files = Files.objects.filter(user=user).order_by('-id')[:amount]
+    files = Files.objects.filter(user=request.user).order_by('-id')[:amount]
+    log.debug(files)
     data = [file.preview_url() for file in files]
     log.debug('data: %s', data)
-    return JsonResponse(data, safe=False)
+    return JsonResponse(data, safe=False, status=200)
 
 
+@auth_from_token
 @require_http_methods(['OPTIONS', 'POST'])
 @csrf_exempt
 def remote_view(request):
@@ -80,10 +99,6 @@ def remote_view(request):
     View  /api/remote/
     """
     log.debug('%s - remote_view: is_secure: %s', request.method, request.is_secure())
-    user = get_auth_user(request)
-    if not user:
-        return JsonResponse({'error': 'Invalid Authorization'}, status=401)
-
     body = request.body.decode()
     log.debug('body: %s', body)
     try:
@@ -104,24 +119,14 @@ def remote_view(request):
     f = File(io.BytesIO(r.content), name=os.path.basename(url))
     file = Files.objects.create(
         file=f,
-        user=user,
-        expr=parse_expire(request, user),
+        user=request.user,
+        expr=parse_expire(request, request.user),
     )
     process_file_upload.delay(file.pk)
     log.debug(file)
     log.debug(file.preview_url())
     response = {'url': f'{file.preview_url()}'}
     return JsonResponse(response)
-
-
-def get_auth_user(request):
-    if request.user.is_authenticated:
-        return request.user
-    authorization = request.headers.get('Authorization') or request.headers.get('Token')
-    if authorization:
-        user = CustomUser.objects.filter(authorization=authorization)
-        if user:
-            return user[0]
 
 
 def parse_expire(request, user) -> str:

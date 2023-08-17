@@ -72,8 +72,8 @@ class FilesTestCase(TestCase):
     def test_api(self):
         """Test API"""
         print('Testing view "api:remote" for code "200"')
-        body = {'url': 'https://f.cssnr.com/r/jeep.jpg'}
-        response = self.client.post(reverse('api:remote'), body, content_type='application/json', follow=True)
+        url = 'https://repository-images.githubusercontent.com/672712475/52cf00a8-31de-4b0a-8522-63670bb4314a'
+        response = self.client.post(reverse('api:remote'), {'url': url}, content_type='application/json', follow=True)
         print(response.json())
         self.assertEqual(response.status_code, 200)
 

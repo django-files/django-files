@@ -424,7 +424,7 @@ def url_route_view(request, filename):
     """
     View  /u/<path:filename>
     """
-    # TODO: Fix the todo in the Template so this will work
+    # TODO: Fix Type Hinting on file.exif ?
     code_mimes = [
         'application/json',
         'application/x-perl',
@@ -502,6 +502,7 @@ def google_verify(request: HttpRequest) -> bool:
 
 
 def get_auth_user(request):
+    # TODO: Use function decorator from api/views.py
     if request.user.is_authenticated:
         return request.user
     authorization = request.headers.get('Authorization') or request.headers.get('Token')
