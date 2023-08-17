@@ -1,4 +1,3 @@
-# import datetime
 import httpx
 import json
 import logging
@@ -29,7 +28,6 @@ log = logging.getLogger('app')
 cache_seconds = 60*60*4
 
 
-# @cache_control(must_revalidate=True, max_age=0)
 @cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="files.stats.shorts")
@@ -41,13 +39,11 @@ def home_view(request):
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
     files = Files.objects.get_request(request)
     stats = FileStats.objects.get_request(request)
-    # stats = FileStats.objects.filter(user=request.user)
     shorts = ShortURLs.objects.get_request(request)
     context = {'files': files, 'stats': stats, 'shorts': shorts}
     return render(request, 'home.html', context)
 
 
-# @cache_control(must_revalidate=True, max_age=0)
 @cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="stats.shorts")
@@ -58,11 +54,9 @@ def stats_view(request):
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
     shorts = ShortURLs.objects.get_request(request)
-    # stats = FileStats.objects.filter(user_id=2)
     stats = FileStats.objects.get_request(request)
     log.debug('stats: %s', stats)
     days, files, size = [], [], []
-    # TODO: Move to Template Tag for Template Fragment Caching
     for stat in reversed(stats):
         days.append(f'{stat.created_at.month}/{stat.created_at.day}')
         files.append(stat.stats['count'])
@@ -72,7 +66,6 @@ def stats_view(request):
     return render(request, 'stats.html', context=context)
 
 
-# @cache_control(must_revalidate=True, max_age=0)
 @cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="files")
@@ -83,13 +76,10 @@ def files_view(request):
     """
     log.debug('%s - files_view: is_secure: %s', request.method, request.is_secure())
     files = Files.objects.get_request(request)
-    # stats = FileStats.objects.get_request(request)
-    # shorts = ShortURLs.objects.get_request(request)
     context = {'files': files}
     return render(request, 'files.html', context)
 
 
-# @cache_control(must_revalidate=True, max_age=0)
 @cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="files")
@@ -103,7 +93,6 @@ def gallery_view(request):
     return render(request, 'gallery.html', context)
 
 
-# @cache_control(must_revalidate=True, max_age=0)
 @cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="shorts")
@@ -113,14 +102,11 @@ def shorts_view(request):
     View  /shorts/
     """
     log.debug('%s - shorts_view: is_secure: %s', request.method, request.is_secure())
-    # files = Files.objects.get_request(request)
-    # stats = FileStats.objects.get_request(request)
     shorts = ShortURLs.objects.get_request(request)
     context = {'shorts': shorts}
     return render(request, 'shorts.html', context)
 
 
-# @cache_control(must_revalidate=True, max_age=0)
 @cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="settings.webhooks")
