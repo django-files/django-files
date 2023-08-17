@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.vary import vary_on_headers
+from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from pytimeparse2 import parse
 
 from home.models import Files, FileStats
@@ -53,6 +53,7 @@ def api_view(request):
 @cache_control(no_cache=True)
 @cache_page(cache_seconds, key_prefix="stats")
 @vary_on_headers('Authorization')
+@vary_on_cookie
 @csrf_exempt
 def stats_view(request):
     """
@@ -72,18 +73,21 @@ def stats_view(request):
 @cache_control(no_cache=True)
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers('Authorization')
+@vary_on_cookie
 @csrf_exempt
 def recent_view(request):
     """
     View  /api/recent/
     """
+    log.debug('request.user: %s', request.user)
     log.debug('%s - recent_view: is_secure: %s', request.method, request.is_secure())
     amount = int(request.GET.get('amount', 10))
     log.debug('amount: %s', amount)
     files = Files.objects.filter(user=request.user).order_by('-id')[:amount]
+    log.debug(files)
     data = [file.preview_url() for file in files]
     log.debug('data: %s', data)
-    return JsonResponse(data, safe=False)
+    return JsonResponse(data, safe=False, status=200)
 
 
 @auth_from_token
@@ -122,16 +126,6 @@ def remote_view(request):
     log.debug(file.preview_url())
     response = {'url': f'{file.preview_url()}'}
     return JsonResponse(response)
-
-
-# def get_auth_user(request):
-#     if request.user.is_authenticated:
-#         return request.user
-#     authorization = request.headers.get('Authorization') or request.headers.get('Token')
-#     if authorization:
-#         user = CustomUser.objects.filter(authorization=authorization)
-#         if user:
-#             return user[0]
 
 
 def parse_expire(request, user) -> str:
