@@ -29,7 +29,8 @@ log = logging.getLogger('app')
 cache_seconds = 60*60*4
 
 
-@cache_control(must_revalidate=True, max_age=0)
+# @cache_control(must_revalidate=True, max_age=0)
+@cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="files.stats.shorts")
 @vary_on_cookie
@@ -46,7 +47,8 @@ def home_view(request):
     return render(request, 'home.html', context)
 
 
-@cache_control(must_revalidate=True, max_age=0)
+# @cache_control(must_revalidate=True, max_age=0)
+@cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="stats.shorts")
 @vary_on_cookie
@@ -70,7 +72,8 @@ def stats_view(request):
     return render(request, 'stats.html', context=context)
 
 
-@cache_control(must_revalidate=True, max_age=0)
+# @cache_control(must_revalidate=True, max_age=0)
+@cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_cookie
@@ -86,7 +89,8 @@ def files_view(request):
     return render(request, 'files.html', context)
 
 
-@cache_control(must_revalidate=True, max_age=0)
+# @cache_control(must_revalidate=True, max_age=0)
+@cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_cookie
@@ -99,7 +103,8 @@ def gallery_view(request):
     return render(request, 'gallery.html', context)
 
 
-@cache_control(must_revalidate=True, max_age=0)
+# @cache_control(must_revalidate=True, max_age=0)
+@cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="shorts")
 @vary_on_cookie
@@ -115,7 +120,8 @@ def shorts_view(request):
     return render(request, 'shorts.html', context)
 
 
-@cache_control(must_revalidate=True, max_age=0)
+# @cache_control(must_revalidate=True, max_age=0)
+@cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="settings.webhooks")
 @vary_on_cookie
