@@ -1,4 +1,3 @@
-# import datetime
 import httpx
 import json
 import logging
@@ -10,8 +9,10 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
 from django.template.loader import render_to_string
+from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
 from pygments import highlight
 from pygments.lexers import get_lexer_for_mimetype
@@ -24,9 +25,13 @@ from home.tasks import clear_shorts_cache, process_file_upload, process_stats
 from oauth.models import CustomUser, rand_string
 
 log = logging.getLogger('app')
+cache_seconds = 60*60*4
 
 
+@cache_control(no_cache=True)
 @login_required
+@cache_page(cache_seconds, key_prefix="files.stats.shorts")
+@vary_on_cookie
 def home_view(request):
     """
     View  /
@@ -34,24 +39,24 @@ def home_view(request):
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
     files = Files.objects.get_request(request)
     stats = FileStats.objects.get_request(request)
-    # stats = FileStats.objects.filter(user=request.user)
     shorts = ShortURLs.objects.get_request(request)
     context = {'files': files, 'stats': stats, 'shorts': shorts}
     return render(request, 'home.html', context)
 
 
+@cache_control(no_cache=True)
 @login_required
+@cache_page(cache_seconds, key_prefix="stats.shorts")
+@vary_on_cookie
 def stats_view(request):
     """
     View  /stats/
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
     shorts = ShortURLs.objects.get_request(request)
-    # stats = FileStats.objects.filter(user_id=2)
     stats = FileStats.objects.get_request(request)
     log.debug('stats: %s', stats)
     days, files, size = [], [], []
-    # TODO: Move to Template Tag for Template Fragment Caching
     for stat in reversed(stats):
         days.append(f'{stat.created_at.month}/{stat.created_at.day}')
         files.append(stat.stats['count'])
@@ -61,20 +66,24 @@ def stats_view(request):
     return render(request, 'stats.html', context=context)
 
 
+@cache_control(no_cache=True)
 @login_required
+@cache_page(cache_seconds, key_prefix="files")
+@vary_on_cookie
 def files_view(request):
     """
     View  /files/
     """
     log.debug('%s - files_view: is_secure: %s', request.method, request.is_secure())
     files = Files.objects.get_request(request)
-    # stats = FileStats.objects.get_request(request)
-    # shorts = ShortURLs.objects.get_request(request)
     context = {'files': files}
     return render(request, 'files.html', context)
 
 
+@cache_control(no_cache=True)
 @login_required
+@cache_page(cache_seconds, key_prefix="files")
+@vary_on_cookie
 def gallery_view(request):
     """
     View  /gallery/
@@ -84,20 +93,24 @@ def gallery_view(request):
     return render(request, 'gallery.html', context)
 
 
+@cache_control(no_cache=True)
 @login_required
+@cache_page(cache_seconds, key_prefix="shorts")
+@vary_on_cookie
 def shorts_view(request):
     """
     View  /shorts/
     """
     log.debug('%s - shorts_view: is_secure: %s', request.method, request.is_secure())
-    # files = Files.objects.get_request(request)
-    # stats = FileStats.objects.get_request(request)
     shorts = ShortURLs.objects.get_request(request)
     context = {'shorts': shorts}
     return render(request, 'shorts.html', context)
 
 
+@cache_control(no_cache=True)
 @login_required
+@cache_page(cache_seconds, key_prefix="settings.webhooks")
+@vary_on_cookie
 def settings_view(request):
     """
     View  /settings/
@@ -145,6 +158,8 @@ def settings_view(request):
 
 @login_required
 @csrf_exempt
+@cache_page(cache_seconds)
+@vary_on_cookie
 def uppy_view(request):
     """
     View  /uppy/

@@ -8,7 +8,7 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-{% cache 86400 files_gallery request.user %}
+{#{% cache 86400 files_gallery request.user %}#}
     <div class="container-fluid py-3 px-4">
 
         <h1>Gallery</h1>
@@ -44,7 +44,7 @@
         </div>
 
     </div>
-{% endcache %}
+{#{% endcache %}#}
 {% endblock %}
 
 {% block tail %}{% endblock %}

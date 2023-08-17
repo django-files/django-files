@@ -47,35 +47,35 @@ def app_cleanup():
 def flush_template_cache():
     # Flush all template cache on request
     log.info('flush_template_cache')
-    return cache.delete_pattern('template.cache.*')
+    return cache.delete_pattern('*.decorators.cache.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_files_cache():
     # Clear Files cache
     log.info('clear_files_cache')
-    return cache.delete_pattern('*files*')
+    return cache.delete_pattern('*.files.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_shorts_cache():
     # Clear Shorts cache
     log.info('clear_shorts_cache')
-    return cache.delete_pattern('template.cache.shorts*')
+    return cache.delete_pattern('*.shorts.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_stats_cache():
     # Clear Stats cache
     log.info('clear_stats_cache')
-    return cache.delete_pattern('template.cache.stats*')
+    return cache.delete_pattern('*.stats.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_settings_cache():
     # Clear Settings cache
     log.info('clear_settings_cache')
-    return cache.delete_pattern('template.cache.settings*')
+    return cache.delete_pattern('*.settings.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})

@@ -24,7 +24,8 @@ class TestAuthViews(TestCase):
             'home:gen-sharex': 200,
             'home:gen-sharex-url': 200,
             'home:gen-flameshot': 200,
-            'api:index': 200,
+            'api:status': 200,
+            'api:stats': 200,
             'api:recent': 200,
         }
         print('Creating Test User: testuser')

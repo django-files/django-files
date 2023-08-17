@@ -24,6 +24,7 @@ def clear_shorts_cache_signal(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=FileStats)
+@receiver(post_delete, sender=FileStats)
 def clear_stats_cache_signal(sender, instance, **kwargs):
     clear_stats_cache.delay()
 

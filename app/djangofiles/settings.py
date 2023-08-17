@@ -65,9 +65,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
+# CACHE_MIDDLEWARE_SECONDS = 0
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', True, bool)
 NGINX_ACCESS_LOGS = config('NGINX_ACCESS_LOGS', '/logs/nginx.access')
 
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', True, bool)
 # CSRF_TRUSTED_ORIGINS = config('CSRF_ORIGINS', '', Csv())
 # SECURE_REFERRER_POLICY = config('SECURE_REFERRER_POLICY', 'no-referrer')
 
@@ -253,7 +254,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-if config('SENTRY_URL', False):
+if config('SENTRY_URL', False, bool):
     sentry_sdk.init(
         dsn=config('SENTRY_URL'),
         integrations=[DjangoIntegration()],
@@ -265,7 +266,7 @@ if config('SENTRY_URL', False):
 
 if DEBUG:
     def show_toolbar(request):
-        if config('DISABLE_DEBUG_TOOLBAR', False):
+        if config('DISABLE_DEBUG_TOOLBAR', False, bool):
             return False
         return True if request.user.is_superuser else False
     DEBUG_TOOLBAR_CONFIG = {'SHOW_TOOLBAR_CALLBACK': show_toolbar}
