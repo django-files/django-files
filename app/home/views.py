@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
 from django.template.loader import render_to_string
-from django.views.decorators.cache import cache_page, never_cache
+from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
@@ -29,7 +29,7 @@ log = logging.getLogger('app')
 cache_seconds = 60*60*4
 
 
-@never_cache
+@cache_control(must_revalidate=True, max_age=0)
 @login_required
 @cache_page(cache_seconds, key_prefix="files.stats.shorts")
 @vary_on_cookie
@@ -46,7 +46,7 @@ def home_view(request):
     return render(request, 'home.html', context)
 
 
-@never_cache
+@cache_control(must_revalidate=True, max_age=0)
 @login_required
 @cache_page(cache_seconds, key_prefix="stats.shorts")
 @vary_on_cookie
@@ -70,7 +70,7 @@ def stats_view(request):
     return render(request, 'stats.html', context=context)
 
 
-@never_cache
+@cache_control(must_revalidate=True, max_age=0)
 @login_required
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_cookie
@@ -86,7 +86,7 @@ def files_view(request):
     return render(request, 'files.html', context)
 
 
-@never_cache
+@cache_control(must_revalidate=True, max_age=0)
 @login_required
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_cookie
@@ -99,7 +99,7 @@ def gallery_view(request):
     return render(request, 'gallery.html', context)
 
 
-@never_cache
+@cache_control(must_revalidate=True, max_age=0)
 @login_required
 @cache_page(cache_seconds, key_prefix="shorts")
 @vary_on_cookie
@@ -115,7 +115,7 @@ def shorts_view(request):
     return render(request, 'shorts.html', context)
 
 
-@never_cache
+@cache_control(must_revalidate=True, max_age=0)
 @login_required
 @cache_page(cache_seconds, key_prefix="settings.webhooks")
 @vary_on_cookie
