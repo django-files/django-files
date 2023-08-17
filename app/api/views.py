@@ -30,7 +30,7 @@ def api_view(request):
 
 
 @require_http_methods(['OPTIONS', 'GET', 'POST'])
-@cache_page(None, key_prefix="users")
+@cache_page(60*60*4, key_prefix="users")
 @vary_on_cookie
 @csrf_exempt
 def users_view(request):
@@ -43,7 +43,7 @@ def users_view(request):
 
 
 @require_http_methods(['OPTIONS', 'GET'])
-@cache_page(None, key_prefix="files")
+@cache_page(60*60*4, key_prefix="files")
 @vary_on_cookie
 @csrf_exempt
 def recent_view(request):

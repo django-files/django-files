@@ -75,7 +75,7 @@ def clear_stats_cache():
 def clear_settings_cache():
     # Clear Settings cache
     log.info('clear_settings_cache')
-    return cache.delete_pattern('template.cache.settings*')
+    return cache.delete_pattern('*settings*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})

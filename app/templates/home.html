@@ -13,7 +13,7 @@
 
         <h1>Django Files</h1>
 
-        {% cache 86400 stats_home request.user %}
+{#        {% cache 86400 stats_home request.user %}#}
             {% if not stats %}
                 <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
             {% else %}
@@ -33,7 +33,7 @@
                             <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>{% endif %}</p>
                 {% endwith %}
             {% endif %}
-        {% endcache %}
+{#        {% endcache %}#}
 
         {% cache 86400 files_home request.user %}
             <h2 id="files">Files</h2>

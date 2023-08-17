@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block body %}
-{% cache 86400 stats_stats request.user %}
+{#{% cache 86400 stats_stats request.user %}#}
 <div class="container-fluid py-3 px-4">
 
     <h1>Stats</h1>
@@ -93,7 +93,7 @@
     {% endif %}
 
 </div>
-{% endcache %}
+{#{% endcache %}#}
 {% endblock %}
 
 {% block tail %}

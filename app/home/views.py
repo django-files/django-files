@@ -10,8 +10,10 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
 from django.template.loader import render_to_string
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
 from pygments import highlight
 from pygments.lexers import get_lexer_for_mimetype
@@ -27,6 +29,8 @@ log = logging.getLogger('app')
 
 
 @login_required
+@cache_page(60*60*4, key_prefix="files-stats-shorts")
+@vary_on_cookie
 def home_view(request):
     """
     View  /
@@ -41,6 +45,8 @@ def home_view(request):
 
 
 @login_required
+@cache_page(60*60*4, key_prefix="stats-shorts")
+@vary_on_cookie
 def stats_view(request):
     """
     View  /stats/
@@ -62,6 +68,8 @@ def stats_view(request):
 
 
 @login_required
+@cache_page(60*60*4, key_prefix="files")
+@vary_on_cookie
 def files_view(request):
     """
     View  /files/
@@ -75,6 +83,8 @@ def files_view(request):
 
 
 @login_required
+@cache_page(60*60*4, key_prefix="files")
+@vary_on_cookie
 def gallery_view(request):
     """
     View  /gallery/
@@ -85,6 +95,8 @@ def gallery_view(request):
 
 
 @login_required
+@cache_page(60*60*4, key_prefix="shorts")
+@vary_on_cookie
 def shorts_view(request):
     """
     View  /shorts/
@@ -98,6 +110,8 @@ def shorts_view(request):
 
 
 @login_required
+@cache_page(60*60*4, key_prefix="settings-webhooks")
+@vary_on_cookie
 def settings_view(request):
     """
     View  /settings/
@@ -145,6 +159,8 @@ def settings_view(request):
 
 @login_required
 @csrf_exempt
+@cache_page(60*60*4, key_prefix="settings-webhooks")
+@vary_on_cookie
 def uppy_view(request):
     """
     View  /uppy/
