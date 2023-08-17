@@ -6,13 +6,14 @@ import os
 import validators
 from django.core.files import File
 from django.http import JsonResponse
-from django.views.decorators.cache import cache_page
+from django.core import serializers
+from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from pytimeparse2 import parse
 
-from home.models import Files
+from home.models import Files, FileStats
 from home.tasks import process_file_upload
 from oauth.models import CustomUser
 
@@ -30,19 +31,29 @@ def api_view(request):
 
 
 @require_http_methods(['OPTIONS', 'GET', 'POST'])
-@cache_page(60*60*4, key_prefix="users")
+@cache_control(no_cache=True)
+@cache_page(60*60*4, key_prefix="stats")
 @vary_on_cookie
 @csrf_exempt
-def users_view(request):
+def stats_view(request):
     """
-    View  /api/users/
+    View  /api/stats/
     """
-    # TODO: Add signals to CustomUser model to flush cache
-    log.debug('NOT CACHED')
-    return JsonResponse({'error': 'Not Implemented'}, safe=False, status=400)
+    # TODO: Make get_auth_user a view decorator
+    log.debug('%s - remote_view: is_secure: %s', request.method, request.is_secure())
+    user = get_auth_user(request)
+    if not user:
+        return JsonResponse({'error': 'Invalid Authorization'}, status=401)
+    amount = int(request.GET.get('amount', 10))
+    log.debug('amount: %s', amount)
+    # TODO: Format Stats
+    stats = FileStats.objects.filter(user=user)[:amount]
+    data = serializers.serialize('json', stats)
+    return JsonResponse(json.loads(data), safe=False)
 
 
 @require_http_methods(['OPTIONS', 'GET'])
+@cache_control(no_cache=True)
 @cache_page(60*60*4, key_prefix="files")
 @vary_on_cookie
 @csrf_exempt
@@ -50,13 +61,13 @@ def recent_view(request):
     """
     View  /api/recent/
     """
-    count = 10
-    log.debug('%s - recent_view: is_secure: %s', request.method, request.is_secure())
+    log.debug('%s - remote_view: is_secure: %s', request.method, request.is_secure())
     user = get_auth_user(request)
-    log.debug('user: %s', user)
     if not user:
         return JsonResponse({'error': 'Invalid Authorization'}, status=401)
-    files = Files.objects.filter(user=user).order_by('-id')[:count]
+    amount = int(request.GET.get('amount', 10))
+    log.debug('amount: %s', amount)
+    files = Files.objects.filter(user=user).order_by('-id')[:amount]
     data = [file.preview_url() for file in files]
     log.debug('data: %s', data)
     return JsonResponse(data, safe=False)
