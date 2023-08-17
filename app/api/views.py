@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.vary import vary_on_cookie
+from django.views.decorators.vary import vary_on_headers
 from pytimeparse2 import parse
 
 from home.models import Files, FileStats
@@ -19,9 +19,10 @@ from home.tasks import process_file_upload
 from oauth.models import CustomUser
 
 log = logging.getLogger('app')
+cache_seconds = 60*60*4
 
 
-def get_auth_user(view):
+def auth_from_token(view):
     @functools.wraps(view)
     def wrapper(request, *args, **kwargs):
         if request.user.is_authenticated:
@@ -36,7 +37,7 @@ def get_auth_user(view):
     return wrapper
 
 
-@get_auth_user
+@auth_from_token
 @require_http_methods(['OPTIONS', 'GET'])
 @csrf_exempt
 def api_view(request):
@@ -47,11 +48,11 @@ def api_view(request):
     return JsonResponse({'status': 'online', 'user': request.user.id})
 
 
-@get_auth_user
+@auth_from_token
 @require_http_methods(['OPTIONS', 'GET'])
 @cache_control(no_cache=True)
-@cache_page(60*60*4, key_prefix="stats")
-@vary_on_cookie
+@cache_page(cache_seconds, key_prefix="stats")
+@vary_on_headers('Authorization')
 @csrf_exempt
 def stats_view(request):
     """
@@ -66,11 +67,11 @@ def stats_view(request):
     return JsonResponse(json.loads(data), safe=False)
 
 
-@get_auth_user
+@auth_from_token
 @require_http_methods(['OPTIONS', 'GET'])
 @cache_control(no_cache=True)
-@cache_page(60*60*4, key_prefix="files")
-@vary_on_cookie
+@cache_page(cache_seconds, key_prefix="files")
+@vary_on_headers('Authorization')
 @csrf_exempt
 def recent_view(request):
     """
@@ -85,7 +86,7 @@ def recent_view(request):
     return JsonResponse(data, safe=False)
 
 
-@get_auth_user
+@auth_from_token
 @require_http_methods(['OPTIONS', 'POST'])
 @csrf_exempt
 def remote_view(request):
