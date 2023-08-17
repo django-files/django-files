@@ -25,6 +25,7 @@ cache_seconds = 60*60*4
 def auth_from_token(view):
     @functools.wraps(view)
     def wrapper(request, *args, **kwargs):
+        # TODO: Only Allow Token Auth, or else cache will prevent user switching
         if request.user.is_authenticated:
             return view(request, *args, **kwargs)
         authorization = request.headers.get('Authorization') or request.headers.get('Token')
