@@ -26,10 +26,11 @@ from home.tasks import clear_shorts_cache, process_file_upload, process_stats
 from oauth.models import CustomUser, rand_string
 
 log = logging.getLogger('app')
+cache_seconds = 60*60*4
 
 
 @login_required
-@cache_page(60*60*4, key_prefix="files-stats-shorts")
+@cache_page(cache_seconds, key_prefix="files.stats.shorts")
 @vary_on_cookie
 def home_view(request):
     """
@@ -45,7 +46,7 @@ def home_view(request):
 
 
 @login_required
-@cache_page(60*60*4, key_prefix="stats-shorts")
+@cache_page(cache_seconds, key_prefix="stats.shorts")
 @vary_on_cookie
 def stats_view(request):
     """
@@ -68,7 +69,7 @@ def stats_view(request):
 
 
 @login_required
-@cache_page(60*60*4, key_prefix="files")
+@cache_page(cache_seconds, key_prefix="files")
 @vary_on_cookie
 def files_view(request):
     """
@@ -83,7 +84,7 @@ def files_view(request):
 
 
 @login_required
-@cache_page(60*60*4, key_prefix="files")
+@cache_page(cache_seconds, key_prefix="files")
 @vary_on_cookie
 def gallery_view(request):
     """
@@ -95,7 +96,7 @@ def gallery_view(request):
 
 
 @login_required
-@cache_page(60*60*4, key_prefix="shorts")
+@cache_page(cache_seconds, key_prefix="shorts")
 @vary_on_cookie
 def shorts_view(request):
     """
@@ -110,7 +111,7 @@ def shorts_view(request):
 
 
 @login_required
-@cache_page(60*60*4, key_prefix="settings-webhooks")
+@cache_page(cache_seconds, key_prefix="settings.webhooks")
 @vary_on_cookie
 def settings_view(request):
     """
@@ -159,7 +160,7 @@ def settings_view(request):
 
 @login_required
 @csrf_exempt
-@cache_page(60*60*4, key_prefix="settings-webhooks")
+@cache_page(cache_seconds, key_prefix="settings-webhooks")
 @vary_on_cookie
 def uppy_view(request):
     """
