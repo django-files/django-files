@@ -160,7 +160,7 @@ def settings_view(request):
 
 @login_required
 @csrf_exempt
-@cache_page(cache_seconds, key_prefix="settings-webhooks")
+@cache_page(cache_seconds)
 @vary_on_cookie
 def uppy_view(request):
     """
