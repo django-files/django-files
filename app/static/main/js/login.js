@@ -1,36 +1,37 @@
 // Document Dot Ready
-$(document).ready(function() {
-
+$(document).ready(function () {
     // Local login form handler
-    $('.form-control').focus(function() {
-        $(this).removeClass('is-invalid');
-    });
-    $('#login-form').on('submit', function(event){
-        event.preventDefault();
-        if ($('#login-button').hasClass('disabled')) { return; }
-        var formData = new FormData($(this)[0]);
+    $('.form-control').focus(function () {
+        $(this).removeClass('is-invalid')
+    })
+    $('#login-form').on('submit', function (event) {
+        event.preventDefault()
+        if ($('#login-button').hasClass('disabled')) {
+            return
+        }
+        let formData = new FormData($(this)[0])
         $.ajax({
             url: $('#login-form').attr('action'),
             type: 'POST',
             data: formData,
-            beforeSend: function(){
-                $('#login-button').addClass('disabled');
+            beforeSend: function () {
+                $('#login-button').addClass('disabled')
             },
-            complete: function(){
-                $('#login-button').removeClass('disabled');
+            complete: function () {
+                $('#login-button').removeClass('disabled')
             },
-            success: function(){
-                location.reload();
+            success: function () {
+                location.reload()
             },
-            error: function() {
-                $('#login-form input').addClass('is-invalid');
+            error: function () {
+                $('#login-form input').addClass('is-invalid')
             },
             cache: false,
             contentType: false,
-            processData: false
-        });
-        return false;
-    });
+            processData: false,
+        })
+        return false
+    })
 
     // var vid = document.getElementById("bgvid");
     // var pauseButton = document.querySelector("#pause");
@@ -52,5 +53,4 @@ $(document).ready(function() {
     //         pauseButton.innerHTML = "Play";
     //     }
     // })
-
-});
+})

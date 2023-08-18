@@ -5,17 +5,17 @@
 
 /* Visually Show Disabled Elements on Mouseover */
 .disabled {
-    cursor: not-allowed! important;
+    cursor: not-allowed !important;
 }
 
 /* Recaptcha Border and Load Fix */
 .g-recaptcha {
-    overflow:hidden;
-    width:298px;
-    height:74px;
+    overflow: hidden;
+    width: 298px;
+    height: 74px;
 }
 iframe {
-    margin:-1px 0px 0px -2px;
+    margin: -1px 0px 0px -2px;
 }
 
 /* Back to Top Button */
