@@ -1,3 +1,17 @@
+/* Back to Top Button */
+#btn-back-to-top {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: none;
+    z-index: 1005;
+}
+
+/* Bring Menu Above Uppy Menu */
+.dropdown-menu {
+    z-index: 1005;
+}
+
 /* Always Show Scrollbar */
 /*body {*/
 /*    overflow-y: scroll !important;*/
@@ -14,23 +28,10 @@
 /*    width: 298px;*/
 /*    height: 74px;*/
 /*}*/
+
 /*iframe {*/
 /*    margin: -1px 0 0 -2px;*/
 /*}*/
-
-/* Back to Top Button */
-#btn-back-to-top {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    display: none;
-    z-index: 1005;
-}
-
-/* Bring Menu Above Uppy Menu */
-.dropdown-menu {
-    z-index: 1005;
-}
 
 /* Modal Fix */
 /*.modal-open {*/
