@@ -30,7 +30,6 @@ $(document).ready(function () {
             contentType: false,
             processData: false,
         })
-        return false
     })
 
     // var vid = document.getElementById("bgvid");
