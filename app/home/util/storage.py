@@ -16,11 +16,8 @@ class DynamicStorageFieldFile(FieldFile):
         super(DynamicStorageFieldFile, self).__init__(
            instance, field, name
         )
-        if not instance.meta:  # if meta is None we have not processed a file
-            self.storage = default_storage
-        else:
-            if True:  # TODO:  this needs to read site settings or user settings to find out where to go next.
-                self.storage = S3Boto3Storage()
+        if True:  # TODO:  this needs to read site settings or user settings to find out where to go next.
+            self.storage = S3Bucket()
 
 
 class StoragesRouterFileField(models.FileField):
@@ -28,11 +25,12 @@ class StoragesRouterFileField(models.FileField):
     attr_class = DynamicStorageFieldFile
 
     def pre_save(self, model_instance, add):
-        if not model_instance.meta:  # if meta is None we have not processed a file
-            self.storage = default_storage
-        else:
-            if True:  # TODO:  this needs to read site settings or user settings to find out where to go next.
-                self.storage = S3Boto3Storage()
+        if True:  # TODO:  this needs to read site settings or user settings to find out where to go next.
+            self.storage = S3Bucket()
         file = super(StoragesRouterFileField, self
                      ).pre_save(model_instance, add)
         return file
+
+
+class S3Bucket(S3Boto3Storage):
+    bucket_name = 'i.luac.es'

@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
+from django.core.files.storage import default_storage
 from django.template.loader import render_to_string
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
@@ -17,7 +18,8 @@ from fractions import Fraction
 from pygments import highlight
 from pygments.lexers import get_lexer_for_mimetype
 from pygments.formatters import HtmlFormatter
-from pytimeparse2 import parse
+from home.util.expire import parse_expire
+
 
 from home.forms import SettingsForm
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
@@ -170,15 +172,23 @@ def uppy_view(request):
     log.debug(request.headers)
     log.debug(request.POST)
     log.debug(request.FILES)
-    file = Files.objects.create(
-        file=request.FILES.get('file'),
-        user=request.user,
-        info=request.POST.get('info', ''),
-        expr=parse_expire(request, request.user),
-    )
-    if not file.file:
+    # we want to create our file object after processing
+    # file = Files.objects.create(
+    #     file=request.FILES.get('file'),
+    #     user=request.user,
+    #     info=request.POST.get('info', ''),
+    #     expr=parse_expire(request, request.user),
+    # )
+
+    if not (file := request.FILES.get('file')):
         return HttpResponse(status=400)
-    process_file_upload.delay(file.pk)
+    path = default_storage.save(file.name, file)
+    process_file_upload.delay({
+            'file_path': path,
+            'post': request.POST,
+            'user_id': request.user.id,
+            'expire': parse_expire(request),
+        })
     return HttpResponse()
 
 
@@ -512,19 +522,3 @@ def get_auth_user(request):
             return user[0]
 
 
-def parse_expire(request, user) -> str:
-    # Get Expiration from POST or Default
-    expr = ''
-    if request.POST.get('Expires-At') is not None:
-        expr = request.POST['Expires-At'].strip()
-    elif request.POST.get('ExpiresAt') is not None:
-        expr = request.POST['ExpiresAt'].strip()
-    elif request.headers.get('Expires-At') is not None:
-        expr = request.headers['Expires-At'].strip()
-    elif request.headers.get('ExpiresAt') is not None:
-        expr = request.headers['ExpiresAt'].strip()
-    if expr.lower() in ['0', 'never', 'none', 'null']:
-        return ''
-    if parse(expr) is not None:
-        return expr
-    return user.default_expire or ''
