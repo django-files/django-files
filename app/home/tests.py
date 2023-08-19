@@ -93,6 +93,7 @@ class FilesTestCase(TestCase):
         body = {'url': url}
         response1 = self.client.post(reverse('home:shorten'), body, content_type='application/json', follow=True)
         data = response1.json()
+        print(data)
         self.assertEqual(response1.status_code, 200)
         short = ShortURLs.objects.all().first()
         print(short)
