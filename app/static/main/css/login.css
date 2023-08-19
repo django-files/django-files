@@ -19,7 +19,7 @@ video {
 }
 
 #login-outer {
-    background: rgba(0 0 0 / 0.3);
+    background: rgba(0 0 0 / 30%);
     width: 300px;
     margin: 10px auto;
     padding: 10px 10px;
