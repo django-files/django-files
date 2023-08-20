@@ -1,6 +1,6 @@
 from django.test import TestCase
 # from pathlib import Path
-# from django.core.management import call_command
+from django.core.management import call_command
 # from django.core.files import File
 from django.urls import reverse
 
@@ -12,6 +12,7 @@ from home.tasks import delete_expired_files, app_init
 class TestAuthViews(TestCase):
     """Test Auth Views"""
     def setUp(self):
+        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
         self.views = {
             'oauth:login': 302,
             'home:index': 200,
