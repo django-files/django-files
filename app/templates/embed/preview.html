@@ -75,7 +75,8 @@
                             Your browser does not support the audio tag.
                         </audio>
                     {% elif render in 'text,code' %}
-                        <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}">
+                        <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
+                        <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
                         <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
                         <pre class="pt-3 "><code class="language-python" id="text-preview">...</code></pre>
                     {% else %}
@@ -155,6 +156,11 @@
     })
     .then((data) => {
         $('#text-preview').html(data);
+        let theme = document.documentElement.getAttribute('data-bs-theme');
+        if (theme != "dark") {
+            $('#code-dark').prop('disabled', true);
+            $('#code-light').prop('disabled', false);
+        }
         hljs.highlightAll();
     })
     .catch((error) => {
