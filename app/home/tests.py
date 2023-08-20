@@ -1,12 +1,12 @@
 from django.test import TestCase
-from pathlib import Path
-from django.core.management import call_command
-from django.core.files import File
+# from pathlib import Path
+# from django.core.management import call_command
+# from django.core.files import File
 from django.urls import reverse
 
 from oauth.models import CustomUser
-from home.models import Files, ShortURLs
-from home.tasks import process_file_upload, delete_expired_files, process_stats, app_init
+from home.models import ShortURLs
+from home.tasks import delete_expired_files, app_init
 
 
 class TestAuthViews(TestCase):
