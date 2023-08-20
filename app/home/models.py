@@ -1,3 +1,5 @@
+import validators
+
 from django.db import models
 from django.shortcuts import reverse
 
@@ -34,6 +36,8 @@ class Files(models.Model):
 
     def get_url(self):
         site_settings = SiteSettings.objects.get(pk=1)
+        if validators.url(self.file.url):
+            return self.file.url
         return site_settings.site_url + self.file.url
 
     def preview_url(self):

@@ -30,15 +30,15 @@
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:title" content="{{ file.name }}">
     {% if render == 'image' %}
-        <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:image" content="{{ file.get_url }}">
         <meta property="og:type" content="website">
         <meta property="twitter:card" content="summary_large_image">
     {% elif render == 'video' %}
-        <meta property="og:video" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:video" content="{{ file.get_url }}">
         <meta property="og:type" content="video.other">
         <meta property="twitter:card" content="player">
     {% elif render == 'audio' %}
-        <meta property="og:audio" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:audio" content="{{ file.get_url }}">
         <meta property="og:type" content="music.song">
         <meta property="twitter:card" content="player">
     {% else %}
@@ -62,15 +62,15 @@
                 <div class="col-lg-9">
                     {# TODO: Fix this so that we dont check mime type in the template and the view #}
                     {% if render == 'image' %}
-                        <img src="{% url 'home:url-raw' file.file.name %}" alt="{{ file.name }}" class="card-img-left img-fluid">
+                        <img src="{{file.get_url}}" alt="{{ file.name }}" class="card-img-left img-fluid">
                     {% elif render == 'video' %}
                         <video class="mw-100 pt-2 ps-2 pe-2" controls>
-                            <source src="{{ file.file.url }}" type="video/mp4">
+                            <source src="{{ file.get_url }}" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
                     {% elif render == 'audio' %}
                         <audio class="w-100" controls>
-                            <source src="{{ file.file.url }}" type="{{ file.mime }}">
+                            <source src="{{ file.get_url }}" type="{{ file.mime }}">
                             Your browser does not support the audio tag.
                         </audio>
                     {% elif render == 'text' %}
@@ -118,7 +118,7 @@
                     <div class="row g-2 text-center mt-auto">
                         <div class="col-12 ">
                             <a class="btn btn-primary btn-lg d-block" role="button"
-                               href="{% url 'home:url-raw' file.file.name %}" download="{{ file.name }}">
+                               href="{{ file.get_url }}" download="{{ file.name }}">
                                 <i class="fa-solid fa-download me-2"></i> Download</a></div>
                         {% if code or text_preview %}
                             <div class="col-12 ">
@@ -128,7 +128,7 @@
                         {% endif %}
                         <div class="col-12 ">
                             <a class="btn btn-secondary btn-lg d-block" role="button"
-                               href="{% url 'home:url-raw' file.file.name %}">
+                               href="{{ file.get_url }}">
                                 <i class="fa-solid fa-eye me-2"></i> View Raw</a></div>
                         <div class="col-12 ">
                             <a class="clip btn btn-outline-secondary btn-lg d-block" role="button"
@@ -136,7 +136,7 @@
                                 <i class="fa-solid fa-link me-2"></i> Preview URL</a></div>
                         <div class="col-12 ">
                             <a class="clip btn btn-outline-secondary btn-lg d-block" role="button"
-                               data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}}">
+                               data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.file.get_url }}}">
                                 <i class="fa-solid fa-link me-2"></i> Raw URL</a></div>
                     </div>
                 </div>

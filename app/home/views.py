@@ -184,7 +184,7 @@ def uppy_view(request):
         return HttpResponse(status=400)
     path = default_storage.save(file.name, file)
     process_file_upload.delay({
-            'file_path': path,
+            'file_name': path,
             'post': request.POST,
             'user_id': request.user.id,
             'expire': parse_expire(request),
