@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
-from django.shortcuts import render, reverse, get_object_or_404
+from django.shortcuts import render, reverse, get_object_or_404, redirect
 from django.core.files.storage import default_storage
 from django.template.loader import render_to_string
 from django.views.decorators.cache import cache_page, cache_control
@@ -430,6 +430,20 @@ def gen_flameshot(request):
 
 
 @require_http_methods(['GET'])
+def raw_redirect_view(request, filename):
+    """
+    View /raw/<path:filename>
+    """
+    view = False
+    log.debug('url_route_raw: %s', filename)
+    file = get_object_or_404(Files, name=filename)
+    response = HttpResponse(status=302)
+    if True:  # todo must check if s3 here
+        view = True
+    response['Location'] = file.get_url(view=view)
+    return response
+
+@require_http_methods(['GET'])
 def url_route_view(request, filename):
     """
     View  /u/<path:filename>
@@ -445,6 +459,10 @@ def url_route_view(request, filename):
     log.debug('file.mime: %s', file.mime)
     ctx = {'file': file, 'render': file.mime.split('/', 1)[0]}
     log.debug('ctx: %s', ctx)
+    # this should really be something checking if file should be s3 or other remote
+    if True:
+        view_increment = True
+    ctx["remote_url"] = file.get_url(view=view_increment)
     if file.mime.startswith('image'):
         log.debug('IMAGE')
         if file.exif:

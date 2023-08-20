@@ -34,8 +34,11 @@ class Files(models.Model):
         verbose_name = 'File'
         verbose_name_plural = 'Files'
 
-    def get_url(self):
+    def get_url(self, view=True):
         site_settings = SiteSettings.objects.get(pk=1)
+        if view:
+            self.view += 1
+            self.save()
         if validators.url(self.file.url):
             return self.file.url
         return site_settings.site_url + self.file.url
