@@ -4,13 +4,6 @@ from django.db import models
 from django.db.models.fields.files import FieldFile
 
 
-# def storage_router(initial_upload=False, *args, **kwargs):
-#     if initial_upload:
-#         return default_storage
-#     elif True:  # this eventually needs to be based on if s3 is configured, but circular import issue stopping 
-#         return S3Boto3Storage(*args, **kwargs)
-
-
 class DynamicStorageFieldFile(FieldFile):
     def __init__(self, instance, field, name):
         super(DynamicStorageFieldFile, self).__init__(

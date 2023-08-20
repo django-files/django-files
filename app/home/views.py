@@ -440,8 +440,9 @@ def raw_redirect_view(request, filename):
     response = HttpResponse(status=302)
     if True:  # todo must check if s3 here
         view = True
-    response['Location'] = file.get_url(view=view)
+    response['Location'] = file.get_url(view=view, download=request.GET.get('download', False))
     return response
+
 
 @require_http_methods(['GET'])
 def url_route_view(request, filename):
@@ -459,6 +460,7 @@ def url_route_view(request, filename):
     log.debug('file.mime: %s', file.mime)
     ctx = {'file': file, 'render': file.mime.split('/', 1)[0]}
     log.debug('ctx: %s', ctx)
+    view_increment = False
     # this should really be something checking if file should be s3 or other remote
     if True:
         view_increment = True
@@ -467,7 +469,7 @@ def url_route_view(request, filename):
         log.debug('IMAGE')
         if file.exif:
             if exposure_time := file.exif.get('ExposureTime'):
-                file.exif['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
+                file.exif['ExposureTime'] = str(Fraction(exposure_time).limit_denominator(5000))
             if lens_model := file.exif.get('LensModel'):
                 # handle cases where lensmodel is relevant but some values redunant
                 lm_f_stripped = lens_model.replace(f"f/{file.exif.get('FNumber', '')}", "")

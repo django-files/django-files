@@ -118,7 +118,7 @@
                     <div class="row g-2 text-center mt-auto">
                         <div class="col-12 ">
                             <a class="btn btn-primary btn-lg d-block" role="button"
-                               href="{{ file.get_url }}" download="{{ file.name }}">
+                               href="{% url 'home:url-raw-redirect' file.file.name %}?download=true" download="{{ file.name }}">
                                 <i class="fa-solid fa-download me-2"></i> Download</a></div>
                         {% if code or text_preview %}
                             <div class="col-12 ">
@@ -128,7 +128,7 @@
                         {% endif %}
                         <div class="col-12 ">
                             <a class="btn btn-secondary btn-lg d-block" role="button"
-                               href="{{ file.get_url }}">
+                               href="{% url 'home:url-raw-redirect' file.file.name %}">
                                 <i class="fa-solid fa-eye me-2"></i> View Raw</a></div>
                         <div class="col-12 ">
                             <a class="clip btn btn-outline-secondary btn-lg d-block" role="button"

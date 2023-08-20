@@ -34,12 +34,20 @@ class Files(models.Model):
         verbose_name = 'File'
         verbose_name_plural = 'Files'
 
-    def get_url(self, view=True):
+    def get_url(self, view=True, download=False):
         site_settings = SiteSettings.objects.get(pk=1)
         if view:
             self.view += 1
             self.save()
         if validators.url(self.file.url):
+            if download:
+                url = self.file.file._storage.url(
+                    self.file.file.name,
+                    parameters={
+                        'ResponseContentDisposition': f'attachment; filename={self.file.file.name}',
+                        },
+                )
+                return url
             return self.file.url
         return site_settings.site_url + self.file.url
 
