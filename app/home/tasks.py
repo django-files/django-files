@@ -85,9 +85,6 @@ def process_file_upload(file_dict):
     # TODO: Fix all the sub functions/classes
     # Process new file upload
     log.info('process_file_upload: %s', file_dict)
-    if type(file_dict) != dict:
-        log.error("Invalid file data received.")
-        return
     file_abs_path = settings.MEDIA_ROOT + '/' + file_dict["file_name"]
     log.info(file_abs_path)
 
