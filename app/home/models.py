@@ -60,9 +60,6 @@ class Files(models.Model):
             num /= 1024.0
         return f"{num:.1f} YiB"
 
-    def get_state(self):
-        return self._state.adding
-
 
 class FileStats(models.Model):
     id = models.AutoField(primary_key=True)
@@ -108,7 +105,7 @@ class SiteSettings(models.Model):
     s3_region = models.CharField(max_length=16, blank=True, null=True)
     s3_secret_key = models.CharField(max_length=128, blank=True, null=True)
     s3_secret_key_id = models.CharField(max_length=128, blank=True, null=True)
-    # tODO: we should gate actually saving this fields on verifying we can run head bucket with the credentials on the bucket.
+    # TODO: we should gate actually saving this fields on verifying we can run head bucket with the credentials on the bucket.
     s3_bucket_name = models.CharField(max_length=128, blank=True, null=True)
     s3_cdn = models.CharField(
         max_length=128,

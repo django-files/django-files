@@ -1,5 +1,6 @@
 from pytimeparse2 import parse
 
+
 def parse_expire(request) -> str:
     # Get Expiration from POST or Default
     expr = ''

@@ -114,7 +114,7 @@ def process_file_upload(file_dict):
     file_obj.size = file_obj.file.size
     log.info('file.size: %s', file_obj.size)
     if file_obj.mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
-        processor = ImageProcessor(file_obj)
+        processor = ImageProcessor(file_obj, file_abs_path)
         processor.process_file()
     file_obj.save()
     log.info('-'*40)

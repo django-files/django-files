@@ -520,5 +520,3 @@ def get_auth_user(request):
         user = CustomUser.objects.filter(authorization=authorization)
         if user:
             return user[0]
-
-
