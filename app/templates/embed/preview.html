@@ -146,7 +146,7 @@
 
 <script>
     {% if render in 'text,code' %}
-    fetch("{{ request.scheme }}://{{ request.get_host }}:8085{% url 'home:url-raw-redirect' file.file.name %}")
+    fetch("{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}")
     .then(response => {
         if (!response.ok) {
             throw new Error('Network response was not ok');
