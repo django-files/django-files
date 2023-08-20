@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
-from django.shortcuts import render, reverse, get_object_or_404, redirect
+from django.shortcuts import render, reverse, get_object_or_404
 from django.core.files.storage import default_storage
 from django.template.loader import render_to_string
 from django.views.decorators.cache import cache_page, cache_control
@@ -15,9 +15,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
-from pygments import highlight
-from pygments.lexers import get_lexer_for_mimetype
-from pygments.formatters import HtmlFormatter
 from home.util.expire import parse_expire
 
 
@@ -151,6 +148,7 @@ def settings_view(request):
     request.user.remove_exif_geo = form.cleaned_data['remove_exif_geo']
     request.user.remove_exif = form.cleaned_data['remove_exif']
     request.user.show_exif_preview = form.cleaned_data['show_exif_preview']
+    request.user.s3_bucket_name = form.cleaned_data.get('s3_bucket_name')
 
     request.user.save()
     if data['reload']:
@@ -476,15 +474,6 @@ def url_route_view(request, filename):
                 lm_model_stripped = lm_f_stripped.replace(f"{file.exif.get('Model')}", "")
                 file.exif['LensModel'] = lm_model_stripped
         return render(request, 'embed/preview.html', context=ctx)
-    elif file.mime == 'text/plain':
-        log.debug('TEXT')
-        with open(file.file.path, 'r') as f:
-            text_preview = f.read()
-        ctx['text_preview'] = text_preview
-        file.view += 1
-        file.save()
-        ctx['render'] = 'text'
-        return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
         log.debug('MARKDOWN')
         with open(file.file.path, 'r') as f:
@@ -495,16 +484,12 @@ def url_route_view(request, filename):
         return render(request, 'embed/markdown.html', context=ctx)
     elif file.mime.startswith('text/') or file.mime in code_mimes:
         log.debug('CODE')
-        with open(file.file.path, 'r') as f:
-            code = f.read()
-        lexer = get_lexer_for_mimetype(file.mime, stripall=True)
-        formatter = HtmlFormatter(style='one-dark')
-        ctx['css'] = formatter.get_style_defs()
-        ctx['html'] = highlight(code, lexer, formatter)
-        ctx['code'] = code
-        file.view += 1
-        file.save()
+        lang_map = {
+            "x-python": "python",
+            "plain": "plaintext"
+        }
         ctx['render'] = 'code'
+        ctx['highlight_language'] = f"language-{lang_map.get(file.mime.replace('text/',''), 'plaintext')}"
         return render(request, 'embed/preview.html', context=ctx)
     else:
         log.debug('UNKNOWN')

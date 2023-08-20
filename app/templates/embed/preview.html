@@ -1,4 +1,5 @@
 {% extends "main.html" %}
+{% load static %}
 {% load home_tags %}
 
 {% block title %}{{ file.name }}{% endblock %}
@@ -73,14 +74,10 @@
                             <source src="{{ file.get_url }}" type="{{ file.mime }}">
                             Your browser does not support the audio tag.
                         </audio>
-                    {% elif render == 'text' %}
-                        <pre class="p-3"><code>{{ text_preview }}</code></pre>
-                    {% elif render == 'code' %}
-                        {% if html %}
-                            <div class="container-fluid py-3 px-4">
-                                {{ html|safe }}
-                            </div>
-                        {% endif %}
+                    {% elif render in 'text,code' %}
+                        <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}">
+                        <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
+                        <pre class="pt-3 "><code class="language-python" id="text-preview">...</code></pre>
                     {% else %}
                         <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
                     {% endif %}
@@ -136,7 +133,7 @@
                                 <i class="fa-solid fa-link me-2"></i> Preview URL</a></div>
                         <div class="col-12 ">
                             <a class="clip btn btn-outline-secondary btn-lg d-block" role="button"
-                               data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.file.get_url }}}">
+                               data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}">
                                 <i class="fa-solid fa-link me-2"></i> Raw URL</a></div>
                     </div>
                 </div>
@@ -145,6 +142,28 @@
     </div>
 {% endblock %}
 
-{% block footer %}{% endblock %}
+{% block footer %}
+
+<script>
+    {% if render in 'text,code' %}
+    fetch("{{ request.scheme }}://{{ request.get_host }}:8085{% url 'home:url-raw-redirect' file.file.name %}")
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.text();
+    })
+    .then((data) => {
+        $('#text-preview').html(data);
+        hljs.highlightAll();
+    })
+    .catch((error) => {
+        let message = "Error fetching {{ file.file.name }}: " + error
+        show_toast(message, bsClass = 'danger')
+    });
+    {% endif %}
+</script>
+
+{% endblock %}
 
 {% block tail %}{% endblock %}

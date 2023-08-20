@@ -116,7 +116,7 @@ class SiteSettings(models.Model):
     s3_region = models.CharField(max_length=16, blank=True, null=True)
     s3_secret_key = models.CharField(max_length=128, blank=True, null=True)
     s3_secret_key_id = models.CharField(max_length=128, blank=True, null=True)
-    # TODO: we should gate actually saving this fields on verifying we can run head bucket with the credentials on the bucket.
+    # TODO: we should gate actually saving this fields on verifying we can list bucket with the credentials
     s3_bucket_name = models.CharField(max_length=128, blank=True, null=True)
     s3_cdn = models.CharField(
         max_length=128,

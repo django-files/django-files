@@ -17,6 +17,7 @@ from pytimeparse2 import parse
 
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 from home.util.processors import ImageProcessor
+from home.util.s3 import use_s3
 from oauth.models import CustomUser
 
 log = logging.getLogger('celery')
@@ -119,6 +120,8 @@ def process_file_upload(file_dict):
     file_obj.save()
     log.info('-'*40)
     send_discord_message.delay(file_obj.pk)
+    if use_s3():
+        os.remove(file_abs_path)
     return file_obj.pk
 
 

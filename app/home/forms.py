@@ -14,6 +14,7 @@ class SettingsForm(forms.Form):
     remove_exif_geo = forms.BooleanField(required=False)
     remove_exif = forms.BooleanField(required=False)
     show_exif_preview = forms.BooleanField(required=False)
+    s3_bucket_name = forms.CharField(max_length=128, required=False)
 
     def clean_default_color(self):
         data = self.cleaned_data['default_color'].strip().lower()
