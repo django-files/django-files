@@ -430,7 +430,7 @@ def raw_redirect_view(request, filename):
     log.debug('url_route_raw: %s', filename)
     file = get_object_or_404(Files, name=filename)
     response = HttpResponse(status=302)
-    if True:  # todo must check if s3 here
+    if use_s3():
         view = True
     response['Location'] = file.get_url(view=view, download=request.GET.get('download', False))
     return response
