@@ -14,7 +14,7 @@
     <meta property="og:title" content="{{ file.name }}">
     <meta property="og:description" content="{{ file.info|default:"" }}{% if file.user.show_exif_preview %}{% if file.exif.Model %}
     Camera: {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}{% endif %}
-    {{ file.exif.DateTime|convert_str_date }}{% if file.meta.GPSArea %}
+    {{ file.exif.DateTimeOriginal|convert_str_date }}{% if file.meta.GPSArea %}
     {{ file.meta.GPSArea }}{% endif %}{% if file.exif.GPSInfo.6 %}
     Elevation: {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}
 
@@ -104,7 +104,7 @@
                     <p class="card-text">Uploaded {{ file.date }}</p>
                     {% if file.user.show_exif_preview and file.exif %}
                         <p class="card-text text-body-secondary">
-                            {% if file.exif.DateTime %}<b>Taken On:</b> {{ file.exif.DateTime|convert_str_date }}<br>{% endif %}
+                            {% if file.exif.DateTime %}<b>Taken On:</b> {{ file.exif.DateTimeOriginal|convert_str_date }}<br>{% endif %}
                             {% if file.exif.Model %}<b>Camera:</b> {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}<br>{% endif %}
                             {% if file.meta.GPSArea %}<b>Location:</b> {{ file.meta.GPSArea }}<br>{% endif %}
                             {% if file.exif.GPSInfo.6 %}<b>Elevation:</b> {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
