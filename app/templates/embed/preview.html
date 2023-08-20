@@ -31,15 +31,15 @@
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:title" content="{{ file.name }}">
     {% if render == 'image' %}
-        <meta property="og:image" content="{{ file.get_url }}">
+        <meta property="og:image" content="{{ static_url }}">
         <meta property="og:type" content="website">
         <meta property="twitter:card" content="summary_large_image">
     {% elif render == 'video' %}
-        <meta property="og:video" content="{{ file.get_url }}">
+        <meta property="og:video" content="{{ static_url }}">
         <meta property="og:type" content="video.other">
         <meta property="twitter:card" content="player">
     {% elif render == 'audio' %}
-        <meta property="og:audio" content="{{ file.get_url }}">
+        <meta property="og:audio" content="{{ static_url }}">
         <meta property="og:type" content="music.song">
         <meta property="twitter:card" content="player">
     {% else %}
@@ -63,15 +63,15 @@
                 <div class="col-lg-9">
                     {# TODO: Fix this so that we dont check mime type in the template and the view #}
                     {% if render == 'image' %}
-                        <img src="{{file.get_url}}" alt="{{ file.name }}" class="card-img-left img-fluid">
+                        <img src="{{ static_url }}" alt="{{ file.name }}" class="card-img-left img-fluid">
                     {% elif render == 'video' %}
                         <video class="mw-100 pt-2 ps-2 pe-2" controls>
-                            <source src="{{ file.get_url }}" type="video/mp4">
+                            <source src="{{ static_url }}" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
                     {% elif render == 'audio' %}
                         <audio class="w-100" controls>
-                            <source src="{{ file.get_url }}" type="{{ file.mime }}">
+                            <source src="{{ static_url }}" type="{{ file.mime }}">
                             Your browser does not support the audio tag.
                         </audio>
                     {% elif render in 'text,code' %}

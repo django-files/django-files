@@ -34,7 +34,7 @@ class Files(models.Model):
         verbose_name = 'File'
         verbose_name_plural = 'Files'
 
-    def get_url(self, view=True, download=False):
+    def get_url(self, view=False, download=False):
         site_settings = SiteSettings.objects.get(pk=1)
         if view:
             self.view += 1

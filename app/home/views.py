@@ -16,6 +16,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
 from home.util.expire import parse_expire
+from home.util.s3 import use_s3
 
 
 from home.forms import SettingsForm
@@ -449,13 +450,8 @@ def url_route_view(request, filename):
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
     log.debug('file.mime: %s', file.mime)
-    ctx = {'file': file, 'render': file.mime.split('/', 1)[0]}
+    ctx = {'file': file, 'render': file.mime.split('/', 1)[0], "static_url": file.get_url(view=use_s3())}
     log.debug('ctx: %s', ctx)
-    view_increment = False
-    # this should really be something checking if file should be s3 or other remote
-    if True:
-        view_increment = True
-    ctx["remote_url"] = file.get_url(view=view_increment)
     if file.mime.startswith('image'):
         log.debug('IMAGE')
         if file.exif:
