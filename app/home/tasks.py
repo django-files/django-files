@@ -99,7 +99,6 @@ def process_file_upload(file_dict):
             expr=file_dict["expire"],
         )
     log.info('-'*40)
-
     file_obj.name = os.path.basename(file_obj.file.name)
     log.info('file.name: %s', file_obj.name)
     file_obj.mime, _ = mimetypes.guess_type(file_abs_path, strict=False)
