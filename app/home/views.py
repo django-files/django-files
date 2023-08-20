@@ -170,13 +170,6 @@ def uppy_view(request):
     log.debug(request.headers)
     log.debug(request.POST)
     log.debug(request.FILES)
-    # we want to create our file object after processing
-    # file = Files.objects.create(
-    #     file=request.FILES.get('file'),
-    #     user=request.user,
-    #     info=request.POST.get('info', ''),
-    #     expr=parse_expire(request, request.user),
-    # )
 
     if not (file := request.FILES.get('file')):
         return HttpResponse(status=400)

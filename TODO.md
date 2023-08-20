@@ -17,12 +17,11 @@
 
 ## Preview Page
 - [ ] Overhaul EXIF Parsing to be a re-usable function
-- [ ] Fix Pygments Code for Light Mode
-- [ ] Fix Image Preview for Images not Browser Compatible
+- [ ] Fix highlight.js for Light Mode
+- [ ] Fix Image Preview for Images not Browser Compatible (heic)
 
 ## Site Settings
 - [ ] Full Settings Interface Overhaul
-- [ ] Remove GPS metadata Feature
 - [ ] Custom Site Title Feature
 - [ ] Custom Favicon Feature
 - [ ] Custom Login Screen Feature
