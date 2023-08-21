@@ -35,6 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 coverage
           pip install -r requirements.txt
+          playwright install chromium
 
       - name: "Flake8"
         working-directory: app
