@@ -1,12 +1,14 @@
+boto3
 celery>=5,<6
 channels
 channels-redis
 django>=4,<5
-django-cors-headers
 django-debug-toolbar>=4,<5
 django-celery-beat
 django-extensions
 django-redis
+django-storages
+django-cors-headers
 geopy
 gunicorn
 httpx
@@ -14,7 +16,6 @@ markdown
 mysqlclient
 Pillow
 psycopg[binary]
-Pygments
 python-decouple
 python-dotenv
 pytimeparse2

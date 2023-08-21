@@ -1,4 +1,5 @@
 {% extends "main.html" %}
+{% load static %}
 {% load home_tags %}
 
 {% block title %}{{ file.name }}{% endblock %}
@@ -14,7 +15,7 @@
     <meta property="og:title" content="{{ file.name }}">
     <meta property="og:description" content="{{ file.info|default:"" }}{% if file.user.show_exif_preview %}{% if file.exif.Model %}
     Camera: {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}{% endif %}
-    {{ file.exif.DateTime|convert_str_date }}{% if file.meta.GPSArea %}
+    {{ file.exif.DateTimeOriginal|convert_str_date }}{% if file.meta.GPSArea %}
     {{ file.meta.GPSArea }}{% endif %}{% if file.exif.GPSInfo.6 %}
     Elevation: {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}
 
@@ -30,15 +31,15 @@
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:title" content="{{ file.name }}">
     {% if render == 'image' %}
-        <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:image" content="{{ static_url }}">
         <meta property="og:type" content="website">
         <meta property="twitter:card" content="summary_large_image">
     {% elif render == 'video' %}
-        <meta property="og:video" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:video" content="{{ static_url }}">
         <meta property="og:type" content="video.other">
         <meta property="twitter:card" content="player">
     {% elif render == 'audio' %}
-        <meta property="og:audio" content="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}">
+        <meta property="og:audio" content="{{ static_url }}">
         <meta property="og:type" content="music.song">
         <meta property="twitter:card" content="player">
     {% else %}
@@ -62,25 +63,22 @@
                 <div class="col-lg-9">
                     {# TODO: Fix this so that we dont check mime type in the template and the view #}
                     {% if render == 'image' %}
-                        <img src="{% url 'home:url-raw' file.file.name %}" alt="{{ file.name }}" class="card-img-left img-fluid">
+                        <img src="{{ static_url }}" alt="{{ file.name }}" class="card-img-left img-fluid">
                     {% elif render == 'video' %}
                         <video class="mw-100 pt-2 ps-2 pe-2" controls>
-                            <source src="{{ file.file.url }}" type="video/mp4">
+                            <source src="{{ static_url }}" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
                     {% elif render == 'audio' %}
                         <audio class="w-100" controls>
-                            <source src="{{ file.file.url }}" type="{{ file.mime }}">
+                            <source src="{{ static_url }}" type="{{ file.mime }}">
                             Your browser does not support the audio tag.
                         </audio>
-                    {% elif render == 'text' %}
-                        <pre class="p-3"><code>{{ text_preview }}</code></pre>
-                    {% elif render == 'code' %}
-                        {% if html %}
-                            <div class="container-fluid py-3 px-4">
-                                {{ html|safe }}
-                            </div>
-                        {% endif %}
+                    {% elif render in 'text,code' %}
+                        <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
+                        <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
+                        <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
+                        <pre class="pt-3 "><code class="language-python" id="text-preview">...</code></pre>
                     {% else %}
                         <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
                     {% endif %}
@@ -104,7 +102,7 @@
                     <p class="card-text">Uploaded {{ file.date }}</p>
                     {% if file.user.show_exif_preview and file.exif %}
                         <p class="card-text text-body-secondary">
-                            {% if file.exif.DateTime %}<b>Taken On:</b> {{ file.exif.DateTime|convert_str_date }}<br>{% endif %}
+                            {% if file.exif.DateTime %}<b>Taken On:</b> {{ file.exif.DateTimeOriginal|convert_str_date }}<br>{% endif %}
                             {% if file.exif.Model %}<b>Camera:</b> {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}<br>{% endif %}
                             {% if file.meta.GPSArea %}<b>Location:</b> {{ file.meta.GPSArea }}<br>{% endif %}
                             {% if file.exif.GPSInfo.6 %}<b>Elevation:</b> {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
@@ -118,7 +116,7 @@
                     <div class="row g-2 text-center mt-auto">
                         <div class="col-12 ">
                             <a class="btn btn-primary btn-lg d-block" role="button"
-                               href="{% url 'home:url-raw' file.file.name %}" download="{{ file.name }}">
+                               href="{% url 'home:url-raw-redirect' file.file.name %}?download=true" download="{{ file.name }}">
                                 <i class="fa-solid fa-download me-2"></i> Download</a></div>
                         {% if code or text_preview %}
                             <div class="col-12 ">
@@ -128,7 +126,7 @@
                         {% endif %}
                         <div class="col-12 ">
                             <a class="btn btn-secondary btn-lg d-block" role="button"
-                               href="{% url 'home:url-raw' file.file.name %}">
+                               href="{% url 'home:url-raw-redirect' file.file.name %}">
                                 <i class="fa-solid fa-eye me-2"></i> View Raw</a></div>
                         <div class="col-12 ">
                             <a class="clip btn btn-outline-secondary btn-lg d-block" role="button"
@@ -136,7 +134,7 @@
                                 <i class="fa-solid fa-link me-2"></i> Preview URL</a></div>
                         <div class="col-12 ">
                             <a class="clip btn btn-outline-secondary btn-lg d-block" role="button"
-                               data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.file.url }}}">
+                               data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}">
                                 <i class="fa-solid fa-link me-2"></i> Raw URL</a></div>
                     </div>
                 </div>
@@ -145,6 +143,33 @@
     </div>
 {% endblock %}
 
-{% block footer %}{% endblock %}
+{% block footer %}
+
+<script>
+    {% if render in 'text,code' %}
+    fetch("{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}")
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.text();
+    })
+    .then((data) => {
+        $('#text-preview').html(data);
+        let theme = document.documentElement.getAttribute('data-bs-theme');
+        if (theme != "dark") {
+            $('#code-dark').prop('disabled', true);
+            $('#code-light').prop('disabled', false);
+        }
+        hljs.highlightAll();
+    })
+    .catch((error) => {
+        let message = "Error fetching {{ file.file.name }}: " + error
+        show_toast(message, bsClass = 'danger')
+    });
+    {% endif %}
+</script>
+
+{% endblock %}
 
 {% block tail %}{% endblock %}

@@ -24,5 +24,6 @@ urlpatterns = [
     path('gen/sharex-url/', views.gen_sharex_url, name='gen-sharex-url'),
     path('gen/flameshot/', views.gen_flameshot, name='gen-flameshot'),
     path('u/<path:filename>', views.url_route_view, name='url-route'),
+    path('raw/<path:filename>', views.raw_redirect_view, name='url-raw-redirect'),
     path('r/<path:filename>', views.url_route_view, name='url-raw'),
 ]

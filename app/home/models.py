@@ -1,14 +1,17 @@
+import validators
+
 from django.db import models
 from django.shortcuts import reverse
 
 from home.managers import FilesManager, FileStatsManager, ShortURLsManager, WebhooksManager
 from oauth.models import CustomUser
+from home.util.storage import StoragesRouterFileField
 
 
 class Files(models.Model):
     upload_to = '.'
     id = models.AutoField(primary_key=True)
-    file = models.FileField(upload_to=upload_to)
+    file = StoragesRouterFileField(upload_to=upload_to)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     size = models.IntegerField(default=0, verbose_name='Size', help_text='File Size in Bytes.')
     mime = models.CharField(max_length=255, null=True, blank=True, verbose_name='MIME', help_text='File MIME Type.')
@@ -31,8 +34,21 @@ class Files(models.Model):
         verbose_name = 'File'
         verbose_name_plural = 'Files'
 
-    def get_url(self):
+    def get_url(self, view=False, download=False):
         site_settings = SiteSettings.objects.get(pk=1)
+        if view:
+            self.view += 1
+            self.save()
+        if validators.url(self.file.url):
+            if download:
+                url = self.file.file._storage.url(
+                    self.file.file.name,
+                    parameters={
+                        'ResponseContentDisposition': f'attachment; filename={self.file.file.name}',
+                        },
+                )
+                return url
+            return self.file.url
         return site_settings.site_url + self.file.url
 
     def preview_url(self):
@@ -96,6 +112,18 @@ class ShortURLs(models.Model):
 class SiteSettings(models.Model):
     id = models.AutoField(primary_key=True)
     site_url = models.URLField(max_length=128, blank=True, null=True, verbose_name='Site URL')
+
+    s3_region = models.CharField(max_length=16, blank=True, null=True)
+    s3_secret_key = models.CharField(max_length=128, blank=True, null=True)
+    s3_secret_key_id = models.CharField(max_length=128, blank=True, null=True)
+    # TODO: we should gate actually saving this fields on verifying we can list bucket with the credentials
+    s3_bucket_name = models.CharField(max_length=128, blank=True, null=True)
+    s3_cdn = models.CharField(
+        max_length=128,
+        blank=True,
+        null=True,
+        help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.'
+        )
 
     def __str__(self):
         return f'<SiteSettings(site_url={self.site_url})>'

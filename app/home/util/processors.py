@@ -8,20 +8,21 @@ log = logging.getLogger('celery')
 
 
 class ImageProcessor(object):
-    def __init__(self, file: Files):
+    def __init__(self, file: Files, local_path: str):
         self.file = file
+        self.local_path = local_path
 
     def process_file(self) -> None:
         # TODO: Concatenate Logic to This Function
         # processes image files, collects or strips exif, sets metadata
-        with Image.open(self.file.file.path) as image:
+        with Image.open(self.local_path) as image:
             self.file.meta['PILImageWidth'], self.file.meta['PILImageHeight'] = image.size
             if self.file.user.remove_exif:
-                return self.strip_exif(image, self.file)
+                return self.strip_exif(image, self.file, self.local_path)
             log.info('Parsing and storing EXIF: %s', self.file.pk)
             image, exif_clean, exif = self._handle_exif(image)
             # write exif in case exif modified
-            image.save(self.file.file.path, exif=exif)
+            image.save(self.local_path, exif=exif)
             # determine photo area from gps and store in metadata
             if area := city_state_from_exif(exif_clean.get('GPSInfo')):
                 self.file.meta['GPSArea'] = area
@@ -74,11 +75,11 @@ class ImageProcessor(object):
         return image, exif
 
     @staticmethod
-    def strip_exif(image: Image, file: Files) -> None:
+    def strip_exif(image: Image, file: Files, local_path: str) -> None:
         # accepts image and file, rewrites image file without exif
         log.info('Stripping EXIF: %s', file.pk)
         with Image.new(image.mode, image.size) as new:
             new.putdata(image.getdata())
             if 'P' in image.mode:
                 new.putpalette(image.getpalette())
-            new.save(file.file.path)
+            new.save(local_path)

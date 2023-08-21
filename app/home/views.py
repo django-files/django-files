@@ -8,16 +8,16 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
+from django.core.files.storage import default_storage
 from django.template.loader import render_to_string
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
-from pygments import highlight
-from pygments.lexers import get_lexer_for_mimetype
-from pygments.formatters import HtmlFormatter
-from pytimeparse2 import parse
+from home.util.expire import parse_expire
+from home.util.s3 import use_s3
+
 
 from home.forms import SettingsForm
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
@@ -149,6 +149,7 @@ def settings_view(request):
     request.user.remove_exif_geo = form.cleaned_data['remove_exif_geo']
     request.user.remove_exif = form.cleaned_data['remove_exif']
     request.user.show_exif_preview = form.cleaned_data['show_exif_preview']
+    request.user.s3_bucket_name = form.cleaned_data.get('s3_bucket_name')
 
     request.user.save()
     if data['reload']:
@@ -170,15 +171,16 @@ def uppy_view(request):
     log.debug(request.headers)
     log.debug(request.POST)
     log.debug(request.FILES)
-    file = Files.objects.create(
-        file=request.FILES.get('file'),
-        user=request.user,
-        info=request.POST.get('info', ''),
-        expr=parse_expire(request, request.user),
-    )
-    if not file.file:
+
+    if not (file := request.FILES.get('file')):
         return HttpResponse(status=400)
-    process_file_upload.delay(file.pk)
+    path = default_storage.save(file.name, file)
+    process_file_upload.delay({
+            'file_name': path,
+            'post': request.POST,
+            'user_id': request.user.id,
+            'expire': parse_expire(request),
+        })
     return HttpResponse()
 
 
@@ -420,6 +422,21 @@ def gen_flameshot(request):
 
 
 @require_http_methods(['GET'])
+def raw_redirect_view(request, filename):
+    """
+    View /raw/<path:filename>
+    """
+    view = False
+    log.debug('url_route_raw: %s', filename)
+    file = get_object_or_404(Files, name=filename)
+    response = HttpResponse(status=302)
+    if use_s3():
+        view = True
+    response['Location'] = file.get_url(view=view, download=request.GET.get('download', False))
+    return response
+
+
+@require_http_methods(['GET'])
 def url_route_view(request, filename):
     """
     View  /u/<path:filename>
@@ -433,27 +450,18 @@ def url_route_view(request, filename):
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
     log.debug('file.mime: %s', file.mime)
-    ctx = {'file': file, 'render': file.mime.split('/', 1)[0]}
+    ctx = {'file': file, 'render': file.mime.split('/', 1)[0], "static_url": file.get_url(view=use_s3())}
     log.debug('ctx: %s', ctx)
     if file.mime.startswith('image'):
         log.debug('IMAGE')
         if file.exif:
             if exposure_time := file.exif.get('ExposureTime'):
-                file.exif['ExposureTime'] = Fraction(exposure_time).limit_denominator(5000)
+                file.exif['ExposureTime'] = str(Fraction(exposure_time).limit_denominator(5000))
             if lens_model := file.exif.get('LensModel'):
                 # handle cases where lensmodel is relevant but some values redunant
                 lm_f_stripped = lens_model.replace(f"f/{file.exif.get('FNumber', '')}", "")
                 lm_model_stripped = lm_f_stripped.replace(f"{file.exif.get('Model')}", "")
                 file.exif['LensModel'] = lm_model_stripped
-        return render(request, 'embed/preview.html', context=ctx)
-    elif file.mime == 'text/plain':
-        log.debug('TEXT')
-        with open(file.file.path, 'r') as f:
-            text_preview = f.read()
-        ctx['text_preview'] = text_preview
-        file.view += 1
-        file.save()
-        ctx['render'] = 'text'
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
         log.debug('MARKDOWN')
@@ -465,16 +473,12 @@ def url_route_view(request, filename):
         return render(request, 'embed/markdown.html', context=ctx)
     elif file.mime.startswith('text/') or file.mime in code_mimes:
         log.debug('CODE')
-        with open(file.file.path, 'r') as f:
-            code = f.read()
-        lexer = get_lexer_for_mimetype(file.mime, stripall=True)
-        formatter = HtmlFormatter(style='one-dark')
-        ctx['css'] = formatter.get_style_defs()
-        ctx['html'] = highlight(code, lexer, formatter)
-        ctx['code'] = code
-        file.view += 1
-        file.save()
+        lang_map = {
+            "x-python": "python",
+            "plain": "plaintext"
+        }
         ctx['render'] = 'code'
+        ctx['highlight_language'] = f"language-{lang_map.get(file.mime.replace('text/',''), 'plaintext')}"
         return render(request, 'embed/preview.html', context=ctx)
     else:
         log.debug('UNKNOWN')
@@ -510,21 +514,3 @@ def get_auth_user(request):
         user = CustomUser.objects.filter(authorization=authorization)
         if user:
             return user[0]
-
-
-def parse_expire(request, user) -> str:
-    # Get Expiration from POST or Default
-    expr = ''
-    if request.POST.get('Expires-At') is not None:
-        expr = request.POST['Expires-At'].strip()
-    elif request.POST.get('ExpiresAt') is not None:
-        expr = request.POST['ExpiresAt'].strip()
-    elif request.headers.get('Expires-At') is not None:
-        expr = request.headers['Expires-At'].strip()
-    elif request.headers.get('ExpiresAt') is not None:
-        expr = request.headers['ExpiresAt'].strip()
-    if expr.lower() in ['0', 'never', 'none', 'null']:
-        return ''
-    if parse(expr) is not None:
-        return expr
-    return user.default_expire or ''

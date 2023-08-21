@@ -8,3 +8,4 @@
 *.sqlite3
 settings.env
 app/.env
+.ash_history
