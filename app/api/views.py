@@ -5,7 +5,6 @@ import logging
 import os
 import validators
 import functools
-from django.core.files import File
 from django.core.files.storage import default_storage
 from django.core import serializers
 from django.http import JsonResponse
@@ -13,7 +12,6 @@ from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
-from pytimeparse2 import parse
 
 from home.models import Files, FileStats
 from home.tasks import process_file_upload
