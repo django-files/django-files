@@ -49,6 +49,7 @@ class TestAuthViews(TestCase):
 
 
 class PlaywrightTest(StaticLiveServerTestCase):
+    """Test Playwright"""
     ss = 'screenshots'
     views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Settings']
     context = None
@@ -75,7 +76,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         cls.browser.close()
         cls.playwright.stop()
 
-    def test_views(self):
+    def test_browser_views(self):
         page = self.context.new_page()
         page.goto(f"{self.live_server_url}/")
         page.locator('text=Django Files')
@@ -100,6 +101,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
 
 
 class FilesTestCase(TestCase):
+    """Test Files"""
     def setUp(self):
         call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
@@ -117,9 +119,8 @@ class FilesTestCase(TestCase):
         pass
 
     def test_files(self):
-        """Test Files Object"""
         file_path = Path('../.assets/gps.jpg')
-        print(f'Testing: FILE PATH: {file_path}')
+        print(f'--- Testing: FILE PATH: {file_path}')
         with open(file_path, 'rb') as f:
             path = default_storage.save(file_path.name, f)
         file_pk = process_file_upload(path, self.user.id)
@@ -144,22 +145,22 @@ class FilesTestCase(TestCase):
         self.assertEqual(file.exif, exif_data)
         self.assertEqual(file.meta, meta_data)
         response = self.client.get(reverse('home:url-route', kwargs={'filename': file.name}), follow=True)
-        print(dir(response))
         self.assertEqual(response.status_code, 200)
-        process_stats()
         # TODO: This will test file duplication once fixed
-        # self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), 1)
+        # files = Files.objects.all(user=self.user)
+        # self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
 
-        print('Testing: API:REMOTE')
+        print('--- Testing: API:REMOTE')
         url = 'https://raw.githubusercontent.com/django-files/django-files/master/.assets/gps.jpg'
         data = {'url': url, 'Expires-At': '1y'}
         response = self.client.post(reverse('api:remote'), data, content_type='application/json', follow=True)
         print(response.json())
         self.assertEqual(response.status_code, 200)
         # TODO: This will test file duplication once fixed
-        # self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), 2)
+        # files = Files.objects.all(user=self.user)
+        # self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
 
-        print('Testing: SHORTS')
+        print('--- Testing: SHORTS')
         url = 'https://raw.githubusercontent.com/django-files/django-files/master/.assets/gps.jpg'
         body = {'url': url}
         response1 = self.client.post(reverse('home:shorten'), body, content_type='application/json', follow=True)
@@ -172,11 +173,20 @@ class FilesTestCase(TestCase):
         self.assertEqual(short.url, url)
         response2 = self.client.get(reverse('home:short', kwargs={'short': short.short}))
         self.assertEqual(response2.status_code, 302)
-        print(response2.headers)
+        print(response2.headers.get('Location'))
+        self.assertEqual(response2.headers.get('Location'), short.url)
 
-        print('Testing: Misc Tasks')
+        files = Files.objects.filter(user=self.user)
+        print(f'files count: {len(files)}')
+        shorts = ShortURLs.objects.filter(user=self.user)
+        print(f'shorts count: {len(shorts)}')
+
+        print('--- Testing: app_init')
         app_init()
+        print('--- Testing: delete_expired_files')
         delete_expired_files()
+        print('--- Testing: process_stats')
+        process_stats()
 
 
 meta_data = {
