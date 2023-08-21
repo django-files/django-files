@@ -11,6 +11,7 @@ trigger:
     - promote
 
 environment:
+  RALPH_HOST: "`i.luac.es`"
   PROD_HOST: "`f.cssnr.com`"
   DEV_HOST: "`f-dev.cssnr.com`"
   REGISTRY_GROUP: shane
@@ -36,9 +37,9 @@ steps:
     commands:
       - echo DRONE_DEPLOY_TO $${DRONE_DEPLOY_TO}
       - echo DRONE_SOURCE_BRANCH $${DRONE_SOURCE_BRANCH\/\\/\/\-}
-      - export ENV_NAME=$(if [ "$${DRONE_DEPLOY_TO}" = prod ];then echo 'prod';else echo 'dev';fi)
+      - export ENV_NAME=$(if [ "$${DRONE_DEPLOY_TO}" = prod ];then echo 'prod';if [ "$${DRONE_DEPLOY_TO}" = ralph ];then echo 'ralph';else echo 'dev';fi)
       - echo "ENV_NAME=$${ENV_NAME}" >> ./.environment
-      - export TRAEFIK_HOST=$(if [ "$${DRONE_DEPLOY_TO}" = prod ];then echo $${PROD_HOST};else echo $${DEV_HOST};fi)
+      - export TRAEFIK_HOST=$(if [ "$${DRONE_DEPLOY_TO}" = prod ];then echo $${PROD_HOST};if [ "$${DRONE_DEPLOY_TO}" = ralph ];then echo $${RALPH_HOST};else echo $${DEV_HOST};fi)
       - echo "TRAEFIK_HOST='$${TRAEFIK_HOST}'" >> ./.environment
       - echo "VERSION=$${DRONE_SOURCE_BRANCH\/\\/\/\-}" >> ./.environment
       - echo "STACK_NAME=$${ENV_NAME}_$${DRONE_REPO_OWNER}_$${DRONE_REPO_NAME}" >> ./.environment
