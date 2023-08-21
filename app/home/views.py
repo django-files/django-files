@@ -17,6 +17,8 @@ from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
 from home.util.expire import parse_expire
 from home.util.s3 import use_s3
+from api.views import auth_from_token
+
 
 from home.forms import SettingsForm
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
@@ -185,6 +187,7 @@ def uppy_view(request):
 
 @csrf_exempt
 @require_http_methods(['POST'])
+@auth_from_token
 def upload_view(request):
     """
     View  /upload/ and /api/upload
@@ -193,16 +196,13 @@ def upload_view(request):
     log.debug(request.POST)
     log.debug(request.FILES)
     try:
-        user = get_auth_user(request)
-        if not user:
-            return JsonResponse({'error': 'Invalid Authorization'}, status=401)
         if not (file := request.FILES.get('file')):
             return JsonResponse({'error': 'File Not Created'}, status=400)
         path = default_storage.save(file.name, file)
         file_pk = process_file_upload({
             'file_name': path,
             'post': request.POST,
-            'user_id': user.id,
+            'user_id': request.user.id,
             'expire': parse_expire(request),
         })
         uploaded_file = Files.objects.get(pk=file_pk)

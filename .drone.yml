@@ -44,6 +44,7 @@ steps:
       - echo "VERSION=$${DRONE_SOURCE_BRANCH\/\\/\/\-}" >> ./.environment
       - echo "STACK_NAME=$${ENV_NAME}_$${DRONE_REPO_OWNER}_$${DRONE_REPO_NAME}" >> ./.environment
       - echo  "ENV_FILE=$${CONFIGS_DIR}/services/$${DRONE_REPO_OWNER}/$${DRONE_REPO_NAME}/$${ENV_NAME}/$${CONFIG_FILE}" >> ./.environment
+      - cat ./.environment
 
   - name: "Service Configs"
     image: alpine/git
