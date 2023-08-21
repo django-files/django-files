@@ -176,12 +176,7 @@ def uppy_view(request):
     if not (file := request.FILES.get('file')):
         return HttpResponse(status=400)
     path = default_storage.save(file.name, file)
-    process_file_upload.delay({
-            'file_name': path,
-            'post': request.POST,
-            'user_id': request.user.id,
-            'expire': parse_expire(request),
-        })
+    process_file_upload.delay(path, request.user.id)
     return HttpResponse()
 
 
@@ -199,12 +194,7 @@ def upload_view(request):
         if not (file := request.FILES.get('file')):
             return JsonResponse({'error': 'File Not Created'}, status=400)
         path = default_storage.save(file.name, file)
-        file_pk = process_file_upload({
-            'file_name': path,
-            'post': request.POST,
-            'user_id': request.user.id,
-            'expire': parse_expire(request),
-        })
+        file_pk = process_file_upload(path, request.user.id)
         uploaded_file = Files.objects.get(pk=file_pk)
         data = {
             'files': [uploaded_file.preview_url()],

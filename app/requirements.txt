@@ -16,6 +16,7 @@ markdown
 mysqlclient
 Pillow
 psycopg[binary]
+pytest-playwright
 python-decouple
 python-dotenv
 pytimeparse2
