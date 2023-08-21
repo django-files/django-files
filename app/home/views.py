@@ -185,9 +185,9 @@ def uppy_view(request):
     return HttpResponse()
 
 
-@auth_from_token
 @csrf_exempt
 @require_http_methods(['POST'])
+@auth_from_token
 def upload_view(request):
     """
     View  /upload/ and /api/upload
