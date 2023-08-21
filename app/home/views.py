@@ -18,7 +18,6 @@ from fractions import Fraction
 from home.util.expire import parse_expire
 from home.util.s3 import use_s3
 
-
 from home.forms import SettingsForm
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
 from home.tasks import clear_shorts_cache, process_file_upload, process_stats
@@ -197,21 +196,22 @@ def upload_view(request):
         user = get_auth_user(request)
         if not user:
             return JsonResponse({'error': 'Invalid Authorization'}, status=401)
-        file = Files.objects.create(
-            file=request.FILES.get('file'),
-            user=user,
-            info=request.POST.get('info', ''),
-            expr=parse_expire(request, user),
-        )
-        if not file.file:
+        if not (file := request.FILES.get('file')):
             return JsonResponse({'error': 'File Not Created'}, status=400)
-        process_file_upload.delay(file.pk)
+        path = default_storage.save(file.name, file)
+        file_pk = process_file_upload({
+            'file_name': path,
+            'post': request.POST,
+            'user_id': user.id,
+            'expire': parse_expire(request),
+        })
+        uploaded_file = Files.objects.get(pk=file_pk)
         data = {
-            'files': [file.preview_url()],
-            'url': file.preview_url(),
-            'raw': file.get_url(),
-            'name': file.name,
-            'size': file.size,
+            'files': [uploaded_file.preview_url()],
+            'url': uploaded_file.preview_url(),
+            'raw': uploaded_file.get_url(),
+            'name': uploaded_file.name,
+            'size': uploaded_file.size,
         }
         return JsonResponse(data)
     except Exception as error:
