@@ -1,8 +1,11 @@
+import os
 from django.test import TestCase
 # from pathlib import Path
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.management import call_command
 # from django.core.files import File
 from django.urls import reverse
+from playwright.sync_api import sync_playwright
 
 from oauth.models import CustomUser
 from home.models import ShortURLs
@@ -41,15 +44,62 @@ class TestAuthViews(TestCase):
             response = self.client.get(reverse(view))
             self.assertEqual(response.status_code, status)
 
-# this needs to be reworked for new file processing setup
-# class FilesTestCase(TestCase):
-#     def setUp(self):
-#         call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
-#         print('Creating Test User: testuser')
-#         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
-#         print(self.user.authorization)
-#         login = self.client.login(username='testuser', password='12345')
-#         print(login)
+
+class MyViewTests(StaticLiveServerTestCase):
+    ss = 'ss'
+    views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Settings']
+    context = None
+    browser = None
+    playwright = None
+
+    @classmethod
+    def setUpClass(cls):
+        # app_init()
+        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
+        if not os.path.isdir(cls.ss):
+            os.mkdir(cls.ss)
+        print('Creating Test User: testuser')
+        cls.user = CustomUser.objects.create_user(username='testuser', password='12345', email='abuse@aol.com')
+        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        super().setUpClass()
+        cls.playwright = sync_playwright().start()
+        cls.browser = cls.playwright.chromium.launch()
+        cls.context = cls.browser.new_context(color_scheme='dark')
+        # storage = cls.context.storage_state(path="state.json")
+        # cls.context = cls.context.new_context(storage_state="state.json")
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        cls.browser.close()
+        cls.playwright.stop()
+
+    def test_views(self):
+        page = self.context.new_page()
+        page.goto(f"{self.live_server_url}/")
+        page.locator('text=Django Files')
+        page.screenshot(path=f'{self.ss}/Login.png')
+        page.fill('[name=username]', 'testuser')
+        page.fill('[name=password]', '12345')
+        page.click('#login-button')
+
+        page.wait_for_selector('text=Home', timeout=3000)
+        page.screenshot(path=f'{self.ss}/Home.png')
+
+        for view in self.views:
+            page.locator(f'text={view}').first.click()
+            page.wait_for_selector(f'text={view}', timeout=3000)
+            page.screenshot(path=f'{self.ss}/{view}.png')
+
+
+class FilesTestCase(TestCase):
+    def setUp(self):
+        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
+        print('Creating Test User: testuser')
+        self.user = CustomUser.objects.create_user(username='testuser', password='12345')
+        print(self.user.authorization)
+        login = self.client.login(username='testuser', password='12345')
+        print(login)
 
 #     def test_files(self):
 #         """Test Files Object"""
@@ -60,7 +110,6 @@ class TestAuthViews(TestCase):
 #                 file=File(f, name=path.name),
 #                 user=self.user,
 #             )
-
 #         print(file)
 #         file.save()
 #         process_file_upload(file.pk)
