@@ -1,7 +1,9 @@
 import os
 # import re
+# import shutil
 from django.test import TestCase
 from pathlib import Path
+from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.files.storage import default_storage
 from django.core.management import call_command
@@ -104,11 +106,20 @@ class FilesTestCase(TestCase):
         print(self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
         print(login)
+        print(f'settings.MEDIA_ROOT: {settings.MEDIA_ROOT}')
+        # if os.path.isdir(settings.MEDIA_ROOT):
+        #     print(f'Removing: {settings.MEDIA_ROOT}')
+        #     shutil.rmtree(settings.MEDIA_ROOT)
+        # else:
+        #     os.mkdir(settings.MEDIA_ROOT)
+
+    def tearDown(self):
+        pass
 
     def test_files(self):
         """Test Files Object"""
         file_path = Path('../.assets/gps.jpg')
-        print(f'Creating Files Object from file: {file_path}')
+        print(f'Testing: FILE PATH: {file_path}')
         with open(file_path, 'rb') as f:
             path = default_storage.save(file_path.name, f)
         file_pk = process_file_upload(path, self.user.id)
@@ -122,7 +133,7 @@ class FilesTestCase(TestCase):
         # file.save()
         # process_file_upload((path, self.user.id))
         file = Files.objects.get(pk=file_pk)
-        print(file.file.path)
+        print(f'file.file.path: {file.file.path}')
         # TODO: Fix File Processing so it does not create 2 file objects
         # self.assertEqual(file.get_url(), 'https://example.com/r/gps.jpg')
         # self.assertEqual(file.preview_url(), 'https://example.com/u/gps.jpg')
@@ -136,19 +147,19 @@ class FilesTestCase(TestCase):
         print(dir(response))
         self.assertEqual(response.status_code, 200)
         process_stats()
+        # TODO: This will test file duplication once fixed
+        # self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), 1)
 
-    def test_api(self):
-        """Test API"""
-        print('Testing view "api:remote" for code "200"')
+        print('Testing: API:REMOTE')
         url = 'https://raw.githubusercontent.com/django-files/django-files/master/.assets/gps.jpg'
         data = {'url': url, 'Expires-At': '1y'}
         response = self.client.post(reverse('api:remote'), data, content_type='application/json', follow=True)
         print(response.json())
         self.assertEqual(response.status_code, 200)
+        # TODO: This will test file duplication once fixed
+        # self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), 2)
 
-    def test_shorts(self):
-        """Test Tasks"""
-        print('Testing Shorts')
+        print('Testing: SHORTS')
         url = 'https://raw.githubusercontent.com/django-files/django-files/master/.assets/gps.jpg'
         body = {'url': url}
         response1 = self.client.post(reverse('home:shorten'), body, content_type='application/json', follow=True)
@@ -163,10 +174,7 @@ class FilesTestCase(TestCase):
         self.assertEqual(response2.status_code, 302)
         print(response2.headers)
 
-    @staticmethod
-    def test_tasks():
-        """Test Tasks"""
-        print('Testing Tasks')
+        print('Testing: Misc Tasks')
         app_init()
         delete_expired_files()
 

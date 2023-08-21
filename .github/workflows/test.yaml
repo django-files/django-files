@@ -51,7 +51,7 @@ jobs:
       - name: "Test & Coverage"
         working-directory: app
         run: |
-          coverage run manage.py test --keepdb
+          coverage run manage.py test --verbosity 2 --keepdb
           coverage xml
           coverage report
 
