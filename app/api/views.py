@@ -5,17 +5,17 @@ import logging
 import os
 import validators
 import functools
-from django.core.files import File
+from django.core.files.storage import default_storage
 from django.core import serializers
 from django.http import JsonResponse
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
-from pytimeparse2 import parse
 
 from home.models import Files, FileStats
 from home.tasks import process_file_upload
+from home.util.expire import parse_expire
 from oauth.models import CustomUser
 
 log = logging.getLogger('app')
@@ -38,8 +38,8 @@ def auth_from_token(view):
     return wrapper
 
 
-@auth_from_token
 @require_http_methods(['OPTIONS', 'GET'])
+@auth_from_token
 @csrf_exempt
 def api_view(request):
     """
@@ -49,8 +49,8 @@ def api_view(request):
     return JsonResponse({'status': 'online', 'user': request.user.id})
 
 
-@auth_from_token
 @require_http_methods(['OPTIONS', 'GET'])
+@auth_from_token
 @cache_control(no_cache=True)
 @cache_page(cache_seconds, key_prefix="stats")
 @vary_on_headers('Authorization')
@@ -69,8 +69,8 @@ def stats_view(request):
     return JsonResponse(json.loads(data), safe=False)
 
 
-@auth_from_token
 @require_http_methods(['OPTIONS', 'GET'])
+@auth_from_token
 @cache_control(no_cache=True)
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers('Authorization')
@@ -91,9 +91,9 @@ def recent_view(request):
     return JsonResponse(data, safe=False, status=200)
 
 
-@auth_from_token
-@require_http_methods(['OPTIONS', 'POST'])
 @csrf_exempt
+@require_http_methods(['OPTIONS', 'POST'])
+@auth_from_token
 def remote_view(request):
     """
     View  /api/remote/
@@ -116,32 +116,40 @@ def remote_view(request):
     if not r.is_success:
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
-    f = File(io.BytesIO(r.content), name=os.path.basename(url))
-    file = Files.objects.create(
-        file=f,
-        user=request.user,
-        expr=parse_expire(request, request.user),
-    )
-    process_file_upload.delay(file.pk)
-    log.debug(file)
-    log.debug(file.preview_url())
-    response = {'url': f'{file.preview_url()}'}
+    # f = File(io.BytesIO(r.content), name=os.path.basename(url))
+    path = default_storage.save(os.path.basename(url), io.BytesIO(r.content))
+    file_pk = process_file_upload({
+        'file_name': path,
+        'post': request.POST,
+        'user_id': request.user.id,
+        'expire': parse_expire(request),
+    })
+    uploaded_file = Files.objects.get(pk=file_pk)
+    # file = Files.objects.create(
+    #     file=f,
+    #     user=request.user,
+    #     expr=parse_expire(request, request.user),
+    # )
+    # process_file_upload.delay(file.pk)
+    # log.debug(file)
+    log.debug(uploaded_file.preview_url())
+    response = {'url': f'{uploaded_file.preview_url()}'}
     return JsonResponse(response)
 
 
-def parse_expire(request, user) -> str:
-    # Get Expiration from POST or Default
-    expr = ''
-    if request.POST.get('Expires-At') is not None:
-        expr = request.POST['Expires-At'].strip()
-    elif request.POST.get('ExpiresAt') is not None:
-        expr = request.POST['ExpiresAt'].strip()
-    elif request.headers.get('Expires-At') is not None:
-        expr = request.headers['Expires-At'].strip()
-    elif request.headers.get('ExpiresAt') is not None:
-        expr = request.headers['ExpiresAt'].strip()
-    if expr.lower() in ['0', 'never', 'none', 'null']:
-        return ''
-    if parse(expr) is not None:
-        return expr
-    return user.default_expire or ''
+# def parse_expire(request, user) -> str:
+#     # Get Expiration from POST or Default
+#     expr = ''
+#     if request.POST.get('Expires-At') is not None:
+#         expr = request.POST['Expires-At'].strip()
+#     elif request.POST.get('ExpiresAt') is not None:
+#         expr = request.POST['ExpiresAt'].strip()
+#     elif request.headers.get('Expires-At') is not None:
+#         expr = request.headers['Expires-At'].strip()
+#     elif request.headers.get('ExpiresAt') is not None:
+#         expr = request.headers['ExpiresAt'].strip()
+#     if expr.lower() in ['0', 'never', 'none', 'null']:
+#         return ''
+#     if parse(expr) is not None:
+#         return expr
+#     return user.default_expire or ''
