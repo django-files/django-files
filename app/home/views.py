@@ -203,7 +203,7 @@ def upload_view(request):
         file_pk = process_file_upload({
             'file_name': path,
             'post': request.POST,
-            'user_id': request.user.id,
+            'user_id': user.id,
             'expire': parse_expire(request),
         })
         uploaded_file = Files.objects.get(pk=file_pk)
