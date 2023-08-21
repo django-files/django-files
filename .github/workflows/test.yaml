@@ -55,7 +55,7 @@ jobs:
           coverage report
 
       - name: "Archive Screenshots"
-      - uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3
         with:
           name: screenshots
           path: app/screenshots/
