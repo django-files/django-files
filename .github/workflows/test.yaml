@@ -53,8 +53,6 @@ jobs:
           coverage run manage.py test --keepdb
           coverage xml
           coverage report
-#          export CODACY_PROJECT_TOKEN=${{ secrets.CODACY_PROJECT_TOKEN }}
-#          bash <(curl -Ls https://coverage.codacy.com/get.sh) report
 
       - name: "Archive Screenshots"
       - uses: actions/upload-artifact@v3

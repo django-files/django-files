@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
-from home.util.expire import parse_expire
+# from home.util.expire import parse_expire
 from home.util.s3 import use_s3
 from api.views import auth_from_token
 

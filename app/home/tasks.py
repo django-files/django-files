@@ -16,7 +16,7 @@ from django.utils import timezone
 from pytimeparse2 import parse
 
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
-from home.util.expire import parse_expire
+# from home.util.expire import parse_expire
 from home.util.processors import ImageProcessor
 from home.util.s3 import use_s3
 from oauth.models import CustomUser

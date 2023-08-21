@@ -1,5 +1,5 @@
 import os
-import re
+# import re
 from django.test import TestCase
 from pathlib import Path
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
