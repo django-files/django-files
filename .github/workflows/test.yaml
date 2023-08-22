@@ -68,7 +68,7 @@ jobs:
           host: ${{ secrets.ARTIFACTS_HOST }}
           user: ${{ secrets.RSYNC_USER }}
           pass: ${{ secrets.RSYNC_PASS }}
-          port: "2222"
+          port: ${{ secrets.RSYNC_PORT }}
           base: "/static"
           webhost: "https://artifacts.hosted-domains.com"
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
