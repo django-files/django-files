@@ -61,6 +61,18 @@ jobs:
           name: screenshots
           path: app/screenshots/
 
+      - name: "Push Screenshots"
+        uses: hosted-domains/gh-push-artifacts@master
+        with:
+          path: "app/screenshots/"
+          host: ${{ secrets.ARTIFACTS_HOST }}
+          user: ${{ secrets.RSYNC_USER }}
+          pass: ${{ secrets.RSYNC_PASS }}
+          port: "2222"
+          base: "/static"
+          webhost: "https://artifacts.hosted-domains.com"
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+
       - name: "Codacy Coverage"
         uses: codacy/codacy-coverage-reporter-action@v1
         with:
