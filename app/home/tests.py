@@ -141,20 +141,28 @@ class PlaywrightTest(StaticLiveServerTestCase):
             page.locator(f'text={view}').first.click()
             page.wait_for_selector(f'text={view}', timeout=3000)
             page.screenshot(path=f'{self.screenshots}/{view}.png')
+            if view == 'Files':
+                page.locator('.delete-file-btn').first.click()
+                delete_btn = page.locator('#confirm-delete-hook-btn')
+                page.wait_for_timeout(timeout=500)
+                page.screenshot(path=f'{self.screenshots}/{view}-delete-click.png')
+                delete_btn.click()
+                page.wait_for_timeout(timeout=500)
+                page.screenshot(path=f'{self.screenshots}/{view}-delete-deleted.png')
             if view == 'Settings':
                 page.locator('#remove_exif').click()
                 page.locator('#remove_exif_geo').click()
                 page.locator('#save-settings').click()
-                page.wait_for_timeout(timeout=1000)
+                page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{view}-save-settings.png')
                 page.locator('#navbarDropdown').click()
                 page.locator('#flush-cache').click()
-                page.wait_for_timeout(timeout=1000)
+                page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{view}-flush-cache.png')
             if view == self.views[-1]:
                 page.locator('#navbarDropdown').click()
                 page.locator('.log-out').click()
-                page.wait_for_timeout(timeout=1000)
+                page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{view}-logout.png')
 
 
