@@ -5,7 +5,7 @@ import logging
 import os
 import validators
 import functools
-from django.core.files.storage import default_storage, storages
+from django.core.files.storage import storages
 from django.core import serializers
 from django.http import JsonResponse
 from django.shortcuts import reverse
@@ -63,9 +63,7 @@ def upload_view(request):
         if not (file := request.FILES.get('file')):
             return JsonResponse({'error': 'File Not Created'}, status=400)
         # TODO: Start DEBUGGING HERE
-        from django.core.files import File  # file
         # https://docs.djangoproject.com/en/4.2/ref/files/storage/#django.core.files.storage.Storage.save
-        # name != path
         storage = storages['temp']
         file_name = storage.save(file.name, file)
         file_pk = process_file_upload(file_name, request.user.id)

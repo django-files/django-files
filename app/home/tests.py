@@ -5,7 +5,7 @@ from django.test import TestCase
 from pathlib import Path
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-from django.core.files.storage import default_storage, storages
+from django.core.files.storage import storages
 from django.core.management import call_command
 # from django.core.files import File
 from django.urls import reverse
