@@ -13,6 +13,7 @@ from django.core.files import File
 # from django.core.cache.utils import make_template_fragment_key
 from django.template.loader import render_to_string
 from django.utils import timezone
+from pathlib import Path
 from pytimeparse2 import parse
 
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
@@ -21,7 +22,7 @@ from home.util.processors import ImageProcessor
 from home.util.s3 import use_s3
 from oauth.models import CustomUser
 
-log = logging.getLogger('celery')
+log = logging.getLogger('app')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 20, 'countdown': 3})
@@ -91,15 +92,22 @@ def process_file_upload(file_name: str, user_id: int, **kwargs) -> int:
     :return: Integer: Files Object PK
     """
     log.info('-'*40)
-    log.info('process_file_upload: %s', file_name)
+    log.info('process_file_upload: file_name: %s', file_name)
+    user = CustomUser.objects.get(id=user_id)
+    log.info('user: %s', user)
+    # https://docs.python.org/3/library/pathlib.html
+    # path = Path(file_name)
+    path = Path(os.path.join(settings.TEMP_ROOT, file_name))
+    log.info('path.resolve(): %s', path.resolve())
     # TODO: Because this uses `default_storage` it is already a Django File Object, File #1
-    file_path = settings.MEDIA_ROOT + '/' + file_name
-    log.info(file_path)
-    with open(file_path, mode='rb') as f:
-        if not f:
-            raise ValueError(f'404: File Not Found: {file_name}')
-        user = CustomUser.objects.get(id=user_id)
+    # https://docs.djangoproject.com/en/4.2/ref/files/storage/#django.core.files.storage.storages
+    # file_path = settings.MEDIA_ROOT + '/' + file_name
+
+    if not path.is_file():
+        raise ValueError(f'404: File Not Found: {file_name}')
+    with path.open(mode='rb') as f:
         # TODO: This now creates a second Django File Object, File #2
+        # https://docs.djangoproject.com/en/4.2/ref/files/file/
         file = Files.objects.create(file=File(f, name=file_name), user=user)
     file.name = os.path.basename(file.file.name)
     log.info('file.name: %s', file.name)

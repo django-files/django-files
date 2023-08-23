@@ -1,5 +1,19 @@
 # TODO
 
+## 0.1.1
+
+### Storge Issue Outline
+
+1.  In its current setup, `default_storage.save()` creates the file in the media directory on ~69 [views.py](app/api/views.py)
+
+For this first issue, we probably need to define a temporary storage, 
+that the task can read into memory, save to media storage, then cleanup.
+ 
+2.  Then a second file is created on ~109 [tasks.py](app%2Fhome%2Ftasks.py)
+
+If the first issue uses an isolated storage, while we would be writing the file to disk twice, 
+it should fix all issues with this part of the storage problem.
+
 ## Issues
 - [ ] Users: Fix Local User to allow Discord Webhook
 - [ ] Overhaul Image Processing Tasks in `util`
