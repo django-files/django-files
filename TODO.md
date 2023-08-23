@@ -12,8 +12,6 @@
 -   Expiration has been disabled and not working
 -   Info field has been disabled and should be reworked with expiration
 
-### Storage Status
-
 ## Issues
 - [ ] Users: Fix Local User to allow Discord Webhook
 - [ ] Overhaul Image Processing Tasks in `util`
