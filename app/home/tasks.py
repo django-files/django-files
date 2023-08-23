@@ -90,6 +90,8 @@ def process_file_upload(file_name: str, user_id: int, **kwargs) -> int:
     :param user_id: Integer: user ID
     :param kwargs: Not Implemented
     :return: Integer: Files Object PK
+    TODO: This is no longer a shared_task or being used as one
+    TODO: Make this accept the in-memory File Object since its not a Task
     """
     log.info('-'*40)
     log.info('process_file_upload: file_name: %s', file_name)

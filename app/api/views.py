@@ -13,6 +13,7 @@ from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from typing import IO, Optional
 
 from home.models import Files, FileStats, SiteSettings, ShortURLs
 from home.tasks import process_file_upload
@@ -60,20 +61,15 @@ def upload_view(request):
     log.debug(request.POST)
     log.debug(request.FILES)
     try:
-        if not (file := request.FILES.get('file')):
-            return JsonResponse({'error': 'File Not Created'}, status=400)
-        # TODO: Start DEBUGGING HERE
-        # https://docs.djangoproject.com/en/4.2/ref/files/storage/#django.core.files.storage.Storage.save
-        storage = storages['temp']
-        file_name = storage.save(file.name, file)
-        file_pk = process_file_upload(file_name, request.user.id)
-        uploaded_file = Files.objects.get(pk=file_pk)
+        if not (f := request.FILES.get('file')):
+            return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
+        file = process_file(f.name, f, request.user.id)
         data = {
-            'files': [uploaded_file.preview_url()],
-            'url': uploaded_file.preview_url(),
-            'raw': uploaded_file.get_url(),
-            'name': uploaded_file.name,
-            'size': uploaded_file.size,
+            'files': [file.preview_url()],
+            'url': file.preview_url(),
+            'raw': file.get_url(),
+            'name': file.name,
+            'size': file.size,
         }
         return JsonResponse(data)
     except Exception as error:
@@ -201,12 +197,12 @@ def remote_view(request):
     if not r.is_success:
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
-    # f = File(io.BytesIO(r.content), name=os.path.basename(url))
-    storage = storages['temp']
-    file_name = storage.save(os.path.basename(url), io.BytesIO(r.content))
-    # path = default_storage.save(os.path.basename(url), io.BytesIO(r.content))
-    file_pk = process_file_upload(file_name, request.user.id)
-    uploaded_file = Files.objects.get(pk=file_pk)
+    # # f = File(io.BytesIO(r.content), name=os.path.basename(url))
+    # file_name = storages['temp'].save(os.path.basename(url), io.BytesIO(r.content))
+    # # path = default_storage.save(os.path.basename(url), io.BytesIO(r.content))
+    # file_pk = process_file_upload(file_name, request.user.id)
+    # uploaded_file = Files.objects.get(pk=file_pk)
+
     # file = Files.objects.create(
     #     file=f,
     #     user=request.user,
@@ -214,15 +210,37 @@ def remote_view(request):
     # )
     # process_file_upload.delay(file.pk)
     # log.debug(file)
-    log.debug(uploaded_file.preview_url())
-    response = {'url': f'{uploaded_file.preview_url()}'}
+
+    file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id)
+    response = {'url': f'{file.preview_url()}'}
+    log.debug('url: %s', url)
     return JsonResponse(response)
 
 
-def gen_short(vanity, length=4):
+def process_file(name: str, f: IO, user_id: int) -> Files:
+    """
+    Reusable Function to Process a File Upload
+    https://docs.djangoproject.com/en/4.2/ref/files/storage/#django.core.files.storage.Storage.save
+    :param name: String: name of the file
+    :param f: File Object: The file to upload
+    :param user_id: Integer: The owners User ID
+    :return: Files: The created Files object
+    TODO: This is not necessary now that the process_file_upload Task, is not a Task
+    """
+    file_name = storages['temp'].save(name, f)
+    try:
+        file_pk = process_file_upload(file_name, user_id)
+        return Files.objects.get(pk=file_pk)
+    finally:
+        storages['temp'].delete(file_name)
+
+
+def gen_short(vanity: Optional[str] = None, length: int = 4) -> str:
     if vanity:
-        # TODO: check that vanity does not exist
-        return vanity
+        if not ShortURLs.objects.filter(short=vanity):
+            return vanity
+        else:
+            raise ValueError(f'Vanity Taken: {vanity}')
     rand = rand_string(length=length)
     while ShortURLs.objects.filter(short=rand):
         rand = rand_string(length=length)
