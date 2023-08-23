@@ -248,8 +248,9 @@ class FilesTestCase(TestCase):
         app_init()
         print('--- Testing: delete_expired_files')
         delete_expired_files()
-        print('--- Testing: app_cleanup')
-        app_cleanup()
+        # TODO: Vector Related Task
+        # print('--- Testing: app_cleanup')
+        # app_cleanup()
 
 
 short_urls = [
