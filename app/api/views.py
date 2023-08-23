@@ -12,6 +12,7 @@ from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from pytimeparse2 import parse
 from typing import Optional
 
 from home.models import Files, FileStats, SiteSettings, ShortURLs
@@ -62,7 +63,8 @@ def upload_view(request):
     try:
         if not (f := request.FILES.get('file')):
             return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
-        file = process_file(f.name, f, request.user.id)
+        kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
+        file = process_file(f.name, f, request.user.id, **kwargs)
         data = {
             'files': [file.preview_url()],
             'url': file.preview_url(),
@@ -196,7 +198,8 @@ def remote_view(request):
     if not r.is_success:
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
-    file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id)
+    kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
+    file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id, **kwargs)
     response = {'url': f'{file.preview_url()}'}
     log.debug('url: %s', url)
     return JsonResponse(response)
@@ -213,3 +216,21 @@ def gen_short(vanity: Optional[str] = None, length: int = 4) -> str:
         rand = rand_string(length=length)
         continue
     return rand
+
+
+def parse_expire(request) -> str:
+    # Get Expiration from POST or Default
+    expr = ''
+    if request.POST.get('Expires-At') is not None:
+        expr = request.POST['Expires-At'].strip()
+    elif request.POST.get('ExpiresAt') is not None:
+        expr = request.POST['ExpiresAt'].strip()
+    elif request.headers.get('Expires-At') is not None:
+        expr = request.headers['Expires-At'].strip()
+    elif request.headers.get('ExpiresAt') is not None:
+        expr = request.headers['ExpiresAt'].strip()
+    if expr.lower() in ['0', 'never', 'none', 'null']:
+        return ''
+    if parse(expr) is not None:
+        return expr
+    return request.user.default_expire or ''

@@ -122,9 +122,9 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.goto(f"{self.live_server_url}/")
         page.locator('text=Django Files')
         page.wait_for_timeout(timeout=1000)
-        page.screenshot(path=f'{self.screenshots}/Login.png')
         page.fill('[name=username]', 'testuser')
         page.fill('[name=password]', '12345')
+        page.screenshot(path=f'{self.screenshots}/Login.png')
         page.click('#login-button')
 
         page.wait_for_selector('text=Home', timeout=3000)

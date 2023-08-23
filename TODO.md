@@ -4,13 +4,22 @@
 
 ### ToDoS
 
--   Task profess_file_upload needs to be reworked as a function to accept in-memory File Objects
--   Function profess_file is a temporary function until the above task is done
+-   Rework the `get_url` function in the Files Model
+-   Look into `utils.s3` and `utils.storage` files
+-   Add tests for `/raw/` and other S3 functions
 
 ### Known Bugs
 
 -   Expiration has been disabled and not working
 -   Info field has been disabled and should be reworked with expiration
+
+## Testing
+
+-   Test API endpoint with token
+-   Test Settings Form with Playwright
+-   Test Flush Cache and Logout with Playwright
+-   Test Vector Tasks
+-   Test Oauth Flow
 
 ## Issues
 - [ ] Users: Fix Local User to allow Discord Webhook

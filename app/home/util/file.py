@@ -7,7 +7,7 @@ from django.core.files import File
 from typing import IO
 
 from home.models import Files
-from home.util.processors import ImageProcessor
+from home.util.image import ImageProcessor
 from home.util.s3 import use_s3
 from home.tasks import send_discord_message
 from oauth.models import CustomUser
