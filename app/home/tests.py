@@ -136,6 +136,11 @@ class FilesTestCase(TestCase):
         self.assertEqual(file.mime, 'image/jpeg')
         self.assertEqual(file.size, 3518)
         self.assertEqual(file.get_size(), '3.4 KiB')
+        print('-'*40)
+        print(file.exif)
+        print('-'*40)
+        print(exif_data)
+        print('-'*40)
         self.assertEqual(file.exif, exif_data)
         self.assertEqual(file.meta, meta_data)
         response = self.client.get(reverse('home:url-route', kwargs={'filename': file.name}), follow=True)
@@ -195,14 +200,14 @@ exif_data = {
     "ImageWidth": "4032",
     "ImageLength": "3024",
     "GPSInfo": {
-        "1": "N",
-        "2": [44.0, 30.0, 15.1703],
-        "3": "W",
-        "4": [116.0, 2.0, 1.1939],
-        "5": "\u0000",
-        "6": 1412.065,
-        "7": [22.0, 17.0, 38.0],
-        "29": "2022:12:21",
+        1: "N",
+        2: (44.0, 30.0, 15.1703),
+        3: "W",
+        4: (116.0, 2.0, 1.1939),
+        5: "\x00",
+        6: 1412.065,
+        7: (22.0, 17.0, 38.0),
+        29: "2022:12:21",
     },
     "ResolutionUnit": "2",
     "ExifOffset": "230",
@@ -214,7 +219,7 @@ exif_data = {
     "XResolution": "72.0",
     "YResolution": "72.0",
     "ExifVersion": "0220",
-    "ComponentsConfiguration": "\u0001\u0002\u0003\u0000",
+    "ComponentsConfiguration": "\x01\x02\x03\x00",
     "ShutterSpeedValue": "8.415",
     "DateTimeOriginal": "2022:12:21 15:18:20",
     "DateTimeDigitized": "2022:12:21 15:18:20",
@@ -235,7 +240,8 @@ exif_data = {
     "ExifImageHeight": "3024",
     "SensingMethod": "1",
     "ExposureTime": "0.0029239766081871343",
-    "FNumber": "2.4", "SceneType": "\u0001",
+    "FNumber": "2.4",
+    "SceneType": "\x01",
     "ExposureProgram": "2",
     "ISOSpeedRatings": "50",
     "ExposureMode": "0",
