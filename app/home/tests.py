@@ -13,7 +13,7 @@ from playwright.sync_api import sync_playwright
 
 from api.views import gen_short
 from home.models import Files, ShortURLs, SiteSettings
-from home.tasks import app_cleanup, delete_expired_files, app_init, process_stats
+from home.tasks import delete_expired_files, app_init, process_stats
 from home.util.file import process_file
 from oauth.models import CustomUser
 
@@ -248,9 +248,6 @@ class FilesTestCase(TestCase):
         app_init()
         print('--- Testing: delete_expired_files')
         delete_expired_files()
-        # TODO: Vector Related Task
-        # print('--- Testing: app_cleanup')
-        # app_cleanup()
 
 
 short_urls = [
