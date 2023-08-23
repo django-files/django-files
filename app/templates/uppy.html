@@ -59,7 +59,7 @@
             browserBackButtonClose: false
         })
         .use(Uppy.XHRUpload, {
-            endpoint: "{% url 'home:uppy' %}",
+            endpoint: "{% url 'api:upload' %}",
             headers: {
                 "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
             },

@@ -6,7 +6,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
-from django.core.files.storage import default_storage
 from django.template.loader import render_to_string
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
@@ -17,7 +16,7 @@ from home.util.s3 import use_s3
 
 from home.forms import SettingsForm
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
-from home.tasks import clear_shorts_cache, process_file_upload, process_stats
+from home.tasks import clear_shorts_cache, process_stats
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -158,18 +157,7 @@ def uppy_view(request):
     """
     View  /uppy/
     """
-    if request.method in ['GET', 'HEAD']:
-        return render(request, 'uppy.html')
-
-    log.debug(request.headers)
-    log.debug(request.POST)
-    log.debug(request.FILES)
-
-    if not (file := request.FILES.get('file')):
-        return HttpResponse(status=400)
-    path = default_storage.save(file.name, file)
-    process_file_upload.delay(path, request.user.id)
-    return HttpResponse()
+    return render(request, 'uppy.html')
 
 
 def shorten_short_view(request, short):
@@ -385,14 +373,3 @@ def google_verify(request: HttpRequest) -> bool:
     except Exception as error:
         log.exception(error)
         return False
-
-
-# def get_auth_user(request):
-#     # TODO: Use function decorator from api/views.py
-#     if request.user.is_authenticated:
-#         return request.user
-#     authorization = request.headers.get('Authorization') or request.headers.get('Token')
-#     if authorization:
-#         user = CustomUser.objects.filter(authorization=authorization)
-#         if user:
-#             return user[0]
