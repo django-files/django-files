@@ -7,7 +7,7 @@ _log_file="/tmp/django-files.log"
 _cwd=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Configure Script Variables
-_upload_url="{{ site_url }}{% url 'home:api-upload' %}"
+_upload_url="{{ site_url }}{% url 'api:upload' %}"
 _token="{{ token }}"
 #_success="${_cwd}/success.ogg"  # Unset to not use
 #_failure="${_cwd}/error.ogg"  # Unset to not use

@@ -1,8 +1,6 @@
 import httpx
-import json
 import logging
 import markdown
-import validators
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -15,15 +13,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
-# from home.util.expire import parse_expire
 from home.util.s3 import use_s3
 from api.views import auth_from_token
-
 
 from home.forms import SettingsForm
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
 from home.tasks import clear_shorts_cache, process_file_upload, process_stats
-from oauth.models import CustomUser, rand_string
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -117,7 +112,6 @@ def settings_view(request):
     View  /settings/
     """
     log.debug('settings_view: %s', request.method)
-    # site_settings = SiteSettings.objects.get(pk=1)
     site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
     if request.method in ['GET', 'HEAD']:
         webhooks = Webhooks.objects.get_request(request)
@@ -137,7 +131,6 @@ def settings_view(request):
 
     if request.user.default_color != form.cleaned_data['default_color']:
         request.user.default_color = form.cleaned_data['default_color']
-        # data['reload'] = True
 
     if request.user.nav_color_1 != form.cleaned_data['nav_color_1']:
         request.user.nav_color_1 = form.cleaned_data['nav_color_1']
@@ -180,91 +173,6 @@ def uppy_view(request):
     return HttpResponse()
 
 
-@csrf_exempt
-@require_http_methods(['POST'])
-@auth_from_token
-def upload_view(request):
-    """
-    View  /upload/ and /api/upload
-    """
-    log.debug(request.headers)
-    log.debug(request.POST)
-    log.debug(request.FILES)
-    try:
-        if not (file := request.FILES.get('file')):
-            return JsonResponse({'error': 'File Not Created'}, status=400)
-        path = default_storage.save(file.name, file)
-        file_pk = process_file_upload(path, request.user.id)
-        uploaded_file = Files.objects.get(pk=file_pk)
-        data = {
-            'files': [uploaded_file.preview_url()],
-            'url': uploaded_file.preview_url(),
-            'raw': uploaded_file.get_url(),
-            'name': uploaded_file.name,
-            'size': uploaded_file.size,
-        }
-        return JsonResponse(data)
-    except Exception as error:
-        log.exception(error)
-        return JsonResponse({'error': str(error)}, status=500)
-
-
-@csrf_exempt
-@require_http_methods(['POST'])
-def shorten_view(request):
-    """
-    View  /shorten/ and /api/shorten
-    """
-    body = request.body.decode()
-    log.debug(body)
-    log.debug('-'*40)
-    log.debug(request.headers)
-    log.debug('-'*40)
-    log.debug(request.POST)
-    try:
-        user = get_auth_user(request)
-        if not user:
-            return JsonResponse({'error': 'Invalid Authorization'}, status=401)
-
-        url = request.headers.get('url')
-        vanity = request.headers.get('vanity')
-        max_views = request.headers.get('max-views')
-        if not url:
-            try:
-                data = json.loads(body)
-                log.debug('data: %s', data)
-                url = data.get('url', url)
-                vanity = data.get('vanity', vanity)
-                max_views = data.get('max-views', max_views)
-            except Exception as error:
-                log.debug(error)
-        if not url:
-            return JsonResponse({'error': 'Missing Required Value: url'}, status=400)
-
-        log.debug('url: %s', url)
-        if not validators.url(url):
-            return JsonResponse({'error': 'Unable to Validate URL'}, status=400)
-        if max_views and not str(max_views).isdigit():
-            return JsonResponse({'error': 'max-views Must be an Integer'}, status=400)
-        if vanity and not validators.slug(vanity):
-            return JsonResponse({'error': 'vanity Must be a Slug'}, status=400)
-        short = gen_short(vanity)
-        log.debug('short: %s', short)
-        url = ShortURLs.objects.create(
-            url=url,
-            short=short,
-            max=max_views or 0,
-            user=user,
-        )
-        site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
-        full_url = site_settings.site_url + reverse('home:short', kwargs={'short': url.short})
-        return JsonResponse({'url': full_url}, safe=False)
-
-    except Exception as error:
-        log.exception(error)
-        return JsonResponse({'error': str(error)}, status=500)
-
-
 def shorten_short_view(request, short):
     """
     View  /s/{short}
@@ -278,17 +186,6 @@ def shorten_short_view(request, short):
         q.save()
     clear_shorts_cache.delay()
     return HttpResponseRedirect(url)
-
-
-def gen_short(vanity, length=4):
-    if vanity:
-        # TODO: check that vanity does not exist
-        return vanity
-    rand = rand_string(length=length)
-    while ShortURLs.objects.filter(short=rand):
-        rand = rand_string(length=length)
-        continue
-    return rand
 
 
 @login_required
@@ -349,7 +246,7 @@ def gen_sharex(request):
         'Name': f'Django Files - {request.get_host()} - File',
         'DestinationType': 'ImageUploader, FileUploader, TextUploader',
         'RequestMethod': 'POST',
-        'RequestURL': request.build_absolute_uri(reverse('home:api-upload')),
+        'RequestURL': request.build_absolute_uri(reverse('api:upload')),
         'Headers': {
             'Authorization': request.user.authorization,
             'Expires-At': request.user.default_expire,
@@ -359,7 +256,6 @@ def gen_sharex(request):
         'FileFormName': 'file',
         'ErrorMessage': '{json:error}'
     }
-    # Create the HttpResponse object with the appropriate headers.
     filename = f'{request.get_host()} - Files.sxcu'
     response = JsonResponse(data, json_dumps_params={'indent': 4})
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -378,7 +274,7 @@ def gen_sharex_url(request):
         'Name': f'Django Files - {request.get_host()} - URL',
         'DestinationType': 'URLShortener, URLSharingService',
         'RequestMethod': 'POST',
-        'RequestURL': request.build_absolute_uri(reverse('home:api-shorten')),
+        'RequestURL': request.build_absolute_uri(reverse('api:shorten')),
         'Headers': {
             'Authorization': request.user.authorization,
         },
@@ -387,7 +283,6 @@ def gen_sharex_url(request):
         'Data': '{"url":"{input}"}',
         'ErrorMessage': '{json:error}',
     }
-    # Create the HttpResponse object with the appropriate headers.
     filename = f'{request.get_host()} - URL.sxcu'
     response = JsonResponse(data, json_dumps_params={'indent': 4})
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -400,12 +295,9 @@ def gen_flameshot(request):
     """
     View  /gen/flameshot/
     """
-    # site_settings = SiteSettings.objects.get(pk=1)
-    # context = {'site_url': settings.SITE_URL, 'token': request.user.authorization}
     context = {'site_url': request.build_absolute_uri(reverse('home:upload')), 'token': request.user.authorization}
     log.debug('context: %s', context)
     message = render_to_string('scripts/flameshot.sh', context)
-    # log.debug('message: %s', message)
     response = HttpResponse(message)
     response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
     return response
@@ -416,6 +308,7 @@ def raw_redirect_view(request, filename):
     """
     View /raw/<path:filename>
     """
+    # TODO: Fully Outline/Document what this does
     view = False
     log.debug('url_route_raw: %s', filename)
     file = get_object_or_404(Files, name=filename)
@@ -495,12 +388,12 @@ def google_verify(request: HttpRequest) -> bool:
         return False
 
 
-def get_auth_user(request):
-    # TODO: Use function decorator from api/views.py
-    if request.user.is_authenticated:
-        return request.user
-    authorization = request.headers.get('Authorization') or request.headers.get('Token')
-    if authorization:
-        user = CustomUser.objects.filter(authorization=authorization)
-        if user:
-            return user[0]
+# def get_auth_user(request):
+#     # TODO: Use function decorator from api/views.py
+#     if request.user.is_authenticated:
+#         return request.user
+#     authorization = request.headers.get('Authorization') or request.headers.get('Token')
+#     if authorization:
+#         user = CustomUser.objects.filter(authorization=authorization)
+#         if user:
+#             return user[0]

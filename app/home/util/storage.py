@@ -1,9 +1,8 @@
-
 from django.core.files.storage import default_storage
-from home.util.s3 import S3Bucket, use_s3
-
 from django.db import models
 from django.db.models.fields.files import FieldFile
+
+from home.util.s3 import S3Bucket, use_s3
 
 
 class DynamicStorageFieldFile(FieldFile):

@@ -26,7 +26,7 @@ log = logging.getLogger('celery')
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 20, 'countdown': 3})
 def app_init():
-    # App Init Task
+    # App Init Task - Only Runs on First Startup, then is Disabled
     log.info('app_init')
     site_settings, created = SiteSettings.objects.get_or_create(pk=1)
     if created:
@@ -179,6 +179,7 @@ def process_stats():
             data[user.id]['shorts'] = len(s)
 
     for user_id, _data in data.items():
+        # TODO: Look into type warning on next line
         _data['human_size'] = Files.get_size_of(_data['size'])
         log.info('user_id: %s', user_id)
         user_id = None if str(user_id) == '_totals' else user_id
