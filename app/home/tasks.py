@@ -1,6 +1,4 @@
 import logging
-import mimetypes
-import os
 import httpx
 import json
 import urllib.parse
@@ -9,17 +7,13 @@ from django_redis import get_redis_connection
 from django.conf import settings
 # from django.core import management
 from django.core.cache import cache
-from django.core.files import File
 # from django.core.cache.utils import make_template_fragment_key
 from django.template.loader import render_to_string
 from django.utils import timezone
-from pathlib import Path
 from pytimeparse2 import parse
 
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 # from home.util.expire import parse_expire
-from home.util.processors import ImageProcessor
-from home.util.s3 import use_s3
 from oauth.models import CustomUser
 
 log = logging.getLogger('app')
@@ -80,57 +74,6 @@ def clear_settings_cache():
     # Clear Settings cache
     log.info('clear_settings_cache')
     return cache.delete_pattern('*.settings.*')
-
-
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})
-def process_file_upload(file_name: str, user_id: int, **kwargs) -> int:
-    """
-    Process File Uploads
-    :param file_name: String: name of the file in the MEDIA_DIR
-    :param user_id: Integer: user ID
-    :param kwargs: Not Implemented
-    :return: Integer: Files Object PK
-    TODO: This is no longer a shared_task or being used as one
-    TODO: Make this accept the in-memory File Object since its not a Task
-    """
-    log.info('-'*40)
-    log.info('process_file_upload: file_name: %s', file_name)
-    user = CustomUser.objects.get(id=user_id)
-    log.info('user: %s', user)
-    # https://docs.python.org/3/library/pathlib.html
-    # path = Path(file_name)
-    path = Path(os.path.join(settings.TEMP_ROOT, file_name))
-    log.info('path.resolve(): %s', path.resolve())
-    # TODO: Because this uses `default_storage` it is already a Django File Object, File #1
-    # https://docs.djangoproject.com/en/4.2/ref/files/storage/#django.core.files.storage.storages
-    # file_path = settings.MEDIA_ROOT + '/' + file_name
-
-    if not path.is_file():
-        raise ValueError(f'404: File Not Found: {file_name}')
-    with path.open(mode='rb') as f:
-        # TODO: This now creates a second Django File Object, File #2
-        # https://docs.djangoproject.com/en/4.2/ref/files/file/
-        file = Files.objects.create(file=File(f, name=file_name), user=user)
-    file.name = os.path.basename(file.file.name)
-    log.info('file.name: %s', file.name)
-    file.mime, _ = mimetypes.guess_type(file.file.path, strict=False)
-    if not file.mime:
-        file.mime, _ = mimetypes.guess_type(file.file.name, strict=False)
-    file.mime = file.mime or 'application/octet-stream'
-    log.info('file.mime: %s', file.mime)
-    file.size = file.file.size
-    log.info('file.size: %s', file.size)
-    if file.mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
-        processor = ImageProcessor(file, file.file.path)
-        processor.process_file()
-    file.save()
-    log.info('-'*40)
-    send_discord_message.delay(file.pk)
-    # TODO: Why are we not just using django.conf.settings to check this?
-    if use_s3():
-        # TODO: This should probably async
-        os.remove(file.file.path)
-    return file.pk
 
 
 @shared_task()

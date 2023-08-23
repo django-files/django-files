@@ -13,7 +13,7 @@ from playwright.sync_api import sync_playwright
 from oauth.models import CustomUser
 from home.models import ShortURLs, Files
 from home.tasks import delete_expired_files, app_init, process_stats
-from api.views import process_file
+from home.util.file import process_file
 
 
 class TestAuthViews(TestCase):
@@ -128,19 +128,7 @@ class FilesTestCase(TestCase):
         path = Path('../.assets/gps.jpg')
         print(f'--- Testing: FILE PATH: {path}')
         with path.open(mode='rb') as f:
-            # file_name = storages['temp'].save(path.name, f)
             file = process_file(path.name, f, self.user.id)
-        # file_pk = process_file_upload(file_name, self.user.id)
-        # uploaded_file = Files.objects.get(pk=file_pk)
-        # with path.open(mode='rb') as f:
-        #     file = Files.objects.create(
-        #         file=File(f, name=path.name),
-        #         user=self.user,
-        #     )
-        # print(file)
-        # file.save()
-        # process_file_upload((path, self.user.id))
-        # file = Files.objects.get(pk=file_pk)
         print(f'file.file.path: {file.file.path}')
         # TODO: Fix File Processing so it does not create 2 file objects
         print(f'file.get_url(): {file.get_url()}')

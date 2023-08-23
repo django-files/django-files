@@ -72,23 +72,6 @@ NGINX_ACCESS_LOGS = config('NGINX_ACCESS_LOGS', '/logs/nginx.access')
 # CSRF_TRUSTED_ORIGINS = config('CSRF_ORIGINS', '', Csv())
 # SECURE_REFERRER_POLICY = config('SECURE_REFERRER_POLICY', 'no-referrer')
 
-TEMP_ROOT = config('TEMP_ROOT', '/data/media/temp')
-
-STORAGES = {
-    'default': {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
-    },
-    'staticfiles': {
-        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
-    },
-    'temp': {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
-        'OPTIONS': {
-            'location': TEMP_ROOT,
-        },
-    },
-}
-
 MESSAGE_TAGS = {
     message_constants.DEBUG: 'secondary',
     message_constants.INFO: 'primary',
