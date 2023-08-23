@@ -10,4 +10,5 @@
 *.sqlite3
 settings.env
 app/.env
+app/test.env
 .ash_history

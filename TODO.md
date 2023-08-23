@@ -2,17 +2,17 @@
 
 ## 0.1.1
 
-### Storge Issue Outline
+### ToDoS
 
-1.  In its current setup, `default_storage.save()` creates the file in the media directory on ~69 [views.py](app/api/views.py)
+-   Task profess_file_upload needs to be reworked as a function to accept in-memory File Objects
+-   Function profess_file is a temporary function until the above task is done
 
-For this first issue, we probably need to define a temporary storage, 
-that the task can read into memory, save to media storage, then cleanup.
- 
-2.  Then a second file is created on ~109 [tasks.py](app%2Fhome%2Ftasks.py)
+### Known Bugs
 
-If the first issue uses an isolated storage, while we would be writing the file to disk twice, 
-it should fix all issues with this part of the storage problem.
+-   Expiration has been disabled and not working
+-   Info field has been disabled and should be reworked with expiration
+
+### Storage Status
 
 ## Issues
 - [ ] Users: Fix Local User to allow Discord Webhook

@@ -5,7 +5,6 @@ from django.test import TestCase
 from pathlib import Path
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-from django.core.files.storage import storages
 from django.core.management import call_command
 # from django.core.files import File
 from django.urls import reverse
@@ -13,7 +12,8 @@ from playwright.sync_api import sync_playwright
 
 from oauth.models import CustomUser
 from home.models import ShortURLs, Files
-from home.tasks import delete_expired_files, app_init, process_file_upload, process_stats
+from home.tasks import delete_expired_files, app_init, process_stats
+from api.views import process_file
 
 
 class TestAuthViews(TestCase):
@@ -128,9 +128,9 @@ class FilesTestCase(TestCase):
         path = Path('../.assets/gps.jpg')
         print(f'--- Testing: FILE PATH: {path}')
         with path.open(mode='rb') as f:
-            storage = storages['temp']
-            file_name = storage.save(path.name, f)
-        file_pk = process_file_upload(file_name, self.user.id)
+            # file_name = storages['temp'].save(path.name, f)
+            file = process_file(path.name, f, self.user.id)
+        # file_pk = process_file_upload(file_name, self.user.id)
         # uploaded_file = Files.objects.get(pk=file_pk)
         # with path.open(mode='rb') as f:
         #     file = Files.objects.create(
@@ -140,7 +140,7 @@ class FilesTestCase(TestCase):
         # print(file)
         # file.save()
         # process_file_upload((path, self.user.id))
-        file = Files.objects.get(pk=file_pk)
+        # file = Files.objects.get(pk=file_pk)
         print(f'file.file.path: {file.file.path}')
         # TODO: Fix File Processing so it does not create 2 file objects
         print(f'file.get_url(): {file.get_url()}')
