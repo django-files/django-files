@@ -3,7 +3,7 @@ set -e
 
 _file_name="example-file-name.txt"
 
-_upload_url='{{ site_url }}{% url "home:api-upload" %}'
+_upload_url='{{ site_url }}{% url "api:upload" %}'
 _auth='{{ auth }}'
 _expire='{{ expire }}'
 

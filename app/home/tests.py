@@ -18,23 +18,24 @@ from home.tasks import delete_expired_files, app_init, process_file_upload, proc
 
 class TestAuthViews(TestCase):
     """Test Auth Views"""
+    views = {
+        'oauth:login': 302,
+        'home:index': 200,
+        'home:gallery': 200,
+        'home:uppy': 200,
+        'home:files': 200,
+        'home:shorts': 200,
+        'home:settings': 200,
+        'home:stats': 200,
+        'home:gen-sharex': 200,
+        'home:gen-sharex-url': 200,
+        'home:gen-flameshot': 200,
+        'api:status': 200,
+        'api:stats': 200,
+        'api:recent': 200,
+    }
+
     def setUp(self):
-        self.views = {
-            'oauth:login': 302,
-            'home:index': 200,
-            'home:files': 200,
-            'home:gallery': 200,
-            'home:uppy': 200,
-            'home:shorts': 200,
-            'home:settings': 200,
-            'home:stats': 200,
-            'home:gen-sharex': 200,
-            'home:gen-sharex-url': 200,
-            'home:gen-flameshot': 200,
-            'api:status': 200,
-            'api:stats': 200,
-            'api:recent': 200,
-        }
         call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
         print(self.user.authorization)
@@ -50,7 +51,7 @@ class TestAuthViews(TestCase):
 
 class PlaywrightTest(StaticLiveServerTestCase):
     """Test Playwright"""
-    ss = 'screenshots'
+    screenshots = 'screenshots'
     views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Settings']
     context = None
     browser = None
@@ -59,10 +60,11 @@ class PlaywrightTest(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        if not os.path.isdir(cls.ss):
-            os.mkdir(cls.ss)
+        if not os.path.isdir(cls.screenshots):
+            os.mkdir(cls.screenshots)
         call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
-        CustomUser.objects.create_user(username='testuser', password='12345', email='abuse@aol.com')
+        user = CustomUser.objects.create_user(username='testuser', password='12345')
+        print(user.authorization)
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         cls.playwright = sync_playwright().start()
         cls.browser = cls.playwright.chromium.launch()
@@ -80,24 +82,25 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page = self.context.new_page()
         page.goto(f"{self.live_server_url}/")
         page.locator('text=Django Files')
-        page.screenshot(path=f'{self.ss}/Login.png')
+        page.wait_for_timeout(timeout=1000)
+        page.screenshot(path=f'{self.screenshots}/Login.png')
         page.fill('[name=username]', 'testuser')
         page.fill('[name=password]', '12345')
         page.click('#login-button')
 
         page.wait_for_selector('text=Home', timeout=3000)
-        page.screenshot(path=f'{self.ss}/Home.png')
+        page.screenshot(path=f'{self.screenshots}/Home.png')
 
         # page.click('text=View Stats')
         # page.get_by_role("link", name=re.compile(".+View Stats", re.IGNORECASE)).click()
         page.goto(f"{self.live_server_url}/stats/")
         page.wait_for_selector('text=Stats', timeout=3000)
-        page.screenshot(path=f'{self.ss}/Stats.png')
+        page.screenshot(path=f'{self.screenshots}/Stats.png')
 
         for view in self.views:
             page.locator(f'text={view}').first.click()
             page.wait_for_selector(f'text={view}', timeout=3000)
-            page.screenshot(path=f'{self.ss}/{view}.png')
+            page.screenshot(path=f'{self.screenshots}/{view}.png')
 
 
 class FilesTestCase(TestCase):

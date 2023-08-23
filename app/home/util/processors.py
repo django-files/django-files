@@ -4,7 +4,7 @@ from PIL import Image, ExifTags, TiffImagePlugin
 from home.models import Files
 from home.util.geolocation import city_state_from_exif
 
-log = logging.getLogger('celery')
+log = logging.getLogger('app')
 
 
 class ImageProcessor(object):

@@ -11,8 +11,8 @@ from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from home.models import Webhooks
-from .forms import LoginForm
-from .models import CustomUser
+from oauth.forms import LoginForm
+from oauth.models import CustomUser
 
 log = logging.getLogger('app')
 
