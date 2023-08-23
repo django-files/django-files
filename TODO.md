@@ -4,8 +4,8 @@
 
 ### ToDoS
 
--   Task profess_file_upload needs to be reworked as a function to accept in-memory File Objects
--   Function profess_file is a temporary function until the above task is done
+-   Rework the `get_url` function in the Files Model
+-   Look into `utils.s3` and `utils.storage` files
 
 ### Known Bugs
 

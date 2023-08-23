@@ -13,7 +13,6 @@ from django.utils import timezone
 from pytimeparse2 import parse
 
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
-# from home.util.expire import parse_expire
 from oauth.models import CustomUser
 
 log = logging.getLogger('app')
