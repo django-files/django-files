@@ -13,7 +13,7 @@ from playwright.sync_api import sync_playwright
 from oauth.models import CustomUser
 from home.models import ShortURLs, Files
 from home.tasks import delete_expired_files, app_init, process_stats
-from api.views import process_file
+from home.util.file import process_file
 
 
 class TestAuthViews(TestCase):
@@ -111,11 +111,7 @@ class FilesTestCase(TestCase):
         print(self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
         print(login)
-        print(f'settings.TEMP_ROOT: {settings.TEMP_ROOT}')
         print(f'settings.MEDIA_ROOT: {settings.MEDIA_ROOT}')
-        if os.path.isdir(settings.TEMP_ROOT):
-            print(f'Removing: {settings.TEMP_ROOT}')
-            shutil.rmtree(settings.TEMP_ROOT)
         if os.path.isdir(settings.MEDIA_ROOT):
             print(f'Removing: {settings.MEDIA_ROOT}')
             shutil.rmtree(settings.MEDIA_ROOT)
@@ -128,19 +124,7 @@ class FilesTestCase(TestCase):
         path = Path('../.assets/gps.jpg')
         print(f'--- Testing: FILE PATH: {path}')
         with path.open(mode='rb') as f:
-            # file_name = storages['temp'].save(path.name, f)
             file = process_file(path.name, f, self.user.id)
-        # file_pk = process_file_upload(file_name, self.user.id)
-        # uploaded_file = Files.objects.get(pk=file_pk)
-        # with path.open(mode='rb') as f:
-        #     file = Files.objects.create(
-        #         file=File(f, name=path.name),
-        #         user=self.user,
-        #     )
-        # print(file)
-        # file.save()
-        # process_file_upload((path, self.user.id))
-        # file = Files.objects.get(pk=file_pk)
         print(f'file.file.path: {file.file.path}')
         # TODO: Fix File Processing so it does not create 2 file objects
         print(f'file.get_url(): {file.get_url()}')
@@ -152,6 +136,11 @@ class FilesTestCase(TestCase):
         self.assertEqual(file.mime, 'image/jpeg')
         self.assertEqual(file.size, 3518)
         self.assertEqual(file.get_size(), '3.4 KiB')
+        print('-'*40)
+        print(file.exif)
+        print('-'*40)
+        print(exif_data)
+        print('-'*40)
         self.assertEqual(file.exif, exif_data)
         self.assertEqual(file.meta, meta_data)
         response = self.client.get(reverse('home:url-route', kwargs={'filename': file.name}), follow=True)
@@ -185,8 +174,6 @@ class FilesTestCase(TestCase):
         print(response2.headers.get('Location'))
         self.assertEqual(response2.headers.get('Location'), short.url)
 
-        print(f' --- TEMP_ROOT: {settings.TEMP_ROOT} - {len(os.listdir(settings.TEMP_ROOT))}')
-        print(os.listdir(settings.TEMP_ROOT))
         print(f' --- MEDIA_ROOT: {settings.MEDIA_ROOT} - {len(os.listdir(settings.MEDIA_ROOT))}')
         print(os.listdir(settings.MEDIA_ROOT))
 
@@ -213,14 +200,14 @@ exif_data = {
     "ImageWidth": "4032",
     "ImageLength": "3024",
     "GPSInfo": {
-        "1": "N",
-        "2": [44.0, 30.0, 15.1703],
-        "3": "W",
-        "4": [116.0, 2.0, 1.1939],
-        "5": "\u0000",
-        "6": 1412.065,
-        "7": [22.0, 17.0, 38.0],
-        "29": "2022:12:21",
+        1: "N",
+        2: (44.0, 30.0, 15.1703),
+        3: "W",
+        4: (116.0, 2.0, 1.1939),
+        5: "\x00",
+        6: 1412.065,
+        7: (22.0, 17.0, 38.0),
+        29: "2022:12:21",
     },
     "ResolutionUnit": "2",
     "ExifOffset": "230",
@@ -232,7 +219,7 @@ exif_data = {
     "XResolution": "72.0",
     "YResolution": "72.0",
     "ExifVersion": "0220",
-    "ComponentsConfiguration": "\u0001\u0002\u0003\u0000",
+    "ComponentsConfiguration": "\x01\x02\x03\x00",
     "ShutterSpeedValue": "8.415",
     "DateTimeOriginal": "2022:12:21 15:18:20",
     "DateTimeDigitized": "2022:12:21 15:18:20",
@@ -253,7 +240,8 @@ exif_data = {
     "ExifImageHeight": "3024",
     "SensingMethod": "1",
     "ExposureTime": "0.0029239766081871343",
-    "FNumber": "2.4", "SceneType": "\u0001",
+    "FNumber": "2.4",
+    "SceneType": "\x01",
     "ExposureProgram": "2",
     "ISOSpeedRatings": "50",
     "ExposureMode": "0",

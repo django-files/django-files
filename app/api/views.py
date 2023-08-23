@@ -5,7 +5,6 @@ import logging
 import os
 import validators
 import functools
-from django.core.files.storage import storages
 from django.core import serializers
 from django.http import JsonResponse
 from django.shortcuts import reverse
@@ -13,10 +12,10 @@ from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
-from typing import IO, Optional
+from typing import Optional
 
 from home.models import Files, FileStats, SiteSettings, ShortURLs
-from home.tasks import process_file_upload
+from home.util.file import process_file
 from oauth.models import CustomUser, rand_string
 
 log = logging.getLogger('app')
@@ -197,42 +196,10 @@ def remote_view(request):
     if not r.is_success:
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
-    # # f = File(io.BytesIO(r.content), name=os.path.basename(url))
-    # file_name = storages['temp'].save(os.path.basename(url), io.BytesIO(r.content))
-    # # path = default_storage.save(os.path.basename(url), io.BytesIO(r.content))
-    # file_pk = process_file_upload(file_name, request.user.id)
-    # uploaded_file = Files.objects.get(pk=file_pk)
-
-    # file = Files.objects.create(
-    #     file=f,
-    #     user=request.user,
-    #     expr=parse_expire(request, request.user),
-    # )
-    # process_file_upload.delay(file.pk)
-    # log.debug(file)
-
     file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id)
     response = {'url': f'{file.preview_url()}'}
     log.debug('url: %s', url)
     return JsonResponse(response)
-
-
-def process_file(name: str, f: IO, user_id: int) -> Files:
-    """
-    Reusable Function to Process a File Upload
-    https://docs.djangoproject.com/en/4.2/ref/files/storage/#django.core.files.storage.Storage.save
-    :param name: String: name of the file
-    :param f: File Object: The file to upload
-    :param user_id: Integer: The owners User ID
-    :return: Files: The created Files object
-    TODO: This is not necessary now that the process_file_upload Task, is not a Task
-    """
-    file_name = storages['temp'].save(name, f)
-    try:
-        file_pk = process_file_upload(file_name, user_id)
-        return Files.objects.get(pk=file_pk)
-    finally:
-        storages['temp'].delete(file_name)
 
 
 def gen_short(vanity: Optional[str] = None, length: int = 4) -> str:
