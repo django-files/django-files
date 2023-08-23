@@ -4,6 +4,7 @@
 **/venv/
 *.pyc
 .coverage
+**/screenshots/
 *.log
 *.sqlite3
 settings.env

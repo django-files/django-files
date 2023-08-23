@@ -15,7 +15,7 @@ from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 
 from home.models import Files, FileStats
 from home.tasks import process_file_upload
-from home.util.expire import parse_expire
+# from home.util.expire import parse_expire
 from oauth.models import CustomUser
 
 log = logging.getLogger('app')
@@ -118,12 +118,7 @@ def remote_view(request):
 
     # f = File(io.BytesIO(r.content), name=os.path.basename(url))
     path = default_storage.save(os.path.basename(url), io.BytesIO(r.content))
-    file_pk = process_file_upload({
-        'file_name': path,
-        'post': request.POST,
-        'user_id': request.user.id,
-        'expire': parse_expire(request),
-    })
+    file_pk = process_file_upload(path, request.user.id)
     uploaded_file = Files.objects.get(pk=file_pk)
     # file = Files.objects.create(
     #     file=f,

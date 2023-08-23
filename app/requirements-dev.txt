@@ -16,12 +16,12 @@ markdown
 mysqlclient
 Pillow
 psycopg[binary]
-# pytest-playwright
+pytest-playwright
 python-decouple
 python-dotenv
 pytimeparse2
 sentry-sdk
 uvicorn[standard]
 validators
-# watchdog
+watchdog
 Werkzeug

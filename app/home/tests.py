@@ -1,18 +1,24 @@
+import os
+# import re
+# import shutil
 from django.test import TestCase
-# from pathlib import Path
+from pathlib import Path
+from django.conf import settings
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.core.files.storage import default_storage
 from django.core.management import call_command
 # from django.core.files import File
 from django.urls import reverse
+from playwright.sync_api import sync_playwright
 
 from oauth.models import CustomUser
-from home.models import ShortURLs
-from home.tasks import delete_expired_files, app_init
+from home.models import ShortURLs, Files
+from home.tasks import delete_expired_files, app_init, process_file_upload, process_stats
 
 
 class TestAuthViews(TestCase):
     """Test Auth Views"""
     def setUp(self):
-        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
         self.views = {
             'oauth:login': 302,
             'home:index': 200,
@@ -29,7 +35,7 @@ class TestAuthViews(TestCase):
             'api:stats': 200,
             'api:recent': 200,
         }
-        print('Creating Test User: testuser')
+        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
         print(self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
@@ -41,56 +47,121 @@ class TestAuthViews(TestCase):
             response = self.client.get(reverse(view))
             self.assertEqual(response.status_code, status)
 
-# this needs to be reworked for new file processing setup
-# class FilesTestCase(TestCase):
-#     def setUp(self):
-#         call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
-#         print('Creating Test User: testuser')
-#         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
-#         print(self.user.authorization)
-#         login = self.client.login(username='testuser', password='12345')
-#         print(login)
 
-#     def test_files(self):
-#         """Test Files Object"""
-#         path = Path('../.assets/gps.jpg')
-#         print(f'Creating Files Object from file: {path}')
-#         with path.open(mode='rb') as f:
-#             file = Files.objects.create(
-#                 file=File(f, name=path.name),
-#                 user=self.user,
-#             )
+class PlaywrightTest(StaticLiveServerTestCase):
+    """Test Playwright"""
+    ss = 'screenshots'
+    views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Settings']
+    context = None
+    browser = None
+    playwright = None
 
-#         print(file)
-#         file.save()
-#         process_file_upload(file.pk)
-#         file = Files.objects.get(pk=file.pk)
-#         self.assertEqual(file.get_url(), 'https://example.com/r/gps.jpg')
-#         self.assertEqual(file.preview_url(), 'https://example.com/u/gps.jpg')
-#         self.assertEqual(file.preview_uri(), '/u/gps.jpg')
-#         self.assertEqual(file.mime, 'image/jpeg')
-#         self.assertEqual(file.size, 3518)
-#         self.assertEqual(file.get_size(), '3.4 KiB')
-#         self.assertEqual(file.exif, exif_data)
-#         self.assertEqual(file.meta, meta_data)
-#         response = self.client.get(reverse('home:url-route', kwargs={'filename': file.name}), follow=True)
-#         print(dir(response))
-#         self.assertEqual(response.status_code, 200)
-#         process_stats()
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if not os.path.isdir(cls.ss):
+            os.mkdir(cls.ss)
+        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
+        CustomUser.objects.create_user(username='testuser', password='12345', email='abuse@aol.com')
+        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        cls.playwright = sync_playwright().start()
+        cls.browser = cls.playwright.chromium.launch()
+        cls.context = cls.browser.new_context(color_scheme='dark')
+        # storage = cls.context.storage_state(path="state.json")
+        # cls.context = cls.context.new_context(storage_state="state.json")
 
-    def test_api(self):
-        """Test API"""
-        print('Testing view "api:remote" for code "200"')
-        url = 'https://repository-images.githubusercontent.com/672712475/52cf00a8-31de-4b0a-8522-63670bb4314a'
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        cls.browser.close()
+        cls.playwright.stop()
+
+    def test_browser_views(self):
+        page = self.context.new_page()
+        page.goto(f"{self.live_server_url}/")
+        page.locator('text=Django Files')
+        page.screenshot(path=f'{self.ss}/Login.png')
+        page.fill('[name=username]', 'testuser')
+        page.fill('[name=password]', '12345')
+        page.click('#login-button')
+
+        page.wait_for_selector('text=Home', timeout=3000)
+        page.screenshot(path=f'{self.ss}/Home.png')
+
+        # page.click('text=View Stats')
+        # page.get_by_role("link", name=re.compile(".+View Stats", re.IGNORECASE)).click()
+        page.goto(f"{self.live_server_url}/stats/")
+        page.wait_for_selector('text=Stats', timeout=3000)
+        page.screenshot(path=f'{self.ss}/Stats.png')
+
+        for view in self.views:
+            page.locator(f'text={view}').first.click()
+            page.wait_for_selector(f'text={view}', timeout=3000)
+            page.screenshot(path=f'{self.ss}/{view}.png')
+
+
+class FilesTestCase(TestCase):
+    """Test Files"""
+    def setUp(self):
+        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
+        self.user = CustomUser.objects.create_user(username='testuser', password='12345')
+        print(self.user.authorization)
+        login = self.client.login(username='testuser', password='12345')
+        print(login)
+        print(f'settings.MEDIA_ROOT: {settings.MEDIA_ROOT}')
+        # if os.path.isdir(settings.MEDIA_ROOT):
+        #     print(f'Removing: {settings.MEDIA_ROOT}')
+        #     shutil.rmtree(settings.MEDIA_ROOT)
+        # else:
+        #     os.mkdir(settings.MEDIA_ROOT)
+
+    def tearDown(self):
+        pass
+
+    def test_files(self):
+        file_path = Path('../.assets/gps.jpg')
+        print(f'--- Testing: FILE PATH: {file_path}')
+        with open(file_path, 'rb') as f:
+            path = default_storage.save(file_path.name, f)
+        file_pk = process_file_upload(path, self.user.id)
+        # uploaded_file = Files.objects.get(pk=file_pk)
+        # with path.open(mode='rb') as f:
+        #     file = Files.objects.create(
+        #         file=File(f, name=path.name),
+        #         user=self.user,
+        #     )
+        # print(file)
+        # file.save()
+        # process_file_upload((path, self.user.id))
+        file = Files.objects.get(pk=file_pk)
+        print(f'file.file.path: {file.file.path}')
+        # TODO: Fix File Processing so it does not create 2 file objects
+        # self.assertEqual(file.get_url(), 'https://example.com/r/gps.jpg')
+        # self.assertEqual(file.preview_url(), 'https://example.com/u/gps.jpg')
+        # self.assertEqual(file.preview_uri(), '/u/gps.jpg')
+        self.assertEqual(file.mime, 'image/jpeg')
+        self.assertEqual(file.size, 3518)
+        self.assertEqual(file.get_size(), '3.4 KiB')
+        self.assertEqual(file.exif, exif_data)
+        self.assertEqual(file.meta, meta_data)
+        response = self.client.get(reverse('home:url-route', kwargs={'filename': file.name}), follow=True)
+        self.assertEqual(response.status_code, 200)
+        # TODO: This will test file duplication once fixed
+        # files = Files.objects.all(user=self.user)
+        # self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
+
+        print('--- Testing: API:REMOTE')
+        url = 'https://raw.githubusercontent.com/django-files/django-files/master/.assets/gps.jpg'
         data = {'url': url, 'Expires-At': '1y'}
         response = self.client.post(reverse('api:remote'), data, content_type='application/json', follow=True)
         print(response.json())
         self.assertEqual(response.status_code, 200)
+        # TODO: This will test file duplication once fixed
+        # files = Files.objects.all(user=self.user)
+        # self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
 
-    def test_shorts(self):
-        """Test Tasks"""
-        print('Testing Shorts')
-        url = 'https://repository-images.githubusercontent.com/672712475/52cf00a8-31de-4b0a-8522-63670bb4314a'
+        print('--- Testing: SHORTS')
+        url = 'https://raw.githubusercontent.com/django-files/django-files/master/.assets/gps.jpg'
         body = {'url': url}
         response1 = self.client.post(reverse('home:shorten'), body, content_type='application/json', follow=True)
         data = response1.json()
@@ -102,14 +173,20 @@ class TestAuthViews(TestCase):
         self.assertEqual(short.url, url)
         response2 = self.client.get(reverse('home:short', kwargs={'short': short.short}))
         self.assertEqual(response2.status_code, 302)
-        print(response2.headers)
+        print(response2.headers.get('Location'))
+        self.assertEqual(response2.headers.get('Location'), short.url)
 
-    @staticmethod
-    def test_tasks():
-        """Test Tasks"""
-        print('Testing Tasks')
+        files = Files.objects.filter(user=self.user)
+        print(f'files count: {len(files)}')
+        shorts = ShortURLs.objects.filter(user=self.user)
+        print(f'shorts count: {len(shorts)}')
+
+        print('--- Testing: app_init')
         app_init()
+        print('--- Testing: delete_expired_files')
         delete_expired_files()
+        print('--- Testing: process_stats')
+        process_stats()
 
 
 meta_data = {
