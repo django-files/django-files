@@ -111,11 +111,7 @@ class FilesTestCase(TestCase):
         print(self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
         print(login)
-        print(f'settings.TEMP_ROOT: {settings.TEMP_ROOT}')
         print(f'settings.MEDIA_ROOT: {settings.MEDIA_ROOT}')
-        if os.path.isdir(settings.TEMP_ROOT):
-            print(f'Removing: {settings.TEMP_ROOT}')
-            shutil.rmtree(settings.TEMP_ROOT)
         if os.path.isdir(settings.MEDIA_ROOT):
             print(f'Removing: {settings.MEDIA_ROOT}')
             shutil.rmtree(settings.MEDIA_ROOT)
@@ -173,8 +169,6 @@ class FilesTestCase(TestCase):
         print(response2.headers.get('Location'))
         self.assertEqual(response2.headers.get('Location'), short.url)
 
-        print(f' --- TEMP_ROOT: {settings.TEMP_ROOT} - {len(os.listdir(settings.TEMP_ROOT))}')
-        print(os.listdir(settings.TEMP_ROOT))
         print(f' --- MEDIA_ROOT: {settings.MEDIA_ROOT} - {len(os.listdir(settings.MEDIA_ROOT))}')
         print(os.listdir(settings.MEDIA_ROOT))
 
