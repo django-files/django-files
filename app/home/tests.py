@@ -1,3 +1,4 @@
+import logging
 import os
 # import re
 import shutil
@@ -10,10 +11,13 @@ from django.core.management import call_command
 from django.urls import reverse
 from playwright.sync_api import sync_playwright
 
-from oauth.models import CustomUser
-from home.models import ShortURLs, Files
+from api.views import gen_short
+from home.models import Files, ShortURLs, SiteSettings
 from home.tasks import delete_expired_files, app_init, process_stats
 from home.util.file import process_file
+from oauth.models import CustomUser
+
+log = logging.getLogger('app')
 
 
 class TestAuthViews(TestCase):
@@ -38,9 +42,9 @@ class TestAuthViews(TestCase):
     def setUp(self):
         call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
-        print(self.user.authorization)
+        log.info('self.user.authorization: %s', self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
-        print(login)
+        log.info('login: %s', login)
 
     def test_views_with_auth(self):
         for view, status in self.views.items():
@@ -56,6 +60,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
     context = None
     browser = None
     playwright = None
+    user = None
 
     @classmethod
     def setUpClass(cls):
@@ -63,8 +68,8 @@ class PlaywrightTest(StaticLiveServerTestCase):
         if not os.path.isdir(cls.screenshots):
             os.mkdir(cls.screenshots)
         call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
-        user = CustomUser.objects.create_user(username='testuser', password='12345')
-        print(user.authorization)
+        cls.user = CustomUser.objects.create_user(username='testuser', password='12345')
+        log.info('cls.user.authorization: %s', cls.user.authorization)
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         cls.playwright = sync_playwright().start()
         cls.browser = cls.playwright.chromium.launch()
@@ -78,7 +83,41 @@ class PlaywrightTest(StaticLiveServerTestCase):
         cls.browser.close()
         cls.playwright.stop()
 
+    def _process_file(self, directory: str, file_name: str) -> Files:
+        path = Path(directory)
+        path = path / file_name
+        print(f'--- Processing: path: {path}')
+        with path.open(mode='rb') as f:
+            file = process_file(path.name, f, self.user.id)
+            log.debug('file: %s', file)
+            return file
+
     def test_browser_views(self):
+        print('--- prep files for browser shots ---')
+        print('-'*40)
+        log.debug('os.getcwd(): %s', os.getcwd())
+        dirs = ['static/images', 'static/video', '../.assets']
+        for directory in dirs:
+            log.debug('directory: %s', directory)
+            for file_name in os.listdir(directory):
+                if not os.path.isfile(os.path.join(directory, file_name)):
+                    continue
+                log.debug('file_name: %s', file_name)
+                file = self._process_file(directory, file_name)
+                log.debug('file.pk: %s', file.pk)
+        print('-'*40)
+        print('--- loading shorts for browser shots ---')
+        for url in short_urls:
+            short = ShortURLs.objects.create(
+                url=url,
+                short=gen_short(),
+                user=self.user,
+            )
+            log.debug('short: %s', short)
+        print('-'*40)
+        print('--- Testing: process_stats')
+        process_stats()
+        print('--- Running: test_browser_views ---')
         page = self.context.new_page()
         page.goto(f"{self.live_server_url}/")
         page.locator('text=Django Files')
@@ -108,12 +147,14 @@ class FilesTestCase(TestCase):
     def setUp(self):
         call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
-        print(self.user.authorization)
+        log.info('self.user.authorization: %s', self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
-        print(login)
-        print(f'settings.MEDIA_ROOT: {settings.MEDIA_ROOT}')
+        log.info('login: %s', login)
+        site_settings = SiteSettings.objects.get(pk=1)
+        log.info('site_settings: %s', site_settings)
+        log.info('settings.MEDIA_ROOT: %s', settings.MEDIA_ROOT)
         if os.path.isdir(settings.MEDIA_ROOT):
-            print(f'Removing: {settings.MEDIA_ROOT}')
+            log.info('Removing: %s', settings.MEDIA_ROOT)
             shutil.rmtree(settings.MEDIA_ROOT)
         os.mkdir(settings.MEDIA_ROOT)
 
@@ -125,22 +166,19 @@ class FilesTestCase(TestCase):
         print(f'--- Testing: FILE PATH: {path}')
         with path.open(mode='rb') as f:
             file = process_file(path.name, f, self.user.id)
+        print('--- Testing: process_stats')
+        process_stats()
         print(f'file.file.path: {file.file.path}')
         # TODO: Fix File Processing so it does not create 2 file objects
         print(f'file.get_url(): {file.get_url()}')
         print(f'file.preview_url(): {file.preview_url()}')
         print(f'file.preview_uri(): {file.preview_uri()}')
-        # self.assertEqual(file.get_url(), 'https://example.com/r/gps.jpg')
-        # self.assertEqual(file.preview_url(), 'https://example.com/u/gps.jpg')
-        # self.assertEqual(file.preview_uri(), '/u/gps.jpg')
+        self.assertEqual(file.get_url(), 'https://example.com/r/gps.jpg')
+        self.assertEqual(file.preview_url(), 'https://example.com/u/gps.jpg')
+        self.assertEqual(file.preview_uri(), '/u/gps.jpg')
         self.assertEqual(file.mime, 'image/jpeg')
         self.assertEqual(file.size, 3518)
         self.assertEqual(file.get_size(), '3.4 KiB')
-        print('-'*40)
-        print(file.exif)
-        print('-'*40)
-        print(exif_data)
-        print('-'*40)
         self.assertEqual(file.exif, exif_data)
         self.assertEqual(file.meta, meta_data)
         response = self.client.get(reverse('home:url-route', kwargs={'filename': file.name}), follow=True)
@@ -184,11 +222,16 @@ class FilesTestCase(TestCase):
 
         print('--- Testing: app_init')
         app_init()
-        print('--- Testing: process_stats')
-        process_stats()
         print('--- Testing: delete_expired_files')
         delete_expired_files()
 
+
+short_urls = [
+    'https://github.com/django-files/django-files',
+    'https://github.com/django-files/web-extension',
+    'https://addons.mozilla.org/addon/django-files',
+    'https://chrome.google.com/webstore/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej',
+]
 
 meta_data = {
     "PILImageWidth": 128,
