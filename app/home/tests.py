@@ -68,7 +68,8 @@ class PlaywrightTest(StaticLiveServerTestCase):
         if not os.path.isdir(cls.screenshots):
             os.mkdir(cls.screenshots)
         call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
-        cls.user = CustomUser.objects.create_user(username='testuser', password='12345')
+        cls.user = CustomUser.objects.create_user(
+            username='testuser', password='12345', is_superuser=True, is_staff=True)
         log.info('cls.user.authorization: %s', cls.user.authorization)
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         cls.playwright = sync_playwright().start()
@@ -125,7 +126,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.fill('[name=username]', 'testuser')
         page.fill('[name=password]', '12345')
         page.screenshot(path=f'{self.screenshots}/Login.png')
-        page.click('#login-button')
+        page.locator('#login-button').click()
 
         page.wait_for_selector('text=Home', timeout=3000)
         page.screenshot(path=f'{self.screenshots}/Home.png')
@@ -140,6 +141,21 @@ class PlaywrightTest(StaticLiveServerTestCase):
             page.locator(f'text={view}').first.click()
             page.wait_for_selector(f'text={view}', timeout=3000)
             page.screenshot(path=f'{self.screenshots}/{view}.png')
+            if view == 'Settings':
+                page.locator('#remove_exif').click()
+                page.locator('#remove_exif_geo').click()
+                page.locator('#save-settings').click()
+                page.wait_for_timeout(timeout=1000)
+                page.screenshot(path=f'{self.screenshots}/{view}-save-settings.png')
+                page.locator('#navbarDropdown').click()
+                page.locator('#flush-cache').click()
+                page.wait_for_timeout(timeout=1000)
+                page.screenshot(path=f'{self.screenshots}/{view}-flush-cache.png')
+            if view == self.views[-1]:
+                page.locator('#navbarDropdown').click()
+                page.locator('.log-out').click()
+                page.wait_for_timeout(timeout=1000)
+                page.screenshot(path=f'{self.screenshots}/{view}-logout.png')
 
 
 class FilesTestCase(TestCase):
