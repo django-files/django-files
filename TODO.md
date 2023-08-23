@@ -6,6 +6,7 @@
 
 -   Rework the `get_url` function in the Files Model
 -   Look into `utils.s3` and `utils.storage` files
+-   Add tests for `/raw/` and other S3 functions
 
 ### Known Bugs
 
