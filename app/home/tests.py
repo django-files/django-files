@@ -1,11 +1,11 @@
 import os
 # import re
-# import shutil
+import shutil
 from django.test import TestCase
 from pathlib import Path
 from django.conf import settings
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-from django.core.files.storage import default_storage
+from django.core.files.storage import storages
 from django.core.management import call_command
 # from django.core.files import File
 from django.urls import reverse
@@ -111,22 +111,26 @@ class FilesTestCase(TestCase):
         print(self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
         print(login)
+        print(f'settings.TEMP_ROOT: {settings.TEMP_ROOT}')
         print(f'settings.MEDIA_ROOT: {settings.MEDIA_ROOT}')
-        # if os.path.isdir(settings.MEDIA_ROOT):
-        #     print(f'Removing: {settings.MEDIA_ROOT}')
-        #     shutil.rmtree(settings.MEDIA_ROOT)
-        # else:
-        #     os.mkdir(settings.MEDIA_ROOT)
+        if os.path.isdir(settings.TEMP_ROOT):
+            print(f'Removing: {settings.TEMP_ROOT}')
+            shutil.rmtree(settings.TEMP_ROOT)
+        if os.path.isdir(settings.MEDIA_ROOT):
+            print(f'Removing: {settings.MEDIA_ROOT}')
+            shutil.rmtree(settings.MEDIA_ROOT)
+        os.mkdir(settings.MEDIA_ROOT)
 
     def tearDown(self):
         pass
 
     def test_files(self):
-        file_path = Path('../.assets/gps.jpg')
-        print(f'--- Testing: FILE PATH: {file_path}')
-        with open(file_path, 'rb') as f:
-            path = default_storage.save(file_path.name, f)
-        file_pk = process_file_upload(path, self.user.id)
+        path = Path('../.assets/gps.jpg')
+        print(f'--- Testing: FILE PATH: {path}')
+        with path.open(mode='rb') as f:
+            storage = storages['temp']
+            file_name = storage.save(path.name, f)
+        file_pk = process_file_upload(file_name, self.user.id)
         # uploaded_file = Files.objects.get(pk=file_pk)
         # with path.open(mode='rb') as f:
         #     file = Files.objects.create(
@@ -139,6 +143,9 @@ class FilesTestCase(TestCase):
         file = Files.objects.get(pk=file_pk)
         print(f'file.file.path: {file.file.path}')
         # TODO: Fix File Processing so it does not create 2 file objects
+        print(f'file.get_url(): {file.get_url()}')
+        print(f'file.preview_url(): {file.preview_url()}')
+        print(f'file.preview_uri(): {file.preview_uri()}')
         # self.assertEqual(file.get_url(), 'https://example.com/r/gps.jpg')
         # self.assertEqual(file.preview_url(), 'https://example.com/u/gps.jpg')
         # self.assertEqual(file.preview_uri(), '/u/gps.jpg')
@@ -150,8 +157,8 @@ class FilesTestCase(TestCase):
         response = self.client.get(reverse('home:url-route', kwargs={'filename': file.name}), follow=True)
         self.assertEqual(response.status_code, 200)
         # TODO: This will test file duplication once fixed
-        # files = Files.objects.all(user=self.user)
-        # self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
+        files = Files.objects.filter(user=self.user)
+        self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
 
         print('--- Testing: API:REMOTE')
         url = 'https://raw.githubusercontent.com/django-files/django-files/master/.assets/gps.jpg'
@@ -160,8 +167,8 @@ class FilesTestCase(TestCase):
         print(response.json())
         self.assertEqual(response.status_code, 200)
         # TODO: This will test file duplication once fixed
-        # files = Files.objects.all(user=self.user)
-        # self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
+        files = Files.objects.filter(user=self.user)
+        self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
 
         print('--- Testing: SHORTS')
         url = 'https://raw.githubusercontent.com/django-files/django-files/master/.assets/gps.jpg'
@@ -172,12 +179,16 @@ class FilesTestCase(TestCase):
         self.assertEqual(response1.status_code, 200)
         short = ShortURLs.objects.all().first()
         print(short)
-        # self.assertEqual(data['url'], 'https://example.com/s/Y2sa')
         self.assertEqual(short.url, url)
         response2 = self.client.get(reverse('home:short', kwargs={'short': short.short}))
         self.assertEqual(response2.status_code, 302)
         print(response2.headers.get('Location'))
         self.assertEqual(response2.headers.get('Location'), short.url)
+
+        print(f' --- TEMP_ROOT: {settings.TEMP_ROOT} - {len(os.listdir(settings.TEMP_ROOT))}')
+        print(os.listdir(settings.TEMP_ROOT))
+        print(f' --- MEDIA_ROOT: {settings.MEDIA_ROOT} - {len(os.listdir(settings.MEDIA_ROOT))}')
+        print(os.listdir(settings.MEDIA_ROOT))
 
         files = Files.objects.filter(user=self.user)
         print(f'files count: {len(files)}')
@@ -186,10 +197,10 @@ class FilesTestCase(TestCase):
 
         print('--- Testing: app_init')
         app_init()
-        print('--- Testing: delete_expired_files')
-        delete_expired_files()
         print('--- Testing: process_stats')
         process_stats()
+        print('--- Testing: delete_expired_files')
+        delete_expired_files()
 
 
 meta_data = {

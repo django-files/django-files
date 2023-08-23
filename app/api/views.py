@@ -5,7 +5,7 @@ import logging
 import os
 import validators
 import functools
-from django.core.files.storage import default_storage
+from django.core.files.storage import storages
 from django.core import serializers
 from django.http import JsonResponse
 from django.shortcuts import reverse
@@ -62,8 +62,11 @@ def upload_view(request):
     try:
         if not (file := request.FILES.get('file')):
             return JsonResponse({'error': 'File Not Created'}, status=400)
-        path = default_storage.save(file.name, file)
-        file_pk = process_file_upload(path, request.user.id)
+        # TODO: Start DEBUGGING HERE
+        # https://docs.djangoproject.com/en/4.2/ref/files/storage/#django.core.files.storage.Storage.save
+        storage = storages['temp']
+        file_name = storage.save(file.name, file)
+        file_pk = process_file_upload(file_name, request.user.id)
         uploaded_file = Files.objects.get(pk=file_pk)
         data = {
             'files': [uploaded_file.preview_url()],
@@ -135,7 +138,7 @@ def shorten_view(request):
 @require_http_methods(['OPTIONS', 'GET'])
 @auth_from_token
 @cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix="stats")
+@cache_page(cache_seconds, key_prefix='stats')
 @vary_on_headers('Authorization')
 @vary_on_cookie
 def stats_view(request):
@@ -155,7 +158,7 @@ def stats_view(request):
 @require_http_methods(['OPTIONS', 'GET'])
 @auth_from_token
 @cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix="files")
+@cache_page(cache_seconds, key_prefix='files')
 @vary_on_headers('Authorization')
 @vary_on_cookie
 def recent_view(request):
@@ -199,8 +202,10 @@ def remote_view(request):
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
     # f = File(io.BytesIO(r.content), name=os.path.basename(url))
-    path = default_storage.save(os.path.basename(url), io.BytesIO(r.content))
-    file_pk = process_file_upload(path, request.user.id)
+    storage = storages['temp']
+    file_name = storage.save(os.path.basename(url), io.BytesIO(r.content))
+    # path = default_storage.save(os.path.basename(url), io.BytesIO(r.content))
+    file_pk = process_file_upload(file_name, request.user.id)
     uploaded_file = Files.objects.get(pk=file_pk)
     # file = Files.objects.create(
     #     file=f,
