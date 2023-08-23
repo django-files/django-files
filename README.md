@@ -46,6 +46,7 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 ### Core
 *   Multiple Users, Local, and OAuth
 *   Ready-to-use ShareX and Flameshot scripts
+*   Google Chrome and Mozilla Firefox Web Extension
 
 ### UI Features
 *   Home Page; with Overview and Stats
@@ -87,7 +88,8 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 *   Max Views
 
 ### External
-*   Chrome Extension: https://github.com/django-files/chrome-extension
+*   Chrome Extension: https://chrome.google.com/webstore/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej
+*   Firefox Extension:https://addons.mozilla.org/addon/django-files
 
 ## Screen Shots
 
