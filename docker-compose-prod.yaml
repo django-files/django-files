@@ -2,8 +2,8 @@ version: '3.7'
 
 services:
   django-files:
-    build: .
-    image: django-files:${VERSION:-latest}
+    #build: .
+    image: ghcr.io/django-files/django-files:latest
     deploy:
       mode: global
       labels:
@@ -19,19 +19,18 @@ services:
         - "traefik.http.services.STACK_NAME.loadbalancer.server.port=80"
         - "traefik.http.services.STACK_NAME.loadbalancer.server.scheme=http"
     volumes:
-      - static_dir:/data/static
-      - logs_dir:/logs
       - media_dir:/data/media
-      - redis_data:/data/redis
+      #- logs_dir:/logs
     ports:
       - "80:80"
-#    extra_hosts:
-#      - "app:127.0.0.1"
-#      - "redis:127.0.0.1"
+    #networks:
+    #  - traefik-public
+    #  - net-internal
+
+#networks:
+#  traefik-public:
+#    external: true
 
 volumes:
-  static_dir:
-  redis_data:
-  logs_dir:
-#  vector_data:
   media_dir:
+  #logs_dir:

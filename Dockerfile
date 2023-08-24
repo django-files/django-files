@@ -28,10 +28,12 @@ COPY --from=base /usr/local/bin/ /usr/local/bin/
 RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
     curl -1sLf 'https://repositories.timber.io/public/vector/cfg/setup/bash.deb.sh' | bash  &&\
     groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -G video -s /usr/sbin/nologin app  &&\
-    mkdir -p /app /data/media/db /data/media/files /data/static /logs  &&  touch /logs/nginx.access  &&\
-    chown app:app /app /data/media/db /data/media/files /data/static /logs /logs/nginx.access  &&\
-    apt-get -y install --no-install-recommends libmariadb-dev-compat pkg-config supervisor nginx redis-server vector  &&\
-    apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove &&  apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
+    mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
+    chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
+    apt-get -y install --no-install-recommends libmariadb-dev-compat pkg-config  \
+        supervisor nginx redis-server vector  &&\
+    apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
+    apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/mime.types /etc/nginx/raw-mime.types
