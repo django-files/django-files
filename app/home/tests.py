@@ -84,28 +84,20 @@ class PlaywrightTest(StaticLiveServerTestCase):
         cls.browser.close()
         cls.playwright.stop()
 
-    def _process_file(self, directory: str, file_name: str) -> Files:
-        path = Path(directory)
-        path = path / file_name
-        print(f'--- Processing: path: {path}')
-        with path.open(mode='rb') as f:
-            file = process_file(path.name, f, self.user.id)
-            log.debug('file: %s', file)
-            return file
-
     def test_browser_views(self):
         print('--- prep files for browser shots ---')
         print('-'*40)
         log.debug('os.getcwd(): %s', os.getcwd())
         dirs = ['static/images', 'static/video', '../.assets']
         for directory in dirs:
-            log.debug('directory: %s', directory)
+            dir_path = Path(directory)
+            log.debug('directory: %s', dir_path)
             for file_name in os.listdir(directory):
-                if not os.path.isfile(os.path.join(directory, file_name)):
-                    continue
-                log.debug('file_name: %s', file_name)
-                file = self._process_file(directory, file_name)
-                log.debug('file.pk: %s', file.pk)
+                path = dir_path / file_name
+                if path.is_file():
+                    log.debug('path.name: %s', path.name)
+                    file = process_file_path(path, self.user.id)
+                    log.debug('file.pk: %s', file.pk)
         print('-'*40)
         print('--- loading shorts for browser shots ---')
         for url in short_urls:
@@ -129,6 +121,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.locator('#login-button').click()
 
         page.wait_for_selector('text=Home', timeout=3000)
+        page.wait_for_timeout(timeout=500)
         page.screenshot(path=f'{self.screenshots}/Home.png')
 
         # page.click('text=View Stats')
@@ -141,20 +134,28 @@ class PlaywrightTest(StaticLiveServerTestCase):
             page.locator(f'text={view}').first.click()
             page.wait_for_selector(f'text={view}', timeout=3000)
             page.screenshot(path=f'{self.screenshots}/{view}.png')
+            if view == 'Files':
+                page.locator('.delete-file-btn').first.click()
+                delete_btn = page.locator('#confirm-delete-hook-btn')
+                page.wait_for_timeout(timeout=500)
+                page.screenshot(path=f'{self.screenshots}/{view}-delete-click.png')
+                delete_btn.click()
+                page.wait_for_timeout(timeout=500)
+                page.screenshot(path=f'{self.screenshots}/{view}-delete-deleted.png')
             if view == 'Settings':
                 page.locator('#remove_exif').click()
                 page.locator('#remove_exif_geo').click()
                 page.locator('#save-settings').click()
-                page.wait_for_timeout(timeout=1000)
+                page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{view}-save-settings.png')
                 page.locator('#navbarDropdown').click()
                 page.locator('#flush-cache').click()
-                page.wait_for_timeout(timeout=1000)
+                page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{view}-flush-cache.png')
             if view == self.views[-1]:
                 page.locator('#navbarDropdown').click()
                 page.locator('.log-out').click()
-                page.wait_for_timeout(timeout=1000)
+                page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{view}-logout.png')
 
 
@@ -180,8 +181,9 @@ class FilesTestCase(TestCase):
     def test_files(self):
         path = Path('../.assets/gps.jpg')
         print(f'--- Testing: FILE PATH: {path}')
-        with path.open(mode='rb') as f:
-            file = process_file(path.name, f, self.user.id)
+        file = process_file_path(path, self.user.id)
+        # with path.open(mode='rb') as f:
+        #     file = process_file(path.name, f, self.user.id)
         print('--- Testing: process_stats')
         process_stats()
         print(f'file.file.path: {file.file.path}')
@@ -199,7 +201,6 @@ class FilesTestCase(TestCase):
         self.assertEqual(file.meta, meta_data)
         response = self.client.get(reverse('home:url-route', kwargs={'filename': file.name}), follow=True)
         self.assertEqual(response.status_code, 200)
-        # TODO: This will test file duplication once fixed
         files = Files.objects.filter(user=self.user)
         self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
 
@@ -209,7 +210,6 @@ class FilesTestCase(TestCase):
         response = self.client.post(reverse('api:remote'), data, content_type='application/json', follow=True)
         print(response.json())
         self.assertEqual(response.status_code, 200)
-        # TODO: This will test file duplication once fixed
         files = Files.objects.filter(user=self.user)
         self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
 
@@ -240,6 +240,14 @@ class FilesTestCase(TestCase):
         app_init()
         print('--- Testing: delete_expired_files')
         delete_expired_files()
+
+
+def process_file_path(path: Path, user_id: int) -> Files:
+    print(f'--- Processing: path: {path}')
+    with path.open(mode='rb') as f:
+        file = process_file(path.name, f, user_id)
+        log.debug('file: %s', file)
+        return file
 
 
 short_urls = [
