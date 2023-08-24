@@ -8,6 +8,7 @@ pwd
 ls -lah
 if [ -f "/.env" ];then
     echo "----- SOURCE /.env -----"
+    set -a
     . /.env
 fi
 echo "----- APP ENTRYPOINT DEBUG - REMOVE -----"
