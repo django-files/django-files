@@ -101,6 +101,7 @@ def shorts_view(request):
     return render(request, 'shorts.html', context)
 
 
+@csrf_exempt
 @cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="settings.webhooks")

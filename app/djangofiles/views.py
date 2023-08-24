@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from home.tasks import flush_template_cache
@@ -14,6 +15,7 @@ def health_check(request):
     return JsonResponse({'status': 'up'}, status=200)
 
 
+@csrf_exempt
 @login_required()
 @require_http_methods(['POST'])
 def flush_cache_view(request):

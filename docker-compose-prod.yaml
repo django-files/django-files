@@ -1,0 +1,34 @@
+version: '3.7'
+
+services:
+  django-files:
+    build: .
+    image: django-files:${VERSION:-latest}
+    deploy:
+      mode: global
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.constraint-label=traefik-public"
+        - "traefik.http.routers.STACK_NAME-http.rule=Host(${TRAEFIK_HOST:-``})"
+        - "traefik.http.routers.STACK_NAME-http.entrypoints=http"
+        - "traefik.http.routers.STACK_NAME-http.middlewares=https-redirect"
+        - "traefik.http.routers.STACK_NAME-https.rule=Host(${TRAEFIK_HOST:-``})"
+        - "traefik.http.routers.STACK_NAME-https.entrypoints=https"
+        - "traefik.http.routers.STACK_NAME-https.tls=true"
+        - "traefik.http.services.STACK_NAME.loadbalancer.server.port=80"
+        - "traefik.http.services.STACK_NAME.loadbalancer.server.scheme=http"
+    volumes:
+      - static_dir:/data/static
+      - logs_dir:/logs
+      - media_dir:/data/media
+      - redis_data:/data/redis
+    ports:
+      - "9001:80"
+
+volumes:
+  static_dir:
+  redis_data:
+  logs_dir:
+#  vector_data:
+  media_dir:
