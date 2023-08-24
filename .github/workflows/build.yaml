@@ -32,4 +32,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: django-files/django-files:latest
+          tags: smashedr/django-files:latest
