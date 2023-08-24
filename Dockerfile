@@ -14,6 +14,11 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip  &&\
 
 FROM python:3.11-slim
 
+LABEL org.opencontainers.image.source="https://github.com/django-files/django-files"
+LABEL org.opencontainers.image.description="Django Files"
+LABEL org.opencontainers.image.authors="smashedr,raluaces"
+LABEL org.opencontainers.image.licenses="GPL-3.0"
+
 ENV TZ=UTC
 ENV PYTHONUNBUFFERED 1
 
