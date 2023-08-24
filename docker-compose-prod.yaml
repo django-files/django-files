@@ -24,7 +24,7 @@ services:
       - media_dir:/data/media
       - redis_data:/data/redis
     ports:
-      - "9001:80"
+      - "80:80"
 
 volumes:
   static_dir:

@@ -3,7 +3,8 @@ FROM python:3.11-slim as base
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE 1
 
-RUN apt-get -y update && apt-get -y install build-essential gcc libmariadb-dev-compat pkg-config
+RUN apt-get -y update  &&  apt-get -y install --no-install-recommends  \
+    build-essential gcc libmariadb-dev-compat pkg-config
 
 COPY app/requirements.txt .
 RUN ls -lah
@@ -19,15 +20,13 @@ ENV PYTHONUNBUFFERED 1
 COPY --from=base /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
 COPY --from=base /usr/local/bin/ /usr/local/bin/
 
-RUN groupadd -g 1000 app  &&\
-    useradd -r -d /app -M -u 1000 -g 1000 -G video -s /usr/sbin/nologin app  &&\
+RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
+    curl -1sLf 'https://repositories.timber.io/public/vector/cfg/setup/bash.deb.sh' | bash  &&\
+    groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -G video -s /usr/sbin/nologin app  &&\
     mkdir -p /app /data/media/db /data/media/files /data/static /logs  &&  touch /logs/nginx.access  &&\
     chown app:app /app /data/media/db /data/media/files /data/static /logs /logs/nginx.access  &&\
-    apt-get -y update  &&  apt-get -y install libmariadb-dev-compat pkg-config curl  &&\
-    apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
-
-RUN curl -1sLf 'https://repositories.timber.io/public/vector/cfg/setup/bash.deb.sh' | bash
-RUN apt-get update && apt-get install -y supervisor nginx redis-server vector
+    apt-get -y install --no-install-recommends libmariadb-dev-compat pkg-config supervisor nginx redis-server vector  &&\
+    apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove &&  apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/nginx.conf /etc/nginx/nginx.conf
