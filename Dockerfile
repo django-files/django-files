@@ -33,20 +33,14 @@ RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
     apt-get -y install --no-install-recommends libmariadb-dev-compat pkg-config supervisor nginx redis-server vector  &&\
     apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove &&  apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/mime.types /etc/nginx/raw-mime.types
 COPY vector/vector.toml /etc/vector/vector.toml
 COPY docker/redis.conf /etc/redis/redis.conf
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY --chmod=0755 docker/docker-entrypoint.sh /docker-entrypoint.sh
 
 COPY --chown=app:app . .
 
 CMD ["/usr/bin/supervisord"]
-
-#COPY docker/docker-entrypoint.sh /docker-entrypoint.sh
-#ENTRYPOINT ["sh", "docker-entrypoint.sh"]
-
-#WORKDIR /app
-#COPY --chown=app:app . .
-#USER app
-#ENTRYPOINT ["sh", "docker-entrypoint.sh"]
+ENTRYPOINT ["bash", "/docker-entrypoint.sh"]

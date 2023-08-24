@@ -25,6 +25,9 @@ services:
       - redis_data:/data/redis
     ports:
       - "80:80"
+#    extra_hosts:
+#      - "app:127.0.0.1"
+#      - "redis:127.0.0.1"
 
 volumes:
   static_dir:
