@@ -2,6 +2,16 @@ name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Tags'
+        required: true
+        default: 'latest'
+
+env:
+  REGISTRY: "ghcr.io"
+  USER: "django-files"
+  REPO: "django-files"
 
 jobs:
   build:
@@ -12,6 +22,20 @@ jobs:
     steps:
       - name: "Checkout"
         uses: actions/checkout@v3
+
+      - name: "Parse Tags"
+        id: tags
+        run: |
+          echo "Input Tags: ${{ inputs.tags }}"
+          TAGS=""
+          IFS=',' read -ra INPUT <<< "${{ inputs.tags }}"
+          for tag in "${INPUT[@]}";do
+            echo "${REGISTRY}/${USER}/${REPO}:${tag}"
+            TAGS+="${REGISTRY}/${USER}/${REPO}:${tag},"
+          done
+          TAGS="$(echo ${TAGS} | sed 's/,*$//g')"
+          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+          echo "Parsed Tags: ${TAGS}"
 
       - name: "Setup Buildx"
         uses: docker/setup-buildx-action@v2
@@ -31,4 +55,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/django-files/django-files:latest
+          tags: ${{ steps.tags.outputs.tags }}
