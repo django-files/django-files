@@ -1,32 +1,34 @@
 # TODO
 
-## 0.1.1
+## Top
 
-### ToDoS
+### Top Dos
 
--   Rework the `get_url` function in the Files Model
--   Look into `utils.s3` and `utils.storage` files
--   Add tests for `/raw/` and other S3 functions
+- [ ] Rework the `get_url` function in the Files Model
+- [ ] Look into `utils.s3` and `utils.storage` files
+- [ ] Add tests for `/raw/` and other S3 functions
 
-### Known Bugs
+### Top Bugs
 
--   Expiration has been disabled and not working
--   Info field has been disabled and should be reworked with expiration
-
-## Testing
-
--   Test API endpoint with token
--   Test Settings Form with Playwright
--   Test Flush Cache and Logout with Playwright
--   Test Vector Tasks
--   Test Oauth Flow
+- [ ] The site does not work unless a proper SITE_URL is set.
 
 ## Issues
 - [ ] Users: Fix Local User to allow Discord Webhook
 - [ ] Overhaul Image Processing Tasks in `util`
+- [ ] Look into duplicate setup.cfg files
+
+## Testing
+
+- [ ] Test API endpoint with token
+- [ ] Test Settings Form with Playwright
+- [ ] Test Flush Cache and Logout with Playwright
+- [ ] Test Vector Tasks
+- [ ] Test Oauth Flow
 
 ## General/UI
 - [ ] Gallery Overhaul
+- [ ] Go through requirements and fully split to requirements and requirements-dev
+- [ ] Go through environment variables and determine which ones should be configurable
 
 ## Files and Upload
 - [ ] Add File Viewing Endpoints for Stats and Embeds
@@ -42,6 +44,7 @@
 - [ ] Fix Image Preview for Images not Browser Compatible (heic)
 
 ## Site Settings
+- [ ] Add OAuth Variables to SiteSettings
 - [ ] Full Settings Interface Overhaul
 - [ ] Custom Site Title Feature
 - [ ] Custom Favicon Feature

@@ -8,7 +8,9 @@ from django.contrib.messages import constants as message_constants
 from pathlib import Path
 from sentry_sdk.integrations.django import DjangoIntegration
 
+BASE_DIR = Path(__file__).resolve().parent.parent
 
+# determine which env file to use
 if 'test' in sys.argv or 'test_coverage' in sys.argv:
     dotenv_path = find_dotenv('test.env', usecwd=True)
     print(f'TEST dotenv_path: {dotenv_path}')
@@ -25,10 +27,16 @@ print(f'database_type: {database_type}')
 db_location = config('DATABSE_LOCATION', '/data/media/db/database.sqlite3')
 print(f'db_location: {db_location}')
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+# ensure SECRET is long enough for django SECRET_KEY
+if missing := 50 - len(config('SECRET')):
+    key_prefix = 'django-files-app-secret-key-prefix'
+    SECRET_KEY = key_prefix[:missing] + config('SECRET')
+else:
+    SECRET_KEY = config('SECRET')[:50]
+print(f'SECRET_KEY: {SECRET_KEY}')
 
-SECRET_KEY = config('SECRET_KEY')
 SITE_URL = config('SITE_URL', 'http://localhost')
+print(f'SITE_URL: {SITE_URL}')
 
 DEBUG = config('DEBUG', 'False', bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '*', Csv())

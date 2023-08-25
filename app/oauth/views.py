@@ -8,6 +8,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from home.models import Webhooks
@@ -17,6 +18,7 @@ from oauth.models import CustomUser
 log = logging.getLogger('app')
 
 
+@csrf_exempt
 def oauth_show(request):
     """
     View  /oauth/
@@ -91,6 +93,7 @@ def oauth_callback(request):
     return HttpResponseRedirect(get_login_redirect_url(request))
 
 
+@csrf_exempt
 @require_http_methods(['POST'])
 def oauth_logout(request):
     """
