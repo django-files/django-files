@@ -2,16 +2,18 @@
 
 set -ex
 
+## Debugging
+#
+#echo "----- SUPERVISOR ENTRYPOINT DEBUG - REMOVE -----"
+#pwd
+#ls -lah
+#if [ -f "/.env" ];then
+#    echo "----- SOURCE /.env -----"
+#    set -a
+#    . /.env
+#fi
+#echo "----- SUPERVISOR ENTRYPOINT DEBUG - REMOVE -----"
 
-echo "----- APP ENTRYPOINT DEBUG - REMOVE -----"
-pwd
-ls -lah
-if [ -f "/.env" ];then
-    echo "----- SOURCE /.env -----"
-    set -a
-    . /.env
-fi
-echo "----- APP ENTRYPOINT DEBUG - REMOVE -----"
 
 # Create /data/media directories for mount
 

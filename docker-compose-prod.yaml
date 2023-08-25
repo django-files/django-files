@@ -2,8 +2,11 @@ version: '3.7'
 
 services:
   django-files:
-    #build: .
     image: ghcr.io/django-files/django-files:latest
+    environment:
+      SECRET: "JYGTKLztZxVdu5NXuhXGaSkLJosiiQyBhFJ4LAHrJ5YHigQqq7"
+      USERNAME: "testuser"
+      PASSWORD: "demopassword"
     deploy:
       mode: global
       labels:

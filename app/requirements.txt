@@ -1,12 +1,12 @@
 boto3
 celery>=5,<6
 # coverage
-channels
-channels-redis
+channels  # TODO: websockets: not in use
+channels-redis  # TODO: websockets: not in use
 django>=4,<5
-django-debug-toolbar>=4,<5
+django-debug-toolbar>=4,<5  # TODO: move to dev
 django-celery-beat
-django-extensions
+django-extensions  # TODO: move to dev
 django-redis
 django-storages
 django-cors-headers
@@ -25,5 +25,5 @@ pytimeparse2
 sentry-sdk
 uvicorn[standard]
 validators
-watchdog
-Werkzeug
+watchdog  # TODO: move to dev
+Werkzeug  # TODO: move to dev

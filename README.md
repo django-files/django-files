@@ -17,14 +17,17 @@ or submit an [Issue](https://github.com/cssnr/zipline-cli/issues/new) for any bu
 ## Table of Contents
 
 *   [Overview](#overview)
+*   [Running](#running)
+    -   [Docker Run](#docker-run)
+    -   [Docker Compose](#docker-compose)
 *   [Features](#features)
 *   [Screen Shots](#screen-shots)
 *   [Usage](#usage)
     -   [Files](#files)
     -   [Short URL](#short-urls)
-*   [Deploy](#deploy)
 *   [Variables](#variables)
 *   [Database](#database)
+*   [Dev Deploy](#dev-deploy)
 *   [Frameworks](#frameworks)
 
 ## Overview
@@ -35,6 +38,76 @@ A [Django](https://github.com/django/django) application, with a
 [Docker](https://www.docker.com/) and Docekr Swarm.  
 Allows uploading files programmatically or via the UI using
 [Uppy](https://uppy.io/).
+
+## Running
+
+**This is currently in Beta.** Expect changes without migrations.
+
+For required variables and options, see: [Variables](#variables)
+
+### Docker Run:
+
+You must use a volume mounted to `/data/media` to store files, database, and sessions.
+
+To use a `.env` file you will need to export the variables first:
+```bash
+set -a; source .env
+docker run --name "django-files" -d --restart unless-stopped  \
+  -p 80:80  -v /data/django-files:/data/media  \
+    ghcr.io/django-files/django-files:latest
+```
+
+With inline environment variables:
+```bash
+docker run --name "django-files" -d --restart unless-stopped  \
+  -p 80:80  -v /data/django-files:/data/media  \
+  -e SECRET=07Y5uGMWF8icYIJXsKPpbdMm  \
+  -e USERNAME=testuser  \
+  -e PASSWORD=testpass  \
+    ghcr.io/django-files/django-files:latest
+```
+
+### Docker Compose:
+
+You must use `media_dir` or mount a volume to `/data/media` to store files, database, and sessions. 
+To use a local mount, replace `media_dir` with `/path/to/folder` you want to store the data locally.
+
+With a `.env` file:
+```yaml
+version: '3'
+
+services:
+  django-files:
+    image: ghcr.io/django-files/django-files:latest
+    env_file: .env
+    volumes:
+      - media_dir:/data/media
+    ports:
+      - "80:80"
+
+volumes:
+  media_dir:
+```
+
+With inline environment variables:
+```yaml
+version: '3'
+
+services:
+  django-files:
+    image: ghcr.io/django-files/django-files:latest
+    environment:
+      SECRET: "07Y5uGMWF8icYIJXsKPpbdMm"
+      USERNAME: "testuser"
+      PASSWORD: "testpass"
+    volumes:
+      - media_dir:/data/media
+    ports:
+      - "80:80"
+
+volumes:
+  media_dir:
+```
 
 ## Features
 
@@ -126,46 +199,6 @@ Response Type: JSON
 
 You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 
-## Deploy
-
-Command included below to generate the required `SECRET_KEY`.  
-The `SITE_URL` can be set with a variable or later set with UI Settings.
-
-To make a [Discord Application](https://discord.com/developers/applications),
-go to the OAuth2 section for Client ID, Client Secret, and to Set Callback URL.  
-This is your SITE_URL + `/oauth/callback/`.  
-Example: `https://example.com` would be `https://example.com/oauth/callback/`
-
-Local Auth may also be used. No need to set Discord variables if so.  
-**Known issues:** you can not add a Discord Webhook to a Local Auth user account.
-
-```text
-git clone https://github.com/django-files/django-files
-cd django-files
-cp settings.env.example settings.env
-
-cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 50
-# copy above output for SECRET_KEY variable
-vim settings.env
-vim docker-compose.yaml
-# Note: both files and sqlite databse are stored in media_dir
-
-docker compose up --build --remove-orphans --force-recreate --detach
-docker compose logs -f
-
-# expect errors on first run - wait for migration to finish, then restart
-docker compose down --remove-orphans
-docker compose up --build --remove-orphans --force-recreate --detach
-
-# for development server use:
-docker compose -f docker-compose-dev.yaml up --build --remove-orphans --force-recreate
-```
-
-*   `settings.env`
-    -   edit the stuff outlined at the top, see above for more info.
-*   `docker-compose.yaml` or `-swarm`
-    -   note the database and files are stored in `media_dir` in a docker volume
-
 ## Variables
 
 You must configure one of the following authentication methods:
@@ -175,17 +208,16 @@ You must configure one of the following authentication methods:
 
 **Bold:** _Required_
 
-| Variable                  | Description       | Example                                              |
-|---------------------------|-------------------|------------------------------------------------------|
-| **SECRET_KEY**            | App Secret        | `JYGTKLztZxVdu5NXuhXGaSkLJosiiQyBhFJ4LAHrJ5YHigQqq7` |
-| SITE_URL                  | Site URL          | `https://example.com`                                |
-| SUPER_USERS               | Discord User IDs  | `111150265075298304,111148006983614464`              |
-| OAUTH_CLIENT_ID           | Discord Client ID | `1135676900124135484`                                |
-| OAUTH_CLIENT_SECRET       | Discord Secret    | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
-| OAUTH_REDIRECT_URL        | Discord Redirect  | `https://example.com/oauth/callback/`                |
-| DJANGO_SUPERUSER_USERNAME | Local Username    | `admin`                                              |
-| DJANGO_SUPERUSER_PASSWORD | Local Password    | `PSZX7TgiSg6aB6sZ`                                   |
-| DJANGO_SUPERUSER_EMAIL    | Local E-Mail      | `user@example.com`                                  |
+| Variable            | Description       | Example                                              |
+|---------------------|-------------------|------------------------------------------------------|
+| **SECRET**          | App Secret        | `JYGTKLztZxVdu5NXuhXGaSkLJosiiQyBhFJ4LAHrJ5YHigQqq7` |
+| SITE_URL            | Site URL          | `https://example.com`                                |
+| SUPER_USERS         | Discord User IDs  | `111150265075298304,111148006983614464`              |
+| OAUTH_CLIENT_ID     | Discord Client ID | `1135676900124135484`                                |
+| OAUTH_CLIENT_SECRET | Discord Secret    | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
+| OAUTH_REDIRECT_URL  | Discord Redirect  | `https://example.com/oauth/callback/`                |
+| USERNAME            | Local Username    | `admin`                                              |
+| PASSWORD            | Local Password    | `PSZX7TgiSg6aB6sZ`                                   | |
 
 ## Database
 
@@ -206,6 +238,46 @@ No changes or additional configuration is required for `sqlite3`.
 
 Note: sqlite3 is stored by default in `media_dir/db`
 based on what is set in the `docker-compose.yaml` file.
+
+## Dev Deploy
+
+Command included below to generate the required `SECRET`.  
+The `SITE_URL` can be set with a variable or later set with UI Settings.
+
+To make a [Discord Application](https://discord.com/developers/applications),
+go to the OAuth2 section for Client ID, Client Secret, and to Set Callback URL.  
+This is your SITE_URL + `/oauth/callback/`.  
+Example: `https://example.com` would be `https://example.com/oauth/callback/`
+
+Local Auth may also be used. No need to set Discord variables if so.  
+**Known issues:** you can not add a Discord Webhook to a Local Auth user account.
+
+```text
+git clone https://github.com/django-files/django-files
+cd django-files
+cp settings.env.example settings.env
+
+cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 50
+# copy above output for SECRET variable
+vim settings.env
+vim docker-compose.yaml
+# Note: both files and sqlite databse are stored in media_dir
+
+docker compose up --build --remove-orphans --force-recreate --detach
+docker compose logs -f
+
+# expect errors on first run - wait for migration to finish, then restart
+docker compose down --remove-orphans
+docker compose up --build --remove-orphans --force-recreate --detach
+
+# for development server use:
+docker compose -f docker-compose-dev.yaml up --build --remove-orphans --force-recreate
+```
+
+*   `settings.env`
+    -   edit the stuff outlined at the top, see above for more info.
+*   `docker-compose.yaml` or `-swarm`
+    -   note the database and files are stored in `media_dir` in a docker volume
 
 ## Frameworks
 
