@@ -15,6 +15,7 @@
 ## Issues
 - [ ] Users: Fix Local User to allow Discord Webhook
 - [ ] Overhaul Image Processing Tasks in `util`
+- [ ] Look into duplicate setup.cfg files
 
 ## Testing
 
@@ -43,6 +44,7 @@
 - [ ] Fix Image Preview for Images not Browser Compatible (heic)
 
 ## Site Settings
+- [ ] Add OAuth Variables to SiteSettings
 - [ ] Full Settings Interface Overhaul
 - [ ] Custom Site Title Feature
 - [ ] Custom Favicon Feature

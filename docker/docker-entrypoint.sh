@@ -2,21 +2,6 @@
 
 set -ex
 
-## Debugging
-#
-#echo "----- SUPERVISOR ENTRYPOINT DEBUG - REMOVE -----"
-#pwd
-#ls -lah
-#if [ -f "/.env" ];then
-#    echo "----- SOURCE /.env -----"
-#    set -a
-#    . /.env
-#fi
-#echo "----- SUPERVISOR ENTRYPOINT DEBUG - REMOVE -----"
-
-
-# Create /data/media directories for mount
-
 if [ ! -d "/data/media/files" ];then
     echo "Creating Directory: /data/media/files"
     mkdir "/data/media/files"
