@@ -1,4 +1,4 @@
-[![Discord](https://img.shields.io/discord/899171661457293343?label=Discord&color=5865F2&logo=discord&logoColor=white)](https://discord.gg/wXy6m2X8wY)
+[![Actions Build](https://github.com/django-files/django-files/actions/workflows/build.yaml/badge.svg)](https://github.com/django-files/django-files/actions/workflows/build.yaml)
 [![Actions Test](https://img.shields.io/github/actions/workflow/status/django-files/django-files/test.yaml?label=Test&logo=github)](https://github.com/django-files/django-files/actions/workflows/test.yaml)
 [![Drone Deploy](https://img.shields.io/drone/build/django-files/django-files?label=Deploy&logo=drone&server=https%3A%2F%2Fdrone.hosted-domains.com)](https://drone.hosted-domains.com/django-files/django-files)
 [![Codacy Grade](https://img.shields.io/codacy/grade/7c41f4f6526c4233ba1304bfb45981c4?label=Codacy&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/dashboard)
