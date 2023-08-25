@@ -5,18 +5,19 @@ import logging
 import os
 import validators
 import functools
-from django.core.files.storage import default_storage
 from django.core import serializers
 from django.http import JsonResponse
+from django.shortcuts import reverse
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from pytimeparse2 import parse
+from typing import Optional
 
-from home.models import Files, FileStats
-from home.tasks import process_file_upload
-from home.util.expire import parse_expire
-from oauth.models import CustomUser
+from home.models import Files, FileStats, SiteSettings, ShortURLs
+from home.util.file import process_file
+from oauth.models import CustomUser, rand_string
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -38,9 +39,9 @@ def auth_from_token(view):
     return wrapper
 
 
+@csrf_exempt
 @require_http_methods(['OPTIONS', 'GET'])
 @auth_from_token
-@csrf_exempt
 def api_view(request):
     """
     View  /api/
@@ -49,13 +50,94 @@ def api_view(request):
     return JsonResponse({'status': 'online', 'user': request.user.id})
 
 
+@csrf_exempt
+@require_http_methods(['POST'])
+@auth_from_token
+def upload_view(request):
+    """
+    View  /upload/ and /api/upload
+    """
+    log.debug(request.headers)
+    log.debug(request.POST)
+    log.debug(request.FILES)
+    try:
+        if not (f := request.FILES.get('file')):
+            return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
+        kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
+        file = process_file(f.name, f, request.user.id, **kwargs)
+        data = {
+            'files': [file.preview_url()],
+            'url': file.preview_url(),
+            'raw': file.get_url(),
+            'name': file.name,
+            'size': file.size,
+        }
+        return JsonResponse(data)
+    except Exception as error:
+        log.exception(error)
+        return JsonResponse({'error': str(error)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+@auth_from_token
+def shorten_view(request):
+    """
+    View  /shorten/ and /api/shorten
+    """
+    body = request.body.decode()
+    log.debug(body)
+    log.debug('-'*40)
+    log.debug(request.headers)
+    log.debug('-'*40)
+    log.debug(request.POST)
+    try:
+        url = request.headers.get('url')
+        vanity = request.headers.get('vanity')
+        max_views = request.headers.get('max-views')
+        if not url:
+            try:
+                data = json.loads(body)
+                log.debug('data: %s', data)
+                url = data.get('url', url)
+                vanity = data.get('vanity', vanity)
+                max_views = data.get('max-views', max_views)
+            except Exception as error:
+                log.debug(error)
+        if not url:
+            return JsonResponse({'error': 'Missing Required Value: url'}, status=400)
+
+        log.debug('url: %s', url)
+        if not validators.url(url):
+            return JsonResponse({'error': 'Unable to Validate URL'}, status=400)
+        if max_views and not str(max_views).isdigit():
+            return JsonResponse({'error': 'max-views Must be an Integer'}, status=400)
+        if vanity and not validators.slug(vanity):
+            return JsonResponse({'error': 'vanity Must be a Slug'}, status=400)
+        short = gen_short(vanity)
+        log.debug('short: %s', short)
+        url = ShortURLs.objects.create(
+            url=url,
+            short=short,
+            max=max_views or 0,
+            user=request.user,
+        )
+        site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+        full_url = site_settings.site_url + reverse('home:short', kwargs={'short': url.short})
+        return JsonResponse({'url': full_url}, safe=False)
+
+    except Exception as error:
+        log.exception(error)
+        return JsonResponse({'error': str(error)}, status=500)
+
+
+@csrf_exempt
 @require_http_methods(['OPTIONS', 'GET'])
 @auth_from_token
 @cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix="stats")
+@cache_page(cache_seconds, key_prefix='stats')
 @vary_on_headers('Authorization')
 @vary_on_cookie
-@csrf_exempt
 def stats_view(request):
     """
     View  /api/stats/
@@ -69,13 +151,13 @@ def stats_view(request):
     return JsonResponse(json.loads(data), safe=False)
 
 
+@csrf_exempt
 @require_http_methods(['OPTIONS', 'GET'])
 @auth_from_token
 @cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix="files")
+@cache_page(cache_seconds, key_prefix='files')
 @vary_on_headers('Authorization')
 @vary_on_cookie
-@csrf_exempt
 def recent_view(request):
     """
     View  /api/recent/
@@ -116,40 +198,39 @@ def remote_view(request):
     if not r.is_success:
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
-    # f = File(io.BytesIO(r.content), name=os.path.basename(url))
-    path = default_storage.save(os.path.basename(url), io.BytesIO(r.content))
-    file_pk = process_file_upload({
-        'file_name': path,
-        'post': request.POST,
-        'user_id': request.user.id,
-        'expire': parse_expire(request),
-    })
-    uploaded_file = Files.objects.get(pk=file_pk)
-    # file = Files.objects.create(
-    #     file=f,
-    #     user=request.user,
-    #     expr=parse_expire(request, request.user),
-    # )
-    # process_file_upload.delay(file.pk)
-    # log.debug(file)
-    log.debug(uploaded_file.preview_url())
-    response = {'url': f'{uploaded_file.preview_url()}'}
+    kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
+    file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id, **kwargs)
+    response = {'url': f'{file.preview_url()}'}
+    log.debug('url: %s', url)
     return JsonResponse(response)
 
 
-# def parse_expire(request, user) -> str:
-#     # Get Expiration from POST or Default
-#     expr = ''
-#     if request.POST.get('Expires-At') is not None:
-#         expr = request.POST['Expires-At'].strip()
-#     elif request.POST.get('ExpiresAt') is not None:
-#         expr = request.POST['ExpiresAt'].strip()
-#     elif request.headers.get('Expires-At') is not None:
-#         expr = request.headers['Expires-At'].strip()
-#     elif request.headers.get('ExpiresAt') is not None:
-#         expr = request.headers['ExpiresAt'].strip()
-#     if expr.lower() in ['0', 'never', 'none', 'null']:
-#         return ''
-#     if parse(expr) is not None:
-#         return expr
-#     return user.default_expire or ''
+def gen_short(vanity: Optional[str] = None, length: int = 4) -> str:
+    if vanity:
+        if not ShortURLs.objects.filter(short=vanity):
+            return vanity
+        else:
+            raise ValueError(f'Vanity Taken: {vanity}')
+    rand = rand_string(length=length)
+    while ShortURLs.objects.filter(short=rand):
+        rand = rand_string(length=length)
+        continue
+    return rand
+
+
+def parse_expire(request) -> str:
+    # Get Expiration from POST or Default
+    expr = ''
+    if request.POST.get('Expires-At') is not None:
+        expr = request.POST['Expires-At'].strip()
+    elif request.POST.get('ExpiresAt') is not None:
+        expr = request.POST['ExpiresAt'].strip()
+    elif request.headers.get('Expires-At') is not None:
+        expr = request.headers['Expires-At'].strip()
+    elif request.headers.get('ExpiresAt') is not None:
+        expr = request.headers['ExpiresAt'].strip()
+    if expr.lower() in ['0', 'never', 'none', 'null']:
+        return ''
+    if parse(expr) is not None:
+        return expr
+    return request.user.default_expire or ''

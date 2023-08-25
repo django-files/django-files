@@ -167,7 +167,7 @@ elif database_type == 'postgresql':
         },
     }
 else:
-    raise ValueError(f"Unknown DATABASE_TYPE: {database_type}")
+    raise ValueError(f'Unknown DATABASE_TYPE: {database_type}')
 
 INSTALLED_APPS = [
     'channels',

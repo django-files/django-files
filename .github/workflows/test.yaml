@@ -4,7 +4,7 @@ on:
   push:
     branches: ["master"]
   pull_request:
-    branches: ["master"]
+    branches: ["master", "*.*.*"]
   workflow_dispatch:
 
 jobs:
@@ -29,35 +29,51 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: "Dependencies ${{ matrix.version }}"
+      - name: "Requirements ${{ matrix.version }}"
         working-directory: app
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 coverage
-          pip install -r requirements.txt
+          python -m pip install -r requirements-dev.txt
+          playwright install chromium
 
       - name: "Flake8"
         working-directory: app
         run: |
           flake8
 
-      - name: "Migrate"
-        working-directory: app
-        run: |
-          python manage.py makemigrations
-          python manage.py migrate
+#      - name: "Migrate"
+#        working-directory: app
+#        run: |
+#          python manage.py makemigrations
+#          python manage.py migrate
 
-      - name: "Test & Coverage"
+      - name: "Test"
         working-directory: app
         run: |
-          coverage run manage.py test --keepdb
+          coverage run manage.py test --verbosity 2 --keepdb
           coverage xml
           coverage report
-#          export CODACY_PROJECT_TOKEN=${{ secrets.CODACY_PROJECT_TOKEN }}
-#          bash <(curl -Ls https://coverage.codacy.com/get.sh) report
 
       - name: "Codacy Coverage"
         uses: codacy/codacy-coverage-reporter-action@v1
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: app/coverage.xml
+
+      - name: "Upload Artifact"
+        uses: actions/upload-artifact@v3
+        with:
+          name: screenshots
+          path: app/screenshots/
+
+      - name: "Push Artifacts"
+        uses: hosted-domains/gh-push-artifacts@master
+        with:
+          path: "app/screenshots/"
+          host: ${{ secrets.ARTIFACTS_HOST }}
+          user: ${{ secrets.RSYNC_USER }}
+          pass: ${{ secrets.RSYNC_PASS }}
+          port: ${{ secrets.RSYNC_PORT }}
+          base: "/static"
+          webhost: "https://artifacts.hosted-domains.com"
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}

@@ -1,5 +1,26 @@
 # TODO
 
+## 0.1.1
+
+### ToDoS
+
+-   Rework the `get_url` function in the Files Model
+-   Look into `utils.s3` and `utils.storage` files
+-   Add tests for `/raw/` and other S3 functions
+
+### Known Bugs
+
+-   Expiration has been disabled and not working
+-   Info field has been disabled and should be reworked with expiration
+
+## Testing
+
+-   Test API endpoint with token
+-   Test Settings Form with Playwright
+-   Test Flush Cache and Logout with Playwright
+-   Test Vector Tasks
+-   Test Oauth Flow
+
 ## Issues
 - [ ] Users: Fix Local User to allow Discord Webhook
 - [ ] Overhaul Image Processing Tasks in `util`

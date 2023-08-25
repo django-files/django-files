@@ -1,11 +1,14 @@
 .idea/
 *.iml
+.vscode/
 **/__pycache__/
 **/venv/
 *.pyc
 .coverage
+**/screenshots/
 *.log
 *.sqlite3
 settings.env
 app/.env
+app/test.env
 .ash_history

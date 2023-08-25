@@ -1,6 +1,6 @@
 venv:
 	python -m venv venv
 requirements:
-	pip install -r requirements.txt
+	pip install -r app/requirements-dev.txt
 dev:
 	make venv requirements

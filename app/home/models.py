@@ -1,5 +1,4 @@
 import validators
-
 from django.db import models
 from django.shortcuts import reverse
 
@@ -34,37 +33,34 @@ class Files(models.Model):
         verbose_name = 'File'
         verbose_name_plural = 'Files'
 
-    def get_url(self, view=False, download=False):
+    def get_url(self, view: bool = False, download: bool = False) -> str:
         site_settings = SiteSettings.objects.get(pk=1)
         if view:
             self.view += 1
             self.save()
-        if validators.url(self.file.url):
-            if download:
-                url = self.file.file._storage.url(
-                    self.file.file.name,
-                    parameters={
-                        'ResponseContentDisposition': f'attachment; filename={self.file.file.name}',
-                        },
-                )
-                return url
+        if not validators.url(self.file.url):
+            return site_settings.site_url + self.file.url
+        if not download:
             return self.file.url
-        return site_settings.site_url + self.file.url
+        # TODO: access protected member, look into how to better handle this
+        return self.file.file._storage.url(
+            self.file.file.name,
+            parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
 
-    def preview_url(self):
+    def preview_url(self) -> str:
         site_settings = SiteSettings.objects.get(pk=1)
         uri = reverse('home:url-route', kwargs={'filename': self.file.name})
         return site_settings.site_url + uri
 
-    def preview_uri(self):
+    def preview_uri(self) -> str:
         return reverse('home:url-route', kwargs={'filename': self.file.name})
 
-    def get_size(self):
+    def get_size(self) -> str:
         num = self.size
         return self.get_size_of(num)
 
     @staticmethod
-    def get_size_of(num):
+    def get_size_of(num: int) -> str:
         for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
             if abs(num) < 1024.0:
                 return f"{num:3.1f} {unit}B"
@@ -112,18 +108,14 @@ class ShortURLs(models.Model):
 class SiteSettings(models.Model):
     id = models.AutoField(primary_key=True)
     site_url = models.URLField(max_length=128, blank=True, null=True, verbose_name='Site URL')
-
     s3_region = models.CharField(max_length=16, blank=True, null=True)
     s3_secret_key = models.CharField(max_length=128, blank=True, null=True)
     s3_secret_key_id = models.CharField(max_length=128, blank=True, null=True)
     # TODO: we should gate actually saving this fields on verifying we can list bucket with the credentials
     s3_bucket_name = models.CharField(max_length=128, blank=True, null=True)
     s3_cdn = models.CharField(
-        max_length=128,
-        blank=True,
-        null=True,
-        help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.'
-        )
+        max_length=128, blank=True, null=True,
+        help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.')
 
     def __str__(self):
         return f'<SiteSettings(site_url={self.site_url})>'

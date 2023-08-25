@@ -1,6 +1,4 @@
 import logging
-import mimetypes
-import os
 import httpx
 import json
 import urllib.parse
@@ -9,23 +7,20 @@ from django_redis import get_redis_connection
 from django.conf import settings
 # from django.core import management
 from django.core.cache import cache
-from django.core.files import File
 # from django.core.cache.utils import make_template_fragment_key
 from django.template.loader import render_to_string
 from django.utils import timezone
 from pytimeparse2 import parse
 
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
-from home.util.processors import ImageProcessor
-from home.util.s3 import use_s3
 from oauth.models import CustomUser
 
-log = logging.getLogger('celery')
+log = logging.getLogger('app')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 20, 'countdown': 3})
 def app_init():
-    # App Init Task
+    # App Init Task - Only Runs on First Startup, then is Disabled
     log.info('app_init')
     site_settings, created = SiteSettings.objects.get_or_create(pk=1)
     if created:
@@ -78,45 +73,6 @@ def clear_settings_cache():
     # Clear Settings cache
     log.info('clear_settings_cache')
     return cache.delete_pattern('*.settings.*')
-
-
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 5})
-def process_file_upload(file_dict):
-    # TODO: Fix all the sub functions/classes
-    # Process new file upload
-    log.info('process_file_upload: %s', file_dict)
-    file_abs_path = settings.MEDIA_ROOT + '/' + file_dict["file_name"]
-    log.info(file_abs_path)
-
-    with open(file_abs_path, mode='rb') as file:
-        if not file:
-            return log.warning('WARNING NO FILE -- file is None --')
-        user = CustomUser.objects.get(id=file_dict["user_id"])
-        file_obj = Files.objects.create(
-            file=File(file, name=file_dict["file_name"]),
-            user=user,
-            info=file_dict["post"].get('info', ''),
-            expr=file_dict["expire"],
-        )
-    log.info('-'*40)
-    file_obj.name = os.path.basename(file_obj.file.name)
-    log.info('file.name: %s', file_obj.name)
-    file_obj.mime, _ = mimetypes.guess_type(file_abs_path, strict=False)
-    if not file_obj.mime:
-        file_obj.mime, _ = mimetypes.guess_type(file_obj.file.name, strict=False)
-    file_obj.mime = file_obj.mime or 'application/octet-stream'
-    log.info('file.mime: %s', file_obj.mime)
-    file_obj.size = file_obj.file.size
-    log.info('file.size: %s', file_obj.size)
-    if file_obj.mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
-        processor = ImageProcessor(file_obj, file_abs_path)
-        processor.process_file()
-    file_obj.save()
-    log.info('-'*40)
-    send_discord_message.delay(file_obj.pk)
-    if use_s3():
-        os.remove(file_abs_path)
-    return file_obj.pk
 
 
 @shared_task()
@@ -175,6 +131,7 @@ def process_stats():
             data[user.id]['shorts'] = len(s)
 
     for user_id, _data in data.items():
+        # TODO: Look into type warning on next line
         _data['human_size'] = Files.get_size_of(_data['size'])
         log.info('user_id: %s', user_id)
         user_id = None if str(user_id) == '_totals' else user_id

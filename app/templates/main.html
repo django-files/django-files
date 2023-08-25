@@ -76,12 +76,12 @@
                             Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
                     {% else %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link" id="navbarDropdown2" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}
                                 <i class="fas fa-angle-down mx-1"></i>
                                 <img src="{{ user|avatar_url }}"
                                      class="rounded-circle mx-2 d-none d-sm-inline d-md-inline d-lg-inline d-xl-inline" height="26" width="26" alt="P"></a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown2">
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                 <li><a class="dropdown-item" role="button" data-bs-toggle="modal" data-bs-target="#user-info-modal">
                                     <i class="fas fa-user-circle me-2"></i> Profile</a></li>
                                 <li><a class="dropdown-item" href="{% url 'home:settings' %}">

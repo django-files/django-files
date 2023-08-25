@@ -9,18 +9,12 @@ def rand_string(length=32):
     return ''.join(random.choices(choices, k=length))
 
 
-def rand_color_hex():
-    # TODO: Add distinctipy
-    colors = ['#483D8B', '#8A2BE2', '#DC143C', '#9932CC', '#228B22', '#ADFF2F']
-    return random.choice(colors).lower()
-
-
-# def rand_color_hex():
-#     rgb = ""
-#     for _ in "RGB":
-#         i = random.randrange(0, 2**8)
-#         rgb += i.to_bytes(1, "big").hex()
-#     return rgb
+def rand_color_hex(prefix: str = '#'):
+    rgb = ""
+    for _ in "RGB":
+        i = random.randrange(0, 2**8)
+        rgb += i.to_bytes(1, "big").hex()
+    return f'{prefix or ""}{rgb}'
 
 
 class CustomUser(AbstractUser):
@@ -35,20 +29,14 @@ class CustomUser(AbstractUser):
     nav_color_1 = models.CharField(default='#130e36', max_length=7)
     nav_color_2 = models.CharField(default='#1e1c21', max_length=7)
     remove_exif_geo = models.BooleanField(
-        default=False,
-        verbose_name="No EXIF Geo",
-        help_text="Removes geo exif data from images on upload.",
-    )
+        default=False, verbose_name="No EXIF Geo",
+        help_text="Removes geo exif data from images on upload.")
     remove_exif = models.BooleanField(
-        default=False,
-        verbose_name="No EXIF",
-        help_text="Removes exif data from images on upload.",
-    )
+        default=False, verbose_name="No EXIF",
+        help_text="Removes exif data from images on upload.")
     show_exif_preview = models.BooleanField(
-        default=False,
-        verbose_name="EXIF Preview",
-        help_text="Shows exif data on previews and unfurls.",
-    )
+        default=False, verbose_name="EXIF Preview",
+        help_text="Shows exif data on previews and unfurls.")
 
     def __str__(self):
         return self.username

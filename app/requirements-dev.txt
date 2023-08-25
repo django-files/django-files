@@ -1,6 +1,6 @@
 boto3
 celery>=5,<6
-# coverage
+coverage
 channels
 channels-redis
 django>=4,<5
@@ -10,7 +10,7 @@ django-extensions
 django-redis
 django-storages
 django-cors-headers
-# flake8
+flake8
 geopy
 gunicorn
 httpx
@@ -18,7 +18,7 @@ markdown
 mysqlclient
 Pillow
 psycopg[binary]
-# pytest-playwright
+pytest-playwright
 python-decouple
 python-dotenv
 pytimeparse2

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
+from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 
 admin.site.site_header = 'Django Files Administration'
 
