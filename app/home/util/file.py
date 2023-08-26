@@ -1,7 +1,6 @@
 import logging
 import mimetypes
 import os
-import uuid
 import tempfile
 # from django.conf import settings
 from django.core.files import File
@@ -12,7 +11,7 @@ from home.models import Files
 from home.util.image import ImageProcessor
 from home.tasks import send_discord_message
 from oauth.models import CustomUser
-from home.util.storage import use_s3
+from home.util.rand import rand_string
 
 log = logging.getLogger('app')
 
@@ -44,13 +43,13 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
             processor.process_file()
             file.meta = processor.meta
             file.exif = processor.exif
-        # duplication handle is forgone since we assign a name prior to file object creation
-        # specifically this is problematic on s3 since nothing checks the bucket for the file prior to save
+        # proper duplication handling in storages is forgone since we assign a name prior to file object creation
         # we must check for a duplicate name and append a random string if it exists in the db
-        if use_s3() and Files.objects.filter(name=name).exists():
-            name = uuid.uuid4().hex[0:5] + '-' + name
+        while Files.objects.filter(name=name).exists():
+            split = os.path.splitext(name)
+            name = split[0] + "-" + rand_string(length=5) + split[1]
         file.file = File(fp, name=name)
-        file.name = file.file.name
+        file.name = name
         log.info('file.name: %s', file.file.name)
         file.mime = file_mime
         log.info('file.mime: %s', file.mime)
