@@ -45,8 +45,8 @@ class Files(models.Model):
 
     def get_gallery_url(self) -> str:
         if use_s3():
-            return self.get_url(self)
-        return self.get_url(self) + "?view=gallery"
+            return self.get_url(False)
+        return self.get_url(False) + "?view=gallery"
 
     def preview_url(self) -> str:
         site_settings = SiteSettings.objects.get(pk=1)
