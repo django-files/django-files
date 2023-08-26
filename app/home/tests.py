@@ -77,6 +77,10 @@ class PlaywrightTest(StaticLiveServerTestCase):
         cls.context = cls.browser.new_context(color_scheme='dark')
         # storage = cls.context.storage_state(path="state.json")
         # cls.context = cls.context.new_context(storage_state="state.json")
+        log.info('settings.MEDIA_ROOT: %s', settings.MEDIA_ROOT)
+        if os.path.isdir(settings.MEDIA_ROOT):
+            log.info('Removing: %s', settings.MEDIA_ROOT)
+            shutil.rmtree(settings.MEDIA_ROOT)
 
     @classmethod
     def tearDownClass(cls):
@@ -93,10 +97,14 @@ class PlaywrightTest(StaticLiveServerTestCase):
             dir_path = Path(directory)
             log.debug('directory: %s', dir_path)
             for file_name in os.listdir(directory):
+                if file_name == 'gps.jpg':
+                    continue
                 path = dir_path / file_name
                 if path.is_file():
                     log.debug('path.name: %s', path.name)
                     file = process_file_path(path, self.user.id)
+                    if file_name == 'an225.jpg':
+                        file = process_file_path(path, self.user.id)
                     log.debug('file.pk: %s', file.pk)
         print('-'*40)
         print('--- loading shorts for browser shots ---')
@@ -184,10 +192,7 @@ class FilesTestCase(TestCase):
         file = process_file_path(path, self.user.id)
         # with path.open(mode='rb') as f:
         #     file = process_file(path.name, f, self.user.id)
-        print('--- Testing: process_stats')
-        process_stats()
         print(f'file.file.path: {file.file.path}')
-        # TODO: Fix File Processing so it does not create 2 file objects
         print(f'file.get_url(): {file.get_url()}')
         print(f'file.preview_url(): {file.preview_url()}')
         print(f'file.preview_uri(): {file.preview_uri()}')

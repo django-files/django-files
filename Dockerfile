@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 RUN apt-get -y update  &&  apt-get -y install --no-install-recommends  \
     build-essential gcc libmariadb-dev-compat pkg-config
 
-COPY app/requirements.txt .
+COPY app/requirements-build.txt requirements.txt
 RUN ls -lah
 RUN python3 -m pip install --no-cache-dir --upgrade pip  &&\
     python3 -m pip install --no-cache-dir -r requirements.txt

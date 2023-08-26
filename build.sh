@@ -5,10 +5,10 @@ REGISTRY_HOST="ghcr.io"
 REGISTRY_USER="django-files"
 REGISTRY_REPO="django-files"
 
-if [ -f ".env" ];then
-    echo "Sourcing Environment: .env"
-    source ".env"
-fi
+#if [ -f ".env" ];then
+#    echo "Sourcing Environment: .env"
+#    source ".env"
+#fi
 if [ -z "${VERSION}" ];then
     if [ -z "${1}" ];then
         VERSION="latest"
