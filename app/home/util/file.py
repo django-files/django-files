@@ -32,6 +32,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     file = Files(user=user, **kwargs)
     with tempfile.NamedTemporaryFile(suffix=os.path.basename(name)) as fp:
         fp.write(f.read())
+        fp.seek(0)
         print(fp.name)
         file_mime, _ = mimetypes.guess_type(name, strict=False)
         if not file_mime:
