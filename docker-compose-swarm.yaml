@@ -24,14 +24,8 @@ services:
       - static_dir:/data/static
       - logs_dir:/logs
       - media_dir:/data/media
-#    secrets:
-#      - source: cssnr_basic_http_auth
-#        target: /etc/nginx/auth.users
     depends_on:
       - app
-#      - flower
-#      - redis-commander
-#      - phpmyadmin
     networks:
       - traefik-public
       - net-internal
@@ -117,52 +111,6 @@ services:
     networks:
       - net-internal
 
-
-#  redis-commander:
-#    image: ghcr.io/joeferner/redis-commander:latest
-#    environment:
-#      - REDIS_HOSTS=local:redis:6379:0,local:redis:6379:1
-#      - URL_PREFIX=/redis
-#      - TRUST_PROXY=true
-#    deploy:
-#      replicas: 1
-#    depends_on:
-#      - redis
-#    networks:
-#      - net-internal
-#
-#  flower:
-#    image: mher/flower:1.2
-#    env_file: ${ENV_FILE}
-#    deploy:
-#      replicas: 1
-#    volumes:
-#      - flower_data:/data
-#    depends_on:
-#      - app
-#      - redis
-#    networks:
-#      - net-internal
-#
-#  phpmyadmin:
-#    image: phpmyadmin:latest
-#    env_file: ${ENV_FILE}
-#    environment:
-#      - APACHE_PORT=8082
-#      - PMA_ABSOLUTE_URI=/phpmyadmin/
-#      - PMA_HOST=${DATABASE_HOST}
-#      - PMA_PORT=${DATABASE_PORT}
-#      - PMA_USER=${DATABASE_USER}
-#      - PMA_PASSWORD=${DATABASE_PASS}
-#    deploy:
-#      replicas: 1
-#    networks:
-#      - net-internal
-#
-#secrets:
-#  cssnr_basic_http_auth:
-#    external: true
-
 networks:
   net-internal:
     driver: overlay
@@ -171,7 +119,6 @@ networks:
 
 volumes:
   static_dir:
-#  flower_data:
   redis_data:
   logs_dir:
   vector_data:

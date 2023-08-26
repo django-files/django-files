@@ -3,6 +3,7 @@ version: '3.7'
 services:
   django-files:
     image: ghcr.io/django-files/django-files:latest
+#    env_file: .env
     environment:
       SECRET: "JYGTKLztZxVdu5NXuhXGaSkLJosiiQyBhFJ4LAHrJ5YHigQqq7"
       USERNAME: "testuser"

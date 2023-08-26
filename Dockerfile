@@ -27,7 +27,8 @@ COPY --from=base /usr/local/bin/ /usr/local/bin/
 
 RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
     curl -1sLf 'https://repositories.timber.io/public/vector/cfg/setup/bash.deb.sh' | bash  &&\
-    groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -G video -s /usr/sbin/nologin app  &&\
+    groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin/nologin app  &&\
+    groupadd -g 101 nginx  &&  useradd -r -d /var/cache/nginx -M -u 101 -g 101 -s /usr/sbin/nologin nginx  &&\
     mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
     chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
     apt-get -y install --no-install-recommends libmariadb-dev-compat pkg-config  \
