@@ -19,10 +19,8 @@ class ImageProcessor(object):
     def process_file(self) -> None:
         # TODO: Concatenate Logic to This Function
         # processes image files, collects or strips exif, sets metadata
-        if self.exif is None:
-            self.exif = {}
-        if self.meta is None:
-            self.meta = {}
+        self.exif = {}
+        self.meta = {}
         with Image.open(self.local_path) as image:
             self.meta['PILImageWidth'], self.meta['PILImageHeight'] = image.size
             if self.remove_exif:
