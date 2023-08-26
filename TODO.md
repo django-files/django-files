@@ -1,24 +1,19 @@
 # TODO
 
-## Top
-
-### Top Dos
-
+## TopDos
 - [ ] Rework the `get_url` function in the Files Model
 - [ ] Look into `utils.s3` and `utils.storage` files
 - [ ] Add tests for `/raw/` and other S3 functions
 
-### Top Bugs
-
+## TopBugs
 - [ ] The site does not work unless a proper SITE_URL is set.
 
-## Issues
+## TopShues
 - [ ] Users: Fix Local User to allow Discord Webhook
 - [ ] Overhaul Image Processing Tasks in `util`
 - [ ] Look into duplicate setup.cfg files
 
 ## Testing
-
 - [ ] Test API endpoint with token
 - [ ] Test Settings Form with Playwright
 - [ ] Test Flush Cache and Logout with Playwright
@@ -27,7 +22,6 @@
 
 ## General/UI
 - [ ] Gallery Overhaul
-- [ ] Go through requirements and fully split to requirements and requirements-dev
 - [ ] Go through environment variables and determine which ones should be configurable
 
 ## Files and Upload
@@ -39,12 +33,12 @@
 - [ ] Option to strip exif on upload regardless of user settings.
 
 ## Preview Page
-- [ ] Overhaul EXIF Parsing to be a re-usable function
 - [ ] Fix highlight.js for Light Mode
 - [ ] Fix Image Preview for Images not Browser Compatible (heic)
 
 ## Site Settings
 - [ ] Add OAuth Variables to SiteSettings
+- [ ] Add S3 Variables to SiteSetetings
 - [ ] Full Settings Interface Overhaul
 - [ ] Custom Site Title Feature
 - [ ] Custom Favicon Feature
@@ -62,4 +56,5 @@
 - [ ] Users - GET PUT DELETE users
 
 ## Miscellaneous
+- [ ] Finish optimizing build image first =D
 - [ ] Add Demo Mode and launch Demo

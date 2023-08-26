@@ -39,6 +39,7 @@ SITE_URL = config('SITE_URL', 'http://localhost')
 print(f'SITE_URL: {SITE_URL}')
 
 DEBUG = config('DEBUG', 'False', bool)
+print(f'DEBUG: {DEBUG}')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '*', Csv())
 SESSION_COOKIE_AGE = config('SESSION_COOKIE_AGE', 3600 * 24 * 14, int)
 
@@ -187,11 +188,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_celery_beat',
-    'django_extensions',
-    'debug_toolbar',
     'home',
     'oauth',
 ]
+if DEBUG:
+    INSTALLED_APPS += [
+        'django_extensions',
+        'debug_toolbar',
+    ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -202,8 +206,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
+if DEBUG:
+    MIDDLEWARE += [
+        'debug_toolbar.middleware.DebugToolbarMiddleware',
+    ]
 
 TEMPLATES = [
     {

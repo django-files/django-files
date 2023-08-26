@@ -23,14 +23,8 @@ services:
       - logs_dir:/logs
       - media_dir:/data/media
       - ${APP_FILES:-./app}:/app
-#    secrets:
-#      - source: cssnr_basic_http_auth
-#        target: /etc/nginx/auth.users
     depends_on:
       - app
-#      - flower
-#      - redis-commander
-#      - phpmyadmin
     ports:
       - "80:80"
 
@@ -105,50 +99,8 @@ services:
       - logs_dir:/logs
       - vector_data:/data
 
-
-#  redis-commander:
-#    image: ghcr.io/joeferner/redis-commander:latest
-#    environment:
-#      - REDIS_HOSTS=local:redis:6379:0,local:redis:6379:1
-#      - URL_PREFIX=/redis
-#      - TRUST_PROXY=true
-#    deploy:
-#      replicas: 1
-#    depends_on:
-#      - redis
-#
-#  flower:
-#    image: mher/flower:1.2
-#    env_file: settings.env
-#    deploy:
-#      replicas: 1
-#    volumes:
-#      - flower_data:/data
-#    depends_on:
-#      - app
-#      - redis
-#      - worker
-#
-#  phpmyadmin:
-#    image: phpmyadmin:latest
-#    env_file: settings.env
-#    environment:
-#      - APACHE_PORT=8082
-#      - PMA_ABSOLUTE_URI=/phpmyadmin/
-#      - PMA_HOST=${DATABASE_HOST}
-#      - PMA_PORT=${DATABASE_PORT}
-#      - PMA_USER=${DATABASE_USER}
-#      - PMA_PASSWORD=${DATABASE_PASS}
-#    deploy:
-#      replicas: 1
-#
-#secrets:
-#  cssnr_basic_http_auth:
-#    file: ~/basic_http_auth
-
 volumes:
   static_dir:
-#  flower_data:
   redis_data:
   logs_dir:
   vector_data:
