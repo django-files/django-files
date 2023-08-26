@@ -50,7 +50,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
         if use_s3() and Files.objects.filter(name=name).exists():
             name = uuid.uuid4().hex[0:5] + '-' + name
         file.file = File(fp, name=name)
-        file.name = name
+        file.name = file.file.name
         log.info('file.name: %s', file.file.name)
         file.mime = file_mime
         log.info('file.mime: %s', file.mime)
