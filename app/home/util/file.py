@@ -12,6 +12,7 @@ from home.models import Files
 from home.util.image import ImageProcessor
 from home.tasks import send_discord_message
 from oauth.models import CustomUser
+from home.util.storage import use_s3
 
 log = logging.getLogger('app')
 
@@ -46,7 +47,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
         # duplication handle is forgone since we assign a name prior to file object creation
         # specifically this is problematic on s3 since nothing checks the bucket for the file prior to save
         # we must check for a duplicate name and append a random string if it exists in the db
-        if Files.objects.filter(name=name).exists():
+        if use_s3() and Files.objects.filter(name=name).exists():
             name = uuid.uuid4().hex[0:5] + '-' + name
         file.file = File(fp, name=name)
         file.name = name

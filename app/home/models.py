@@ -48,7 +48,10 @@ class Files(models.Model):
                 parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
         if expire is not None:
             # if expire is overridden set expire via url method
-            self.file.url(expire=expire)
+            return self.file.file._storage.url(
+                self.file.file.name,
+                expire=86400
+            )
         return self.file.url
 
     def get_meta_static_url(self) -> str:
