@@ -43,12 +43,15 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
             file.meta = processor.meta
             file.exif = processor.exif
         file.file = File(fp, name=name)
-        file.name = os.path.basename(name)
         log.info('file.name: %s', file.name)
         file.mime = file_mime
         log.info('file.mime: %s', file.mime)
         file.size = file.file.size
         log.info('file.size: %s', file.size)
         file.save()
+    # saving the file will cause the name to change if the file already exists, update filename in model if so
+    # TODO: perhaps we should fetch name in the model with a method instead
+    file.name = file.file.name
+    file.save()
     send_discord_message.delay(file.pk)
     return file
