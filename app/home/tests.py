@@ -265,7 +265,7 @@ short_urls = [
 meta_data = {
     "PILImageWidth": 128,
     "PILImageHeight": 96,
-    "GPSArea": "Cascade, Idaho"
+    "GPSArea": "Cascade, Idaho, United States"
 }
 
 exif_data = {
