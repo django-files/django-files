@@ -8,8 +8,8 @@ log = logging.getLogger('app')
 
 
 class ImageProcessor(object):
-    meta: Optional[dict] = {}
-    exif: Optional[dict] = {}
+    meta: Optional[dict] = None
+    exif: Optional[dict] = None
 
     def __init__(self, local_path: str, remove_exif: bool, remove_exif_geo: bool):
         self.local_path = local_path
@@ -28,6 +28,10 @@ class ImageProcessor(object):
             # write exif in case exif modified
             image.save(self.local_path, exif=exif)
             # determine photo area from gps and store in metadata
+            if self.exif is None:
+                self.exif = {}
+            if self.meta is None:
+                self.meta = {}
             if area := city_state_from_exif(exif_clean.get('GPSInfo')):
                 self.meta['GPSArea'] = area
             self.exif = self.cast(exif_clean)
