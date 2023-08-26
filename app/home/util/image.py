@@ -1,32 +1,35 @@
 import logging
 from PIL import Image, ExifTags, TiffImagePlugin
 
-from home.models import Files
 from home.util.geolocation import city_state_from_exif
 
 log = logging.getLogger('app')
 
 
 class ImageProcessor(object):
-    def __init__(self, file: Files, local_path: str):
-        self.file = file
+
+    def __init__(self, local_path: str, remove_exif: bool, remove_exif_geo: bool):
         self.local_path = local_path
+        self.remove_exif = remove_exif
+        self.remove_exif_geo = remove_exif_geo
+        self.exif = {}
+        self.meta = {}
 
     def process_file(self) -> None:
         # TODO: Concatenate Logic to This Function
         # processes image files, collects or strips exif, sets metadata
         with Image.open(self.local_path) as image:
-            self.file.meta['PILImageWidth'], self.file.meta['PILImageHeight'] = image.size
-            if self.file.user.remove_exif:
-                return self.strip_exif(image, self.file, self.local_path)
-            log.info('Parsing and storing EXIF: %s', self.file.pk)
+            self.meta['PILImageWidth'], self.meta['PILImageHeight'] = image.size
+            if self.remove_exif:
+                return self.strip_exif(image, self.local_path)
+            log.info('Parsing and storing EXIF: %s', self.local_path)
             image, exif_clean, exif = self._handle_exif(image)
             # write exif in case exif modified
             image.save(self.local_path, exif=exif)
             # determine photo area from gps and store in metadata
             if area := city_state_from_exif(exif_clean.get('GPSInfo')):
-                self.file.meta['GPSArea'] = area
-            self.file.exif = self.cast(exif_clean)
+                self.meta['GPSArea'] = area
+            self.exif = self.cast(exif_clean)
 
     def _handle_exif(self, image: Image) -> tuple:
         # TODO: Remove Basic Logic from here and put it all in one function
@@ -34,7 +37,7 @@ class ImageProcessor(object):
         # does not collect gps data if strip_gps true
         exif_clean = {}
         exif = image.getexif()
-        if self.file.user.remove_exif_geo:
+        if self.remove_exif_geo:
             image, exif = self.strip_gps_raw_exif(image, exif)
         try:
             # get_exif tends to not have all data we need, so we call _get_exif, if that fails
@@ -75,9 +78,9 @@ class ImageProcessor(object):
         return image, exif
 
     @staticmethod
-    def strip_exif(image: Image, file: Files, local_path: str) -> None:
+    def strip_exif(image: Image, local_path: str) -> None:
         # accepts image and file, rewrites image file without exif
-        log.info('Stripping EXIF: %s', file.pk)
+        log.info('Stripping EXIF: %s', local_path)
         with Image.new(image.mode, image.size) as new:
             new.putdata(image.getdata())
             if 'P' in image.mode:

@@ -1,10 +1,9 @@
-import validators
 from django.db import models
 from django.shortcuts import reverse
 
 from home.managers import FilesManager, FileStatsManager, ShortURLsManager, WebhooksManager
 from oauth.models import CustomUser
-from home.util.storage import StoragesRouterFileField
+from home.util.storage import StoragesRouterFileField, use_s3
 
 
 class Files(models.Model):
@@ -34,18 +33,20 @@ class Files(models.Model):
         verbose_name_plural = 'Files'
 
     def get_url(self, view: bool = False, download: bool = False) -> str:
-        site_settings = SiteSettings.objects.get(pk=1)
         if view:
             self.view += 1
             self.save()
-        if not validators.url(self.file.url):
-            return site_settings.site_url + self.file.url
-        if not download:
-            return self.file.url
-        # TODO: access protected member, look into how to better handle this
-        return self.file.file._storage.url(
-            self.file.file.name,
-            parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
+        if download:
+            # TODO: access protected member, look into how to better handle this
+            return self.file.file._storage.url(
+                self.file.file.name,
+                parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
+        return self.file.url
+
+    def get_gallery_url(self) -> str:
+        if use_s3():
+            return self.get_url(self)
+        return self.get_url(self) + "?view=gallery"
 
     def preview_url(self) -> str:
         site_settings = SiteSettings.objects.get(pk=1)

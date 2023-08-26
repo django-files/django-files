@@ -15,7 +15,7 @@ class Command(BaseCommand):
                 self.style.SUCCESS('ALL Cache Cleared')
             )
         else:
-            cache.delete_pattern('template.cache.*')
+            cache.delete_pattern('*.decorators.cache.*')
             self.stdout.write(
                 self.style.SUCCESS('Template Cache Cleared')
             )
