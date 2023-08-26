@@ -62,7 +62,6 @@ class PlaywrightTest(StaticLiveServerTestCase):
     browser = None
     playwright = None
     user = None
-    c = 1
 
     @classmethod
     def setUpClass(cls):
@@ -91,6 +90,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         cls.playwright.stop()
 
     def test_browser_views(self):
+        c = 1
         print(f'--- {self.live_server_url} ---')
         print('--- prep files for browser shots ---')
         print('-'*40)
@@ -117,11 +117,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         print('-'*40)
         print('--- loading shorts for browser shots ---')
         for url in short_urls:
-            short = ShortURLs.objects.create(
-                url=url,
-                short=gen_short(),
-                user=self.user,
-            )
+            short = ShortURLs.objects.create(url=url, short=gen_short(), user=self.user)
             log.debug('short: %s', short)
         print('-'*40)
         print('--- Testing: process_stats')
@@ -133,48 +129,48 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=1000)
         page.fill('[name=username]', 'testuser')
         page.fill('[name=password]', '12345')
-        page.screenshot(path=f'{self.screenshots}/{self.c}_Login.png')
-        self.c += 1
+        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Login.png')
+        c += 1
         page.locator('#login-button').click()
 
         page.wait_for_selector('text=Home', timeout=3000)
         page.wait_for_timeout(timeout=500)
-        page.screenshot(path=f'{self.screenshots}/{self.c}_Home.png')
-        self.c += 1
+        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Home.png')
+        c += 1
 
         # page.click('text=View Stats')
         # page.get_by_role("link", name=re.compile(".+View Stats", re.IGNORECASE)).click()
         page.goto(f"{self.live_server_url}/stats/")
         page.wait_for_selector('text=Stats', timeout=3000)
-        page.screenshot(path=f'{self.screenshots}/{self.c}_Stats.png')
-        self.c += 1
+        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Stats.png')
+        c += 1
 
         for view in self.views:
             page.locator(f'text={view}').first.click()
             page.wait_for_selector(f'text={view}', timeout=3000)
-            page.screenshot(path=f'{self.screenshots}/{self.c}_{view}.png')
-            self.c += 1
+            page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}.png')
+            c += 1
             if view == 'Files':
                 page.locator('.delete-file-btn').first.click()
                 delete_btn = page.locator('#confirm-delete-hook-btn')
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{self.c}_{view}-delete-click.png')
-                self.c += 1
+                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-click.png')
+                c += 1
                 delete_btn.click()
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{self.c}_{view}-delete-deleted.png')
-                self.c += 1
+                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-deleted.png')
+                c += 1
             if view == 'Settings':
                 page.locator('#show_exif_preview').click()
                 page.locator('#save-settings').click()
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{self.c}_{view}-save-settings.png')
-                self.c += 1
+                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-save-settings.png')
+                c += 1
                 page.locator('#navbarDropdown').click()
                 page.locator('#flush-cache').click()
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{self.c}_{view}-flush-cache.png')
-                self.c += 1
+                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-flush-cache.png')
+                c += 1
             # if view == 'Shorts':
             #     page.locator('#url').fill('https://github.com/django-files/django-files/pkgs/container/django-files')
             #     page.get_by_role("button", name="Create").click()
@@ -182,8 +178,9 @@ class PlaywrightTest(StaticLiveServerTestCase):
             #     page.reload(wait_until='load')
             #     page.screenshot(path=f'{self.screenshots}/{view}-create.png')
 
+        control = 'gps2.jpg'
         page.goto(f"{self.live_server_url}/files/")
-        page.locator('text=gps2.jpg').first.click()
+        page.locator(f'text={control}').first.click()
         page.locator('text=12/17/2022 12:14:26')
         page.locator('text=samsung SM-G973U')
         page.locator('text=King County, Washington, United States')
@@ -192,26 +189,26 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.locator('text=1.5')
         page.locator('text=400')
         page.locator('text=1/120 s')
-        page.screenshot(path=f'{self.screenshots}/{self.c}_Preview-gps2.jpg.png')
-        self.c += 1
+        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Preview-{control}.png')
+        c += 1
         page.locator('text=View Raw').click()
         page.wait_for_load_state()
-        page.screenshot(path=f'{self.screenshots}/{self.c}_Raw-gps2.jpg.png')
-        self.c += 1
+        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Raw-{control}.png')
+        c += 1
         # page.go_back()
         for file in self.previews:
             page.goto(f"{self.live_server_url}/files/")
             page.locator(f'text={file}').first.click()
             # page.wait_for_load_state()
             page.wait_for_timeout(timeout=500)
-            page.screenshot(path=f'{self.screenshots}/{self.c}_Preview-{file}.png')
-            self.c += 1
+            page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Preview-{file}.png')
+            c += 1
 
         page.goto(f"{self.live_server_url}/")
         page.locator('#navbarDropdown').click()
         page.locator('.log-out').click()
         page.wait_for_timeout(timeout=500)
-        page.screenshot(path=f'{self.screenshots}/{self.c}_logout.png')
+        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_logout.png')
 
 
 class FilesTestCase(TestCase):
