@@ -208,7 +208,7 @@ class FilesTestCase(TestCase):
 
     def test_files(self):
         path = Path('../.assets/gps.jpg')
-        print(f'--- Testing: FILE PATH: {path}')
+        print(f'--- Testing Control File: {path}')
         file = process_file_path(path, self.user.id)
         # with path.open(mode='rb') as f:
         #     file = process_file(path.name, f, self.user.id)
