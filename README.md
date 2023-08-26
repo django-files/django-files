@@ -8,9 +8,10 @@
 
 A Self-Hosted Django File Manager for Uploading and Sharing;
 designed to work with client apps such as [ShareX](https://github.com/ShareX/ShareX) and
-[Flameshot](https://github.com/flameshot-org/flameshot).  
-Django Files is currently functional but **Under Active Development**. Expect breaking changes
-until an official [release](https://github.com/django-files/django-files/releases) is made.  
+[Flameshot](https://github.com/flameshot-org/flameshot). Django Files is currently 
+functional but **Under Active Development**. Expect breaking changes until an official 
+[release](https://github.com/django-files/django-files/releases) is made.
+
 Please open a [Feature Request](https://github.com/django-files/django-files/discussions/new?category=feature-requests)
 or submit an [Issue](https://github.com/cssnr/zipline-cli/issues/new) for any bugs.
 
@@ -35,27 +36,21 @@ or submit an [Issue](https://github.com/cssnr/zipline-cli/issues/new) for any bu
 A [Django](https://github.com/django/django) application, with a
 [Celery](https://github.com/celery/celery) task queue, using
 [Bootstrap 5.3](https://getbootstrap.com/), built for
-[Docker](https://www.docker.com/) and Docekr Swarm.  
-Allows uploading files programmatically or via the UI using
-[Uppy](https://uppy.io/).
+[Docker](https://www.docker.com/) for Uploading Files via the API
+or UI using [Uppy](https://uppy.io/).
 
 ## Running
 
-**This is currently in Beta.** Expect changes without migrations.
+> **Warning**
+>
+> This is currently in Beta.
+> Expect breaking changes without migrations.
 
 For required variables and options, see: [Variables](#variables)
 
 ### Docker Run:
 
-You must use a volume mounted to `/data/media` to store files, database, and sessions.
-
-To use a `.env` file you will need to export the variables first:
-```bash
-set -a; source .env
-docker run --name "django-files" -d --restart unless-stopped  \
-  -p 80:80  -v /data/django-files:/data/media  \
-    ghcr.io/django-files/django-files:latest
-```
+You must use a volume mounted to `/data/media` to store files, database and sessions.
 
 With inline environment variables:
 ```bash
@@ -67,27 +62,18 @@ docker run --name "django-files" -d --restart unless-stopped  \
     ghcr.io/django-files/django-files:latest
 ```
 
+To use a `.env` file you will need to export the variables first:
+```bash
+set -a; source .env
+docker run --name "django-files" -d --restart unless-stopped  \
+  -p 80:80  -v /data/django-files:/data/media  \
+    ghcr.io/django-files/django-files:latest
+```
+
 ### Docker Compose:
 
 You must use `media_dir` or mount a volume to `/data/media` to store files, database, and sessions. 
 To use a local mount, replace `media_dir` with `/path/to/folder` you want to store the data locally.
-
-With a `.env` file:
-```yaml
-version: '3'
-
-services:
-  django-files:
-    image: ghcr.io/django-files/django-files:latest
-    env_file: .env
-    volumes:
-      - media_dir:/data/media
-    ports:
-      - "80:80"
-
-volumes:
-  media_dir:
-```
 
 With inline environment variables:
 ```yaml
@@ -109,6 +95,23 @@ volumes:
   media_dir:
 ```
 
+With a `.env` file:
+```yaml
+version: '3'
+
+services:
+  django-files:
+    image: ghcr.io/django-files/django-files:latest
+    env_file: .env
+    volumes:
+      - media_dir:/data/media
+    ports:
+      - "80:80"
+
+volumes:
+  media_dir:
+```
+
 For a Docker Swarm and Traefik example, see: [docker-compose-prod.yaml](docker-compose-prod.yaml)
 
 ## Features
@@ -120,6 +123,7 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 
 ### Core
 *   Multiple Users, Local, and OAuth
+*   Local Storage with Optional S3 Storage
 *   Ready-to-use ShareX and Flameshot scripts
 *   Google Chrome and Mozilla Firefox Web Extension
 
@@ -132,7 +136,7 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 *   Short URLs; View, Create, and Delete Shorts
 *   Settings; Configure Settings via UI
 *   Django Admin to Manage all data for Superusers
-*   Preview Page with optional file metadata
+*   Preview Page for Embeds with optional file metadata
 
 ### Site Settings
 *   ShareX File and URL Configuration
@@ -206,7 +210,7 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 You must configure one of the following authentication methods:
 1.  Local Authentication with `DJANGO_SUPERUSER_*` Variables
 2.  Discord Authentication with `OAUTH_*` Variables
-    -   Variables acquired by [Creating a Discord App](#frameworks).
+    -   Variables acquired by [Creating a Discord App](#dev-deploy).
 
 **Bold:** _Required_
 
@@ -242,6 +246,10 @@ Note: sqlite3 is stored by default in `media_dir/db`
 based on what is set in the `docker-compose.yaml` file.
 
 ## Dev Deploy
+
+> **Note**
+>
+> These instructions may be out of date, but should get you up and running.
 
 Command included below to generate the required `SECRET`.  
 The `SITE_URL` can be set with a variable or later set with UI Settings.
