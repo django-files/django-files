@@ -45,9 +45,11 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
             file.exif = processor.exif
         # proper duplication handling in storages is forgone since we assign a name prior to file object creation
         # we must check for a duplicate name and append a random string if it exists in the db
-        while Files.objects.filter(name=name).exists():
+        prop_name = name
+        while Files.objects.filter(name=prop_name).exists():
             split = os.path.splitext(name)
-            name = split[0] + "-" + rand_string(length=5) + split[1]
+            prop_name = split[0] + "-" + rand_string(length=4) + split[1]
+        name = prop_name
         file.file = File(fp, name=name)
         file.name = name
         log.info('file.name: %s', file.file.name)
