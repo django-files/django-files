@@ -1,6 +1,7 @@
 import logging
 import mimetypes
 import os
+import uuid
 import tempfile
 # from django.conf import settings
 from django.core.files import File
@@ -42,16 +43,18 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
             processor.process_file()
             file.meta = processor.meta
             file.exif = processor.exif
+        # duplication handle is forgone since we assign a name prior to file object creation
+        # specifically this is problematic on s3 since nothing checks the bucket for the file prior to save
+        # we must check for a duplicate name and append a random string if it exists in the db
+        if Files.objects.filter(name=name).exists():
+            name = uuid.uuid4().hex[0:5] + '-' + name
         file.file = File(fp, name=name)
-        log.info('file.name: %s', file.name)
+        file.name = name
+        log.info('file.name: %s', file.file.name)
         file.mime = file_mime
         log.info('file.mime: %s', file.mime)
         file.size = file.file.size
         log.info('file.size: %s', file.size)
         file.save()
-    # saving the file will cause the name to change if the file already exists, update filename in model if so
-    # TODO: perhaps we should fetch name in the model with a method instead
-    file.name = file.file.name
-    file.save()
     send_discord_message.delay(file.pk)
     return file

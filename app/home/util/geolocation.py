@@ -13,7 +13,6 @@ def city_state_from_exif(gps_ifd: dict) -> str:
         geolocator = Nominatim(user_agent='django-files')
         location = geolocator.reverse(dms_to_degrees(gps_ifd))
         location_strings = []
-        print(location.raw['address'])
         if location.raw['address'].get('city', None):
             location_strings.append(location.raw['address'].get('city'))
         else:
