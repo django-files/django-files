@@ -35,6 +35,7 @@
 ## Preview Page
 - [ ] Fix highlight.js for Light Mode
 - [ ] Fix Image Preview for Images not Browser Compatible (heic)
+- [ ] HTML is being rendered on the preview page
 
 ## Site Settings
 - [ ] Add OAuth Variables to SiteSettings
