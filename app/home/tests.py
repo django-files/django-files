@@ -57,10 +57,12 @@ class PlaywrightTest(StaticLiveServerTestCase):
     """Test Playwright"""
     screenshots = 'screenshots'
     views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Settings']
+    previews = ['README.md', 'requirements.txt', 'main.html', 'views.py', 'an225.jpg']
     context = None
     browser = None
     playwright = None
     user = None
+    c = 1
 
     @classmethod
     def setUpClass(cls):
@@ -89,10 +91,18 @@ class PlaywrightTest(StaticLiveServerTestCase):
         cls.playwright.stop()
 
     def test_browser_views(self):
+        print(f'--- {self.live_server_url} ---')
         print('--- prep files for browser shots ---')
         print('-'*40)
         log.debug('os.getcwd(): %s', os.getcwd())
-        dirs = ['static/images', 'static/video', '../.assets']
+        # process_file_path(Path('../.github/workflows/test.yaml'), self.user.id)
+        # process_file_path(Path('../.prettierrc.json'), self.user.id)
+        process_file_path(Path('./requirements.txt'), self.user.id)
+        process_file_path(Path('../README.md'), self.user.id)
+        process_file_path(Path('./templates/main.html'), self.user.id)
+        process_file_path(Path('./home/views.py'), self.user.id)
+        process_file_path(Path('../.assets/an225.jpg'), self.user.id)
+        dirs = ['static/video', '../.assets']
         for directory in dirs:
             dir_path = Path(directory)
             log.debug('directory: %s', dir_path)
@@ -103,8 +113,6 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 if path.is_file():
                     log.debug('path.name: %s', path.name)
                     file = process_file_path(path, self.user.id)
-                    if file_name == 'an225.jpg':
-                        file = process_file_path(path, self.user.id)
                     log.debug('file.pk: %s', file.pk)
         print('-'*40)
         print('--- loading shorts for browser shots ---')
@@ -125,45 +133,54 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=1000)
         page.fill('[name=username]', 'testuser')
         page.fill('[name=password]', '12345')
-        page.screenshot(path=f'{self.screenshots}/Login.png')
+        page.screenshot(path=f'{self.screenshots}/{self.c}_Login.png')
+        self.c += 1
         page.locator('#login-button').click()
 
         page.wait_for_selector('text=Home', timeout=3000)
         page.wait_for_timeout(timeout=500)
-        page.screenshot(path=f'{self.screenshots}/Home.png')
+        page.screenshot(path=f'{self.screenshots}/{self.c}_Home.png')
+        self.c += 1
 
         # page.click('text=View Stats')
         # page.get_by_role("link", name=re.compile(".+View Stats", re.IGNORECASE)).click()
         page.goto(f"{self.live_server_url}/stats/")
         page.wait_for_selector('text=Stats', timeout=3000)
-        page.screenshot(path=f'{self.screenshots}/Stats.png')
+        page.screenshot(path=f'{self.screenshots}/{self.c}_Stats.png')
+        self.c += 1
 
         for view in self.views:
             page.locator(f'text={view}').first.click()
             page.wait_for_selector(f'text={view}', timeout=3000)
-            page.screenshot(path=f'{self.screenshots}/{view}.png')
+            page.screenshot(path=f'{self.screenshots}/{self.c}_{view}.png')
+            self.c += 1
             if view == 'Files':
                 page.locator('.delete-file-btn').first.click()
                 delete_btn = page.locator('#confirm-delete-hook-btn')
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{view}-delete-click.png')
+                page.screenshot(path=f'{self.screenshots}/{self.c}_{view}-delete-click.png')
+                self.c += 1
                 delete_btn.click()
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{view}-delete-deleted.png')
+                page.screenshot(path=f'{self.screenshots}/{self.c}_{view}-delete-deleted.png')
+                self.c += 1
             if view == 'Settings':
                 page.locator('#show_exif_preview').click()
                 page.locator('#save-settings').click()
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{view}-save-settings.png')
+                page.screenshot(path=f'{self.screenshots}/{self.c}_{view}-save-settings.png')
+                self.c += 1
                 page.locator('#navbarDropdown').click()
                 page.locator('#flush-cache').click()
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{view}-flush-cache.png')
-            # if view == self.views[-1]:
-            #     page.locator('#navbarDropdown').click()
-            #     page.locator('.log-out').click()
-            #     page.wait_for_timeout(timeout=500)
-            #     page.screenshot(path=f'{self.screenshots}/{view}-logout.png')
+                page.screenshot(path=f'{self.screenshots}/{self.c}_{view}-flush-cache.png')
+                self.c += 1
+            # if view == 'Shorts':
+            #     page.locator('#url').fill('https://github.com/django-files/django-files/pkgs/container/django-files')
+            #     page.get_by_role("button", name="Create").click()
+            #     page.on("dialog", lambda dialog: dialog.accept())
+            #     page.reload(wait_until='load')
+            #     page.screenshot(path=f'{self.screenshots}/{view}-create.png')
 
         page.goto(f"{self.live_server_url}/files/")
         page.locator('text=gps2.jpg').first.click()
@@ -175,16 +192,26 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.locator('text=1.5')
         page.locator('text=400')
         page.locator('text=1/120 s')
-        page.screenshot(path=f'{self.screenshots}/preview-gps2.png')
+        page.screenshot(path=f'{self.screenshots}/{self.c}_Preview-gps2.jpg.png')
+        self.c += 1
         page.locator('text=View Raw').click()
         page.wait_for_load_state()
-        page.screenshot(path=f'{self.screenshots}/raw-gps2.png')
-        page.go_back()
+        page.screenshot(path=f'{self.screenshots}/{self.c}_Raw-gps2.jpg.png')
+        self.c += 1
+        # page.go_back()
+        for file in self.previews:
+            page.goto(f"{self.live_server_url}/files/")
+            page.locator(f'text={file}').first.click()
+            # page.wait_for_load_state()
+            page.wait_for_timeout(timeout=500)
+            page.screenshot(path=f'{self.screenshots}/{self.c}_Preview-{file}.png')
+            self.c += 1
 
+        page.goto(f"{self.live_server_url}/")
         page.locator('#navbarDropdown').click()
         page.locator('.log-out').click()
-        # page.wait_for_timeout(timeout=500)
-        page.screenshot(path=f'{self.screenshots}/logout.png')
+        page.wait_for_timeout(timeout=500)
+        page.screenshot(path=f'{self.screenshots}/{self.c}_logout.png')
 
 
 class FilesTestCase(TestCase):
