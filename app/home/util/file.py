@@ -33,7 +33,6 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     with tempfile.NamedTemporaryFile(suffix=os.path.basename(name)) as fp:
         fp.write(f.read())
         fp.seek(0)
-        print(fp.name)
         file_mime, _ = mimetypes.guess_type(name, strict=False)
         if not file_mime:
             file_mime, _ = mimetypes.guess_type(name, strict=False)
@@ -44,7 +43,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
             file.meta = processor.meta
             file.exif = processor.exif
         file.file = File(fp, name=name)
-        file.name = os.path.basename(file.file.name)
+        file.name = os.path.basename(name)
         log.info('file.name: %s', file.name)
         file.mime = file_mime
         log.info('file.mime: %s', file.mime)
