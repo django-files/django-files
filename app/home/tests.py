@@ -151,8 +151,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{view}-delete-deleted.png')
             if view == 'Settings':
-                page.locator('#remove_exif').click()
-                page.locator('#remove_exif_geo').click()
+                page.locator('#show_exif_preview').click()
                 page.locator('#save-settings').click()
                 page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{view}-save-settings.png')
@@ -160,11 +159,32 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.locator('#flush-cache').click()
                 page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{view}-flush-cache.png')
-            if view == self.views[-1]:
-                page.locator('#navbarDropdown').click()
-                page.locator('.log-out').click()
-                page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{view}-logout.png')
+            # if view == self.views[-1]:
+            #     page.locator('#navbarDropdown').click()
+            #     page.locator('.log-out').click()
+            #     page.wait_for_timeout(timeout=500)
+            #     page.screenshot(path=f'{self.screenshots}/{view}-logout.png')
+
+        page.goto(f"{self.live_server_url}/files/")
+        page.locator(f'text=gps2.jpg').first.click()
+        page.locator(f'text=12/17/2022 12:14:26')
+        page.locator(f'text=samsung SM-G973U')
+        page.locator(f'text=King County, Washington, United States')
+        page.locator(f'text=109.0 m')
+        page.locator(f'text=4mm')
+        page.locator(f'text=1.5')
+        page.locator(f'text=400')
+        page.locator(f'text=1/120 s')
+        page.screenshot(path=f'{self.screenshots}/preview-gps2.png')
+        page.locator(f'text=View Raw').click()
+        page.wait_for_load_state()
+        page.screenshot(path=f'{self.screenshots}/raw-gps2.png')
+        page.go_back()
+
+        page.locator('#navbarDropdown').click()
+        page.locator('.log-out').click()
+        # page.wait_for_timeout(timeout=500)
+        page.screenshot(path=f'{self.screenshots}/logout.png')
 
 
 class FilesTestCase(TestCase):
