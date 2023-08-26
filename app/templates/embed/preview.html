@@ -31,15 +31,15 @@
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:title" content="{{ file.name }}">
     {% if render == 'image' %}
-        <meta property="og:image" content="{{ static_url }}">
+        <meta property="og:image" content="{{ static_meta_url|safe }}">
         <meta property="og:type" content="website">
         <meta property="twitter:card" content="summary_large_image">
     {% elif render == 'video' %}
-        <meta property="og:video" content="{{ static_url }}">
+        <meta property="og:video" content="{{ static_meta_url|safe }}">
         <meta property="og:type" content="video.other">
         <meta property="twitter:card" content="player">
     {% elif render == 'audio' %}
-        <meta property="og:audio" content="{{ static_url }}">
+        <meta property="og:audio" content="{{ static_meta_url|safe }}">
         <meta property="og:type" content="music.song">
         <meta property="twitter:card" content="player">
     {% else %}

@@ -17,7 +17,8 @@ from typing import Optional
 
 from home.models import Files, FileStats, SiteSettings, ShortURLs
 from home.util.file import process_file
-from oauth.models import CustomUser, rand_string
+from oauth.models import CustomUser
+from home.util.rand import rand_string
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4

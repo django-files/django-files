@@ -11,6 +11,7 @@ from home.models import Files
 from home.util.image import ImageProcessor
 from home.tasks import send_discord_message
 from oauth.models import CustomUser
+from home.util.rand import rand_string
 
 log = logging.getLogger('app')
 
@@ -42,16 +43,20 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
             processor.process_file()
             file.meta = processor.meta
             file.exif = processor.exif
+        # proper duplication handling in storages is forgone since we assign a name prior to file object creation
+        # we must check for a duplicate name and append a random string if it exists in the db
+        prop_name = name
+        while Files.objects.filter(name=prop_name).exists():
+            split = os.path.splitext(name)
+            prop_name = split[0] + "-" + rand_string(length=4) + split[1]
+        name = prop_name
         file.file = File(fp, name=name)
-        log.info('file.name: %s', file.name)
+        file.name = name
+        log.info('file.name: %s', file.file.name)
         file.mime = file_mime
         log.info('file.mime: %s', file.mime)
         file.size = file.file.size
         log.info('file.size: %s', file.size)
         file.save()
-    # saving the file will cause the name to change if the file already exists, update filename in model if so
-    # TODO: perhaps we should fetch name in the model with a method instead
-    file.name = file.file.name
-    file.save()
     send_discord_message.delay(file.pk)
     return file

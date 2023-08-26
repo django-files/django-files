@@ -12,10 +12,15 @@ def city_state_from_exif(gps_ifd: dict) -> str:
     try:
         geolocator = Nominatim(user_agent='django-files')
         location = geolocator.reverse(dms_to_degrees(gps_ifd))
-        if not (area := location.raw['address'].get('city')):
-            area = location.raw['address'].get('county')
-        state = location.raw['address'].get('state', '')
-        return f'{area}, {state}'
+        location_strings = []
+        if location.raw['address'].get('city', None):
+            location_strings.append(location.raw['address'].get('city'))
+        else:
+            location_strings.append(location.raw['address'].get('county'))
+        location_strings.append(location.raw['address'].get('state'))
+        location_strings.append(location.raw['address'].get('country'))
+        location_strings = list(filter(None, location_strings))
+        return ", ".join(location_strings)
     except Exception as error:
         log.info(error)
         return ''

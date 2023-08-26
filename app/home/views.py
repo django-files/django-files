@@ -321,7 +321,12 @@ def url_route_view(request, filename):
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
     log.debug('file.mime: %s', file.mime)
-    ctx = {'file': file, 'render': file.mime.split('/', 1)[0], "static_url": file.get_url(view=use_s3())}
+    ctx = {
+        'file': file,
+        'render': file.mime.split('/', 1)[0],
+        "static_url": file.get_url(view=use_s3()),
+        "static_meta_url": file.get_meta_static_url()
+    }
     log.debug('ctx: %s', ctx)
     if file.mime.startswith('image'):
         log.debug('IMAGE')
