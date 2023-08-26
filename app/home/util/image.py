@@ -8,19 +8,17 @@ log = logging.getLogger('app')
 
 
 class ImageProcessor(object):
-    meta: Optional[dict] = None
-    exif: Optional[dict] = None
 
     def __init__(self, local_path: str, remove_exif: bool, remove_exif_geo: bool):
         self.local_path = local_path
         self.remove_exif = remove_exif
         self.remove_exif_geo = remove_exif_geo
+        self.exif = {}
+        self.meta = {}
 
     def process_file(self) -> None:
         # TODO: Concatenate Logic to This Function
         # processes image files, collects or strips exif, sets metadata
-        self.exif = {}
-        self.meta = {}
         with Image.open(self.local_path) as image:
             self.meta['PILImageWidth'], self.meta['PILImageHeight'] = image.size
             if self.remove_exif:
