@@ -1,6 +1,5 @@
 import logging
 from PIL import Image, ExifTags, TiffImagePlugin
-from typing import Optional
 
 from home.util.geolocation import city_state_from_exif
 
