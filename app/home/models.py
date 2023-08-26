@@ -32,7 +32,12 @@ class Files(models.Model):
         verbose_name = 'File'
         verbose_name_plural = 'Files'
 
-    def get_url(self, view: bool = False, download: bool = False) -> str:
+    def get_url(self, view: bool = False, download: bool = False, expire: int = None) -> str:
+        """Gets a static url to a file object.
+        view counts url retrival as a view
+        download makes the static url force download
+        expire overrides the signing expire time for cloud storage urls
+        """
         if view:
             self.view += 1
             self.save()
@@ -41,11 +46,34 @@ class Files(models.Model):
             return self.file.file._storage.url(
                 self.file.file.name,
                 parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
+        if expire is not None:
+            # if expire is overridden set expire via url method
+            self.file.url(expire=expire)
         return self.file.url
 
-    def get_gallery_url(self) -> str:
+    def get_meta_static_url(self) -> str:
+        """
+        We want an overrided static expire time for cloud storage objects when using meta.
+        Otherwise some clients may cache an old meta url and it will fail to display when using signed urls.
+        There may also be future cases where we dont want to issue this url for private/pw protected files.
+        """
         if use_s3():
-            return self.get_url(False)
+            # TODO: access protected member, look into how to better handle this
+            return self.file.file._storage.url(
+                self.file.file.name,
+                expire=86400
+            )
+        return self.get_url(False)
+
+    def get_gallery_url(self) -> str:
+        """Generates a static url for use on a gallery page."""
+        if use_s3():
+            # we override expire on gallery urls to avoid cached gallery pages from failing to load
+            # TODO: access protected member, look into how to better handle this
+            return self.file.file._storage.url(
+                self.file.file.name,
+                expire=14440
+            )
         return self.get_url(False) + "?view=gallery"
 
     def preview_url(self) -> str:

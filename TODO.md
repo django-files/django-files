@@ -38,7 +38,7 @@
 
 ## Site Settings
 - [ ] Add OAuth Variables to SiteSettings
-- [ ] Add S3 Variables to SiteSetetings
+- [ ] Add S3 Variables to SiteSettings
 - [ ] Full Settings Interface Overhaul
 - [ ] Custom Site Title Feature
 - [ ] Custom Favicon Feature
