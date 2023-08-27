@@ -86,10 +86,10 @@ steps:
       -   echo "-- before stat ---"
       -   stat "$COMPOSE_FILE"
       -   echo "-- before cp ---"
-      -   cp $${{COMPOSE_FILE}} $${STACK_COMPOSE}
+      -   cp "$COMPOSE_FILE" "STACK_COMPOSE"
       -   echo "-- before sed ---"
-      -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$${STACK_COMPOSE}"
-      -   cat "$${STACK_COMPOSE}"
+      -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$COMPOSE_FILE"
+      -   cat "$COMPOSE_FILE"
       - done
 
   - name: "Build and Deploy"
