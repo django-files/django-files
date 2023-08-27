@@ -110,7 +110,7 @@ steps:
       -   echo STACK_NAME $${STACK_NAME}
       -   export STACK_COMPOSE="docker-compose-deploy-$${ENV_NAME}.yaml"
       -   echo STACK_COMPOSE $${STACK_COMPOSE}
-      -   #docker compose -f $${STACK_COMPOSE} build --force-rm
-      -   #docker compose -f $${STACK_COMPOSE} push
-      -   #docker stack deploy -c $${STACK_COMPOSE} --with-registry-auth --resolve-image always $${STACK_NAME}
+      -   docker compose -f $${STACK_COMPOSE} build --force-rm
+      -   docker compose -f $${STACK_COMPOSE} push
+      -   docker stack deploy -c $${STACK_COMPOSE} --with-registry-auth --resolve-image always $${STACK_NAME}
       - done
