@@ -78,7 +78,7 @@
                         <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
                         <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
                         <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
-                        <pre class="pt-3 "><code class="language-python" id="text-preview">...</code></pre>
+                        <pre class="pt-3 ps-3"><code id="text-preview"><i class="fas fa-spinner fa-pulse"></i></code></pre>
                     {% else %}
                         <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
                     {% endif %}
@@ -155,15 +155,17 @@
         return response.text();
     })
     .then((data) => {
-        $('#text-preview').html(data);
+        $('#text-preview').text(data);
         let theme = document.documentElement.getAttribute('data-bs-theme');
         if (theme != "dark") {
             $('#code-dark').prop('disabled', true);
             $('#code-light').prop('disabled', false);
         }
-        hljs.highlightAll();
-    })
-    .catch((error) => {
+        $('#text-preview').each(function(i, block) {
+            hljs.highlightElement(block);
+        })
+        console.log("ping");
+    }).catch((error) => {
         let message = "Error fetching {{ file.file.name }}: " + error
         show_toast(message, bsClass = 'danger')
     });
