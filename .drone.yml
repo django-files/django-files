@@ -73,9 +73,12 @@ steps:
       - for ENV_NAME in $${ENV_NAMES}; do
       -   export STACK_NAME="$${ENV_NAME}_$${DRONE_REPO_OWNER}_$${DRONE_REPO_NAME}"
       -   echo STACK_NAME $${STACK_NAME}
-      -   cp -f $${{COMPOSE_FILE}} docker-compose-deploy-$${ENV_NAME}.yaml
-      -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" docker-compose-deploy-$${ENV_NAME}.yaml
-      -   cat docker-compose-deploy-$${ENV_NAME}.yaml
+      -   echo COMPOSE_FILE $${COMPOSE_FILE}
+      -   export STACK_COMPOSE="docker-compose-deploy-$${ENV_NAME}.yaml"
+      -   echo STACK_COMPOSE $${STACK_COMPOSE}
+      -   cp -f "$${{COMPOSE_FILE}}" "$${STACK_COMPOSE}"
+      -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$${STACK_COMPOSE}"
+      -   cat "$${STACK_COMPOSE}"
       - done
 
   - name: "Build and Deploy"
