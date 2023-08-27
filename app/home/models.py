@@ -90,7 +90,6 @@ class Files(models.Model):
             cache.set(f"{self.name}-gallery-url", )
         return gallery_url
 
-
     def preview_url(self) -> str:
         site_settings = SiteSettings.objects.get(pk=1)
         uri = reverse('home:url-route', kwargs={'filename': self.file.name})
