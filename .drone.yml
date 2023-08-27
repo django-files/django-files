@@ -76,7 +76,9 @@ steps:
       -   echo COMPOSE_FILE $${COMPOSE_FILE}
       -   export STACK_COMPOSE="docker-compose-deploy-$${ENV_NAME}.yaml"
       -   echo STACK_COMPOSE $${STACK_COMPOSE}
+      -   echo "---";ls -lah;echo "---"
       -   cp -f "$${{COMPOSE_FILE}}" "$${STACK_COMPOSE}"
+      -   echo "Copy Done";sleep 3
       -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$${STACK_COMPOSE}"
       -   cat "$${STACK_COMPOSE}"
       - done
