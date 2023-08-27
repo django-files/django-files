@@ -42,7 +42,6 @@ steps:
       - echo ENV_NAMES $${ENV_NAMES}
       - echo "ENV_NAMES='$${ENV_NAMES}'" >> ./.environment
       - cat ./.environment
-      - echo $IFS | od -c
 
   - name: "Service Configs"
     image: alpine/git
@@ -77,17 +76,8 @@ steps:
       -   echo COMPOSE_FILE $${COMPOSE_FILE}
       -   export STACK_COMPOSE="docker-compose-deploy-$${ENV_NAME}.yaml"
       -   echo STACK_COMPOSE $${STACK_COMPOSE}
-      -   echo "-- before debug ---"
-      -   echo $IFS | od -c
-      -   echo $${STACK_COMPOSE} | od -c
-      -   echo $${COMPOSE_FILE} | od -c
-      -   echo "-- before ls ---"
-      -   ls -a
-      -   echo "-- before stat ---"
       -   stat "$COMPOSE_FILE"
-      -   echo "-- before cp ---"
       -   cp "$COMPOSE_FILE" "STACK_COMPOSE"
-      -   echo "-- before sed ---"
       -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$COMPOSE_FILE"
       -   cat "$COMPOSE_FILE"
       - done
