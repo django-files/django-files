@@ -11,7 +11,6 @@ from home.models import Files
 from home.util.image import ImageProcessor
 from home.tasks import send_discord_message
 from oauth.models import CustomUser
-from home.util.rand import rand_string
 
 log = logging.getLogger('app')
 
