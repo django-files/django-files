@@ -69,8 +69,10 @@ steps:
     image: alpine
     commands:
       - set -a; . ./.environment
+      - OIFS="$${IFS}"
       - IFS=','
       - for ENV_NAME in $${ENV_NAMES}; do
+      -   IFS="$${OIFS}"
       -   export STACK_NAME="$${ENV_NAME}_$${DRONE_REPO_OWNER}_$${DRONE_REPO_NAME}"
       -   echo STACK_NAME $${STACK_NAME}
       -   echo COMPOSE_FILE $${COMPOSE_FILE}
@@ -79,8 +81,8 @@ steps:
       -   echo "---";ls -lah;echo "---"
       -   stat "$${{COMPOSE_FILE}}"
       -   cp "$${{COMPOSE_FILE}}" "$${STACK_COMPOSE}"
-      -   echo "Copy Done";sleep 3
-#      -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$${STACK_COMPOSE}"
+      -   echo "Copy Done";echo "---";sleep 3
+      -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$${STACK_COMPOSE}"
       -   cat "$${STACK_COMPOSE}"
       - done
 
