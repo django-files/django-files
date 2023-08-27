@@ -1,7 +1,7 @@
 import datetime
 import sentry_sdk
 import sys
-# from celery.schedules import crontab
+from celery.schedules import crontab
 from decouple import config, Csv
 from dotenv import find_dotenv, load_dotenv
 from django.contrib.messages import constants as message_constants
@@ -115,6 +115,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'home.tasks.process_vector_stats',
         'schedule': datetime.timedelta(minutes=config('PROCESS_VECTOR_STATS', 1, int)),
     },
+    'refresh_gallery_static_urls_cache': {
+        'task': 'refresh_gallery_static_urls_cache',
+        'schedule': crontab(minute='0', hour='9,21')
+    }
 }
 
 CHANNEL_LAYERS = {
