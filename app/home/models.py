@@ -59,8 +59,10 @@ class Files(models.Model):
                 expire=86400
             )
         # check if generic url is cached if not generate and cache
-
-        return self.file.url
+        if (url := cache.get(f"{self.name}-url", )) is None:
+            url = self.file.url
+            cache.set(f"{self.name}-url", url)
+        return url
 
     def get_meta_static_url(self) -> str:
         """
@@ -78,7 +80,8 @@ class Files(models.Model):
 
     def get_gallery_url(self) -> str:
         """Generates a static url for use on a gallery page."""
-        if (gallery_url := cache.get(f"{self.name}-gallery-url")) is not None:
+        if (gallery_url := cache.get(f"{self.name}-gallery-url")) is None:
+            print("gallery url cache MISS")
             if use_s3():
                 # we override expire on gallery urls to avoid cached gallery pages from failing to load
                 # TODO: access protected member, look into how to better handle this
@@ -86,8 +89,10 @@ class Files(models.Model):
                     self.file.file.name,
                     expire=14440
                 )
+                cache.set(f"{self.name}-gallery-url", gallery_url)
+                return gallery_url
             gallery_url = self.get_url(False) + "?view=gallery"
-            cache.set(f"{self.name}-gallery-url", )
+            cache.set(f"{self.name}-gallery-url", gallery_url)
         return gallery_url
 
     def preview_url(self) -> str:
