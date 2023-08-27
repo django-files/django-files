@@ -79,6 +79,8 @@ steps:
       -   echo "-- before debug ---"
       -   echo $${STACK_COMPOSE} | od -c
       -   echo $${COMPOSE_FILE} | od -c
+      -   echo "-- before ls ---"
+      -   ls -a
       -   echo "-- before stat ---"
       -   stat $${{COMPOSE_FILE}}
       -   echo "-- before cp ---"
