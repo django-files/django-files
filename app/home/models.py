@@ -103,7 +103,7 @@ class Files(models.Model):
                     expire=14440
                 )
                 # intentionally expire cache before gallery url signing expires
-                cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 10800)
+                cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
             return gallery_url
         return self.get_url(False) + "?view=gallery"
 
