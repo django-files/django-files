@@ -19,7 +19,6 @@ class FilesAdmin(admin.ModelAdmin):
         return format_html('<a href="{0}">{1}</a>', obj.get_gallery_url(), obj.file.name)
 
 
-
 @admin.register(FileStats)
 class FileStatsAdmin(admin.ModelAdmin):
     model = FileStats
