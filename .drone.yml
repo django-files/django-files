@@ -78,7 +78,7 @@ steps:
       -   echo STACK_COMPOSE $${STACK_COMPOSE}
       -   stat "$COMPOSE_FILE"
       -   cp "$COMPOSE_FILE" "$STACK_COMPOSE"
-      -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$COMPOSE_FILE"
+      -   sed -i "s/STACK_NAME/$STACK_NAME/g" "$COMPOSE_FILE"
       -   cat "$COMPOSE_FILE"
       - done
 
