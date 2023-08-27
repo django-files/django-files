@@ -44,7 +44,7 @@ def app_cleanup():
 def flush_template_cache():
     # Flush all template cache on request
     log.info('flush_template_cache')
-    return cache.delete_pattern('*.decorators.cache.*')
+    return cache.delete_pattern('*.decorators.cache.*') + cache.delete_pattern('*.urlcache.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
