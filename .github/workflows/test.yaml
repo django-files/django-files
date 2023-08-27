@@ -67,7 +67,7 @@ jobs:
           path: app/screenshots/
 
       - name: "Push Artifacts"
-        uses: hosted-domains/gh-push-artifacts@master
+        uses: hosted-domains/gh-push-artifacts@jinja
         with:
           path: "app/screenshots/"
           host: ${{ secrets.ARTIFACTS_HOST }}
