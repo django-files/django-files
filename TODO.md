@@ -33,9 +33,7 @@
 - [ ] Option to strip exif on upload regardless of user settings.
 
 ## Preview Page
-- [ ] Fix highlight.js for Light Mode
 - [ ] Fix Image Preview for Images not Browser Compatible (heic)
-- [ ] HTML is being rendered on the preview page
 
 ## Site Settings
 - [ ] Add OAuth Variables to SiteSettings
@@ -59,3 +57,5 @@
 ## Miscellaneous
 - [ ] Finish optimizing build image first =D
 - [ ] Add Demo Mode and launch Demo
+- [ ] Auto configure CORS on s3 bucket on init.
+- [ ] Example IAM settings for s3 user, plus guide on setup.

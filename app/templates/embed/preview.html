@@ -14,18 +14,17 @@
     <meta property="og:author" content="{{ file.user.username }}">
     <meta property="og:title" content="{{ file.name }}">
     <meta property="og:description" content="{{ file.info|default:"" }}{% if file.user.show_exif_preview %}{% if file.exif.Model %}
-    Camera: {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}{% endif %}
-    {{ file.exif.DateTimeOriginal|convert_str_date }}{% if file.meta.GPSArea %}
-    {{ file.meta.GPSArea }}{% endif %}{% if file.exif.GPSInfo.6 %}
-    Elevation: {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}
+Camera: {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}{% endif %}{% if file.exif.DateTimeOriginal%}
+{{ file.exif.DateTimeOriginal|convert_str_date }}{% if file.meta.GPSArea %}{% endif %}{% if file.meta.GPSArea %}
+{{ file.meta.GPSArea }}{% endif %}{% if file.exif.GPSInfo.6 %}{% endif %}{% if file.exif.GPSInfo.6 %}
+Elevation: {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}
 
-    {% if file.exif.FocalLength %}{{ file.exif.FocalLength|floatformat:'0' }}mm{% endif %}{% if file.exif.FNumber %} &fnof; {{ file.exif.FNumber }}{% endif %}
-    {% if file.exif.ISOSpeedRatings %}ISO Speed: {{ file.exif.ISOSpeedRatings }}{% endif %}
-    {% if file.exif.ExposureTime %}Exposure Time: {{ file.exif.ExposureTime }} s{% endif %}
-    {% endif %}{% if file.meta.PILImageWidth %}
-    Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}
-    {{ file.mime }} uploaded by {% if file.user.first_name %}{{ file.user.first_name }}{% else %}{{ file.user.username }}{% endif %} on {{ file.date }}
-    ">
+{% endif %}{% if file.exif.FocalLength %}{{ file.exif.FocalLength|floatformat:'0' }}mm{% endif %}{% if file.exif.FNumber %} &fnof; {{ file.exif.FNumber }}{% endif %}{% if file.exif.ISOSpeedRatings %}
+ISO Speed: {{ file.exif.ISOSpeedRatings }}{% endif %}{% if file.exif.ExposureTime %}
+Exposure Time: {{ file.exif.ExposureTime }} s{% endif %}
+{% endif %}{% if file.meta.PILImageWidth %}
+Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}
+{{ file.mime }} uploaded by {% if file.user.first_name %}{{ file.user.first_name }}{% else %}{{ file.user.username }}{% endif %} on {{ file.date }}">
 
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
@@ -78,7 +77,7 @@
                         <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
                         <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
                         <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
-                        <pre class="pt-3 "><code class="language-python" id="text-preview">...</code></pre>
+                        <pre class="pt-3 ps-3"><code id="text-preview"><i class="fas fa-spinner fa-pulse"></i></code></pre>
                     {% else %}
                         <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
                     {% endif %}
@@ -155,15 +154,16 @@
         return response.text();
     })
     .then((data) => {
-        $('#text-preview').html(data);
+        $('#text-preview').text(data);
         let theme = document.documentElement.getAttribute('data-bs-theme');
         if (theme != "dark") {
             $('#code-dark').prop('disabled', true);
             $('#code-light').prop('disabled', false);
         }
-        hljs.highlightAll();
-    })
-    .catch((error) => {
+        $('#text-preview').each(function(i, block) {
+            hljs.highlightElement(block);
+        })
+    }).catch((error) => {
         let message = "Error fetching {{ file.file.name }}: " + error
         show_toast(message, bsClass = 'danger')
     });

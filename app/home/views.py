@@ -349,12 +349,7 @@ def url_route_view(request, filename):
         return render(request, 'embed/markdown.html', context=ctx)
     elif file.mime.startswith('text/') or file.mime in code_mimes:
         log.debug('CODE')
-        lang_map = {
-            "x-python": "python",
-            "plain": "plaintext"
-        }
         ctx['render'] = 'code'
-        ctx['highlight_language'] = f"language-{lang_map.get(file.mime.replace('text/',''), 'plaintext')}"
         return render(request, 'embed/preview.html', context=ctx)
     else:
         log.debug('UNKNOWN')
