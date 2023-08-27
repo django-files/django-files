@@ -1,9 +1,11 @@
 from django.db import models
 from django.shortcuts import reverse
+from django.conf import settings
 
 from home.managers import FilesManager, FileStatsManager, ShortURLsManager, WebhooksManager
 from oauth.models import CustomUser
 from home.util.storage import StoragesRouterFileField, use_s3
+from django.core.cache import cache
 
 
 class Files(models.Model):
@@ -41,17 +43,35 @@ class Files(models.Model):
         if view:
             self.view += 1
             self.save()
+        # ######## Download Static URL ########
         if download:
-            # TODO: access protected member, look into how to better handle this
+            # check if download url cached, if not serve new one
+            if use_s3():
+                if (download_url := cache.get(f"file.urlcache.download.{self.pk}", )) is None:
+                    # TODO: access protected member, look into how to better handle this
+                    download_url = self.file.file._storage.url(
+                        self.file.file.name,
+                        parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
+                    cache.set(f"file.urlcache.download.{self.pk}", download_url, settings.AWS_QUERYSTRING_EXPIRE)
+                return download_url
+                # skip cache behavior for local file storage
             return self.file.file._storage.url(
-                self.file.file.name,
-                parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
+                    self.file.file.name,
+                    parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
+        # ######## Custom Expire Generic Static URL (cloud only) ########
         if expire is not None:
+            # we cant cache this since it will be a custom value
             # if expire is overridden set expire via url method
             return self.file.file._storage.url(
                 self.file.file.name,
-                expire=86400
-            )
+                expire=86400)
+        # ######## Generic Static URL ########
+        if use_s3():
+            # check if generic static url is cached if not generate and cache, honors AWS settings sign expire time
+            if (url := cache.get(f"file.urlcache.raw.{self.pk}", )) is None:
+                url = self.file.url
+                cache.set(f"file.urlcache.raw.{self.pk}", url, settings.AWS_QUERYSTRING_EXPIRE)
+            return url
         return self.file.url
 
     def get_meta_static_url(self) -> str:
@@ -61,22 +81,30 @@ class Files(models.Model):
         There may also be future cases where we dont want to issue this url for private/pw protected files.
         """
         if use_s3():
-            # TODO: access protected member, look into how to better handle this
-            return self.file.file._storage.url(
-                self.file.file.name,
-                expire=86400
-            )
+            if (meta_static_url := cache.get(f"file.urlcache.meta_static.{self.pk}")) is None:
+                # TODO: access protected member, look into how to better handle this
+                meta_static_url = self.file.file._storage.url(
+                    self.file.file.name,
+                    expire=86400
+                )
+                cache.set(f"file.urlcache.meta_static.{self.pk}", meta_static_url, 10800)
+            return meta_static_url
         return self.get_url(False)
 
     def get_gallery_url(self) -> str:
         """Generates a static url for use on a gallery page."""
         if use_s3():
-            # we override expire on gallery urls to avoid cached gallery pages from failing to load
+            # only want cache for s3
+            # override signing expire on gallery urls to avoid cached gallery pages from failing to load
             # TODO: access protected member, look into how to better handle this
-            return self.file.file._storage.url(
-                self.file.file.name,
-                expire=14440
-            )
+            if (gallery_url := cache.get(f"file.urlcache.gallery.{self.pk}")) is None:
+                gallery_url = self.file.file._storage.url(
+                    self.file.file.name,
+                    expire=86400
+                )
+                # intentionally expire cache before gallery url signing expires
+                cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
+            return gallery_url
         return self.get_url(False) + "?view=gallery"
 
     def preview_url(self) -> str:

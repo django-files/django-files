@@ -12,6 +12,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from pytimeparse2 import parse
 
+from home.util.storage import use_s3
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 from oauth.models import CustomUser
 
@@ -44,7 +45,7 @@ def app_cleanup():
 def flush_template_cache():
     # Flush all template cache on request
     log.info('flush_template_cache')
-    return cache.delete_pattern('*.decorators.cache.*')
+    return cache.delete_pattern('*.decorators.cache.*') + cache.delete_pattern('*.urlcache.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
@@ -73,6 +74,18 @@ def clear_settings_cache():
     # Clear Settings cache
     log.info('clear_settings_cache')
     return cache.delete_pattern('*.settings.*')
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 2, 'countdown': 30})
+def refresh_gallery_static_urls_cache():
+    # Process file stats
+    log.info('----- START gallery cache refresh -----')
+    if use_s3:
+        files = Files.objects.all()
+        for file in files:
+            cache.delete(f'file.urlcache.gallery.{file.pk}')
+            file.get_gallery_url()
+    log.info('----- COMPLETE gallery cache refresh -----')
 
 
 @shared_task()

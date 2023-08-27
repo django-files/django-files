@@ -1,7 +1,7 @@
 import datetime
 import sentry_sdk
 import sys
-# from celery.schedules import crontab
+from celery.schedules import crontab
 from decouple import config, Csv
 from dotenv import find_dotenv, load_dotenv
 from django.contrib.messages import constants as message_constants
@@ -74,7 +74,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
-AWS_S3_FILE_OVERWRITE = False
+AWS_S3_FILE_OVERWRITE = config('AWS_S3_FILE_OVERWRITE', False, bool)
+AWS_QUERYSTRING_EXPIRE = config('AWS_QUERYSTRING_EXPIRE', 14400, int)
 
 # CACHE_MIDDLEWARE_SECONDS = 0
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', True, bool)
@@ -114,6 +115,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'home.tasks.process_vector_stats',
         'schedule': datetime.timedelta(minutes=config('PROCESS_VECTOR_STATS', 1, int)),
     },
+    'refresh_gallery_static_urls_cache': {
+        'task': 'refresh_gallery_static_urls_cache',
+        'schedule': crontab(minute='0', hour='9,21')
+    }
 }
 
 CHANNEL_LAYERS = {
