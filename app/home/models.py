@@ -4,6 +4,7 @@ from django.shortcuts import reverse
 from home.managers import FilesManager, FileStatsManager, ShortURLsManager, WebhooksManager
 from oauth.models import CustomUser
 from home.util.storage import StoragesRouterFileField, use_s3
+from django.core.cache import cache
 
 
 class Files(models.Model):
@@ -42,16 +43,23 @@ class Files(models.Model):
             self.view += 1
             self.save()
         if download:
-            # TODO: access protected member, look into how to better handle this
-            return self.file.file._storage.url(
-                self.file.file.name,
-                parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
+            # check if download url cached, if not serve new one
+            if (download_url := cache.get(f"{self.name}-download-url", )) is None:
+                # TODO: access protected member, look into how to better handle this
+                download_url = self.file.file._storage.url(
+                    self.file.file.name,
+                    parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
+                cache.set(f"{self.name}-download-url", download_url)
+            return download_url
         if expire is not None:
+            # we cant cache this since it will be a custom value
             # if expire is overridden set expire via url method
             return self.file.file._storage.url(
                 self.file.file.name,
                 expire=86400
             )
+        # check if generic url is cached if not generate and cache
+
         return self.file.url
 
     def get_meta_static_url(self) -> str:
@@ -70,14 +78,18 @@ class Files(models.Model):
 
     def get_gallery_url(self) -> str:
         """Generates a static url for use on a gallery page."""
-        if use_s3():
-            # we override expire on gallery urls to avoid cached gallery pages from failing to load
-            # TODO: access protected member, look into how to better handle this
-            return self.file.file._storage.url(
-                self.file.file.name,
-                expire=14440
-            )
-        return self.get_url(False) + "?view=gallery"
+        if (gallery_url := cache.get(f"{self.name}-gallery-url")) is not None:
+            if use_s3():
+                # we override expire on gallery urls to avoid cached gallery pages from failing to load
+                # TODO: access protected member, look into how to better handle this
+                gallery_url = self.file.file._storage.url(
+                    self.file.file.name,
+                    expire=14440
+                )
+            gallery_url = self.get_url(False) + "?view=gallery"
+            cache.set(f"{self.name}-gallery-url", )
+        return gallery_url
+
 
     def preview_url(self) -> str:
         site_settings = SiteSettings.objects.get(pk=1)
