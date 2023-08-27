@@ -100,7 +100,7 @@ class Files(models.Model):
             if (gallery_url := cache.get(f"file.urlcache.gallery.{self.pk}")) is None:
                 gallery_url = self.file.file._storage.url(
                     self.file.file.name,
-                    expire=14440
+                    expire=86400
                 )
                 # intentionally expire cache before gallery url signing expires
                 cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
