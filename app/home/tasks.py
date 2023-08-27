@@ -84,7 +84,7 @@ def refresh_gallery_static_urls_cache():
         files = Files.objects.all()
         for file in files:
             cache.delete(f'file.urlcache.gallery.{file.pk}')
-            file.get_galler_url()
+            file.get_gallery_url()
     log.info('----- COMPLETE gallery cache refresh -----')
 
 
