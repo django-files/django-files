@@ -84,7 +84,7 @@ steps:
       -   echo "-- before ls ---"
       -   ls -a
       -   echo "-- before stat ---"
-      -   stat ${COMPOSE_FILE}
+      -   stat "$COMPOSE_FILE"
       -   echo "-- before cp ---"
       -   cp $${{COMPOSE_FILE}} $${STACK_COMPOSE}
       -   echo "-- before sed ---"
