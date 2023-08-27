@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 
@@ -8,11 +9,15 @@ admin.site.site_header = 'Django Files Administration'
 @admin.register(Files)
 class FilesAdmin(admin.ModelAdmin):
     model = Files
-    list_display = ('id', 'file', 'size', 'expr', 'mime', 'user', 'date',)
+    list_display = ('id', 'show_file', 'size', 'expr', 'mime', 'user', 'date',)
     list_filter = ('user', 'expr', 'mime',)
-    readonly_fields = ('id', 'file', 'size', 'mime', 'user', 'date',)
-    search_fields = ('id', 'file', 'size', 'expr', 'mime', 'date',)
+    readonly_fields = ('id', 'show_file', 'size', 'mime', 'user', 'date',)
+    search_fields = ('id', 'show_file', 'size', 'expr', 'mime', 'date',)
     ordering = ('-date',)
+
+    def show_file(self, obj):
+        return format_html('<a href="{0}">{1}</a>', obj.get_gallery_url(), obj.file.name)
+
 
 
 @admin.register(FileStats)
