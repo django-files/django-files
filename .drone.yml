@@ -79,7 +79,7 @@ steps:
       -   echo "---";ls -lah;echo "---"
       -   cp $${{COMPOSE_FILE}} $${STACK_COMPOSE}
       -   echo "Copy Done";sleep 3
-      -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$${STACK_COMPOSE}"
+#      -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$${STACK_COMPOSE}"
       -   cat "$${STACK_COMPOSE}"
       - done
 
