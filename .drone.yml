@@ -79,7 +79,7 @@ steps:
       -   stat "$COMPOSE_FILE"
       -   cp "$COMPOSE_FILE" "$STACK_COMPOSE"
       -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$STACK_COMPOSE"
-      -   cat "$COMPOSE_FILE"
+      -   cat "$STACK_COMPOSE"
       - done
 
   - name: "Build and Deploy"
