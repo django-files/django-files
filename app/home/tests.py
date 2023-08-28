@@ -13,7 +13,7 @@ from playwright.sync_api import sync_playwright
 
 from api.views import gen_short
 from home.models import Files, ShortURLs, SiteSettings
-from home.tasks import delete_expired_files, app_init, process_stats
+from home.tasks import delete_expired_files, app_init, process_stats, flush_template_cache
 from home.util.file import process_file
 from oauth.models import CustomUser
 
@@ -57,7 +57,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
     """Test Playwright"""
     screenshots = 'screenshots'
     views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Settings']
-    previews = ['README.md', 'requirements.txt', 'main.html', 'views.py', 'an225.jpg']
+    previews = ['README.md', 'requirements.txt', 'main.html', 'home_tags.py', 'an225.jpg']
     context = None
     browser = None
     playwright = None
@@ -100,7 +100,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         process_file_path(Path('./requirements.txt'), self.user.id)
         process_file_path(Path('../README.md'), self.user.id)
         process_file_path(Path('./templates/main.html'), self.user.id)
-        process_file_path(Path('./home/views.py'), self.user.id)
+        process_file_path(Path('./home/templatetags/home_tags.py'), self.user.id)
         process_file_path(Path('../.assets/an225.jpg'), self.user.id)
         dirs = ['static/video', '../.assets']
         for directory in dirs:
@@ -166,17 +166,33 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-save-settings.png')
                 c += 1
+                # Note: this does not flush the cache since it is an async task, it just tests the UI flush button
                 page.locator('#navbarDropdown').click()
                 page.locator('#flush-cache').click()
                 page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-flush-cache.png')
                 c += 1
-            # if view == 'Shorts':
-            #     page.locator('#url').fill('https://github.com/django-files/django-files/pkgs/container/django-files')
-            #     page.get_by_role("button", name="Create").click()
-            #     page.on("dialog", lambda dialog: dialog.accept())
-            #     page.reload(wait_until='load')
-            #     page.screenshot(path=f'{self.screenshots}/{view}-create.png')
+            if view == 'Shorts':
+                page.locator('#url').fill('https://github.com/django-files/django-files/pkgs/container/django-files')
+                # page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-fill.png')
+                # c += 1
+                page.get_by_role("button", name="Create").click()
+                print('--- Testing: flush_template_cache')
+                page.wait_for_timeout(timeout=500)
+                flush_template_cache()
+                # page.on("dialog", lambda dialog: dialog.accept())
+                page.reload()
+                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-create.png')
+                c += 1
+                page.locator('.delete-short-btn').first.click()
+                delete_btn = page.locator('#confirm-delete-short-hook-btn')
+                page.wait_for_timeout(timeout=500)
+                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-click.png')
+                c += 1
+                delete_btn.click()
+                page.wait_for_timeout(timeout=500)
+                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-deleted.png')
+                c += 1
 
         control = 'gps2.jpg'
         page.goto(f"{self.live_server_url}/files/")

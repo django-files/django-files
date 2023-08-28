@@ -60,14 +60,14 @@ jobs:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: app/coverage.xml
 
-      - name: "Upload Artifact"
-        uses: actions/upload-artifact@v3
-        with:
-          name: screenshots
-          path: app/screenshots/
+#      - name: "Upload Artifact"
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: screenshots
+#          path: app/screenshots/
 
       - name: "Push Artifacts"
-        uses: hosted-domains/gh-push-artifacts@master
+        uses: hosted-domains/push-artifacts-action@master
         with:
           path: "app/screenshots/"
           host: ${{ secrets.ARTIFACTS_HOST }}
