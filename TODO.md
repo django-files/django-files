@@ -34,6 +34,7 @@
 
 ## Preview Page
 - [ ] Fix Image Preview for Images not Browser Compatible (heic)
+- [ ] Context Menu to delete files and do other future actions like pw protect or private mode
 
 ## Site Settings
 - [ ] Add OAuth Variables to SiteSettings
