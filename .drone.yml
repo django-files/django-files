@@ -7,7 +7,7 @@ platform:
 
 trigger:
   event:
-    - push
+    - pull_request
     - promote
 
 environment:
