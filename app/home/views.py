@@ -205,6 +205,7 @@ def delete_file_ajax(request, pk):
     file.delete()
     return HttpResponse(status=204)
 
+
 @login_required
 @csrf_exempt
 @require_http_methods(['POST'])
