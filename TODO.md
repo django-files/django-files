@@ -7,7 +7,6 @@
 
 ## TopBugs
 - [ ] The site does not work unless a proper SITE_URL is set.
-- [ ] Delete short url does not work.
 
 ## TopShues
 - [ ] Users: Fix Local User to allow Discord Webhook

@@ -62,8 +62,8 @@ $(document).ready(function () {
         })
 
         // Handle delete click confirmations
-        $('#confirm-delete-hook-btn').click(function () {
-            if ($('#confirm-delete-hook-btn').hasClass('disabled')) {
+        $('#confirm-delete-short-hook-btn').click(function () {
+            if ($('#confirm-delete-short-hook-btn').hasClass('disabled')) {
                 return
             }
             console.log(hookID)
@@ -73,7 +73,7 @@ $(document).ready(function () {
                 headers: { 'X-CSRFToken': csrftoken },
                 beforeSend: function () {
                     console.log('beforeSend')
-                    $('#confirm-delete-hook-btn').addClass('disabled')
+                    $('#confirm-delete-short-hook-btn').addClass('disabled')
                 },
                 success: function (response) {
                     console.log('response: ' + response)
@@ -98,7 +98,7 @@ $(document).ready(function () {
                 },
                 complete: function () {
                     console.log('complete')
-                    $('#confirm-delete-hook-btn').removeClass('disabled')
+                    $('#confirm-delete-short-hook-btn').removeClass('disabled')
                 },
             })
         })
