@@ -209,6 +209,23 @@ def delete_file_ajax(request, pk):
 @login_required
 @csrf_exempt
 @require_http_methods(['POST'])
+def delete_short_ajax(request, pk):
+    """
+    View  /ajax/delete/short/<int:pk>/
+    TODO: Implement into /short/ using DELETE method
+    """
+    log.debug('del_hook_view_a: %s', pk)
+    short = ShortURLs.objects.get(pk=pk)
+    if short.user != request.user:
+        return HttpResponse(status=401)
+    log.debug(short)
+    short.delete()
+    return HttpResponse(status=204)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(['POST'])
 def delete_hook_ajax(request, pk):
     """
     View  /ajax/delete/hook/<int:pk>/

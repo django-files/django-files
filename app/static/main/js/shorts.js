@@ -51,4 +51,55 @@ $(document).ready(function () {
             processData: false,
         })
     })
+
+        // Define Hook Modal and Delete handlers
+        const deleteHookModal = new bootstrap.Modal('#delete-short-modal', {})
+        let hookID
+        $('.delete-short-btn').click(function () {
+            hookID = $(this).data('hook-id')
+            console.log(hookID)
+            deleteHookModal.show()
+        })
+
+        // Handle delete click confirmations
+        $('#confirm-delete-short-hook-btn').click(function () {
+            if ($('#confirm-delete-short-hook-btn').hasClass('disabled')) {
+                return
+            }
+            console.log(hookID)
+            $.ajax({
+                type: 'POST',
+                url: `/ajax/delete/short/${hookID}/`,
+                headers: { 'X-CSRFToken': csrftoken },
+                beforeSend: function () {
+                    console.log('beforeSend')
+                    $('#confirm-delete-short-hook-btn').addClass('disabled')
+                },
+                success: function (response) {
+                    console.log('response: ' + response)
+                    deleteHookModal.hide()
+                    console.log('removing #short-' + hookID)
+                    let count = $('#shorts-table tr').length
+                    $('#short-' + hookID).remove()
+                    if (count <= 2) {
+                        console.log('removing #shorts-table@ #shorts-table')
+                        $('#shorts-table').remove()
+                    }
+                    let message = 'Short URL ' + hookID + ' Successfully Removed.'
+                    show_toast(message, 'success')
+                },
+                error: function (xhr, status, error) {
+                    console.log('xhr status: ' + xhr.status)
+                    console.log('status: ' + status)
+                    console.log('error: ' + error)
+                    deleteHookModal.hide()
+                    let message = xhr.status + ': ' + error
+                    show_toast(message, 'danger', '15000')
+                },
+                complete: function () {
+                    console.log('complete')
+                    $('#confirm-delete-short-hook-btn').removeClass('disabled')
+                },
+            })
+        })
 })
