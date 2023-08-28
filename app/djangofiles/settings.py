@@ -22,12 +22,13 @@ else:
     env = load_dotenv(dotenv_path=dotenv_path)
     print(f'env: {env}')
 
+# determine database type and location
 database_type = config('DATABASE_TYPE', 'sqlite3')
 print(f'database_type: {database_type}')
 db_location = config('DATABSE_LOCATION', '/data/media/db/database.sqlite3')
 print(f'db_location: {db_location}')
 
-# ensure SECRET is long enough for django SECRET_KEY
+# ensure SECRET/SECRET_KEY is exactly 50 characters long
 if missing := 50 - len(config('SECRET')):
     key_prefix = 'django-files-app-secret-key-prefix'
     SECRET_KEY = key_prefix[:missing] + config('SECRET')
@@ -35,11 +36,11 @@ else:
     SECRET_KEY = config('SECRET')[:50]
 print(f'SECRET_KEY: {SECRET_KEY}')
 
-SITE_URL = config('SITE_URL', 'http://localhost')
-print(f'SITE_URL: {SITE_URL}')
-
 DEBUG = config('DEBUG', 'False', bool)
 print(f'DEBUG: {DEBUG}')
+APP_VERSION = config('APP_VERSION', 'DEV')
+
+SITE_URL = config('SITE_URL', 'http://localhost')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '*', Csv())
 SESSION_COOKIE_AGE = config('SESSION_COOKIE_AGE', 3600 * 24 * 14, int)
 
@@ -77,10 +78,10 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'
 AWS_S3_FILE_OVERWRITE = config('AWS_S3_FILE_OVERWRITE', False, bool)
 AWS_QUERYSTRING_EXPIRE = config('AWS_QUERYSTRING_EXPIRE', 14400, int)
 
-# CACHE_MIDDLEWARE_SECONDS = 0
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', True, bool)
 NGINX_ACCESS_LOGS = config('NGINX_ACCESS_LOGS', '/logs/nginx.access')
 
+# CACHE_MIDDLEWARE_SECONDS = 0
 # CSRF_TRUSTED_ORIGINS = config('CSRF_ORIGINS', '', Csv())
 # SECURE_REFERRER_POLICY = config('SECURE_REFERRER_POLICY', 'no-referrer')
 
@@ -276,14 +277,14 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-if config('SENTRY_URL', False, bool):
+if config('SENTRY_URL', False):
     sentry_sdk.init(
         dsn=config('SENTRY_URL'),
         integrations=[DjangoIntegration()],
         traces_sample_rate=config('SENTRY_SAMPLE_RATE', 0.25, float),
         send_default_pii=True,
         debug=config('SENTRY_DEBUG', config('DEBUG', 'False'), bool),
-        environment=config('SENTRY_ENVIRONMENT'),
+        environment=config('SENTRY_ENVIRONMENT', None),
     )
 
 if DEBUG:

@@ -11,7 +11,7 @@ register = template.Library()
 @register.simple_tag(name='get_config')
 def get_config(value):
     # get django setting value or return none
-    return getattr(settings, value, None)
+    return getattr(settings, value, '')
 
 
 @register.filter(name='avatar_url')

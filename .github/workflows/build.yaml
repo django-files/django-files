@@ -1,12 +1,13 @@
 name: Build
 
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       tags:
-        description: 'Tags: comma,separated'
-        required: true
-        default: 'latest'
+        description: "Override Tags: comma,separated"
+        required: false
 
 env:
   REGISTRY: "ghcr.io"
@@ -20,22 +21,42 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      - name: "Checkout"
+        uses: actions/checkout@v3
+
       - name: "Tags"
         id: tags
         run: |
           echo "Input Tags: ${{ inputs.tags }}"
-          TAGS=""
-          IFS=',' read -ra INPUT <<< "${{ inputs.tags }}"
-          for tag in "${INPUT[@]}";do
-            echo "${REGISTRY}/${USER}/${REPO}:${tag}"
-            TAGS+="${REGISTRY}/${USER}/${REPO}:${tag},"
-          done
-          TAGS="$(echo ${TAGS} | sed 's/,*$//g')"
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
-          echo "Parsed Tags: ${TAGS}"
-
-      - name: "Checkout"
-        uses: actions/checkout@v3
+          echo "GITHUB_REF_NAME: ${GITHUB_REF_NAME}"
+          echo "github.event_name: ${{ github.event_name }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ];then
+            if [ -n "${{ inputs.tags }}" ];then
+              echo "Parsing Input Tags..."
+              TAGS=""
+              IFS=',' read -ra INPUT <<< "${{ inputs.tags }}"
+              for tag in "${INPUT[@]}";do
+                echo "${REGISTRY}/${USER}/${REPO}:${tag}"
+                TAGS+="${REGISTRY}/${USER}/${REPO}:${tag},"
+              done
+              TAGS="$(echo ${TAGS} | sed 's/,*$//g')"
+            else
+              echo "Using Default Tags..."
+              TAGS="${REGISTRY}/${USER}/${REPO}:${GITHUB_REF_NAME}"
+              TAGS+=",${REGISTRY}/${USER}/${REPO}:latest"
+            fi
+            echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+            echo "Parsed Tags: ${TAGS}"
+          else
+            TAGS="${REGISTRY}/${USER}/${REPO}:${GITHUB_REF_NAME}"
+            if [ "${{ github.event.release.prerelease }}" != "true" ];then
+              TAGS+=",${REGISTRY}/${USER}/${REPO}:latest"
+            fi
+            echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+            echo "Parsed Tags: ${TAGS}"
+          fi
+          echo "APP_VERSION=${GITHUB_REF_NAME}" >> .env
+          echo "APP_VERSION: ${APP_VERSION}"
 
       - name: "Setup Buildx"
         uses: docker/setup-buildx-action@v2
@@ -45,7 +66,7 @@ jobs:
       - name: "Docker Login"
         uses: docker/login-action@v2
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ secrets.GHCR_USER }}
           password: ${{ secrets.GHCR_PASS }}
 

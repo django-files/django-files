@@ -1,12 +1,13 @@
 # TODO
 
 ## TopDos
-- [ ] Rework the `get_url` function in the Files Model
+- [ ] Review ALL the `get_url` methods in the Files Model
 - [ ] Look into `utils.s3` and `utils.storage` files
 - [ ] Add tests for `/raw/` and other S3 functions
 
 ## TopBugs
-- [ ] The site does not work unless a proper SITE_URL is set.
+- [ ] The SITE_URL is still used as a setting value some places, and as a SiteSettings in others
+- [ ] Add a Warning to the site until the SITE_URL has been updated
 
 ## TopShues
 - [ ] Users: Fix Local User to allow Discord Webhook
