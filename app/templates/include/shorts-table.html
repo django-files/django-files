@@ -1,6 +1,6 @@
 {% load home_tags %}
 
-<table class="table table-sm table-striped table-hover">
+<table class="table table-sm table-striped table-hover" id="shorts-table">
     <thead>
     <tr>
         <th scope="col" class="d-none d-sm-table-cell">Short</th>
@@ -12,7 +12,7 @@
     </thead>
     <tbody>
     {% for short in shorts %}
-    <tr>
+    <tr id="short-{{ short.id }}">
         <th scope="row" class="d-none d-sm-table-cell">
             <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'home:short' short=short.short %}" target="_blank">
                 {{ short.short }}</a></th>
@@ -22,9 +22,27 @@
         <td class="text-center">
             <a class="clip text-white mx-1" role="button" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{% url 'home:short' short=short.short %}">
             <i class="fa-regular fa-clipboard"></i></a>
-            <a role="button" class="delete-short-btn link-danger mx-1" data-short-id="{{ short.id }}" title="Delete">
-                <i class="fa-regular fa-trash-can"></i></a></td>
+            <a role="button" class="delete-short-btn" data-hook-id="{{ short.id }}" title="Delete">
+                <i class="fa-regular fa-trash-can link-danger"></i></a></td></td>
     </tr>
     {% endfor %}
     </tbody>
 </table>
+
+<div class="modal fade" id="delete-short-modal" tabindex="-1" aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Delete Short URL</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">Are you sure you want to delete this short url?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="confirm-delete-hook-btn">Delete <i
+                        class="fa-regular fa-trash-can ms-1"></i></button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
