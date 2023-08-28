@@ -7,6 +7,7 @@
 
 ## TopBugs
 - [ ] The site does not work unless a proper SITE_URL is set.
+- [ ] Delete short url does not work.
 
 ## TopShues
 - [ ] Users: Fix Local User to allow Discord Webhook
@@ -31,6 +32,7 @@
 - [ ] Filename Options Feature
 - [ ] Overhaul /shorten and /upload URL Endpoints
 - [ ] Option to strip exif on upload regardless of user settings.
+- [ ] Bulk delete on files list.
 
 ## Preview Page
 - [ ] Fix Image Preview for Images not Browser Compatible (heic)
