@@ -57,7 +57,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
     """Test Playwright"""
     screenshots = 'screenshots'
     views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Settings']
-    previews = ['README.md', 'requirements.txt', 'main.html', 'views.py', 'an225.jpg']
+    previews = ['README.md', 'requirements.txt', 'main.html', 'home_tags.py', 'an225.jpg']
     context = None
     browser = None
     playwright = None
