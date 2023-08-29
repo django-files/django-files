@@ -104,7 +104,7 @@ def shorts_view(request):
 @csrf_exempt
 @cache_control(no_cache=True)
 @login_required
-@cache_page(cache_seconds, key_prefix="settings.webhooks")
+# @cache_page(cache_seconds, key_prefix="settings.webhooks")
 @vary_on_cookie
 def settings_view(request):
     """
@@ -124,8 +124,12 @@ def settings_view(request):
         return JsonResponse(form.errors, status=400)
     data = {'reload': False}
     log.debug(form.cleaned_data)
-    site_settings.site_url = form.cleaned_data['site_url']
-    site_settings.save()
+    if request.user.is_superuser:
+        site_settings.site_url = form.cleaned_data['site_url']
+        site_settings.oauth_reg = form.cleaned_data['oauth_reg']
+        site_settings.two_factor = form.cleaned_data['two_factor']
+        site_settings.save()
+
     request.user.default_expire = form.cleaned_data['default_expire']
 
     if request.user.default_color != form.cleaned_data['default_color']:
@@ -142,6 +146,10 @@ def settings_view(request):
     request.user.remove_exif_geo = form.cleaned_data['remove_exif_geo']
     request.user.remove_exif = form.cleaned_data['remove_exif']
     request.user.show_exif_preview = form.cleaned_data['show_exif_preview']
+    log.debug('form.cleaned_data.show_exif_preview: %s', form.cleaned_data['show_exif_preview'])
+    log.debug('request.user.show_exif_preview: %s', request.user.show_exif_preview)
+
+    # TODO: Determine if this is superuser setting or user setting
     request.user.s3_bucket_name = form.cleaned_data.get('s3_bucket_name')
 
     request.user.save()

@@ -9,20 +9,26 @@ logger = logging.getLogger('app')
 register = template.Library()
 
 
+@register.filter(name='if_true')
+def if_true(value, output):
+    # return output if value is true else empty
+    return output if value else ''
+
+
 @register.filter(name='get_config')
 def get_config(value):
-    # get django setting value or empty
+    # get django setting or config value or empty
     return getattr(settings, value, None) or config(value, '')
 
 
-@register.filter(name='avatar_url')
-def avatar_url(user):
-    # return discord avatar url from user model
-    if user.avatar_hash:
-        return f'https://cdn.discordapp.com/avatars/' \
-               f'{ user.username }/{ user.avatar_hash }.png'
-    else:
-        return static('images/assets/default.png')
+# @register.filter(name='avatar_url')
+# def avatar_url(user):
+#     # return discord avatar url from user model
+#     if user.avatar_hash:
+#         return f'https://cdn.discordapp.com/avatars/' \
+#                f'{ user.username }/{ user.avatar_hash }.png'
+#     else:
+#         return static('images/assets/default.png')
 
 
 @register.filter(name='single_type')

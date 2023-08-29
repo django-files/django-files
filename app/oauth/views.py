@@ -1,16 +1,18 @@
 import httpx
 import logging
 import urllib.parse
+import duo_universal
 from datetime import datetime, timedelta
 from decouple import config, Csv
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
+# from django.conf import settings
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-import duo_universal
+from typing import Optional
 
 from home.models import SiteSettings, Webhooks
 from oauth.forms import LoginForm
@@ -36,7 +38,9 @@ def oauth_show(request):
         if not user:
             return HttpResponse(status=401)
 
-        if config('DUO_CLIENT_ID', False):
+        if SiteSettings.objects.get(pk=1).two_factor:
+            # if config('DUO_CLIENT_ID', False):
+            #     pass
             log.info('--- DUO DETECTED - REDIRECTING ---')
             log.debug('username: %s', user.username)
             request.session['username'] = user.username
@@ -55,15 +59,15 @@ def oauth_show(request):
         return render(request, 'login.html')
 
 
-def oauth_start(request):
+def oauth_discord(request):
     """
-    View  /oauth/start/
+    View  /oauth/discord/
     """
     request.session['login_redirect_url'] = get_next_url(request)
     log.debug('oauth_start: login_redirect_url: %s', request.session.get('login_redirect_url'))
     params = {
         'redirect_uri': config('OAUTH_REDIRECT_URL'),
-        'client_id': config('OAUTH_CLIENT_ID'),
+        'client_id': config('DISCORD_CLIENT_ID'),
         'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
         'scope': config('OAUTH_SCOPE', 'identify'),
         'prompt': config('OAUTH_PROMPT', 'none'),
@@ -83,12 +87,17 @@ def oauth_callback(request):
         messages.warning(request, 'User aborted or no code in response...')
         return HttpResponseRedirect(get_login_redirect_url(request))
     try:
+        # TODO: CHECK IF DISCORD OAUTH IS USED - for multiple oauth
         log.debug('code: %s', request.GET['code'])
-        auth_data = get_access_token(request.GET['code'])
+        auth_data = get_discord_access_token(request.GET['code'])
         log.debug('auth_data: %s', auth_data)
-        profile = get_user_profile(auth_data)
+        profile = get_discord_profile(auth_data)
         log.debug('profile: %s', profile)
-        user, _ = CustomUser.objects.get_or_create(username=profile['id'])
+        user = get_or_create_user(profile)
+        if not user:
+            messages.error(request, '404: User Not Found.')
+            return HttpResponseRedirect(get_login_redirect_url(request))
+        log.debug('user.username: %s', user.username)
         update_profile(user, profile)
         login(request, user)
         if 'webhook' in auth_data:
@@ -101,6 +110,30 @@ def oauth_callback(request):
         log.exception(error)
         messages.error(request, f'Exception during login: {error}')
     return HttpResponseRedirect(get_login_redirect_url(request))
+
+
+def get_or_create_user(profile: dict) -> Optional[CustomUser]:
+    # user, _ = CustomUser.objects.get_or_create(username=profile['id'])
+    user = CustomUser.objects.filter(oauth_id=profile['oauth_id'])
+    if user:
+        return user[0]
+    user = CustomUser.objects.filter(username=profile['username'])
+    if user:
+        if not user.last_login:
+            return user[0]
+        # local user with matching username exists; however
+        #   user has logged in locally and is now logging in via discord
+        #   without using the connecting to discord from the settings page.
+        #   this is a possible hijacking attempt by a discord user with same username
+        log.warning('Hijacking Attempt BLOCKED! Connect account via Settings page.')
+        return None
+    # no user found matching oauth_id or username. because we prevented hijacking,
+    #   oauth username that are already in use locally cannot auto-register...
+    if SiteSettings.objects.get(pk=1).oauth_reg or is_super_id(profile['oauth_id']):
+        return CustomUser.objects.create(
+            username=profile['username'], oauth_id=profile['oauth_id'])
+    # local user does not exist and auto registration disabled
+    return None
 
 
 def duo_callback(request):
@@ -187,7 +220,7 @@ def oauth_webhook(request):
     log.debug('oauth_webhook: login_redirect_url: %s', request.session.get('login_redirect_url'))
     params = {
         'redirect_uri': config('OAUTH_REDIRECT_URL'),
-        'client_id': config('OAUTH_CLIENT_ID'),
+        'client_id': config('DISCORD_CLIENT_ID'),
         'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
         'scope': config('OAUTH_SCOPE', 'identify') + ' webhook.incoming',
     }
@@ -200,6 +233,7 @@ def add_webhook(request, profile):
     """
     Add webhook
     """
+    log.debug('add_webhook')
     webhook = Webhooks(
         hook_id=profile['webhook']['id'],
         guild_id=profile['webhook']['guild_id'],
@@ -211,16 +245,16 @@ def add_webhook(request, profile):
     return webhook
 
 
-def get_access_token(code: str) -> dict:
+def get_discord_access_token(code: str) -> dict:
     """
     Post OAuth code and Return access_token
     """
-    log.debug('get_access_token')
+    log.debug('get_discord_access_token')
     url = 'https://discord.com/api/v8/oauth2/token'
     data = {
         'redirect_uri': config('OAUTH_REDIRECT_URL'),
-        'client_id': config('OAUTH_CLIENT_ID'),
-        'client_secret': config('OAUTH_CLIENT_SECRET'),
+        'client_id': config('DISCORD_CLIENT_ID'),
+        'client_secret': config('DISCORD_CLIENT_SECRET'),
         'grant_type': config('OAUTH_GRANT_TYPE', 'authorization_code'),
         'code': code,
     }
@@ -233,13 +267,13 @@ def get_access_token(code: str) -> dict:
     return r.json()
 
 
-def get_user_profile(token_data: dict) -> dict:
+def get_discord_profile(auth_data: dict) -> dict:
     """
     Get Profile for Authenticated User
     """
-    log.debug('get_user_profile')
+    log.debug('get_discord_profile')
     url = 'https://discord.com/api/v8/users/@me'
-    headers = {'Authorization': f"Bearer {token_data['access_token']}"}
+    headers = {'Authorization': f"Bearer {auth_data['access_token']}"}
     r = httpx.get(url, headers=headers, timeout=10)
     if not r.is_success:
         log.info('status_code: %s', r.status_code)
@@ -249,13 +283,12 @@ def get_user_profile(token_data: dict) -> dict:
     p = r.json()
     # profile - Custom user data from oauth provider
     return {
-        'id': p['id'],
+        'oauth_id': p['id'],
         'username': p['username'],
-        'discriminator': p['discriminator'],
-        'avatar': p['avatar'],
-        'access_token': token_data['access_token'],
-        'refresh_token': token_data['refresh_token'],
-        'expires_in': datetime.now() + timedelta(0, token_data['expires_in']),
+        'discord_avatar': p['avatar'],
+        'access_token': auth_data['access_token'],
+        'refresh_token': auth_data['refresh_token'],
+        'expires_in': datetime.now() + timedelta(0, auth_data['expires_in']),
     }
 
 
@@ -264,14 +297,18 @@ def update_profile(user: CustomUser, profile: dict) -> None:
     Update Django user profile with provided data
     """
     log.debug('update_profile')
-    user.first_name = profile['username']
-    user.last_name = profile['discriminator']
-    user.avatar_hash = profile['avatar']
-    user.access_token = profile['access_token']
-    user.refresh_token = profile['refresh_token']
-    user.expires_in = profile['expires_in']
-    if profile['id'] in config('SUPER_USERS', '', Csv()):
-        log.info('Super user login: %s', profile['id'])
+    log.debug('user.username: %s', user.username)
+    log.debug('profile.username: %s', profile['username'])
+    del profile['username']
+    for key, value in profile.items():
+        setattr(user, key, value)
+    # user.first_name = profile['first_name']
+    # user.avatar_hash = profile['avatar']
+    # user.access_token = profile['access_token']
+    # user.refresh_token = profile['refresh_token']
+    # user.expires_in = profile['expires_in']
+    if is_super_id(profile['oauth_id']):
+        log.info('Super user login: %s', profile['oauth_id'])
         user.is_staff, user.is_admin, user.is_superuser = True, True, True
     user.save()
 
@@ -311,3 +348,10 @@ def get_login_redirect_url(request: HttpRequest) -> str:
         request.session.modified = True
         return url
     return reverse('home:index')
+
+
+def is_super_id(oauth_id):
+    if oauth_id in config('SUPER_USERS', '', Csv()):
+        return True
+    else:
+        return False

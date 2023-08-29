@@ -51,8 +51,8 @@
             <div class="d-grid gap-2 mt-2">
                 <button id="login-button" class="btn btn-secondary" type="submit">
                     <i class="fas fa-sign-in-alt"></i> Local Login</button>
-                {% if 'OAUTH_CLIENT_ID'|get_config %}
-                    <a href="{% url 'oauth:start' %}?next={{ request.path }}" class="btn btn-primary" role="button">
+                {% if 'DISCORD_CLIENT_ID'|get_config %}
+                    <a href="{% url 'oauth:discord' %}?next={{ request.path }}" class="btn btn-primary" role="button">
                         <i class="fa-brands fa-discord"></i> Discord Login</a>
                 {% endif %}
             </div>

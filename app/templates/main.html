@@ -75,9 +75,10 @@
                     {% else %}
                         <li class="nav-item dropdown">
                             <a class="nav-link" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}
+{#                                {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}#}
+                                {{ user.first_name|default:user.username }}
                                 <i class="fas fa-angle-down mx-1"></i>
-                                <img src="{{ user|avatar_url }}"
+                                <img src="{{ user.get_avatar }}"
                                      class="rounded-circle mx-2 d-none d-sm-inline d-md-inline d-lg-inline d-xl-inline" height="26" width="26" alt="P"></a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                 <li><a class="dropdown-item" role="button" data-bs-toggle="modal" data-bs-target="#user-info-modal">
@@ -94,18 +95,11 @@
                                     <li><a class="dropdown-item text-success" href="{% url 'admin:index' %}">
                                         <i class="fa-solid fa-rocket me-2"></i> Admin</a></li>
                                 {% endif %}
-                                {% if request.user.is_superuser %}
-{#                                    <li><hr class="dropdown-divider"></li>#}
-{#                                    <li><a class="dropdown-item text-primary" href="{% url 'flower' %}" target="_blank">#}
-{#                                        <i class="fas fa-seedling me-2"></i> Flower <i class="fas fa-external-link-alt ms-1"></i></a></li>#}
-{#                                    <li><a class="dropdown-item text-primary" href="{% url 'redis' %}" target="_blank">#}
-{#                                        <i class="fa-solid fa-database me-2"></i> Redis <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i></a></li>#}
-{#                                    <li><a class="dropdown-item text-primary" href="{% url 'phpmyadmin' %}" target="_blank">#}
-{#                                        <i class="fa-solid fa-server me-2"></i> MySQL <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i></a></li>#}
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-warning" role="button" target="_blank" id="flush-cache">
-                                        <i class="fa-solid fa-toilet me-2"></i> Flush Cache</a></li>
-                                {% endif %}
+{#                                {% if request.user.is_superuser %}#}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-warning" role="button" target="_blank" id="flush-cache">
+                                    <i class="fa-solid fa-toilet me-2"></i> Flush Cache</a></li>
+{#                                {% endif %}#}
                                 <div class="dropdown-divider"></div>
                                 <li><a class="dropdown-item log-out text-danger" role="button">
                                     <i class="fas fa-sign-out-alt me-2"></i> Log Out</a></li>
@@ -174,7 +168,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <img src="{{ user|avatar_url }}" alt="Profile Picture"
+                    <img src="{{ user.get_avatar }}" alt="Profile Picture"
                          class="rounded float-end m-2" style="max-height:128px;max-width:128px;">
                     <h4 class="modal-title">{% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}</h4>
                     <p><a class="btn btn-outline-success" role="button" href="{% url 'home:settings' %}">

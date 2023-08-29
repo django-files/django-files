@@ -9,7 +9,7 @@ class TestViews(TestCase):
             'health_check': 200,
             'flush_cache': 302,
             'oauth:login': 200,
-            'oauth:start': 302,
+            'oauth:discord': 302,
             'home:index': 302,
             'home:gallery': 302,
             'home:uppy': 302,
