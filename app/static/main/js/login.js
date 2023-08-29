@@ -21,7 +21,9 @@ $(document).ready(function () {
             success: function (response) {
                 console.log('response: ' + response)
                 if (response.redirect) {
-                    window.location.href = response.redirect
+                    console.log('response.redirect: ' + response.redirect)
+                    // window.location.href = response.redirect
+                    return window.location.replace(response.redirect)
                 }
                 location.reload()
             },

@@ -124,7 +124,7 @@ def duo_callback(request):
         user = CustomUser.objects.get(username=username)
         login(request, user)
         log.debug('duo_callback: login_next_url: %s', request.session.get('login_next_url'))
-        messages.warning(request, 'State Check Failed. Try Again!')
+        messages.success(request, f'Congrats, You Authenticated Twice, {username}!')
         return HttpResponseRedirect(get_login_redirect_url(request))
 
     except Exception as error:
@@ -133,7 +133,7 @@ def duo_callback(request):
 
 
 def duo_redirect(request, username):
-    log.debug('duo_redirect: username:', username)
+    log.debug('duo_redirect: username: %s', username)
     duo_client = get_duo_client(request)
     try:
         duo_client.health_check()

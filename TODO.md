@@ -22,6 +22,7 @@
 - [ ] Test Oauth Flow
 
 ## General/UI
+- [ ] Avatars for Local Users
 - [ ] Gallery Overhaul
 - [ ] Go through environment variables and determine which ones should be configurable
 
