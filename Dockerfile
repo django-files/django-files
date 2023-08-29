@@ -44,7 +44,7 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY --chmod=0755 docker/docker-entrypoint.sh /docker-entrypoint.sh
 
 COPY --chown=app:app app app
-COPY --chown=app:app .env app/.env
+#COPY --chown=app:app .env app/.env
 
 CMD ["/usr/bin/supervisord"]
 ENTRYPOINT ["bash", "/docker-entrypoint.sh"]
