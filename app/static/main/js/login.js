@@ -14,17 +14,28 @@ $(document).ready(function () {
             url: $('#login-form').attr('action'),
             type: 'POST',
             data: formData,
+            crossDomain: true,
             beforeSend: function () {
                 $('#login-button').addClass('disabled')
             },
-            complete: function () {
-                $('#login-button').removeClass('disabled')
-            },
-            success: function () {
+            success: function (response) {
+                console.log('response: ' + response)
+                if (response.redirect) {
+                    console.log('response.redirect: ' + response.redirect)
+                    // window.location.href = response.redirect
+                    return window.location.replace(response.redirect)
+                }
                 location.reload()
             },
-            error: function () {
+            error: function (xhr, status, error) {
+                console.log('xhr: ' + xhr)
+                console.log('status: ' + status)
+                console.log('error: ' + error)
                 $('#login-form input').addClass('is-invalid')
+            },
+            complete: function () {
+                console.log('complete')
+                $('#login-button').removeClass('disabled')
             },
             cache: false,
             contentType: false,

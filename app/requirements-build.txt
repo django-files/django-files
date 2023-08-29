@@ -10,6 +10,7 @@ django-celery-beat
 django-redis
 django-storages
 django-cors-headers
+duo_universal
 # flake8
 geopy
 gunicorn

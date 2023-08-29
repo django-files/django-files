@@ -5,13 +5,14 @@ from datetime import datetime, timedelta
 from decouple import config, Csv
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+import duo_universal
 
-from home.models import Webhooks
+from home.models import SiteSettings, Webhooks
 from oauth.forms import LoginForm
 from oauth.models import CustomUser
 
@@ -34,6 +35,15 @@ def oauth_show(request):
                             password=form.cleaned_data['password'])
         if not user:
             return HttpResponse(status=401)
+
+        if config('DUO_CLIENT_ID', False):
+            log.info('--- DUO DETECTED - REDIRECTING ---')
+            log.debug('username: %s', user.username)
+            request.session['username'] = user.username
+            url = duo_redirect(request, user.username)
+            log.debug('url: %s', url)
+            return JsonResponse({'redirect': url})
+
         login(request, user)
         messages.info(request, f'Successfully logged in as {user.username}.')
         return HttpResponse()
@@ -91,6 +101,67 @@ def oauth_callback(request):
         log.exception(error)
         messages.error(request, f'Exception during login: {error}')
     return HttpResponseRedirect(get_login_redirect_url(request))
+
+
+def duo_callback(request):
+    """
+    View  /oauth/duo/
+    """
+    log.debug('%s - duo_callback', request.method)
+    try:
+        duo_client = get_duo_client(request)
+        state = request.GET.get('state')
+        log.debug('state: %s', state)
+        code = request.GET.get('duo_code')
+        log.debug('code: %s', code)
+        if state != request.session['state']:
+            messages.warning(request, 'State Check Failed. Try Again!')
+            return HttpResponseRedirect(get_login_redirect_url(request))
+        username = request.session['username']
+        log.debug('username: %s', username)
+        decoded_token = duo_client.exchange_authorization_code_for_2fa_result(code, username)
+        log.debug('decoded_token: %s', decoded_token)
+        user = CustomUser.objects.get(username=username)
+        login(request, user)
+        log.debug('duo_callback: login_next_url: %s', request.session.get('login_next_url'))
+        messages.success(request, f'Congrats, You Authenticated Twice, {username}!')
+        return HttpResponseRedirect(get_login_redirect_url(request))
+
+    except Exception as error:
+        log.exception(error)
+        return HttpResponse(status=401)
+
+
+def duo_redirect(request, username):
+    log.debug('duo_redirect: username: %s', username)
+    duo_client = get_duo_client(request)
+    try:
+        duo_client.health_check()
+    except duo_universal.DuoException as error:
+        log.exception(error)
+        raise ValueError('Duo Health Check Failed: %s', error)
+
+    state = duo_client.generate_state()
+    log.debug('state: %s', state)
+    request.session['state'] = state
+
+    prompt_uri = duo_client.create_auth_url(username, state)
+    log.debug('prompt_uri: %s', prompt_uri)
+    return prompt_uri
+
+
+def get_duo_client(request):
+    log.debug('request.build_absolute_uri: %s', request.build_absolute_uri())
+    site_url = SiteSettings.objects.get(pk=1).site_url
+    log.debug('site_url: %s', site_url)
+    redirect_uri = site_url.rstrip('/') + reverse('oauth:duo')
+    log.debug('redirect_uri: %s', redirect_uri)
+    return duo_universal.Client(
+        config('DUO_CLIENT_ID'),
+        config('DUO_CLIENT_SECRET'),
+        config('DUO_API_HOST'),
+        redirect_uri,
+    )
 
 
 @csrf_exempt
