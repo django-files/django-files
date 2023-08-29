@@ -11,4 +11,5 @@ urlpatterns = [
     path('logout/', views.oauth_logout, name='logout'),
     path('callback/', views.oauth_callback, name='callback'),
     path('webhook/', views.oauth_webhook, name='webhook'),
+    path('duo/', views.duo_callback, name='duo'),
 ]
