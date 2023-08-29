@@ -1,5 +1,6 @@
 import logging
 import datetime
+from decouple import config
 from django import template
 from django.conf import settings
 from django.templatetags.static import static
@@ -8,10 +9,10 @@ logger = logging.getLogger('app')
 register = template.Library()
 
 
-@register.simple_tag(name='get_config')
+@register.filter(name='get_config')
 def get_config(value):
-    # get django setting value or return none
-    return getattr(settings, value, '')
+    # get django setting value or empty
+    return getattr(settings, value, None) or config(value, '')
 
 
 @register.filter(name='avatar_url')

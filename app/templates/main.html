@@ -8,9 +8,7 @@
 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    {% get_config 'DEBUG' as debug_enabled %}{% if debug_enabled %}
-        <meta name="robots" content="noindex, nofollow">{% endif %}
-
+    {% if 'DEBUG'|get_config %}<meta name="robots" content="noindex, nofollow">{% endif %}
     <title>Django Files - {% block title %}{% endblock %}</title>
 
     {% block meta %}
@@ -87,7 +85,7 @@
                                 <li><a class="dropdown-item" href="{% url 'home:settings' %}">
                                     <i class="fa-solid fa-gears me-2"></i> Settings</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item clip" data-clipboard-text="{% get_config 'SITE_URL' %}" href="javascript:">
+                                <li><a class="dropdown-item clip" data-clipboard-text="{{ 'SITE_URL'|get_config }}" href="javascript:">
                                     <i class="fa-solid fa-globe me-2"></i> Copy URL</a></li>
                                 <li><a class="dropdown-item clip" data-clipboard-text="{{ user.authorization }}" href="javascript:">
                                     <i class="fa-solid fa-key me-2"></i> Copy Token</a></li>
@@ -138,7 +136,7 @@
 
             <div class="col-12 col-md-4">
                 <p><a class="text-decoration-none" href="https://github.com/django-files/django-files" target="_blank">
-                    <i class="fab fa-github"></i> Django Files</a> v{% get_config 'APP_VERSION' %}</p>
+                    <i class="fab fa-github"></i> Django Files</a> v{{ 'APP_VERSION'|get_config }}</p>
             </div>
 
             <div class="col-12 col-md-8 text-md-end">
@@ -199,7 +197,7 @@
                         </tr>
                         <tr>
                             <th>Site URL</th>
-                            <td>{% get_config 'SITE_URL' %}</td>
+                            <td>{{ 'SITE_URL'|get_config }}</td>
                         </tr>
                         <tr>
                             <th>Default Expire</th>
