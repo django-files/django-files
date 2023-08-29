@@ -3,7 +3,7 @@ import datetime
 from decouple import config
 from django import template
 from django.conf import settings
-from django.templatetags.static import static
+# from django.templatetags.static import static
 
 logger = logging.getLogger('app')
 register = template.Library()
