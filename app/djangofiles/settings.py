@@ -63,7 +63,8 @@ USE_TZ = True
 USE_I18N = True
 USE_L10N = True
 
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND')
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', 'redis://redis:6379/1')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', 'redis://redis:6379/1')
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = config('TZ', 'UTC')
@@ -102,7 +103,6 @@ CELERY_BEAT_SCHEDULE = {
     'app_cleanup': {
         'task': 'home.tasks.app_cleanup',
         'schedule': datetime.timedelta(hours=config('APP_CLEANUP_HOUR', 1, int)),
-        # 'schedule': crontab(minute='0', hour='0'),
     },
     'delete_expired_files': {
         'task': 'home.tasks.delete_expired_files',
@@ -133,14 +133,14 @@ CHANNEL_LAYERS = {
 
 CACHES = {
     'default': {
-        'BACKEND': config('CACHE_BACKEND', 'django.core.cache.backends.dummy.DummyCache'),
-        'LOCATION': config('CACHE_LOCATION', None),
+        'BACKEND': config('CACHE_BACKEND', 'django_redis.cache.RedisCache'),
+        'LOCATION': config('CACHE_LOCATION', 'redis://redis:6379/0'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },
     },
     'vector': {
-        'BACKEND': config('CACHE_BACKEND'),
+        'BACKEND': config('CACHE_BACKEND', 'django_redis.cache.RedisCache'),
         'LOCATION': config('VECTOR_LOCATION', 'redis://redis:6379/2'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
@@ -259,12 +259,12 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': config('DJANGO_LOG_LEVEL', 'INFO'),
+            'level': config('DJANGO_LOG_LEVEL', 'WARNING'),
             'propagate': True,
         },
         'app': {
             'handlers': ['console'],
-            'level': config('APP_LOG_LEVEL', 'DEBUG'),
+            'level': config('APP_LOG_LEVEL', 'INFO'),
             'propagate': True,
         },
     },
