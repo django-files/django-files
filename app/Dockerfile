@@ -3,7 +3,7 @@ FROM python:3.11-alpine as base
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE 1
 
-RUN apk add --update --no-cache alpine-sdk mysql-dev
+RUN apk add --update --no-cache alpine-sdk mysql-dev gcc libffi-dev musl-dev
 
 #RUN apt-get -y update && apt-get -y install build-essential libmariadb-dev-compat
 
