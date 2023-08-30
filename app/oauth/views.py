@@ -141,7 +141,7 @@ def get_or_create_user(request, profile: dict) -> Optional[CustomUser]:
         return CustomUser.objects.filter(username=username)[0]
     user = CustomUser.objects.filter(username=profile['username'])
     if user:
-        if not user.last_login:
+        if not user[0].last_login:
             log.warning('%s claimed by oauth_id: %s', profile['username'], profile['oauth_id'])
             return user[0]
         # local user with matching username exists; however
