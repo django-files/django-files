@@ -63,6 +63,8 @@ def oauth_discord(request):
     """
     View  /oauth/discord/
     """
+    if request.user.is_authenticated:
+        request.session['oauth_claim_username'] = request.user.username
     request.session['login_redirect_url'] = get_next_url(request)
     log.debug('oauth_start: login_redirect_url: %s', request.session.get('login_redirect_url'))
     params = {
@@ -93,7 +95,7 @@ def oauth_callback(request):
         log.debug('auth_data: %s', auth_data)
         profile = get_discord_profile(auth_data)
         log.debug('profile: %s', profile)
-        user = get_or_create_user(profile)
+        user = get_or_create_user(request, profile)
         if not user:
             messages.error(request, '404: User Not Found.')
             return HttpResponseRedirect(get_login_redirect_url(request))
@@ -112,14 +114,25 @@ def oauth_callback(request):
     return HttpResponseRedirect(get_login_redirect_url(request))
 
 
-def get_or_create_user(profile: dict) -> Optional[CustomUser]:
+def get_or_create_user(request, profile: dict) -> Optional[CustomUser]:
     # user, _ = CustomUser.objects.get_or_create(username=profile['id'])
     user = CustomUser.objects.filter(oauth_id=profile['oauth_id'])
     if user:
+        if 'oauth_claim_username' in request.session:
+            del request.session['oauth_claim_username']
+            log.warning('OAuth ID Already Claimed!')
+            return None
+        log.debug('oauth user found by oauth_id: %s', user[0].oauth_id)
         return user[0]
+    if 'oauth_claim_username' in request.session:
+        username = request.session['oauth_claim_username']
+        del request.session['oauth_claim_username']
+        log.warning('used oauth_claim_username: %s', username)
+        return CustomUser.objects.filter(username=username)[0]
     user = CustomUser.objects.filter(username=profile['username'])
     if user:
         if not user.last_login:
+            log.warning('%s claimed by oauth_id: %s', profile['username'], profile['oauth_id'])
             return user[0]
         # local user with matching username exists; however
         #   user has logged in locally and is now logging in via discord
@@ -130,9 +143,11 @@ def get_or_create_user(profile: dict) -> Optional[CustomUser]:
     # no user found matching oauth_id or username. because we prevented hijacking,
     #   oauth username that are already in use locally cannot auto-register...
     if SiteSettings.objects.get(pk=1).oauth_reg or is_super_id(profile['oauth_id']):
+        log.warning('%s created by oauth_reg with oauth_id: %s', profile['username'], profile['oauth_id'])
         return CustomUser.objects.create(
             username=profile['username'], oauth_id=profile['oauth_id'])
     # local user does not exist and auto registration disabled
+    log.debug('User does not exist locally and oauth_reg is off: ', profile['oauth_id'])
     return None
 
 

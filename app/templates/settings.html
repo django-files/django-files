@@ -25,6 +25,11 @@
 
         <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings' %}">
 
+            {% if not user.oauth_id %}
+                <p><a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary" role="button">
+                    <i class="fab fa-discord me-2"></i> Connect Account to a Discord</a></p>
+            {% endif %}
+
             {% if user.is_superuser %}
                 <div class='border border-warning-subtle rounded-2 p-2 my-2'>
                     <div class="row">
