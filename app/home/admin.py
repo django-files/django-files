@@ -15,7 +15,8 @@ class FilesAdmin(admin.ModelAdmin):
     search_fields = ('id', 'show_file', 'size', 'expr', 'mime', 'date',)
     ordering = ('-date',)
 
-    def show_file(self, obj):
+    @staticmethod
+    def show_file(obj):
         return format_html('<a href="{0}">{1}</a>', obj.get_gallery_url(), obj.file.name)
 
 
@@ -56,5 +57,5 @@ class WebhooksAdmin(admin.ModelAdmin):
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
     model = SiteSettings
-    list_display = ('id', 'site_url',)
+    list_display = ('id', 'site_url', 'oauth_reg', 'two_factor',)
     readonly_fields = ('id',)

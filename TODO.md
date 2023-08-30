@@ -21,6 +21,9 @@
 - [ ] Test Vector Tasks
 - [ ] Test Oauth Flow
 
+## Users
+- [ ] Add User Invites
+
 ## General/UI
 - [ ] Avatars for Local Users
 - [ ] Gallery Overhaul
