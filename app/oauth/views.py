@@ -157,7 +157,7 @@ def get_or_create_user(request, profile: dict) -> Optional[CustomUser]:
         return CustomUser.objects.create(
             username=profile['username'], oauth_id=profile['oauth_id'])
     # local user does not exist and auto registration disabled
-    log.debug('User does not exist locally and oauth_reg is off: ', profile['oauth_id'])
+    log.debug('User does not exist locally and oauth_reg is off: %s', profile['oauth_id'])
     return None
 
 
