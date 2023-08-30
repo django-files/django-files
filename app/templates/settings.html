@@ -25,9 +25,11 @@
 
         <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings' %}">
 
+            {% if 'DISCORD_CLIENT_ID'|get_config %}
             {% if not user.oauth_id %}
                 <p><a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary" role="button">
                     <i class="fab fa-discord me-2"></i> Connect Account to a Discord</a></p>
+            {% endif %}
             {% endif %}
 
             {% if user.is_superuser %}
@@ -148,42 +150,52 @@
 
         <h3 id="webhooks">Webhooks</h3>
 
-        <div class="pt-3">
-            <p><a href="{% url 'oauth:webhook' %}" class="btn btn-lg btn-outline-primary" role="button">
-                <i class="fab fa-discord me-2"></i> Add Webhook to Discord</a></p>
-        </div>
+        {% if 'DISCORD_CLIENT_ID'|get_config %}
+            {% if user.oauth_id %}
+                <div class="pt-3">
+                    <p><a href="{% url 'oauth:webhook' %}" class="btn btn-lg btn-outline-primary" role="button">
+                        <i class="fab fa-discord me-2"></i> Add Webhook to Discord</a></p>
+                </div>
 
-        {% if not webhooks %}
-            <p class="lead">No Webhooks Found. Perhaps you forgot to add one?</p>
+                {% if not webhooks %}
+                    <p class="lead">No Webhooks Found. Perhaps you forgot to add one?</p>
+                {% else %}
+                    <table class="table table-responsive" id="webhooks-table">
+                        <thead>
+                        <tr>
+                            <th scope="col" class="d-none d-sm-table-cell">ID</th>
+                            <th scope="col" class="d-none d-sm-table-cell">Guild ID</th>
+                            <th scope="col">Channel ID</th>
+                            <th scope="col" class="d-none d-md-table-cell">Date</th>
+                            <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for data in webhooks %}
+                            <tr id="webhook-{{ data.id }}">
+                                <th scope="row" class="d-none d-sm-table-cell">{{ data.id }}</th>
+                                <td><a class="clip text-white text-decoration-none" role="button"
+                                    data-clipboard-text="{{ data.guild_id }}">{{ data.guild_id }}</a></td>
+                                <td class="d-none d-sm-table-cell">
+                                    <a class="clip text-white text-decoration-none" role="button"
+                                    data-clipboard-text="{{ data.channel_id }}">{{ data.channel_id }}</a></td>
+                                <td class="d-none d-md-table-cell">
+                                    <a class="clip text-white text-decoration-none" role="button"
+                                    data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a></td>
+                                <td class="text-center"><a role="button" class="delete-webhook-btn" data-hook-id="{{ data.id }}" title="Delete">
+                                    <i class="fa-regular fa-trash-can link-danger"></i></a></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            {% else %}
+                <p>To enable Webhooks, you must connect Discord.</p>
+                <p><a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary" role="button">
+                    <i class="fab fa-discord me-2"></i> Connect Account to a Discord</a></p>
+            {% endif %}
         {% else %}
-            <table class="table table-responsive" id="webhooks-table">
-                <thead>
-                <tr>
-                    <th scope="col" class="d-none d-sm-table-cell">ID</th>
-                    <th scope="col" class="d-none d-sm-table-cell">Guild ID</th>
-                    <th scope="col">Channel ID</th>
-                    <th scope="col" class="d-none d-md-table-cell">Date</th>
-                    <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for data in webhooks %}
-                    <tr id="webhook-{{ data.id }}">
-                        <th scope="row" class="d-none d-sm-table-cell">{{ data.id }}</th>
-                        <td><a class="clip text-white text-decoration-none" role="button"
-                            data-clipboard-text="{{ data.guild_id }}">{{ data.guild_id }}</a></td>
-                        <td class="d-none d-sm-table-cell">
-                            <a class="clip text-white text-decoration-none" role="button"
-                            data-clipboard-text="{{ data.channel_id }}">{{ data.channel_id }}</a></td>
-                        <td class="d-none d-md-table-cell">
-                            <a class="clip text-white text-decoration-none" role="button"
-                            data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a></td>
-                        <td class="text-center"><a role="button" class="delete-webhook-btn" data-hook-id="{{ data.id }}" title="Delete">
-                            <i class="fa-regular fa-trash-can link-danger"></i></a></td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+            <p>To enable Webhooks, you must configure Discord.</p>
         {% endif %}
 
         <hr>

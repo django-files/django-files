@@ -1,4 +1,5 @@
 import httpx
+import json
 import logging
 import urllib.parse
 import duo_universal
@@ -97,9 +98,18 @@ def oauth_callback(request):
         log.debug('profile: %s', profile)
         user = get_or_create_user(request, profile)
         if not user:
-            messages.error(request, '404: User Not Found.')
+            messages.error(request, 'User Not Found or Already Taken.')
             return HttpResponseRedirect(get_login_redirect_url(request))
         log.debug('user.username: %s', user.username)
+
+        if SiteSettings.objects.get(pk=1).two_factor:
+            log.info('--- DUO DETECTED - REDIRECTING ---')
+            request.session['username'] = user.username
+            request.session['profile'] = json.dumps(profile, default=str)
+            url = duo_redirect(request, user.username)
+            log.debug('url: %s', url)
+            return HttpResponseRedirect(url)
+
         update_profile(user, profile)
         login(request, user)
         if 'webhook' in auth_data:
@@ -171,6 +181,12 @@ def duo_callback(request):
         log.debug('decoded_token: %s', decoded_token)
         user = CustomUser.objects.get(username=username)
         login(request, user)
+
+        if 'profile' in request.session:
+            log.debug('profile in session, updating oauth profile')
+            update_profile(user, json.loads(request.session['profile']))
+            del request.session['profile']
+
         log.debug('duo_callback: login_next_url: %s', request.session.get('login_next_url'))
         messages.success(request, f'Congrats, You Authenticated Twice, {username}!')
         return HttpResponseRedirect(get_login_redirect_url(request))
