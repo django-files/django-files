@@ -177,7 +177,7 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 There are some Screen Shots avialable on the GitHub Pages site by selecting 
 [Screen Shots](https://django-files.github.io/screenshots.html) from the menu.
 
-- [https://django-files.github.io/](https://django-files.github.io/)
+-   [https://django-files.github.io/](https://django-files.github.io/)
 
 ## Usage
 

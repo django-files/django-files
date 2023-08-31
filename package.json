@@ -23,8 +23,6 @@
         "jscookie": "^1.1.0",
         "uppy": "^3.14.1"
     },
-    "devDependencies": {
-    },
     "scripts": {
         "postinstall": "npx gulp"
     }
