@@ -160,7 +160,7 @@ def settings_view(request):
 
 @login_required
 @csrf_exempt
-@cache_page(cache_seconds)
+# @cache_page(cache_seconds)
 @vary_on_cookie
 def uppy_view(request):
     """

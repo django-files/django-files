@@ -1,6 +1,6 @@
 const gulp = require('gulp')
-const copy = require('gulp-copy')
-const concat = require('gulp-concat')
+// const copy = require('gulp-copy')
+// const concat = require('gulp-concat')
 
 gulp.task('animate', () => {
     return gulp
@@ -42,20 +42,11 @@ gulp.task('jquery', () => {
         .pipe(gulp.dest('app/static/dist/jquery'))
 })
 
-gulp.task('jscookie', () => {
-    return gulp
-        .src('node_modules/jscookie/cookie.js')
-        .pipe(gulp.dest('app/static/dist/jscookie'))
-})
-
-gulp.task('uppy', () => {
-    return gulp
-        .src([
-            'node_modules/uppy/dist/uppy.min.css',
-            'node_modules/uppy/dist/uppy.min.js',
-        ])
-        .pipe(gulp.dest('app/static/dist/uppy'))
-})
+// gulp.task('jscookie', () => {
+//     return gulp
+//         .src('node_modules/jscookie/cookie.js')
+//         .pipe(gulp.dest('app/static/dist/jscookie'))
+// })
 
 gulp.task(
     'default',
@@ -64,8 +55,7 @@ gulp.task(
         'bootstrap',
         'clipboard',
         'fontawesome',
-        'jquery',
-        'jscookie',
-        'uppy'
+        'jquery'
+        // 'jscookie'
     )
 )

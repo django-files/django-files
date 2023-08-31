@@ -18,56 +18,61 @@
 {% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{% static 'dist/uppy/uppy.min.css' %}">
+    <link href="https://releases.transloadit.com/uppy/v3.14.1/uppy.min.css" rel="stylesheet">
 {% endblock %}
 
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
         <h1>Upload</h1>
-        <p>Drag and Drop Files or Folders below...</p>
-        <div id="drag-drop-area"></div>
+
+        <div id="uppy" class="mt-4"></div>
 
     </div>
 {% endblock %}
 
 {% block tail %}
-    {% csrf_token %}
-    <script src="{% static 'dist/uppy/uppy.min.js' %}"></script>
-    <script>
-        var uppy = new Uppy.Core({
-            debug: true,
-            autoProceed: false,
-            restrictions: {
-                maxFileSize: 1048576000,
-                {#requiredMetaFields: ['info'],#}
-            }
-        })
-        .use(Uppy.Dashboard, {
-            inline: true,
-            theme: 'dark',
-            target: '#drag-drop-area',
-            showProgressDetails: true,
-            note: 'Generic Files Upload',
-            height: 380,
-            width: '100%',
-            metaFields: [
-                {id: 'name', name: 'Name', placeholder: 'File Name'},
-                {id: 'Expires-At', name: 'Expires At', placeholder: 'File Expiration Time.'},
-                {id: 'info', name: 'Info', placeholder: 'Information about the file.'}
-            ],
-            browserBackButtonClose: false
-        })
-        .use(Uppy.XHRUpload, {
-            endpoint: "{% url 'api:upload' %}",
-            headers: {
-                "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
-            },
-        })
+    <script type="module">
+        import {
+            Uppy,
+            Dashboard,
+            Webcam,
+            Audio,
+            ScreenCapture,
+            XHRUpload,
+        } from "https://releases.transloadit.com/uppy/v3.14.1/uppy.min.mjs";
 
-        uppy.on('complete', result => {
-          console.log('successful files:', result.successful)
-          console.log('failed files:', result.failed)
-        })
+        const uppy = new Uppy({ debug: true, autoProceed: false })
+            .use(Dashboard, {
+                inline: true,
+                theme: 'auto',
+                target: '#uppy',
+                showProgressDetails: true,
+                showLinkToFileUploadResult: true,
+                autoOpenFileEditor: true,
+                proudlyDisplayPoweredByUppy: false,
+                note: 'Django Files Upload',
+                height: 380,
+                width: '100%',
+                metaFields: [
+                    {id: 'name', name: 'Name', placeholder: 'File Name'},
+                    {id: 'Expires-At', name: 'Expires At', placeholder: 'File Expiration Time.'},
+                    {id: 'info', name: 'Info', placeholder: 'Information about the file.'}
+                ],
+                browserBackButtonClose: false
+            })
+            .use(Webcam, { target: Dashboard })
+            .use(Audio, { target: Dashboard })
+            .use(ScreenCapture, { target: Dashboard })
+            .use(XHRUpload, {
+                endpoint: "{% url 'api:upload' %}",
+                headers: {
+                    "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
+                },
+            })
+
+        uppy.on("success", (fileCount) => {
+            console.log(`${fileCount} files uploaded`);
+        });
     </script>
 {% endblock %}

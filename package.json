@@ -15,15 +15,20 @@
         "animate.css": "^4.1.1",
         "bootstrap": "^5.3.1",
         "clipboard": "^2.0.11",
-        "gulp": "^4.0.2",
-        "gulp-concat": "^2.6.1",
-        "gulp-copy": "^4.0.1",
         "highlight.js": "^11.8.0",
         "jquery": "^3.6.4",
-        "jscookie": "^1.1.0",
-        "uppy": "^3.14.1"
+        "jscookie": "^1.1.0"
+    },
+    "devDependencies": {
+        "gulp": "^4.0.2",
+        "webpack": "^5.68.0",
+        "@uppy/core": "^3.4.0",
+        "@uppy/dashboard": "^3.5.1",
+        "@uppy/xhr-upload": "^3.3.2"
     },
     "scripts": {
-        "postinstall": "npx gulp"
+        "copy-static": "npx gulp",
+        "build-uppy": "npx webpack --config webpack.config.js",
+        "postinstall": "npm run copy-static"
     }
 }
