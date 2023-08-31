@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block head %}
-    <link rel="stylesheet" href="{% static 'uppy/uppy.min.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/uppy/uppy.min.css' %}">
 {% endblock %}
 
 {% block body %}
@@ -33,7 +33,7 @@
 
 {% block tail %}
     {% csrf_token %}
-    <script src="{% static 'uppy/uppy.min.js' %}"></script>
+    <script src="{% static 'dist/uppy/uppy.min.js' %}"></script>
     <script>
         var uppy = new Uppy.Core({
             debug: true,

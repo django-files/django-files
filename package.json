@@ -1,0 +1,31 @@
+{
+    "name": "django-files",
+    "version": "0.4.0",
+    "description": "Django Files",
+    "homepage": "https://github.com/django-files/django-files",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/django-files/django-files.git"
+    },
+    "bugs": {
+        "url": "https://github.com/django-files/django-files/issues"
+    },
+    "dependencies": {
+        "@fortawesome/fontawesome-free": "^6.4.2",
+        "animate.css": "^4.1.1",
+        "bootstrap": "^5.3.1",
+        "clipboard": "^2.0.11",
+        "gulp": "^4.0.2",
+        "gulp-concat": "^2.6.1",
+        "gulp-copy": "^4.0.1",
+        "highlight.js": "^11.8.0",
+        "jquery": "^3.6.4",
+        "jscookie": "^1.1.0",
+        "uppy": "^3.14.1"
+    },
+    "devDependencies": {
+    },
+    "scripts": {
+        "postinstall": "npx gulp"
+    }
+}

@@ -1,3 +1,14 @@
+#FROM node:18-bookworm-slim as node
+#
+#ENV TZ=UTC
+#ENV NODE_ENV=production
+#
+#WORKDIR /app
+#
+#COPY ["package.json", "package-lock.json*", "gulpfile.js", "./"]
+#
+#RUN npm install --production
+
 FROM python:3.11-alpine as base
 
 ENV TZ=UTC
@@ -35,6 +46,8 @@ RUN addgroup -g 1000 app  &&\
 #    chown app:app /app /data/media/db /data/media/files /data/static  &&\
 #    apt-get -y update  &&  apt-get -y install gcc libmariadb-dev-compat pkg-config  &&\
 #    apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
+
+#COPY --from=node /app/app/static/dist /app/app/static/dist
 
 WORKDIR /app
 COPY --chown=app:app . .

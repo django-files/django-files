@@ -5,6 +5,7 @@
 **/venv/
 *.pyc
 .coverage
+**/dist/
 **/screenshots/
 *.log
 *.sqlite3
