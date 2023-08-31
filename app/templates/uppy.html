@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block head %}
-    <link href="https://releases.transloadit.com/uppy/v3.14.1/uppy.min.css" rel="stylesheet">
+    <link href="{% static 'uppy/uppy.min.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block body %}
@@ -40,7 +40,7 @@
             Audio,
             ScreenCapture,
             XHRUpload,
-        } from "https://releases.transloadit.com/uppy/v3.14.1/uppy.min.mjs";
+        } from "{% static 'uppy/uppy.min.mjs' %}";
 
         const uppy = new Uppy({ debug: true, autoProceed: false })
             .use(Dashboard, {
