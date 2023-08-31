@@ -49,7 +49,6 @@ or UI using [Uppy](https://uppy.io/).
 For required variables and options, see: [Variables](#variables)
 
 ### Docker Run:
-
 You must use a volume mounted to `/data/media` to store files, database and sessions.
 
 With inline environment variables:
@@ -71,7 +70,6 @@ docker run --name "django-files" -d --restart unless-stopped  \
 ```
 
 ### Docker Compose:
-
 You must use `media_dir` or mount a volume to `/data/media` to store files, database, and sessions. 
 To use a local mount, replace `media_dir` with `/path/to/folder` you want to store the data locally.
 
@@ -122,10 +120,12 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 [Submit a Feature Request](https://github.com/django-files/django-files/discussions/new?category=feature-requests).
 
 ### Core
-*   Multiple Users, Local, and OAuth
+*   Multiple Users, Local, and Optional OAuth
 *   Local Storage with Optional S3 Storage
 *   Ready-to-use ShareX and Flameshot scripts
 *   Google Chrome and Mozilla Firefox Web Extension
+*   Optional Duo Two-Factor Authentication
+*   Optional Sentry Error Reporting
 
 ### UI Features
 *   Home Page; with Overview and Stats
@@ -147,11 +147,13 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 *   Remove EXIF Data on Upload OR Remove EXIF GPS Only
 *   Custom Embed Color
 *   Custom Navbar Colors
+*   Connect to OAuth Account (if oauth configured)
+*   Enable OAuth Registration (if oauth configured)
+*   Enable Two-Factor Registration (if duo configured)
 
 ### Files
 *   File Expiration
 *   View Counting
-*   Max Views (WIP)
 *   EXIF Metadata Preview
 
 ### FileStats
@@ -167,12 +169,15 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 *   Max Views
 
 ### External
-*   Chrome Extension: https://chrome.google.com/webstore/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej
 *   Firefox Extension:https://addons.mozilla.org/addon/django-files
+*   Chrome Extension: https://chrome.google.com/webstore/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej
 
 ## Screen Shots
 
-Coming Soon...
+There are some Screen Shots avialable on the GitHub Pages site by selecting 
+[Screen Shots](https://django-files.github.io/screenshots.html) from the menu.
+
+- [https://django-files.github.io/](https://django-files.github.io/)
 
 ## Usage
 

@@ -29,10 +29,10 @@ gulp.task('fontawesome', () => {
             [
                 'node_modules/@fortawesome/fontawesome-free/css/all.min.css',
                 'node_modules/@fortawesome/fontawesome-free/js/all.min.js',
-                'node_modules/@fortawesome/fontawesome-free/webfonts/**/*', // Select all files and subdirectories
+                'node_modules/@fortawesome/fontawesome-free/webfonts/**/*',
             ],
             { base: 'node_modules/@fortawesome/fontawesome-free' }
-        ) // Preserve directory structure
+        )
         .pipe(gulp.dest('app/static/dist/fontawesome'))
 })
 
