@@ -41,6 +41,14 @@ jobs:
         run: |
           flake8
 
+      - name: "Setup Node 18"
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: "Node Install"
+        run: npm install
+
 #      - name: "Migrate"
 #        working-directory: app
 #        run: |
