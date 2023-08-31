@@ -148,6 +148,8 @@ class PlaywrightTest(StaticLiveServerTestCase):
         for view in self.views:
             page.locator(f'text={view}').first.click()
             page.wait_for_selector(f'text={view}', timeout=3000)
+            if view == 'Upload':
+                page.wait_for_timeout(timeout=500)
             page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}.png')
             c += 1
             if view == 'Files':
