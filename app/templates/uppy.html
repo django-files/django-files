@@ -19,21 +19,20 @@
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'uppy/uppy.min.css' %}">
+    <script src="{% static 'uppy/uppy.min.js' %}"></script>
 {% endblock %}
 
 {% block body %}
     <div class="container-fluid py-3 px-4">
-
         <h1>Upload</h1>
         <p>Drag and Drop Files or Folders below...</p>
         <div id="drag-drop-area"></div>
-
     </div>
 {% endblock %}
 
 {% block tail %}
     {% csrf_token %}
-    <script src="{% static 'uppy/uppy.min.js' %}"></script>
+
     <script>
         var uppy = new Uppy.Core({
             debug: true,
@@ -41,16 +40,18 @@
             restrictions: {
                 maxFileSize: 1048576000,
                 {#requiredMetaFields: ['info'],#}
-            }
-        })
-        .use(Uppy.Dashboard, {
+
+            },
+        });
+        uppy.use(Uppy.Dashboard, {
             inline: true,
             theme: 'dark',
             target: '#drag-drop-area',
             showProgressDetails: true,
-            note: 'Generic Files Upload',
-            height: 380,
+            note: 'Django Files Upload',
             width: '100%',
+            height: '80vh',
+            proudlyDisplayPoweredByUppy: false,
             metaFields: [
                 {id: 'name', name: 'Name', placeholder: 'File Name'},
                 {id: 'Expires-At', name: 'Expires At', placeholder: 'File Expiration Time.'},
