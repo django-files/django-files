@@ -84,7 +84,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 </div>
             <div class="col-lg-3 d-flex flex-column">
                 <div class="card-body">
-                    <h3 class="card-title">{{ file.name }}{% if request.user.is_authenticated %}<div class="dropdown">
+                    <h3 class="card-title">{{ file.name }}{% if request.user.is_authenticated and request.user == file.user %}<div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle float-end mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                         <ul class="dropdown-menu">
                           <li>
