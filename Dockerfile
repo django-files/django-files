@@ -45,7 +45,7 @@ RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
     apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
     apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
-COPY --from=node /work/app/static/dist /work/app/static/dist
+COPY --from=node /work/app/static/dist/ /app/static/dist/
 
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/mime.types /etc/nginx/raw-mime.types
