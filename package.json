@@ -1,6 +1,5 @@
 {
     "name": "django-files",
-    "version": "0.4.1",
     "description": "Django Files",
     "homepage": "https://github.com/django-files/django-files",
     "repository": {
@@ -17,17 +16,10 @@
         "clipboard": "^2.0.11",
         "highlight.js": "^11.8.0",
         "jquery": "^3.6.4",
-        "jscookie": "^1.1.0",
-        "gulp": "^4.0.2",
-        "webpack": "^5.68.0",
-        "webpack-cli": "^4.9.1",
-        "@uppy/core": "^3.4.0",
-        "@uppy/dashboard": "^3.5.1",
-        "@uppy/xhr-upload": "^3.3.2"
+        "gulp": "^4.0.2"
     },
     "scripts": {
         "copy-static": "npx gulp",
-        "build-uppy": "npx webpack --config webpack.config.js",
         "postinstall": "npm run copy-static"
     }
 }
