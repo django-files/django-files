@@ -13,3 +13,4 @@ settings.env
 app/.env
 app/test.env
 .ash_history
+node_modules/

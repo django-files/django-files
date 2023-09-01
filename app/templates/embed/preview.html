@@ -84,7 +84,15 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 </div>
             <div class="col-lg-3 d-flex flex-column">
                 <div class="card-body">
-                    <h3 class="card-title">{{ file.name }}</h3>
+                    <h3 class="card-title">{{ file.name }}<div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle float-end mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                        <ul class="dropdown-menu">
+                          <li>
+                          <a role="button" class="delete-file-btn dropdown-item" data-hook-id="{{ file.id }}" title="Delete">
+                            <i class="fa-regular fa-trash-can link-danger"></i> Delete File</a>
+                        </li>
+                        </ul>
+                      </div></h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                     {% if file.meta.PILImageWidth %}
                     <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
@@ -140,6 +148,24 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="delete-file-modal" tabindex="-1" aria-labelledby="exampleModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalLabel">Delete File</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">Are you sure you want to delete this file?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="confirm-delete-hook-btn">Delete <i
+                        class="fa-regular fa-trash-can ms-1"></i></button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block footer %}
@@ -172,4 +198,6 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
 
 {% endblock %}
 
-{% block tail %}{% endblock %}
+{% block tail %}
+    <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
+{% endblock %}
