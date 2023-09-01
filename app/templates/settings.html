@@ -64,32 +64,30 @@
                             </div>
                         </div>
                     </div>
-                        {% if 'DISCORD_CLIENT_ID'|get_config %}
-                            <div class="row">
-                            <div class="col mx-sm-4 fs-5">
-                                <div class="form-check form-switch px-lg-5">
-                                    <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
-                                    <label class="form-check-label" for="oauth_reg">
-                                        Allow Oauth Auto Registration.
-                                    </label>
-                                </div>
+                    {% if 'DISCORD_CLIENT_ID'|get_config %}
+                        <div class="row">
+                        <div class="col mx-sm-4 fs-5">
+                            <div class="form-check form-switch px-lg-5">
+                                <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
+                                <label class="form-check-label" for="oauth_reg">
+                                    Allow Oauth Auto Registration.
+                                </label>
                             </div>
-                            </div>
-                        {% endif %}
-                            {% if 'DUO_CLIENT_ID'|get_config %}
-                                <div class="row">
-                                <div class="col mx-sm-4 fs-5">
-                                    <div class="form-check form-switch px-lg-5">
-                                        <input class="form-check-input" type="checkbox" id="duo_auth" name="duo_auth" {{ site_settings.duo_auth|if_true:"checked" }}>
-                                        <label class="form-check-label" for="duo_auth">
-                                            Enable Two-Factor Authentication.
-                                        </label>
-                                    </div>
-                                </div>
-                                </div>
-                            {% endif %}
                         </div>
-                    </div>
+                        </div>
+                    {% endif %}
+                    {% if 'DUO_CLIENT_ID'|get_config %}
+                        <div class="row">
+                        <div class="col mx-sm-4 fs-5">
+                            <div class="form-check form-switch px-lg-5">
+                                <input class="form-check-input" type="checkbox" id="duo_auth" name="duo_auth" {{ site_settings.duo_auth|if_true:"checked" }}>
+                                <label class="form-check-label" for="duo_auth">
+                                    Enable Two-Factor Authentication.
+                                </label>
+                            </div>
+                        </div>
+                        </div>
+                    {% endif %}
                 </div>
             {% endif %}
 
