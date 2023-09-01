@@ -8,7 +8,9 @@ from pytimeparse2 import parse
 class SettingsForm(forms.Form):
     site_url = forms.CharField(max_length=128)
     oauth_reg = forms.BooleanField(required=False)
+    pub_load = forms.BooleanField(required=False)
     two_factor = forms.BooleanField(required=False)
+    duo_auth = forms.BooleanField(required=False)
     default_expire = forms.CharField(max_length=128, required=False)
     default_color = forms.CharField(max_length=7)
     nav_color_1 = forms.CharField(max_length=7)

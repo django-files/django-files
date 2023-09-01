@@ -27,13 +27,13 @@
 
             {% if 'DISCORD_CLIENT_ID'|get_config %}
             {% if not user.oauth_id %}
-                <p><a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary" role="button">
+                <p><a href="{% url "oauth:discord" %}" class="btn btn-sm btn-outline-primary" role="button">
                     <i class="fab fa-discord me-2"></i> Connect Account to a Discord</a></p>
             {% endif %}
             {% endif %}
 
             {% if user.is_superuser %}
-                <div class='border border-warning-subtle rounded-2 p-2 my-2'>
+                <div class="border border-warning-subtle rounded-2 p-2 my-2">
                     <div class="row">
                         <div class="col-md-6">
                             <label for="site_url" class="form-label">Site URL</label>
@@ -49,13 +49,23 @@
                             <input type="text" class="form-control" id="s3_bucket_name" name="s3_bucket_name" placeholder=""
                                    value="{{ site_settings.s3_bucket_name }}" aria-describedby="s3_bucket_name-help s3_bucket_name-invalid">
                             <div id="s3_bucket_name-help" class="form-text">
-                                <span class='text-warning'><strong>INOP</strong></span> Should be set via environment variables.
+                                <span class="text-warning"><strong>INOP</strong></span> Should be set via environment variables.
                             </div>
                             <div id="s3_bucket_name-invalid" class="invalid-feedback"></div>
                         </div>
                     </div>
-                    <div class='row'>
+                    <div class="row">
+                        <div class="col mx-sm-4 fs-5">
+                            <div class="form-check form-switch px-lg-5">
+                                <input class="form-check-input" type="checkbox" id="pub_load" name="pub_load" {{ site_settings.pub_load|if_true:"checked" }}>
+                                <label class="form-check-label" for="pub_load">
+                                    Allow Public Uploads.
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                         {% if 'DISCORD_CLIENT_ID'|get_config %}
+                            <div class="row">
                             <div class="col mx-sm-4 fs-5">
                                 <div class="form-check form-switch px-lg-5">
                                     <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
@@ -64,24 +74,26 @@
                                     </label>
                                 </div>
                             </div>
+                            </div>
                         {% endif %}
-                        {% if 'DUO_CLIENT_ID'|get_config %}
-                            <div class="row my-2">
+                            {% if 'DUO_CLIENT_ID'|get_config %}
+                                <div class="row">
                                 <div class="col mx-sm-4 fs-5">
                                     <div class="form-check form-switch px-lg-5">
-                                        <input class="form-check-input" type="checkbox" id="two_factor" name="two_factor" {{ site_settings.two_factor|if_true:"checked" }}>
-                                        <label class="form-check-label" for="two_factor">
+                                        <input class="form-check-input" type="checkbox" id="duo_auth" name="duo_auth" {{ site_settings.duo_auth|if_true:"checked" }}>
+                                        <label class="form-check-label" for="duo_auth">
                                             Enable Two-Factor Authentication.
                                         </label>
                                     </div>
                                 </div>
-                            </div>
-                        {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             {% endif %}
 
-            <div class='border border-success-subtle rounded-2 p-2 my-2'>
+            <div class="border border-success-subtle rounded-2 p-2 my-2">
                 <div class="row">
                     <div class="col-md-6">
                         <label for="default_expire" class="form-label">Default Expire</label>

@@ -1,0 +1,82 @@
+{% extends "main.html" %}
+{% block uppy_active %}active{% endblock %}
+{% block title %}Upload{% endblock %}
+{% load home_tags %}
+{% load static %}
+
+{% block meta %}
+    <meta name="author" content="Shane"/>
+    <meta name="title" content="Django Files - Upload"/>
+    <meta name="description" content="Upload files securely up to 1GB in size."/>
+
+    <meta property="og:author" content="Shane">
+    <meta property="og:title" content="Django Files - Upload">
+    <meta property="og:description" content="Upload files securely up to 1GB in size.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo.png' %}">
+{% endblock %}
+
+{% block head %}
+    <link href="{% static 'uppy/uppy.min.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block body %}
+    <div class="container-fluid py-3 px-4">
+
+        <h1>Upload</h1>
+
+        <div id="uppy" class="mt-4"></div>
+
+    </div>
+{% endblock %}
+
+{% if not request.user.is_authenticated %}
+    {% block footer %}{% endblock %}
+{% endif %}
+
+{% block tail %}
+    <script type="module">
+        import {
+            Uppy,
+            Dashboard,
+            Webcam,
+            Audio,
+            ScreenCapture,
+            XHRUpload,
+        } from "{% static 'uppy/uppy.min.js' %}";
+
+        const uppy = new Uppy({ debug: true, autoProceed: false })
+            .use(Dashboard, {
+                inline: true,
+                theme: 'auto',
+                target: '#uppy',
+                showProgressDetails: true,
+                showLinkToFileUploadResult: true,
+                autoOpenFileEditor: true,
+                proudlyDisplayPoweredByUppy: false,
+                note: 'Django Files Upload',
+                height: 380,
+                width: '100%',
+                metaFields: [
+                    {id: 'name', name: 'Name', placeholder: 'File Name'},
+                    {id: 'Expires-At', name: 'Expires At', placeholder: 'File Expiration Time.'},
+                    {id: 'info', name: 'Info', placeholder: 'Information about the file.'}
+                ],
+                browserBackButtonClose: false
+            })
+            .use(Webcam, { target: Dashboard })
+            .use(Audio, { target: Dashboard })
+            .use(ScreenCapture, { target: Dashboard })
+            .use(XHRUpload, {
+                endpoint: "{% url 'home:public-uppy' %}",
+                headers: {
+                    "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
+                },
+            })
+
+        uppy.on("success", (fileCount) => {
+            console.log(`${fileCount} files uploaded`);
+        });
+    </script>
+{% endblock %}

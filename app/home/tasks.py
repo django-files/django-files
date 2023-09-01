@@ -31,6 +31,11 @@ def app_init():
         log.info('site_settings created')
     else:
         log.warning('site_settings already created')
+    # public_user, created = CustomUser.objects.get_or_create(username='public')
+    # if created:
+    #     log.info('public_user created: public')
+    # else:
+    #     log.warning('public_user already created: public')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 300})

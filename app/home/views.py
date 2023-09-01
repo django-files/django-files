@@ -14,9 +14,11 @@ from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
 from home.util.s3 import use_s3
 
+from api.views import process_file_upload, parse_expire
 from home.forms import SettingsForm
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
 from home.tasks import clear_shorts_cache, process_stats
+from oauth.models import CustomUser
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -105,7 +107,7 @@ def shorts_view(request):
 @cache_control(no_cache=True)
 @login_required
 # @cache_page(cache_seconds, key_prefix="settings.webhooks")
-@vary_on_cookie
+# @vary_on_cookie
 def settings_view(request):
     """
     View  /settings/
@@ -127,7 +129,8 @@ def settings_view(request):
     if request.user.is_superuser:
         site_settings.site_url = form.cleaned_data['site_url']
         site_settings.oauth_reg = form.cleaned_data['oauth_reg']
-        site_settings.two_factor = form.cleaned_data['two_factor']
+        site_settings.oauth_reg = form.cleaned_data['oauth_reg']
+        site_settings.pub_load = form.cleaned_data['pub_load']
         site_settings.save()
 
     request.user.default_expire = form.cleaned_data['default_expire']
@@ -158,15 +161,47 @@ def settings_view(request):
     return JsonResponse(data, status=200)
 
 
-@login_required
 @csrf_exempt
+@cache_control(no_cache=True)
+@login_required
 # @cache_page(cache_seconds)
-@vary_on_cookie
+# @vary_on_cookie
 def uppy_view(request):
     """
     View  /uppy/
     """
     return render(request, 'uppy.html')
+
+
+@csrf_exempt
+@cache_control(no_cache=True)
+def pub_uppy_view(request):
+    """
+    View  /public/
+    """
+    log.debug('%s - pub_uppy_view', request.method)
+    log.debug('request.user: %s', request.user)
+    try:
+        site_settings = SiteSettings.objects.get(pk=1)
+        log.debug('site_settings: %s', site_settings)
+        if not site_settings.pub_load:
+            if request.user.is_authenticated:
+                messages.warning(request, 'You Must Enable Public Uploads.')
+                return HttpResponseRedirect(reverse('home:settings'))
+            return HttpResponseRedirect(reverse('oauth:login'))
+
+        if request.method == 'POST':
+            if not (f := request.FILES.get('file')):
+                return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
+            kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
+            if not request.user.is_authenticated:
+                request.user, _ = CustomUser.objects.get_or_create(username='public')
+            return process_file_upload(f, request.user.id, **kwargs)
+
+        return render(request, 'public.html')
+    except Exception as error:
+        log.exception(error)
+        return JsonResponse({'error': str(error)}, status=500)
 
 
 def shorten_short_view(request, short):

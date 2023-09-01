@@ -168,10 +168,14 @@ class ShortURLs(models.Model):
 class SiteSettings(models.Model):
     id = models.AutoField(primary_key=True)
     site_url = models.URLField(max_length=128, blank=True, null=True, verbose_name='Site URL')
+    pub_load = models.BooleanField(default=False, verbose_name='Public Upload',
+                                   help_text='Allow Public Uploads')
     oauth_reg = models.BooleanField(default=False, verbose_name='Oauth Reg',
                                     help_text='Allow Oauth Auto Registration')
     two_factor = models.BooleanField(default=False, verbose_name='Two-Factor',
                                      help_text='Require Two-Factor Authentication')
+    duo_auth = models.BooleanField(default=False, verbose_name='Duo AUth',
+                                   help_text='Require Duo Authentication')
     s3_region = models.CharField(max_length=16, blank=True, null=True)
     s3_secret_key = models.CharField(max_length=128, blank=True, null=True)
     s3_secret_key_id = models.CharField(max_length=128, blank=True, null=True)
