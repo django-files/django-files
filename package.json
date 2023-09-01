@@ -1,6 +1,6 @@
 {
     "name": "django-files",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "Django Files",
     "homepage": "https://github.com/django-files/django-files",
     "repository": {
