@@ -82,6 +82,12 @@ steps:
       -   cat "$STACK_COMPOSE"
       - done
 
+  - name: "Node Install"
+    image: node:18-alpine
+    commands:
+      - set -a; . ./.environment
+      - npm install
+
   - name: "Build and Deploy"
     image: docker:dind
     volumes:

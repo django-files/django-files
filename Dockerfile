@@ -1,3 +1,12 @@
+FROM node:18-bookworm-slim as node
+
+ENV TZ=UTC
+ENV NODE_ENV=production
+WORKDIR /work
+COPY ["package.json", "package-lock.json", "gulpfile.js", "/work/"]
+RUN npm install
+
+
 FROM python:3.11-slim as base
 
 ENV TZ=UTC
@@ -35,6 +44,8 @@ RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
         supervisor nginx redis-server vector  &&\
     apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
     apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
+
+COPY --from=node /work/app/static/dist /work/app/static/dist
 
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/mime.types /etc/nginx/raw-mime.types

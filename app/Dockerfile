@@ -36,6 +36,8 @@ RUN addgroup -g 1000 app  &&\
 #    apt-get -y update  &&  apt-get -y install gcc libmariadb-dev-compat pkg-config  &&\
 #    apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
+#COPY --from=node /app/app/static/dist /app/app/static/dist
+
 WORKDIR /app
 COPY --chown=app:app . .
 USER app

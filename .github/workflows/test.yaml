@@ -41,6 +41,14 @@ jobs:
         run: |
           flake8
 
+      - name: "Setup Node 18"
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: "Node Install"
+        run: npm install
+
 #      - name: "Migrate"
 #        working-directory: app
 #        run: |
@@ -67,7 +75,7 @@ jobs:
 #          path: app/screenshots/
 
       - name: "Push Artifacts"
-        uses: hosted-domains/push-artifacts-action@master
+        uses: cssnr/push-artifacts-action@master
         with:
           path: "app/screenshots/"
           host: ${{ secrets.ARTIFACTS_HOST }}

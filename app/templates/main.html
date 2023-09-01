@@ -26,11 +26,11 @@
 
     <link rel="icon" href="{% static 'images/favicon.ico' %}" sizes="any">
 {#    <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">#}
-    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'font-awesome/css/all.min.css' %}">
-    <link rel="stylesheet" href="{% static 'main/css/main.css' %}">
-    <link rel="stylesheet" href="{% static 'animate/animate.min.css' %}">
-    <script type="text/javascript" src="{% static "bootstrap/theme.js" %}"></script>
+    <link rel="stylesheet" href="{% static 'dist/bootstrap/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/fontawesome/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/animate/animate.min.css' %}">
+    <script type="text/javascript" src="{% static 'bootstrap/theme.js' %}"></script>
 
     {% block head %}{% endblock %}
 
@@ -229,14 +229,14 @@
 </div>
 
 {% block js %}
-    <script type="text/javascript" src="{% static 'jquery/jquery.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'font-awesome/js/all.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'clipboardjs/clipboard.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'jscookie/js.cookie.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'main/js/main.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/jquery/jquery.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/fontawesome/js/all.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/clipboard/clipboard.min.js' %}"></script>
+{#    <script type="text/javascript" src="{% static 'dist/jscookie/cookie.js' %}"></script>#}
+    <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
     {% if request.user.is_authenticated %}
-        <script type="text/javascript" src="{% static 'main/js/user.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/user.js' %}"></script>
     {% endif %}
 {% endblock %}
 
