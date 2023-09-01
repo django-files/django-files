@@ -84,7 +84,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 </div>
             <div class="col-lg-3 d-flex flex-column">
                 <div class="card-body">
-                    <h3 class="card-title">{{ file.name }}<div class="dropdown">
+                    <h3 class="card-title">{{ file.name }}{% if request.user.is_authenticated %}<div class="dropdown">
                         <button class="btn btn-secondary dropdown-toggle float-end mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                         <ul class="dropdown-menu">
                           <li>
@@ -92,7 +92,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                             <i class="fa-regular fa-trash-can link-danger"></i> Delete File</a>
                         </li>
                         </ul>
-                      </div></h3>
+                      </div>{% endif %}</h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                     {% if file.meta.PILImageWidth %}
                     <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
