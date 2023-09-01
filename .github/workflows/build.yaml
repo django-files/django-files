@@ -55,7 +55,7 @@ jobs:
             echo "tags=${TAGS}" >> $GITHUB_OUTPUT
             echo "Parsed Tags: ${TAGS}"
           fi
-          echo "APP_VERSION=${GITHUB_REF_NAME}" >> .env
+          echo "APP_VERSION=${GITHUB_REF_NAME}" >> app/.env
           echo "APP_VERSION: ${GITHUB_REF_NAME}"
 
       - name: "Setup Buildx"
