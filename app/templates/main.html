@@ -122,7 +122,7 @@
 {% endblock %}
 
 {% block backtotop %}
-<button type="button" class="btn btn-primary btn-floating" id="btn-back-to-top">
+<button type="button" class="btn btn-primary btn-floating mb-6" id="btn-back-to-top">
     <i class="fas fa-arrow-up"></i>
 </button>
 {% endblock %}
@@ -130,15 +130,15 @@
 {% block footer %}
 <footer class="footer mt-auto p-2">
     <div class="container-fluid">
-        <div class="row me-5">
+        <div class="row">
 
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-lg-4">
                 <p><a class="text-decoration-none" href="https://github.com/django-files/django-files" target="_blank">
                     <i class="fab fa-github"></i> Django Files</a> v{{ 'APP_VERSION'|get_config }}</p>
             </div>
 
-            <div class="col-12 col-md-8 text-md-end">
-                <ul class="list-unstyled list-inline d-none d-sm-block">
+            <div class="col-12 col-lg-8 text-md-end">
+                <ul class="list-unstyled list-inline d-none d-md-block ps-0">
                     <li class="list-inline-item"><a href="{% url 'home:index' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Home</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:gallery' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Gallery</a></li>
@@ -155,8 +155,8 @@
                 </ul>
             </div>
 
-            <div class="col-12 text-md-end">
-                <ul class="list-unstyled d-xs-block d-sm-none d-md-none d-lg-none d-xl-none text-end">
+            <div class="col-12">
+                <ul class="list-unstyled d-xs-block d-md-none d-lg-none d-xl-none">
                     <li class="list-group-item"><a href="{% url 'home:index' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Home</a></li>
                     <li class="list-group-item"><a href="{% url 'home:gallery' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Gallery</a></li>
                     <li class="list-group-item"><a href="{% url 'home:uppy' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Upload</a></li>
