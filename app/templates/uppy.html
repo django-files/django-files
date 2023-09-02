@@ -4,19 +4,6 @@
 {% load home_tags %}
 {% load static %}
 
-{% block meta %}
-    <meta name="author" content="Shane"/>
-    <meta name="title" content="Django Files - Upload"/>
-    <meta name="description" content="Upload files securely up to 1GB in size."/>
-
-    <meta property="og:author" content="Shane">
-    <meta property="og:title" content="Django Files - Upload">
-    <meta property="og:description" content="Upload files securely up to 1GB in size.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo.png' %}">
-{% endblock %}
-
 {% block head %}
     <link href="{% static 'uppy/uppy.min.css' %}" rel="stylesheet">
 {% endblock %}
