@@ -5,9 +5,7 @@ import urllib.parse
 from celery import shared_task
 from django_redis import get_redis_connection
 from django.conf import settings
-# from django.core import management
 from django.core.cache import cache
-# from django.core.cache.utils import make_template_fragment_key
 from django.template.loader import render_to_string
 from django.utils import timezone
 from pytimeparse2 import parse
@@ -74,11 +72,11 @@ def clear_stats_cache():
     return cache.delete_pattern('*.stats.*')
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
-def clear_settings_cache():
-    # Clear Settings cache
-    log.info('clear_settings_cache')
-    return cache.delete_pattern('*.settings.*')
+# @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
+# def clear_settings_cache():
+#     # Clear Settings cache
+#     log.info('clear_settings_cache')
+#     return cache.delete_pattern('*.settings.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 2, 'countdown': 30})

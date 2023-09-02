@@ -11,8 +11,6 @@ from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
-from django.core.cache import cache
-from django.forms.models import model_to_dict
 from fractions import Fraction
 from home.util.s3 import use_s3
 
@@ -146,11 +144,12 @@ def settings_view(request):
     if request.user.is_superuser:
         site_settings.site_url = form.cleaned_data['site_url']
         site_settings.site_title = form.cleaned_data['site_title']
-        site_settings.oauth_reg = form.cleaned_data['oauth_reg']
-        site_settings.oauth_reg = form.cleaned_data['oauth_reg']
+        site_settings.site_description = form.cleaned_data['site_description']
+        site_settings.site_color = form.cleaned_data['site_color']
         site_settings.pub_load = form.cleaned_data['pub_load']
+        site_settings.oauth_reg = form.cleaned_data['oauth_reg']
+        site_settings.duo_auth = form.cleaned_data['duo_auth']
         site_settings.save()
-        cache.set('site_settings', model_to_dict(site_settings))
 
     request.user.default_expire = form.cleaned_data['default_expire']
 

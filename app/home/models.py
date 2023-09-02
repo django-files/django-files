@@ -3,6 +3,7 @@ from django.shortcuts import reverse
 from django.conf import settings
 
 from home.managers import FilesManager, FileStatsManager, ShortURLsManager, WebhooksManager
+from home.util.rand import rand_color_hex
 from oauth.models import CustomUser
 from home.util.storage import StoragesRouterFileField, use_s3
 from django.core.cache import cache
@@ -169,6 +170,11 @@ class SiteSettings(models.Model):
     id = models.AutoField(primary_key=True)
     site_url = models.URLField(max_length=128, blank=True, null=True, verbose_name='Site URL')
     site_title = models.CharField(max_length=64, default='Django Files', verbose_name='Site Title')
+    site_description = models.TextField(max_length=155, verbose_name='Site Description',
+                                        default=('A Feature Packed Self-Hosted Django/Docker File Manager for '
+                                                 'Sharing Files with ShareX, Flameshot and Much more...'))
+    site_color = models.CharField(default=rand_color_hex, max_length=7, verbose_name='Site Color',
+                                  help_text='Site Theme Color for Site Embeds')
     pub_load = models.BooleanField(default=False, verbose_name='Public Upload',
                                    help_text='Allow Public Uploads')
     oauth_reg = models.BooleanField(default=False, verbose_name='Oauth Reg',

@@ -54,6 +54,13 @@
                             <div id="site_title-invalid" class="invalid-feedback"></div>
                         </div>
                     </div>
+                    <div class='row'>
+                        <div class="mb-3">
+                            <label for="site_description" class="form-label">Site Description</label>
+                            <textarea class="form-control" id="site_description" name="site_description" rows="2">{{ site_settings.site_description }}</textarea>
+                        </div>
+                    </div>
+                    {% comment %}
                     <div class="row">
                         <div class="col-md-6">
                             <label for="s3_bucket_name" class="form-label">S3 Bucket Name</label>
@@ -65,6 +72,7 @@
                             <div id="s3_bucket_name-invalid" class="invalid-feedback"></div>
                         </div>
                     </div>
+                    {% endcomment %}
                     <div class="row">
                         <div class="col mx-sm-4 fs-5">
                             <div class="form-check form-switch px-lg-5">
@@ -99,6 +107,14 @@
                         </div>
                         </div>
                     {% endif %}
+                    <div class="row pt-3">
+                        <div class="col-auto">
+                            <label for="site_color" class="form-label">Theme</label>
+                            <input type="color" class="form-control form-control-color" id="site_color" name="site_color"
+                                   value="{{ site_settings.site_color }}" title="Default Color" aria-describedby="site_color-invalid">
+                            <div id="site_color-invalid" class="invalid-feedback"></div>
+                        </div>
+                    </div>
                 </div>
             {% endif %}
 
