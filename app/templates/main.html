@@ -9,7 +9,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {% if 'DEBUG'|get_config %}<meta name="robots" content="noindex, nofollow">{% endif %}
-    <title>{{ site_settings.site_title|default:"Django Files" }} - {% block title %}{% endblock %}</title>
+    <title>{{ site_settings.site_title|default:'Django Files' }} - {% block title %}{% endblock %}</title>
 
     {% block meta %}
         <meta name="title" content="{{ site_settings.site_title|default:'Django Files' }}"/>
