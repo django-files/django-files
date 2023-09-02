@@ -43,6 +43,31 @@ $(document).ready(function () {
         })
     })
 
+    function iOS() {
+        return [
+          'iPad Simulator',
+          'iPhone Simulator',
+          'iPod Simulator',
+          'iPad',
+          'iPhone',
+          'iPod'
+        ].includes(navigator.platform)
+        // iPad on iOS 13 detection
+        || (navigator.userAgent.includes("Mac") && "ontouchend" in document)
+    }
+
+    if (iOS()) {
+        var video = document.getElementById('bgvid');
+        var source = document.getElementById('bgvidsrc');
+        console.log(source);
+        console.log(bgvid.src.replace('webm', 'mp4'));
+        source.setAttribute('src', '/static/video/loop.mp4');
+        source.setAttribute('type', 'video/mp4');
+        console.log(source);
+        video.play();
+    }
+
+
     // var vid = document.getElementById("bgvid");
     // var pauseButton = document.querySelector("#pause");
     //
