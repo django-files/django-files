@@ -5,9 +5,7 @@ import urllib.parse
 from celery import shared_task
 from django_redis import get_redis_connection
 from django.conf import settings
-# from django.core import management
 from django.core.cache import cache
-# from django.core.cache.utils import make_template_fragment_key
 from django.template.loader import render_to_string
 from django.utils import timezone
 from pytimeparse2 import parse
@@ -31,6 +29,11 @@ def app_init():
         log.info('site_settings created')
     else:
         log.warning('site_settings already created')
+    # public_user, created = CustomUser.objects.get_or_create(username='public')
+    # if created:
+    #     log.info('public_user created: public')
+    # else:
+    #     log.warning('public_user already created: public')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 300})
@@ -69,11 +72,11 @@ def clear_stats_cache():
     return cache.delete_pattern('*.stats.*')
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
-def clear_settings_cache():
-    # Clear Settings cache
-    log.info('clear_settings_cache')
-    return cache.delete_pattern('*.settings.*')
+# @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
+# def clear_settings_cache():
+#     # Clear Settings cache
+#     log.info('clear_settings_cache')
+#     return cache.delete_pattern('*.settings.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 2, 'countdown': 30})

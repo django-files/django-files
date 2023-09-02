@@ -57,5 +57,5 @@ class WebhooksAdmin(admin.ModelAdmin):
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
     model = SiteSettings
-    list_display = ('id', 'site_url', 'oauth_reg', 'two_factor',)
+    list_display = ('id', 'site_url', 'oauth_reg', 'duo_auth',)
     readonly_fields = ('id',)

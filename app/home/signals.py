@@ -1,7 +1,9 @@
+from django.core.cache import cache
 from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
+from django.forms.models import model_to_dict
 
-from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache, clear_settings_cache
+from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache
 from home.tasks import send_success_message
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
 
@@ -29,12 +31,10 @@ def clear_stats_cache_signal(sender, instance, **kwargs):
     clear_stats_cache.delay()
 
 
-@receiver(post_save, sender=Webhooks)
-@receiver(post_delete, sender=Webhooks)
 @receiver(post_save, sender=SiteSettings)
 @receiver(post_delete, sender=SiteSettings)
 def clear_settings_cache_signal(sender, instance, **kwargs):
-    clear_settings_cache.delay()
+    cache.set('site_settings', model_to_dict(instance))
 
 
 @receiver(post_save, sender=Webhooks)

@@ -65,15 +65,7 @@ def upload_view(request):
         if not (f := request.FILES.get('file')):
             return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
         kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
-        file = process_file(f.name, f, request.user.id, **kwargs)
-        data = {
-            'files': [file.preview_url()],
-            'url': file.preview_url(),
-            'raw': file.get_url(),
-            'name': file.name,
-            'size': file.size,
-        }
-        return JsonResponse(data)
+        return process_file_upload(f, request.user.id, **kwargs)
     except Exception as error:
         log.exception(error)
         return JsonResponse({'error': str(error)}, status=500)
@@ -206,6 +198,18 @@ def remote_view(request):
     return JsonResponse(response)
 
 
+def process_file_upload(f, user_id, **kwargs):
+    file = process_file(f.name, f, user_id, **kwargs)
+    data = {
+        'files': [file.preview_url()],
+        'url': file.preview_url(),
+        'raw': file.get_url(),
+        'name': file.name,
+        'size': file.size,
+    }
+    return JsonResponse(data)
+
+
 def gen_short(vanity: Optional[str] = None, length: int = 4) -> str:
     if vanity:
         if not ShortURLs.objects.filter(short=vanity):
@@ -234,4 +238,6 @@ def parse_expire(request) -> str:
         return ''
     if parse(expr) is not None:
         return expr
-    return request.user.default_expire or ''
+    if request.user.is_authenticated:
+        return request.user.default_expire or ''
+    return ''
