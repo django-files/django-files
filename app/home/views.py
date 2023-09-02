@@ -64,15 +64,26 @@ def stats_view(request):
 
 @cache_control(no_cache=True)
 @login_required
-@cache_page(cache_seconds, key_prefix="files")
-@vary_on_cookie
+# @cache_page(cache_seconds, key_prefix="files")
+# @vary_on_cookie
 def files_view(request):
     """
     View  /files/
     """
     log.debug('%s - files_view: is_secure: %s', request.method, request.is_secure())
-    files = Files.objects.get_request(request)
-    context = {'files': files}
+    if request.user.is_superuser:
+        users = CustomUser.objects.all()
+        context = {'users': users}
+        user = request.GET.get('user')
+        log.debug('user: %s', user)
+        if user:
+            files = Files.objects.filter(user_id=int(user))
+        else:
+            files = Files.objects.get_request(request)
+        context.update({'files': files})
+    else:
+        files = Files.objects.get_request(request)
+        context = {'files': files}
     return render(request, 'files.html', context)
 
 
