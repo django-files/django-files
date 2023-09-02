@@ -45,6 +45,17 @@
                             <div id="site_url-invalid" class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-6">
+                            <label for="site_title" class="form-label">Site Title</label>
+                            <input type="text" class="form-control" id="site_title" name="site_title" placeholder=""
+                                   value="{{ site_settings.site_title }}" aria-describedby="site_title-help site_title-invalid">
+                            <div id="site_title-help" class="form-text">
+                                Site Title.
+                            </div>
+                            <div id="site_title-invalid" class="invalid-feedback"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
                             <label for="s3_bucket_name" class="form-label">S3 Bucket Name</label>
                             <input type="text" class="form-control" id="s3_bucket_name" name="s3_bucket_name" placeholder=""
                                    value="{{ site_settings.s3_bucket_name }}" aria-describedby="s3_bucket_name-help s3_bucket_name-invalid">

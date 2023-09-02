@@ -85,7 +85,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             <div class="col-lg-3 d-flex flex-column">
                 <div class="card-body">
                     <h3 class="card-title">{{ file.name }}{% if request.user.is_authenticated and request.user == file.user %}<div class="dropdown">
-                        <button class="btn btn-secondary float-end mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                        <button class="btn btn-outline-secondary float-end mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                         <ul class="dropdown-menu">
                           <li>
                           <a role="button" class="delete-file-btn dropdown-item" data-hook-id="{{ file.id }}" title="Delete">

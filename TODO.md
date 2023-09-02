@@ -40,13 +40,11 @@
 
 ## Preview Page
 - [ ] Fix Image Preview for Images not Browser Compatible (heic)
-- [ ] Context Menu to delete files and do other future actions like pw protect or private mode
 
 ## Site Settings
 - [ ] Add OAuth Variables to SiteSettings
 - [ ] Add S3 Variables to SiteSettings
 - [ ] Full Settings Interface Overhaul
-- [ ] Custom Site Title Feature
 - [ ] Custom Favicon Feature
 - [ ] Custom Login Screen Feature
 
