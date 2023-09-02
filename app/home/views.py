@@ -64,8 +64,8 @@ def stats_view(request):
 
 @cache_control(no_cache=True)
 @login_required
-# @cache_page(cache_seconds, key_prefix="files")
-# @vary_on_cookie
+@cache_page(cache_seconds, key_prefix="files")
+@vary_on_cookie
 def files_view(request):
     """
     View  /files/
