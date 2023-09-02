@@ -168,6 +168,7 @@ class ShortURLs(models.Model):
 class SiteSettings(models.Model):
     id = models.AutoField(primary_key=True)
     site_url = models.URLField(max_length=128, blank=True, null=True, verbose_name='Site URL')
+    site_title = models.CharField(max_length=64, default='Django Files', verbose_name='Site Title')
     pub_load = models.BooleanField(default=False, verbose_name='Public Upload',
                                    help_text='Allow Public Uploads')
     oauth_reg = models.BooleanField(default=False, verbose_name='Oauth Reg',
