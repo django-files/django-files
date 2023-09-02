@@ -25,6 +25,7 @@ video {
     width: 300px;
     margin: 10px auto;
     padding: 25px;
+    filter: drop-shadow(15px -15px 12px #000000);
 }
 
 .form-control {
