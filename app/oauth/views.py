@@ -39,7 +39,7 @@ def oauth_show(request):
         if not user:
             return HttpResponse(status=401)
 
-        if SiteSettings.objects.get(pk=1).two_factor:
+        if SiteSettings.objects.get(pk=1).duo_auth:
             # if config('DUO_CLIENT_ID', False):
             #     pass
             log.info('--- DUO DETECTED - REDIRECTING ---')
@@ -102,7 +102,7 @@ def oauth_callback(request):
             return HttpResponseRedirect(get_login_redirect_url(request))
         log.debug('user.username: %s', user.username)
 
-        if SiteSettings.objects.get(pk=1).two_factor:
+        if SiteSettings.objects.get(pk=1).duo_auth:
             log.info('--- DUO DETECTED - REDIRECTING ---')
             request.session['username'] = user.username
             request.session['profile'] = json.dumps(profile, default=str)

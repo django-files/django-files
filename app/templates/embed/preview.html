@@ -148,41 +148,36 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             </div>
         </div>
     </div>
-
-    <script>
-        {% if render in 'text,code' %}
-            fetch("{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}")
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.text();
-                })
-                .then((data) => {
-                    let preview = $('#text-preview')
-                    preview.text(data);
-                    let theme = document.documentElement.getAttribute('data-bs-theme');
-                    if (theme !== "dark") {
-                        $('#code-dark').prop('disabled', true);
-                        $('#code-light').prop('disabled', false);
-                    }
-                    preview.each(function(i, block) {
-                        hljs.highlightElement(block);
-                    })
-                }).catch((error) => {
-                let message = "Error fetching {{ file.file.name }}: " + error
-                show_toast(message, 'danger')
-            });
-        {% endif %}
-    </script>
-
-    {% include 'include/delete-modal.html' %}
 {% endblock %}
 
-{% block footer %}{% endblock %}
+{% block footer %}
 
-{% block tail %}
-    {% if user.is_authenticated %}
-        <script type="text/javascript" src="{% static 'js/preview.js' %}"></script>
+<script>
+    {% if render in 'text,code' %}
+    fetch("{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}")
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.text();
+    })
+    .then((data) => {
+        $('#text-preview').text(data);
+        let theme = document.documentElement.getAttribute('data-bs-theme');
+        if (theme != "dark") {
+            $('#code-dark').prop('disabled', true);
+            $('#code-light').prop('disabled', false);
+        }
+        $('#text-preview').each(function(i, block) {
+            hljs.highlightElement(block);
+        })
+    }).catch((error) => {
+        let message = "Error fetching {{ file.file.name }}: " + error
+        show_toast(message, bsClass = 'danger')
+    });
     {% endif %}
+</script>
+
 {% endblock %}
+
+{% block tail %}{% endblock %}

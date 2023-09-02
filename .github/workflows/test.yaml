@@ -49,11 +49,13 @@ jobs:
       - name: "Node Install"
         run: npm install
 
-#      - name: "Migrate"
-#        working-directory: app
-#        run: |
-#          python manage.py makemigrations
-#          python manage.py migrate
+      - name: "Test Migrations"
+        working-directory: app
+        env:
+          DATABSE_LOCATION: /tmp/migration-test-db
+        run: |
+          python manage.py migrate
+          python manage.py makemigrations --dry-run --check --noinput
 
       - name: "Test"
         working-directory: app

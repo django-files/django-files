@@ -18,6 +18,10 @@
     </div>
 {% endblock %}
 
+{% if not request.user.is_authenticated %}
+    {% block footer %}{% endblock %}
+{% endif %}
+
 {% block tail %}
     <script type="module">
         import {
@@ -52,7 +56,7 @@
             .use(Audio, { target: Dashboard })
             .use(ScreenCapture, { target: Dashboard })
             .use(XHRUpload, {
-                endpoint: "{% url 'api:upload' %}",
+                endpoint: "{% url 'home:public-uppy' %}",
                 headers: {
                     "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
                 },

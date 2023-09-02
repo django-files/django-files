@@ -33,7 +33,7 @@
             {% endif %}
 
             {% if user.is_superuser %}
-                <div class='border border-warning-subtle rounded-2 p-2 my-2'>
+                <div class="border border-warning-subtle rounded-2 p-2 my-2">
                     <div class="row">
                         <div class="col-md-6">
                             <label for="site_url" class="form-label">Site URL</label>
@@ -54,45 +54,71 @@
                             <div id="site_title-invalid" class="invalid-feedback"></div>
                         </div>
                     </div>
+                    <div class='row'>
+                        <div class="mb-3">
+                            <label for="site_description" class="form-label">Site Description</label>
+                            <textarea class="form-control" id="site_description" name="site_description" rows="2">{{ site_settings.site_description }}</textarea>
+                        </div>
+                    </div>
+                    {% comment %}
                     <div class="row">
                         <div class="col-md-6">
                             <label for="s3_bucket_name" class="form-label">S3 Bucket Name</label>
                             <input type="text" class="form-control" id="s3_bucket_name" name="s3_bucket_name" placeholder=""
                                    value="{{ site_settings.s3_bucket_name }}" aria-describedby="s3_bucket_name-help s3_bucket_name-invalid">
                             <div id="s3_bucket_name-help" class="form-text">
-                                <span class='text-warning'><strong>INOP</strong></span> Should be set via environment variables.
+                                <span class="text-warning"><strong>INOP</strong></span> Should be set via environment variables.
                             </div>
                             <div id="s3_bucket_name-invalid" class="invalid-feedback"></div>
                         </div>
                     </div>
-                    <div class='row'>
-                        {% if 'DISCORD_CLIENT_ID'|get_config %}
-                            <div class="col mx-sm-4 fs-5">
-                                <div class="form-check form-switch px-lg-5">
-                                    <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
-                                    <label class="form-check-label" for="oauth_reg">
-                                        Allow Oauth Auto Registration.
-                                    </label>
-                                </div>
+                    {% endcomment %}
+                    <div class="row">
+                        <div class="col mx-sm-4 fs-5">
+                            <div class="form-check form-switch px-lg-5">
+                                <input class="form-check-input" type="checkbox" id="pub_load" name="pub_load" {{ site_settings.pub_load|if_true:"checked" }}>
+                                <label class="form-check-label" for="pub_load">
+                                    Allow Public Uploads.
+                                </label>
                             </div>
-                        {% endif %}
-                        {% if 'DUO_CLIENT_ID'|get_config %}
-                            <div class="row my-2">
-                                <div class="col mx-sm-4 fs-5">
-                                    <div class="form-check form-switch px-lg-5">
-                                        <input class="form-check-input" type="checkbox" id="two_factor" name="two_factor" {{ site_settings.two_factor|if_true:"checked" }}>
-                                        <label class="form-check-label" for="two_factor">
-                                            Enable Two-Factor Authentication.
-                                        </label>
-                                    </div>
-                                </div>
+                        </div>
+                    </div>
+                    {% if 'DISCORD_CLIENT_ID'|get_config %}
+                        <div class="row">
+                        <div class="col mx-sm-4 fs-5">
+                            <div class="form-check form-switch px-lg-5">
+                                <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
+                                <label class="form-check-label" for="oauth_reg">
+                                    Allow Oauth Auto Registration.
+                                </label>
                             </div>
-                        {% endif %}
+                        </div>
+                        </div>
+                    {% endif %}
+                    {% if 'DUO_CLIENT_ID'|get_config %}
+                        <div class="row">
+                        <div class="col mx-sm-4 fs-5">
+                            <div class="form-check form-switch px-lg-5">
+                                <input class="form-check-input" type="checkbox" id="duo_auth" name="duo_auth" {{ site_settings.duo_auth|if_true:"checked" }}>
+                                <label class="form-check-label" for="duo_auth">
+                                    Enable Two-Factor Authentication.
+                                </label>
+                            </div>
+                        </div>
+                        </div>
+                    {% endif %}
+                    <div class="row pt-3">
+                        <div class="col-auto">
+                            <label for="site_color" class="form-label">Theme</label>
+                            <input type="color" class="form-control form-control-color" id="site_color" name="site_color"
+                                   value="{{ site_settings.site_color }}" title="Default Color" aria-describedby="site_color-invalid">
+                            <div id="site_color-invalid" class="invalid-feedback"></div>
+                        </div>
                     </div>
                 </div>
             {% endif %}
 
-            <div class='border border-success-subtle rounded-2 p-2 my-2'>
+            <div class="border border-success-subtle rounded-2 p-2 my-2">
                 <div class="row">
                     <div class="col-md-6">
                         <label for="default_expire" class="form-label">Default Expire</label>

@@ -3,7 +3,12 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Define Hook Modal and Delete handlers
-    const deleteHookModal = new bootstrap.Modal('#delete-file-modal', {})
+    let deleteHookModal
+    try {
+        deleteHookModal = new bootstrap.Modal('#delete-file-modal', {})
+    } catch (error) {
+        console.log('#delete-file-modal not found on page')
+    }
     let hookID
     $('.delete-file-btn').click(function () {
         hookID = $(this).data('hook-id')
@@ -51,5 +56,15 @@ $(document).ready(function () {
                 $('#confirm-delete-hook-btn').removeClass('disabled')
             },
         })
+    })
+
+    $('#user').change(function () {
+        let user = $(this).val()
+        console.log('user: ' + user)
+        if (user) {
+            let url = new URL(location.href)
+            url.searchParams.set('user', user)
+            location.href = url.toString()
+        }
     })
 })
