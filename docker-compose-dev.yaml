@@ -34,12 +34,6 @@ services:
     env_file: settings.env
     command: >
       sh -c "python manage.py runserver_plus 0.0.0.0:9000"
-    healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:9000/app-health-check/"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 5s
     deploy:
       mode: global
     volumes:
