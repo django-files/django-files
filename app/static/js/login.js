@@ -43,7 +43,6 @@ $(document).ready(function () {
         })
     })
 
-
     // var vid = document.getElementById("bgvid");
     // var pauseButton = document.querySelector("#pause");
     //
