@@ -21,22 +21,22 @@
     <div class="d-flex flex-grow-1 justify-content-center align-items-center">
     <div id="login-outer" class="animate__animated animate__fadeIn">
         <div class="text-center">
-            <img class="img-responsive" src="{% static 'images/logo.png' %}" alt="Django Files">
-            <h3 class="text-center">Django Files</h3>
+            <img class="img-responsive" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
+            <h3 class="text-center">{{ site_settings.site_title }}</h3>
         </div>
 
         <form class="submit-once" method="POST" name="login-form" id="login-form" action="{% url 'oauth:login' %}">
             {% csrf_token %}
 
-            <div class="col">
-                <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" placeholder="username" autocomplete="username" required autofocus>
+            <div class="col mt-4">
+                <input type="text" class="form-control" id="username" name="username" autocomplete="username" required autofocus>
+                <span class="form-label floating-label">username</span>
             </div>
 
-            <div class="col mt-2">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" name="password" placeholder="password" autocomplete="password"
+            <div class="col">
+                <input type="password" class="form-control" id="password" name="password" autocomplete="password"
                        aria-describedby="passwordFeedback" required>
+                    <span class="form-label floating-label">password</span>
                 <div id="passwordFeedback" class="invalid-feedback">
                     Invalid Username or Password.
                 </div>
@@ -48,7 +48,7 @@
                 <input type="hidden" name="next" value="{{ request.session.login_next_url }}">
             {% endif %}
 
-            <div class="d-grid gap-2 mt-2">
+            <div class="d-grid gap-2">
                 <button id="login-button" class="btn btn-secondary" type="submit">
                     <i class="fas fa-sign-in-alt"></i> Local Login</button>
                 {% if 'DISCORD_CLIENT_ID'|get_config %}
@@ -59,7 +59,7 @@
 
             <div id="login-message">
                 {% if messages %}
-                    <ul class="list-group text-center mt-2">
+                    <ul class="list-group text-center">
                         {% for message in messages %}
                             <li class="list-group-item list-group-item-{{ message.tags }}">{{ message }}</li>
                         {% endfor %}

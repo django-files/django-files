@@ -13,17 +13,40 @@ video {
     height: auto;
     z-index: -100;
     transform: translateX(-50%) translateY(-50%);
+    filter: blur(150px);
     background: url('/static/video/loop.jpg') no-repeat;
     background-size: cover;
     transition: 1s opacity;
 }
 
 #login-outer {
+    border-radius: 25px;
     background: rgba(0 0 0 / 30%);
     width: 300px;
     margin: 10px auto;
-    padding: 10px;
+    padding: 25px;
 }
+
+.form-control {
+    background: rgba(0 0 0 / 30%);
+}
+
+input:focus ~ .floating-label,
+input:not(:focus):valid ~ .floating-label{
+  top: -60px;
+  left: 5px;
+  font-size: 14px;
+  opacity: 1;
+}
+
+.floating-label {
+  position: relative;
+  pointer-events: none;
+  top: -30px;
+  left: 10px;
+  transition: 0.2s ease all;
+}
+
 
 /*.stopfade {*/
 /*    opacity: .5;*/
