@@ -59,11 +59,8 @@ $(document).ready(function () {
     if (iOS()) {
         var video = document.getElementById('bgvid');
         var source = document.getElementById('bgvidsrc');
-        console.log(source);
-        console.log(bgvid.src.replace('webm', 'mp4'));
         source.setAttribute('src', '/static/video/loop.mp4');
         source.setAttribute('type', 'video/mp4');
-        console.log(source);
         video.play();
     }
 
