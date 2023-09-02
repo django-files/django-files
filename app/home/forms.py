@@ -7,6 +7,7 @@ from pytimeparse2 import parse
 
 class SettingsForm(forms.Form):
     site_url = forms.CharField(max_length=128)
+    site_title = forms.CharField(max_length=64, required=False)
     oauth_reg = forms.BooleanField(required=False)
     two_factor = forms.BooleanField(required=False)
     default_expire = forms.CharField(max_length=128, required=False)

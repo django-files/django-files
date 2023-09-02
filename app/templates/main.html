@@ -9,16 +9,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {% if 'DEBUG'|get_config %}<meta name="robots" content="noindex, nofollow">{% endif %}
-    <title>Django Files - {% block title %}{% endblock %}</title>
+    <title>{{ site_settings.site_title|default:"Django Files" }} - {% block title %}{% endblock %}</title>
 
     {% block meta %}
-        <meta name="author" content="Shane"/>
-        <meta name="title" content="Django Files"/>
-        <meta name="description" content="Django Files - A Django File, plural style."/>
+        <meta name="title" content="{{ site_settings.site_title|default:'Django Files' }}"/>
+        <meta name="description" content="{{ site_settings.site_title|default:'Django Files' }} - A Django File, plural style."/>
 
-        <meta property="og:author" content="Shane">
-        <meta property="og:title" content="Django Files">
-        <meta property="og:description" content="Django Files - A Django File, plural style.">
+        <meta property="og:title" content="{{ site_settings.site_title|default:'Django Files' }}">
+        <meta property="og:description" content="{{ site_settings.site_title|default:'Django Files' }} - A Django File, plural style.">
         <meta property="og:type" content="website">
         <meta property="og:url" content="{{ request.build_absolute_uri }}">
         <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo.png' %}">
