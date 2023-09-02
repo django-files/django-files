@@ -76,8 +76,12 @@ def files_view(request):
         context = {'users': users}
         user = request.GET.get('user')
         log.debug('user: %s', user)
+        log.debug('user.type: %s', type(user))
         if user:
-            files = Files.objects.filter(user_id=int(user))
+            if user == "0":
+                files = Files.objects.all()
+            else:
+                files = Files.objects.filter(user_id=int(user))
         else:
             files = Files.objects.get_request(request)
         context.update({'files': files})

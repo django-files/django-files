@@ -17,7 +17,7 @@
             <div class="float-end">
                 <select id="user" name="user" class="form-select" aria-label="Default select example">
                     <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
-                    <option value="0">All Users</option>
+                    <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
                     {% for user in users %}
                         <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
                     {% endfor %}
