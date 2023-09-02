@@ -6,9 +6,6 @@ platform:
   arch: arm64
 
 trigger:
-  branch:
-    exclude:
-      - master
   event:
     - push
     - promote
