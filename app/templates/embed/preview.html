@@ -84,15 +84,19 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 </div>
             <div class="col-lg-3 d-flex flex-column">
                 <div class="card-body">
-                    <h3 class="card-title">{{ file.name }}{% if request.user.is_authenticated and request.user == file.user %}<div class="dropdown">
-                        <button class="btn btn-outline-secondary float-end mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-                        <ul class="dropdown-menu">
-                          <li>
-                          <a role="button" class="delete-file-btn dropdown-item" data-hook-id="{{ file.id }}" title="Delete">
-                            <i class="fa-regular fa-trash-can link-danger"></i> Delete File</a>
-                        </li>
-                        </ul>
-                      </div>{% endif %}</h3>
+                    <h3 class="card-title">{{ file.name }}
+                        {% if request.user.is_authenticated and request.user == file.user %}
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary float-end mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a role="button" class="delete-file-btn dropdown-item" data-hook-id="{{ file.id }}" title="Delete">
+                                            <i class="fa-regular fa-trash-can link-danger"></i> Delete File</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                     {% if file.meta.PILImageWidth %}
                     <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
@@ -148,10 +152,10 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             </div>
         </div>
     </div>
+    {% include 'include/delete-modal.html' %}
 {% endblock %}
 
 {% block footer %}
-
 <script>
     {% if render in 'text,code' %}
     fetch("{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}")
@@ -177,7 +181,8 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
     });
     {% endif %}
 </script>
-
 {% endblock %}
 
-{% block tail %}{% endblock %}
+{% block tail %}
+<script type="text/javascript" src="{% static 'js/preview.js' %}"></script>
+{% endblock %}

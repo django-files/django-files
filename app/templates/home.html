@@ -11,7 +11,7 @@
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
-        <h1>{{ site_settings.site_title|default:'Django Files' }}</h1>
+        <h1>{{ site_settings.site_title }}</h1>
 
 {#        {% cache 86400 stats_home request.user %}#}
             {% if not stats %}
