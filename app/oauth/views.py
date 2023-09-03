@@ -89,15 +89,26 @@ def oauth_callback(request):
             messages.warning(request, 'User aborted or no code in response...')
             return HttpResponseRedirect(get_login_redirect_url(request))
 
-        if request.session['oauth_provider'] == 'discord':
-            oauth = DiscordOauth(code)
-        elif request.session['oauth_provider'] == 'github':
+        if request.session['oauth_provider'] == 'github':
             oauth = GithubOauth(code)
+        elif request.session['oauth_provider'] == 'discord':
+            oauth = DiscordOauth(code)
+        # elif request.session['oauth_provider'] == 'discord-webhook':
+        #     oauth = DiscordOauth(code)
+        #     oauth.process_login()
+        #     oauth.add_webhook(request)
+        #     messages.info(request, f'Webhook successfully added: {webhook.id}')
         else:
             messages.error(request, 'Unknown Provider: %s' % request.session['oauth_provider'])
             return HttpResponseRedirect(get_login_redirect_url(request))
 
         oauth.process_login()
+        if request.session.get('webhook'):
+            del request.session['webhook']
+            webhook = oauth.add_webhook(request)
+            messages.info(request, f'Webhook successfully added: {webhook.id}')
+            return HttpResponseRedirect(get_login_redirect_url(request))
+
         user = get_or_create_user(request, oauth.id, oauth.username)
         log.debug('user: %s', user)
         if not user:
@@ -112,6 +123,7 @@ def oauth_callback(request):
     except Exception as error:
         log.exception(error)
         messages.error(request, f'Exception during login: {error}')
+        return HttpResponseRedirect(get_login_redirect_url(request))
 
 
 def duo_callback(request):

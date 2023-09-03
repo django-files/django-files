@@ -198,7 +198,7 @@
         <h3 id="webhooks">Webhooks</h3>
 
         {% if 'DISCORD_CLIENT_ID'|get_config %}
-            {% if user.oauth_id %}
+            {% if user.discord %}
                 <div class="pt-3">
                     <p><a href="{% url 'oauth:webhook' %}" class="btn btn-lg btn-outline-primary" role="button">
                         <i class="fab fa-discord me-2"></i> Add Webhook to Discord</a></p>

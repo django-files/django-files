@@ -21,7 +21,7 @@ class GithubOauth(object):
         'profile',
     ]
 
-    def __init__(self, code: str):
+    def __init__(self, code: str) -> None:
         self.code = code
         self.id: Optional[int] = None
         self.username: Optional[str] = None
@@ -29,14 +29,14 @@ class GithubOauth(object):
         self.data: Optional[dict] = None
         self.profile: Optional[dict] = None
 
-    def process_login(self):
+    def process_login(self) -> None:
         self.data = self.get_token(self.code)
         self.profile = self.get_profile(self.data)
         self.id: Optional[int] = self.profile['id']
         self.username: Optional[str] = self.profile['login']
         self.first_name: Optional[str] = self.profile['name']
 
-    def update_profile(self, user):
+    def update_profile(self, user) -> None:
         if not getattr(user, __name__, None):
             Github.objects.create(
                 user=user,

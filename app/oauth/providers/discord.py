@@ -6,6 +6,7 @@ from decouple import config
 from django.shortcuts import HttpResponseRedirect
 from typing import Optional
 
+from home.models import Webhooks
 from oauth.models import Discord
 
 __name__ = 'discord'
@@ -24,7 +25,7 @@ class DiscordOauth(object):
         'profile',
     ]
 
-    def __init__(self, code: str):
+    def __init__(self, code: str) -> None:
         self.code = code
         self.id: Optional[int] = None
         self.username: Optional[str] = None
@@ -32,14 +33,14 @@ class DiscordOauth(object):
         self.data: Optional[dict] = None
         self.profile: Optional[dict] = None
 
-    def process_login(self):
+    def process_login(self) -> None:
         self.data = self.get_token(self.code)
         self.profile = self.get_profile(self.data)
         self.id: Optional[int] = self.profile['id']
         self.username: Optional[str] = self.profile['username']
         self.first_name: Optional[str] = self.profile['global_name']
 
-    def update_profile(self, user):
+    def update_profile(self, user) -> None:
         if not getattr(user, __name__, None):
             Discord.objects.create(
                 user=user,
@@ -52,7 +53,15 @@ class DiscordOauth(object):
         user.discord.refresh_token = self.data['refresh_token']
         user.discord.expires_in = datetime.now() + timedelta(0, self.data['expires_in'])
         user.discord.save()
-        log.debug('USER SAVED 1')
+
+    def add_webhook(self, request) -> Webhooks:
+        return Webhooks.objects.create(
+            hook_id=self.data['webhook']['id'],
+            guild_id=self.data['webhook']['guild_id'],
+            channel_id=self.data['webhook']['channel_id'],
+            url=self.data['webhook']['url'],
+            owner=request.user,
+        )
 
     @classmethod
     def redirect_login(cls, request) -> HttpResponseRedirect:
@@ -74,6 +83,7 @@ class DiscordOauth(object):
     @classmethod
     def redirect_webhook(cls, request) -> HttpResponseRedirect:
         request.session['oauth_provider'] = __name__
+        request.session['webhook'] = 'discord'
         params = {
             'redirect_uri': config('OAUTH_REDIRECT_URL'),
             'client_id': config('DISCORD_CLIENT_ID'),

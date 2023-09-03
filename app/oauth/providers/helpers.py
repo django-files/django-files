@@ -32,7 +32,7 @@ def get_or_create_user(request, _id, username) -> Optional[CustomUser]:
     log.debug('username %s', username)
 
     # get user by Oauth Provider ID
-    user = CustomUser.objects.filter(discord__id=_id)
+    user = CustomUser.objects.filter(discord__id=_id) or CustomUser.objects.filter(github__id=_id)
     if user:
         # if oauth user already exists and is trying to be claimed
         if request.session.get('oauth_claim_username'):
@@ -54,9 +54,9 @@ def get_or_create_user(request, _id, username) -> Optional[CustomUser]:
 
     # get user by username and check if the user has logged in or not
     user = CustomUser.objects.filter(username=username)
-    log.debug('got user by Username')
-    log.debug(user)
     if user:
+        log.debug('got user by Username')
+        log.debug(user)
         if user[0].last_login:
             # local user exists but has already logged in
             log.warning('Hijacking Attempt BLOCKED! Connect account via Settings page.')
