@@ -396,10 +396,9 @@ def raw_redirect_view(request, filename):
     view = False
     log.debug('url_route_raw: %s', filename)
     file = get_object_or_404(Files, name=filename)
-    if (request.user != file.user) and file.password and (((password := (request.GET.get('password'))) != file.password)):
-        if password is not None:
-            messages.warning(request, 'Invalid Password!')
-        return render(request, 'embed/password.html', status=403)
+    ctx = {"file": file}
+    if lock := file_lock(request, ctx):
+        return lock
     response = HttpResponse(status=302)
     if use_s3():
         view = True
@@ -427,10 +426,8 @@ def url_route_view(request, filename):
         "static_url": file.get_url(view=use_s3()),
         "static_meta_url": file.get_meta_static_url()
     }
-    if (request.user != file.user) and file.password and (((password := (request.GET.get('password'))) != file.password)):
-        if password is not None:
-            messages.warning(request, 'Invalid Password!')
-        return render(request, 'embed/password.html', context=ctx, status=403)
+    if lock := file_lock(request, ctx=ctx):
+        return lock
     log.debug('ctx: %s', ctx)
     if file.mime.startswith('image'):
         log.debug('IMAGE')
@@ -478,3 +475,13 @@ def google_verify(request: HttpRequest) -> bool:
     except Exception as error:
         log.exception(error)
         return False
+
+
+def file_lock(request: HttpRequest, ctx):
+    """Returns a not allowed if private or file pw page if password set."""
+    if ctx["file"].private and (request.user != ctx["file"].user) and ctx["file"].password is None:
+        raise PermissionDenied
+    if (request.user != ctx["file"].user) and ctx["file"].password and (((password := (request.GET.get('password'))) != ctx["file"].password)):
+        if password is not None:
+            messages.warning(request, 'Invalid Password!')
+        return render(request, 'embed/password.html', context=ctx, status=403)

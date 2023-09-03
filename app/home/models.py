@@ -31,6 +31,7 @@ class Files(models.Model):
     meta = models.JSONField(default=dict, blank=True, verbose_name="Metadata", help_text="JSON formatted metadata.")
 
     password = models.CharField(max_length=255, null=True, blank=True, verbose_name='File Password')
+    private = models.BooleanField(default=False, verbose_name='Private File')
     objects = FilesManager()
 
     def __str__(self):

@@ -102,4 +102,35 @@ $(document).ready(function () {
                 },
             })
         })
-})
+
+        $('#unMaskPassword').click(function(){
+            var password_field = $('#password').get(0)
+            if (password_field.type === "password") {
+                password_field.type = "text";
+              } else {
+                password_field.type = "password";
+              }
+        });
+
+        $('#copyPassword').click(function(){
+            var password_field = $('#password').get(0);
+            navigator.clipboard.writeText(password_field.value);
+            show_toast("Password copied!", 'info', '15000');
+        });
+
+        $('#generatePassword').click(function(){
+            var chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            var passwordLength = 12;
+            var password = "";
+            for (var i = 0; i <= passwordLength; i++) {
+                var randomNumber = Math.floor(Math.random() * chars.length);
+                password += chars.substring(randomNumber, randomNumber +1);
+               }
+            $('#password').get(0).value = password;
+            navigator.clipboard.writeText(password);
+            show_toast("Password generated and copied!", 'info', '15000');
+        });
+
+
+});
+
