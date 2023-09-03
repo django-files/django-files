@@ -8,6 +8,7 @@ app_name = 'oauth'
 urlpatterns = [
     path('', views.oauth_show, name='login'),
     path('discord/', views.oauth_discord, name='discord'),
+    path('github/', views.oauth_github, name='github'),
     path('webhook/', views.oauth_webhook, name='webhook'),
     path('logout/', views.oauth_logout, name='logout'),
     path('callback/', views.oauth_callback, name='callback'),

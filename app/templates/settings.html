@@ -26,7 +26,7 @@
         <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings' %}">
 
             {% if 'DISCORD_CLIENT_ID'|get_config %}
-            {% if not user.oauth_id %}
+            {% if not user.discord %}
                 <p><a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary" role="button">
                     <i class="fab fa-discord me-2"></i> Connect Account to a Discord</a></p>
             {% endif %}
