@@ -137,8 +137,8 @@ class Files(models.Model):
         return f"{num:.1f} YiB"
 
     def _pw_query_string(self) -> str:
-        if self.file.password:
-            return f'?password={ self.file.password }'
+        if self.password:
+            return f'?password={ self.password }'
         return ''
 
 
