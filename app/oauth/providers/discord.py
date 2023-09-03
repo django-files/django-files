@@ -3,9 +3,13 @@ import logging
 import urllib.parse
 from datetime import datetime, timedelta
 from decouple import config
+from django.db import models
 from django.http import HttpRequest
 from django.shortcuts import HttpResponseRedirect
-from oauth.providers.helpers import get_next_url
+from oauth.providers.helpers import get_next_url, get_or_create_user, OauthUser
+from typing import Optional, Tuple
+
+from oauth.models import CustomUser, Discord
 
 log = logging.getLogger('app')
 
@@ -32,9 +36,8 @@ class DiscordOauth(object):
     #     }
 
     @classmethod
-    def login(cls, request: HttpRequest) -> HttpResponseRedirect:
+    def redirect_login(cls, request: HttpRequest) -> HttpResponseRedirect:
         request.session['oauth_provider'] = 'discord'
-        request.session['login_redirect_url'] = get_next_url(request)
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {
@@ -45,13 +48,12 @@ class DiscordOauth(object):
             'prompt': config('OAUTH_PROMPT', 'none'),
         }
         url_params = urllib.parse.urlencode(params)
-        return HttpResponseRedirect(f'{cls.api_url}/oauth2/authorize?{url_params}')
+        url = f'{cls.api_url}/oauth2/authorize?{url_params}'
+        return HttpResponseRedirect(url)
 
     @classmethod
-    def webhook(cls, request: HttpRequest) -> HttpResponseRedirect:
+    def redirect_webhook(cls, request: HttpRequest) -> HttpResponseRedirect:
         request.session['oauth_provider'] = 'discord'
-        request.session['login_redirect_url'] = get_next_url(request)
-        log.debug('oauth_webhook: login_redirect_url: %s', request.session.get('login_redirect_url'))
         params = {
             'redirect_uri': config('OAUTH_REDIRECT_URL'),
             'client_id': config('DISCORD_CLIENT_ID'),
@@ -63,21 +65,36 @@ class DiscordOauth(object):
         return HttpResponseRedirect(url)
 
     # @classmethod
-    # def profile(cls, code: str) -> dict:
-    #     token_resp = cls.get_token(code)
-    #     user_resp = cls.get_profile(token_resp)
-    #     return {
-    #         'oauth_id': user_resp['id'],
-    #         'username': user_resp['username'],
-    #         'discord_avatar': user_resp['avatar'],
-    #         'access_token': token_resp['access_token'],
-    #         'refresh_token': token_resp['refresh_token'],
-    #         'expires_in': datetime.now() + timedelta(0, token_resp['expires_in']),
-    #     }
+    # def get_user(cls, code: str) -> Optional[OauthUser]:
+    #     Discord.objects.create(
+    #         user=user,
+    #         id=profile['id'],
+    #         profile=profile,
+    #         avatar=profile['avatar'],
+    #         access_token=data['access_token'],
+    #         refresh_token=data['refresh_token'],
+    #         expires_in=datetime.now() + timedelta(0, data['expires_in']),
+    #     )
+    #     return user
+
+    @classmethod
+    def get_user(cls, code: str) -> Optional[OauthUser]:
+        data = cls.get_token(code)
+        profile = cls.get_profile(data)
+        # user = get_or_create_user(profile['id'], profile['username'])
+        if not (user := get_or_create_user(profile['id'], profile['username'])):
+            return None
+        return OauthUser(
+            _id=profile['id'],
+            username=profile['username'],
+            user=user,
+            data=data,
+            profile=profile,
+        )
 
     @classmethod
     def get_token(cls, code: str) -> dict:
-        log.debug('get_discord_access_token')
+        log.debug('get_token')
         url = f'{cls.api_url}/oauth2/token'
         data = {
             'redirect_uri': config('OAUTH_REDIRECT_URL'),
@@ -89,7 +106,7 @@ class DiscordOauth(object):
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         r = httpx.post(url, data=data, headers=headers, timeout=10)
         if not r.is_success:
-            log.info('status_code: %s', r.status_code)
+            log.debug('status_code: %s', r.status_code)
             log.error('content: %s', r.content)
             r.raise_for_status()
         return r.json()
@@ -101,16 +118,17 @@ class DiscordOauth(object):
         headers = {'Authorization': f"Bearer {data['access_token']}"}
         r = httpx.get(url, headers=headers, timeout=10)
         if not r.is_success:
-            log.info('status_code: %s', r.status_code)
+            log.debug('status_code: %s', r.status_code)
             log.error('content: %s', r.content)
             r.raise_for_status()
         log.debug('r.json(): %s', r.json())
-        user_resp = r.json()
-        return {
-            'oauth_id': user_resp['id'],
-            'username': user_resp['username'],
-            'discord_avatar': user_resp['avatar'],
-            'access_token': data['access_token'],
-            'refresh_token': data['refresh_token'],
-            'expires_in': datetime.now() + timedelta(0, data['expires_in']),
-        }
+        return r.json()
+        # user_resp = r.json()
+        # return {
+        #     'oauth_id': user_resp['id'],
+        #     'username': user_resp['username'],
+        #     'discord_avatar': user_resp['avatar'],
+        #     'access_token': data['access_token'],
+        #     'refresh_token': data['refresh_token'],
+        #     'expires_in': datetime.now() + timedelta(0, data['expires_in']),
+        # }

@@ -14,7 +14,7 @@ from typing import Optional
 
 from home.models import SiteSettings, Webhooks
 from oauth.forms import LoginForm
-from oauth.providers.helpers import get_login_redirect_url, get_next_url, is_super_id
+from oauth.providers.helpers import get_login_redirect_url, get_next_url, is_super_id, OauthUser
 from oauth.providers.discord import DiscordOauth
 from oauth.models import CustomUser
 
@@ -63,7 +63,8 @@ def oauth_discord(request):
     """
     View  /oauth/discord/
     """
-    return DiscordOauth.login(request)
+    request.session['login_redirect_url'] = get_next_url(request)
+    return DiscordOauth.redirect_login(request)
 
 
 def oauth_callback(request):
@@ -77,68 +78,59 @@ def oauth_callback(request):
     try:
         log.debug('code: %s', request.GET['code'])
         if request.session['oauth_provider'] == 'discord':
-            auth = DiscordOauth.get_token(request.GET['code'])
-            profile = DiscordOauth.get_profile(auth)
+            user: OauthUser = DiscordOauth.get_user(request.GET['code'])
         else:
-            raise ValueError('Unknown Provider: %s' % request.session['oauth_provider'])
+            messages.error(request, 'Unknown Provider: %s' % request.session['oauth_provider'])
+            return HttpResponseRedirect(get_login_redirect_url(request))
 
-        log.debug('oauth.profile: %s', profile)
-        user = get_or_create_user(request, profile)
         if not user:
             messages.error(request, 'User Not Found or Already Taken.')
             return HttpResponseRedirect(get_login_redirect_url(request))
 
-        log.debug('user.username: %s', user.username)
-        if SiteSettings.objects.get(pk=1).duo_auth:
-            log.info('--- DUO DETECTED - REDIRECTING ---')
-            request.session['username'] = user.username
-            request.session['profile'] = json.dumps(profile, default=str)
-            url = duo_redirect(request, user.username)
-            log.debug('url: %s', url)
-            return HttpResponseRedirect(url)
-
-        update_profile(user, profile)
+        update_profile(user.user, user.profile)
         login(request, user)
-        if 'webhook' in auth:
-            log.debug('webhook in profile')
-            webhook = add_webhook(request, auth)
-            messages.info(request, f'Webhook successfully added: {webhook.id}')
-        else:
-            messages.info(request, f'Successfully logged in. {user.first_name}.')
+        messages.info(request, f'Successfully logged in. {user.user.first_name}.')
+
+        # if 'webhook' in token_resp:
+        #     log.debug('webhook in profile')
+        #     webhook = add_webhook(request, token_resp)
+        #     messages.info(request, f'Webhook successfully added: {webhook.id}')
+        # else:
+        #     messages.info(request, f'Successfully logged in. {user.first_name}.')
     except Exception as error:
         log.exception(error)
         messages.error(request, f'Exception during login: {error}')
     return HttpResponseRedirect(get_login_redirect_url(request))
 
 
-def get_or_create_user(request, profile: dict) -> Optional[CustomUser]:
-    # user, _ = CustomUser.objects.get_or_create(username=profile['id'])
-    user = CustomUser.objects.filter(oauth_id=profile['oauth_id'])
-    if user:
-        if 'oauth_claim_username' in request.session:
-            del request.session['oauth_claim_username']
-            log.warning('OAuth ID Already Claimed!')
-            return None
-        log.debug('oauth user found by oauth_id: %s', user[0].oauth_id)
-        return user[0]
-    if 'oauth_claim_username' in request.session:
-        username = request.session['oauth_claim_username']
-        del request.session['oauth_claim_username']
-        log.warning('used oauth_claim_username: %s', username)
-        return CustomUser.objects.filter(username=username)[0]
-    user = CustomUser.objects.filter(username=profile['username'])
-    if user:
-        if not user[0].last_login:
-            log.warning('%s claimed by oauth_id: %s', profile['username'], profile['oauth_id'])
-            return user[0]
-        log.warning('Hijacking Attempt BLOCKED! Connect account via Settings page.')
-        return None
-    if SiteSettings.objects.get(pk=1).oauth_reg or is_super_id(profile['oauth_id']):
-        log.warning('%s created by oauth_reg with oauth_id: %s', profile['username'], profile['oauth_id'])
-        return CustomUser.objects.create(
-            username=profile['username'], oauth_id=profile['oauth_id'])
-    log.debug('User does not exist locally and oauth_reg is off: %s', profile['oauth_id'])
-    return None
+# def get_or_create_user(request, profile: dict) -> Optional[CustomUser]:
+#     # user, _ = CustomUser.objects.get_or_create(username=profile['id'])
+#     user = CustomUser.objects.filter(oauth_id=profile['oauth_id'])
+#     if user:
+#         if 'oauth_claim_username' in request.session:
+#             del request.session['oauth_claim_username']
+#             log.warning('OAuth ID Already Claimed!')
+#             return None
+#         log.debug('oauth user found by oauth_id: %s', user[0].oauth_id)
+#         return user[0]
+#     if 'oauth_claim_username' in request.session:
+#         username = request.session['oauth_claim_username']
+#         del request.session['oauth_claim_username']
+#         log.warning('used oauth_claim_username: %s', username)
+#         return CustomUser.objects.filter(username=username)[0]
+#     user = CustomUser.objects.filter(username=profile['username'])
+#     if user:
+#         if not user[0].last_login:
+#             log.warning('%s claimed by oauth_id: %s', profile['username'], profile['oauth_id'])
+#             return user[0]
+#         log.warning('Hijacking Attempt BLOCKED! Connect account via Settings page.')
+#         return None
+#     if SiteSettings.objects.get(pk=1).oauth_reg or is_super_id(profile['oauth_id']):
+#         log.warning('%s created by oauth_reg with oauth_id: %s', profile['username'], profile['oauth_id'])
+#         return CustomUser.objects.create(
+#             username=profile['username'], oauth_id=profile['oauth_id'])
+#     log.debug('User does not exist locally and oauth_reg is off: %s', profile['oauth_id'])
+#     return None
 
 
 def duo_callback(request):
@@ -227,17 +219,18 @@ def oauth_webhook(request):
     """
     View  /oauth/webhook/
     """
-    request.session['login_redirect_url'] = get_next_url(request)
-    log.debug('oauth_webhook: login_redirect_url: %s', request.session.get('login_redirect_url'))
-    params = {
-        'redirect_uri': config('OAUTH_REDIRECT_URL'),
-        'client_id': config('DISCORD_CLIENT_ID'),
-        'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
-        'scope': config('OAUTH_SCOPE', 'identify') + ' webhook.incoming',
-    }
-    url_params = urllib.parse.urlencode(params)
-    url = f'https://discord.com/api/oauth2/authorize?{url_params}'
-    return HttpResponseRedirect(url)
+    return DiscordOauth.redirect_webhook(request)
+    # request.session['login_redirect_url'] = get_next_url(request)
+    # log.debug('oauth_webhook: login_redirect_url: %s', request.session.get('login_redirect_url'))
+    # params = {
+    #     'redirect_uri': config('OAUTH_REDIRECT_URL'),
+    #     'client_id': config('DISCORD_CLIENT_ID'),
+    #     'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
+    #     'scope': config('OAUTH_SCOPE', 'identify') + ' webhook.incoming',
+    # }
+    # url_params = urllib.parse.urlencode(params)
+    # url = f'https://discord.com/api/oauth2/authorize?{url_params}'
+    # return HttpResponseRedirect(url)
 
 
 def add_webhook(request, profile):
@@ -271,3 +264,12 @@ def update_profile(user: CustomUser, profile: dict) -> None:
         user.is_staff, user.is_admin, user.is_superuser = True, True, True
     user.save()
 
+
+# log.debug('user.username: %s', user.username)
+# if SiteSettings.objects.get(pk=1).duo_auth:
+#     log.info('--- DUO DETECTED - REDIRECTING ---')
+#     request.session['username'] = user.username
+#     request.session['profile'] = json.dumps(profile, default=str)
+#     url = duo_redirect(request, user.username)
+#     log.debug('url: %s', url)
+#     return HttpResponseRedirect(url)
