@@ -501,7 +501,8 @@ def file_lock(request: HttpRequest, ctx):
     """Returns a not allowed if private or file pw page if password set."""
     if ctx["file"].private and (request.user != ctx["file"].user) and ctx["file"].password is None:
         raise PermissionDenied
-    if (request.user != ctx["file"].user) and ctx["file"].password and (((password := (request.GET.get('password'))) != ctx["file"].password)):
-        if password is not None:
-            messages.warning(request, 'Invalid Password!')
-        return render(request, 'embed/password.html', context=ctx, status=403)
+    if ctx["file"].password and (request.user != ctx["file"].user):
+        if ((supplied_password := (request.GET.get('password'))) != ctx["file"].password):
+            if supplied_password is not None:
+                messages.warning(request, 'Invalid Password!')
+            return render(request, 'embed/password.html', context=ctx, status=403)
