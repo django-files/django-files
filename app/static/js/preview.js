@@ -85,7 +85,7 @@ $(document).ready(function () {
                 success: function (response) {
                     console.log('response: ' + response)
                     setPasswordHookModal.hide()
-                    message = 'Error Setting Password!'
+                    message = 'Password set!'
                     show_toast(message, 'success')
                 },
                 error: function (xhr, status, error) {
@@ -99,6 +99,49 @@ $(document).ready(function () {
                 complete: function () {
                     console.log('complete')
                     $('#confirm-set-password-hook-btn').removeClass('disabled')
+                },
+            })
+        })
+
+        // Handle toggling file private status
+        $('#toggle-private-btn').click(function () {
+            event.preventDefault()
+            pvhookID = $(this).data('hook-id')
+            if ($('#toggle-private-btn').hasClass('disabled')) {
+                return
+            }
+            console.log(pvhookID)
+            private_status = $('#privateStatus');
+            toggle_status = $('#toggleStatus');
+            toggle_text = $('#toggleText');
+            $.ajax({
+                type: 'POST',
+                url: `/ajax/toggle_private/file/${pvhookID}/`,
+                headers: { 'X-CSRFToken': csrftoken },
+                success: function (response) {
+                    console.log('response: ' + response)
+                    var isTrueSet = (response === 'True');
+                    if (isTrueSet) {
+                        message = 'File made private!'
+                        private_status.title = "Private File";
+                        private_status.removeClass('fa-lock-open').addClass('fa-lock')
+                        toggle_status.removeClass('fa-lock').addClass('fa-lock-open')
+                        toggle_text.text(toggle_text.text().replace('Private', 'Public'))
+                    } else {
+                        message = 'File made public!'
+                        private_status.title = "Public File";
+                        private_status.removeClass("fa-lock").addClass("fa-lock-open")
+                        toggle_status.removeClass('fa-lock-open').addClass('fa-lock')
+                        toggle_text.text(toggle_text.text().replace('Public', 'Private'))
+                    }
+                    show_toast(message, 'success');
+                },
+                error: function (xhr, status, error) {
+                    console.log('xhr status: ' + xhr.status)
+                    console.log('status: ' + status)
+                    console.log('error: ' + error)
+                    let message = xhr.status + ': ' + error
+                    show_toast(message, 'danger', '15000')
                 },
             })
         })

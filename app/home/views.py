@@ -288,6 +288,26 @@ def set_password_file_ajax(request, pk):
 @login_required
 @csrf_exempt
 @require_http_methods(['POST'])
+def toggle_private_file_ajax(request, pk):
+    """
+    View  /ajax/toggle_private/file/<int:pk>/
+    """
+    log.debug('toggle_private_hook_view_a: %s', pk)
+    file = Files.objects.get(pk=pk)
+    if file.user != request.user:
+        return HttpResponse(status=401)
+    log.debug(file)
+    if file.private:
+        file.private = False
+    else:
+        file.private = True
+    file.save()
+    return HttpResponse(file.private, status=200)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(['POST'])
 def delete_short_ajax(request, pk):
     """
     View  /ajax/delete/short/<int:pk>/

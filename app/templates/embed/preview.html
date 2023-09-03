@@ -90,13 +90,17 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                                 <button class="btn btn-outline-secondary float-end mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                                 <ul class="dropdown-menu">
                                     <li>
+                                        <a role="button" id="toggle-private-btn" class="toggle-private-hook-btn dropdown-item" data-hook-id="{{ file.id }}" title="Toggle Private">
+                                            {% if file.private %}<i id="toggleStatus" class="fa-solid fa-fw fa-lock-open "></i><span class="toggleText">&nbsp;Make Public</span>{% else %}<i id="toggleStatus" class="fa-solid fa-fw fa-lock"></i><span id="toggleText">&nbsp;Make Private</span>{% endif %}</a>
+                                    </li>
+                                    <li>
                                         <a role="button" class="set-password-file-btn dropdown-item" data-hook-id="{{ file.id }}" title="Set Password">
-                                            <i class="fas fa-lock link-info"></i> Set Password</a>
+                                            <i class="fas fa-key link-info fa-fw"></i>&nbsp;Set Password</a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <a role="button" class="delete-file-btn dropdown-item" data-hook-id="{{ file.id }}" title="Delete">
-                                            <i class="fa-regular fa-trash-can link-danger"></i> Delete File</a>
+                                            <i class="fa-regular fa-trash-can link-danger fa-fw"></i><span class="text-end">&nbsp;Delete File</span></a>
                                     </li>
                                 </ul>
                             </div>
@@ -113,7 +117,13 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% else %}
                             <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
                         {% endif %}
-                        <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}</p>
+                        <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
+                        <span class="text-center">
+                            {% if file.private %}&nbsp;&nbsp;&nbsp;<i id="privateStatus" title="Private File" class="fa-solid fa-lock"></i>{% endif %}
+                            {% if file.password %}&nbsp;&nbsp;&nbsp;<i title="Password Protected File" class="fa-solid fa-key"></i>{% endif %}
+                            {% if not file.private and not file.password %}&nbsp;&nbsp;&nbsp;<i id="privateStatus" title="Public File" class="fa-solid fa-lock-open"></i>{% endif %}
+                        </span>
+                    </p>
                     <p class="card-text mx-0 mb-0">Uploader: {{ file.user.first_name|default:file.user.username }}</p>
                     <p class="card-text">Uploaded {{ file.date }}</p>
                     {% if file.user.show_exif_preview and file.exif %}
