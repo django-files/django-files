@@ -1,6 +1,5 @@
 import json
 import logging
-import urllib.parse
 import duo_universal
 from decouple import config
 from django.contrib import messages
@@ -10,7 +9,6 @@ from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from typing import Optional
 
 from home.models import SiteSettings, Webhooks
 from oauth.forms import LoginForm
@@ -38,15 +36,15 @@ def oauth_show(request):
         if not user:
             return HttpResponse(status=401)
 
-        if SiteSettings.objects.get(pk=1).duo_auth:
-            # if config('DUO_CLIENT_ID', False):
-            #     pass
-            log.info('--- DUO DETECTED - REDIRECTING ---')
-            log.debug('username: %s', user.username)
-            request.session['username'] = user.username
-            url = duo_redirect(request, user.username)
-            log.debug('url: %s', url)
-            return JsonResponse({'redirect': url})
+        # if SiteSettings.objects.get(pk=1).duo_auth:
+        #     # if config('DUO_CLIENT_ID', False):
+        #     #     pass
+        #     log.info('--- DUO DETECTED - REDIRECTING ---')
+        #     log.debug('username: %s', user.username)
+        #     request.session['username'] = user.username
+        #     url = duo_redirect(request, user.username)
+        #     log.debug('url: %s', url)
+        #     return JsonResponse({'redirect': url})
 
         login(request, user)
         messages.info(request, f'Successfully logged in as {user.username}.')
@@ -55,8 +53,7 @@ def oauth_show(request):
     if request.user.is_authenticated:
         next_url = get_next_url(request)
         return HttpResponseRedirect(next_url)
-    else:
-        return render(request, 'login.html')
+    return render(request, 'login.html')
 
 
 def oauth_discord(request):
@@ -90,7 +87,7 @@ def oauth_callback(request):
             messages.error(request, 'Unknown Provider: %s' % request.session['oauth_provider'])
             return HttpResponseRedirect(get_login_redirect_url(request))
 
-        user, created = get_or_create_user(oauth.id, oauth.username)
+        user, created = get_or_create_user(request, oauth.id, oauth.username)
         log.debug('user: %s', user)
         log.debug('created: %s', created)
         if not user:
@@ -106,64 +103,10 @@ def oauth_callback(request):
         login(request, user)
         messages.info(request, f'Successfully logged in. {user.first_name}.')
         return HttpResponseRedirect(get_login_redirect_url(request))
-        # if not user.discord:
-        #     Discord.objects.create(
-        #         user=user,
-        #         id=profile['id'],
-        #     )
-        # user.discord.profile = profile
-        # user.discord.avatar = profile['avatar']
-        # user.discord.access_token = data['access_token']
-        # user.discord.refresh_token = data['refresh_token']
-        # user.discord.expires_in = datetime.now() + timedelta(0, data['expires_in'])
-        # user.save()
 
-        # if not user:
-        #     messages.error(request, 'User Not Found or Already Taken.')
-        #     return HttpResponseRedirect(get_login_redirect_url(request))
-
-        # update_profile(user.user, user.profile)
-
-
-        # if 'webhook' in token_resp:
-        #     log.debug('webhook in profile')
-        #     webhook = add_webhook(request, token_resp)
-        #     messages.info(request, f'Webhook successfully added: {webhook.id}')
-        # else:
-        #     messages.info(request, f'Successfully logged in. {user.first_name}.')
     except Exception as error:
         log.exception(error)
         messages.error(request, f'Exception during login: {error}')
-
-
-# def get_or_create_user(request, profile: dict) -> Optional[CustomUser]:
-#     # user, _ = CustomUser.objects.get_or_create(username=profile['id'])
-#     user = CustomUser.objects.filter(oauth_id=profile['oauth_id'])
-#     if user:
-#         if 'oauth_claim_username' in request.session:
-#             del request.session['oauth_claim_username']
-#             log.warning('OAuth ID Already Claimed!')
-#             return None
-#         log.debug('oauth user found by oauth_id: %s', user[0].oauth_id)
-#         return user[0]
-#     if 'oauth_claim_username' in request.session:
-#         username = request.session['oauth_claim_username']
-#         del request.session['oauth_claim_username']
-#         log.warning('used oauth_claim_username: %s', username)
-#         return CustomUser.objects.filter(username=username)[0]
-#     user = CustomUser.objects.filter(username=profile['username'])
-#     if user:
-#         if not user[0].last_login:
-#             log.warning('%s claimed by oauth_id: %s', profile['username'], profile['oauth_id'])
-#             return user[0]
-#         log.warning('Hijacking Attempt BLOCKED! Connect account via Settings page.')
-#         return None
-#     if SiteSettings.objects.get(pk=1).oauth_reg or is_super_id(profile['oauth_id']):
-#         log.warning('%s created by oauth_reg with oauth_id: %s', profile['username'], profile['oauth_id'])
-#         return CustomUser.objects.create(
-#             username=profile['username'], oauth_id=profile['oauth_id'])
-#     log.debug('User does not exist locally and oauth_reg is off: %s', profile['oauth_id'])
-#     return None
 
 
 def duo_callback(request):
@@ -253,17 +196,6 @@ def oauth_webhook(request):
     View  /oauth/webhook/
     """
     return DiscordOauth.redirect_webhook(request)
-    # request.session['login_redirect_url'] = get_next_url(request)
-    # log.debug('oauth_webhook: login_redirect_url: %s', request.session.get('login_redirect_url'))
-    # params = {
-    #     'redirect_uri': config('OAUTH_REDIRECT_URL'),
-    #     'client_id': config('DISCORD_CLIENT_ID'),
-    #     'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
-    #     'scope': config('OAUTH_SCOPE', 'identify') + ' webhook.incoming',
-    # }
-    # url_params = urllib.parse.urlencode(params)
-    # url = f'https://discord.com/api/oauth2/authorize?{url_params}'
-    # return HttpResponseRedirect(url)
 
 
 def add_webhook(request, profile):

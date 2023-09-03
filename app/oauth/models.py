@@ -2,13 +2,11 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.templatetags.static import static
 
-# from oauth.providers.discord import DiscordProfile
 from home.util.rand import rand_string, rand_color_hex
 
 
 class CustomUser(AbstractUser):
     id = models.AutoField(primary_key=True)
-    # discord = models.ForeignKey(DiscordProfile, on_delete=models.CASCADE)
     authorization = models.CharField(default=rand_string, max_length=32)
     default_expire = models.CharField(default='', blank=True, max_length=32)
     default_color = models.CharField(default=rand_color_hex, max_length=7)
@@ -39,14 +37,20 @@ class CustomUser(AbstractUser):
 
 
 class Discord(models.Model):
-    user = models.OneToOneField(
-        CustomUser,
-        on_delete=models.CASCADE,
-        primary_key=True,
-    )
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
     id = models.IntegerField()
     profile = models.JSONField(null=True, blank=True)
     avatar = models.CharField(null=True, blank=True, max_length=32)
     access_token = models.CharField(null=True, blank=True, max_length=32)
     refresh_token = models.CharField(null=True, blank=True, max_length=32)
     expires_in = models.DateTimeField(null=True, blank=True)
+
+
+class Github(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
+    id = models.IntegerField()
+    profile = models.JSONField(null=True, blank=True)
+    avatar = models.CharField(null=True, blank=True, max_length=32)
+    access_token = models.CharField(null=True, blank=True, max_length=32)
+    # refresh_token = models.CharField(null=True, blank=True, max_length=32)
+    # expires_in = models.DateTimeField(null=True, blank=True)
