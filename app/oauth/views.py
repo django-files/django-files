@@ -77,7 +77,6 @@ def oauth_callback(request):
     try:
         log.debug('code: %s', request.GET['code'])
         if request.session['oauth_provider'] == 'discord':
-            # profile = DiscordOauth.profile(request.GET['code'])
             auth = DiscordOauth.get_token(request.GET['code'])
             profile = DiscordOauth.get_profile(auth)
         else:
@@ -267,11 +266,6 @@ def update_profile(user: CustomUser, profile: dict) -> None:
     del profile['username']
     for key, value in profile.items():
         setattr(user, key, value)
-    # user.first_name = profile['first_name']
-    # user.avatar_hash = profile['avatar']
-    # user.access_token = profile['access_token']
-    # user.refresh_token = profile['refresh_token']
-    # user.expires_in = profile['expires_in']
     if is_super_id(profile['oauth_id']):
         log.info('Super user login: %s', profile['oauth_id'])
         user.is_staff, user.is_admin, user.is_superuser = True, True, True
