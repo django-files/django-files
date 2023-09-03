@@ -90,6 +90,11 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                                 <button class="btn btn-outline-secondary float-end mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                                 <ul class="dropdown-menu">
                                     <li>
+                                        <a role="button" class="set-password-file-btn dropdown-item" data-hook-id="{{ file.id }}" title="Set Password">
+                                            <i class="fas fa-lock link-info"></i> Set Password</a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
                                         <a role="button" class="delete-file-btn dropdown-item" data-hook-id="{{ file.id }}" title="Delete">
                                             <i class="fa-regular fa-trash-can link-danger"></i> Delete File</a>
                                     </li>
@@ -153,6 +158,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         </div>
     </div>
     {% include 'include/delete-modal.html' %}
+    {% include 'include/set-password-modal.html' %}
 {% endblock %}
 
 {% block footer %}

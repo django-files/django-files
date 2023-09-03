@@ -53,4 +53,53 @@ $(document).ready(function () {
             },
         })
     })
+
+
+        // Set Password Hook Modal and Set Password handlers
+        const setPasswordHookModal = new bootstrap.Modal('#set-password-file-modal', {})
+        let pwhookID
+        $('.set-password-file-btn').click(function () {
+            pwhookID = $(this).data('hook-id')
+            console.log(pwhookID)
+            setPasswordHookModal.show()
+        })
+    
+        // Handle set password click confirmations
+        $('#confirm-set-password-hook-btn').click(function () {
+            event.preventDefault()
+            if ($('#confirm-set-password-hook-btn').hasClass('disabled')) {
+                return
+            }
+            var formData = new $("#set-password-form").serialize()
+            console.log(formData)
+            console.log(pwhookID)
+            $.ajax({
+                type: 'POST',
+                url: `/ajax/set_password/file/${pwhookID}/`,
+                headers: { 'X-CSRFToken': csrftoken },
+                data: formData,
+                beforeSend: function () {
+                    console.log('beforeSend')
+                    $('#confirm-set-password-hook-btn').addClass('disabled')
+                },
+                success: function (response) {
+                    console.log('response: ' + response)
+                    setPasswordHookModal.hide()
+                    message = 'Error Setting Password!'
+                    show_toast(message, 'success')
+                },
+                error: function (xhr, status, error) {
+                    console.log('xhr status: ' + xhr.status)
+                    console.log('status: ' + status)
+                    console.log('error: ' + error)
+                    setPasswordHookModal.hide()
+                    let message = xhr.status + ': ' + error
+                    show_toast(message, 'danger', '15000')
+                },
+                complete: function () {
+                    console.log('complete')
+                    $('#confirm-set-password-hook-btn').removeClass('disabled')
+                },
+            })
+        })
 })

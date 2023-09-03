@@ -4,6 +4,7 @@ import markdown
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
 from django.template.loader import render_to_string
@@ -270,6 +271,23 @@ def delete_file_ajax(request, pk):
 @login_required
 @csrf_exempt
 @require_http_methods(['POST'])
+def set_password_file_ajax(request, pk):
+    """
+    View  /ajax/set_password/file/<int:pk>/
+    """
+    log.debug('password_hook_view_a: %s', pk)
+    file = Files.objects.get(pk=pk)
+    if file.user != request.user:
+        return HttpResponse(status=401)
+    log.debug(file)
+    file.password = request.POST.get('password')
+    file.save()
+    return HttpResponse(status=200)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(['POST'])
 def delete_short_ajax(request, pk):
     """
     View  /ajax/delete/short/<int:pk>/
@@ -378,6 +396,10 @@ def raw_redirect_view(request, filename):
     view = False
     log.debug('url_route_raw: %s', filename)
     file = get_object_or_404(Files, name=filename)
+    if (request.user != file.user) and file.password and (((password := (request.GET.get('password'))) != file.password)):
+        if password is not None:
+            messages.warning(request, 'Invalid Password!')
+        return render(request, 'embed/password.html', status=403)
     response = HttpResponse(status=302)
     if use_s3():
         view = True
@@ -399,14 +421,16 @@ def url_route_view(request, filename):
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
     log.debug('file.mime: %s', file.mime)
-    if file.password and request.GET.get('password') != file.password:
-        return HttpResponse(status=401)
     ctx = {
         'file': file,
         'render': file.mime.split('/', 1)[0],
         "static_url": file.get_url(view=use_s3()),
         "static_meta_url": file.get_meta_static_url()
     }
+    if (request.user != file.user) and file.password and (((password := (request.GET.get('password'))) != file.password)):
+        if password is not None:
+            messages.warning(request, 'Invalid Password!')
+        return render(request, 'embed/password.html', context=ctx, status=403)
     log.debug('ctx: %s', ctx)
     if file.mime.startswith('image'):
         log.debug('IMAGE')

@@ -20,6 +20,7 @@ urlpatterns = [
     path('ajax/update/stats/', views.update_stats_ajax, name='update-stats'),
     path('ajax/delete/short/<int:pk>/', views.delete_short_ajax, name='delete-short'),
     path('ajax/delete/file/<int:pk>/', views.delete_file_ajax, name='delete-file'),
+    path('ajax/set_password/file/<int:pk>/', views.set_password_file_ajax, name='set-password-file'),
     path('ajax/delete/hook/<int:pk>/', views.delete_hook_ajax, name='delete-hook'),
     path('gen/sharex/', views.gen_sharex, name='gen-sharex'),
     path('gen/sharex-url/', views.gen_sharex_url, name='gen-sharex-url'),

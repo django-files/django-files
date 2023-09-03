@@ -21,7 +21,11 @@ class Files(models.Model):
     expr = models.CharField(default='', max_length=32, blank=True, verbose_name='Expiration', help_text='File Expire.')
     view = models.IntegerField(default=0, verbose_name='Views', help_text='File Views.')
     maxv = models.IntegerField(default=0, verbose_name='Max', help_text='Max Views.')
-    exif = models.JSONField(default=dict, blank=True, verbose_name="EXIF Metadata", help_text="JSON formatted exif metadata.")
+    exif = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="EXIF Metadata",
+        help_text="JSON formatted exif metadata.")
     date = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='File Created Date.')
     edit = models.DateTimeField(auto_now=True, verbose_name='Edited', help_text='File Edited Date.')
     meta = models.JSONField(default=dict, blank=True, verbose_name="Metadata", help_text="JSON formatted metadata.")
@@ -56,11 +60,12 @@ class Files(models.Model):
                         self.file.file.name,
                         parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
                     cache.set(f"file.urlcache.download.{self.pk}", download_url, settings.AWS_QUERYSTRING_EXPIRE)
-                return download_url
+                return download_url + self._pw_query_string()
                 # skip cache behavior for local file storage
             return self.file.file._storage.url(
                     self.file.file.name,
-                    parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
+                    parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'}
+                    )
         # ######## Custom Expire Generic Static URL (cloud only) ########
         if expire is not None:
             # we cant cache this since it will be a custom value
@@ -75,7 +80,7 @@ class Files(models.Model):
                 url = self.file.url
                 cache.set(f"file.urlcache.raw.{self.pk}", url, settings.AWS_QUERYSTRING_EXPIRE)
             return url
-        return self.file.url
+        return self.file.url + self._pw_query_string()
 
     def get_meta_static_url(self) -> str:
         """
@@ -129,6 +134,11 @@ class Files(models.Model):
                 return f"{num:3.1f} {unit}B"
             num /= 1024.0
         return f"{num:.1f} YiB"
+
+    def _pw_query_string(self) -> str:
+        if self.file.password:
+            return f'?password={ self.file.password }'
+        return ''
 
 
 class FileStats(models.Model):

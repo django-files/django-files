@@ -252,10 +252,12 @@
     <script type="text/javascript" src="{% static 'dist/fontawesome/js/all.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/clipboard/clipboard.min.js' %}"></script>
 {#    <script type="text/javascript" src="{% static 'dist/jscookie/cookie.js' %}"></script>#}
-    <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
     {% if request.user.is_authenticated %}
         <script type="text/javascript" src="{% static 'js/user.js' %}"></script>
     {% endif %}
+    {% block main_js %}
+        <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
+    {% endblock %}
 {% endblock %}
 
 {% block tail %}{% endblock %}
