@@ -14,7 +14,7 @@ from typing import Optional
 
 from home.models import SiteSettings, Webhooks
 from oauth.forms import LoginForm
-from oauth.providers.helpers import get_login_redirect_url, get_next_url, is_super_id, OauthUser
+from oauth.providers.helpers import get_login_redirect_url, get_next_url, get_or_create_user, is_super_id
 from oauth.providers.discord import DiscordOauth
 from oauth.models import CustomUser
 
@@ -71,25 +71,59 @@ def oauth_callback(request):
     """
     View  /oauth/callback/
     """
-    log.debug('oauth_callback: login_next_url: %s', request.session.get('login_next_url'))
-    if 'code' not in request.GET:
-        messages.warning(request, 'User aborted or no code in response...')
-        return HttpResponseRedirect(get_login_redirect_url(request))
     try:
-        log.debug('code: %s', request.GET['code'])
+        code = request.GET.get('code')
+        log.debug('code: %s', code)
+        if not code:
+            messages.warning(request, 'User aborted or no code in response...')
+            return HttpResponseRedirect(get_login_redirect_url(request))
+
+        log.debug('oauth_callback: login_next_url: %s', request.session.get('login_next_url'))
+        if not (code := request.GET.get('code')):
+            messages.warning(request, 'User aborted or no code in response...')
+            return HttpResponseRedirect(get_login_redirect_url(request))
+
         if request.session['oauth_provider'] == 'discord':
-            user: OauthUser = DiscordOauth.get_user(request.GET['code'])
+            oauth = DiscordOauth(code)
+            oauth.process_login()
         else:
             messages.error(request, 'Unknown Provider: %s' % request.session['oauth_provider'])
             return HttpResponseRedirect(get_login_redirect_url(request))
 
+        user, created = get_or_create_user(oauth.id, oauth.username)
+        log.debug('user: %s', user)
+        log.debug('created: %s', created)
         if not user:
             messages.error(request, 'User Not Found or Already Taken.')
             return HttpResponseRedirect(get_login_redirect_url(request))
 
-        update_profile(user.user, user.profile)
+        if created:
+            user.username = oauth.username
+            user.first_name = oauth.first_name
+        log.debug('update_profile: %s', user)
+        oauth.update_profile(user)
+        log.debug('login: %s', user)
         login(request, user)
-        messages.info(request, f'Successfully logged in. {user.user.first_name}.')
+        messages.info(request, f'Successfully logged in. {user.first_name}.')
+        return HttpResponseRedirect(get_login_redirect_url(request))
+        # if not user.discord:
+        #     Discord.objects.create(
+        #         user=user,
+        #         id=profile['id'],
+        #     )
+        # user.discord.profile = profile
+        # user.discord.avatar = profile['avatar']
+        # user.discord.access_token = data['access_token']
+        # user.discord.refresh_token = data['refresh_token']
+        # user.discord.expires_in = datetime.now() + timedelta(0, data['expires_in'])
+        # user.save()
+
+        # if not user:
+        #     messages.error(request, 'User Not Found or Already Taken.')
+        #     return HttpResponseRedirect(get_login_redirect_url(request))
+
+        # update_profile(user.user, user.profile)
+
 
         # if 'webhook' in token_resp:
         #     log.debug('webhook in profile')
@@ -100,7 +134,6 @@ def oauth_callback(request):
     except Exception as error:
         log.exception(error)
         messages.error(request, f'Exception during login: {error}')
-    return HttpResponseRedirect(get_login_redirect_url(request))
 
 
 # def get_or_create_user(request, profile: dict) -> Optional[CustomUser]:

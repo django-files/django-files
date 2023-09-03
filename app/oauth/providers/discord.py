@@ -3,8 +3,8 @@ import logging
 import urllib.parse
 from datetime import datetime, timedelta
 from decouple import config
+from django.contrib import messages
 from django.db import models
-from django.http import HttpRequest
 from django.shortcuts import HttpResponseRedirect
 from oauth.providers.helpers import get_next_url, get_or_create_user, OauthUser
 from typing import Optional, Tuple
@@ -17,26 +17,39 @@ log = logging.getLogger('app')
 class DiscordOauth(object):
     api_url = 'https://discord.com/api/v8/'
 
-    # __slots__ = [
-    #     'token_resp',
-    #     'user_resp',
-    #     'profile',
-    # ]
+    __slots__ = [
+        'code',
+        'id',
+        'username',
+        'first_name',
+        'data',
+        'profile',
+    ]
 
-    # def __init__(self, code: str):
-    #     self.token_resp = self.get_token(code)
-    #     self.user_resp = self.get_profile(self.token_resp)
-    #     self.profile = {
-    #         'oauth_id': self.user_resp['id'],
-    #         'username': self.user_resp['username'],
-    #         'discord_avatar': self.user_resp['avatar'],
-    #         'access_token': self.token_resp['access_token'],
-    #         'refresh_token': self.token_resp['refresh_token'],
-    #         'expires_in': datetime.now() + timedelta(0, self.token_resp['expires_in']),
-    #     }
+    def __init__(self, code: str):
+        self.code = code
+        self.id: Optional[int] = None
+        self.username: Optional[str] = None
+        self.first_name: Optional[str] = None
+        self.data: Optional[dict] = None
+        self.profile: Optional[dict] = None
+        # self.token_resp = self.get_token(code)
+        # self.user_resp = self.get_profile(self.token_resp)
+        # self.profile = {
+        #     'oauth_id': self.user_resp['id'],
+        #     'username': self.user_resp['username'],
+        #     'discord_avatar': self.user_resp['avatar'],
+        #     'access_token': self.token_resp['access_token'],
+        #     'refresh_token': self.token_resp['refresh_token'],
+        #     'expires_in': datetime.now() + timedelta(0, self.token_resp['expires_in']),
+        # }
+
+    # def do_login(self):
+    #     self.data = self.get_token(code)
+    #     self.profile = self.get_profile(data)
 
     @classmethod
-    def redirect_login(cls, request: HttpRequest) -> HttpResponseRedirect:
+    def redirect_login(cls, request) -> HttpResponseRedirect:
         request.session['oauth_provider'] = 'discord'
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
@@ -52,7 +65,7 @@ class DiscordOauth(object):
         return HttpResponseRedirect(url)
 
     @classmethod
-    def redirect_webhook(cls, request: HttpRequest) -> HttpResponseRedirect:
+    def redirect_webhook(cls, request) -> HttpResponseRedirect:
         request.session['oauth_provider'] = 'discord'
         params = {
             'redirect_uri': config('OAUTH_REDIRECT_URL'),
@@ -77,20 +90,57 @@ class DiscordOauth(object):
     #     )
     #     return user
 
-    @classmethod
-    def get_user(cls, code: str) -> Optional[OauthUser]:
-        data = cls.get_token(code)
-        profile = cls.get_profile(data)
-        # user = get_or_create_user(profile['id'], profile['username'])
-        if not (user := get_or_create_user(profile['id'], profile['username'])):
-            return None
-        return OauthUser(
-            _id=profile['id'],
-            username=profile['username'],
-            user=user,
-            data=data,
-            profile=profile,
-        )
+    def process_login(self):
+        self.data = self.get_token(self.code)
+        self.profile = self.get_profile(self.data)
+        self.id: Optional[int] = self.profile['id']
+        self.username: Optional[str] = self.profile['username']
+        self.first_name: Optional[str] = self.profile['global_name']
+
+    # def get_user(self):
+    #     user = get_or_create_user(profile['id'], profile['username'])
+    #     user, created = get_or_create_user(profile['id'], profile['username'])
+    #     if created:
+    #         user.username = profile['username']
+    #         user.first_name = profile['global_name']
+
+    def update_profile(self, user):
+        # if not user.discord:
+        if not user.discord:
+            Discord.objects.create(
+                user=user,
+                id=self.profile['id'],
+            )
+        log.debug('user.discord: %s', user.discord)
+        user.discord.profile = self.profile,
+        user.discord.avatar = self.profile['avatar'],
+        user.discord.access_token = self.data['access_token'],
+        user.discord.refresh_token = self.data['refresh_token'],
+        user.discord.expires_in = datetime.now() + timedelta(0, self.data['expires_in']),
+        user.save()
+        # Discord.objects.update_or_create(
+        #     user=user,
+        #     id=self.profile['id'],
+        #     profile=self.profile,
+        #     avatar=self.profile['avatar'],
+        #     access_token=self.data['access_token'],
+        #     refresh_token=self.data['refresh_token'],
+        #     expires_in=datetime.now() + timedelta(0, self.data['expires_in']),
+        # )
+        # user.discord.profile = profile
+        # user.discord.avatar = profile['avatar']
+        # user.discord.access_token = data['access_token']
+        # user.discord.refresh_token = data['refresh_token']
+        # user.discord.expires_in = datetime.now() + timedelta(0, data['expires_in'])
+        # user.save()
+
+        # return OauthUser(
+        #     _id=profile['id'],
+        #     username=profile['username'],
+        #     user=user,
+        #     data=data,
+        #     profile=profile,
+        # )
 
     @classmethod
     def get_token(cls, code: str) -> dict:

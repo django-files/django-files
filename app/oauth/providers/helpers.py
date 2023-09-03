@@ -30,25 +30,32 @@ class OauthUser(object):
 def get_or_create_user(_id, username):
     # get user by ID
     # user = CustomUser.objects.filter(id=oauth_profile['id'])
+    log.debug('_id: %s', _id)
+    log.debug('username %s', username)
+
     user = CustomUser.objects.filter(discord__id=_id)
     if user:
-        return user[0]
+        log.debug('got user by Discord ID')
+        log.debug(user)
+        return user[0], False
 
     # get user by username - check if the user has logged in or not
     user = CustomUser.objects.filter(username=username)
+    log.debug('got user by Username')
+    log.debug(user)
     if user:
         if user[0].last_login:
             log.warning('Hijacking Attempt BLOCKED! Connect account via Settings page.')
-            return None
+            return None, None
         log.info('User %s claimed by Discord User: %s', user.id, _id)
-        return user[0]
+        return user[0], False
 
     if SiteSettings.objects.get(pk=1).oauth_reg or is_super_id(_id):
         log.info('%s created by oauth_reg with id: %s', username, _id)
-        return CustomUser.objects.create(username=username, oauth_id=_id)
+        return CustomUser.objects.create(username=username), True
 
     log.debug('User does not exist locally and oauth_reg is off: %s', _id)
-    return None
+    return None, None
 
 
 def get_next_url(request: HttpRequest) -> str:
