@@ -21,10 +21,12 @@ class Files(models.Model):
     expr = models.CharField(default='', max_length=32, blank=True, verbose_name='Expiration', help_text='File Expire.')
     view = models.IntegerField(default=0, verbose_name='Views', help_text='File Views.')
     maxv = models.IntegerField(default=0, verbose_name='Max', help_text='Max Views.')
-    exif = models.JSONField(default=dict, verbose_name="EXIF Metadata", help_text="JSON formatted exif metadata.")
+    exif = models.JSONField(default=dict, blank=True, verbose_name="EXIF Metadata", help_text="JSON formatted exif metadata.")
     date = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='File Created Date.')
     edit = models.DateTimeField(auto_now=True, verbose_name='Edited', help_text='File Edited Date.')
-    meta = models.JSONField(default=dict, verbose_name="Metadata", help_text="JSON formatted metadata.")
+    meta = models.JSONField(default=dict, blank=True, verbose_name="Metadata", help_text="JSON formatted metadata.")
+
+    password = models.CharField(max_length=255, null=True, blank=True, verbose_name='File Password')
     objects = FilesManager()
 
     def __str__(self):

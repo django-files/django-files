@@ -7,6 +7,7 @@ from django.urls import path
 from djangofiles import views
 
 handler400 = 'djangofiles.views.handler400_view'
+handler401 = 'djangofiles.views.handler401_view'
 handler403 = 'djangofiles.views.handler403_view'
 handler404 = 'djangofiles.views.handler404_view'
 handler500 = 'djangofiles.views.handler500_view'

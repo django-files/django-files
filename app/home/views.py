@@ -399,6 +399,8 @@ def url_route_view(request, filename):
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
     log.debug('file.mime: %s', file.mime)
+    if file.password and request.GET.get('password') != file.password:
+        return HttpResponse(status=401)
     ctx = {
         'file': file,
         'render': file.mime.split('/', 1)[0],

@@ -30,6 +30,10 @@ def handler400_view(request, exception):
     logger.debug(exception)
     return render(request, 'error/400.html', status=400)
 
+def handler401_view(request, exception):
+    logger.debug('handler401_view')
+    return render(request, 'error/401.html', status=401)
+
 
 def handler403_view(request, exception):
     logger.debug('handler403_view')
