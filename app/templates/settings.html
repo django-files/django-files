@@ -26,10 +26,16 @@
         <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings' %}">
 
             {% if 'DISCORD_CLIENT_ID'|get_config %}
-            {% if not user.discord %}
-                <p><a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary" role="button">
-                    <i class="fab fa-discord me-2"></i> Connect Account to a Discord</a></p>
+                {% if not user.discord %}
+                    <p><a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary" role="button">
+                        <i class="fab fa-discord me-2"></i> Connect Account to a Discord</a></p>
+                {% endif %}
             {% endif %}
+            {% if 'GITHUB_CLIENT_ID'|get_config %}
+                {% if not user.github %}
+                    <p><a href="{% url 'oauth:github' %}" class="btn btn-sm btn-outline-light" role="button">
+                        <i class="fab fa-github me-2"></i> Connect Account to a GitHub</a></p>
+                {% endif %}
             {% endif %}
 
             {% if user.is_superuser %}

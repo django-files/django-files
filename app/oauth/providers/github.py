@@ -43,14 +43,15 @@ class GithubOauth(object):
                 id=self.profile['id'],
             )
         log.debug('user.github: %s', user.github)
-        user.github.profile = self.profile,
-        user.github.avatar = self.profile['avatar_url'],
-        user.github.access_token = self.data['access_token'],
-        user.save()
+        user.github.profile = self.profile
+        user.github.avatar = self.profile['avatar_url']
+        user.github.access_token = self.data['access_token']
+        user.github.save()
 
     @classmethod
     def redirect_login(cls, request) -> HttpResponseRedirect:
         request.session['oauth_provider'] = __name__
+        log.debug('request.session.oauth_provider: %s', request.session['oauth_provider'])
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {

@@ -27,7 +27,7 @@ class OauthUser(object):
         self.profile: dict = profile
 
 
-def get_or_create_user(request, _id, username) -> Tuple[Optional[CustomUser], bool]:
+def get_or_create_user(request, _id, username) -> Optional[CustomUser]:
     log.debug('_id: %s', _id)
     log.debug('username %s', username)
 
@@ -38,11 +38,11 @@ def get_or_create_user(request, _id, username) -> Tuple[Optional[CustomUser], bo
         if request.session.get('oauth_claim_username'):
             del request.session['oauth_claim_username']
             log.info('OAuth ID Already Claimed!')
-            return None, False
+            return None
         # use found by oauth provider id
         log.debug('got user by ID')
         log.debug(user)
-        return user[0], False
+        return user[0]
 
     # user is connecting to oauth, get user from session claim
     if request.session.get('oauth_claim_username'):
@@ -50,7 +50,7 @@ def get_or_create_user(request, _id, username) -> Tuple[Optional[CustomUser], bo
         del request.session['oauth_claim_username']
         log.info('OAuth Used oauth_claim_username: %s', username)
         if user := CustomUser.objects.filter(username=username):
-            return user[0], False
+            return user[0]
 
     # get user by username and check if the user has logged in or not
     user = CustomUser.objects.filter(username=username)
@@ -60,18 +60,18 @@ def get_or_create_user(request, _id, username) -> Tuple[Optional[CustomUser], bo
         if user[0].last_login:
             # local user exists but has already logged in
             log.warning('Hijacking Attempt BLOCKED! Connect account via Settings page.')
-            return None, False
+            return None
         # local user matching oauth username exist and has never logged in
         log.info('User %s claimed by OAuth ID: %s', user.id, _id)
-        return user[0], False
+        return user[0]
 
     # no matching accounts found, if registration is enabled, create user
     if SiteSettings.objects.get(pk=1).oauth_reg or is_super_id(_id):
         log.info('%s created by oauth_reg with id: %s', username, _id)
-        return CustomUser.objects.create(username=username), True
+        return CustomUser.objects.create(username=username)
 
     log.debug('User does not exist locally and oauth_reg is off: %s', _id)
-    return None, False
+    return None
 
 
 def get_next_url(request: HttpRequest) -> str:

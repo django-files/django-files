@@ -24,9 +24,11 @@ class CustomUser(AbstractUser):
 
     def get_avatar(self):
         # TODO: Let User Choose Profile Icon or Chose by Active Login
-        if self.discord.avatar:
+        if hasattr(self, 'discord') and getattr(self.discord, 'avatar'):
             return f'https://cdn.discordapp.com/avatars/' \
                    f'{ self.discord.id }/{ self.discord.avatar }.png'
+        if hasattr(self, 'github') and getattr(self.github, 'avatar'):
+            return self.github.avatar
         return static('images/assets/default.png')
 
     def __str__(self):

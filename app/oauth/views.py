@@ -98,19 +98,13 @@ def oauth_callback(request):
             return HttpResponseRedirect(get_login_redirect_url(request))
 
         oauth.process_login()
-        user, created = get_or_create_user(request, oauth.id, oauth.username)
+        user = get_or_create_user(request, oauth.id, oauth.username)
         log.debug('user: %s', user)
-        log.debug('created: %s', created)
         if not user:
             messages.error(request, 'User Not Found or Already Taken.')
             return HttpResponseRedirect(get_login_redirect_url(request))
 
-        if created:
-            user.username = oauth.username
-            user.first_name = oauth.first_name
-        log.debug('update_profile: %s', user)
         oauth.update_profile(user)
-        log.debug('login: %s', user)
         login(request, user)
         messages.info(request, f'Successfully logged in. {user.first_name}.')
         return HttpResponseRedirect(get_login_redirect_url(request))
@@ -141,10 +135,10 @@ def duo_callback(request):
         user = CustomUser.objects.get(username=username)
         login(request, user)
 
-        if 'profile' in request.session:
-            log.debug('profile in session, updating oauth profile')
-            update_profile(user, json.loads(request.session['profile']))
-            del request.session['profile']
+        # if 'profile' in request.session:
+        #     log.debug('profile in session, updating oauth profile')
+        #     update_profile(user, json.loads(request.session['profile']))
+        #     del request.session['profile']
 
         log.debug('duo_callback: login_next_url: %s', request.session.get('login_next_url'))
         messages.success(request, f'Congrats, You Authenticated Twice, {username}!')
@@ -223,22 +217,6 @@ def add_webhook(request, profile):
     )
     webhook.save()
     return webhook
-
-
-def update_profile(user: CustomUser, profile: dict) -> None:
-    """
-    Update Django user profile with provided data
-    """
-    log.debug('update_profile')
-    log.debug('user.username: %s', user.username)
-    log.debug('profile.username: %s', profile['username'])
-    del profile['username']
-    for key, value in profile.items():
-        setattr(user, key, value)
-    if is_super_id(profile['oauth_id']):
-        log.info('Super user login: %s', profile['oauth_id'])
-        user.is_staff, user.is_admin, user.is_superuser = True, True, True
-    user.save()
 
 
 # log.debug('user.username: %s', user.username)

@@ -46,16 +46,18 @@ class DiscordOauth(object):
                 id=self.profile['id'],
             )
         log.debug('user.discord: %s', user.discord)
-        user.discord.profile = self.profile,
-        user.discord.avatar = self.profile['avatar'],
-        user.discord.access_token = self.data['access_token'],
-        user.discord.refresh_token = self.data['refresh_token'],
-        user.discord.expires_in = datetime.now() + timedelta(0, self.data['expires_in']),
-        user.save()
+        user.discord.profile = self.profile
+        user.discord.avatar = self.profile['avatar']
+        user.discord.access_token = self.data['access_token']
+        user.discord.refresh_token = self.data['refresh_token']
+        user.discord.expires_in = datetime.now() + timedelta(0, self.data['expires_in'])
+        user.discord.save()
+        log.debug('USER SAVED 1')
 
     @classmethod
     def redirect_login(cls, request) -> HttpResponseRedirect:
         request.session['oauth_provider'] = __name__
+        log.debug('request.session.oauth_provider: %s', request.session['oauth_provider'])
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {
