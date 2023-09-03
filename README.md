@@ -234,6 +234,7 @@ Note: SITE_URL is being deprecated in favor of SiteSettings URL, however, is sti
 | AWS_SECRET_ACCESS_KEY   | AWS IAM Secret    | `eVJsrhftrv2fcwyYcy323Sfhe5svy5436r557`              |
 | AWS_STORAGE_BUCKET_NAME | Name of s3 bucket | `my-s3-bucket`                                       |
 | AWS_QUERYSTRING_EXPIRE  | s3 urls valid for | `300`                                                |
+| AWS_S3_CDN_URL          | proxy or cdn url  | `https://examples3cdndomain.com`
 | DUO_API_HOST            | DUO API Host      | `api-abc123.duosecurity.com`                         |
 | DUO_CLIENT_ID           | DUO Client ID     | `nmoNmuLM72WB3RsNkwuv`                               |
 | DUO_CLIENT_SECRET       | DUO Secret        | `nmoNmuLM72WB3RsNkwuvnmoNmuLM72WB3RsNkwuv`           |
