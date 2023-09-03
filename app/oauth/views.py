@@ -4,11 +4,10 @@ import logging
 import urllib.parse
 import duo_universal
 from datetime import datetime, timedelta
-from decouple import config, Csv
+from decouple import config
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
-# from django.conf import settings
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -17,6 +16,8 @@ from typing import Optional
 
 from home.models import SiteSettings, Webhooks
 from oauth.forms import LoginForm
+from oauth.providers.helpers import get_login_redirect_url, get_next_url, is_super_id
+from oauth.providers.discord import DiscordOauth
 from oauth.models import CustomUser
 
 log = logging.getLogger('app')
@@ -64,21 +65,7 @@ def oauth_discord(request):
     """
     View  /oauth/discord/
     """
-    if request.user.is_authenticated:
-        request.session['oauth_claim_username'] = request.user.username
-    request.session['login_redirect_url'] = get_next_url(request)
-    log.debug('oauth_start: login_redirect_url: %s', request.session.get('login_redirect_url'))
-    params = {
-        'redirect_uri': config('OAUTH_REDIRECT_URL'),
-        'client_id': config('DISCORD_CLIENT_ID'),
-        'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
-        'scope': config('OAUTH_SCOPE', 'identify'),
-        'prompt': config('OAUTH_PROMPT', 'none'),
-    }
-    url_params = urllib.parse.urlencode(params)
-    url = f'https://discord.com/api/oauth2/authorize?{url_params}'
-    log.debug('url: %s', url)
-    return HttpResponseRedirect(url)
+    return DiscordOauth.redirect_login(request)
 
 
 def oauth_callback(request):
@@ -90,29 +77,30 @@ def oauth_callback(request):
         messages.warning(request, 'User aborted or no code in response...')
         return HttpResponseRedirect(get_login_redirect_url(request))
     try:
-        # TODO: CHECK IF DISCORD OAUTH IS USED - for multiple oauth
         log.debug('code: %s', request.GET['code'])
-        auth_data = get_discord_access_token(request.GET['code'])
-        log.debug('auth_data: %s', auth_data)
-        profile = get_discord_profile(auth_data)
-        log.debug('profile: %s', profile)
-        user = get_or_create_user(request, profile)
+        if request.session['oauth_provider'] == 'discord':
+            oauth = DiscordOauth.process_code(request.GET['code'])
+        else:
+            raise ValueError('Unknown Provider: %s' % request.session['oauth_provider'])
+
+        log.debug('oauth.profile: %s', oauth.profile)
+        user = get_or_create_user(request, oauth.profile)
         if not user:
             messages.error(request, 'User Not Found or Already Taken.')
             return HttpResponseRedirect(get_login_redirect_url(request))
-        log.debug('user.username: %s', user.username)
 
+        log.debug('user.username: %s', user.username)
         if SiteSettings.objects.get(pk=1).duo_auth:
             log.info('--- DUO DETECTED - REDIRECTING ---')
             request.session['username'] = user.username
-            request.session['profile'] = json.dumps(profile, default=str)
+            request.session['profile'] = json.dumps(oauth.profile, default=str)
             url = duo_redirect(request, user.username)
             log.debug('url: %s', url)
             return HttpResponseRedirect(url)
 
-        update_profile(user, profile)
+        update_profile(user, oauth.profile)
         login(request, user)
-        if 'webhook' in auth_data:
+        if 'webhook' in oauth.token_resp:
             log.debug('webhook in profile')
             webhook = add_webhook(request, auth_data)
             messages.info(request, f'Webhook successfully added: {webhook.id}')
@@ -276,53 +264,6 @@ def add_webhook(request, profile):
     return webhook
 
 
-def get_discord_access_token(code: str) -> dict:
-    """
-    Post OAuth code and Return access_token
-    """
-    log.debug('get_discord_access_token')
-    url = 'https://discord.com/api/v8/oauth2/token'
-    data = {
-        'redirect_uri': config('OAUTH_REDIRECT_URL'),
-        'client_id': config('DISCORD_CLIENT_ID'),
-        'client_secret': config('DISCORD_CLIENT_SECRET'),
-        'grant_type': config('OAUTH_GRANT_TYPE', 'authorization_code'),
-        'code': code,
-    }
-    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    r = httpx.post(url, data=data, headers=headers, timeout=10)
-    if not r.is_success:
-        log.info('status_code: %s', r.status_code)
-        log.error('content: %s', r.content)
-        r.raise_for_status()
-    return r.json()
-
-
-def get_discord_profile(auth_data: dict) -> dict:
-    """
-    Get Profile for Authenticated User
-    """
-    log.debug('get_discord_profile')
-    url = 'https://discord.com/api/v8/users/@me'
-    headers = {'Authorization': f"Bearer {auth_data['access_token']}"}
-    r = httpx.get(url, headers=headers, timeout=10)
-    if not r.is_success:
-        log.info('status_code: %s', r.status_code)
-        log.error('content: %s', r.content)
-        r.raise_for_status()
-    log.debug('r.json(): %s', r.json())
-    p = r.json()
-    # profile - Custom user data from oauth provider
-    return {
-        'oauth_id': p['id'],
-        'username': p['username'],
-        'discord_avatar': p['avatar'],
-        'access_token': auth_data['access_token'],
-        'refresh_token': auth_data['refresh_token'],
-        'expires_in': datetime.now() + timedelta(0, auth_data['expires_in']),
-    }
-
-
 def update_profile(user: CustomUser, profile: dict) -> None:
     """
     Update Django user profile with provided data
@@ -343,46 +284,3 @@ def update_profile(user: CustomUser, profile: dict) -> None:
         user.is_staff, user.is_admin, user.is_superuser = True, True, True
     user.save()
 
-
-def get_next_url(request: HttpRequest) -> str:
-    """
-    Determine 'next' parameter
-    """
-    log.debug('get_next_url')
-    if 'next' in request.GET:
-        log.debug('next in request.GET: %s', str(request.GET['next']))
-        return str(request.GET['next'])
-    if 'next' in request.POST:
-        log.debug('next in request.POST: %s', str(request.POST['next']))
-        return str(request.POST['next'])
-    if 'login_next_url' in request.session:
-        log.debug('login_next_url in request.session: %s', request.session['login_next_url'])
-        url = request.session['login_next_url']
-        del request.session['login_next_url']
-        request.session.modified = True
-        return url
-    if 'HTTP_REFERER' in request.META:
-        log.debug('HTTP_REFERER in request.META: %s', request.META['HTTP_REFERER'])
-        return request.META['HTTP_REFERER']
-    log.info('----- get_next_url FAILED -----')
-    return reverse('home:index')
-
-
-def get_login_redirect_url(request: HttpRequest) -> str:
-    """
-    Determine 'login_redirect_url' parameter
-    """
-    log.debug('get_login_redirect_url: login_redirect_url: %s', request.session.get('login_redirect_url'))
-    if 'login_redirect_url' in request.session:
-        url = request.session['login_redirect_url']
-        del request.session['login_redirect_url']
-        request.session.modified = True
-        return url
-    return reverse('home:index')
-
-
-def is_super_id(oauth_id):
-    if oauth_id in config('SUPER_USERS', '', Csv()):
-        return True
-    else:
-        return False
