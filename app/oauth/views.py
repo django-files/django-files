@@ -1,9 +1,7 @@
-import httpx
 import json
 import logging
 import urllib.parse
 import duo_universal
-from datetime import datetime, timedelta
 from decouple import config
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
@@ -65,7 +63,7 @@ def oauth_discord(request):
     """
     View  /oauth/discord/
     """
-    return DiscordOauth.redirect_login(request)
+    return DiscordOauth.login(request)
 
 
 def oauth_callback(request):
@@ -79,12 +77,14 @@ def oauth_callback(request):
     try:
         log.debug('code: %s', request.GET['code'])
         if request.session['oauth_provider'] == 'discord':
-            oauth = DiscordOauth.process_code(request.GET['code'])
+            # profile = DiscordOauth.profile(request.GET['code'])
+            auth = DiscordOauth.get_token(request.GET['code'])
+            profile = DiscordOauth.get_profile(auth)
         else:
             raise ValueError('Unknown Provider: %s' % request.session['oauth_provider'])
 
-        log.debug('oauth.profile: %s', oauth.profile)
-        user = get_or_create_user(request, oauth.profile)
+        log.debug('oauth.profile: %s', profile)
+        user = get_or_create_user(request, profile)
         if not user:
             messages.error(request, 'User Not Found or Already Taken.')
             return HttpResponseRedirect(get_login_redirect_url(request))
@@ -93,16 +93,16 @@ def oauth_callback(request):
         if SiteSettings.objects.get(pk=1).duo_auth:
             log.info('--- DUO DETECTED - REDIRECTING ---')
             request.session['username'] = user.username
-            request.session['profile'] = json.dumps(oauth.profile, default=str)
+            request.session['profile'] = json.dumps(profile, default=str)
             url = duo_redirect(request, user.username)
             log.debug('url: %s', url)
             return HttpResponseRedirect(url)
 
-        update_profile(user, oauth.profile)
+        update_profile(user, profile)
         login(request, user)
-        if 'webhook' in oauth.token_resp:
+        if 'webhook' in auth:
             log.debug('webhook in profile')
-            webhook = add_webhook(request, auth_data)
+            webhook = add_webhook(request, auth)
             messages.info(request, f'Webhook successfully added: {webhook.id}')
         else:
             messages.info(request, f'Successfully logged in. {user.first_name}.')
@@ -132,19 +132,12 @@ def get_or_create_user(request, profile: dict) -> Optional[CustomUser]:
         if not user[0].last_login:
             log.warning('%s claimed by oauth_id: %s', profile['username'], profile['oauth_id'])
             return user[0]
-        # local user with matching username exists; however
-        #   user has logged in locally and is now logging in via discord
-        #   without using the connecting to discord from the settings page.
-        #   this is a possible hijacking attempt by a discord user with same username
         log.warning('Hijacking Attempt BLOCKED! Connect account via Settings page.')
         return None
-    # no user found matching oauth_id or username. because we prevented hijacking,
-    #   oauth username that are already in use locally cannot auto-register...
     if SiteSettings.objects.get(pk=1).oauth_reg or is_super_id(profile['oauth_id']):
         log.warning('%s created by oauth_reg with oauth_id: %s', profile['username'], profile['oauth_id'])
         return CustomUser.objects.create(
             username=profile['username'], oauth_id=profile['oauth_id'])
-    # local user does not exist and auto registration disabled
     log.debug('User does not exist locally and oauth_reg is off: %s', profile['oauth_id'])
     return None
 

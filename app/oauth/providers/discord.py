@@ -13,27 +13,26 @@ log = logging.getLogger('app')
 class DiscordOauth(object):
     api_url = 'https://discord.com/api/v8/'
 
-    __slots__ = [
-        'token_resp',
-        'user_resp',
-        'profile',
-    ]
+    # __slots__ = [
+    #     'token_resp',
+    #     'user_resp',
+    #     'profile',
+    # ]
+
+    # def __init__(self, code: str):
+    #     self.token_resp = self.get_token(code)
+    #     self.user_resp = self.get_profile(self.token_resp)
+    #     self.profile = {
+    #         'oauth_id': self.user_resp['id'],
+    #         'username': self.user_resp['username'],
+    #         'discord_avatar': self.user_resp['avatar'],
+    #         'access_token': self.token_resp['access_token'],
+    #         'refresh_token': self.token_resp['refresh_token'],
+    #         'expires_in': datetime.now() + timedelta(0, self.token_resp['expires_in']),
+    #     }
 
     @classmethod
-    def process_code(cls, code: str):
-        cls.token_resp = cls.get_token(code)
-        cls.user_resp = cls.get_profile(cls.token_resp)
-        cls.profile = {
-            'oauth_id': cls.user_resp['id'],
-            'username': cls.user_resp['username'],
-            'discord_avatar': cls.user_resp['avatar'],
-            'access_token': cls.token_resp['access_token'],
-            'refresh_token': cls.token_resp['refresh_token'],
-            'expires_in': datetime.now() + timedelta(0, cls.token_resp['expires_in']),
-        }
-
-    @classmethod
-    def redirect_login(cls, request: HttpRequest) -> HttpResponseRedirect:
+    def login(cls, request: HttpRequest) -> HttpResponseRedirect:
         request.session['oauth_provider'] = 'discord'
         request.session['login_redirect_url'] = get_next_url(request)
         if request.user.is_authenticated:
@@ -49,7 +48,7 @@ class DiscordOauth(object):
         return HttpResponseRedirect(f'{cls.api_url}/oauth2/authorize?{url_params}')
 
     @classmethod
-    def redirect_webhook(cls, request: HttpRequest) -> HttpResponseRedirect:
+    def webhook(cls, request: HttpRequest) -> HttpResponseRedirect:
         request.session['oauth_provider'] = 'discord'
         request.session['login_redirect_url'] = get_next_url(request)
         log.debug('oauth_webhook: login_redirect_url: %s', request.session.get('login_redirect_url'))
@@ -62,6 +61,19 @@ class DiscordOauth(object):
         url_params = urllib.parse.urlencode(params)
         url = f'{cls.api_url}/oauth2/authorize?{url_params}'
         return HttpResponseRedirect(url)
+
+    # @classmethod
+    # def profile(cls, code: str) -> dict:
+    #     token_resp = cls.get_token(code)
+    #     user_resp = cls.get_profile(token_resp)
+    #     return {
+    #         'oauth_id': user_resp['id'],
+    #         'username': user_resp['username'],
+    #         'discord_avatar': user_resp['avatar'],
+    #         'access_token': token_resp['access_token'],
+    #         'refresh_token': token_resp['refresh_token'],
+    #         'expires_in': datetime.now() + timedelta(0, token_resp['expires_in']),
+    #     }
 
     @classmethod
     def get_token(cls, code: str) -> dict:
@@ -93,4 +105,12 @@ class DiscordOauth(object):
             log.error('content: %s', r.content)
             r.raise_for_status()
         log.debug('r.json(): %s', r.json())
-        return r.json()
+        user_resp = r.json()
+        return {
+            'oauth_id': user_resp['id'],
+            'username': user_resp['username'],
+            'discord_avatar': user_resp['avatar'],
+            'access_token': data['access_token'],
+            'refresh_token': data['refresh_token'],
+            'expires_in': datetime.now() + timedelta(0, data['expires_in']),
+        }
