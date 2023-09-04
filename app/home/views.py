@@ -270,6 +270,43 @@ def delete_file_ajax(request, pk):
 @login_required
 @csrf_exempt
 @require_http_methods(['POST'])
+def set_password_file_ajax(request, pk):
+    """
+    View  /ajax/set_password/file/<int:pk>/
+    """
+    log.debug('password_hook_view_a: %s', pk)
+    file = Files.objects.get(pk=pk)
+    if file.user != request.user:
+        return HttpResponse(status=401)
+    log.debug(file)
+    file.password = request.POST.get('password')
+    file.save()
+    return HttpResponse(status=200)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(['POST'])
+def toggle_private_file_ajax(request, pk):
+    """
+    View  /ajax/toggle_private/file/<int:pk>/
+    """
+    log.debug('toggle_private_hook_view_a: %s', pk)
+    file = Files.objects.get(pk=pk)
+    if file.user != request.user:
+        return HttpResponse(status=401)
+    log.debug(file)
+    if file.private:
+        file.private = False
+    else:
+        file.private = True
+    file.save()
+    return HttpResponse(file.private, status=200)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(['POST'])
 def delete_short_ajax(request, pk):
     """
     View  /ajax/delete/short/<int:pk>/
@@ -378,6 +415,9 @@ def raw_redirect_view(request, filename):
     view = False
     log.debug('url_route_raw: %s', filename)
     file = get_object_or_404(Files, name=filename)
+    ctx = {"file": file}
+    if lock := file_lock(request, ctx):
+        return lock
     response = HttpResponse(status=302)
     if use_s3():
         view = True
@@ -405,6 +445,8 @@ def url_route_view(request, filename):
         "static_url": file.get_url(view=use_s3()),
         "static_meta_url": file.get_meta_static_url()
     }
+    if lock := file_lock(request, ctx=ctx):
+        return lock
     log.debug('ctx: %s', ctx)
     if file.mime.startswith('image'):
         log.debug('IMAGE')
@@ -452,3 +494,15 @@ def google_verify(request: HttpRequest) -> bool:
     except Exception as error:
         log.exception(error)
         return False
+
+
+def file_lock(request: HttpRequest, ctx):
+    """Returns a not allowed if private or file pw page if password set."""
+    if (ctx["file"].private and (request.user != ctx["file"].user) and
+            (ctx["file"].password is None or ctx["file"].password == '')):
+        return render(request, 'error/403.html', context=ctx, status=403)
+    if ctx["file"].password and (request.user != ctx["file"].user):
+        if ((supplied_password := (request.GET.get('password'))) != ctx["file"].password):
+            if supplied_password is not None:
+                messages.warning(request, 'Invalid Password!')
+            return render(request, 'embed/password.html', context=ctx, status=403)

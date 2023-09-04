@@ -19,7 +19,7 @@ services:
         - "traefik.http.services.STACK_NAME.loadbalancer.server.port=80"
         - "traefik.http.services.STACK_NAME.loadbalancer.server.scheme=http"
     volumes:
-      - static_dir:/data/static
+      - ${APP_FILES_STATIC:-./app/static}:/data/static
       - logs_dir:/logs
       - media_dir:/data/media
       - ${APP_FILES:-./app}:/app
@@ -37,7 +37,7 @@ services:
     deploy:
       mode: global
     volumes:
-      - static_dir:/data/static
+      - ${APP_FILES_STATIC:-./app/static}:/data/static
       - media_dir:/data/media
       - ${APP_FILES:-./app}:/app
     depends_on:

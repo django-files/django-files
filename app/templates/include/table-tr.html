@@ -31,6 +31,16 @@
            data-clipboard-text="{{ file.date|localtime }}">{{ file.date|localtime }}</a></td>
 
     <td class="d-none d-sm-table-cell">
+        <a class="clip text-white text-decoration-none" role="button">
+            {% if file.password %}<i class="fa-solid fa-key"></i>{% endif %}
+        </a></td>
+
+    <td class="d-none d-sm-table-cell">
+        <a class="clip text-white text-decoration-none" role="button">
+            {% if file.private %}<i class="fa-solid fa-lock"></i>{% endif %}
+        </a></td>
+
+    <td class="d-none d-sm-table-cell">
         <a class="clip text-white text-decoration-none" role="button"
            data-clipboard-text="{{ file.view }}">{{ file.view }}</a></td>
 
