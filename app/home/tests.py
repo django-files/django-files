@@ -56,7 +56,7 @@ class TestAuthViews(TestCase):
 class PlaywrightTest(StaticLiveServerTestCase):
     """Test Playwright"""
     screenshots = 'screenshots'
-    views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Settings']
+    views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Settings', 'Stats']
     previews = ['README.md', 'requirements.txt', 'main.html', 'home_tags.py', 'an225.jpg']
     context = None
     browser = None
@@ -146,6 +146,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         c += 1
 
         for view in self.views:
+            print('---------- view: %s' % view)
             page.locator(f'text={view}').first.click()
             page.wait_for_selector(f'text={view}', timeout=3000)
             if view == 'Upload':
@@ -187,7 +188,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-create.png')
                 c += 1
                 page.locator('.delete-short-btn').first.click()
-                delete_btn = page.locator('#confirm-delete-short-hook-btn')
+                delete_btn = page.locator('#short-delete-confirm')
                 page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-click.png')
                 c += 1
@@ -237,7 +238,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         private_file.password = 'test123'
         private_file.save()
         page.goto(f"{self.live_server_url}{private_file.preview_uri()}")
-        page.locator(f'text=Unlock {private_file.name}')
+        page.locator('text=Unlock')
         page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_pw_file.png')
         page.fill('[name=password]', 'test123')
         page.locator('#unlock-button').click()

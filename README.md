@@ -3,6 +3,7 @@
 [![Deploy](https://img.shields.io/drone/build/django-files/django-files?label=Deploy&logo=drone&server=https%3A%2F%2Fdrone.hosted-domains.com)](https://drone.hosted-domains.com/django-files/django-files)
 [![Codacy](https://img.shields.io/codacy/grade/7c41f4f6526c4233ba1304bfb45981c4?label=Codacy&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/dashboard)
 [![Coverage](https://img.shields.io/codacy/coverage/7c41f4f6526c4233ba1304bfb45981c4?label=Coverage&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/dashboard)
+[![GitHub release (with filter)](https://img.shields.io/github/v/release/django-files/django-files?logo=github&label=Release)](https://github.com/django-files/django-files/releases/latest)
 [![](https://repository-images.githubusercontent.com/672712475/52cf00a8-31de-4b0a-8522-63670bb4314a)](https://github.com/django-files/django-files)
 # Django Files
 
@@ -174,7 +175,7 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 
 ## Screen Shots
 
-There are some Screen Shots avialable on the GitHub Pages site by selecting 
+There are some Screen Shots available on the GitHub Pages site by selecting 
 [Screen Shots](https://django-files.github.io/screenshots.html) from the menu.
 
 -   [https://django-files.github.io/](https://django-files.github.io/)
@@ -228,13 +229,15 @@ Note: SITE_URL is being deprecated in favor of SiteSettings URL, however, is sti
 | SUPER_USERS             | Discord User IDs  | `111150265075298304,111148006983614464`              |
 | DISCORD_CLIENT_ID       | Discord Client ID | `1135676900124135484`                                |
 | DISCORD_CLIENT_SECRET   | Discord Secret    | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
+| GITHUB_CLIENT_ID        | GitHub Client ID  | `1135676900124135484`                                |
+| GITHUB_CLIENT_SECRET    | GitHub Secret     | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
 | OAUTH_REDIRECT_URL      | Discord Redirect  | `https://example.com/oauth/callback/`                |
 | AWS_REGION_NAME         | AWS Region Name   | `us-east-1`                                          |
 | AWS_ACCESS_KEY_ID       | AWS IAM User Key  | `AKIEAKADFGASDFASGSDAFSDF`                           |
 | AWS_SECRET_ACCESS_KEY   | AWS IAM Secret    | `eVJsrhftrv2fcwyYcy323Sfhe5svy5436r557`              |
 | AWS_STORAGE_BUCKET_NAME | Name of s3 bucket | `my-s3-bucket`                                       |
 | AWS_QUERYSTRING_EXPIRE  | s3 urls valid for | `300`                                                |
-| AWS_S3_CDN_URL          | proxy or cdn url  | `https://examples3cdndomain.com`
+| AWS_S3_CDN_URL          | proxy or cdn url  | `https://examples3cdndomain.com`                     |
 | DUO_API_HOST            | DUO API Host      | `api-abc123.duosecurity.com`                         |
 | DUO_CLIENT_ID           | DUO Client ID     | `nmoNmuLM72WB3RsNkwuv`                               |
 | DUO_CLIENT_SECRET       | DUO Secret        | `nmoNmuLM72WB3RsNkwuvnmoNmuLM72WB3RsNkwuv`           |

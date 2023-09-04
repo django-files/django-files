@@ -97,11 +97,9 @@
                                     <li><a class="dropdown-item text-success" href="{% url 'admin:index' %}">
                                         <i class="fa-solid fa-rocket me-2"></i> Admin</a></li>
                                 {% endif %}
-{#                                {% if request.user.is_superuser %}#}
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-warning" role="button" target="_blank" id="flush-cache">
                                     <i class="fa-solid fa-toilet me-2"></i> Flush Cache</a></li>
-{#                                {% endif %}#}
                                 <div class="dropdown-divider"></div>
                                 <li><a class="dropdown-item log-out text-danger" role="button">
                                     <i class="fas fa-sign-out-alt me-2"></i> Log Out</a></li>
@@ -115,14 +113,12 @@
 </header>
 {% endblock %}
 
-{% block body_no_main %}
-    <main class="flex-shrink-0">
-        {% block body %}{% endblock %}
-    </main>
-{% endblock %}
+<main class="flex-shrink-0">
+    {% block body %}{% endblock %}
+</main>
 
 {% block backtotop %}
-<button type="button" class="btn btn-secondary btn-floating opacity-50" id="btn-back-to-top">
+<button type="button" class="btn btn-secondary btn-floating opacity-50" id="back-to-top">
     <i class="fas fa-arrow-up"></i>
 </button>
 {% endblock %}
@@ -191,10 +187,6 @@
                     <h4 class="modal-title">{% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}</h4>
                     <p><a class="btn btn-outline-success" role="button" href="{% url 'home:settings' %}">
                         <i class="fa-solid fa-list-check me-2"></i> Edit Settings</a></p>
-{#                    <p>Copy <a class="clip" role="button" data-clipboard-text="{{ user.authorization }}">#}
-{#                        Authorization Token</a>.</p>#}
-{#                    <a class="clip" role="button" data-clipboard-text="{{ user.authorization }}">#}
-{#                        <i class="fa-regular fa-clipboard ms-2"></i> Copy Token</a>#}
 
                     <div class="clearfix"></div>
                     <table class="table mt-2">
@@ -251,13 +243,10 @@
     <script type="text/javascript" src="{% static 'dist/bootstrap/bootstrap.bundle.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/fontawesome/js/all.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/clipboard/clipboard.min.js' %}"></script>
-{#    <script type="text/javascript" src="{% static 'dist/jscookie/cookie.js' %}"></script>#}
+    <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
     {% if request.user.is_authenticated %}
         <script type="text/javascript" src="{% static 'js/user.js' %}"></script>
     {% endif %}
-    {% block main_js %}
-        <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
-    {% endblock %}
 {% endblock %}
 
 {% block tail %}{% endblock %}

@@ -7,7 +7,7 @@ $(document).ready(function () {
     try {
         deleteHookModal = new bootstrap.Modal('#delete-file-modal', {})
     } catch (error) {
-        console.log('#delete-file-modal not found on page')
+        console.log('#delete-file-modal Not Found')
     }
     let hookID
     $('.delete-file-btn').click(function () {
