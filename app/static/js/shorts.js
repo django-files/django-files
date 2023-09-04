@@ -35,7 +35,7 @@ $(document).ready(function () {
             complete: function (data, textStatus) {
                 //
             },
-            error: function (data, status, error) {
+            error: function (data) {
                 console.log(
                     'Status: ' +
                         data.status +
@@ -52,24 +52,22 @@ $(document).ready(function () {
         })
     })
 
-    // Define Hook Modal and Delete handlers
-    if (document.getElementById('delete-short-modal')) {
-        const deleteHookModal = new bootstrap.Modal('#delete-short-modal', {})
-        if (deleteHookModal) {
-            let hookID
-            $('.delete-short-btn').click(function () {
-                hookID = $(this).data('hook-id')
-                console.log(hookID)
-                deleteHookModal.show()
-            })
-        }
+    // // Define Hook Modal and Delete handlers
+    let deleteShortModal
+    try {
+        deleteShortModal = new bootstrap.Modal('#deleteShortModal', {})
+    } catch (error) {
+        console.log('#deleteShortModal Not Found')
     }
+    let hookID
+    $('.delete-short-btn').click(function () {
+        hookID = $(this).data('hook-id')
+        console.log(hookID)
+        deleteShortModal.show()
+    })
 
     // Handle delete click confirmations
-    $('#confirm-delete-short-hook-btn').click(function () {
-        if ($('#confirm-delete-short-hook-btn').hasClass('disabled')) {
-            return
-        }
+    $('#shortDeleteConfirm').click(function () {
         console.log(hookID)
         $.ajax({
             type: 'POST',
@@ -77,11 +75,10 @@ $(document).ready(function () {
             headers: { 'X-CSRFToken': csrftoken },
             beforeSend: function () {
                 console.log('beforeSend')
-                $('#confirm-delete-short-hook-btn').addClass('disabled')
             },
             success: function (response) {
                 console.log('response: ' + response)
-                deleteHookModal.hide()
+                deleteShortModal.hide()
                 console.log('removing #short-' + hookID)
                 let count = $('#shorts-table tr').length
                 $('#short-' + hookID).remove()
@@ -96,13 +93,12 @@ $(document).ready(function () {
                 console.log('xhr status: ' + xhr.status)
                 console.log('status: ' + status)
                 console.log('error: ' + error)
-                deleteHookModal.hide()
+                deleteShortModal.hide()
                 let message = xhr.status + ': ' + error
                 show_toast(message, 'danger', '15000')
             },
             complete: function () {
                 console.log('complete')
-                $('#confirm-delete-short-hook-btn').removeClass('disabled')
             },
         })
     })

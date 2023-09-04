@@ -19,7 +19,7 @@ video {
     transition: 1s opacity;
 }
 
-#login-outer {
+#loginOuterDiv {
     border-radius: 25px;
     background: rgba(0 0 0 / 30%);
     margin: 10px auto;
@@ -31,18 +31,18 @@ video {
     background: rgba(0 0 0 / 30%);
 }
 
-input:focus ~ .floating-label,
-input:not(:focus):valid ~ .floating-label {
-    top: -60px;
-    left: 5px;
-    font-size: 14px;
-    opacity: 1;
-}
-
 .floating-label {
     position: relative;
     pointer-events: none;
     top: -30px;
     left: 10px;
     transition: 0.2s ease all;
+}
+
+input:focus ~ .floating-label,
+input:not(:focus):valid ~ .floating-label {
+    top: -60px;
+    left: 5px;
+    font-size: 14px;
+    opacity: 1;
 }

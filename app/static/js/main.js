@@ -1,6 +1,14 @@
 $(document).ready(function () {
+    // // Monitor home websockets for new data
+    // const socket = new WebSocket('wss://' + window.location.host + '/ws/home/');
+    // console.log('Websockets Connected.');
+    // socket.onmessage = function(event) {
+    //     let data = JSON.parse(event.data);
+    //     console.log(data);
+    // };
+
     // Back to Top Button, Function, and Listener
-    let mybutton = document.getElementById('btn-back-to-top')
+    let mybutton = document.getElementById('backToTopBtn')
     if (mybutton) {
         window.onscroll = function () {
             scrollFunction()
@@ -21,14 +29,6 @@ $(document).ready(function () {
             document.documentElement.scrollTop = 0
         }
     }
-
-    // // Monitor home websockets for new data
-    // const socket = new WebSocket('wss://' + window.location.host + '/ws/home/');
-    // console.log('Websockets Connected.');
-    // socket.onmessage = function(event) {
-    //     let data = JSON.parse(event.data);
-    //     console.log(data);
-    // };
 
     // Init a ClipboardJS attribute
     new ClipboardJS('.clip')

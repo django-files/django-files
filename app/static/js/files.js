@@ -5,9 +5,9 @@ $(document).ready(function () {
     // Define Hook Modal and Delete handlers
     let deleteHookModal
     try {
-        deleteHookModal = new bootstrap.Modal('#delete-file-modal', {})
+        deleteHookModal = new bootstrap.Modal('#deleteFileModal', {})
     } catch (error) {
-        console.log('#delete-file-modal not found on page')
+        console.log('#deleteFileModal Not Found')
     }
     let hookID
     $('.delete-file-btn').click(function () {
