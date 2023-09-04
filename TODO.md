@@ -31,7 +31,6 @@
 
 ## Files and Upload
 - [ ] Add File Viewing Endpoints for Stats and Embeds
-- [ ] Password Protection Feature
 - [ ] Max Views Feature
 - [ ] Filename Options Feature
 - [ ] Overhaul /shorten and /upload URL Endpoints
