@@ -10,23 +10,6 @@ from oauth.models import CustomUser
 log = logging.getLogger('app')
 
 
-class OauthUser(object):
-    __slots__ = [
-        'id',
-        'username',
-        'user',
-        'data',
-        'profile',
-    ]
-
-    def __init__(self, _id, username, user, data, profile):
-        self.id: int = _id
-        self.username: int = username
-        self.user: CustomUser = user
-        self.data: dict = data
-        self.profile: dict = profile
-
-
 def get_or_create_user(request, _id, username) -> Optional[CustomUser]:
     log.debug('_id: %s', _id)
     log.debug('username %s', username)
@@ -120,7 +103,5 @@ def is_super_id(_id):
     log.debug('_id: %s', _id)
     log.debug('SUPER_USERS: %s', config('SUPER_USERS', '', Csv()))
     if _id in config('SUPER_USERS', '', Csv()):
-        log.debug('TRUE')
         return True
-    log.debug('TRUE')
     return False
