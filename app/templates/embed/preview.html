@@ -184,7 +184,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
 {% block footer %}
 <script>
     {% if render in 'text,code' %}
-    fetch("{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}")
+    fetch("{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}{% if file.password %}?password={{ file.password }}{% endif %}")
     .then(response => {
         if (!response.ok) {
             throw new Error('Network response was not ok');
