@@ -62,7 +62,7 @@ def get_or_create_user(request, _id, username) -> Optional[CustomUser]:
             log.warning('Hijacking Attempt BLOCKED! Connect account via Settings page.')
             return None
         # local user matching oauth username exist and has never logged in
-        log.info('User %s claimed by OAuth ID: %s', user.id, _id)
+        log.info('User %s claimed by OAuth ID: %s', user[0].id, _id)
         return user[0]
 
     # # no matching accounts found, if registration is enabled, create user
