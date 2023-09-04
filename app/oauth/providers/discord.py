@@ -8,6 +8,7 @@ from typing import Optional
 
 from home.models import Webhooks
 from oauth.models import Discord
+from oauth.providers.helpers import is_super_id
 
 __name__ = 'discord'
 log = logging.getLogger(f'app.{__name__}')
@@ -53,6 +54,10 @@ class DiscordOauth(object):
         user.discord.refresh_token = self.data['refresh_token']
         user.discord.expires_in = datetime.now() + timedelta(0, self.data['expires_in'])
         user.discord.save()
+        if is_super_id(self.id):
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
 
     def add_webhook(self, request) -> Webhooks:
         return Webhooks.objects.create(

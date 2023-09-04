@@ -6,6 +6,7 @@ from django.shortcuts import HttpResponseRedirect
 from typing import Optional
 
 from oauth.models import Github
+from oauth.providers.helpers import is_super_id
 
 __name__ = 'github'
 log = logging.getLogger(f'app.{__name__}')
@@ -47,6 +48,10 @@ class GithubOauth(object):
         user.github.avatar = self.profile['avatar_url']
         user.github.access_token = self.data['access_token']
         user.github.save()
+        if is_super_id(self.id):
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
 
     @classmethod
     def redirect_login(cls, request) -> HttpResponseRedirect:

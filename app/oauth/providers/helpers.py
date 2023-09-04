@@ -65,6 +65,11 @@ def get_or_create_user(request, _id, username) -> Optional[CustomUser]:
         log.info('User %s claimed by OAuth ID: %s', user.id, _id)
         return user[0]
 
+    # # no matching accounts found, if registration is enabled, create user
+    # if is_super_id(_id):
+    #     log.info('%s SUPERUSER by oauth_reg with id: %s', username, _id)
+    #     return CustomUser.objects.create(username=username, is_staff=True, is_superuser=True)
+
     # no matching accounts found, if registration is enabled, create user
     if SiteSettings.objects.get(pk=1).oauth_reg or is_super_id(_id):
         log.info('%s created by oauth_reg with id: %s', username, _id)
@@ -111,8 +116,11 @@ def get_login_redirect_url(request: HttpRequest) -> str:
     return reverse('home:index')
 
 
-def is_super_id(oauth_id):
-    if oauth_id in config('SUPER_USERS', '', Csv()):
+def is_super_id(_id):
+    log.debug('_id: %s', _id)
+    log.debug('SUPER_USERS: %s', config('SUPER_USERS', '', Csv()))
+    if _id in config('SUPER_USERS', '', Csv()):
+        log.debug('TRUE')
         return True
-    else:
-        return False
+    log.debug('TRUE')
+    return False
