@@ -1,10 +1,9 @@
-import json
 import logging
 import duo_universal
 from decouple import config
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
@@ -12,7 +11,7 @@ from django.views.decorators.http import require_http_methods
 
 from home.models import SiteSettings, Webhooks
 from oauth.forms import LoginForm
-from oauth.providers.helpers import get_login_redirect_url, get_next_url, get_or_create_user, is_super_id
+from oauth.providers.helpers import get_login_redirect_url, get_next_url, get_or_create_user
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.models import CustomUser

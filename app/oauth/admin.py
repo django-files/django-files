@@ -20,4 +20,3 @@ class CustomUserAdmin(UserAdmin):
             'remove_exif_geo', 'remove_exif', 'show_exif_preview',
         )}),
     )
-

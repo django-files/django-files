@@ -2,7 +2,7 @@ import logging
 from decouple import config, Csv
 from django.http import HttpRequest
 from django.urls import reverse
-from typing import Optional, Tuple
+from typing import Optional
 
 from home.models import SiteSettings
 from oauth.models import CustomUser
