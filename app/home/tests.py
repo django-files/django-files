@@ -188,7 +188,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-create.png')
                 c += 1
                 page.locator('.delete-short-btn').first.click()
-                delete_btn = page.locator('#shortDeleteConfirm')
+                delete_btn = page.locator('#short-delete-confirm')
                 page.wait_for_timeout(timeout=500)
                 page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-click.png')
                 c += 1

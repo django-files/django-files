@@ -67,7 +67,7 @@ $(document).ready(function () {
     })
 
     // Handle delete click confirmations
-    $('#shortDeleteConfirm').click(function () {
+    $('#short-delete-confirm').click(function () {
         console.log(hookID)
         $.ajax({
             type: 'POST',
