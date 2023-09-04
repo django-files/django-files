@@ -55,9 +55,9 @@ $(document).ready(function () {
     // // Define Hook Modal and Delete handlers
     let deleteShortModal
     try {
-        deleteShortModal = new bootstrap.Modal('#deleteShortModal', {})
+        deleteShortModal = new bootstrap.Modal('#delete-short-modal', {})
     } catch (error) {
-        console.log('#deleteShortModal Not Found')
+        console.log('#delete-short-modal Not Found')
     }
     let hookID
     $('.delete-short-btn').click(function () {
