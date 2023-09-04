@@ -101,7 +101,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         process_file_path(Path('../README.md'), self.user.id)
         process_file_path(Path('./templates/main.html'), self.user.id)
         process_file_path(Path('./home/templatetags/home_tags.py'), self.user.id)
-        process_file_path(Path('../.assets/an225.jpg'), self.user.id)
+        private_file = process_file_path(Path('../.assets/an225.jpg'), self.user.id)
         dirs = ['static/video', '../.assets']
         for directory in dirs:
             dir_path = Path(directory)
@@ -227,6 +227,22 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.locator('.log-out').click()
         page.wait_for_timeout(timeout=500)
         page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_logout.png')
+
+        private_file.private = True
+        private_file.save()
+        page.goto(f"{self.live_server_url}{private_file.preview_uri}")
+        page.locator('text=Permission Denied')
+        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_private_denied.png')
+
+        private_file.password = 'test123'
+        private_file.save()
+        page.goto(f"{self.live_server_url}{private_file.preview_uri}")
+        page.locator(f'text=Unlock {file.name}')
+        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_pw_file.png')
+        page.fill('[name=password]', 'test123')
+        page.locator('#unlock-button').click()
+        page.locator(f'text={file.size}')
+        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_pw_unlocked_file.png')
 
 
 class FilesTestCase(TestCase):
