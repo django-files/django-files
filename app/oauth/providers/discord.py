@@ -10,8 +10,8 @@ from home.models import Webhooks
 from oauth.models import Discord
 from oauth.providers.helpers import is_super_id
 
-__name__ = 'discord'
-log = logging.getLogger(f'app.{__name__}')
+provider = 'discord'
+log = logging.getLogger(f'app.{provider}')
 
 
 class DiscordOauth(object):
@@ -42,7 +42,7 @@ class DiscordOauth(object):
         self.first_name: Optional[str] = self.profile['global_name']
 
     def update_profile(self, user) -> None:
-        if not getattr(user, __name__, None):
+        if not getattr(user, provider, None):
             Discord.objects.create(
                 user=user,
                 id=self.profile['id'],
@@ -70,7 +70,7 @@ class DiscordOauth(object):
 
     @classmethod
     def redirect_login(cls, request) -> HttpResponseRedirect:
-        request.session['oauth_provider'] = __name__
+        request.session['oauth_provider'] = provider
         log.debug('request.session.oauth_provider: %s', request.session['oauth_provider'])
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
@@ -87,7 +87,7 @@ class DiscordOauth(object):
 
     @classmethod
     def redirect_webhook(cls, request) -> HttpResponseRedirect:
-        request.session['oauth_provider'] = __name__
+        request.session['oauth_provider'] = provider
         request.session['webhook'] = 'discord'
         params = {
             'redirect_uri': config('OAUTH_REDIRECT_URL'),

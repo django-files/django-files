@@ -8,8 +8,8 @@ from typing import Optional
 from oauth.models import Github
 from oauth.providers.helpers import is_super_id
 
-__name__ = 'github'
-log = logging.getLogger(f'app.{__name__}')
+provider = 'github'
+log = logging.getLogger(f'app.{provider}')
 
 
 class GithubOauth(object):
@@ -38,7 +38,7 @@ class GithubOauth(object):
         self.first_name: Optional[str] = self.profile['name']
 
     def update_profile(self, user) -> None:
-        if not getattr(user, __name__, None):
+        if not getattr(user, provider, None):
             Github.objects.create(
                 user=user,
                 id=self.profile['id'],
@@ -55,7 +55,7 @@ class GithubOauth(object):
 
     @classmethod
     def redirect_login(cls, request) -> HttpResponseRedirect:
-        request.session['oauth_provider'] = __name__
+        request.session['oauth_provider'] = provider
         log.debug('request.session.oauth_provider: %s', request.session['oauth_provider'])
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
