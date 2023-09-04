@@ -22,7 +22,6 @@ video {
 #login-outer {
     border-radius: 25px;
     background: rgba(0 0 0 / 30%);
-    width: 300px;
     margin: 10px auto;
     padding: 25px;
     filter: drop-shadow(15px -15px 12px #000000);
