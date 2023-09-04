@@ -57,6 +57,10 @@
                         <a href="{% url 'oauth:discord' %}?next={{ request.path }}" class="btn btn-primary" role="button">
                             <i class="fa-brands fa-discord"></i> Discord Login</a>
                     {% endif %}
+                    {% if 'GITHUB_CLIENT_ID'|get_config %}
+                        <a href="{% url 'oauth:github' %}?next={{ request.path }}" class="btn btn-dark" role="button">
+                            <i class="fa-brands fa-github"></i> GitHub Login</a>
+                    {% endif %}
                 </div>
 
                 <div id="login-message" class="pt-3">
