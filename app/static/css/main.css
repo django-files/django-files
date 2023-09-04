@@ -11,30 +11,3 @@
 .dropdown-menu {
     z-index: 1005;
 }
-
-/* Always Show Scrollbar */
-/*body {*/
-/*    overflow-y: scroll !important;*/
-/*}*/
-
-/* Visually Show Disabled Elements on Mouseover */
-/*.disabled {*/
-/*    cursor: not-allowed !important;*/
-/*}*/
-
-/* Recaptcha Border and Load Fix */
-/*.g-recaptcha {*/
-/*    overflow: hidden;*/
-/*    width: 298px;*/
-/*    height: 74px;*/
-/*}*/
-
-/*iframe {*/
-/*    margin: -1px 0 0 -2px;*/
-/*}*/
-
-/* Modal Fix */
-/*.modal-open {*/
-/*    overflow-y: scroll !important;*/
-/*    padding-right:0 !important;*/
-/*}*/

@@ -33,53 +33,17 @@ video {
 }
 
 input:focus ~ .floating-label,
-input:not(:focus):valid ~ .floating-label{
-  top: -60px;
-  left: 5px;
-  font-size: 14px;
-  opacity: 1;
+input:not(:focus):valid ~ .floating-label {
+    top: -60px;
+    left: 5px;
+    font-size: 14px;
+    opacity: 1;
 }
 
 .floating-label {
-  position: relative;
-  pointer-events: none;
-  top: -30px;
-  left: 10px;
-  transition: 0.2s ease all;
+    position: relative;
+    pointer-events: none;
+    top: -30px;
+    left: 10px;
+    transition: 0.2s ease all;
 }
-
-
-/*.stopfade {*/
-/*    opacity: .5;*/
-/*}*/
-/*@media screen and (max-width: 500px) {*/
-/*    div{width:70%;}*/
-/*}*/
-/*@media screen and (max-device-width: 800px) {*/
-/*    html { background: url('/static/video/loop.jpg') #000 no-repeat center center fixed; }*/
-/*    #bgvid { display: none; }*/
-/*}*/
-/*.vertical-alignment-helper {*/
-/*    display:table;*/
-/*    height: 100%;*/
-/*    width: 100%;*/
-/*    pointer-events:none;*/
-/*}*/
-/*.vertical-align-center {*/
-/*    !* To center vertically *!*/
-/*    display: table-cell;*/
-/*    vertical-align: middle;*/
-/*    pointer-events:none;*/
-/*}*/
-/*.modal-content {*/
-/*    !* Bootstrap sets the size of the modal in the modal-dialog class, we need to inherit it *!*/
-/*    width:inherit;*/
-/*    height:inherit;*/
-/*    !* To center horizontally *!*/
-/*    margin: 0 auto;*/
-/*    pointer-events:all;*/
-/*}*/
-/*.modal-open {*/
-/*    !* Fix content left-shift during modal open - I have no idea why this is happening *!*/
-/*    padding-right: 0 !important;*/
-/*}*/

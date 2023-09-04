@@ -2,7 +2,6 @@
 {% load static %}
 {% load home_tags %}
 {% load cache %}
-{% block contact_active %}active{% endblock %}
 {% block title %}Login{% endblock %}
 
 {% block head %}
@@ -11,34 +10,33 @@
 
 {% block navbar %}{% endblock %}
 
-{% block body_no_main %}
-<main class="h-100">
-    <div class="h-100 align-self-center">
+{% block body %}
+    <div class="container-fluid p-3">
+
         <video poster="{% static 'video/loop.jpg' %}" id="bgvid" playsinline autoplay muted loop>
             <source src="{% static 'video/loop.mp4' %}" type="video/mp4" id="bgvidsrc">
         </video>
-    {#    <button type="button" class="btn btn-primary float-end" id="pause">Pause</button>#}
 
-        <div class="d-flex flex-column h-100 align-items-center">
-        <div class="d-flex flex-grow-1 justify-content-center align-items-center">
         <div id="login-outer" class="animate__animated animate__fadeIn">
             <div class="text-center">
                 <img class="img-responsive" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
-                <h3 class="text-center text-white">{{ site_settings.site_title }}</h3>
+                <h3 class="text-center text-white mt-2">{{ site_settings.site_title }}</h3>
             </div>
 
             <form class="submit-once" method="POST" name="login-form" id="login-form" action="{% url 'oauth:login' %}">
                 {% csrf_token %}
 
                 <div class="col mt-4">
+                    <label class="sr-only" for="username"></label>
                     <input type="text" class="form-control" id="username" name="username" autocomplete="username" required autofocus>
                     <span class="form-label floating-label text-white">username</span>
                 </div>
 
                 <div class="col">
+                    <label class="sr-only" for="password"></label>
                     <input type="password" class="form-control" id="password" name="password" autocomplete="password"
-                        aria-describedby="passwordFeedback" required>
-                        <span class="form-label floating-label text-white">password</span>
+                           aria-describedby="passwordFeedback" required>
+                    <span class="form-label floating-label text-white">password</span>
                     <div id="passwordFeedback" class="invalid-feedback">
                         Invalid Username or Password.
                     </div>
@@ -63,7 +61,7 @@
                     {% endif %}
                 </div>
 
-                <div id="login-message" class="pt-3">
+                <div id="login-message" class="mt-2">
                     {% if messages %}
                         <ul class="list-group text-center">
                             {% for message in messages %}
@@ -74,11 +72,8 @@
                 </div>
             </form>
         </div>
-        </div>
-        </div>
-    </div>
-</main>
 
+    </div>
 {% endblock %}
 
 {% block footer %}{% endblock %}
@@ -86,7 +81,5 @@
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/login.js' %}"></script>
 {% endblock %}
-{% block main_js %}
-{% endblock %}
-{% block backtotop %}
-{% endblock %}
+
+{% block backtotop %}{% endblock %}
