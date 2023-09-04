@@ -19,7 +19,7 @@ video {
     transition: 1s opacity;
 }
 
-#loginOuterDiv {
+#login-outer {
     border-radius: 25px;
     background: rgba(0 0 0 / 30%);
     margin: 10px auto;

@@ -8,7 +8,7 @@ $(document).ready(function () {
     // };
 
     // Back to Top Button, Function, and Listener
-    let mybutton = document.getElementById('backToTopBtn')
+    let mybutton = document.getElementById('back-to-top')
     if (mybutton) {
         window.onscroll = function () {
             scrollFunction()
