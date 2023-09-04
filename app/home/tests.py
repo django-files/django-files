@@ -230,13 +230,13 @@ class PlaywrightTest(StaticLiveServerTestCase):
 
         private_file.private = True
         private_file.save()
-        page.goto(f"{self.live_server_url}{private_file.preview_uri}")
+        page.goto(f"{self.live_server_url}{private_file.preview_uri()}")
         page.locator('text=Permission Denied')
         page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_private_denied.png')
 
         private_file.password = 'test123'
         private_file.save()
-        page.goto(f"{self.live_server_url}{private_file.preview_uri}")
+        page.goto(f"{self.live_server_url}{private_file.preview_uri()}")
         page.locator(f'text=Unlock {file.name}')
         page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_pw_file.png')
         page.fill('[name=password]', 'test123')
