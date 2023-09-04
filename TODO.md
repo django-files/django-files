@@ -31,7 +31,6 @@
 
 ## Files and Upload
 - [ ] Add File Viewing Endpoints for Stats and Embeds
-- [ ] Password Protection Feature
 - [ ] Max Views Feature
 - [ ] Filename Options Feature
 - [ ] Overhaul /shorten and /upload URL Endpoints
@@ -58,6 +57,11 @@
 - [ ] Files - GET files
 - [ ] Stats - GET stats
 - [ ] Users - GET PUT DELETE users
+
+## Passwords and Private Files
+- [ ] Add support for nginx raw files to have signed urls.
+- [ ] Auto add password query string to preview/raw url clipboard buttons when pw set
+- [ ] Better access denied error page.
 
 ## Miscellaneous
 - [ ] Finish optimizing build image first =D
