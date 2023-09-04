@@ -3,6 +3,10 @@ body {
     background: #000;
 }
 
+main {
+    height: 100%;
+}
+
 video {
     position: fixed;
     top: 50%;
