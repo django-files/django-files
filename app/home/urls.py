@@ -1,3 +1,4 @@
+from django.conf.urls import include
 from django.urls import path, re_path
 
 from api.views import shorten_view, upload_view
@@ -11,9 +12,9 @@ urlpatterns = [
     path('gallery/', views.gallery_view, name='gallery'),
     path('uppy/', views.uppy_view, name='uppy'),
     path('shorts/', views.shorts_view, name='shorts'),
-    path('settings/', views.settings_view, name='settings'),
     path('stats/', views.stats_view, name='stats'),
     path('public/', views.pub_uppy_view, name='public-uppy'),
+    path('settings/', include('settings.urls')),
     re_path(r'^upload/?$', upload_view, name='upload'),
     re_path(r'^shorten/?$', shorten_view, name='shorten'),
     path('s/<str:short>', views.shorten_short_view, name='short'),
@@ -23,9 +24,6 @@ urlpatterns = [
     path('ajax/set_password/file/<int:pk>/', views.set_password_file_ajax, name='set-password-file'),
     path('ajax/toggle_private/file/<int:pk>/', views.toggle_private_file_ajax, name='toggle-private-file'),
     path('ajax/delete/hook/<int:pk>/', views.delete_hook_ajax, name='delete-hook'),
-    path('gen/sharex/', views.gen_sharex, name='gen-sharex'),
-    path('gen/sharex-url/', views.gen_sharex_url, name='gen-sharex-url'),
-    path('gen/flameshot/', views.gen_flameshot, name='gen-flameshot'),
     path('u/<path:filename>', views.url_route_view, name='url-route'),
     path('raw/<path:filename>', views.raw_redirect_view, name='url-raw-redirect'),
     path('r/<path:filename>', views.url_route_view, name='url-raw'),

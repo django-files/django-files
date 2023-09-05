@@ -11,7 +11,7 @@
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
-        <h1>{{ site_settings.site_title }}</h1>
+        <h1><i class="fa-solid fa-house-laptop me-2"></i> {{ site_settings.site_title }}</h1>
 
 {#        {% cache 86400 stats_home request.user %}#}
             {% if not stats %}
@@ -41,7 +41,7 @@
                 <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
             {% else %}
                 <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
-                {% include 'include/files-table.html' with files=files|slice:":10"  %}
+                {% include 'files/files-table.html' with files=files|slice:":10"  %}
                 {% if files|length > 10 %}
                     <p><em>This list is truncated to 10 files. <span class="d-inline-block">
                         <a href="{% url 'home:files' %}">View All Files</a></span></em></p>

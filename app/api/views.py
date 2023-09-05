@@ -15,10 +15,11 @@ from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from pytimeparse2 import parse
 from typing import Optional
 
-from home.models import Files, FileStats, SiteSettings, ShortURLs
+from home.models import Files, FileStats, ShortURLs
 from home.util.file import process_file
 from oauth.models import CustomUser
 from home.util.rand import rand_string
+from settings.models import SiteSettings
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4

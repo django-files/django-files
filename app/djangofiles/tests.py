@@ -15,10 +15,11 @@ class TestViews(TestCase):
             'home:uppy': 302,
             'home:files': 302,
             'home:shorts': 302,
-            'home:settings': 302,
             'home:stats': 302,
             'home:upload': 405,
             'home:shorten': 405,
+            'home:settings:user': 302,
+            'home:settings:site': 302,
             'api:upload': 405,
             'api:shorten': 405,
         }

@@ -6,9 +6,9 @@ from decouple import config
 from django.shortcuts import HttpResponseRedirect
 from typing import Optional
 
-from home.models import SiteSettings, Webhooks
 from oauth.models import Discord
 from oauth.providers.helpers import is_super_id
+from settings.models import SiteSettings, Webhooks
 
 provider = 'discord'
 log = logging.getLogger(f'app.{provider}')

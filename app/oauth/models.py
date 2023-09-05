@@ -54,5 +54,3 @@ class Github(models.Model):
     profile = models.JSONField(null=True, blank=True)
     avatar = models.CharField(null=True, blank=True, max_length=32)
     access_token = models.CharField(null=True, blank=True, max_length=32)
-    # refresh_token = models.CharField(null=True, blank=True, max_length=32)
-    # expires_in = models.DateTimeField(null=True, blank=True)

@@ -1,0 +1,11 @@
+
+<nav class="" aria-label="breadcrumb" style="--bs-breadcrumb-divider: '|';">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item "><a href="{% url 'home:settings:user' %}" class="link-body-emphasis text-decoration-none">
+            <i class="fas fa-user-circle me-2"></i> User</a></li>
+        {% if request.user.is_superuser %}
+            <li class="breadcrumb-item"><a href="{% url 'home:settings:site' %}" class="link-body-emphasis text-decoration-none">
+                <i class="fa-solid fa-gears me-2"></i> Site</a></li>
+        {% endif %}
+    </ol>
+</nav>

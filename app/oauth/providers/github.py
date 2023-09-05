@@ -5,9 +5,9 @@ from decouple import config
 from django.shortcuts import HttpResponseRedirect
 from typing import Optional
 
-from home.models import SiteSettings
 from oauth.models import Github
 from oauth.providers.helpers import is_super_id
+from settings.models import SiteSettings
 
 provider = 'github'
 log = logging.getLogger(f'app.{provider}')

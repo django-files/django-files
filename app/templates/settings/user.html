@@ -2,115 +2,21 @@
 {% load home_tags %}
 {% load static %}
 {% load cache %}
-{% block settings_active %}active{% endblock %}
-{% block title %}Settings{% endblock %}
+{% block user_active %}active{% endblock %}
+{% block user_active_dd %}active{% endblock %}
+{% block title %}User Settings{% endblock %}
 
 {% block head %}{% endblock %}
 
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
-        <h1>Settings</h1>
+        <h1><i class="fas fa-user-circle me-2"></i> User Settings</h1>
 
-        <nav class="" aria-label="breadcrumb" style="--bs-breadcrumb-divider: '|';">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="#general">General</a></li>
-                <li class="breadcrumb-item"><a href="#webhooks">Webhooks</a></li>
-                <li class="breadcrumb-item"><a href="#upload">Upload</a></li>
-                <li class="breadcrumb-item"><a href="#token">Token</a></li>
-            </ol>
-        </nav>
+        {% include 'settings/menu.html' %}
 
-        <h3 id="general">General</h3>
-
-        <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings' %}">
-
-            {% if user.is_superuser %}
-                <div class="border border-warning-subtle rounded-2 p-2 my-2">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label for="site_url" class="form-label">Site URL</label>
-                            <input type="text" class="form-control" id="site_url" name="site_url" placeholder=""
-                                value="{{ site_settings.site_url }}" aria-describedby="site_url-help site_url-invalid">
-                            <div id="site_url-help" class="form-text">
-                                Used for Uploads and Discord Messages.
-                            </div>
-                            <div id="site_url-invalid" class="invalid-feedback"></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="site_title" class="form-label">Site Title</label>
-                            <input type="text" class="form-control" id="site_title" name="site_title" placeholder=""
-                                   value="{{ site_settings.site_title }}" aria-describedby="site_title-help site_title-invalid">
-                            <div id="site_title-help" class="form-text">
-                                Site Title.
-                            </div>
-                            <div id="site_title-invalid" class="invalid-feedback"></div>
-                        </div>
-                    </div>
-                    <div class='row'>
-                        <div class="mb-3">
-                            <label for="site_description" class="form-label">Site Description</label>
-                            <textarea class="form-control" id="site_description" name="site_description" rows="2">{{ site_settings.site_description }}</textarea>
-                        </div>
-                    </div>
-                    {% comment %}
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label for="s3_bucket_name" class="form-label">S3 Bucket Name</label>
-                            <input type="text" class="form-control" id="s3_bucket_name" name="s3_bucket_name" placeholder=""
-                                   value="{{ site_settings.s3_bucket_name }}" aria-describedby="s3_bucket_name-help s3_bucket_name-invalid">
-                            <div id="s3_bucket_name-help" class="form-text">
-                                <span class="text-warning"><strong>INOP</strong></span> Should be set via environment variables.
-                            </div>
-                            <div id="s3_bucket_name-invalid" class="invalid-feedback"></div>
-                        </div>
-                    </div>
-                    {% endcomment %}
-                    <div class="row">
-                        <div class="col mx-sm-4 fs-5">
-                            <div class="form-check form-switch px-lg-5">
-                                <input class="form-check-input" type="checkbox" id="pub_load" name="pub_load" {{ site_settings.pub_load|if_true:"checked" }}>
-                                <label class="form-check-label" for="pub_load">
-                                    Allow Public Uploads.
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
-                        <div class="row">
-                        <div class="col mx-sm-4 fs-5">
-                            <div class="form-check form-switch px-lg-5">
-                                <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
-                                <label class="form-check-label" for="oauth_reg">
-                                    Allow Oauth Auto Registration.
-                                </label>
-                            </div>
-                        </div>
-                        </div>
-                    {% endif %}
-                    {% if 'DUO_CLIENT_ID'|get_config %}
-                        <div class="row">
-                        <div class="col mx-sm-4 fs-5">
-                            <div class="form-check form-switch px-lg-5">
-                                <input class="form-check-input" type="checkbox" id="duo_auth" name="duo_auth" {{ site_settings.duo_auth|if_true:"checked" }}>
-                                <label class="form-check-label" for="duo_auth">
-                                    Enable Two-Factor Authentication.
-                                </label>
-                            </div>
-                        </div>
-                        </div>
-                    {% endif %}
-                    <div class="row pt-3">
-                        <div class="col-auto">
-                            <label for="site_color" class="form-label">Theme</label>
-                            <input type="color" class="form-control form-control-color" id="site_color" name="site_color"
-                                   value="{{ site_settings.site_color }}" title="Default Color" aria-describedby="site_color-invalid">
-                            <div id="site_color-invalid" class="invalid-feedback"></div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
+        <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings:site' %}">
+            
             <div class="border border-success-subtle rounded-2 p-2 my-2">
                 <div class="row">
                     <div class="col-md-6">
@@ -255,17 +161,17 @@
 
         <div class="row g-3">
             <div class="col-sm-6">
-                <a href="{% url 'home:gen-sharex' %}" class="btn btn-lg btn-outline-primary d-block">
+                <a href="{% url 'home:settings:sharex' %}" class="btn btn-lg btn-outline-primary d-block">
                     <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="24">
                     ShareX Files</a>
             </div>
             <div class="col-sm-6">
-                <a href="{% url 'home:gen-sharex-url' %}" class="btn btn-lg btn-outline-primary d-block">
+                <a href="{% url 'home:settings:sharex-url' %}" class="btn btn-lg btn-outline-primary d-block">
                     <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="24">
                     ShareX URL Shorts</a>
             </div>
             <div class="col-sm-12">
-                <a href="{% url 'home:gen-flameshot' %}" class="btn btn-lg btn-outline-info d-block">
+                <a href="{% url 'home:settings:flameshot' %}" class="btn btn-lg btn-outline-info d-block">
                     <img src="{% static 'images/assets/flameshot.svg' %}" class="me-2" alt="Flameshot" width="24">
                     Flameshot Script</a>
             </div>

@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from home.models import SiteSettings, Webhooks
+from settings.models import SiteSettings, Webhooks
 from oauth.forms import LoginForm
 from oauth.providers.helpers import get_login_redirect_url, get_next_url, get_or_create_user
 from oauth.providers.discord import DiscordOauth

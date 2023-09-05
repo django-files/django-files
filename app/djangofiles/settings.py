@@ -200,6 +200,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'home',
     'oauth',
+    'settings',
 ]
 if DEBUG:
     INSTALLED_APPS += [
@@ -235,7 +236,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.static',
-                'home.context_processors.site_settings',
+                'settings.context_processors.site_settings',
             ],
         },
     },

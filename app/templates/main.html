@@ -25,7 +25,6 @@
     {% endblock %}
 
     <link rel="icon" href="{% static 'images/favicon.ico' %}" sizes="any">
-{#    <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">#}
     <link rel="stylesheet" href="{% static 'dist/bootstrap/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'dist/fontawesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
@@ -66,8 +65,21 @@
                                             href="{% url 'home:shorts' %}">Shorts</a></li>
                     <li class="nav-item"><a class="nav-link {% block stats_active %}{% endblock %}"
                         href="{% url 'home:stats' %}">Stats</a></li>
-                    <li class="nav-item"><a class="nav-link {% block settings_active %}{% endblock %}"
-                                            href="{% url 'home:settings' %}">Settings</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Settings</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item {% block user_active %}{% endblock %}" href="{% url 'home:settings:user' %}">
+                                <i class="fas fa-user-circle me-2"></i>User Settings</a></li>
+                            {% if request.user.is_superuser %}
+                                <li><a class="dropdown-item {% block site_active %}{% endblock %}" href="{% url 'home:settings:site' %}">
+                                    <i class="fa-solid fa-gears me-2"></i>Site Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-success" href="{% url 'admin:index' %}">
+                                    <i class="fa-solid fa-rocket me-2"></i> Admin</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
                 </ul>
                 {% endif %}
                 <ul class="navbar-nav ms-auto">
@@ -77,22 +89,22 @@
                     {% else %}
                         <li class="nav-item dropdown">
                             <a class="nav-link" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-{#                                {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}#}
-                                {{ user.first_name|default:user.username }}
-                                <i class="fas fa-angle-down mx-1"></i>
+                                {{ user.first_name|default:user.username }} <i class="fas fa-angle-down mx-1"></i>
                                 <img src="{{ user.get_avatar }}"
                                      class="rounded-circle mx-2 d-none d-sm-inline d-md-inline d-lg-inline d-xl-inline" height="26" width="26" alt="P"></a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item" role="button" data-bs-toggle="modal" data-bs-target="#user-info-modal">
-                                    <i class="fas fa-user-circle me-2"></i> Profile</a></li>
-                                <li><a class="dropdown-item" href="{% url 'home:settings' %}">
-                                    <i class="fa-solid fa-gears me-2"></i> Settings</a></li>
+                                <li><a class="dropdown-item {% block user_active_dd %}{% endblock %}" href="{% url 'home:settings:user' %}">
+                                    <i class="fas fa-user-circle me-2"></i> User Settings</a></li>
+                                {% if request.user.is_superuser %}
+                                    <li><a class="dropdown-item {% block site_active_dd %}{% endblock %}" href="{% url 'home:settings:site' %}">
+                                        <i class="fa-solid fa-gears me-2"></i> Site Settings</a></li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item clip" data-clipboard-text="{{ 'SITE_URL'|get_config }}" href="javascript:">
                                     <i class="fa-solid fa-globe me-2"></i> Copy URL</a></li>
                                 <li><a class="dropdown-item clip" data-clipboard-text="{{ user.authorization }}" href="javascript:">
                                     <i class="fa-solid fa-key me-2"></i> Copy Token</a></li>
-                                {% if request.user.is_staff or request.user.is_superuser %}
+                                {% if request.user.is_superuser %}
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-success" href="{% url 'admin:index' %}">
                                         <i class="fa-solid fa-rocket me-2"></i> Admin</a></li>
@@ -118,54 +130,12 @@
 </main>
 
 {% block backtotop %}
-<button type="button" class="btn btn-secondary btn-floating opacity-50" id="back-to-top">
-    <i class="fas fa-arrow-up"></i>
-</button>
+    <button type="button" class="btn btn-secondary btn-floating opacity-50" id="back-to-top">
+        <i class="fas fa-arrow-up"></i></button>
 {% endblock %}
 
 {% block footer %}
-<footer class="footer mt-auto p-2">
-    <div class="container-fluid">
-        <div class="row">
-
-            <div class="col-12 col-lg-4">
-                <p><a class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover" href="https://github.com/django-files/django-files" target="_blank">
-                    <i class="fab fa-github"></i> Django Files</a> <span class="text-body-secondary">v{{ 'APP_VERSION'|get_config }}</span></p>
-            </div>
-
-            <div class="col-12 col-lg-8 text-lg-end">
-                <ul class="list-unstyled list-inline d-none d-md-block ps-0">
-                    <li class="list-inline-item"><a href="{% url 'home:index' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Home</a></li>
-                    <li class="list-inline-item">|</li>
-                    <li class="list-inline-item"><a href="{% url 'home:gallery' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Gallery</a></li>
-                    <li class="list-inline-item">|</li>
-                    <li class="list-inline-item"><a href="{% url 'home:uppy' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Upload</a></li>
-                    <li class="list-inline-item">|</li>
-                    <li class="list-inline-item"><a href="{% url 'home:files' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Files</a></li>
-                    <li class="list-inline-item">|</li>
-                    <li class="list-inline-item"><a href="{% url 'home:shorts' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Shorts</a></li>
-                    <li class="list-inline-item">|</li>
-                    <li class="list-inline-item"><a href="{% url 'home:stats' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Stats</a></li>
-                    <li class="list-inline-item">|</li>
-                    <li class="list-inline-item"><a href="{% url 'home:settings' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Settings</a></li>
-                </ul>
-            </div>
-
-            <div class="col-12">
-                <ul class="list-unstyled d-xs-block d-md-none d-lg-none d-xl-none">
-                    <li class="list-group-item"><a href="{% url 'home:index' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Home</a></li>
-                    <li class="list-group-item"><a href="{% url 'home:gallery' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Gallery</a></li>
-                    <li class="list-group-item"><a href="{% url 'home:uppy' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Upload</a></li>
-                    <li class="list-group-item"><a href="{% url 'home:files' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Files</a></li>
-                    <li class="list-group-item"><a href="{% url 'home:shorts' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Shorts</a></li>
-                    <li class="list-group-item"><a href="{% url 'home:stats' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Stats</a></li>
-                    <li class="list-group-item"><a href="{% url 'home:settings' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">Settings</a></li>
-                </ul>
-            </div>
-
-        </div>
-    </div>
-</footer>
+    {% include 'include/footer.html' %}
 {% endblock %}
 
 {% if request.user.is_authenticated %}
@@ -173,70 +143,23 @@
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
     </form>
-    <div class="modal fade" id="user-info-modal" tabindex="-1" aria-labelledby="user-info-modal-label" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="user-info-modal-label">
-                        <i class="fas fa-user-circle me-2"></i> Profile</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <img src="{{ user.get_avatar }}" alt="Profile Picture"
-                         class="rounded float-end m-2" style="max-height:128px;max-width:128px;">
-                    <h4 class="modal-title">{% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}</h4>
-                    <p><a class="btn btn-outline-success" role="button" href="{% url 'home:settings' %}">
-                        <i class="fa-solid fa-list-check me-2"></i> Edit Settings</a></p>
-
-                    <div class="clearfix"></div>
-                    <table class="table mt-2">
-                        <tbody>
-                        <tr>
-                            <th>Discord ID</th>
-                            <td>{{ user.username }}</td>
-                        </tr>
-                        <tr>
-                            <th>Discord Username</th>
-                            <td>{{ user.first_name }}#{{ user.last_name }}</td>
-                        </tr>
-                        <tr>
-                            <th>Site URL</th>
-                            <td>{{ 'SITE_URL'|get_config }}</td>
-                        </tr>
-                        <tr>
-                            <th>Default Expire</th>
-                            <td>{{ user.default_expire|default:'Never' }}</td>
-                        </tr>
-                        <tr>
-                            <th>Default Color</th>
-                            <td style="color: {{ user.default_color|default:'#111111' }}">{{ user.default_color|default:"Not Set" }}</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="modal-footer">
-                    <a href="https://discord.com/login" class="btn btn-primary me-auto" role="button" target="_blank">
-                        Open in Discord <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i></a>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
 {% endif %}
 
-<div class="toast-container position-fixed bottom-0 end-0 p-3 mb-5">
-    {% block messages %}{% if messages %}
-        {% for message in messages %}
-            <div class="toast toast-alert align-items-center text-bg-{{ message.tags }} border-0"
-                 role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
-                <div class="d-flex">
-                    <div class="toast-body">{{ message }}</div>
-                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+{% block toast %}
+    <div class="toast-container position-fixed bottom-0 end-0 p-3 mb-5">
+        {% block messages %}{% if messages %}
+            {% for message in messages %}
+                <div class="toast toast-alert align-items-center text-bg-{{ message.tags }} border-0"
+                     role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                    <div class="d-flex">
+                        <div class="toast-body">{{ message }}</div>
+                        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
                 </div>
-            </div>
-        {% endfor %}
-    {% endif %}{% endblock %}
-</div>
+            {% endfor %}
+        {% endif %}{% endblock %}
+    </div>
+{% endblock %}
 
 {% block js %}
     <script type="text/javascript" src="{% static 'dist/jquery/jquery.min.js' %}"></script>

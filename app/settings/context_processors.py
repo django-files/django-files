@@ -1,4 +1,4 @@
-from home.models import SiteSettings
+from settings.models import SiteSettings
 from django.core.cache import cache
 from django.forms.models import model_to_dict
 
