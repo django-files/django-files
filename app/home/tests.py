@@ -202,7 +202,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
             page.locator(f'text={file}').first.click()
             # page.wait_for_load_state()
             page.wait_for_timeout(timeout=500)
-            self.screenshot(page, 'Preview-{file}')
+            self.screenshot(page, f'Preview-{file}')
 
         page.goto(f"{self.live_server_url}/")
         page.locator('text=Settings').first.click()
