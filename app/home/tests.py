@@ -96,7 +96,6 @@ class PlaywrightTest(StaticLiveServerTestCase):
         cls.playwright.stop()
 
     def test_browser_views(self):
-        c = 1
         print(f'--- {self.live_server_url} ---')
         print('--- prep files for browser shots ---')
         print('-'*40)
@@ -206,8 +205,8 @@ class PlaywrightTest(StaticLiveServerTestCase):
             self.screenshot(page, 'Preview-{file}')
 
         page.goto(f"{self.live_server_url}/")
-        page.locator(f'text=Settings').first.click()
-        page.locator(f'text=User Settings').first.click()
+        page.locator('text=Settings').first.click()
+        page.locator('text=User Settings').first.click()
         self.screenshot(page, 'Settings-User')
 
         page.locator('#show_exif_preview').click()
@@ -215,8 +214,8 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-User-save-settings')
 
-        page.locator(f'text=Settings').first.click()
-        page.locator(f'text=Site Settings').first.click()
+        page.locator('text=Settings').first.click()
+        page.locator('text=Site Settings').first.click()
         self.screenshot(page, 'Settings-Site')
 
         page.locator('#pub_load').click()
