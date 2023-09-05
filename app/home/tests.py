@@ -204,8 +204,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
             page.wait_for_timeout(timeout=500)
             self.screenshot(page, f'Preview-{file}')
 
-        page.goto(f"{self.live_server_url}/")
-        page.locator('text=Settings').first.click()
+        page.locator('#navbarDropdown').click()
         page.locator('text=User Settings').first.click()
         self.screenshot(page, 'Settings-User')
 
@@ -214,7 +213,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-User-save-settings')
 
-        page.locator('text=Settings').first.click()
+        page.locator('#navbarDropdown').click()
         page.locator('text=Site Settings').first.click()
         self.screenshot(page, 'Settings-Site')
 
