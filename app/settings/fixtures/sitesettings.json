@@ -1,6 +1,6 @@
 [
   {
-    "model": "home.SiteSettings",
+    "model": "settings.SiteSettings",
     "pk": 1,
     "fields": {
       "site_url": "https://example.com"

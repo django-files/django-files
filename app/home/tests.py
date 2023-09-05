@@ -1,6 +1,5 @@
 import logging
 import os
-# import re
 import shutil
 from django.test import TestCase
 from pathlib import Path
@@ -35,14 +34,14 @@ class TestAuthViews(TestCase):
         'home:stats': 200,
         'home:settings:sharex': 200,
         'home:settings:sharex-url': 200,
-        'home:gen-flameshot': 200,
+        'home:settings:flameshot': 200,
         'api:status': 200,
         'api:stats': 200,
         'api:recent': 200,
     }
 
     def setUp(self):
-        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
+        call_command('loaddata', 'settings/fixtures/sitesettings.json', verbosity=0)
         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
         log.info('self.user.authorization: %s', self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
@@ -70,7 +69,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         super().setUpClass()
         if not os.path.isdir(cls.screenshots):
             os.mkdir(cls.screenshots)
-        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
+        call_command('loaddata', 'settings/fixtures/sitesettings.json', verbosity=0)
         cls.user = CustomUser.objects.create_user(
             username='testuser', password='12345', is_superuser=True, is_staff=True)
         log.info('cls.user.authorization: %s', cls.user.authorization)
@@ -251,7 +250,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
 class FilesTestCase(TestCase):
     """Test Files"""
     def setUp(self):
-        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
+        call_command('loaddata', 'settings/fixtures/sitesettings.json', verbosity=0)
         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
         log.info('self.user.authorization: %s', self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
