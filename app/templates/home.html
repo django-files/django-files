@@ -13,7 +13,6 @@
 
         <h1><i class="fa-solid fa-house-laptop me-2"></i> {{ site_settings.site_title }}</h1>
 
-{#        {% cache 86400 stats_home request.user %}#}
             {% if not stats %}
                 <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
             {% else %}
@@ -33,9 +32,7 @@
                             <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>{% endif %}</p>
                 {% endwith %}
             {% endif %}
-{#        {% endcache %}#}
 
-{#        {% cache 86400 files_home request.user %}#}
             <h2 id="files">Files</h2>
             {% if not files %}
                 <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
@@ -47,9 +44,7 @@
                         <a href="{% url 'home:files' %}">View All Files</a></span></em></p>
                 {% endif %}
             {% endif %}
-{#        {% endcache %}#}
 
-{#        {% cache 86400 shorts_home request.user %}#}
             <h2 id="shorts">Shorts</h2>
             <form id="quick-short-form" action="{% url 'home:shorten' %}">
                 <div class="input-group my-2">
@@ -69,7 +64,6 @@
                         <a href="{% url 'home:shorts' %}">View All Shorts</a></span></em></p>
                 {% endif %}
             {% endif %}
-{#        {% endcache %}#}
 
     </div>
 {% endblock %}

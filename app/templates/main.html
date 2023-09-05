@@ -65,21 +65,6 @@
                                             href="{% url 'home:shorts' %}">Shorts</a></li>
                     <li class="nav-item"><a class="nav-link {% block stats_active %}{% endblock %}"
                         href="{% url 'home:stats' %}">Stats</a></li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Settings</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item {% block user_active %}{% endblock %}" href="{% url 'settings:user' %}">
-                                <i class="fas fa-user-circle me-2"></i> User Settings</a></li>
-                            {% if request.user.is_superuser %}
-                                <li><a class="dropdown-item {% block site_active %}{% endblock %}" href="{% url 'settings:site' %}">
-                                    <i class="fa-solid fa-gears me-2"></i> Site Settings</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-warning" href="{% url 'admin:settings_sitesettings_change' 1 %}">
-                                    <i class="fa-solid fa-plane-departure me-2"></i> All Settings</a></li>
-                            {% endif %}
-                        </ul>
-                    </li>
                 </ul>
                 {% endif %}
                 <ul class="navbar-nav ms-auto">

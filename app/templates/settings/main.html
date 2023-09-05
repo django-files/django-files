@@ -1,0 +1,26 @@
+{% extends "main.html" %}
+
+{% block body %}
+    <div class="container-fluid py-3 px-4">
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <h1><i class="{% block fa_class %}{% endblock %} me-2"></i> {% block title %}{% endblock %}</h1>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <nav class="text-lg-end float-md-end mt-2" aria-label="breadcrumb" style="--bs-breadcrumb-divider: '|';">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item "><a href="{% url 'settings:user' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                            <i class="fas fa-user-circle me-2"></i> User</a></li>
+                        {% if request.user.is_superuser %}
+                            <li class="breadcrumb-item"><a href="{% url 'settings:site' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                                <i class="fa-solid fa-gears me-2"></i> Site</a></li>
+                        {% endif %}
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        {% block main %}{% endblock %}
+    </div>
+{% endblock %}

@@ -4,7 +4,7 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-    <div class="container mt-2">
+    <div class="container-fluid py-3 px-4">
 
         {% block main %}{% endblock %}
 
@@ -12,7 +12,6 @@
             <a href="{% url 'home:index' %}">Go Home</a>.</p>
 
     </div>
-
 {% endblock %}
 
 {% block tail %}{% endblock %}
