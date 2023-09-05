@@ -70,13 +70,13 @@
                             Settings</a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item {% block user_active %}{% endblock %}" href="{% url 'settings:user' %}">
-                                <i class="fas fa-user-circle me-2"></i>User Settings</a></li>
+                                <i class="fas fa-user-circle me-2"></i> User Settings</a></li>
                             {% if request.user.is_superuser %}
                                 <li><a class="dropdown-item {% block site_active %}{% endblock %}" href="{% url 'settings:site' %}">
-                                    <i class="fa-solid fa-gears me-2"></i>Site Settings</a></li>
+                                    <i class="fa-solid fa-gears me-2"></i> Site Settings</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-warning" href="{% url 'admin:settings_sitesettings_change' 1 %}">
-                                    <i class="fa-solid fa-plane-departure"></i> All Settings</a></li>
+                                    <i class="fa-solid fa-plane-departure me-2"></i> All Settings</a></li>
                             {% endif %}
                         </ul>
                     </li>
@@ -106,11 +106,11 @@
                                     <i class="fa-solid fa-key me-2"></i> Copy Token</a></li>
                                 {% if request.user.is_superuser %}
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-success" href="{% url 'admin:index' %}">
-                                        <i class="fa-solid fa-rocket me-2"></i> Admin</a></li>
+                                    <li><a class="dropdown-item text-warning" href="{% url 'admin:settings_sitesettings_change' 1 %}">
+                                        <i class="fa-solid fa-plane-departure me-2"></i> Admin</a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-warning" role="button" target="_blank" id="flush-cache">
+                                <li><a class="dropdown-item text-info" role="button" target="_blank" id="flush-cache">
                                     <i class="fa-solid fa-toilet me-2"></i> Flush Cache</a></li>
                                 <div class="dropdown-divider"></div>
                                 <li><a class="dropdown-item log-out text-danger" role="button">
