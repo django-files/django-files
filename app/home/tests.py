@@ -63,6 +63,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
     browser = None
     playwright = None
     user = None
+    count = 0
 
     @classmethod
     def setUpClass(cls):
@@ -83,6 +84,10 @@ class PlaywrightTest(StaticLiveServerTestCase):
         if os.path.isdir(settings.MEDIA_ROOT):
             log.info('Removing: %s', settings.MEDIA_ROOT)
             shutil.rmtree(settings.MEDIA_ROOT)
+
+    def screenshot(self, page, name):
+        self.count += 1
+        page.screenshot(path=f'{self.screenshots}/{self.count:0>{2}}_{name}.png')
 
     @classmethod
     def tearDownClass(cls):
@@ -130,73 +135,51 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=1000)
         page.fill('[name=username]', 'testuser')
         page.fill('[name=password]', '12345')
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Login.png')
-        c += 1
+        self.screenshot(page, 'Login')
+
         page.locator('#login-button').click()
-
-        page.wait_for_selector('text=Home', timeout=3000)
+        page.locator('text=Home')
+        # page.wait_for_selector('text=Home', timeout=3000)
         page.wait_for_timeout(timeout=500)
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Home.png')
-        c += 1
-
-        # page.click('text=View Stats')
-        # page.get_by_role("link", name=re.compile(".+View Stats", re.IGNORECASE)).click()
-        page.goto(f"{self.live_server_url}/stats/")
-        page.wait_for_selector('text=Stats', timeout=3000)
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Stats.png')
-        c += 1
+        self.screenshot(page, 'Home')
 
         for view in self.views:
             print('---------- view: %s' % view)
             page.locator(f'text={view}').first.click()
-            page.wait_for_selector(f'text={view}', timeout=3000)
+            # page.wait_for_selector(f'text={view}', timeout=3000)
             if view == 'Upload':
                 page.wait_for_timeout(timeout=500)
-            page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}.png')
-            c += 1
+                self.screenshot(page, view)
+
             if view == 'Files':
                 page.locator('.delete-file-btn').first.click()
                 delete_btn = page.locator('#confirm-delete-hook-btn')
-                page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-click.png')
-                c += 1
+                self.screenshot(page, view)
+
                 delete_btn.click()
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-deleted.png')
-                c += 1
-            # if view == 'Settings':
-            #     page.locator('#show_exif_preview').click()
-            #     page.locator('#save-settings').click()
-            #     page.wait_for_timeout(timeout=500)
-            #     page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-save-settings.png')
-            #     c += 1
-            #     # Note: this does not flush the cache since it is an async task, it just tests the UI flush button
-            #     page.locator('#navbarDropdown').click()
-            #     page.locator('#flush-cache').click()
-            #     page.wait_for_timeout(timeout=500)
-            #     page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-flush-cache.png')
-            #     c += 1
+                self.screenshot(page, view)
+
             if view == 'Shorts':
+                self.screenshot(page, f'{view}-DEBUG-1')
                 page.locator('#url').fill('https://github.com/django-files/django-files/pkgs/container/django-files')
-                # page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-fill.png')
-                # c += 1
+                self.screenshot(page, f'{view}-DEBUG-2')
                 page.get_by_role("button", name="Create").click()
                 print('--- Testing: flush_template_cache')
                 page.wait_for_timeout(timeout=500)
                 flush_template_cache()
                 # page.on("dialog", lambda dialog: dialog.accept())
                 page.reload()
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-create.png')
-                c += 1
+                self.screenshot(page, f'{view}-create')
+
                 page.locator('.delete-short-btn').first.click()
                 delete_btn = page.locator('#short-delete-confirm')
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-click.png')
-                c += 1
+                self.screenshot(page, f'{view}-delete-click')
+
                 delete_btn.click()
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-deleted.png')
-                c += 1
+                self.screenshot(page, f'{view}-delete-deleted')
 
         control = 'gps2.jpg'
         page.goto(f"{self.live_server_url}/files/")
@@ -209,42 +192,66 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.locator('text=1.5')
         page.locator('text=400')
         page.locator('text=1/120 s')
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Preview-{control}.png')
-        c += 1
+        self.screenshot(page, f'Preview-{control}')
+
         page.locator('text=View Raw').click()
         page.wait_for_load_state()
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Raw-{control}.png')
-        c += 1
-        # page.go_back()
+        self.screenshot(page, 'Raw-{control}')
+
         for file in self.previews:
             page.goto(f"{self.live_server_url}/files/")
             page.locator(f'text={file}').first.click()
             # page.wait_for_load_state()
             page.wait_for_timeout(timeout=500)
-            page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Preview-{file}.png')
-            c += 1
+            self.screenshot(page, 'Preview-{file}')
+
+        page.goto(f"{self.live_server_url}/")
+        page.locator(f'text=Settings').first.click()
+        page.locator(f'text=User Settings').first.click()
+        self.screenshot(page, 'Settings-User')
+
+        page.locator('#show_exif_preview').click()
+        page.locator('#save-settings').click()
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Settings-User-save-settings')
+
+        page.locator(f'text=Settings').first.click()
+        page.locator(f'text=Site Settings').first.click()
+        self.screenshot(page, 'Settings-Site')
+
+        page.locator('#pub_load').click()
+        page.locator('#save-settings').click()
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Settings-Site-save-settings')
+
+        # Note: this does not flush the cache since it is an async task, it just tests the UI flush button
+        page.locator('#navbarDropdown').click()
+        page.locator('#flush-cache').click()
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Settings-Site-flush-cache')
 
         page.goto(f"{self.live_server_url}/")
         page.locator('#navbarDropdown').click()
         page.locator('.log-out').click()
         page.wait_for_timeout(timeout=500)
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_logout.png')
+        self.screenshot(page, 'Logout')
 
         private_file.private = True
         private_file.save()
         page.goto(f"{self.live_server_url}{private_file.preview_uri()}")
         page.locator('text=Permission Denied')
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_private_denied.png')
+        self.screenshot(page, 'File-prive-denied')
 
         private_file.password = 'test123'
         private_file.save()
         page.goto(f"{self.live_server_url}{private_file.preview_uri()}")
         page.locator('text=Unlock')
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_pw_file.png')
+        self.screenshot(page, 'File-password')
+
         page.fill('[name=password]', 'test123')
         page.locator('#unlock-button').click()
         page.locator(f'text={private_file.size}')
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_pw_unlocked_file.png')
+        self.screenshot(page, 'File-unlock')
 
 
 class FilesTestCase(TestCase):

@@ -18,7 +18,7 @@
         <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings:site' %}">
 
             {% if user.is_superuser %}
-                <div class="border border-warning-subtle rounded-2 p-2 my-2">
+                <div class="border border-warning-subtle rounded-2 p-3 my-2">
                     <div class="row">
                         <div class="col-md-6">
                             <label for="site_url" class="form-label">Site URL</label>
@@ -79,7 +79,7 @@
                         </div>
                         </div>
                     {% endif %}
-                    <div class="row pt-3">
+                    <div class="row mt-3">
                         <div class="col-auto">
                             <label for="site_color" class="form-label">Theme</label>
                             <input type="color" class="form-control form-control-color" id="site_color" name="site_color"
@@ -87,15 +87,15 @@
                             <div id="site_color-invalid" class="invalid-feedback"></div>
                         </div>
                     </div>
+
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-lg btn-outline-warning" id="save-settings">
+                                <i class="fa-solid fa-floppy-disk me-2"></i> Save Settings</button>
+                        </div>
+                    </div>
                 </div>
             {% endif %}
-
-            <div class="row pt-3">
-                <div class="col-12">
-                    <button type="submit" class="btn btn-lg btn-outline-success" id="save-settings">
-                        <i class="fa-solid fa-floppy-disk me-2"></i> Save Settings</button>
-                </div>
-            </div>
         </form>
 {% endblock %}
 
