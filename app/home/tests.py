@@ -74,12 +74,12 @@ class PlaywrightTest(StaticLiveServerTestCase):
         cls.user = CustomUser.objects.create_user(
             username='testuser', password='12345', is_superuser=True, is_staff=True)
         log.info('cls.user.authorization: %s', cls.user.authorization)
-        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        os.environ['DJANGO_ALLOW_ASYNC_UNSAFE'] = 'true'
         cls.playwright = sync_playwright().start()
         cls.browser = cls.playwright.chromium.launch()
         cls.context = cls.browser.new_context(color_scheme='dark')
-        # storage = cls.context.storage_state(path="state.json")
-        # cls.context = cls.context.new_context(storage_state="state.json")
+        # storage = cls.context.storage_state(path='state.json')
+        # cls.context = cls.context.new_context(storage_state='state.json')
         log.info('settings.MEDIA_ROOT: %s', settings.MEDIA_ROOT)
         if os.path.isdir(settings.MEDIA_ROOT):
             log.info('Removing: %s', settings.MEDIA_ROOT)
@@ -129,7 +129,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         process_stats()
         print('--- Running: test_browser_views ---')
         page = self.context.new_page()
-        page.goto(f"{self.live_server_url}/")
+        page.goto(f'{self.live_server_url}/')
         page.locator('text=Django Files')
         page.wait_for_timeout(timeout=1000)
         page.fill('[name=username]', 'testuser')
@@ -145,29 +145,29 @@ class PlaywrightTest(StaticLiveServerTestCase):
         for view in self.views:
             print('---------- view: %s' % view)
             page.locator(f'text={view}').first.click()
-            # page.wait_for_selector(f'text={view}', timeout=3000)
             if view == 'Upload':
                 page.wait_for_timeout(timeout=500)
+                self.screenshot(page, view)
+            else:
                 self.screenshot(page, view)
 
             if view == 'Files':
                 page.locator('.delete-file-btn').first.click()
-                delete_btn = page.locator('#confirm-delete-hook-btn')
-                self.screenshot(page, view)
+                delete_btn = page.locator('#confirm-delete-file-btn')
+                page.wait_for_timeout(timeout=500)
+                self.screenshot(page, f'{view}-delete-click')
 
                 delete_btn.click()
                 page.wait_for_timeout(timeout=500)
-                self.screenshot(page, view)
+                self.screenshot(page, f'{view}-delete-deleted')
 
             if view == 'Shorts':
-                self.screenshot(page, f'{view}-DEBUG-1')
                 page.locator('#url').fill('https://github.com/django-files/django-files/pkgs/container/django-files')
-                self.screenshot(page, f'{view}-DEBUG-2')
-                page.get_by_role("button", name="Create").click()
+                page.get_by_role('button', name='Create').click()
                 print('--- Testing: flush_template_cache')
                 page.wait_for_timeout(timeout=500)
                 flush_template_cache()
-                # page.on("dialog", lambda dialog: dialog.accept())
+                # page.on('dialog', lambda dialog: dialog.accept())
                 page.reload()
                 self.screenshot(page, f'{view}-create')
 
@@ -181,7 +181,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 self.screenshot(page, f'{view}-delete-deleted')
 
         control = 'gps2.jpg'
-        page.goto(f"{self.live_server_url}/files/")
+        page.goto(f'{self.live_server_url}/files/')
         page.locator(f'text={control}').first.click()
         page.locator('text=12/17/2022 12:14:26')
         page.locator('text=samsung SM-G973U')
@@ -195,10 +195,10 @@ class PlaywrightTest(StaticLiveServerTestCase):
 
         page.locator('text=View Raw').click()
         page.wait_for_load_state()
-        self.screenshot(page, 'Raw-{control}')
+        self.screenshot(page, f'Raw-{control}')
 
         for file in self.previews:
-            page.goto(f"{self.live_server_url}/files/")
+            page.goto(f'{self.live_server_url}/files/')
             page.locator(f'text={file}').first.click()
             # page.wait_for_load_state()
             page.wait_for_timeout(timeout=500)
@@ -228,21 +228,27 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-Site-flush-cache')
 
-        page.goto(f"{self.live_server_url}/")
+        page.goto(f'{self.live_server_url}/404')
+        self.screenshot(page, 'Error-404-authed')
+
+        page.goto(f'{self.live_server_url}/')
         page.locator('#navbarDropdown').click()
         page.locator('.log-out').click()
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Logout')
 
+        page.goto(f'{self.live_server_url}/404')
+        self.screenshot(page, 'Error-404-unauthed')
+
         private_file.private = True
         private_file.save()
-        page.goto(f"{self.live_server_url}{private_file.preview_uri()}")
+        page.goto(f'{self.live_server_url}{private_file.preview_uri()}')
         page.locator('text=Permission Denied')
-        self.screenshot(page, 'File-prive-denied')
+        self.screenshot(page, 'Error-403-private-file')
 
         private_file.password = 'test123'
         private_file.save()
-        page.goto(f"{self.live_server_url}{private_file.preview_uri()}")
+        page.goto(f'{self.live_server_url}{private_file.preview_uri()}')
         page.locator('text=Unlock')
         self.screenshot(page, 'File-password')
 
