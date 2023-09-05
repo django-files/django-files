@@ -45,27 +45,8 @@ def site_view(request):
         site_settings.duo_auth = form.cleaned_data['duo_auth']
         site_settings.save()
 
-    request.user.default_expire = form.cleaned_data['default_expire']
-
-    if request.user.default_color != form.cleaned_data['default_color']:
-        request.user.default_color = form.cleaned_data['default_color']
-
-    if request.user.nav_color_1 != form.cleaned_data['nav_color_1']:
-        request.user.nav_color_1 = form.cleaned_data['nav_color_1']
-        data['reload'] = True
-
-    if request.user.nav_color_2 != form.cleaned_data['nav_color_2']:
-        request.user.nav_color_2 = form.cleaned_data['nav_color_2']
-        data['reload'] = True
-
-    request.user.remove_exif_geo = form.cleaned_data['remove_exif_geo']
-    request.user.remove_exif = form.cleaned_data['remove_exif']
-    request.user.show_exif_preview = form.cleaned_data['show_exif_preview']
-    log.debug('form.cleaned_data.show_exif_preview: %s', form.cleaned_data['show_exif_preview'])
-    log.debug('request.user.show_exif_preview: %s', request.user.show_exif_preview)
-
-    # TODO: Determine if this is superuser setting or user setting
-    request.user.s3_bucket_name = form.cleaned_data.get('s3_bucket_name')
+    # # TODO: Determine if this is superuser setting or user setting
+    # request.user.s3_bucket_name = form.cleaned_data.get('s3_bucket_name')
 
     request.user.save()
     if data['reload']:

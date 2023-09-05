@@ -3,7 +3,12 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Define Delete Modal and Delete Button class handler
-    const deleteHookModal = new bootstrap.Modal('#delete-hook-modal', {})
+    let deleteHookModal
+    try {
+        deleteHookModal = new bootstrap.Modal('#delete-hook-modal', {})
+    } catch (error) {
+        console.log('#delete-hook-modal Not Found')
+    }
     let hookID
     $('.delete-webhook-btn').click(function () {
         hookID = $(this).data('hook-id')
