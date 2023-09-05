@@ -1,4 +1,3 @@
-from django.conf.urls import include
 from django.urls import path, re_path
 
 from api.views import shorten_view, upload_view

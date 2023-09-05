@@ -12,49 +12,49 @@
             <div class="col-12 col-lg-8 text-lg-end">
                 <ul class="list-unstyled list-inline d-none d-md-block ps-0">
                     <li class="list-inline-item"><a href="{% url 'home:index' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Home</a></li>
+                        <i class="fa-solid fa-house-laptop me-1"></i> Home</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:gallery' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Gallery</a></li>
+                        <i class="fa-regular fa-images me-1"></i> Gallery</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:uppy' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Upload</a></li>
+                        <i class="fa-solid fa-upload me-1"></i> Upload</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:files' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Files</a></li>
+                        <i class="fa-regular fa-folder-open me-1"></i> Files</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:shorts' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Shorts</a></li>
+                        <i class="fa-solid fa-link me-1"></i> Shorts</a></li>
                     <li class="list-inline-item">|</li>
                     <li class="list-inline-item"><a href="{% url 'home:stats' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Stats</a></li>
+                        <i class="fa-solid fa-chart-line me-1"></i> Stats</a></li>
 {#                    <li class="list-inline-item">|</li>#}
 {#                    <li class="list-inline-item"><a href="{% url 'settings:site' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">#}
 {#                        Settings</a></li>#}
                 </ul>
             </div>
 
-            <div class="col-12">
-                <ul class="list-unstyled d-xs-block d-md-none d-lg-none d-xl-none">
-                    <li class="list-group-item"><a href="{% url 'home:index' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Home</a></li>
-                    <li class="list-group-item"><a href="{% url 'home:gallery' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Gallery</a></li>
-                    <li class="list-group-item"><a href="{% url 'home:uppy' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Upload</a></li>
-                    <li class="list-group-item"><a href="{% url 'home:files' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Files</a></li>
-                    <li class="list-group-item"><a href="{% url 'home:shorts' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Shorts</a></li>
-                    <li class="list-group-item"><a href="{% url 'home:stats' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                        Stats</a></li>
-{#                    <li class="list-group-item"><a href="{% url 'settings:site' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">#}
-{#                        Settings</a></li>#}
+            <div class="col-12 d-xs-block d-md-none d-lg-none d-xl-none">
+                <ul class="list-unstyled list-inline">
+                    <li class="list-inline-item"><a href="{% url 'home:index' %}" title="Home" class="link-body-emphasis ">
+                        <i class="fa-solid fa-house-laptop me-2"></i></a></li>
+                    <li class="list-inline-item"><a href="{% url 'home:gallery' %}" title="Gallery" class="link-body-emphasis ">
+                        <i class="fa-regular fa-images me-2"></i></a></li>
+                    <li class="list-inline-item"><a href="{% url 'home:uppy' %}" title="Upload" class="link-body-emphasis ">
+                        <i class="fa-solid fa-upload me-2"></i></a></li>
+                    <li class="list-inline-item"><a href="{% url 'home:files' %}" title="Files" class="link-body-emphasis ">
+                        <i class="fa-regular fa-folder-open me-2"></i></a></li>
+                    <li class="list-inline-item"><a href="{% url 'home:shorts' %}" title="Shorts" class="link-body-emphasis ">
+                        <i class="fa-solid fa-link me-2"></i></a></li>
+                    <li class="list-inline-item"><a href="{% url 'home:stats' %}" title="Stats" class="link-body-emphasis ">
+                        <i class="fa-solid fa-chart-line me-2"></i></a></li>
+                    <li class="list-inline-item"><a href="{% url 'settings:user' %}" title="User Settings" class="link-body-emphasis ">
+                        <i class="fas fa-user-circle me-2"></i></a></li>
+                    <li class="list-inline-item"><a href="{% url 'settings:site' %}" title="Site Seettings" class="link-body-emphasis ">
+                        <i class="fa-solid fa-gears me-2"></i></a></li>
                 </ul>
             </div>
 
         </div>
     </div>
 </footer>
-
-

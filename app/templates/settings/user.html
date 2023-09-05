@@ -11,7 +11,7 @@
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
-        {% include 'settings/menu.html' with page_title="User Settings" %}
+        {% include 'settings/menu.html' with page_title='User Settings' fa_class='fas fa-user-circle' %}
 
         <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'settings:site' %}">
             <div class="border border-success-subtle rounded-2 p-3 my-2">
