@@ -5,6 +5,7 @@ from decouple import config
 from django.shortcuts import HttpResponseRedirect
 from typing import Optional
 
+from home.models import SiteSettings
 from oauth.models import Github
 from oauth.providers.helpers import is_super_id
 
@@ -56,12 +57,12 @@ class GithubOauth(object):
     @classmethod
     def redirect_login(cls, request) -> HttpResponseRedirect:
         request.session['oauth_provider'] = provider
-        log.debug('request.session.oauth_provider: %s', request.session['oauth_provider'])
+        site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {
-            'redirect_uri': config('OAUTH_REDIRECT_URL'),
-            'client_id': config('GITHUB_CLIENT_ID'),
+            'redirect_uri': site_settings.oauth_redirect_url or config('OAUTH_REDIRECT_URL'),
+            'client_id': site_settings.github_client_id or config('GITHUB_CLIENT_ID'),
             'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
             'scope': config('OAUTH_SCOPE', ''),
             'prompt': config('OAUTH_PROMPT', 'none'),
@@ -73,15 +74,16 @@ class GithubOauth(object):
     @classmethod
     def get_token(cls, code: str) -> dict:
         log.debug('get_token')
-        url = 'https://github.com/login/oauth/access_token'
+        site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
         data = {
-            'redirect_uri': config('OAUTH_REDIRECT_URL'),
-            'client_id': config('GITHUB_CLIENT_ID'),
-            'client_secret': config('GITHUB_CLIENT_SECRET'),
+            'redirect_uri': site_settings.oauth_redirect_url or config('OAUTH_REDIRECT_URL'),
+            'client_id': site_settings.github_client_id or config('GITHUB_CLIENT_ID'),
+            'client_secret': site_settings.github_client_secret or config('GITHUB_CLIENT_SECRET'),
             'grant_type': config('OAUTH_GRANT_TYPE', 'authorization_code'),
             'code': code,
         }
         headers = {'Accept': 'application/vnd.github+json'}
+        url = 'https://github.com/login/oauth/access_token'
         r = httpx.post(url, data=data, headers=headers, timeout=10)
         if not r.is_success:
             log.debug('status_code: %s', r.status_code)
