@@ -22,6 +22,7 @@ def site_view(request):
     """
     log.debug('site_view: %s', request.method)
     site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+    log.debug('site_settings.github_client_id: %s', site_settings.github_client_id)
     if request.method in ['GET', 'HEAD']:
         webhooks = Webhooks.objects.get_request(request)
         context = {'webhooks': webhooks, 'site_settings': site_settings}
