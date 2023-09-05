@@ -75,8 +75,8 @@
                                 <li><a class="dropdown-item {% block site_active %}{% endblock %}" href="{% url 'settings:site' %}">
                                     <i class="fa-solid fa-gears me-2"></i>Site Settings</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-success" href="{% url 'admin:index' %}">
-                                    <i class="fa-solid fa-rocket me-2"></i> Admin</a></li>
+                                <li><a class="dropdown-item text-warning" href="{% url 'admin:settings_sitesettings_change' 1 %}">
+                                    <i class="fa-solid fa-plane-departure"></i> All Settings</a></li>
                             {% endif %}
                         </ul>
                     </li>

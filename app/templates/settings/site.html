@@ -11,9 +11,7 @@
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
-        <h1><i class="fa-solid fa-gears me-2"></i> Site Settings</h1>
-
-        {% include 'settings/menu.html' %}
+        {% include 'settings/menu.html' with page_title="Site Settings" %}
 
         <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'settings:site' %}">
 
@@ -97,6 +95,7 @@
                 </div>
             {% endif %}
         </form>
+    </div>
 {% endblock %}
 
 {% block tail %}

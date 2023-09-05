@@ -11,13 +11,11 @@
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
-        <h1><i class="fas fa-user-circle me-2"></i> User Settings</h1>
-
-        {% include 'settings/menu.html' %}
+        {% include 'settings/menu.html' with page_title="User Settings" %}
 
         <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'settings:site' %}">
-            
             <div class="border border-success-subtle rounded-2 p-3 my-2">
+
                 <div class="row">
                     <div class="col-md-6">
                         <label for="default_expire" class="form-label">Default Expire</label>
@@ -73,13 +71,14 @@
                         <div id="nav_color_2-invalid" class="invalid-feedback"></div>
                     </div>
                 </div>
-            </div>
 
-            <div class="row mt-3">
-                <div class="col-12">
-                    <button type="submit" class="btn btn-lg btn-outline-success" id="save-settings">
-                        <i class="fa-solid fa-floppy-disk me-2"></i> Save Settings</button>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-lg btn-outline-success" id="save-settings">
+                            <i class="fa-solid fa-floppy-disk me-2"></i> Save Settings</button>
+                    </div>
                 </div>
+
             </div>
         </form>
 
