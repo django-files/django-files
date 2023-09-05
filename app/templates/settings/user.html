@@ -15,7 +15,7 @@
 
         {% include 'settings/menu.html' %}
 
-        <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings:site' %}">
+        <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'settings:site' %}">
             
             <div class="border border-success-subtle rounded-2 p-3 my-2">
                 <div class="row">
@@ -158,17 +158,17 @@
 
         <div class="row g-3">
             <div class="col-sm-6">
-                <a href="{% url 'home:settings:sharex' %}" class="btn btn-lg btn-outline-primary d-block">
+                <a href="{% url 'settings:sharex' %}" class="btn btn-lg btn-outline-primary d-block">
                     <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="24">
                     ShareX Files</a>
             </div>
             <div class="col-sm-6">
-                <a href="{% url 'home:settings:sharex-url' %}" class="btn btn-lg btn-outline-primary d-block">
+                <a href="{% url 'settings:sharex-url' %}" class="btn btn-lg btn-outline-primary d-block">
                     <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="24">
                     ShareX URL Shorts</a>
             </div>
             <div class="col-sm-12">
-                <a href="{% url 'home:settings:flameshot' %}" class="btn btn-lg btn-outline-info d-block">
+                <a href="{% url 'settings:flameshot' %}" class="btn btn-lg btn-outline-info d-block">
                     <img src="{% static 'images/assets/flameshot.svg' %}" class="me-2" alt="Flameshot" width="24">
                     Flameshot Script</a>
             </div>

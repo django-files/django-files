@@ -18,8 +18,8 @@ class TestViews(TestCase):
             'home:stats': 302,
             'home:upload': 405,
             'home:shorten': 405,
-            'home:settings:user': 302,
-            'home:settings:site': 302,
+            'settings:user': 302,
+            'settings:site': 302,
             'api:upload': 405,
             'api:shorten': 405,
         }

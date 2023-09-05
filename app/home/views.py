@@ -143,7 +143,7 @@ def pub_uppy_view(request):
         if not site_settings.pub_load:
             if request.user.is_authenticated:
                 messages.warning(request, 'You Must Enable Public Uploads.')
-                return HttpResponseRedirect(reverse('home:settings:site'))
+                return HttpResponseRedirect(reverse('settings:site'))
             return HttpResponseRedirect(reverse('oauth:login'))
 
         if request.method == 'POST':

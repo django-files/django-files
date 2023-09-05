@@ -15,7 +15,7 @@
 
         {% include 'settings/menu.html' %}
 
-        <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'home:settings:site' %}">
+        <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'settings:site' %}">
 
             {% if user.is_superuser %}
                 <div class="border border-warning-subtle rounded-2 p-3 my-2">
