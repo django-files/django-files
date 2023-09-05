@@ -196,11 +196,18 @@ class SiteSettings(models.Model):
                                      help_text='Require Two-Factor Authentication')
     duo_auth = models.BooleanField(default=False, verbose_name='Duo AUth',
                                    help_text='Require Duo Authentication')
-    s3_region = models.CharField(max_length=16, blank=True, null=True)
-    s3_secret_key = models.CharField(max_length=128, blank=True, null=True)
-    s3_secret_key_id = models.CharField(max_length=128, blank=True, null=True)
+    oauth_redirect_url = models.URLField(max_length=128, blank=True, null=True)
+    discord_client_id = models.CharField(max_length=32, blank=True, null=True)
+    discord_client_secret = models.CharField(max_length=128, blank=True, null=True)
+    github_client_id = models.CharField(max_length=32, blank=True, null=True)
+    github_client_secret = models.CharField(max_length=128, blank=True, null=True)
+    aws_region_name = models.CharField(max_length=16, blank=True, null=True)
+    aws_secret_access_key = models.CharField(max_length=128, blank=True, null=True)  # s3_secret_key
+    aws_access_key_id = models.CharField(max_length=128, blank=True, null=True)  # s3_secret_key_id
+    aws_s3_cdn_url = models.URLField(max_length=128, blank=True, null=True)
     # TODO: we should gate actually saving this fields on verifying we can list bucket with the credentials
-    s3_bucket_name = models.CharField(max_length=128, blank=True, null=True)
+    aws_storage_bucket_name = models.CharField(max_length=128, blank=True, null=True)
+    aws_querystring_expire = models.IntegerField(default=3600, blank=True, null=True)
     s3_cdn = models.CharField(
         max_length=128, blank=True, null=True,
         help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.')

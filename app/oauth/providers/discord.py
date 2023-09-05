@@ -3,6 +3,7 @@ import logging
 import urllib.parse
 from datetime import datetime, timedelta
 from decouple import config
+from django.conf import settings
 from django.shortcuts import HttpResponseRedirect
 from typing import Optional
 
@@ -75,9 +76,9 @@ class DiscordOauth(object):
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {
-            'redirect_uri': config('OAUTH_REDIRECT_URL'),
-            'client_id': config('DISCORD_CLIENT_ID'),
-            'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
+            'redirect_uri': settings.OAUTH_REDIRECT_URL,
+            'client_id': settings.DISCORD_CLIENT_ID,
+            'response_type': settings.OAUTH_RESPONSE_TYPE,
             'scope': config('OAUTH_SCOPE', 'identify'),
             'prompt': config('OAUTH_PROMPT', 'none'),
         }
@@ -90,9 +91,9 @@ class DiscordOauth(object):
         request.session['oauth_provider'] = provider
         request.session['webhook'] = 'discord'
         params = {
-            'redirect_uri': config('OAUTH_REDIRECT_URL'),
-            'client_id': config('DISCORD_CLIENT_ID'),
-            'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
+            'redirect_uri': settings.OAUTH_REDIRECT_URL,
+            'client_id': settings.DISCORD_CLIENT_ID,
+            'response_type': settings.OAUTH_RESPONSE_TYPE,
             'scope': config('OAUTH_SCOPE', 'identify') + ' webhook.incoming',
         }
         url_params = urllib.parse.urlencode(params)
@@ -104,9 +105,9 @@ class DiscordOauth(object):
         log.debug('get_token')
         url = f'{cls.api_url}/oauth2/token'
         data = {
-            'redirect_uri': config('OAUTH_REDIRECT_URL'),
-            'client_id': config('DISCORD_CLIENT_ID'),
-            'client_secret': config('DISCORD_CLIENT_SECRET'),
+            'redirect_uri': settings.OAUTH_REDIRECT_URL,
+            'client_id': settings.DISCORD_CLIENT_ID,
+            'client_secret': settings.DISCORD_CLIENT_SECRET,
             'grant_type': config('OAUTH_GRANT_TYPE', 'authorization_code'),
             'code': code,
         }

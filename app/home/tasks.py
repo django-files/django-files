@@ -6,6 +6,7 @@ from celery import shared_task
 from django_redis import get_redis_connection
 from django.conf import settings
 from django.core.cache import cache
+from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
 from pytimeparse2 import parse
@@ -15,6 +16,17 @@ from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
 from oauth.models import CustomUser
 
 log = logging.getLogger('app')
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 5})
+def export_settings():
+    try:
+        site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+        for key, value in model_to_dict(site_settings).items():
+            setattr(settings, key.upper(), value)
+            log.debug(f'{key.upper()}: {value}')
+    except Exception as error:
+        log.debug(error)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 20, 'countdown': 3})

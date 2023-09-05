@@ -4,7 +4,7 @@ from django.dispatch import receiver
 from django.forms.models import model_to_dict
 
 from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache
-from home.tasks import send_success_message
+from home.tasks import export_settings, send_success_message
 from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
 
 
@@ -35,6 +35,7 @@ def clear_stats_cache_signal(sender, instance, **kwargs):
 @receiver(post_delete, sender=SiteSettings)
 def clear_settings_cache_signal(sender, instance, **kwargs):
     cache.set('site_settings', model_to_dict(instance))
+    export_settings()
 
 
 @receiver(post_save, sender=Webhooks)

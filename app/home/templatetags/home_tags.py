@@ -3,9 +3,8 @@ import datetime
 from decouple import config
 from django import template
 from django.conf import settings
-# from django.templatetags.static import static
 
-logger = logging.getLogger('app')
+log = logging.getLogger('app')
 register = template.Library()
 
 
@@ -19,16 +18,6 @@ def if_true(value, output):
 def get_config(value):
     # get django setting or config value or empty
     return getattr(settings, value, None) or config(value, '')
-
-
-# @register.filter(name='avatar_url')
-# def avatar_url(user):
-#     # return discord avatar url from user model
-#     if user.avatar_hash:
-#         return f'https://cdn.discordapp.com/avatars/' \
-#                f'{ user.username }/{ user.avatar_hash }.png'
-#     else:
-#         return static('images/assets/default.png')
 
 
 @register.filter(name='single_type')

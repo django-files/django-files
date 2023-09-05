@@ -2,6 +2,7 @@ import httpx
 import logging
 import urllib.parse
 from decouple import config
+from django.conf import settings
 from django.shortcuts import HttpResponseRedirect
 from typing import Optional
 
@@ -60,11 +61,11 @@ class GithubOauth(object):
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {
-            'redirect_uri': config('OAUTH_REDIRECT_URL'),
-            'client_id': config('GITHUB_CLIENT_ID'),
-            'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
-            'scope': config('OAUTH_SCOPE', ''),
+            'redirect_uri': settings.OAUTH_REDIRECT_URL,
+            'client_id': settings.GITHUB_CLIENT_ID,
+            'response_type': settings.OAUTH_RESPONSE_TYPE,
             'prompt': config('OAUTH_PROMPT', 'none'),
+            'scope': config('GITHUB_OAUTH_SCOPE', ''),
         }
         url_params = urllib.parse.urlencode(params)
         url = f'https://github.com/login/oauth/authorize?{url_params}'
@@ -75,10 +76,10 @@ class GithubOauth(object):
         log.debug('get_token')
         url = 'https://github.com/login/oauth/access_token'
         data = {
-            'redirect_uri': config('OAUTH_REDIRECT_URL'),
-            'client_id': config('GITHUB_CLIENT_ID'),
-            'client_secret': config('GITHUB_CLIENT_SECRET'),
-            'grant_type': config('OAUTH_GRANT_TYPE', 'authorization_code'),
+            'redirect_uri': settings.OAUTH_REDIRECT_URL,
+            'client_id': settings.GITHUB_CLIENT_ID,
+            'client_secret': settings.GITHUB_CLIENT_SECRET,
+            'grant_type': settings.OAUTH_GRANT_TYPE,
             'code': code,
         }
         headers = {'Accept': 'application/vnd.github+json'}

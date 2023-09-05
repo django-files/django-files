@@ -13,20 +13,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # determine which env file to use
 if 'test' in sys.argv or 'test_coverage' in sys.argv:
     dotenv_path = find_dotenv('test.env', usecwd=True)
-    print(f'TEST dotenv_path: {dotenv_path}')
+    print(f'TEST dotenv_path: {dotenv_path}', file=sys.stderr)
     env = load_dotenv(dotenv_path=dotenv_path)
-    print(f'TEST env: {env}')
+    print(f'TEST env: {env}', file=sys.stderr)
 else:
     dotenv_path = find_dotenv('settings.env', usecwd=True) or find_dotenv(usecwd=True)
-    print(f'dotenv_path: {dotenv_path}')
+    print(f'dotenv_path: {dotenv_path}', file=sys.stderr)
     env = load_dotenv(dotenv_path=dotenv_path)
-    print(f'env: {env}')
+    print(f'env: {env}', file=sys.stderr)
 
 # determine database type and location
 database_type = config('DATABASE_TYPE', 'sqlite3')
-print(f'database_type: {database_type}')
+print(f'database_type: {database_type}', file=sys.stderr)
 db_location = config('DATABSE_LOCATION', '/data/media/db/database.sqlite3')
-print(f'db_location: {db_location}')
+print(f'db_location: {db_location}', file=sys.stderr)
 
 # ensure SECRET/SECRET_KEY is exactly 50 characters long
 if missing := 50 - len(config('SECRET')):
@@ -34,10 +34,10 @@ if missing := 50 - len(config('SECRET')):
     SECRET_KEY = key_prefix[:missing] + config('SECRET')
 else:
     SECRET_KEY = config('SECRET')[:50]
-print(f'SECRET_KEY: {SECRET_KEY}')
+print(f'SECRET_KEY: {SECRET_KEY}', file=sys.stderr)
 
 DEBUG = config('DEBUG', 'False', bool)
-print(f'DEBUG: {DEBUG}')
+print(f'DEBUG: {DEBUG}', file=sys.stderr)
 APP_VERSION = config('APP_VERSION', 'DEV')
 
 SITE_URL = config('SITE_URL', 'http://localhost')
@@ -76,17 +76,35 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
-AWS_S3_FILE_OVERWRITE = config('AWS_S3_FILE_OVERWRITE', False, bool)
-AWS_QUERYSTRING_EXPIRE = config('AWS_QUERYSTRING_EXPIRE', 14400, int)
-AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', None, str)
-AWS_S3_CDN_URL = config('AWS_S3_CDN_URL', '', str)
-
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', True, bool)
 NGINX_ACCESS_LOGS = config('NGINX_ACCESS_LOGS', '/logs/nginx.access')
 
 # CACHE_MIDDLEWARE_SECONDS = 0
 # CSRF_TRUSTED_ORIGINS = config('CSRF_ORIGINS', '', Csv())
 # SECURE_REFERRER_POLICY = config('SECURE_REFERRER_POLICY', 'no-referrer')
+
+# BEGIN - SiteSettings Values
+
+OAUTH_REDIRECT_URL = config('OAUTH_REDIRECT_URL', None)
+OAUTH_GRANT_TYPE = config('OAUTH_GRANT_TYPE', 'authorization_code')
+OAUTH_RESPONSE_TYPE = config('OAUTH_RESPONSE_TYPE', 'code')
+
+DISCORD_CLIENT_ID = config('DISCORD_CLIENT_ID', None)
+DISCORD_CLIENT_SECRET = config('DISCORD_CLIENT_SECRET', None)
+
+GITHUB_CLIENT_ID = config('GITHUB_CLIENT_ID', None)
+GITHUB_CLIENT_SECRET = config('GITHUB_CLIENT_SECRET', None)
+
+AWS_REGION_NAME = config('AWS_REGION_NAME', None)
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', None)
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', None)
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', None)
+AWS_QUERYSTRING_EXPIRE = config('AWS_QUERYSTRING_EXPIRE', None)
+AWS_S3_CDN_URL = config('AWS_S3_CDN_URL', None)
+
+# END - SiteSettings Values
+
+AWS_S3_FILE_OVERWRITE = config('AWS_S3_FILE_OVERWRITE', False, bool)
 
 MESSAGE_TAGS = {
     message_constants.DEBUG: 'secondary',

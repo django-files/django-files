@@ -1,10 +1,9 @@
-import os
 from django.conf import settings
 from storages.backends.s3boto3 import S3Boto3Storage
 
 
 def use_s3():
-    if os.getenv("AWS_STORAGE_BUCKET_NAME", False):
+    if settings.AWS_STORAGE_BUCKET_NAME:
         return True
     return False
 
