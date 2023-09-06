@@ -1,6 +1,4 @@
 import datetime
-import os.path
-
 import sentry_sdk
 import sys
 from celery.schedules import crontab
