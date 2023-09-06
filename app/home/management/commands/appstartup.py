@@ -20,11 +20,6 @@ class Command(BaseCommand):
         local = bool(username and password)
         oauth = bool(os.environ.get('DISCORD_CLIENT_ID') or os.environ.get('GITHUB_CLIENT_ID'))
 
-        # Ensure SiteSettings model
-        site_settings, created = SiteSettings.objects.get_or_create(pk=1)
-        if created:
-            self.stdout.write(self.style.WARNING('SiteSettings Created'))
-
         # Ensure User - see following blocks
         users = CustomUser.objects.all()
 
@@ -52,18 +47,21 @@ class Command(BaseCommand):
                     password=self.default_pass,
                     is_superuser=True,
                     is_staff=True,
+                    show_setup=True,
                 )
                 self.stdout.write(self.style.WARNING('Default User Created'))
                 self.stdout.write(self.style.SUCCESS(f'Username: {username}'))
                 self.stdout.write(self.style.SUCCESS('Password: 12345'))
-                site_settings.initial_setup = True
-                site_settings.save()
-                self.stdout.write(self.style.WARNING('Enabling Initial Setup'))
 
         # Flush template cache
         # TODO: test that this works, may need to move to a worker task
         cache.delete_pattern('*.decorators.cache.*')
         self.stdout.write(self.style.SUCCESS('Flushed Template Cache'))
+
+        # Ensure SiteSettings model
+        site_settings, created = SiteSettings.objects.get_or_create(pk=1)
+        if created:
+            self.stdout.write(self.style.WARNING('SiteSettings Created'))
 
         # Warm site_settings cache
         # TODO: test that this works, may need to move to a worker task

@@ -7,7 +7,6 @@ from settings.managers import WebhooksManager
 
 class SiteSettings(models.Model):
     id = models.AutoField(primary_key=True)
-    initial_setup = models.BooleanField(default=False)
     site_url = models.URLField(max_length=128, blank=True, null=True, verbose_name='Site URL')
     site_title = models.CharField(max_length=64, default='Django Files', verbose_name='Site Title')
     site_description = models.TextField(max_length=155, verbose_name='Site Description',

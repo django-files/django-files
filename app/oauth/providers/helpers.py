@@ -66,8 +66,7 @@ def get_next_url(request) -> str:
     Determine 'next' parameter
     """
     log.debug('get_next_url')
-    if 'initial_setup' in request.session:
-        del request.session['initial_setup']
+    if request.user.is_authenticated and request.user.show_setup:
         return reverse('settings:welcome')
     if 'next' in request.GET:
         log.debug('next in request.GET: %s', str(request.GET['next']))

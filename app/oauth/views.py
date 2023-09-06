@@ -36,10 +36,10 @@ def oauth_show(request):
         if not user:
             return HttpResponse(status=401)
 
-        site_settings = SiteSettings.objects.get(pk=1)
-        # pre_login(request, user, site_settings)
+        if response := pre_login(request, user):
+            return response
         login(request, user)
-        post_login(request, user, site_settings)
+        post_login(request, user)
         messages.info(request, f'Successfully logged in as {user.username}.')
         return HttpResponse()
 
@@ -103,9 +103,10 @@ def oauth_callback(request):
             return HttpResponseRedirect(get_login_redirect_url(request))
 
         oauth.update_profile(user)
-        # site_settings = SiteSettings.objects.get(pk=1)
-        # pre_login(request, user, site_settings)
+        if response := pre_login(request, user):
+            return response
         login(request, user)
+        post_login(request, user)
         messages.info(request, f'Successfully logged in. {user.first_name}.')
         return HttpResponseRedirect(get_login_redirect_url(request))
 
@@ -115,18 +116,17 @@ def oauth_callback(request):
         return HttpResponseRedirect(get_login_redirect_url(request))
 
 
-def pre_login(request, user, site_settings):
+def pre_login(request, user):
     log.debug('username: %s', user.username)
-    if site_settings.duo_auth:
+    if SiteSettings.objects.get(pk=1).duo_auth:
         request.session['username'] = user.username
         url = duo_redirect(request, user.username)
         log.debug('url: %s', url)
         return JsonResponse({'redirect': url})
 
 
-def post_login(request, user, site_settings):
-    if site_settings.initial_setup:
-        request.session['initial_setup'] = 'yes'
+def post_login(request, user):
+    pass
 
 
 def duo_callback(request):

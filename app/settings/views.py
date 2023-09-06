@@ -111,7 +111,6 @@ def welcome_view(request):
     """
     View  /welcome/
     """
-    site_settings = SiteSettings.objects.get(pk=1)
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if not form.is_valid():
@@ -123,16 +122,14 @@ def welcome_view(request):
         log.debug('username: %s', form.cleaned_data['username'])
         user.set_password(form.cleaned_data['password'])
         log.debug('password: %s', form.cleaned_data['password'])
+        user.show_setup = False
         user.save()
         login(request, user)
-
-        site_settings.initial_setup = False
-        log.debug('site_settings.initial_setup: %s', site_settings.initial_setup)
-        site_settings.save()
         request.session['login_redirect_url'] = reverse('settings:site')
+        messages.info(request, f'Welcome to Django Files {request.user.username}.')
         return HttpResponse(status=200)
 
-    if not site_settings.initial_setup:
+    if not request.user.show_setup:
         return redirect('settings:site')
     return render(request, 'settings/welcome.html')
 

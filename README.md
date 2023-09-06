@@ -58,6 +58,14 @@ For Extra Options See: [Variables](#variables)
 
 You must use a volume mounted to `/data/media` to store files, database and sessions. 
 
+Short one-liner to run in foreground:
+
+```bash
+docker run --rm -p 80:80 -v ./django-files:/data/media ghcr.io/django-files/django-files:latest
+```
+
+Run it in the background:
+
 ```bash
 docker run --name "django-files" -d --restart unless-stopped  \
   -p 80:80  -v ./django-files:/data/media  \
