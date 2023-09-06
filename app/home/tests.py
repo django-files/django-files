@@ -71,8 +71,12 @@ class PlaywrightTest(StaticLiveServerTestCase):
         if not os.path.isdir(cls.screenshots):
             os.mkdir(cls.screenshots)
         call_command('loaddata', 'settings/fixtures/sitesettings.json', verbosity=0)
-        cls.user = CustomUser.objects.create_user(
-            username='testuser', password='12345', is_superuser=True, is_staff=True)
+        call_command('loaddata', 'settings/fixtures/customuser.json', verbosity=0)
+        call_command('loaddata', 'settings/fixtures/webhooks.json', verbosity=0)
+        call_command('loaddata', 'settings/fixtures/discord.json', verbosity=0)
+        # cls.user = CustomUser.objects.create_user(
+        #     username='testuser', password='12345', is_superuser=True, is_staff=True)
+        cls.user = CustomUser.objects.get(pk=1)
         log.info('cls.user.authorization: %s', cls.user.authorization)
         os.environ['DJANGO_ALLOW_ASYNC_UNSAFE'] = 'true'
         cls.playwright = sync_playwright().start()
@@ -153,11 +157,10 @@ class PlaywrightTest(StaticLiveServerTestCase):
 
             if view == 'Files':
                 page.locator('.delete-file-btn').first.click()
-                delete_btn = page.locator('#confirm-delete-file-btn')
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-click')
 
-                delete_btn.click()
+                page.locator('#confirm-delete-file-btn').click()
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-deleted')
 
@@ -172,11 +175,10 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 self.screenshot(page, f'{view}-create')
 
                 page.locator('.delete-short-btn').first.click()
-                delete_btn = page.locator('#short-delete-confirm')
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-click')
 
-                delete_btn.click()
+                page.locator('#short-delete-confirm').click()
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-deleted')
 
@@ -213,9 +215,17 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-User-save-settings')
 
-        page.locator('#navbarDropdown').click()
-        page.locator('text=Site Settings').first.click()
-        self.screenshot(page, 'Settings-Site')
+        page.locator('.delete-webhook-btn').first.click()
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Settings-delete-click')
+
+        page.locator('#confirm-delete-hook-btn').click()
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Settings-delete-deleted')
+
+        page.goto(f'{self.live_server_url}/public/')
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Public-disabled-redirect')
 
         page.locator('#pub_load').click()
         page.locator('#save-settings').click()
@@ -228,13 +238,17 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-Site-flush-cache')
 
+        page.goto(f'{self.live_server_url}/public/')
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Public-enabled')
+
         page.goto(f'{self.live_server_url}/404')
         self.screenshot(page, 'Error-404-authed')
 
         page.goto(f'{self.live_server_url}/')
         page.locator('#navbarDropdown').click()
         page.locator('.log-out').click()
-        page.wait_for_timeout(timeout=500)
+        page.wait_for_timeout(timeout=750)
         self.screenshot(page, 'Logout')
 
         page.goto(f'{self.live_server_url}/404')

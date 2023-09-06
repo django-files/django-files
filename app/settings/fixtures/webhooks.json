@@ -1,0 +1,16 @@
+[
+  {
+    "model": "settings.webhooks",
+    "pk": 1,
+    "fields": {
+      "url": "https://discord.com/api/webhooks/000/aaa",
+      "hook_id": "0000000000000000000",
+      "guild_id": "0000000000000000000",
+      "channel_id": "0000000000000000000",
+      "active": true,
+      "created_at": "2023-09-05T08:17:52.952Z",
+      "updated_at": "2023-09-05T08:17:52.952Z",
+      "owner": 1
+    }
+  }
+]
