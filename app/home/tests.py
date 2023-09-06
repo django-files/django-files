@@ -183,30 +183,6 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-deleted')
 
-        control = 'gps2.jpg'
-        page.goto(f'{self.live_server_url}/files/')
-        page.locator(f'text={control}').first.click()
-        page.locator('text=12/17/2022 12:14:26')
-        page.locator('text=samsung SM-G973U')
-        page.locator('text=King County, Washington, United States')
-        page.locator('text=109.0 m')
-        page.locator('text=4mm')
-        page.locator('text=1.5')
-        page.locator('text=400')
-        page.locator('text=1/120 s')
-        self.screenshot(page, f'Preview-{control}')
-
-        page.locator('text=View Raw').click()
-        page.wait_for_load_state()
-        self.screenshot(page, f'Raw-{control}')
-
-        for file in self.previews:
-            page.goto(f'{self.live_server_url}/files/')
-            page.locator(f'text={file}').first.click()
-            # page.wait_for_load_state()
-            page.wait_for_timeout(timeout=500)
-            self.screenshot(page, f'Preview-{file}')
-
         page.locator('#navbarDropdown').click()
         page.locator('text=User Settings').first.click()
         self.screenshot(page, 'Settings-User')
@@ -242,6 +218,30 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.goto(f'{self.live_server_url}/public/')
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Public-enabled')
+
+        control = 'gps2.jpg'
+        page.goto(f'{self.live_server_url}/files/')
+        page.locator(f'text={control}').first.click()
+        page.locator('text=12/17/2022 12:14:26')
+        page.locator('text=samsung SM-G973U')
+        page.locator('text=King County, Washington, United States')
+        page.locator('text=109.0 m')
+        page.locator('text=4mm')
+        page.locator('text=1.5')
+        page.locator('text=400')
+        page.locator('text=1/120 s')
+        self.screenshot(page, f'Preview-{control}')
+
+        page.locator('text=View Raw').click()
+        page.wait_for_load_state()
+        self.screenshot(page, f'Raw-{control}')
+
+        for file in self.previews:
+            page.goto(f'{self.live_server_url}/files/')
+            page.locator(f'text={file}').first.click()
+            # page.wait_for_load_state()
+            page.wait_for_timeout(timeout=500)
+            self.screenshot(page, f'Preview-{file}')
 
         page.goto(f'{self.live_server_url}/404')
         self.screenshot(page, 'Error-404-authed')
