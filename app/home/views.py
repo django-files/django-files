@@ -142,7 +142,7 @@ def pub_uppy_view(request):
             if request.user.is_authenticated:
                 messages.warning(request, 'You Must Enable Public Uploads.')
                 return HttpResponseRedirect(reverse('settings:site'))
-            return HttpResponseRedirect(reverse('oauth:login'))
+            return HttpResponseRedirect(reverse('oauth:login') + '?next=' + reverse('home:public-uppy'))
 
         if request.method == 'POST':
             if not (f := request.FILES.get('file')):
@@ -152,7 +152,7 @@ def pub_uppy_view(request):
                 request.user, _ = CustomUser.objects.get_or_create(username='public')
             return process_file_upload(f, request.user.id, **kwargs)
 
-        return render(request, 'public.html')
+        return render(request, 'uppy.html')
     except Exception as error:
         log.exception(error)
         return JsonResponse({'error': str(error)}, status=500)

@@ -52,7 +52,7 @@
             .use(Audio, { target: Dashboard })
             .use(ScreenCapture, { target: Dashboard })
             .use(XHRUpload, {
-                endpoint: "{% url 'api:upload' %}",
+                endpoint: "{% if request.user.is_authenticated %}{% url 'api:upload' %}{% else %}{% url 'home:public-uppy' %}{% endif %}",
                 headers: {
                     "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
                 },
