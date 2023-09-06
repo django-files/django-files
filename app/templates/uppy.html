@@ -11,7 +11,7 @@
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
-        <h1>Upload</h1>
+        <h1><i class="fa-solid fa-upload me-2"></i> Upload</h1>
 
         <div id="uppy" class="mt-4"></div>
 
@@ -52,7 +52,7 @@
             .use(Audio, { target: Dashboard })
             .use(ScreenCapture, { target: Dashboard })
             .use(XHRUpload, {
-                endpoint: "{% url 'api:upload' %}",
+                endpoint: "{% if request.user.is_authenticated %}{% url 'api:upload' %}{% else %}{% url 'home:public-uppy' %}{% endif %}",
                 headers: {
                     "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
                 },

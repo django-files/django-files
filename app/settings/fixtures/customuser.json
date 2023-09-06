@@ -1,0 +1,28 @@
+[
+    {
+        "model": "oauth.customuser",
+        "pk": 1,
+        "fields": {
+            "password": "pbkdf2_sha256$600000$3qb8IYaOGB7XnZhBUJFPxH$RvY4+xyt54BtGZoiGeBldJRM6p3Fq9ehnr9inMiqh3E=",
+            "last_login": null,
+            "is_superuser": true,
+            "username": "testuser",
+            "first_name": "",
+            "last_name": "",
+            "email": "",
+            "is_staff": true,
+            "is_active": true,
+            "date_joined": "2023-09-05T23:40:52.933Z",
+            "authorization": "dU3UmsdlS4FvR89c6TbnHXfttclbbVzd",
+            "default_expire": "",
+            "default_color": "#2e4b17",
+            "nav_color_1": "#130e36",
+            "nav_color_2": "#1e1c21",
+            "remove_exif_geo": false,
+            "remove_exif": false,
+            "show_exif_preview": false,
+            "groups": [],
+            "user_permissions": []
+        }
+    }
+]

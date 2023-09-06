@@ -13,8 +13,9 @@ handler500 = 'djangofiles.views.handler500_view'
 
 urlpatterns = [
     path('', include('home.urls')),
-    path('api/', include('api.urls')),
+    path('settings/', include('settings.urls')),
     path('oauth/', include('oauth.urls')),
+    path('api/', include('api.urls')),
     path('admin/', admin.site.urls),
     path('flush-cache/', views.flush_cache_view, name='flush_cache'),
     path('app-health-check/', views.health_check, name='health_check'),

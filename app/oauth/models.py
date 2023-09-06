@@ -7,6 +7,7 @@ from home.util.rand import rand_string, rand_color_hex
 
 class CustomUser(AbstractUser):
     id = models.AutoField(primary_key=True)
+    show_setup = models.BooleanField(default=False)
     authorization = models.CharField(default=rand_string, max_length=32)
     default_expire = models.CharField(default='', blank=True, max_length=32)
     default_color = models.CharField(default=rand_color_hex, max_length=7)
@@ -54,5 +55,3 @@ class Github(models.Model):
     profile = models.JSONField(null=True, blank=True)
     avatar = models.CharField(null=True, blank=True, max_length=32)
     access_token = models.CharField(null=True, blank=True, max_length=32)
-    # refresh_token = models.CharField(null=True, blank=True, max_length=32)
-    # expires_in = models.DateTimeField(null=True, blank=True)

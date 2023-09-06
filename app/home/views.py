@@ -4,21 +4,20 @@ import markdown
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
-from django.template.loader import render_to_string
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
-from home.util.s3 import use_s3
 
 from api.views import process_file_upload, parse_expire
-from home.forms import SettingsForm
-from home.models import Files, FileStats, SiteSettings, ShortURLs, Webhooks
+from home.models import Files, FileStats, ShortURLs
 from home.tasks import clear_shorts_cache, process_stats
+from home.util.s3 import use_s3
 from oauth.models import CustomUser
+from settings.models import SiteSettings, Webhooks
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -121,69 +120,6 @@ def shorts_view(request):
 @csrf_exempt
 @cache_control(no_cache=True)
 @login_required
-# @cache_page(cache_seconds, key_prefix="settings.webhooks")
-# @vary_on_cookie
-def settings_view(request):
-    """
-    View  /settings/
-    """
-    log.debug('settings_view: %s', request.method)
-    site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
-    if request.method in ['GET', 'HEAD']:
-        webhooks = Webhooks.objects.get_request(request)
-        context = {'webhooks': webhooks, 'site_settings': site_settings}
-        log.debug('context: %s', context)
-        return render(request, 'settings.html', context)
-
-    log.debug(request.POST)
-    form = SettingsForm(request.POST)
-    if not form.is_valid():
-        return JsonResponse(form.errors, status=400)
-    data = {'reload': False}
-    log.debug(form.cleaned_data)
-    if request.user.is_superuser:
-        site_settings.site_url = form.cleaned_data['site_url']
-        site_settings.site_title = form.cleaned_data['site_title']
-        site_settings.site_description = form.cleaned_data['site_description']
-        site_settings.site_color = form.cleaned_data['site_color']
-        site_settings.pub_load = form.cleaned_data['pub_load']
-        site_settings.oauth_reg = form.cleaned_data['oauth_reg']
-        site_settings.duo_auth = form.cleaned_data['duo_auth']
-        site_settings.save()
-
-    request.user.default_expire = form.cleaned_data['default_expire']
-
-    if request.user.default_color != form.cleaned_data['default_color']:
-        request.user.default_color = form.cleaned_data['default_color']
-
-    if request.user.nav_color_1 != form.cleaned_data['nav_color_1']:
-        request.user.nav_color_1 = form.cleaned_data['nav_color_1']
-        data['reload'] = True
-
-    if request.user.nav_color_2 != form.cleaned_data['nav_color_2']:
-        request.user.nav_color_2 = form.cleaned_data['nav_color_2']
-        data['reload'] = True
-
-    request.user.remove_exif_geo = form.cleaned_data['remove_exif_geo']
-    request.user.remove_exif = form.cleaned_data['remove_exif']
-    request.user.show_exif_preview = form.cleaned_data['show_exif_preview']
-    log.debug('form.cleaned_data.show_exif_preview: %s', form.cleaned_data['show_exif_preview'])
-    log.debug('request.user.show_exif_preview: %s', request.user.show_exif_preview)
-
-    # TODO: Determine if this is superuser setting or user setting
-    request.user.s3_bucket_name = form.cleaned_data.get('s3_bucket_name')
-
-    request.user.save()
-    if data['reload']:
-        messages.success(request, 'Settings Saved Successfully.')
-    return JsonResponse(data, status=200)
-
-
-@csrf_exempt
-@cache_control(no_cache=True)
-@login_required
-# @cache_page(cache_seconds)
-# @vary_on_cookie
 def uppy_view(request):
     """
     View  /uppy/
@@ -205,8 +141,8 @@ def pub_uppy_view(request):
         if not site_settings.pub_load:
             if request.user.is_authenticated:
                 messages.warning(request, 'You Must Enable Public Uploads.')
-                return HttpResponseRedirect(reverse('home:settings'))
-            return HttpResponseRedirect(reverse('oauth:login'))
+                return HttpResponseRedirect(reverse('settings:site'))
+            return HttpResponseRedirect(reverse('oauth:login') + '?next=' + reverse('home:public-uppy'))
 
         if request.method == 'POST':
             if not (f := request.FILES.get('file')):
@@ -216,7 +152,7 @@ def pub_uppy_view(request):
                 request.user, _ = CustomUser.objects.get_or_create(username='public')
             return process_file_upload(f, request.user.id, **kwargs)
 
-        return render(request, 'public.html')
+        return render(request, 'uppy.html')
     except Exception as error:
         log.exception(error)
         return JsonResponse({'error': str(error)}, status=500)
@@ -337,75 +273,6 @@ def delete_hook_ajax(request, pk):
     return HttpResponse(status=204)
 
 
-@login_required
-@require_http_methods(['GET'])
-def gen_sharex(request):
-    """
-    View  /gen/sharex/
-    """
-    log.debug('gen_sharex')
-    data = {
-        'Version': '15.0.0',
-        'Name': f'Django Files - {request.get_host()} - File',
-        'DestinationType': 'ImageUploader, FileUploader, TextUploader',
-        'RequestMethod': 'POST',
-        'RequestURL': request.build_absolute_uri(reverse('api:upload')),
-        'Headers': {
-            'Authorization': request.user.authorization,
-            'Expires-At': request.user.default_expire,
-        },
-        'Body': 'MultipartFormData',
-        'URL': '{json:url}',
-        'FileFormName': 'file',
-        'ErrorMessage': '{json:error}'
-    }
-    filename = f'{request.get_host()} - Files.sxcu'
-    response = JsonResponse(data, json_dumps_params={'indent': 4})
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
-
-
-@login_required
-@require_http_methods(['GET'])
-def gen_sharex_url(request):
-    """
-    View  /gen/sharex-url/
-    """
-    log.debug('gen_sharex_url')
-    data = {
-        'Version': '15.0.0',
-        'Name': f'Django Files - {request.get_host()} - URL',
-        'DestinationType': 'URLShortener, URLSharingService',
-        'RequestMethod': 'POST',
-        'RequestURL': request.build_absolute_uri(reverse('api:shorten')),
-        'Headers': {
-            'Authorization': request.user.authorization,
-        },
-        'Body': 'JSON',
-        'URL': '{json:url}',
-        'Data': '{"url":"{input}"}',
-        'ErrorMessage': '{json:error}',
-    }
-    filename = f'{request.get_host()} - URL.sxcu'
-    response = JsonResponse(data, json_dumps_params={'indent': 4})
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
-
-
-@login_required
-@require_http_methods(['GET'])
-def gen_flameshot(request):
-    """
-    View  /gen/flameshot/
-    """
-    context = {'site_url': request.build_absolute_uri(reverse('home:upload')), 'token': request.user.authorization}
-    log.debug('context: %s', context)
-    message = render_to_string('scripts/flameshot.sh', context)
-    response = HttpResponse(message)
-    response['Content-Disposition'] = 'attachment; filename="flameshot.sh"'
-    return response
-
-
 @require_http_methods(['GET'])
 def raw_redirect_view(request, filename):
     """
@@ -476,7 +343,7 @@ def url_route_view(request, filename):
         return render(request, 'embed/preview.html', context=ctx)
 
 
-def google_verify(request: HttpRequest) -> bool:
+def google_verify(request) -> bool:
     if 'g_verified' in request.session and request.session['g_verified']:
         return True
     try:
@@ -496,13 +363,13 @@ def google_verify(request: HttpRequest) -> bool:
         return False
 
 
-def file_lock(request: HttpRequest, ctx):
+def file_lock(request, ctx):
     """Returns a not allowed if private or file pw page if password set."""
     if (ctx["file"].private and (request.user != ctx["file"].user) and
             (ctx["file"].password is None or ctx["file"].password == '')):
         return render(request, 'error/403.html', context=ctx, status=403)
     if ctx["file"].password and (request.user != ctx["file"].user):
-        if ((supplied_password := (request.GET.get('password'))) != ctx["file"].password):
+        if (supplied_password := (request.GET.get('password'))) != ctx["file"].password:
             if supplied_password is not None:
                 messages.warning(request, 'Invalid Password!')
             return render(request, 'embed/password.html', context=ctx, status=403)

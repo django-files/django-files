@@ -1,6 +1,5 @@
 import logging
 import os
-# import re
 import shutil
 from django.test import TestCase
 from pathlib import Path
@@ -12,10 +11,11 @@ from django.urls import reverse
 from playwright.sync_api import sync_playwright
 
 from api.views import gen_short
-from home.models import Files, ShortURLs, SiteSettings
+from home.models import Files, ShortURLs
 from home.tasks import delete_expired_files, app_init, process_stats, flush_template_cache
 from home.util.file import process_file
 from oauth.models import CustomUser
+from settings.models import SiteSettings
 
 log = logging.getLogger('app')
 
@@ -29,18 +29,19 @@ class TestAuthViews(TestCase):
         'home:uppy': 200,
         'home:files': 200,
         'home:shorts': 200,
-        'home:settings': 200,
         'home:stats': 200,
-        'home:gen-sharex': 200,
-        'home:gen-sharex-url': 200,
-        'home:gen-flameshot': 200,
+        'settings:site': 200,
+        'settings:user': 200,
+        'settings:sharex': 200,
+        'settings:sharex-url': 200,
+        'settings:flameshot': 200,
         'api:status': 200,
         'api:stats': 200,
         'api:recent': 200,
     }
 
     def setUp(self):
-        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
+        call_command('loaddata', 'settings/fixtures/sitesettings.json', verbosity=0)
         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
         log.info('self.user.authorization: %s', self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
@@ -56,32 +57,41 @@ class TestAuthViews(TestCase):
 class PlaywrightTest(StaticLiveServerTestCase):
     """Test Playwright"""
     screenshots = 'screenshots'
-    views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Settings', 'Stats']
+    views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Stats']
     previews = ['README.md', 'requirements.txt', 'main.html', 'home_tags.py', 'an225.jpg']
     context = None
     browser = None
     playwright = None
     user = None
+    count = 0
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         if not os.path.isdir(cls.screenshots):
             os.mkdir(cls.screenshots)
-        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
-        cls.user = CustomUser.objects.create_user(
-            username='testuser', password='12345', is_superuser=True, is_staff=True)
+        call_command('loaddata', 'settings/fixtures/sitesettings.json', verbosity=0)
+        call_command('loaddata', 'settings/fixtures/customuser.json', verbosity=0)
+        call_command('loaddata', 'settings/fixtures/webhooks.json', verbosity=0)
+        call_command('loaddata', 'settings/fixtures/discord.json', verbosity=0)
+        # cls.user = CustomUser.objects.create_user(
+        #     username='testuser', password='12345', is_superuser=True, is_staff=True)
+        cls.user = CustomUser.objects.get(pk=1)
         log.info('cls.user.authorization: %s', cls.user.authorization)
-        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        os.environ['DJANGO_ALLOW_ASYNC_UNSAFE'] = 'true'
         cls.playwright = sync_playwright().start()
         cls.browser = cls.playwright.chromium.launch()
         cls.context = cls.browser.new_context(color_scheme='dark')
-        # storage = cls.context.storage_state(path="state.json")
-        # cls.context = cls.context.new_context(storage_state="state.json")
+        # storage = cls.context.storage_state(path='state.json')
+        # cls.context = cls.context.new_context(storage_state='state.json')
         log.info('settings.MEDIA_ROOT: %s', settings.MEDIA_ROOT)
         if os.path.isdir(settings.MEDIA_ROOT):
             log.info('Removing: %s', settings.MEDIA_ROOT)
             shutil.rmtree(settings.MEDIA_ROOT)
+
+    def screenshot(self, page, name):
+        self.count += 1
+        page.screenshot(path=f'{self.screenshots}/{self.count:0>{2}}_{name}.png')
 
     @classmethod
     def tearDownClass(cls):
@@ -90,7 +100,6 @@ class PlaywrightTest(StaticLiveServerTestCase):
         cls.playwright.stop()
 
     def test_browser_views(self):
-        c = 1
         print(f'--- {self.live_server_url} ---')
         print('--- prep files for browser shots ---')
         print('-'*40)
@@ -124,81 +133,95 @@ class PlaywrightTest(StaticLiveServerTestCase):
         process_stats()
         print('--- Running: test_browser_views ---')
         page = self.context.new_page()
-        page.goto(f"{self.live_server_url}/")
+        page.goto(f'{self.live_server_url}/')
         page.locator('text=Django Files')
-        page.wait_for_timeout(timeout=1000)
+        page.wait_for_timeout(timeout=750)
         page.fill('[name=username]', 'testuser')
         page.fill('[name=password]', '12345')
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Login.png')
-        c += 1
+        self.screenshot(page, 'Login')
+
         page.locator('#login-button').click()
-
-        page.wait_for_selector('text=Home', timeout=3000)
+        page.locator('text=Home')
+        # page.wait_for_selector('text=Home', timeout=3000)
         page.wait_for_timeout(timeout=500)
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Home.png')
-        c += 1
-
-        # page.click('text=View Stats')
-        # page.get_by_role("link", name=re.compile(".+View Stats", re.IGNORECASE)).click()
-        page.goto(f"{self.live_server_url}/stats/")
-        page.wait_for_selector('text=Stats', timeout=3000)
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Stats.png')
-        c += 1
+        self.screenshot(page, 'Home')
 
         for view in self.views:
             print('---------- view: %s' % view)
             page.locator(f'text={view}').first.click()
-            page.wait_for_selector(f'text={view}', timeout=3000)
             if view == 'Upload':
                 page.wait_for_timeout(timeout=500)
-            page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}.png')
-            c += 1
+                self.screenshot(page, view)
+            else:
+                page.locator(f'text={view}')
+                self.screenshot(page, view)
+
             if view == 'Files':
                 page.locator('.delete-file-btn').first.click()
-                delete_btn = page.locator('#confirm-delete-hook-btn')
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-click.png')
-                c += 1
-                delete_btn.click()
+                self.screenshot(page, f'{view}-delete-click')
+
+                page.locator('#confirm-delete-file-btn').click()
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-deleted.png')
-                c += 1
-            if view == 'Settings':
-                page.locator('#show_exif_preview').click()
-                page.locator('#save-settings').click()
-                page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-save-settings.png')
-                c += 1
-                # Note: this does not flush the cache since it is an async task, it just tests the UI flush button
-                page.locator('#navbarDropdown').click()
-                page.locator('#flush-cache').click()
-                page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-flush-cache.png')
-                c += 1
+                self.screenshot(page, f'{view}-delete-deleted')
+
             if view == 'Shorts':
                 page.locator('#url').fill('https://github.com/django-files/django-files/pkgs/container/django-files')
-                # page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-fill.png')
-                # c += 1
-                page.get_by_role("button", name="Create").click()
+                page.get_by_role('button', name='Create').click()
                 print('--- Testing: flush_template_cache')
-                page.wait_for_timeout(timeout=500)
+                page.wait_for_timeout(timeout=250)
                 flush_template_cache()
-                # page.on("dialog", lambda dialog: dialog.accept())
+                # page.on('dialog', lambda dialog: dialog.accept())
                 page.reload()
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-create.png')
-                c += 1
+                page.locator(f'text={view}')
+                self.screenshot(page, f'{view}-create')
+
                 page.locator('.delete-short-btn').first.click()
-                delete_btn = page.locator('#short-delete-confirm')
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-click.png')
-                c += 1
-                delete_btn.click()
+                self.screenshot(page, f'{view}-delete-click')
+
+                page.locator('#short-delete-confirm').click()
                 page.wait_for_timeout(timeout=500)
-                page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_{view}-delete-deleted.png')
-                c += 1
+                self.screenshot(page, f'{view}-delete-deleted')
+
+        page.locator('#navbarDropdown').click()
+        page.locator('text=User Settings').first.click()
+        self.screenshot(page, 'Settings-User')
+
+        page.locator('#show_exif_preview').click()
+        page.locator('#save-settings').click()
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Settings-User-save-settings')
+
+        page.locator('.delete-webhook-btn').first.click()
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Settings-delete-click')
+
+        page.locator('#confirm-delete-hook-btn').click()
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Settings-delete-deleted')
+
+        page.goto(f'{self.live_server_url}/public/')
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Public-disabled-redirect')
+
+        page.locator('#pub_load').click()
+        page.locator('#save-settings').click()
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Settings-Site-save-settings')
+
+        # Note: this does not flush the cache since it is an async task, it just tests the UI flush button
+        page.locator('#navbarDropdown').click()
+        page.locator('#flush-cache').click()
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Settings-Site-flush-cache')
+
+        page.goto(f'{self.live_server_url}/public/')
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Public-enabled')
 
         control = 'gps2.jpg'
-        page.goto(f"{self.live_server_url}/files/")
+        page.goto(f'{self.live_server_url}/files/')
         page.locator(f'text={control}').first.click()
         page.locator('text=12/17/2022 12:14:26')
         page.locator('text=samsung SM-G973U')
@@ -208,48 +231,50 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.locator('text=1.5')
         page.locator('text=400')
         page.locator('text=1/120 s')
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Preview-{control}.png')
-        c += 1
+        self.screenshot(page, f'Preview-{control}')
+
         page.locator('text=View Raw').click()
         page.wait_for_load_state()
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Raw-{control}.png')
-        c += 1
-        # page.go_back()
-        for file in self.previews:
-            page.goto(f"{self.live_server_url}/files/")
-            page.locator(f'text={file}').first.click()
-            # page.wait_for_load_state()
-            page.wait_for_timeout(timeout=500)
-            page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_Preview-{file}.png')
-            c += 1
+        self.screenshot(page, f'Raw-{control}')
 
-        page.goto(f"{self.live_server_url}/")
+        for file in self.previews:
+            page.goto(f'{self.live_server_url}/files/')
+            page.locator(f'text={file}').first.click()
+            page.wait_for_timeout(timeout=500)
+            self.screenshot(page, f'Preview-{file}')
+
+        page.goto(f'{self.live_server_url}/404')
+        self.screenshot(page, 'Error-404-authed')
+
+        page.goto(f'{self.live_server_url}/')
         page.locator('#navbarDropdown').click()
         page.locator('.log-out').click()
-        page.wait_for_timeout(timeout=500)
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_logout.png')
+        page.wait_for_timeout(timeout=750)
+        self.screenshot(page, 'Logout')
 
         private_file.private = True
         private_file.save()
-        page.goto(f"{self.live_server_url}{private_file.preview_uri()}")
+        page.goto(f'{self.live_server_url}{private_file.preview_uri()}')
         page.locator('text=Permission Denied')
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_private_denied.png')
+        self.screenshot(page, 'Error-403-private-file')
 
         private_file.password = 'test123'
         private_file.save()
-        page.goto(f"{self.live_server_url}{private_file.preview_uri()}")
+        page.goto(f'{self.live_server_url}{private_file.preview_uri()}')
         page.locator('text=Unlock')
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_pw_file.png')
+        self.screenshot(page, 'File-password')
+
         page.fill('[name=password]', 'test123')
         page.locator('#unlock-button').click()
         page.locator(f'text={private_file.size}')
-        page.screenshot(path=f'{self.screenshots}/{c:0>{2}}_pw_unlocked_file.png')
+        page.wait_for_timeout(timeout=250)
+        self.screenshot(page, 'File-unlock')
 
 
 class FilesTestCase(TestCase):
     """Test Files"""
     def setUp(self):
-        call_command('loaddata', 'home/fixtures/sitesettings.json', verbosity=0)
+        call_command('loaddata', 'settings/fixtures/sitesettings.json', verbosity=0)
         self.user = CustomUser.objects.create_user(username='testuser', password='12345')
         log.info('self.user.authorization: %s', self.user.authorization)
         login = self.client.login(username='testuser', password='12345')

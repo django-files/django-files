@@ -44,37 +44,66 @@ or UI using [Uppy](https://uppy.io/).
 
 > **Warning**
 >
-> This is currently in Beta.
-> Expect breaking changes without migrations.
+> This is currently in Beta.  
+> Expect breaking changes without migrations.  
 
-For required variables and options, see: [Variables](#variables)
+For Extra Options See: [Variables](#variables)
+
+### Default Login Credentials
+
+-   **Username:** `admin`
+-   **Password:** `12345`
 
 ### Docker Run:
-You must use a volume mounted to `/data/media` to store files, database and sessions.
 
-With inline environment variables:
+You must use a volume mounted to `/data/media` to store files, database and sessions. 
+
+Short one-liner to run in foreground:
+
+```bash
+docker run --rm -p 80:80 -v ./django-files:/data/media ghcr.io/django-files/django-files:latest
+```
+
+Run it in the background:
+
 ```bash
 docker run --name "django-files" -d --restart unless-stopped  \
-  -p 80:80  -v /data/django-files:/data/media  \
-  -e SECRET=07Y5uGMWF8icYIJXsKPpbdMm  \
-  -e USERNAME=testuser  \
-  -e PASSWORD=testpass  \
+  -p 80:80  -v ./django-files:/data/media  \
     ghcr.io/django-files/django-files:latest
 ```
 
-To use a `.env` file you will need to export the variables first:
+Or Manually Specify a Username and Password:
+
 ```bash
-set -a; source .env
 docker run --name "django-files" -d --restart unless-stopped  \
-  -p 80:80  -v /data/django-files:/data/media  \
+  -p 80:80  -v ./django-files:/data/media  \
+  -e USERNAME=cooluser  \
+  -e PASSWORD=secretpassword  \
     ghcr.io/django-files/django-files:latest
 ```
 
 ### Docker Compose:
 You must use `media_dir` or mount a volume to `/data/media` to store files, database, and sessions. 
-To use a local mount, replace `media_dir` with `/path/to/folder` you want to store the data locally.
+To use a local mount, replace `media_dir` with `/path/to/folder` you want to store the data locally
+and remove the `volumes` section from the bottom. Default username/passwors is `admin/2345`
 
-With inline environment variables:
+```yaml
+version: '3'
+
+services:
+  django-files:
+    image: ghcr.io/django-files/django-files:latest
+    volumes:
+      - media_dir:/data/media
+    ports:
+      - "80:80"
+
+volumes:
+  media_dir:
+```
+
+Or Manually Specify a Username and Password:
+
 ```yaml
 version: '3'
 
@@ -82,9 +111,8 @@ services:
   django-files:
     image: ghcr.io/django-files/django-files:latest
     environment:
-      SECRET: "07Y5uGMWF8icYIJXsKPpbdMm"
-      USERNAME: "testuser"
-      PASSWORD: "testpass"
+      USERNAME: "cooluser"
+      PASSWORD: "secretpassword"
     volumes:
       - media_dir:/data/media
     ports:
@@ -94,21 +122,11 @@ volumes:
   media_dir:
 ```
 
-With a `.env` file:
-```yaml
-version: '3'
+Then Finally:
 
-services:
-  django-files:
-    image: ghcr.io/django-files/django-files:latest
-    env_file: .env
-    volumes:
-      - media_dir:/data/media
-    ports:
-      - "80:80"
-
-volumes:
-  media_dir:
+```bash
+vim docker-compose.yaml
+docker compose up --remove-orphans --force-recreate --detach
 ```
 
 For a Docker Swarm and Traefik example, see: [docker-compose-prod.yaml](docker-compose-prod.yaml)
@@ -121,12 +139,17 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 [Submit a Feature Request](https://github.com/django-files/django-files/discussions/new?category=feature-requests).
 
 ### Core
-*   Multiple Users, Local, and Optional OAuth
 *   Local Storage with Optional S3 Storage
 *   Ready-to-use ShareX and Flameshot scripts
 *   Google Chrome and Mozilla Firefox Web Extension
 *   Optional Duo Two-Factor Authentication
 *   Optional Sentry Error Reporting
+
+### Auth
+*   Multiple Users, Local, and Optional OAuth
+*   Connect account to any configured OAuth Service
+*   Configure OAuth Services from the UI (no restart required)
+*   Supports: Discord, GitHub
 
 ### UI Features
 *   Home Page; with Overview and Stats
@@ -139,16 +162,19 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 *   Django Admin to Manage all data for Superusers
 *   Preview Page for Embeds with optional file metadata
 
-### Site Settings
+### User Settings
 *   ShareX File and URL Configuration
 *   Flameshot Script
 *   Example Scripts
-*   Site URL
 *   Default Expiration for Files
 *   Remove EXIF Data on Upload OR Remove EXIF GPS Only
 *   Custom Embed Color
 *   Custom Navbar Colors
 *   Connect to OAuth Account (if oauth configured)
+
+### Site Settings
+*   Site URL, Title, Description, Theme Color
+*   Enable Public Uploads at `/upload`
 *   Enable OAuth Registration (if oauth configured)
 *   Enable Two-Factor Registration (if duo configured)
 
@@ -156,6 +182,8 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 *   File Expiration
 *   View Counting
 *   EXIF Metadata Preview
+*   Private Files (Beta)
+*   Password-Protected Files (Beta)
 
 ### FileStats
 *   Total Files
@@ -213,12 +241,12 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 
 ## Variables
 
-You must configure one of the following authentication methods:
-1.  Local Authentication with `DJANGO_SUPERUSER_*` Variables
-2.  Discord Authentication with `OAUTH_*` Variables
-    -   Variables acquired by [Creating a Discord App](#dev-deploy).
-
-Note: SITE_URL is being deprecated in favor of SiteSettings URL, however, is still used in a few places.
+> **Important**
+> 
+> **NO VARIABLES ARE REQUIRED!** All are optional.
+>
+> OAuth may be configured from the UI.  
+> AWS/Duo/Sentry **require** environment variables.  
 
 | Variable                | Description       | Example                                              |
 |-------------------------|-------------------|------------------------------------------------------|
@@ -271,15 +299,8 @@ based on what is set in the `docker-compose.yaml` file.
 > These instructions may be out of date, but should get you up and running.
 
 Command included below to generate the required `SECRET`.  
-The `SITE_URL` can be set with a variable or later set with UI Settings.
-
-To make a [Discord Application](https://discord.com/developers/applications),
-go to the OAuth2 section for Client ID, Client Secret, and to Set Callback URL.  
-This is your SITE_URL + `/oauth/callback/`.  
-Example: `https://example.com` would be `https://example.com/oauth/callback/`
-
-Local Auth may also be used. No need to set Discord variables if so.  
-**Known issues:** you can not add a Discord Webhook to a Local Auth user account.
+The `SITE_URL` should be set with a variable for development, in UI Settings.
+You may also want to configure an auth method from the variables above.
 
 ```text
 git clone https://github.com/django-files/django-files
@@ -289,26 +310,17 @@ cp settings.env.example settings.env
 cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 50
 # copy above output for SECRET variable
 vim settings.env
-vim docker-compose.yaml
-# Note: both files and sqlite databse are stored in media_dir
 
 docker compose up --build --remove-orphans --force-recreate --detach
+# or
+docker compose -f docker-compose-dev.yaml up --build --remove-orphans --force-recreate -detach
 docker compose logs -f
 
-# expect errors on first run - wait for migration to finish, then restart
+# bring the stack down
 docker compose down --remove-orphans
-docker compose up --build --remove-orphans --force-recreate --detach
-
-# for development server use:
-docker compose -f docker-compose-dev.yaml up --build --remove-orphans --force-recreate
 ```
 
-*   `settings.env`
-    -   edit the stuff outlined at the top, see above for more info.
-*   `docker-compose.yaml` or `-swarm`
-    -   note the database and files are stored in `media_dir` in a docker volume
-
-## Frameworks
+## Frameworks/Credits
 
 *   Django (4.x) https://www.djangoproject.com/
 *   Celery (5.x) https://docs.celeryproject.org/

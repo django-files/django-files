@@ -1,0 +1,10 @@
+[
+  {
+    "model": "settings.SiteSettings",
+    "pk": 1,
+    "fields": {
+      "site_url": "https://example.com",
+      "discord_client_id": 123
+    }
+  }
+]

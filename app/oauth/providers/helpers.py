@@ -1,11 +1,10 @@
 import logging
 from decouple import config, Csv
-from django.http import HttpRequest
 from django.urls import reverse
 from typing import Optional
 
-from home.models import SiteSettings
 from oauth.models import CustomUser
+from settings.models import SiteSettings
 
 log = logging.getLogger('app')
 
@@ -62,11 +61,13 @@ def get_or_create_user(request, _id, username) -> Optional[CustomUser]:
     return None
 
 
-def get_next_url(request: HttpRequest) -> str:
+def get_next_url(request) -> str:
     """
     Determine 'next' parameter
     """
     log.debug('get_next_url')
+    if request.user.is_authenticated and request.user.show_setup:
+        return reverse('settings:welcome')
     if 'next' in request.GET:
         log.debug('next in request.GET: %s', str(request.GET['next']))
         return str(request.GET['next'])
@@ -86,7 +87,7 @@ def get_next_url(request: HttpRequest) -> str:
     return reverse('home:index')
 
 
-def get_login_redirect_url(request: HttpRequest) -> str:
+def get_login_redirect_url(request) -> str:
     """
     Determine 'login_redirect_url' parameter
     """

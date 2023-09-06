@@ -3,7 +3,12 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Define Delete Modal and Delete Button class handler
-    const deleteHookModal = new bootstrap.Modal('#delete-hook-modal', {})
+    let deleteHookModal
+    try {
+        deleteHookModal = new bootstrap.Modal('#delete-hook-modal', {})
+    } catch (error) {
+        console.log('#delete-hook-modal Not Found')
+    }
     let hookID
     $('.delete-webhook-btn').click(function () {
         hookID = $(this).data('hook-id')
@@ -13,9 +18,6 @@ $(document).ready(function () {
 
     // Handle Confirm Delete Clicks id handler
     $('#confirm-delete-hook-btn').click(function () {
-        if ($('#confirm-delete-hook-btn').hasClass('disabled')) {
-            return
-        }
         console.log(hookID)
         $.ajax({
             type: 'POST',
@@ -23,7 +25,6 @@ $(document).ready(function () {
             headers: { 'X-CSRFToken': csrftoken },
             beforeSend: function () {
                 console.log('beforeSend')
-                $('#confirm-delete-hook-btn').addClass('disabled')
             },
             success: function (response) {
                 console.log('response: ' + response)
@@ -48,7 +49,6 @@ $(document).ready(function () {
             },
             complete: function () {
                 console.log('complete')
-                $('#confirm-delete-hook-btn').removeClass('disabled')
             },
         })
     })

@@ -11,8 +11,9 @@ from django.utils import timezone
 from pytimeparse2 import parse
 
 from home.util.storage import use_s3
-from home.models import Files, FileStats, ShortURLs, SiteSettings, Webhooks
+from home.models import Files, FileStats, ShortURLs
 from oauth.models import CustomUser
+from settings.models import SiteSettings, Webhooks
 
 log = logging.getLogger('app')
 

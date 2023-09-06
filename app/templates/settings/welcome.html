@@ -1,0 +1,47 @@
+{% extends "main.html" %}
+{% load static %}
+{% load tz %}
+{% load home_tags %}
+{% block title %}Welcome{% endblock %}
+
+{% block head %}{% endblock %}
+
+{% block body %}
+    <div class="container-fluid py-3 px-4">
+
+        <h1>Welcome To Django Files</h1>
+
+        <div class="modal fade" id="welcomeModal" aria-labelledby="welcomeModalLabel" aria-hidden="true"
+             tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="welcomeModalLabel">
+                            <i class="fa-solid fa-user-lock"></i> Set Credentials</h1>
+                    </div>
+                    <div class="modal-body">
+                        <form id="welcomeForm" action="{% url 'settings:welcome' %}">
+                            <div class="mb-3">
+                                <label for="username" class="col-form-label">Username:</label>
+                                <input type="text" class="form-control" id="username" name="username" value="{{ request.user.username }}" autofocus required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="col-form-label">Password:</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="saveCredentials" type="submit" class="btn btn-outline-success col">
+                            <i class="fa-solid fa-fingerprint me-2"></i> Save Credentials</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}
+
+{% block tail %}
+    <script type="text/javascript" src="{% static 'js/welcome.js' %}"></script>
+{% endblock %}

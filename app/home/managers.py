@@ -14,8 +14,3 @@ class FileStatsManager(models.Manager):
 class ShortURLsManager(models.Manager):
     def get_request(self, request, **kwargs):
         return self.filter(user=request.user, **kwargs)
-
-
-class WebhooksManager(models.Manager):
-    def get_request(self, request, **kwargs):
-        return self.filter(owner=request.user, **kwargs)

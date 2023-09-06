@@ -3,13 +3,13 @@ import duo_universal
 from decouple import config
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from home.models import SiteSettings, Webhooks
+from settings.models import SiteSettings, Webhooks
 from oauth.forms import LoginForm
 from oauth.providers.helpers import get_login_redirect_url, get_next_url, get_or_create_user
 from oauth.providers.discord import DiscordOauth
@@ -36,17 +36,10 @@ def oauth_show(request):
         if not user:
             return HttpResponse(status=401)
 
-        # if SiteSettings.objects.get(pk=1).duo_auth:
-        #     # if config('DUO_CLIENT_ID', False):
-        #     #     pass
-        #     log.info('--- DUO DETECTED - REDIRECTING ---')
-        #     log.debug('username: %s', user.username)
-        #     request.session['username'] = user.username
-        #     url = duo_redirect(request, user.username)
-        #     log.debug('url: %s', url)
-        #     return JsonResponse({'redirect': url})
-
+        if response := pre_login(request, user):
+            return response
         login(request, user)
+        post_login(request, user)
         messages.info(request, f'Successfully logged in as {user.username}.')
         return HttpResponse()
 
@@ -92,11 +85,6 @@ def oauth_callback(request):
             oauth = GithubOauth(code)
         elif request.session['oauth_provider'] == 'discord':
             oauth = DiscordOauth(code)
-        # elif request.session['oauth_provider'] == 'discord-webhook':
-        #     oauth = DiscordOauth(code)
-        #     oauth.process_login()
-        #     oauth.add_webhook(request)
-        #     messages.info(request, f'Webhook successfully added: {webhook.id}')
         else:
             messages.error(request, 'Unknown Provider: %s' % request.session['oauth_provider'])
             return HttpResponseRedirect(get_login_redirect_url(request))
@@ -115,7 +103,10 @@ def oauth_callback(request):
             return HttpResponseRedirect(get_login_redirect_url(request))
 
         oauth.update_profile(user)
+        if response := pre_login(request, user):
+            return response
         login(request, user)
+        post_login(request, user)
         messages.info(request, f'Successfully logged in. {user.first_name}.')
         return HttpResponseRedirect(get_login_redirect_url(request))
 
@@ -123,6 +114,19 @@ def oauth_callback(request):
         log.exception(error)
         messages.error(request, f'Exception during login: {error}')
         return HttpResponseRedirect(get_login_redirect_url(request))
+
+
+def pre_login(request, user):
+    log.debug('username: %s', user.username)
+    if SiteSettings.objects.get(pk=1).duo_auth:
+        request.session['username'] = user.username
+        url = duo_redirect(request, user.username)
+        log.debug('url: %s', url)
+        return JsonResponse({'redirect': url})
+
+
+def post_login(request, user):
+    pass
 
 
 def duo_callback(request):

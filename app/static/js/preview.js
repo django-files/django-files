@@ -12,10 +12,7 @@ $(document).ready(function () {
     })
 
     // Handle delete click confirmations
-    $('#confirm-delete-hook-btn').click(function () {
-        if ($('#confirm-delete-hook-btn').hasClass('disabled')) {
-            return
-        }
+    $('#confirm-delete-file-btn').click(function () {
         console.log(hookID)
         $.ajax({
             type: 'POST',
@@ -23,7 +20,6 @@ $(document).ready(function () {
             headers: { 'X-CSRFToken': csrftoken },
             beforeSend: function () {
                 console.log('beforeSend')
-                $('#confirm-delete-hook-btn').addClass('disabled')
             },
             success: function (response) {
                 console.log('response: ' + response)
@@ -48,7 +44,6 @@ $(document).ready(function () {
             },
             complete: function () {
                 console.log('complete')
-                $('#confirm-delete-hook-btn').removeClass('disabled')
                 window.location.replace('/files/')
             },
         })

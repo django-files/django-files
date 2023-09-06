@@ -1,9 +1,0 @@
-[
-  {
-    "model": "home.SiteSettings",
-    "pk": 1,
-    "fields": {
-      "site_url": "https://example.com"
-    }
-  }
-]
