@@ -153,6 +153,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, view)
             else:
+                page.locator(f'{view}')
                 self.screenshot(page, view)
 
             if view == 'Files':
