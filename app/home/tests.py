@@ -252,9 +252,6 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=750)
         self.screenshot(page, 'Logout')
 
-        page.goto(f'{self.live_server_url}/404')
-        self.screenshot(page, 'Error-404-unauthed')
-
         private_file.private = True
         private_file.save()
         page.goto(f'{self.live_server_url}{private_file.preview_uri()}')
