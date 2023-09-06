@@ -135,7 +135,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page = self.context.new_page()
         page.goto(f'{self.live_server_url}/')
         page.locator('text=Django Files')
-        page.wait_for_timeout(timeout=1000)
+        page.wait_for_timeout(timeout=750)
         page.fill('[name=username]', 'testuser')
         page.fill('[name=password]', '12345')
         self.screenshot(page, 'Login')
@@ -169,10 +169,11 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.locator('#url').fill('https://github.com/django-files/django-files/pkgs/container/django-files')
                 page.get_by_role('button', name='Create').click()
                 print('--- Testing: flush_template_cache')
-                page.wait_for_timeout(timeout=500)
+                page.wait_for_timeout(timeout=250)
                 flush_template_cache()
                 # page.on('dialog', lambda dialog: dialog.accept())
                 page.reload()
+                page.locator(f'{view}')
                 self.screenshot(page, f'{view}-create')
 
                 page.locator('.delete-short-btn').first.click()
@@ -239,7 +240,6 @@ class PlaywrightTest(StaticLiveServerTestCase):
         for file in self.previews:
             page.goto(f'{self.live_server_url}/files/')
             page.locator(f'text={file}').first.click()
-            # page.wait_for_load_state()
             page.wait_for_timeout(timeout=500)
             self.screenshot(page, f'Preview-{file}')
 
@@ -270,6 +270,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.fill('[name=password]', 'test123')
         page.locator('#unlock-button').click()
         page.locator(f'text={private_file.size}')
+        page.wait_for_timeout(timeout=250)
         self.screenshot(page, 'File-unlock')
 
 
