@@ -1,12 +1,15 @@
 import logging
 from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render, reverse
+from django.shortcuts import render, reverse, redirect
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
+from oauth.models import CustomUser
+from oauth.forms import LoginForm
 from settings.forms import SiteSettingsForm, UserSettingsForm
 from settings.models import SiteSettings, Webhooks
 
@@ -100,6 +103,38 @@ def user_view(request):
     if data['reload']:
         messages.success(request, 'Settings Saved Successfully.')
     return JsonResponse(data, status=200)
+
+
+@csrf_exempt
+@login_required
+def welcome_view(request):
+    """
+    View  /welcome/
+    """
+    site_settings = SiteSettings.objects.get(pk=1)
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if not form.is_valid():
+            log.debug(form.errors)
+            return HttpResponse(status=400)
+
+        user = CustomUser.objects.get(pk=request.user.pk)
+        user.username = form.cleaned_data['username']
+        log.debug('username: %s', form.cleaned_data['username'])
+        user.set_password(form.cleaned_data['password'])
+        log.debug('password: %s', form.cleaned_data['password'])
+        user.save()
+        login(request, user)
+
+        site_settings.initial_setup = False
+        log.debug('site_settings.initial_setup: %s', site_settings.initial_setup)
+        site_settings.save()
+        request.session['login_redirect_url'] = reverse('settings:site')
+        return HttpResponse(status=200)
+
+    if not site_settings.initial_setup:
+        return redirect('settings:site')
+    return render(request, 'settings/welcome.html')
 
 
 @login_required

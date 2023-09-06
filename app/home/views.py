@@ -120,8 +120,6 @@ def shorts_view(request):
 @csrf_exempt
 @cache_control(no_cache=True)
 @login_required
-# @cache_page(cache_seconds)
-# @vary_on_cookie
 def uppy_view(request):
     """
     View  /uppy/
