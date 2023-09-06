@@ -153,7 +153,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, view)
             else:
-                page.locator(f'{view}')
+                page.locator(f'text={view}')
                 self.screenshot(page, view)
 
             if view == 'Files':
@@ -173,7 +173,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 flush_template_cache()
                 # page.on('dialog', lambda dialog: dialog.accept())
                 page.reload()
-                page.locator(f'{view}')
+                page.locator(f'text={view}')
                 self.screenshot(page, f'{view}-create')
 
                 page.locator('.delete-short-btn').first.click()
