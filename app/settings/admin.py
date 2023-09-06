@@ -20,3 +20,4 @@ class SiteSettingsAdmin(admin.ModelAdmin):
     model = SiteSettings
     list_display = ('id', 'site_url', 'oauth_reg', 'duo_auth',)
     readonly_fields = ('id',)
+    exclude = ('initial_setup',)
