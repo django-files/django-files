@@ -13,7 +13,8 @@ from pytimeparse2 import parse
 from home.util.storage import use_s3
 from home.models import Files, FileStats, ShortURLs
 from oauth.models import CustomUser
-from settings.models import SiteSettings, Webhooks
+from settings.models import SiteSettings
+from oauth.models import DiscordWebhooks
 
 log = logging.getLogger('app')
 
@@ -225,7 +226,7 @@ def send_discord_message(pk):
     # Send a Discord message for a new file
     log.info('send_discord_message: pk: %s', pk)
     file = Files.objects.get(pk=pk)
-    webhooks = Webhooks.objects.filter(owner=file.user)
+    webhooks = DiscordWebhooks.objects.filter(owner=file.user)
     context = {'file': file}
     message = render_to_string('message/new-file.html', context)
     log.info(message)
@@ -247,7 +248,7 @@ def send_success_message(hook_pk):
 def send_discord(hook_pk, message):
     log.info('send_discord: %s', hook_pk)
     try:
-        webhook = Webhooks.objects.get(pk=hook_pk)
+        webhook = DiscordWebhooks.objects.get(pk=hook_pk)
         body = {'content': message}
         log.info(body)
         r = httpx.post(webhook.url, json=body, timeout=30)

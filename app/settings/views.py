@@ -11,7 +11,8 @@ from django.views.decorators.http import require_http_methods
 from oauth.models import CustomUser
 from oauth.forms import LoginForm
 from settings.forms import SiteSettingsForm, UserSettingsForm
-from settings.models import SiteSettings, Webhooks
+from settings.models import SiteSettings
+from oauth.models import DiscordWebhooks
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -27,7 +28,7 @@ def site_view(request):
     site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
     log.debug('site_settings.github_client_id: %s', site_settings.github_client_id)
     if request.method in ['GET', 'HEAD']:
-        webhooks = Webhooks.objects.get_request(request)
+        webhooks = DiscordWebhooks.objects.get_request(request)
         context = {'webhooks': webhooks, 'site_settings': site_settings}
         log.debug('context: %s', context)
         return render(request, 'settings/site.html', context)
@@ -67,7 +68,7 @@ def user_view(request):
     log.debug('user_view: %s', request.method)
     site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
     if request.method in ['GET', 'HEAD']:
-        webhooks = Webhooks.objects.get_request(request)
+        webhooks = DiscordWebhooks.objects.get_request(request)
         context = {'webhooks': webhooks, 'site_settings': site_settings}
         log.debug('context: %s', context)
         return render(request, 'settings/user.html', context)

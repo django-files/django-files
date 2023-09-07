@@ -4,7 +4,7 @@ from django.dispatch import receiver
 from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache
 from home.tasks import send_success_message
 from home.models import Files, FileStats, ShortURLs
-from settings.models import Webhooks
+from oauth.models import DiscordWebhooks
 
 
 @receiver(pre_delete, sender=Files)
@@ -30,7 +30,7 @@ def clear_stats_cache_signal(sender, instance, **kwargs):
     clear_stats_cache.delay()
 
 
-@receiver(post_save, sender=Webhooks)
+@receiver(post_save, sender=DiscordWebhooks)
 def send_success_message_signal(sender, instance, **kwargs):
     if kwargs.get('created'):
         send_success_message.delay(instance.id)

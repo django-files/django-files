@@ -8,7 +8,8 @@ from typing import Optional
 
 from oauth.models import Discord
 from oauth.providers.helpers import is_super_id
-from settings.models import SiteSettings, Webhooks
+from settings.models import SiteSettings
+from oauth.models import DiscordWebhooks
 
 provider = 'discord'
 log = logging.getLogger(f'app.{provider}')
@@ -59,8 +60,8 @@ class DiscordOauth(object):
             user.is_superuser = True
             user.save()
 
-    def add_webhook(self, request) -> Webhooks:
-        return Webhooks.objects.create(
+    def add_webhook(self, request) -> DiscordWebhooks:
+        return DiscordWebhooks.objects.create(
             hook_id=self.data['webhook']['id'],
             guild_id=self.data['webhook']['guild_id'],
             channel_id=self.data['webhook']['channel_id'],

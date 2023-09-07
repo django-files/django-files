@@ -3,6 +3,7 @@ from django.db import models
 from django.templatetags.static import static
 
 from home.util.rand import rand_string, rand_color_hex
+from oauth.managers import DiscordWebhooksManager
 
 
 class CustomUser(AbstractUser):
@@ -47,6 +48,27 @@ class Discord(models.Model):
     access_token = models.CharField(null=True, blank=True, max_length=32)
     refresh_token = models.CharField(null=True, blank=True, max_length=32)
     expires_in = models.DateTimeField(null=True, blank=True)
+
+
+class DiscordWebhooks(models.Model):
+    id = models.AutoField(primary_key=True)
+    url = models.URLField(unique=True, verbose_name='Webhook URL')
+    hook_id = models.CharField(max_length=32, blank=True, null=True)
+    guild_id = models.CharField(max_length=32, blank=True, null=True)
+    channel_id = models.CharField(max_length=32, blank=True, null=True)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Hook Created Date.')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='Hook Updated Date.')
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    objects = DiscordWebhooksManager()
+
+    def __str__(self):
+        return f'<Webhook(id={self.id} hook_id={self.hook_id} owner={self.owner.id})>'
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'DiscordWebhooks'
+        verbose_name_plural = 'DiscordWebhooks'
 
 
 class Github(models.Model):

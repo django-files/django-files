@@ -2,7 +2,6 @@ from django.db import models
 
 from home.util.rand import rand_color_hex
 from oauth.models import CustomUser
-from settings.managers import WebhooksManager
 
 
 class SiteSettings(models.Model):
@@ -47,24 +46,3 @@ class SiteSettings(models.Model):
     class Meta:
         verbose_name = 'Setting'
         verbose_name_plural = 'Settings'
-
-
-class Webhooks(models.Model):
-    id = models.AutoField(primary_key=True)
-    url = models.URLField(unique=True, verbose_name='Webhook URL')
-    hook_id = models.CharField(max_length=32, blank=True, null=True)
-    guild_id = models.CharField(max_length=32, blank=True, null=True)
-    channel_id = models.CharField(max_length=32, blank=True, null=True)
-    active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Hook Created Date.')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='Hook Updated Date.')
-    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    objects = WebhooksManager()
-
-    def __str__(self):
-        return f'<Webhook(id={self.id} hook_id={self.hook_id} owner={self.owner.id})>'
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'Webhook'
-        verbose_name_plural = 'Webhooks'
