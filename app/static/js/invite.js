@@ -1,40 +1,39 @@
 $(document).ready(function () {
-    // Define Hook Modal and Delete handlers
-    let inviteModal = new bootstrap.Modal('#inviteModal', {})
-    inviteModal.show()
-
-    // // Local login form handler
-    // $('.form-control').focus(function () {
-    //     $(this).removeClass('is-invalid')
-    // })
-    // $('#saveCredentials').on('click', function (event) {
-    //     console.log('saveCredentials on click function')
-    //     event.preventDefault()
-    //     let welcomeForm = $('#welcomeForm')
-    //     let formData = new FormData(welcomeForm[0])
-    //     $.ajax({
-    //         url: welcomeForm.attr('action'),
-    //         type: 'POST',
-    //         data: formData,
-    //         crossDomain: true,
-    //         beforeSend: function () {
-    //             console.log('beforeSend')
-    //         },
-    //         success: function (response) {
-    //             console.log('response: ' + response)
-    //         },
-    //         error: function (xhr, status, error) {
-    //             console.log('xhr: ' + xhr)
-    //             console.log('status: ' + status)
-    //             console.log('error: ' + error)
-    //         },
-    //         complete: function () {
-    //             console.log('complete')
-    //             location.reload()
-    //         },
-    //         cache: false,
-    //         contentType: false,
-    //         processData: false,
-    //     })
-    // })
+    $('#inviteForm').on('submit', function (event) {
+        console.log('#inviteForm on submit function')
+        event.preventDefault()
+        let form = $(this)
+        console.log(form)
+        $.ajax({
+            url: form.attr('action'),
+            type: form.attr('method'),
+            data: new FormData(form[0]),
+            success: function (data) {
+                console.log('data: ' + data)
+                location.reload()
+            },
+            error: function (jqXHR) {
+                console.log('jqXHR.status: ' + jqXHR.status)
+                console.log('jqXHR.statusText: ' + jqXHR.statusText)
+                if (jqXHR.status === 400) {
+                    let data = jqXHR.responseJSON
+                    console.log(data)
+                    $(form.prop('elements')).each(function () {
+                        if (data.hasOwnProperty(this.name)) {
+                            $('#' + this.name + '-invalid')
+                                .empty()
+                                .append(data[this.name])
+                            $(this).addClass('is-invalid')
+                        }
+                    })
+                } else {
+                    let message = jqXHR.status + ': ' + jqXHR.statusText
+                    show_toast(message, 'danger', '6000')
+                }
+            },
+            cache: false,
+            contentType: false,
+            processData: false,
+        })
+    })
 })

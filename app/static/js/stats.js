@@ -3,35 +3,21 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Handle update stats click
-    $('#update-stats-btn').click(function () {
+    $('#updateStatsBtn').click(function () {
         $.ajax({
-            url: $('#update-stats-btn').attr('data-target-url'),
+            url: $('#updateStatsBtn').attr('data-target-url'),
             type: 'POST',
             headers: { 'X-CSRFToken': csrftoken },
-            beforeSend: function (jqXHR) {
-                //
-            },
-            success: function (data, textStatus, jqXHR) {
-                console.log(
-                    'Status: ' +
-                        jqXHR.status +
-                        ', Data: ' +
-                        JSON.stringify(data)
-                )
+            success: function (data) {
+                console.log('data: ' + JSON.stringify(data))
                 alert('Stats Update Submitted. Page will now Reload...')
-            },
-            complete: function (data, textStatus) {
-                console.log(data)
                 location.reload()
             },
-            error: function (data, status, error) {
-                console.log(
-                    'Status: ' +
-                        data.status +
-                        ', Response: ' +
-                        data.responseText
-                )
-                alert(data.responseText)
+            error: function (jqXHR) {
+                console.log('jqXHR.status: ' + jqXHR.status)
+                console.log('jqXHR.statusText: ' + jqXHR.statusText)
+                let message = jqXHR.status + ': ' + jqXHR.statusText
+                show_toast(message, 'danger', '6000')
             },
             cache: false,
             contentType: false,

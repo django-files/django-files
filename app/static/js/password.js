@@ -1,9 +1,6 @@
 // Document Dot Ready
 $(document).ready(function () {
     // Password form handler
-    $('.form-control').focus(function () {
-        $(this).removeClass('is-invalid')
-    })
     $('#password-form').on('submit', function (event) {
         event.preventDefault()
         if ($('#password-button').hasClass('disabled')) {

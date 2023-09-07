@@ -1,56 +1,74 @@
 {% extends "main.html" %}
 {% load static %}
-{% load tz %}
 {% load home_tags %}
-{% block title %}Welcome{% endblock %}
+{% load cache %}
+{% block title %}Login{% endblock %}
 
-{% block head %}{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+{% endblock %}
+
+{% block navbar %}{% endblock %}
 
 {% block body %}
-    <div class="container-fluid py-3 px-4">
+    <main class="h-100">
 
-        <h1>Welcome To Django Files</h1>
+        <video poster="{% static 'video/loop.jpg' %}" id="bgvid" playsinline autoplay muted loop>
+            <source src="{% static 'video/loop.mp4' %}" type="video/mp4" id="bgvidsrc">
+        </video>
 
-        <div class="modal fade" id="inviteModal" aria-labelledby="inviteModalLabel" aria-hidden="true"
-             tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                        <div class="modal-header">
-                            <h1 class="modal-title fs-5" id="inviteModalLabel">
-                                <i class="fa-solid fa-users me-2"></i> User Invite</h1>
-                        </div>
+        <div class="d-flex flex-column h-100 align-items-center">
+            <div class="d-flex flex-grow-1 justify-content-center align-items-center">
+                <div id="login-outer" class="animate__animated animate__fadeIn " style="max-width: 320px;">
+                    <div class="text-center">
+{#                        <img class="img-responsive" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">#}
+                        <h3 class="text-white mt-2">{{ site_settings.site_title }}</h3>
+{#                        <h4><i class="fa-solid fa-users me-2"></i> User Invite</h4>#}
+                    </div>
+
                     {% if invite %}
-                        <div class="modal-body">
-                            <form id="welcomeForm" action="{% url 'settings:welcome' %}">
-                                <div class="mb-3">
-                                    <label for="username" class="col-form-label">Username:</label>
-                                    <input type="text" class="form-control" id="username" name="username" value="{{ request.user.username }}" autofocus required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="password" class="col-form-label">Password:</label>
-                                    <input type="password" class="form-control" id="password" name="password" required>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button id="saveCredentials" type="submit" class="btn btn-success col">
-                                <i class="fa-solid fa-fingerprint me-2"></i> Save Credentials</button>
-                        </div>
+                        <p class="text-center">Welcome to {{ site_settings.site_title }}.<br>
+                            Select a Username and Password.</p>
+
+                        <form method="POST" name="inviteForm" id="inviteForm" action="{% url 'settings:invite' invite=invite %}">
+                            {% csrf_token %}
+
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" autocomplete="username"
+                                   aria-describedby="username-invalid" autofocus required>
+                            <div id="username-invalid" class="invalid-feedback"></div>
+
+                            <label for="password" class="form-label mt-2">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" autocomplete="password"
+                                   aria-describedby="password-invalid" required>
+                            <div id="password-invalid" class="invalid-feedback"></div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button class="btn btn-success opacity-75" type="submit">
+                                    <i class="fa-solid fa-joint me-2"></i> Be Cool</button>
+                            </div>
+                        </form>
                     {% else %}
-                        <div class="modal-body">
-                        <p class="lead">Invite not found. It's a mess here...</p>
-                        </div>
+                        <p class="lead text-center">
+                            <span class="text-danger-emphasis">Invite Not Found.</span>
+                            <br>
+                            <span class="text-warning-emphasis">Me So Sorry...</span></p>
                         <div class="modal-footer">
-                            <a role="button" class="btn btn-outline-success col" href="{% url 'home:index' %}">Go Home</a>
+                            <a role="button" class="btn btn-outline-success col" href="{% url 'home:index' %}">
+                                <i class="fa-solid fa-house-laptop me-2"></i> Go Home</a>
                         </div>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-    </div>
+    </main>
 {% endblock %}
+
+{% block footer %}{% endblock %}
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/invite.js' %}"></script>
 {% endblock %}
+
+{% block backtotop %}{% endblock %}

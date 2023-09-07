@@ -1,9 +1,5 @@
 // Document Dot Ready
 $(document).ready(function () {
-    // Local login form handler
-    $('.form-control').focus(function () {
-        $(this).removeClass('is-invalid')
-    })
     $('#login-form').on('submit', function (event) {
         event.preventDefault()
         if ($('#login-button').hasClass('disabled')) {

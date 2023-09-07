@@ -232,4 +232,3 @@ def add_webhook(request, profile):
     )
     webhook.save()
     return webhook
-

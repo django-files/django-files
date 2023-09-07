@@ -3,7 +3,7 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Init the logout form click function
-    $('.log-out').on('click', function () {
+    $('.log-out').on('click', function (event) {
         $('#log-out').submit()
         return false
     })
@@ -12,25 +12,19 @@ $(document).ready(function () {
     $('#flush-cache').click(function () {
         console.log('flush-cache clicked...')
         $.ajax({
-            type: 'POST',
             url: '/flush-cache/',
+            type: 'POST',
             headers: { 'X-CSRFToken': csrftoken },
-            beforeSend: function () {
-                console.log('beforeSend')
-            },
             success: function (response) {
                 console.log('response: ' + response)
                 alert('Cache Flush Successfully Sent...')
-            },
-            error: function (xhr, status, error) {
-                console.log('xhr status: ' + xhr.status)
-                console.log('status: ' + status)
-                console.log('error: ' + error)
-                alert('Error: ' + xhr.responseText)
-            },
-            complete: function () {
-                console.log('complete')
                 location.reload()
+            },
+            error: function (jqXHR) {
+                console.log('jqXHR.status: ' + jqXHR.status)
+                console.log('jqXHR.statusText: ' + jqXHR.statusText)
+                let message = jqXHR.status + ': ' + jqXHR.statusText
+                show_toast(message, 'danger', '6000')
             },
         })
         return false

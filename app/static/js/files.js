@@ -3,32 +3,29 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Define Hook Modal and Delete handlers
-    let deleteHookModal
+    let deleteFileModal
     try {
-        deleteHookModal = new bootstrap.Modal('#delete-file-modal', {})
+        deleteFileModal = new bootstrap.Modal('#deleteFileModal', {})
     } catch (error) {
-        console.log('#delete-file-modal Not Found')
+        console.log('#deleteFileModal Not Found')
     }
     let hookID
     $('.delete-file-btn').click(function () {
         hookID = $(this).data('hook-id')
         console.log(hookID)
-        deleteHookModal.show()
+        deleteFileModal.show()
     })
 
     // Handle delete click confirmations
-    $('#confirm-delete-file-btn').click(function () {
+    $('#confirmDeleteFileBtn').click(function () {
         console.log(hookID)
         $.ajax({
-            type: 'POST',
             url: `/ajax/delete/file/${hookID}/`,
+            type: 'POST',
             headers: { 'X-CSRFToken': csrftoken },
-            beforeSend: function () {
-                console.log('beforeSend')
-            },
-            success: function (response) {
-                console.log('response: ' + response)
-                deleteHookModal.hide()
+            success: function (data) {
+                console.log('data: ' + data)
+                deleteFileModal.hide()
                 console.log('removing #file-' + hookID)
                 let count = $('#files-table tr').length
                 $('#file-' + hookID).remove()
@@ -39,16 +36,12 @@ $(document).ready(function () {
                 let message = 'File ' + hookID + ' Successfully Removed.'
                 show_toast(message, 'success')
             },
-            error: function (xhr, status, error) {
-                console.log('xhr status: ' + xhr.status)
-                console.log('status: ' + status)
-                console.log('error: ' + error)
-                deleteHookModal.hide()
-                let message = xhr.status + ': ' + error
-                show_toast(message, 'danger', '15000')
-            },
-            complete: function () {
-                console.log('complete')
+            error: function (jqXHR) {
+                console.log('jqXHR.status: ' + jqXHR.status)
+                console.log('jqXHR.statusText: ' + jqXHR.statusText)
+                deleteFileModal.hide()
+                let message = jqXHR.status + ': ' + jqXHR.statusText
+                show_toast(message, 'danger', '10000')
             },
         })
     })

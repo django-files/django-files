@@ -13,7 +13,7 @@
 
         <h1><i class="fa-solid fa-link me-2"></i> Shorts</h1>
 
-        <form name="shorts-form" id="shorts-form" action="{% url 'home:shorten' %}" data-target-url="{% url 'home:shorten' %}">
+        <form id="shortsForm" method="post" action="{% url 'home:shorten' %}">
             <div class="row g-3">
                 <div class="col-12">
                     <input type="text" class="form-control" placeholder="Reeeaaalllyyy Long URL" aria-label="URL"

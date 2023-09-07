@@ -42,7 +42,7 @@ class TestAuthViews(TestCase):
 
     def setUp(self):
         call_command('loaddata', 'settings/fixtures/sitesettings.json', verbosity=0)
-        self.user = CustomUser.objects.create_user(username='testuser', password='12345')
+        self.user = CustomUser.objects.create_superuser(username='testuser', password='12345')
         log.info('self.user.authorization: %s', self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
         log.info('login: %s', login)
@@ -74,8 +74,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         call_command('loaddata', 'settings/fixtures/customuser.json', verbosity=0)
         call_command('loaddata', 'settings/fixtures/webhooks.json', verbosity=0)
         call_command('loaddata', 'settings/fixtures/discord.json', verbosity=0)
-        # cls.user = CustomUser.objects.create_user(
-        #     username='testuser', password='12345', is_superuser=True, is_staff=True)
+        # cls.user = CustomUser.objects.create_superuser(username='testuser', password='12345')
         cls.user = CustomUser.objects.get(pk=1)
         log.info('cls.user.authorization: %s', cls.user.authorization)
         os.environ['DJANGO_ALLOW_ASYNC_UNSAFE'] = 'true'
@@ -161,7 +160,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-click')
 
-                page.locator('#confirm-delete-file-btn').click()
+                page.locator('#confirmDeleteFileBtn').click()
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-deleted')
 
@@ -193,11 +192,11 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-User-save-settings')
 
-        page.locator('.delete-webhook-btn').first.click()
+        page.locator('.deleteDiscordHookBtn').first.click()
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-delete-click')
 
-        page.locator('#confirm-delete-hook-btn').click()
+        page.locator('#confirmDeleteDiscordHookBtn').click()
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-delete-deleted')
 
@@ -275,7 +274,7 @@ class FilesTestCase(TestCase):
     """Test Files"""
     def setUp(self):
         call_command('loaddata', 'settings/fixtures/sitesettings.json', verbosity=0)
-        self.user = CustomUser.objects.create_user(username='testuser', password='12345')
+        self.user = CustomUser.objects.create_superuser(username='testuser', password='12345')
         log.info('self.user.authorization: %s', self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
         log.info('login: %s', login)

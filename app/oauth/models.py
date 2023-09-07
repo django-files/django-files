@@ -1,9 +1,14 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.templatetags.static import static
+from django.utils import timezone
 
 from home.util.rand import rand_string, rand_color_hex
-from oauth.managers import DiscordWebhooksManager
+from oauth.managers import DiscordWebhooksManager, UserInvitesManager
+
+
+def rand_invite():
+    return rand_string(16)
 
 
 class CustomUser(AbstractUser):
@@ -42,12 +47,19 @@ class CustomUser(AbstractUser):
 
 class UserInvites(models.Model):
     id = models.AutoField(primary_key=True)
-    invite = models.CharField(default=rand_string(16), max_length=16)
-    expire = models.IntegerField(default=0)
-    super_user = models.BooleanField(default=False)
+    invite = models.CharField(default=rand_invite, max_length=16)
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    expire = models.IntegerField(default=0, verbose_name='Expire', help_text='Expiration Seconds.')
+    max_uses = models.IntegerField(default=1, verbose_name='Max', help_text='Max Uses.')
+    uses = models.IntegerField(default=0, verbose_name='Uses', help_text='Total Uses.')
+    user_ids = models.JSONField(default=list, verbose_name='User IDs', help_text='Users who Used Invite.')
+    super_user = models.BooleanField(default=False, verbose_name='Super', help_text='Invited Users are Super Users.')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Invite Created Date.')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='Invite Updated Date.')
-    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    objects = UserInvitesManager()
+
+    def __str__(self):
+        return self.invite
 
     def __repr__(self):
         return f'<UserInvites(id={self.id}, owner={self.owner}>'
@@ -56,6 +68,28 @@ class UserInvites(models.Model):
         ordering = ['-created_at']
         verbose_name = 'User Invite'
         verbose_name_plural = 'User Invites'
+
+    # def save(self, *args, **kwargs):
+    #     self.uses += 1
+    #     super().save(*args, **kwargs)
+
+    def use_invite(self, user_id):
+        if not self.is_valid():
+            return False
+        self.user_ids.append(user_id)
+        self.uses += 1
+        self.save()
+        return True
+
+    def is_valid(self):
+        if self.max_uses:
+            if not self.uses < self.max_uses:
+                return False
+        if self.expire:
+            seconds = timezone.now() - self.created_at
+            if self.expire <= seconds:
+                return False
+        return True
 
     # def get_url(self):
     #     # not implemented

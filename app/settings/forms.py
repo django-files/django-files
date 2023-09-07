@@ -3,24 +3,6 @@ import validators
 from django import forms
 from django.core.exceptions import ValidationError
 from pytimeparse2 import parse
-from oauth.models import CustomUser
-
-
-class UserForm(forms.Form):
-    username = forms.CharField(max_length=128)
-    password = forms.CharField(max_length=128)
-
-    def clean_username(self):
-        username = self.cleaned_data['username'].strip()
-        if CustomUser.objects.filter(username=username):
-            raise ValidationError('Username Already Taken..')
-        return username
-
-    def clean_password(self):
-        password = self.cleaned_data['password'].strip()
-        if len(password) < 6:
-            raise ValidationError('Password Must be 6 Characters Long.')
-        return password
 
 
 class SiteSettingsForm(forms.Form):

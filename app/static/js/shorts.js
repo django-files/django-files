@@ -3,48 +3,34 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Handle Shorts FORM Submit
-    $('#shorts-form').on('submit', function (event) {
+    $('#shortsForm').on('submit', function (event) {
+        console.log('#shortsForm on submit function')
         event.preventDefault()
-        let data = new FormData($(this)[0])
-
+        let form = $(this)
+        console.log(form)
+        // TODO: Simplify JSON Creation...
+        let data = new FormData(form[0])
         data.forEach((value, key) => (data[key] = value))
-        // let json = JSON.stringify(formData);
-
         $.ajax({
-            // url: window.location.pathname,
-            url: $('#shorts-form').attr('action'),
-            type: 'POST',
+            type: form.attr('method'),
+            url: form.attr('action'),
             headers: { 'X-CSRFToken': csrftoken },
-            // data: formData,
             data: JSON.stringify(data),
-            beforeSend: function (jqXHR) {
-                //
-            },
-            success: function (data, textStatus, jqXHR) {
-                console.log(
-                    'Status: ' +
-                        jqXHR.status +
-                        ', Data: ' +
-                        JSON.stringify(data)
-                )
+            success: function (data) {
+                console.log('data: ' + JSON.stringify(data))
                 alert('Short Created: ' + data['url'])
                 location.reload()
-                // let message = 'Short Created: ' + data['url'];
-                // show_toast(message,'success', '6000');
             },
-            complete: function (data, textStatus) {
-                //
-            },
-            error: function (data) {
-                console.log(
-                    'Status: ' +
-                        data.status +
-                        ', Response: ' +
-                        data.responseText
-                )
+            error: function (jqXHR) {
+                console.log('jqXHR.status: ' + jqXHR.status)
+                console.log('jqXHR.statusText: ' + jqXHR.statusText)
                 // TODO: Replace this with real error handling
-                let message = data.status + ': ' + data.responseJSON['error']
-                show_toast(message, 'danger', '6000')
+                if (jqXHR.status === 400) {
+                    show_toast(jqXHR.responseJSON['error'], 'danger', '6000')
+                } else {
+                    let message = jqXHR.status + ': ' + jqXHR.statusText
+                    show_toast(message, 'danger', '6000')
+                }
             },
             cache: false,
             contentType: false,
@@ -73,11 +59,8 @@ $(document).ready(function () {
             type: 'POST',
             url: `/ajax/delete/short/${hookID}/`,
             headers: { 'X-CSRFToken': csrftoken },
-            beforeSend: function () {
-                console.log('beforeSend')
-            },
-            success: function (response) {
-                console.log('response: ' + response)
+            success: function (data) {
+                console.log('data: ' + data)
                 deleteShortModal.hide()
                 console.log('removing #short-' + hookID)
                 let count = $('#shorts-table tr').length
@@ -89,16 +72,12 @@ $(document).ready(function () {
                 let message = 'Short URL ' + hookID + ' Successfully Removed.'
                 show_toast(message, 'success')
             },
-            error: function (xhr, status, error) {
-                console.log('xhr status: ' + xhr.status)
-                console.log('status: ' + status)
-                console.log('error: ' + error)
+            error: function (jqXHR) {
+                console.log('jqXHR.status: ' + jqXHR.status)
+                console.log('jqXHR.statusText: ' + jqXHR.statusText)
                 deleteShortModal.hide()
-                let message = xhr.status + ': ' + error
-                show_toast(message, 'danger', '15000')
-            },
-            complete: function () {
-                console.log('complete')
+                let message = jqXHR.status + ': ' + jqXHR.statusText
+                show_toast(message, 'danger', '6000')
             },
         })
     })

@@ -10,7 +10,7 @@
 {% block head %}{% endblock %}
 
 {% block main %}
-    <form class="row" id="settings-form" name="settings-form" method="POST" action="{% url 'settings:site' %}">
+    <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
         {% if user.is_superuser %}
             <div class="border border-warning-subtle rounded-2 p-3 my-2">
                 <div class="row">
@@ -18,25 +18,29 @@
                         <label for="site_url" class="form-label">Site URL</label>
                         <input type="text" class="form-control" id="site_url" name="site_url" placeholder=""
                             value="{{ site_settings.site_url }}" aria-describedby="site_url-help site_url-invalid">
-                        <div id="site_url-help" class="form-text">
-                            Used for Uploads and Discord Messages.
-                        </div>
                         <div id="site_url-invalid" class="invalid-feedback"></div>
+                        <div id="site_url-help" class="form-text">
+                            Used for Generating URLs.
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label for="site_title" class="form-label">Site Title</label>
                         <input type="text" class="form-control" id="site_title" name="site_title" placeholder=""
                                value="{{ site_settings.site_title }}" aria-describedby="site_title-help site_title-invalid">
-                        <div id="site_title-help" class="form-text">
-                            Site Title.
-                        </div>
                         <div id="site_title-invalid" class="invalid-feedback"></div>
+                        <div id="site_title-help" class="form-text">
+                            Site Title for UI and Meta.
+                        </div>
                     </div>
                 </div>
                 <div class='row'>
                     <div class="mb-3">
                         <label for="site_description" class="form-label">Site Description</label>
-                        <textarea class="form-control" id="site_description" name="site_description" rows="2">{{ site_settings.site_description }}</textarea>
+                        <textarea class="form-control" id="site_description" name="site_description" rows="2" >{{ site_settings.site_description }}</textarea>
+                        <div id="site_description-invalid" class="invalid-feedback"></div>
+                        <div id="site_title-help" class="form-text">
+                            Site Description for Meta.
+                        </div>
                     </div>
                 </div>
                 <div class="row">
@@ -44,7 +48,7 @@
                         <div class="form-check form-switch px-lg-5">
                             <input class="form-check-input" type="checkbox" id="pub_load" name="pub_load" {{ site_settings.pub_load|if_true:"checked" }}>
                             <label class="form-check-label" for="pub_load">
-                                Allow Public Uploads.
+                                Enable Public Uploads: <kbd>/public</kbd>
                             </label>
                         </div>
                     </div>
@@ -55,7 +59,7 @@
                         <div class="form-check form-switch px-lg-5">
                             <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
                             <label class="form-check-label" for="oauth_reg">
-                                Allow Oauth Auto Registration.
+                                Enable Oauth Registration
                             </label>
                         </div>
                     </div>
@@ -67,7 +71,7 @@
                         <div class="form-check form-switch px-lg-5">
                             <input class="form-check-input" type="checkbox" id="duo_auth" name="duo_auth" {{ site_settings.duo_auth|if_true:"checked" }}>
                             <label class="form-check-label" for="duo_auth">
-                                Enable Two-Factor Authentication.
+                                Enable Duo Authentication
                             </label>
                         </div>
                     </div>
