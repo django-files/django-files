@@ -50,3 +50,13 @@ input:not(:focus):valid ~ .floating-label {
     font-size: 14px;
     opacity: 1;
 }
+
+.btn-primary {
+    background: #565aa9;
+    border: #24295E
+}
+
+.btn-primary:hover {
+    background: #383F98;
+    border: #24295E
+}
