@@ -79,6 +79,7 @@ def shorten_view(request):
     """
     View  /shorten/ and /api/shorten
     """
+    body = request.body.decode()
     try:
         url = request.headers.get('url')
         vanity = request.headers.get('vanity')
