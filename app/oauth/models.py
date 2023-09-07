@@ -44,6 +44,7 @@ class UserInvites(models.Model):
     id = models.AutoField(primary_key=True)
     invite = models.CharField(default=rand_string(16), max_length=16)
     expire = models.IntegerField(default=0)
+    super_user = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Invite Created Date.')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='Invite Updated Date.')
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -55,6 +56,10 @@ class UserInvites(models.Model):
         ordering = ['-created_at']
         verbose_name = 'User Invite'
         verbose_name_plural = 'User Invites'
+
+    # def get_url(self):
+    #     # not implemented
+    #     pass
 
 
 class Discord(models.Model):

@@ -11,30 +11,39 @@
 
         <h1>Welcome To Django Files</h1>
 
-        <div class="modal fade" id="welcomeModal" aria-labelledby="welcomeModalLabel" aria-hidden="true"
+        <div class="modal fade" id="inviteModal" aria-labelledby="inviteModalLabel" aria-hidden="true"
              tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="welcomeModalLabel">
-                            <i class="fa-solid fa-user-lock"></i> Set Credentials</h1>
-                    </div>
-                    <div class="modal-body">
-                        <form id="welcomeForm" action="{% url 'settings:welcome' %}">
-                            <div class="mb-3">
-                                <label for="username" class="col-form-label">Username:</label>
-                                <input type="text" class="form-control" id="username" name="username" value="{{ request.user.username }}" autofocus required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="password" class="col-form-label">Password:</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button id="saveCredentials" type="submit" class="btn btn-outline-success col">
-                            <i class="fa-solid fa-fingerprint me-2"></i> Save Credentials</button>
-                    </div>
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="inviteModalLabel">
+                                <i class="fa-solid fa-users me-2"></i> User Invite</h1>
+                        </div>
+                    {% if invite %}
+                        <div class="modal-body">
+                            <form id="welcomeForm" action="{% url 'settings:welcome' %}">
+                                <div class="mb-3">
+                                    <label for="username" class="col-form-label">Username:</label>
+                                    <input type="text" class="form-control" id="username" name="username" value="{{ request.user.username }}" autofocus required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="col-form-label">Password:</label>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button id="saveCredentials" type="submit" class="btn btn-success col">
+                                <i class="fa-solid fa-fingerprint me-2"></i> Save Credentials</button>
+                        </div>
+                    {% else %}
+                        <div class="modal-body">
+                        <p class="lead">Invite not found. It's a mess here...</p>
+                        </div>
+                        <div class="modal-footer">
+                            <a role="button" class="btn btn-outline-success col" href="{% url 'home:index' %}">Go Home</a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -43,5 +52,5 @@
 {% endblock %}
 
 {% block tail %}
-    <script type="text/javascript" src="{% static 'js/welcome.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/invite.js' %}"></script>
 {% endblock %}

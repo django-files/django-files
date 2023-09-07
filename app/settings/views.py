@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from pytimeparse2 import parse
+from typing import Optional
 
 from oauth.models import CustomUser
 from oauth.forms import LoginForm
@@ -109,24 +110,64 @@ def user_view(request):
 
 
 @csrf_exempt
-def invite_view(request):
+def invite_view(request, invite):
     """
     View  /invite/
     """
+    log.debug('request.method: %s', request.method)
+    if request.user.is_authenticated:
+        log.debug('request.user.is_authenticated: %s', request.user.is_authenticated)
+        return redirect('home:index')
     if request.method == 'POST':
         form = LoginForm(request.POST)
+        log.debug('form: %s', form)
         if not form.is_valid():
             log.debug(form.errors)
+            return JsonResponse(form.errors, status=400)
+
+        invite = get_invite(invite)
+        log.debug('invite: %s', invite)
+        if not invite:
             return HttpResponse(status=400)
-    if invite := request.GET.get('invite'):
-        invite = UserInvites.objects.filter(invite=invite)
-        if invite := invite[0]:
-            if invite.expire:
-                seconds = timezone.now() - invite.created_at
-                if invite.expire > seconds:
-                    return render(request, 'settings/invite.html')
-            return render(request, 'settings/invite.html')
-    return render(request, 'settings/invite.html')
+
+        user = CustomUser.objects.create_user(
+            username=form.cleaned_data['username'],
+            password=form.cleaned_data['password'],
+        )
+        log.debug('user: %s', user)
+        invite.delete()
+        login(request, user)
+        request.session['login_redirect_url'] = reverse('settings:user')
+        messages.info(request, f'Welcome to Django Files {request.user.username}.')
+        return HttpResponse(status=200)
+
+    context = {}
+    if invite := get_invite(invite):
+        log.debug('invite: %s', invite)
+        context = {'invite': invite.invite}
+    log.debug('invite: %s', invite)
+    return render(request, 'settings/invite.html', context=context)
+
+
+def get_invite(invite) -> Optional[UserInvites]:
+    if invite := UserInvites.objects.filter(invite=invite):
+        if not invite[0].expire:
+            return invite[0]
+        seconds = timezone.now() - invite[0].created_at
+        if invite[0].expire > seconds:
+            return invite[0]
+    return None
+
+
+# def get_invite(request) -> Optional[UserInvites]:
+#     if invite := request.GET.get('invite') or request.POST.get('invite'):
+#         if invite := UserInvites.objects.filter(invite=invite):
+#             if not invite.expire:
+#                 return invite
+#             seconds = timezone.now() - invite.created_at
+#             if invite.expire > seconds:
+#                 return invite
+#     return None
 
 
 @csrf_exempt
@@ -135,6 +176,9 @@ def welcome_view(request):
     """
     View  /welcome/
     """
+    if not request.user.show_setup:
+        return redirect('settings:site')
+
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if not form.is_valid():
@@ -153,8 +197,6 @@ def welcome_view(request):
         messages.info(request, f'Welcome to Django Files {request.user.username}.')
         return HttpResponse(status=200)
 
-    if not request.user.show_setup:
-        return redirect('settings:site')
     return render(request, 'settings/welcome.html')
 
 

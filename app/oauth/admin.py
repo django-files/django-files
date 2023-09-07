@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from oauth.models import CustomUser, Discord, Github
+from oauth.models import CustomUser, Discord, Github, UserInvites
 
 admin.site.register(Discord)
 admin.site.register(Github)
+admin.site.register(UserInvites)
 
 
 @admin.register(CustomUser)
