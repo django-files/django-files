@@ -1,7 +1,6 @@
 from django.db import models
 
 from home.util.rand import rand_color_hex
-from oauth.models import CustomUser
 
 
 class SiteSettings(models.Model):
