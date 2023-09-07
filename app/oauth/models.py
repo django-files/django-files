@@ -40,23 +40,6 @@ class CustomUser(AbstractUser):
         return f'<CustomUser(id={self.id}, username={self.username}>'
 
 
-class UserInvites(models.Model):
-    id = models.AutoField(primary_key=True)
-    invite = models.CharField(default=rand_string(16), max_length=16)
-    expire = models.IntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Invite Created Date.')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='Invite Updated Date.')
-    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-
-    def __repr__(self):
-        return f'<UserInvites(id={self.id}, owner={self.owner}>'
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'User Invite'
-        verbose_name_plural = 'User Invites'
-
-
 class Discord(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
     id = models.IntegerField()
@@ -65,10 +48,6 @@ class Discord(models.Model):
     access_token = models.CharField(null=True, blank=True, max_length=32)
     refresh_token = models.CharField(null=True, blank=True, max_length=32)
     expires_in = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        verbose_name = 'Discord'
-        verbose_name_plural = 'Discords'
 
 
 class DiscordWebhooks(models.Model):
@@ -88,8 +67,8 @@ class DiscordWebhooks(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Discord Webhook'
-        verbose_name_plural = 'Discord Webhooks'
+        verbose_name = 'DiscordWebhooks'
+        verbose_name_plural = 'DiscordWebhooks'
 
 
 class Github(models.Model):
@@ -98,7 +77,3 @@ class Github(models.Model):
     profile = models.JSONField(null=True, blank=True)
     avatar = models.CharField(null=True, blank=True, max_length=32)
     access_token = models.CharField(null=True, blank=True, max_length=32)
-
-    class Meta:
-        verbose_name = 'Github'
-        verbose_name_plural = 'Githubs'

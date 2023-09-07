@@ -5,16 +5,14 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, reverse, redirect
 from django.template.loader import render_to_string
-from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from pytimeparse2 import parse
 
 from oauth.models import CustomUser
 from oauth.forms import LoginForm
 from settings.forms import SiteSettingsForm, UserSettingsForm
 from settings.models import SiteSettings
-from oauth.models import DiscordWebhooks, UserInvites
+from oauth.models import DiscordWebhooks
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -106,27 +104,6 @@ def user_view(request):
     if data['reload']:
         messages.success(request, 'Settings Saved Successfully.')
     return JsonResponse(data, status=200)
-
-
-@csrf_exempt
-def invite_view(request):
-    """
-    View  /invite/
-    """
-    if request.method == 'POST':
-        form = LoginForm(request.POST)
-        if not form.is_valid():
-            log.debug(form.errors)
-            return HttpResponse(status=400)
-    if invite := request.GET.get('invite'):
-        invite = UserInvites.objects.filter(invite=invite)
-        if invite := invite[0]:
-            if invite.expire:
-                seconds = timezone.now() - invite.created_at
-                if invite.expire > seconds:
-                    return render(request, 'settings/invite.html')
-            return render(request, 'settings/invite.html')
-    return render(request, 'settings/invite.html')
 
 
 @csrf_exempt
