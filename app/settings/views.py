@@ -110,11 +110,6 @@ def invite_view(request, invite):
     View  /invite/
     """
     log.debug('request.method: %s', request.method)
-    log.debug('-'*40)
-    print(request.headers)
-    log.debug('-'*40)
-    print(request.body.decode())
-    log.debug('-'*40)
     if request.user.is_authenticated:
         log.debug('request.user.is_authenticated: %s', request.user.is_authenticated)
         return redirect('home:index')

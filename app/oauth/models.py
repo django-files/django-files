@@ -1,10 +1,12 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.shortcuts import reverse
 from django.templatetags.static import static
 from django.utils import timezone
 
 from home.util.rand import rand_string, rand_color_hex
 from oauth.managers import DiscordWebhooksManager, UserInvitesManager
+from settings.models import SiteSettings
 
 
 def rand_invite():
@@ -62,16 +64,12 @@ class UserInvites(models.Model):
         return self.invite
 
     def __repr__(self):
-        return f'<UserInvites(id={self.id}, owner={self.owner}>'
+        return f'<UserInvites(id={self.id}, owner={self.owner}, valid={self.is_valid()}>'
 
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'User Invite'
         verbose_name_plural = 'User Invites'
-
-    # def save(self, *args, **kwargs):
-    #     self.uses += 1
-    #     super().save(*args, **kwargs)
 
     def use_invite(self, user_id):
         if not self.is_valid():
@@ -91,9 +89,16 @@ class UserInvites(models.Model):
                 return False
         return True
 
-    # def get_url(self):
-    #     # not implemented
-    #     pass
+    def get_uri(self):
+        return reverse('settings:invite', kwargs={'invite': self.invite})
+
+    def get_url(self, site_url):
+        uri = reverse('settings:invite', kwargs={'invite': self.invite})
+        return site_url + uri
+
+    def build_url(self):
+        uri = reverse('settings:invite', kwargs={'invite': self.invite})
+        return SiteSettings.objects.get(pk=1).site_url + uri
 
 
 class Discord(models.Model):
