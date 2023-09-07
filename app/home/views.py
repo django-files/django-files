@@ -17,7 +17,8 @@ from home.models import Files, FileStats, ShortURLs
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
 from oauth.models import CustomUser
-from settings.models import SiteSettings, Webhooks
+from settings.models import SiteSettings
+from oauth.models import DiscordWebhooks
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -265,7 +266,7 @@ def delete_hook_ajax(request, pk):
     View  /ajax/delete/hook/<int:pk>/
     """
     log.debug('delete_hook_ajax: %s', pk)
-    webhook = Webhooks.objects.get(pk=pk)
+    webhook = DiscordWebhooks.objects.get(pk=pk)
     if webhook.owner != request.user:
         return HttpResponse(status=404)
     log.debug(webhook)

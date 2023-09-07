@@ -1,6 +1,6 @@
 [
   {
-    "model": "settings.webhooks",
+    "model": "oauth.discordwebhooks",
     "pk": 1,
     "fields": {
       "url": "https://discord.com/api/webhooks/000/aaa",

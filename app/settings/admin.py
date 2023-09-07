@@ -1,13 +1,14 @@
 from django.contrib import admin
 
-from settings.models import SiteSettings, Webhooks
+from oauth.models import DiscordWebhooks
+from settings.models import SiteSettings
 
 admin.site.site_header = 'Django Files Administration'
 
 
-@admin.register(Webhooks)
-class WebhooksAdmin(admin.ModelAdmin):
-    model = Webhooks
+@admin.register(DiscordWebhooks)
+class DiscordWebhooksAdmin(admin.ModelAdmin):
+    model = DiscordWebhooks
     list_display = ('id', 'hook_id', 'guild_id', 'channel_id', 'owner', 'created_at',)
     list_filter = ('owner',)
     readonly_fields = ('id', 'hook_id', 'guild_id', 'channel_id', 'owner', 'created_at',)
