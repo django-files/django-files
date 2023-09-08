@@ -5,6 +5,8 @@ import logging
 import os
 import validators
 import functools
+import uuid
+
 from django.core import serializers
 from django.http import JsonResponse
 from django.shortcuts import reverse
@@ -14,9 +16,11 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from pytimeparse2 import parse
 from typing import Optional
+from datetime import datetime
 
 from home.models import Files, FileStats, ShortURLs
 from home.util.file import process_file
+from home.util.rand import rand_string
 from oauth.models import CustomUser
 from home.util.rand import rand_string
 from settings.models import SiteSettings
@@ -65,7 +69,9 @@ def upload_view(request):
     try:
         if not (f := request.FILES.get('file')):
             return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
-        kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
+        print(request.headers)
+        kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
+                  'format': request.headers.get('format')}
         return process_file_upload(f, request.user.id, **kwargs)
     except Exception as error:
         log.exception(error)
@@ -195,12 +201,26 @@ def remote_view(request):
 
 
 def process_file_upload(f, user_id, **kwargs):
-    file = process_file(f.name, f, user_id, **kwargs)
+    name = f.name
+    print(kwargs.get('format'))
+    if format := kwargs.get('format'):
+        match format.lower():
+            case 'name':
+                name = name
+            case 'random':
+                name = rand_string()
+            case 'uuid':
+                name = str(uuid.uuid4())
+            case 'date':
+                name = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        name = name + os.path.splitext(f.name)[1]
+    kwargs.pop('format')
+    file = process_file(name, f, user_id, **kwargs)
     data = {
         'files': [file.preview_url()],
         'url': file.preview_url(),
         'raw': file.get_url(),
-        'name': file.name,
+        'name': name,
         'size': file.size,
     }
     return JsonResponse(data)
