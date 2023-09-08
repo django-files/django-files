@@ -211,7 +211,7 @@ def get_formatted_name(name_input: str, format: str = ''):
         case 'date':
             name = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
         case _:
-            name = name
+            name = name_input
     if name != name_input:
         name = name + os.path.splitext(name_input)[1]
     return name
