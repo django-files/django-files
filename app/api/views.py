@@ -192,17 +192,17 @@ def remote_view(request):
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
     kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
-    name = format_file_name(request.user, os.path.basename(url), request.headers.get('format'))
+    name = get_formatted_name(request.user, os.path.basename(url), request.headers.get('format'))
     file = process_file(name, io.BytesIO(r.content), request.user.id, **kwargs)
     response = {'url': f'{file.preview_url()}'}
     log.debug('url: %s', url)
     return JsonResponse(response)
 
 
-def format_file_name(user: CustomUser, name_input: str, format: str = ''):
-    if not format:
-        format = user.get_default_upload_name_format_display()
-    match format.lower():
+def get_formatted_name(user: CustomUser, name_input: str, format_name: str = ''):
+    if not format_name:
+        format_name = user.get_default_upload_name_format_display()
+    match format_name.lower():
         case 'random':
             name = rand_string()
         case 'uuid':
@@ -217,7 +217,7 @@ def format_file_name(user: CustomUser, name_input: str, format: str = ''):
 
 
 def process_file_upload(f, user, **kwargs):
-    name = format_file_name(user, f.name, kwargs.get('format'))
+    name = get_formatted_name(user, f.name, kwargs.get('format'))
     kwargs.pop('format')
     file = process_file(name, f, user.id, **kwargs)
     data = {
