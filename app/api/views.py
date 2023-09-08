@@ -200,7 +200,6 @@ def remote_view(request):
 
 def process_file_upload(f, user_id, **kwargs):
     name = f.name
-    print(kwargs.get('format'))
     if format := kwargs.get('format'):
         match format.lower():
             case 'name':
