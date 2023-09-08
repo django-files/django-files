@@ -3,6 +3,7 @@ from django.db import models
 from django.shortcuts import reverse
 from django.templatetags.static import static
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from home.util.rand import rand_string, rand_color_hex
 from oauth.managers import DiscordWebhooksManager, UserInvitesManager
@@ -30,6 +31,15 @@ class CustomUser(AbstractUser):
     show_exif_preview = models.BooleanField(
         default=False, verbose_name='EXIF Preview',
         help_text='Shows exif data on previews and unfurls.')
+
+    class UploadNameFormats(models.TextChoices):
+        NAME = "name", _("name")
+        RAND = "rand", _("random")
+        DATE = "date", _("date")
+        UUID = "uuid", _("uuid")
+
+    default_upload_name_format = models.CharField(max_length=4, choices=UploadNameFormats.choices,
+                                                  default=UploadNameFormats.NAME)
 
     def get_avatar(self):
         # TODO: Let User Choose Profile Icon or Chose by Active Login

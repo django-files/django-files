@@ -67,7 +67,7 @@ def user_view(request):
     log.debug('user_view: %s', request.method)
     if request.method != 'POST':
         webhooks = DiscordWebhooks.objects.get_request(request)
-        context = {'webhooks': webhooks}
+        context = {'webhooks': webhooks, 'default_upload_name_formats': CustomUser.UploadNameFormats.choices}
         log.debug('context: %s', context)
         return render(request, 'settings/user.html', context)
 
@@ -95,6 +95,7 @@ def user_view(request):
     request.user.remove_exif_geo = form.cleaned_data['remove_exif_geo']
     request.user.remove_exif = form.cleaned_data['remove_exif']
     request.user.show_exif_preview = form.cleaned_data['show_exif_preview']
+    request.user.default_upload_name_format = form.cleaned_data['default_upload_name_format']
     log.debug('form.cleaned_data.show_exif_preview: %s', form.cleaned_data['show_exif_preview'])
     log.debug('request.user.show_exif_preview: %s', request.user.show_exif_preview)
 

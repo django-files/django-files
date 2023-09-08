@@ -70,7 +70,7 @@ def upload_view(request):
             return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
         kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
                   'format': request.headers.get('format')}
-        return process_file_upload(f, request.user.id, **kwargs)
+        return process_file_upload(f, request.user, **kwargs)
     except Exception as error:
         log.exception(error)
         return JsonResponse({'error': str(error)}, status=500)
@@ -192,17 +192,17 @@ def remote_view(request):
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
     kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
-    name = get_formatted_name(os.path.basename(url), request.headers.get('format'))
-    file = process_file(name, io.BytesIO(r.content), request.user.id, **kwargs)
+    print(request.user)
+    name = get_formatted_name(request.user, os.path.basename(url), request.headers.get('format'))
+    file = process_file(name, io.BytesIO(r.content), request.user, **kwargs)
     response = {'url': f'{file.preview_url()}'}
     log.debug('url: %s', url)
     return JsonResponse(response)
 
 
-def get_formatted_name(name_input: str, format: str = ''):
+def get_formatted_name(user: CustomUser, name_input: str, format: str = ''):
     if not format:
-        # default to user setting in future
-        format = ''
+        format = user.get_default_upload_name_format_display()
     match format.lower():
         case 'random':
             name = rand_string()
@@ -217,10 +217,10 @@ def get_formatted_name(name_input: str, format: str = ''):
     return name
 
 
-def process_file_upload(f, user_id, **kwargs):
-    name = get_formatted_name(f.name, kwargs.get('format'))
+def process_file_upload(f, user, **kwargs):
+    name = get_formatted_name(user, f.name, kwargs.get('format'))
     kwargs.pop('format')
-    file = process_file(name, f, user_id, **kwargs)
+    file = process_file(name, f, user.id, **kwargs)
     data = {
         'files': [file.preview_url()],
         'url': file.preview_url(),

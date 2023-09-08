@@ -1,6 +1,7 @@
 import re
 import validators
 from django import forms
+from oauth.models import CustomUser
 from django.core.exceptions import ValidationError
 from pytimeparse2 import parse
 
@@ -34,6 +35,7 @@ class UserSettingsForm(forms.Form):
     remove_exif_geo = forms.BooleanField(required=False)
     remove_exif = forms.BooleanField(required=False)
     show_exif_preview = forms.BooleanField(required=False)
+    default_upload_name_format = forms.ChoiceField(choices=CustomUser.UploadNameFormats.choices)
 
     def clean_default_color(self):
         return is_hex(self.cleaned_data['default_color'].strip().lower())
