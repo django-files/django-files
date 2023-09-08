@@ -192,25 +192,31 @@ def remote_view(request):
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
     kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
-    file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id, **kwargs)
+    name = get_formatted_name(os.path.basename(url), request.headers.get('format'))
+    file = process_file(name, io.BytesIO(r.content), request.user.id, **kwargs)
     response = {'url': f'{file.preview_url()}'}
     log.debug('url: %s', url)
     return JsonResponse(response)
 
 
+def get_formatted_name(name_input: str, format_input: str = ''):
+    # check if format_input set, otherwise user user default as format_input in future
+    match format_input.lower():
+        case 'random':
+            name = rand_string()
+        case 'uuid':
+            name = str(uuid.uuid4())
+        case 'date':
+            name = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        case _:
+            name = name
+    if name != name_input:
+        name = name + os.path.splitext(name_input)[1]
+    return name
+
+
 def process_file_upload(f, user_id, **kwargs):
-    name = f.name
-    if format := kwargs.get('format'):
-        match format.lower():
-            case 'name':
-                name = name
-            case 'random':
-                name = rand_string()
-            case 'uuid':
-                name = str(uuid.uuid4())
-            case 'date':
-                name = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        name = name + os.path.splitext(f.name)[1]
+    name = get_formatted_name(f.name, kwargs.get('format'))
     kwargs.pop('format')
     file = process_file(name, f, user_id, **kwargs)
     data = {
