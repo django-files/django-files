@@ -200,7 +200,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-delete-deleted')
 
-        page.goto(f'{self.live_server_url}/public/')
+        page.goto(f"{self.live_server_url}{reverse('home:public-uppy')}")
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Public-disabled-redirect')
 
@@ -218,10 +218,10 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.get_by_role('button', name='Create').click()
         page.wait_for_timeout(timeout=250)
         page.reload()
-        page.locator('text=Invites')
+        page.locator('#invites')
         self.screenshot(page, 'Settings-invite-created')
 
-        page.goto(f'{self.live_server_url}/public/')
+        page.goto(f"{self.live_server_url}{reverse('home:public-uppy')}")
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Public-enabled')
 

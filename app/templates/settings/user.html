@@ -123,7 +123,8 @@
 
     <hr>
 
-    <h3 id="webhooks">Webhooks</h3>
+    <section id="webhooks">
+    <h3>Webhooks</h3>
 
     {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
         {% if user.discord %}
@@ -172,10 +173,12 @@
     {% else %}
         <p>To enable Webhooks, you must configure Discord.</p>
     {% endif %}
+    </section>
 
     <hr>
 
-    <h3 id="upload">Upload Methods</h3>
+    <section id="upload">
+    <h3>Upload Methods</h3>
 
     <p class="lead">Django Files is backwards compatible with
         <a href="https://zipline.diced.vercel.app/docs/api/upload" target="_blank">
@@ -198,6 +201,7 @@
                 Flameshot Script</a>
         </div>
     </div>
+    </section>
 
     <hr>
 
@@ -290,7 +294,8 @@
 
     <hr>
 
-    <h3 id="token">Authorization Token</h3>
+    <section id="token">
+    <h3>Authorization Token</h3>
 
     <p>Treat this token like a password.</p>
     <p><a class="btn btn-lg btn-outline-light clip" role="button" data-clipboard-text="{{ user.authorization }}">
@@ -314,6 +319,7 @@
             </div>
         </div>
     </div>
+    </section>
 {% endblock %}
 
 {% block tail %}
