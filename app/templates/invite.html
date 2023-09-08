@@ -4,6 +4,24 @@
 {% load cache %}
 {% block title %}Login{% endblock %}
 
+{% block meta %}
+    {% if invite %}
+        <meta name="title" content="{{ site_settings.site_title }} Invite"/>
+        <meta name="description" content="{{ invite.owner.get_name }} has invited you to join {{ site_settings.site_title }}."/>
+        <meta property="og:title" content="{{ site_settings.site_title }} Invite">
+        <meta property="og:description" content="{{ invite.owner.get_name }} has invited you to join {{ site_settings.site_title }}.">
+    {% else %}
+        <meta name="title" content="{{ site_settings.site_title }} Invite"/>
+        <meta name="description" content="Enter an invite code to join {{ site_settings.site_title }}."/>
+        <meta property="og:title" content="{{ site_settings.site_title }} Invite">
+        <meta property="og:description" content="Enter an invite code to join {{ site_settings.site_title }}.">
+    {% endif %}
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo.png' %}">
+    <meta name="theme-color" content="{{ site_settings.site_color }}">
+{% endblock %}
+
 {% block head %}
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
 {% endblock %}
@@ -51,7 +69,7 @@
                         <p class="lead text-center">
                             <span class="text-danger-emphasis">Invite Not Found.</span></p>
 
-                        <form name="inviteSearch" id="inviteSearch" action="/invite/">
+                        <form name="inviteSearch" id="inviteSearch" action="{% url 'home:invite-base' %}">
                             <label for="invite" class="form-label mt-2">Invite Lookup</label>
                             <input type="text" class="form-control" id="invite" name="invite" autocomplete="invite"
                                    placeholder="Invite Code" aria-describedby="invite-invalid" required>

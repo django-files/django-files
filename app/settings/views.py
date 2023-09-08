@@ -79,6 +79,7 @@ def user_view(request):
     data = {'reload': False}
     log.debug(form.cleaned_data)
 
+    request.user.first_name = form.cleaned_data['first_name']
     request.user.default_expire = form.cleaned_data['default_expire']
 
     if request.user.default_color != form.cleaned_data['default_color']:

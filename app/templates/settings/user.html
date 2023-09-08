@@ -10,8 +10,24 @@
 {% block head %}{% endblock %}
 
 {% block main %}
+
+    <div class="float-end">Last Login: {{ user.last_login }}</div>
+    <div>ID: {{ user.id }}</div>
+
     <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
         <div class="border border-success-subtle rounded-2 p-3 my-2">
+
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="first_name" class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name"
+                           value="{{ user.first_name }}" aria-describedby="first_name-help first_name-invalid">
+                    <div id="first_name-invalid" class="invalid-feedback"></div>
+                    <div id="first_name-help" class="form-text">
+                        First Name.
+                    </div>
+                </div>
+            </div>
 
             <div class="row">
                 <div class="col-md-6">

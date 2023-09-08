@@ -28,6 +28,7 @@ class SiteSettingsForm(forms.Form):
 
 
 class UserSettingsForm(forms.Form):
+    first_name = forms.CharField(max_length=128, required=False)
     default_expire = forms.CharField(max_length=128, required=False)
     default_color = forms.CharField(max_length=7)
     nav_color_1 = forms.CharField(max_length=7)
