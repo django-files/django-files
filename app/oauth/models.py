@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.shortcuts import reverse
@@ -103,6 +105,11 @@ class UserInvites(models.Model):
             if self.expire <= delta.seconds:
                 return False
         return True
+
+    def expire_date(self):
+        if self.expire:
+            return self.created_at + datetime.timedelta(seconds=self.expire)
+        return None
 
     def get_uri(self):
         return reverse('home:invite', kwargs={'invite': self.invite})
