@@ -1,4 +1,5 @@
 import logging
+import zoneinfo
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -67,7 +68,11 @@ def user_view(request):
     log.debug('user_view: %s', request.method)
     if request.method != 'POST':
         webhooks = DiscordWebhooks.objects.get_request(request)
-        context = {'webhooks': webhooks, 'default_upload_name_formats': CustomUser.UploadNameFormats.choices}
+        context = {
+            'webhooks': webhooks,
+            'timezones': sorted(zoneinfo.available_timezones()),
+            'default_upload_name_formats': CustomUser.UploadNameFormats.choices,
+        }
         log.debug('context: %s', context)
         return render(request, 'settings/user.html', context)
 
@@ -79,7 +84,10 @@ def user_view(request):
     data = {'reload': False}
     log.debug(form.cleaned_data)
 
+    log.debug('form.cleaned_data.timezone: %s', form.cleaned_data['timezone'])
+    log.debug('request.user.timezone: %s', request.user.timezone)
     request.user.first_name = form.cleaned_data['first_name']
+    request.user.timezone = form.cleaned_data['timezone']
     request.user.default_expire = form.cleaned_data['default_expire']
 
     if request.user.default_color != form.cleaned_data['default_color']:

@@ -27,6 +27,18 @@
                         First Name.
                     </div>
                 </div>
+
+                <div class="col-md-6">
+                    <label for="timezone" class="form-label">Time Zone</label>
+                    <select class="form-select" id="timezone" name="timezone"
+                            aria-describedby="default_upload_name_format-help default_upload_name_format-invalid">
+                        {% for timezone in timezones %}
+                            <option value="{{ timezone }}" {% if timezone == user.timezone %}selected{% endif %}>{{ timezone }}</option>
+                        {% endfor %}
+                    </select>
+                    <div id="default_upload_name_format_name_format-invalid" class="invalid-feedback"></div>
+                    <div id="default_upload_name_format-help" class="form-text"></div>
+                </div>
             </div>
 
             <div class="row">
@@ -40,7 +52,7 @@
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <label for="default_upload_name_format" class="form-label">Default File Upload Name Format</label>
+                    <label for="default_upload_name_format" class="form-label">Default Upload Format</label>
                     <select class="form-select" id="default_upload_name_format" name="default_upload_name_format"
                         aria-describedby="default_upload_name_format-help default_upload_name_format-invalid">
                         {% for choice, value in default_upload_name_formats %}

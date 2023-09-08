@@ -1,7 +1,7 @@
 {% extends "settings/main.html" %}
 {% load home_tags %}
 {% load static %}
-{% load cache %}
+{% load tz %}
 {% block site_active %}active{% endblock %}
 {% block site_active_dd %}active{% endblock %}
 {% block title %}Site Settings{% endblock %}
@@ -10,6 +10,7 @@
 {% block head %}{% endblock %}
 
 {% block main %}
+{% localtime on %}
     <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
         {% if user.is_superuser %}
             <div class="border border-warning-subtle rounded-2 p-3 my-2">
@@ -152,7 +153,7 @@
                            data-clipboard-text="{{ data.owner.get_name }}">{{ data.owner.get_name }}</a></td>
                     <td class="d-none d-lg-table-cell">
                         <a role="button" class="clip text-decoration-none link-body-emphasis"
-                           data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a></td>
+                           data-clipboard-text="{{ data.created_at }}">{{ data.created_at }}</a></td>
                     <td class="d-none d-md-table-cell text-center ">
                         {{ data.expire_date|default:'Never' }}</td>
                     <td class="d-none d-sm-table-cell text-center ">{% if data.super_user %}<i class="fa-solid fa-plane-circle-check text-warning-emphasis"></i>{% else %}-{% endif %}</td>
@@ -167,6 +168,7 @@
     {% endif %}
     </section>
 
+{% endlocaltime %}
 {% endblock %}
 
 {% block tail %}
