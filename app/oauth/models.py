@@ -17,7 +17,7 @@ def rand_invite():
 
 
 class CustomUser(AbstractUser):
-    TIMEZONE_CHOICES = zip(zoneinfo.available_timezones(), zoneinfo.available_timezones())
+    TIMEZONE_CHOICES = zip(sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()))
 
     class UploadNameFormats(models.TextChoices):
         NAME = "name", _("name")
