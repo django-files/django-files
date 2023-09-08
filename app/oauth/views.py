@@ -118,7 +118,7 @@ def oauth_callback(request):
 
 def pre_login(request, user):
     log.debug('username: %s', user.username)
-    if SiteSettings.objects.get(pk=1).duo_auth:
+    if SiteSettings.objects.settings().duo_auth:
         request.session['username'] = user.username
         url = duo_redirect(request, user.username)
         log.debug('url: %s', url)

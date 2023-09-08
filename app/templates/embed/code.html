@@ -7,11 +7,11 @@
 
     <meta name="theme-color" content="{{ file.user.default_color }}">
 
-    <meta name="author" content="{{ file.user.username }}"/>
+    <meta name="author" content="{{ file.user.get_name }}"/>
     <meta name="title" content="{{ file.name }}"/>
     <meta name="description" content="{{ file.info }}"/>
 
-    <meta property="og:author" content="{{ file.user.username }}">
+    <meta property="og:author" content="{{ file.user.get_name }}">
     <meta property="og:title" content="{{ file.name }}">
     <meta property="og:description" content="{{ file.info }}">
 

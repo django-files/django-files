@@ -278,7 +278,7 @@ class FilesTestCase(TestCase):
         log.info('self.user.authorization: %s', self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
         log.info('login: %s', login)
-        site_settings = SiteSettings.objects.get(pk=1)
+        site_settings = SiteSettings.objects.settings()
         log.info('site_settings: %s', site_settings)
         log.info('settings.MEDIA_ROOT: %s', settings.MEDIA_ROOT)
         if os.path.isdir(settings.MEDIA_ROOT):

@@ -74,7 +74,7 @@
                     {% else %}
                         <li class="nav-item dropdown">
                             <a class="nav-link" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {{ user.first_name|default:user.username }} <i class="fas fa-angle-down mx-1"></i>
+                                {{ user.get_name }} <i class="fas fa-angle-down mx-1"></i>
                                 <img src="{{ user.get_avatar }}"
                                      class="rounded-circle mx-2 d-none d-sm-inline d-md-inline d-lg-inline d-xl-inline" height="26" width="26" alt="P"></a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">

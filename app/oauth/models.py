@@ -15,6 +15,12 @@ def rand_invite():
 
 
 class CustomUser(AbstractUser):
+    class UploadNameFormats(models.TextChoices):
+        NAME = "name", _("name")
+        RAND = "rand", _("random")
+        DATE = "date", _("date")
+        UUID = "uuid", _("uuid")
+
     id = models.AutoField(primary_key=True)
     show_setup = models.BooleanField(default=False)
     authorization = models.CharField(default=rand_string, max_length=32)
@@ -31,15 +37,19 @@ class CustomUser(AbstractUser):
     show_exif_preview = models.BooleanField(
         default=False, verbose_name='EXIF Preview',
         help_text='Shows exif data on previews and unfurls.')
+    default_upload_name_format = models.CharField(
+        max_length=4, choices=UploadNameFormats.choices,
+        default=UploadNameFormats.NAME
+    )
 
-    class UploadNameFormats(models.TextChoices):
-        NAME = "name", _("name")
-        RAND = "rand", _("random")
-        DATE = "date", _("date")
-        UUID = "uuid", _("uuid")
+    def __str__(self):
+        return self.get_name()
 
-    default_upload_name_format = models.CharField(max_length=4, choices=UploadNameFormats.choices,
-                                                  default=UploadNameFormats.NAME)
+    def __repr__(self):
+        return f'<CustomUser(id={self.id}, username={self.username}>'
+
+    def get_name(self):
+        return self.first_name or self.username
 
     def get_avatar(self):
         # TODO: Let User Choose Profile Icon or Chose by Active Login
@@ -48,13 +58,8 @@ class CustomUser(AbstractUser):
                    f'{ self.discord.id }/{ self.discord.avatar }.png'
         if hasattr(self, 'github') and getattr(self.github, 'avatar'):
             return self.github.avatar
+        # TODO: Let User Upload an Avatar
         return static('images/assets/default.png')
-
-    def __str__(self):
-        return self.first_name or self.username
-
-    def __repr__(self):
-        return f'<CustomUser(id={self.id}, username={self.username}>'
 
 
 class UserInvites(models.Model):
@@ -100,15 +105,15 @@ class UserInvites(models.Model):
         return True
 
     def get_uri(self):
-        return reverse('settings:invite', kwargs={'invite': self.invite})
+        return reverse('home:invite', kwargs={'invite': self.invite})
 
     def get_url(self, site_url):
-        uri = reverse('settings:invite', kwargs={'invite': self.invite})
+        uri = reverse('home:invite', kwargs={'invite': self.invite})
         return site_url + uri
 
     def build_url(self):
-        uri = reverse('settings:invite', kwargs={'invite': self.invite})
-        return SiteSettings.objects.get(pk=1).site_url + uri
+        uri = reverse('home:invite', kwargs={'invite': self.invite})
+        return SiteSettings.objects.settings().site_url + uri
 
 
 class Discord(models.Model):

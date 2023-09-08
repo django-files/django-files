@@ -72,7 +72,7 @@ class DiscordOauth(object):
     @classmethod
     def redirect_login(cls, request) -> HttpResponseRedirect:
         request.session['oauth_provider'] = provider
-        site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+        site_settings = SiteSettings.objects.settings()
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {
@@ -90,7 +90,7 @@ class DiscordOauth(object):
     def redirect_webhook(cls, request) -> HttpResponseRedirect:
         request.session['oauth_provider'] = provider
         request.session['webhook'] = 'discord'
-        site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+        site_settings = SiteSettings.objects.settings()
         params = {
             'redirect_uri': site_settings.oauth_redirect_url or config('OAUTH_REDIRECT_URL'),
             'client_id': site_settings.discord_client_id or config('DISCORD_CLIENT_ID'),
@@ -104,7 +104,7 @@ class DiscordOauth(object):
     @classmethod
     def get_token(cls, code: str) -> dict:
         log.debug('get_token')
-        site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+        site_settings = SiteSettings.objects.settings()
         data = {
             'redirect_uri': site_settings.oauth_redirect_url or config('OAUTH_REDIRECT_URL'),
             'client_id': site_settings.discord_client_id or config('DISCORD_CLIENT_ID'),

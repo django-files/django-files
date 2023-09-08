@@ -7,11 +7,11 @@
 {% block meta %}
     <meta name="theme-color" content="{{ file.user.default_color }}">
 
-    <meta name="author" content="{{ file.user.username }}"/>
+    <meta name="author" content="{{ file.user.get_name }}"/>
     <meta name="title" content="{{ file.name }}"/>
     <meta name="description" content="{{ file.info }}"/>
 
-    <meta property="og:author" content="{{ file.user.username }}">
+    <meta property="og:author" content="{{ file.user.get_name }}">
     <meta property="og:title" content="{{ file.name }}">
     <meta property="og:description" content="{{ file.info|default:"" }}{% if file.user.show_exif_preview %}{% if file.exif.Model %}
 Camera: {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}{% endif %}{% if file.exif.DateTimeOriginal%}
@@ -24,7 +24,7 @@ ISO Speed: {{ file.exif.ISOSpeedRatings }}{% endif %}{% if file.exif.ExposureTim
 Exposure Time: {{ file.exif.ExposureTime }} s{% endif %}
 {% endif %}{% if file.meta.PILImageWidth %}
 Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}
-{{ file.mime }} uploaded by {% if file.user.first_name %}{{ file.user.first_name }}{% else %}{{ file.user.username }}{% endif %} on {{ file.date }}">
+{{ file.mime }} uploaded by {{ file.user.get_name }} on {{ file.date }}">
 
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
@@ -134,7 +134,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                             {% endif %}
                         </span>
                     </p>
-                    <p class="card-text mx-0 mb-0">Uploader: {{ file.user.first_name|default:file.user.username }}</p>
+                    <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>
                     <p class="card-text">Uploaded {{ file.date }}</p>
                     {% if file.user.show_exif_preview and file.exif %}
                         <p class="card-text text-body-secondary">

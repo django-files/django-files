@@ -36,4 +36,12 @@ $(document).ready(function () {
             processData: false,
         })
     })
+
+    // Handle invite code searches
+    $('#inviteSearch').on('submit', function (event) {
+        event.preventDefault()
+        let invite = $(this)[0].invite.value.trim()
+        let action = $(this).attr('action')
+        return window.location.replace(action + invite)
+    })
 })

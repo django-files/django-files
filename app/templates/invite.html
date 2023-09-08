@@ -21,40 +21,51 @@
             <div class="d-flex flex-grow-1 justify-content-center align-items-center">
                 <div id="login-outer" class="animate__animated animate__fadeIn " style="width: 320px;">
                     <div class="text-center">
-{#                        <img class="img-responsive" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">#}
+                        <img class="img-responsive" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
                         <h3 class="text-white mt-2">{{ site_settings.site_title }}</h3>
-{#                        <h4><i class="fa-solid fa-users me-2"></i> User Invite</h4>#}
                     </div>
 
                     {% if invite %}
-                        <p class="text-center">Welcome to {{ site_settings.site_title }}.<br>
-                            Select a Username and Password.</p>
+                        <p class="text-center"><strong>{{ invite.owner.get_name }}</strong> invited you to join.</p>
+                        <p class="text-center">Select a Username and Password.</p>
 
-                        <form method="POST" name="inviteForm" id="inviteForm" action="{% url 'settings:invite' invite=invite %}">
+                        <form name="inviteForm" id="inviteForm" method="post" action="{% url 'home:invite' invite=invite.invite %}">
                             {% csrf_token %}
 
                             <label for="username" class="form-label">Username</label>
                             <input type="text" class="form-control" id="username" name="username" autocomplete="username"
-                                   aria-describedby="username-invalid" autofocus required>
+                                   placeholder="Username" aria-describedby="username-invalid" autofocus required>
                             <div id="username-invalid" class="invalid-feedback"></div>
 
                             <label for="password" class="form-label mt-2">Password</label>
                             <input type="password" class="form-control" id="password" name="password" autocomplete="password"
-                                   aria-describedby="password-invalid" required>
+                                   placeholder="Password" aria-describedby="password-invalid" required>
                             <div id="password-invalid" class="invalid-feedback"></div>
 
                             <div class="d-grid gap-2 mt-4">
                                 <button class="btn btn-success opacity-75" type="submit">
-                                    <i class="fa-solid fa-user-plus"></i> Create Account</button>
+                                    <i class="fa-solid fa-user-plus me-2"></i> Create Account</button>
                             </div>
                         </form>
                     {% else %}
                         <p class="lead text-center">
-                            <span class="text-danger-emphasis">Invite Not Found.</span>
-                            <br>
-                            <span class="text-warning-emphasis">Me So Sorry...</span></p>
-                        <div class="modal-footer">
-                            <a role="button" class="btn btn-outline-success col" href="{% url 'home:index' %}">
+                            <span class="text-danger-emphasis">Invite Not Found.</span></p>
+
+                        <form name="inviteSearch" id="inviteSearch" action="/invite/">
+                            <label for="invite" class="form-label mt-2">Invite Lookup</label>
+                            <input type="text" class="form-control" id="invite" name="invite" autocomplete="invite"
+                                   placeholder="Invite Code" aria-describedby="invite-invalid" required>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button class="btn btn-success opacity-75" type="submit">
+                                    <i class="fa-solid fa-magnifying-glass me-2"></i> Lookup Invite</button>
+                            </div>
+                        </form>
+
+                        <hr>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <a role="button" class="btn btn-outline-warning col" href="{% url 'home:index' %}">
                                 <i class="fa-solid fa-house-laptop me-2"></i> Go Home</a>
                         </div>
                     {% endif %}

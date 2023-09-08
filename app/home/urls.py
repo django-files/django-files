@@ -13,6 +13,7 @@ urlpatterns = [
     path('shorts/', views.shorts_view, name='shorts'),
     path('stats/', views.stats_view, name='stats'),
     path('public/', views.pub_uppy_view, name='public-uppy'),
+    path('invite/<str:invite>', views.invite_view, name='invite'),
     re_path(r'^upload/?$', upload_view, name='upload'),
     re_path(r'^shorten/?$', shorten_view, name='shorten'),
     path('s/<str:short>', views.shorten_short_view, name='short'),

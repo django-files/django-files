@@ -3,9 +3,10 @@ import logging
 import markdown
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.shortcuts import render, reverse, get_object_or_404
+from django.shortcuts import redirect, render, reverse, get_object_or_404
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -16,7 +17,8 @@ from api.views import process_file_upload, parse_expire
 from home.models import Files, FileStats, ShortURLs
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
-from oauth.models import CustomUser
+from oauth.forms import UserForm
+from oauth.models import CustomUser, UserInvites
 from settings.models import SiteSettings
 from oauth.models import DiscordWebhooks
 
@@ -137,7 +139,7 @@ def pub_uppy_view(request):
     log.debug('%s - pub_uppy_view', request.method)
     log.debug('request.user: %s', request.user)
     try:
-        site_settings = SiteSettings.objects.get(pk=1)
+        site_settings = SiteSettings.objects.settings()
         log.debug('site_settings: %s', site_settings)
         if not site_settings.pub_load:
             if request.user.is_authenticated:
@@ -157,6 +159,56 @@ def pub_uppy_view(request):
     except Exception as error:
         log.exception(error)
         return JsonResponse({'error': str(error)}, status=500)
+
+
+@csrf_exempt
+def invite_view(request, invite=None):
+    """
+    View  /invite/
+    """
+    log.debug('request.method: %s', request.method)
+    if request.user.is_authenticated:
+        log.debug('request.user.is_authenticated: %s', request.user.is_authenticated)
+        return redirect('home:index')
+    if request.method == 'POST':
+        log.debug('request.POST: %s', request.POST)
+        invite = UserInvites.objects.get_invite(invite)
+        log.debug('invite: %s', invite)
+        if not invite or not invite.is_valid():
+            return HttpResponse(status=400)
+
+        form = UserForm(request.POST)
+        if not form.is_valid():
+            return JsonResponse(form.errors, status=400)
+
+        log.debug('username: %s', form.cleaned_data['username'])
+        log.debug('password: %s', form.cleaned_data['password'])
+        if invite.super_user:
+            user = CustomUser.objects.create_superuser(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password'],
+            )
+        else:
+            user = CustomUser.objects.create_user(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password'],
+            )
+        log.debug('user: %s', user)
+        if not invite.use_invite(user.id):
+            return JsonResponse(form.errors, status=400)
+        login(request, user)
+        request.session['login_redirect_url'] = reverse('settings:user')
+        messages.info(request, f'Welcome to Django Files {request.user.get_name}.')
+        return HttpResponse(status=200)
+
+    log.debug('request.GET: %s', request.GET)
+    context = {}
+    if invite := UserInvites.objects.get_invite(invite):
+        log.debug('invite: %s', invite)
+        if invite.is_valid():
+            context = {'invite': invite}
+    log.debug('context: %s', context)
+    return render(request, 'invite.html', context=context)
 
 
 def shorten_short_view(request, short):
