@@ -215,6 +215,12 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-Site-flush-cache')
 
+        page.get_by_role('button', name='Create').click()
+        page.wait_for_timeout(timeout=250)
+        page.reload()
+        page.locator('text=Invites')
+        self.screenshot(page, 'Settings-invite-created')
+
         page.goto(f'{self.live_server_url}/public/')
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Public-enabled')

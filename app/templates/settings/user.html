@@ -133,13 +133,13 @@
                     {% for data in webhooks %}
                         <tr id="webhook-{{ data.id }}">
                             <th scope="row" class="d-none d-sm-table-cell">{{ data.id }}</th>
-                            <td><a class="clip text-white text-decoration-none" role="button"
+                            <td><a class="clip link-body-emphasis text-decoration-none" role="button"
                                 data-clipboard-text="{{ data.guild_id }}">{{ data.guild_id }}</a></td>
                             <td class="d-none d-sm-table-cell">
-                                <a class="clip text-white text-decoration-none" role="button"
+                                <a class="clip link-body-emphasis text-decoration-none" role="button"
                                 data-clipboard-text="{{ data.channel_id }}">{{ data.channel_id }}</a></td>
                             <td class="d-none d-md-table-cell">
-                                <a class="clip text-white text-decoration-none" role="button"
+                                <a class="clip link-body-emphasis text-decoration-none" role="button"
                                 data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a></td>
                             <td class="text-center"><a role="button" class="deleteDiscordHookBtn" data-hook-id="{{ data.id }}" title="Delete">
                                 <i class="fa-regular fa-trash-can link-danger"></i></a></td>

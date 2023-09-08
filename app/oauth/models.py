@@ -99,8 +99,8 @@ class UserInvites(models.Model):
             if not self.uses < self.max_uses:
                 return False
         if self.expire:
-            seconds = timezone.now() - self.created_at
-            if self.expire <= seconds:
+            delta = timezone.now() - self.created_at
+            if self.expire <= delta.seconds:
                 return False
         return True
 

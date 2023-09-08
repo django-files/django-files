@@ -27,7 +27,7 @@
 
                     {% if invite %}
                         <p class="text-center"><strong>{{ invite.owner.get_name }}</strong> invited you to join.</p>
-                        <p class="text-center">Select a Username and Password.</p>
+                        <p class="text-center text-success-emphasis">Select a Username and Password.</p>
 
                         <form name="inviteForm" id="inviteForm" method="post" action="{% url 'home:invite' invite=invite.invite %}">
                             {% csrf_token %}

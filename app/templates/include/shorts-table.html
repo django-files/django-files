@@ -14,9 +14,9 @@
     {% for short in shorts %}
     <tr id="short-{{ short.id }}">
         <th scope="row" class="d-none d-sm-table-cell">
-            <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'home:short' short=short.short %}" target="_blank">
-                {{ short.short }}</a></th>
-        <td><a href="{{ short.url }}" target="_blank">{{ short.url }}</a></td>
+            <a href="{{ request.scheme }}://{{ request.get_host }}{% url 'home:short' short=short.short %}"
+               class="link-body-emphasis" target="_blank">{{ short.short }}</a></th>
+        <td><a href="{{ short.url }}" target="_blank" class="link-body-emphasis">{{ short.url }}</a></td>
         <td class="d-none d-md-table-cell">{{ short.views }}</td>
         <td class="d-none d-md-table-cell">{{ short.max|default:"-" }}</td>
         <td class="text-center">

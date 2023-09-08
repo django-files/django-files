@@ -142,7 +142,7 @@ def invites_view(request):
         log.debug('data: %s', data)
         invite = UserInvites.objects.create(
             owner=request.user,
-            expire=parse(data.get('expire', 0)),
+            expire=parse(data.get('expire', 0)) or 0,
             max_uses=data.get('max_uses', 1),
             super_user=true_false(data.get('super_user', False)),
         )
@@ -293,8 +293,11 @@ def parse_expire(request) -> str:
 
 
 def true_false(value):
+    log.debug('true_false: %s', value)
     if not isinstance(value, str):
         return bool(value)
+    log.debug('value: %s', value)
     if value.lower() in ['true', 'yes', 'on', '1']:
         return True
+    log.debug('FAIL')
     return False
