@@ -22,7 +22,6 @@ from home.models import Files, FileStats, ShortURLs
 from home.util.file import process_file
 from home.util.rand import rand_string
 from oauth.models import CustomUser
-from home.util.rand import rand_string
 from settings.models import SiteSettings
 
 log = logging.getLogger('app')
@@ -69,7 +68,6 @@ def upload_view(request):
     try:
         if not (f := request.FILES.get('file')):
             return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
-        print(request.headers)
         kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
                   'format': request.headers.get('format')}
         return process_file_upload(f, request.user.id, **kwargs)
