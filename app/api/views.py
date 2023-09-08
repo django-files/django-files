@@ -199,9 +199,11 @@ def remote_view(request):
     return JsonResponse(response)
 
 
-def get_formatted_name(name_input: str, format_input: str = ''):
-    # check if format_input set, otherwise user user default as format_input in future
-    match format_input.lower():
+def get_formatted_name(name_input: str, format: str = ''):
+    if not format:
+        # default to user setting in future
+        format = ''
+    match format.lower():
         case 'random':
             name = rand_string()
         case 'uuid':
