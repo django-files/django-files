@@ -1,6 +1,7 @@
 from django.db import models
 
 from home.util.rand import rand_color_hex
+from settings.managers import SiteSettingsManager
 
 
 class SiteSettings(models.Model):
@@ -32,16 +33,18 @@ class SiteSettings(models.Model):
     s3_bucket_name = models.CharField(max_length=128, blank=True, null=True)
     s3_cdn = models.CharField(
         max_length=128, blank=True, null=True,
-        help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.')
+        help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.'
+    )
+    objects = SiteSettingsManager()
 
     def __str__(self):
         return f'<SiteSettings(site_url={self.site_url})>'
+
+    class Meta:
+        verbose_name = 'Setting'
+        verbose_name_plural = 'Settings'
 
     def save(self, *args, **kwargs):
         if self.__class__.objects.count():
             self.pk = self.__class__.objects.first().pk
         super().save(*args, **kwargs)
-
-    class Meta:
-        verbose_name = 'Setting'
-        verbose_name_plural = 'Settings'

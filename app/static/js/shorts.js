@@ -14,8 +14,8 @@ $(document).ready(function () {
         $.ajax({
             type: form.attr('method'),
             url: form.attr('action'),
-            headers: { 'X-CSRFToken': csrftoken },
             data: JSON.stringify(data),
+            headers: { 'X-CSRFToken': csrftoken },
             success: function (data) {
                 console.log('data: ' + JSON.stringify(data))
                 alert('Short Created: ' + data['url'])

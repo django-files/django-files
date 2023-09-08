@@ -53,7 +53,7 @@ def get_or_create_user(request, _id, username) -> Optional[CustomUser]:
     #     return CustomUser.objects.create(username=username, is_staff=True, is_superuser=True)
 
     # no matching accounts found, if registration is enabled, create user
-    if SiteSettings.objects.get(pk=1).oauth_reg or is_super_id(_id):
+    if SiteSettings.objects.settings().oauth_reg or is_super_id(_id):
         log.info('%s created by oauth_reg with id: %s', username, _id)
         return CustomUser.objects.create(username=username)
 

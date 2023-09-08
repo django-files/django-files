@@ -10,8 +10,24 @@
 {% block head %}{% endblock %}
 
 {% block main %}
+
+    <div class="float-end">Last Login: {{ user.last_login }}</div>
+    <div>ID: {{ user.id }}</div>
+
     <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
         <div class="border border-success-subtle rounded-2 p-3 my-2">
+
+            <div class="row">
+                <div class="col-md-6">
+                    <label for="first_name" class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name"
+                           value="{{ user.first_name }}" aria-describedby="first_name-help first_name-invalid">
+                    <div id="first_name-invalid" class="invalid-feedback"></div>
+                    <div id="first_name-help" class="form-text">
+                        First Name.
+                    </div>
+                </div>
+            </div>
 
             <div class="row">
                 <div class="col-md-6">
@@ -107,7 +123,8 @@
 
     <hr>
 
-    <h3 id="webhooks">Webhooks</h3>
+    <section id="webhooks">
+    <h3>Webhooks</h3>
 
     {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
         {% if user.discord %}
@@ -133,13 +150,13 @@
                     {% for data in webhooks %}
                         <tr id="webhook-{{ data.id }}">
                             <th scope="row" class="d-none d-sm-table-cell">{{ data.id }}</th>
-                            <td><a class="clip text-white text-decoration-none" role="button"
+                            <td><a class="clip link-body-emphasis text-decoration-none" role="button"
                                 data-clipboard-text="{{ data.guild_id }}">{{ data.guild_id }}</a></td>
                             <td class="d-none d-sm-table-cell">
-                                <a class="clip text-white text-decoration-none" role="button"
+                                <a class="clip link-body-emphasis text-decoration-none" role="button"
                                 data-clipboard-text="{{ data.channel_id }}">{{ data.channel_id }}</a></td>
                             <td class="d-none d-md-table-cell">
-                                <a class="clip text-white text-decoration-none" role="button"
+                                <a class="clip link-body-emphasis text-decoration-none" role="button"
                                 data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a></td>
                             <td class="text-center"><a role="button" class="deleteDiscordHookBtn" data-hook-id="{{ data.id }}" title="Delete">
                                 <i class="fa-regular fa-trash-can link-danger"></i></a></td>
@@ -156,10 +173,12 @@
     {% else %}
         <p>To enable Webhooks, you must configure Discord.</p>
     {% endif %}
+    </section>
 
     <hr>
 
-    <h3 id="upload">Upload Methods</h3>
+    <section id="upload">
+    <h3>Upload Methods</h3>
 
     <p class="lead">Django Files is backwards compatible with
         <a href="https://zipline.diced.vercel.app/docs/api/upload" target="_blank">
@@ -182,6 +201,7 @@
                 Flameshot Script</a>
         </div>
     </div>
+    </section>
 
     <hr>
 
@@ -274,14 +294,15 @@
 
     <hr>
 
-    <h3 id="token">Authorization Token</h3>
+    <section id="token">
+    <h3>Authorization Token</h3>
 
     <p>Treat this token like a password.</p>
     <p><a class="btn btn-lg btn-outline-light clip" role="button" data-clipboard-text="{{ user.authorization }}">
         <i class="fa-solid fa-key me-2"></i> Copy Token</a></p>
     <p><kbd>{{ user.authorization }}</kbd></p>
 
-    <div class="modal fade" id="delete-hook-modal" tabindex="-1" aria-labelledby="exampleModalLabel"
+    <div class="modal fade" id="deleteDiscordHookModal" tabindex="-1" aria-labelledby="exampleModalLabel"
          aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -298,6 +319,7 @@
             </div>
         </div>
     </div>
+    </section>
 {% endblock %}
 
 {% block tail %}

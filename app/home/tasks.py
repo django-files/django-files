@@ -237,7 +237,7 @@ def send_discord_message(pk):
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')
 def send_success_message(hook_pk):
     # Send a success message for new webhook
-    site_settings = SiteSettings.objects.get(pk=1)
+    site_settings = SiteSettings.objects.settings()
     log.info('send_success_message: %s', hook_pk)
     context = {'site_url': site_settings.site_url}
     message = render_to_string('message/welcome.html', context)

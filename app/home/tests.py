@@ -200,7 +200,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-delete-deleted')
 
-        page.goto(f'{self.live_server_url}/public/')
+        page.goto(f"{self.live_server_url}{reverse('home:public-uppy')}")
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Public-disabled-redirect')
 
@@ -215,7 +215,13 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-Site-flush-cache')
 
-        page.goto(f'{self.live_server_url}/public/')
+        page.get_by_role('button', name='Create').click()
+        page.wait_for_timeout(timeout=250)
+        page.reload()
+        page.locator('#invites').focus()
+        self.screenshot(page, 'Settings-invite-created')
+
+        page.goto(f"{self.live_server_url}{reverse('home:public-uppy')}")
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Public-enabled')
 
@@ -278,7 +284,7 @@ class FilesTestCase(TestCase):
         log.info('self.user.authorization: %s', self.user.authorization)
         login = self.client.login(username='testuser', password='12345')
         log.info('login: %s', login)
-        site_settings = SiteSettings.objects.get(pk=1)
+        site_settings = SiteSettings.objects.settings()
         log.info('site_settings: %s', site_settings)
         log.info('settings.MEDIA_ROOT: %s', settings.MEDIA_ROOT)
         if os.path.isdir(settings.MEDIA_ROOT):

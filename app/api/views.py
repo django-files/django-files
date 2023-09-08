@@ -1,13 +1,14 @@
+import functools
 import httpx
 import io
 import json
 import logging
 import os
-import validators
-import functools
 import uuid
-
+import validators
+from datetime import datetime
 from django.core import serializers
+from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import reverse
 from django.views.decorators.cache import cache_page, cache_control
@@ -16,12 +17,11 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from pytimeparse2 import parse
 from typing import Optional
-from datetime import datetime
 
 from home.models import Files, FileStats, ShortURLs
 from home.util.file import process_file
 from home.util.rand import rand_string
-from oauth.models import CustomUser
+from oauth.models import CustomUser, UserInvites
 from settings.models import SiteSettings
 
 log = logging.getLogger('app')
@@ -115,13 +115,42 @@ def shorten_view(request):
             max=max_views or 0,
             user=request.user,
         )
-        site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
+        site_settings = SiteSettings.objects.settings()
         full_url = site_settings.site_url + reverse('home:short', kwargs={'short': url.short})
         return JsonResponse({'url': full_url}, safe=False)
 
     except Exception as error:
         log.exception(error)
         return JsonResponse({'error': str(error)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(['OPTIONS', 'GET', 'POST'])
+@auth_from_token
+@cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix='stats')
+@vary_on_headers('Authorization')
+@vary_on_cookie
+def invites_view(request):
+    """
+    View  /api/invites/
+    """
+    log.debug('%s - invites_view: is_secure: %s', request.method, request.is_secure())
+    if request.method == 'POST':
+        body = request.body.decode()
+        data = json.loads(body)
+        log.debug('data: %s', data)
+        invite = UserInvites.objects.create(
+            owner=request.user,
+            expire=parse(data.get('expire', 0)) or 0,
+            max_uses=data.get('max_uses', 1),
+            super_user=true_false(data.get('super_user', False)),
+        )
+        log.debug(invite)
+        log.debug(model_to_dict(invite))
+        return JsonResponse(model_to_dict(invite))
+
+    return JsonResponse({'error': 'Not Implemented'}, status=501)
 
 
 @csrf_exempt
@@ -261,3 +290,14 @@ def parse_expire(request) -> str:
     if request.user.is_authenticated:
         return request.user.default_expire or ''
     return ''
+
+
+def true_false(value):
+    log.debug('true_false: %s', value)
+    if not isinstance(value, str):
+        return bool(value)
+    log.debug('value: %s', value)
+    if value.lower() in ['true', 'yes', 'on', '1']:
+        return True
+    log.debug('FAIL')
+    return False

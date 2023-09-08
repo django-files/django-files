@@ -113,7 +113,7 @@ class Files(models.Model):
         return self.get_url(False) + "?view=gallery"
 
     def preview_url(self) -> str:
-        site_settings = SiteSettings.objects.get(pk=1)
+        site_settings = SiteSettings.objects.settings()
         uri = reverse('home:url-route', kwargs={'filename': self.file.name})
         return site_settings.site_url + uri
 

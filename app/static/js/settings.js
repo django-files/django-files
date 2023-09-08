@@ -3,17 +3,20 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Define Delete Modal and Delete Button class handler
-    let deleteHookModal
+    let deleteDiscordHookModal
     try {
-        deleteHookModal = new bootstrap.Modal('#delete-hook-modal', {})
+        deleteDiscordHookModal = new bootstrap.Modal(
+            '#deleteDiscordHookModal',
+            {}
+        )
     } catch (error) {
-        console.log('#delete-hook-modal Not Found')
+        console.log('#deleteDiscordHookModal Not Found')
     }
     let hookID
     $('.deleteDiscordHookBtn').click(function () {
         hookID = $(this).data('hook-id')
         console.log(hookID)
-        deleteHookModal.show()
+        deleteDiscordHookModal.show()
     })
 
     // Handle Confirm Delete Clicks
@@ -25,7 +28,7 @@ $(document).ready(function () {
             headers: { 'X-CSRFToken': csrftoken },
             success: function (data) {
                 console.log('data: ' + data)
-                deleteHookModal.hide()
+                deleteDiscordHookModal.hide()
                 console.log(`removing #wehook-${hookID}`)
                 let count = $('#discordWebhooksTable tr').length
                 $(`#webhook-${hookID}`).remove()
@@ -39,7 +42,7 @@ $(document).ready(function () {
             error: function (jqXHR) {
                 console.log('jqXHR.status: ' + jqXHR.status)
                 console.log('jqXHR.statusText: ' + jqXHR.statusText)
-                deleteHookModal.hide()
+                deleteDiscordHookModal.hide()
                 let message = 'Error: ' + jqXHR.statusText
                 show_toast(message, 'danger', '10000')
             },
@@ -87,6 +90,42 @@ $(document).ready(function () {
                     })
                 } else {
                     alert(jqXHR.statusText)
+                }
+            },
+            cache: false,
+            contentType: false,
+            processData: false,
+        })
+    })
+
+    // Handle Invites Form
+    $('#invitesForm').on('submit', function (event) {
+        console.log('#invitesForm on submit function')
+        event.preventDefault()
+        let form = $(this)
+        console.log(form)
+        // TODO: Simplify JSON Creation...
+        let data = new FormData(form[0])
+        data.forEach((value, key) => (data[key] = value))
+        $.ajax({
+            type: form.attr('method'),
+            url: form.attr('action'),
+            data: JSON.stringify(data),
+            headers: { 'X-CSRFToken': csrftoken },
+            success: function (data) {
+                console.log('data: ' + JSON.stringify(data))
+                alert('Invite Created: ' + data['invite'])
+                location.reload()
+            },
+            error: function (jqXHR) {
+                console.log('jqXHR.status: ' + jqXHR.status)
+                console.log('jqXHR.statusText: ' + jqXHR.statusText)
+                // TODO: Replace this with real error handling
+                if (jqXHR.status === 400) {
+                    show_toast(jqXHR.responseJSON['error'], 'danger', '6000')
+                } else {
+                    let message = jqXHR.status + ': ' + jqXHR.statusText
+                    show_toast(message, 'danger', '6000')
                 }
             },
             cache: false,

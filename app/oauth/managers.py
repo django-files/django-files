@@ -8,6 +8,7 @@ class DiscordWebhooksManager(models.Manager):
 
 class UserInvitesManager(models.Manager):
     def get_invite(self, invite, **kwargs):
-        if invite := self.filter(invite=invite, **kwargs):
-            return invite[0]
+        if invite:
+            if invite := self.filter(invite=invite, **kwargs):
+                return invite[0]
         return None

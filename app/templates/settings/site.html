@@ -95,6 +95,78 @@
             </div>
         {% endif %}
     </form>
+
+    <hr>
+
+    <section id="invites">
+    <h3>Invites</h3>
+
+    <form id="invitesForm" method="post" action="{% url 'api:invites' %}">
+        <div class="row g-3">
+            <div class="col-sm-3">
+                <input type="text" class="form-control" placeholder="Max Uses" aria-label="Max Uses"
+                       id="max_uses" name="max_uses" value="1">
+            </div>
+            <div class="col-sm-3">
+                <input type="text" class="form-control" placeholder="Expiration" aria-label="Expiration"
+                       id="expire" name="expire">
+            </div>
+            <div class="col-sm-3 fs-5 d-flex flex-column">
+                <div class="form-check form-switch flex-grow-1 ">
+                    <input class="form-check-input" type="checkbox" id="super_user" name="super_user">
+                    <label class="form-check-label" for="super_user">Admin</label>
+                </div>
+            </div>
+            <div class="col-sm-3 d-grid">
+                <button class="btn btn-outline-success" type="submit">
+                    <i class="fa-solid fa-user-plus me-2"></i> Create</button>
+            </div>
+        </div>
+    </form>
+
+    {% if not invites %}
+        <p class="lead mt-2">No Invites Found.</p>
+    {% else %}
+        <table class="table table-responsive mt-2" id="invitesTable">
+            <thead>
+            <tr>
+                <th scope="col" class="d-none d-sm-table-cell">ID</th>
+                <th scope="col" class="">Invite</th>
+                <th scope="col" class="d-none d-sm-table-cell">Owner</th>
+                <th scope="col" class="d-none d-lg-table-cell">Created</th>
+                <th scope="col" class="d-none d-md-table-cell text-center">Expire</th>
+                <th scope="col" class="d-none d-sm-table-cell text-center">Admin</th>
+                <th scope="col" class="text-center">Uses</th>
+{#                <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>#}
+            </tr>
+            </thead>
+            <tbody>
+            {% for data in invites %}
+                <tr id="invite-{{ data.id }}" class="">
+                    <th scope="row" class="d-none d-sm-table-cell ">
+                        {{ data.id }}</th>
+                    <td><a role="button" class="clip link-offset-2 link-underline-opacity-25 link-{{ data.is_valid|if_true:"success"|default:"danger" }}"
+                           data-clipboard-text="{{ data.build_url }}">{{ data.invite }}</a></td>
+                    <td class="d-none d-sm-table-cell">
+                        <a role="button" class="clip text-decoration-none link-body-emphasis"
+                           data-clipboard-text="{{ data.owner.get_name }}">{{ data.owner.get_name }}</a></td>
+                    <td class="d-none d-lg-table-cell">
+                        <a role="button" class="clip text-decoration-none link-body-emphasis"
+                           data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a></td>
+                    <td class="d-none d-md-table-cell text-center ">
+                        {{ data.expire_date|default:'Never' }}</td>
+                    <td class="d-none d-sm-table-cell text-center ">{% if data.super_user %}<i class="fa-solid fa-plane-circle-check text-warning-emphasis"></i>{% else %}-{% endif %}</td>
+                    <td class="text-center ">
+                        {{ data.uses }}/{{ data.max_uses }}</td>
+{#                    <td class="text-center"><a role="button" class="deleteInviteBtn" data-hook-id="{{ data.id }}" title="Delete">#}
+{#                        <i class="fa-regular fa-trash-can link-danger"></i></a></td>#}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    </section>
+
 {% endblock %}
 
 {% block tail %}
