@@ -1,5 +1,5 @@
 import datetime
-
+import zoneinfo
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.shortcuts import reverse
@@ -17,6 +17,8 @@ def rand_invite():
 
 
 class CustomUser(AbstractUser):
+    TIMEZONE_CHOICES = zip(sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()))
+
     class UploadNameFormats(models.TextChoices):
         NAME = "name", _("name")
         RAND = "rand", _("random")
@@ -24,8 +26,8 @@ class CustomUser(AbstractUser):
         UUID = "uuid", _("uuid")
 
     id = models.AutoField(primary_key=True)
-    show_setup = models.BooleanField(default=False)
     authorization = models.CharField(default=rand_string, max_length=32)
+    timezone = models.CharField(max_length=255, choices=TIMEZONE_CHOICES, default='America/Los_Angeles')
     default_expire = models.CharField(default='', blank=True, max_length=32)
     default_color = models.CharField(default=rand_color_hex, max_length=7)
     nav_color_1 = models.CharField(default='#130e36', max_length=7)
@@ -43,6 +45,7 @@ class CustomUser(AbstractUser):
         max_length=4, choices=UploadNameFormats.choices,
         default=UploadNameFormats.NAME
     )
+    show_setup = models.BooleanField(default=False)
 
     def __str__(self):
         return self.get_name()
