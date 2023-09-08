@@ -164,7 +164,7 @@ def pub_uppy_view(request):
 @csrf_exempt
 def invite_view(request, invite=None):
     """
-    View  /invite/
+    View  /i/
     """
     log.debug('request.method: %s', request.method)
     if request.user.is_authenticated:
