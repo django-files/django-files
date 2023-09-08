@@ -31,7 +31,7 @@
                 <div class="col-md-6">
                     <label for="timezone" class="form-label">Timezone</label>
                     <input class="form-control" list="timezoneOptions" id="timezone" name="timezone" autocomplete="timezone"
-                           placeholder="{{ user.timezone|default:"Type to Search..." }}">
+                        value="{{ user.timezone }}" placeholder="Type to Search...">
                     <datalist id="timezoneOptions">
                         {% for timezone in timezones %}
                             <option value="{{ timezone }}"></option>
