@@ -1,12 +1,9 @@
 $(document).ready(function () {
-    // Define Hook Modal and Delete handlers
+    // Show Welcome Modal
     let welcomeModal = new bootstrap.Modal('#welcomeModal', {})
     welcomeModal.show()
 
-    // Local login form handler
-    $('.form-control').focus(function () {
-        $(this).removeClass('is-invalid')
-    })
+    // Welcome Form Handler
     $('#saveCredentials').on('click', function (event) {
         console.log('saveCredentials on click function')
         event.preventDefault()
@@ -16,10 +13,6 @@ $(document).ready(function () {
             url: welcomeForm.attr('action'),
             type: 'POST',
             data: formData,
-            crossDomain: true,
-            beforeSend: function () {
-                console.log('beforeSend')
-            },
             success: function (response) {
                 console.log('response: ' + response)
             },

@@ -232,13 +232,3 @@ def add_webhook(request, profile):
     )
     webhook.save()
     return webhook
-
-
-# log.debug('user.username: %s', user.username)
-# if SiteSettings.objects.get(pk=1).duo_auth:
-#     log.info('--- DUO DETECTED - REDIRECTING ---')
-#     request.session['username'] = user.username
-#     request.session['profile'] = json.dumps(profile, default=str)
-#     url = duo_redirect(request, user.username)
-#     log.debug('url: %s', url)
-#     return HttpResponseRedirect(url)

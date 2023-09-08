@@ -28,7 +28,7 @@
 
                 {% include 'include/stats-table.html' with stats=stats count=0 %}
 
-                <p><a class="btn btn-sm btn-outline-warning me-2" role="button" id="update-stats-btn"
+                <p><a class="btn btn-sm btn-outline-warning me-2" role="button" id="updateStatsBtn"
                       data-target-url="{% url 'home:update-stats' %}">
                     <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>{% if stats %}
                     <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>{% endif %}</p>

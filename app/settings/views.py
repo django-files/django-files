@@ -9,10 +9,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from oauth.models import CustomUser
-from oauth.forms import LoginForm
+from oauth.forms import LoginForm, UserForm
 from settings.forms import SiteSettingsForm, UserSettingsForm
 from settings.models import SiteSettings
-from oauth.models import DiscordWebhooks
+from oauth.models import DiscordWebhooks, UserInvites
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -25,6 +25,9 @@ def site_view(request):
     View  /settings/site/
     """
     log.debug('site_view: %s', request.method)
+    if not request.user.is_superuser:
+        return HttpResponse(status=401)
+
     site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
     log.debug('site_settings.github_client_id: %s', site_settings.github_client_id)
     if request.method in ['GET', 'HEAD']:
@@ -40,20 +43,16 @@ def site_view(request):
         return JsonResponse(form.errors, status=400)
     data = {'reload': False}
     log.debug(form.cleaned_data)
-    if request.user.is_superuser:
-        site_settings.site_url = form.cleaned_data['site_url']
-        site_settings.site_title = form.cleaned_data['site_title']
-        site_settings.site_description = form.cleaned_data['site_description']
-        site_settings.site_color = form.cleaned_data['site_color']
-        site_settings.pub_load = form.cleaned_data['pub_load']
-        site_settings.oauth_reg = form.cleaned_data['oauth_reg']
-        site_settings.duo_auth = form.cleaned_data['duo_auth']
-        site_settings.save()
 
-    # # TODO: Determine if this is superuser setting or user setting
-    # request.user.s3_bucket_name = form.cleaned_data.get('s3_bucket_name')
+    site_settings.site_url = form.cleaned_data['site_url']
+    site_settings.site_title = form.cleaned_data['site_title']
+    site_settings.site_description = form.cleaned_data['site_description']
+    site_settings.site_color = form.cleaned_data['site_color']
+    site_settings.pub_load = form.cleaned_data['pub_load']
+    site_settings.oauth_reg = form.cleaned_data['oauth_reg']
+    site_settings.duo_auth = form.cleaned_data['duo_auth']
+    site_settings.save()
 
-    request.user.save()
     if data['reload']:
         messages.success(request, 'Settings Saved Successfully.')
     return JsonResponse(data, status=200)
@@ -66,10 +65,9 @@ def user_view(request):
     View  /settings/user/
     """
     log.debug('user_view: %s', request.method)
-    site_settings, _ = SiteSettings.objects.get_or_create(pk=1)
-    if request.method in ['GET', 'HEAD']:
+    if request.method != 'POST':
         webhooks = DiscordWebhooks.objects.get_request(request)
-        context = {'webhooks': webhooks, 'site_settings': site_settings}
+        context = {'webhooks': webhooks}
         log.debug('context: %s', context)
         return render(request, 'settings/user.html', context)
 
@@ -107,11 +105,65 @@ def user_view(request):
 
 
 @csrf_exempt
+def invite_view(request, invite):
+    """
+    View  /invite/
+    """
+    log.debug('request.method: %s', request.method)
+    if request.user.is_authenticated:
+        log.debug('request.user.is_authenticated: %s', request.user.is_authenticated)
+        return redirect('home:index')
+    if request.method == 'POST':
+        log.debug('request.POST: %s', request.POST)
+        # invite = get_invite(invite)
+        invite = UserInvites.objects.get_invite(invite)
+        log.debug('invite: %s', invite)
+        if not invite or not invite.is_valid():
+            return HttpResponse(status=400)
+
+        form = UserForm(request.POST)
+        if not form.is_valid():
+            return JsonResponse(form.errors, status=400)
+
+        log.debug('username: %s', form.cleaned_data['username'])
+        log.debug('password: %s', form.cleaned_data['password'])
+        if invite.super_user:
+            user = CustomUser.objects.create_superuser(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password'],
+            )
+        else:
+            user = CustomUser.objects.create_user(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password'],
+            )
+        log.debug('user: %s', user)
+        if not invite.use_invite(user.id):
+            return JsonResponse(form.errors, status=400)
+        login(request, user)
+        request.session['login_redirect_url'] = reverse('settings:user')
+        messages.info(request, f'Welcome to Django Files {request.user.username}.')
+        return HttpResponse(status=200)
+
+    log.debug('request.GET: %s', request.GET)
+    context = {}
+    if invite := UserInvites.objects.get_invite(invite):
+        log.debug('invite: %s', invite)
+        if invite.is_valid():
+            context = {'invite': invite.invite}
+    log.debug('context: %s', context)
+    return render(request, 'settings/invite.html', context=context)
+
+
+@csrf_exempt
 @login_required
 def welcome_view(request):
     """
     View  /welcome/
     """
+    if not request.user.show_setup:
+        return redirect('settings:site')
+
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if not form.is_valid():
@@ -130,8 +182,6 @@ def welcome_view(request):
         messages.info(request, f'Welcome to Django Files {request.user.username}.')
         return HttpResponse(status=200)
 
-    if not request.user.show_setup:
-        return redirect('settings:site')
     return render(request, 'settings/welcome.html')
 
 

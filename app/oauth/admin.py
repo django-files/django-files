@@ -1,10 +1,17 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from oauth.models import CustomUser, Discord, Github
+from oauth.models import CustomUser, Discord, Github, UserInvites
 
 admin.site.register(Discord)
 admin.site.register(Github)
+
+
+@admin.register(UserInvites)
+class UserInvitesAdmin(admin.ModelAdmin):
+    list_display = ('invite', 'max_uses', 'uses', 'super_user', 'owner',)
+    list_filter = ('owner', 'super_user',)
+    readonly_fields = ('uses', 'user_ids',)
 
 
 @admin.register(CustomUser)

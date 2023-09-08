@@ -7,8 +7,14 @@ $(document).ready(function () {
     //     console.log(data);
     // };
 
-    // Back to Top Button, Function, and Listener
+    // Form Control
+    $('.form-control').focus(function () {
+        $(this).removeClass('is-invalid')
+    })
+
+    // Back to Top Button
     let mybutton = document.getElementById('back-to-top')
+
     if (mybutton) {
         window.onscroll = function () {
             scrollFunction()
@@ -30,10 +36,9 @@ $(document).ready(function () {
         }
     }
 
-    // Init a ClipboardJS attribute
+    // ClipboardJS
     new ClipboardJS('.clip')
 
-    // Onclick listener for clip
     $(document).ready(function () {
         $('.clip').click(function () {
             var clipElement = $(this)
@@ -59,7 +64,6 @@ $(document).ready(function () {
 
     // Show custom toast-alert classes on load
     $('.toast-alert').each(function () {
-        console.log($(this).html())
         let toastAlert = new bootstrap.Toast($(this))
         toastAlert.show()
     })

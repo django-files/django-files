@@ -10,125 +10,83 @@ $(document).ready(function () {
         console.log('#delete-hook-modal Not Found')
     }
     let hookID
-    $('.delete-webhook-btn').click(function () {
+    $('.deleteDiscordHookBtn').click(function () {
         hookID = $(this).data('hook-id')
         console.log(hookID)
         deleteHookModal.show()
     })
 
-    // Handle Confirm Delete Clicks id handler
-    $('#confirm-delete-hook-btn').click(function () {
+    // Handle Confirm Delete Clicks
+    $('#confirmDeleteDiscordHookBtn').click(function () {
         console.log(hookID)
         $.ajax({
             type: 'POST',
             url: `/ajax/delete/hook/${hookID}/`,
             headers: { 'X-CSRFToken': csrftoken },
-            beforeSend: function () {
-                console.log('beforeSend')
-            },
-            success: function (response) {
-                console.log('response: ' + response)
+            success: function (data) {
+                console.log('data: ' + data)
                 deleteHookModal.hide()
-                console.log('removing #wehook-' + hookID)
-                let count = $('#webhooks-table tr').length
-                $('#webhook-' + hookID).remove()
+                console.log(`removing #wehook-${hookID}`)
+                let count = $('#discordWebhooksTable tr').length
+                $(`#webhook-${hookID}`).remove()
                 if (count <= 2) {
-                    console.log('removing #webhooks-table@ #webhooks')
-                    $('#webhooks-table').remove()
+                    console.log('removing #discordWebhooksTable@')
+                    $('#discordWebhooksTable').remove()
                 }
-                let message = 'Webhoook ' + hookID + ' Successfully Removed.'
+                let message = `Webhoook ${hookID} Successfully Removed.`
                 show_toast(message, 'success')
             },
-            error: function (xhr, status, error) {
-                console.log('xhr status: ' + xhr.status)
-                console.log('status: ' + status)
-                console.log('error: ' + error)
+            error: function (jqXHR) {
+                console.log('jqXHR.status: ' + jqXHR.status)
+                console.log('jqXHR.statusText: ' + jqXHR.statusText)
                 deleteHookModal.hide()
-                let message = xhr.status + ': ' + error
-                show_toast(message, 'danger', '15000')
-            },
-            complete: function () {
-                console.log('complete')
+                let message = 'Error: ' + jqXHR.statusText
+                show_toast(message, 'danger', '10000')
             },
         })
     })
 
-    // Remove .is-invalid when clicking on a filed
-    $('.form-control').focus(function () {
-        $(this).removeClass('is-invalid')
-    })
-
     // Handle profile save button click and response
-    $('#settings-form').on('submit', function (event) {
+    $('#settingsForm').on('submit', function (event) {
+        console.log('#settingsForm on submit function')
         event.preventDefault()
-        if ($('#submit-app-btn').hasClass('disabled')) {
-            return
-        }
-        var formData = new FormData($(this)[0])
+        let form = $(this)
+        console.log(form)
         $.ajax({
             url: window.location.pathname,
-            // url: $('#settings-form').attr('action'),
-            type: 'POST',
+            type: form.attr('method'),
+            data: new FormData(form[0]),
             headers: { 'X-CSRFToken': csrftoken },
-            data: formData,
-            beforeSend: function (jqXHR) {
-                $('#save-settings').addClass('disabled')
-            },
-            success: function (data, textStatus, jqXHR) {
-                console.log(
-                    'Status: ' +
-                        jqXHR.status +
-                        ', Data: ' +
-                        JSON.stringify(data)
-                )
+            success: function (data) {
+                console.log('data: ' + JSON.stringify(data))
                 if (data['reload']) {
                     alert(
                         'Settings changed require reload to take effect.\n' +
                             'The page will now refresh...'
                     )
+                    location.reload()
                 } else {
                     let message = 'Settings Saved Successfully.'
                     show_toast(message, 'success', '6000')
                 }
-                // $("#message-success").show();
             },
-            complete: function (data, textStatus) {
-                $('#save-settings').removeClass('disabled')
-                console.log(data.responseJSON)
-                if (data.responseJSON['reload']) {
-                    location.reload()
-                }
-            },
-            error: function (data, status, error) {
-                console.log(
-                    'Status: ' +
-                        data.status +
-                        ', Response: ' +
-                        data.responseText
-                )
-                let message = data.status + ': ' + error
-                show_toast(message, 'danger', '6000')
-                try {
-                    console.log(data.responseJSON)
-                    if (data.responseJSON.hasOwnProperty('error_message')) {
-                        alert(data.responseJSON['error_message'])
-                    } else {
-                        $($('#settings-form').prop('elements')).each(
-                            function () {
-                                if (
-                                    data.responseJSON.hasOwnProperty(this.name)
-                                ) {
-                                    $('#' + this.name + '-invalid')
-                                        .empty()
-                                        .append(data.responseJSON[this.name])
-                                    $(this).addClass('is-invalid')
-                                }
-                            }
-                        )
-                    }
-                } catch (error) {
-                    console.log(error)
-                    alert('Fatal Error: ' + error)
+            error: function (jqXHR) {
+                console.log('jqXHR.status: ' + jqXHR.status)
+                console.log('jqXHR.statusText: ' + jqXHR.statusText)
+                show_toast(jqXHR.statusText, 'danger', '6000')
+                if (jqXHR.status === 400) {
+                    let data = jqXHR.responseJSON
+                    console.log(data)
+                    $(form.prop('elements')).each(function () {
+                        if (data.hasOwnProperty(this.name)) {
+                            $('#' + this.name + '-invalid')
+                                .empty()
+                                .append(data[this.name])
+                            $(this).addClass('is-invalid')
+                        }
+                    })
+                } else {
+                    alert(jqXHR.statusText)
                 }
             },
             cache: false,

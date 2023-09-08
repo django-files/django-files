@@ -23,34 +23,25 @@ $(document).ready(function () {
         $.ajax({
             url: $('#quick-short-form').attr('action'),
             type: 'POST',
-            headers: { 'X-CSRFToken': csrftoken },
             data: JSON.stringify(data),
-            beforeSend: function (jqXHR) {
-                //
-            },
-            success: function (data, textStatus, jqXHR) {
-                console.log(
-                    'Status: ' +
-                        jqXHR.status +
-                        ', Data: ' +
-                        JSON.stringify(data)
-                )
+            headers: { 'X-CSRFToken': csrftoken },
+            success: function (data) {
+                console.log('data: ' + data)
                 alert('Short Created: ' + data['url'])
                 location.reload()
             },
-            complete: function (data, textStatus) {
-                //
-            },
-            error: function (data) {
-                console.log(
-                    'Status: ' +
-                        data.status +
-                        ', Response: ' +
-                        data.responseText
-                )
-                // alert(data.responseText);
-                let message = data.status + ': ' + data.responseJSON['error']
-                show_toast(message, 'danger', '6000')
+            error: function (jqXHR) {
+                console.log('jqXHR.status: ' + jqXHR.status)
+                console.log('jqXHR.statusText: ' + jqXHR.statusText)
+                if (jqXHR.status === 400) {
+                    let data = jqXHR.responseJSON
+                    console.log(data)
+                    let message = jqXHR.status + ': ' + data['error']
+                    show_toast(message, 'danger', '6000')
+                } else {
+                    let message = jqXHR.status + ': ' + jqXHR.statusText
+                    show_toast(message, 'danger', '6000')
+                }
             },
             cache: false,
             contentType: false,

@@ -3,7 +3,7 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Define Hook Modal and Delete handlers
-    const deleteHookModal = new bootstrap.Modal('#delete-file-modal', {})
+    const deleteHookModal = new bootstrap.Modal('#deleteFileModal', {})
     let hookID
     $('.delete-file-btn').click(function () {
         hookID = $(this).data('hook-id')
@@ -12,7 +12,7 @@ $(document).ready(function () {
     })
 
     // Handle delete click confirmations
-    $('#confirm-delete-file-btn').click(function () {
+    $('#confirmDeleteFileBtn').click(function () {
         console.log(hookID)
         $.ajax({
             type: 'POST',
