@@ -84,8 +84,6 @@ def user_view(request):
     data = {'reload': False}
     log.debug(form.cleaned_data)
 
-    log.debug('form.cleaned_data.timezone: %s', form.cleaned_data['timezone'])
-    log.debug('request.user.timezone: %s', request.user.timezone)
     request.user.first_name = form.cleaned_data['first_name']
     request.user.timezone = form.cleaned_data['timezone']
     request.user.default_expire = form.cleaned_data['default_expire']

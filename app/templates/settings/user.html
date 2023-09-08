@@ -29,13 +29,14 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label for="timezone" class="form-label">Time Zone</label>
-                    <select class="form-select" id="timezone" name="timezone"
-                            aria-describedby="default_upload_name_format-help default_upload_name_format-invalid">
+                    <label for="timezone" class="form-label">Timezone</label>
+                    <input class="form-control" list="timezoneOptions" id="timezone" name="timezone"
+                           placeholder="{{ user.timezone|default:"Type to Search..." }}">
+                    <datalist id="timezoneOptions">
                         {% for timezone in timezones %}
-                            <option value="{{ timezone }}" {% if timezone == user.timezone %}selected{% endif %}>{{ timezone }}</option>
+                            <option value="{{ timezone }}"></option>
                         {% endfor %}
-                    </select>
+                    </datalist>
                     <div id="default_upload_name_format_name_format-invalid" class="invalid-feedback"></div>
                     <div id="default_upload_name_format-help" class="form-text"></div>
                 </div>
