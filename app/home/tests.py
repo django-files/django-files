@@ -218,7 +218,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.get_by_role('button', name='Create').click()
         page.wait_for_timeout(timeout=250)
         page.reload()
-        page.locator('#invites')
+        page.locator('#invites').focus()
         self.screenshot(page, 'Settings-invite-created')
 
         page.goto(f"{self.live_server_url}{reverse('home:public-uppy')}")
