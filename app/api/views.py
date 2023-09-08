@@ -193,7 +193,7 @@ def remote_view(request):
 
     kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
     name = get_formatted_name(request.user, os.path.basename(url), request.headers.get('format'))
-    file = process_file(name, io.BytesIO(r.content), request.user, **kwargs)
+    file = process_file(name, io.BytesIO(r.content), request.user.id, **kwargs)
     response = {'url': f'{file.preview_url()}'}
     log.debug('url: %s', url)
     return JsonResponse(response)
