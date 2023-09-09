@@ -4,9 +4,8 @@ import io
 import json
 import logging
 import os
-import uuid
+
 import validators
-from datetime import datetime
 from django.core import serializers
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
@@ -69,7 +68,7 @@ def upload_view(request):
         if not (f := request.FILES.get('file')):
             return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
         kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
-                  'format': request.headers.get('format')}
+                  'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed')}
         return process_file_upload(f, request.user, **kwargs)
     except Exception as error:
         log.exception(error)
@@ -220,40 +219,20 @@ def remote_view(request):
     if not r.is_success:
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
-    kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info')}
-    name = get_formatted_name(request.user, os.path.basename(url), request.headers.get('format'))
-    file = process_file(name, io.BytesIO(r.content), request.user.id, **kwargs)
+    kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'), 'format': request.headers.get('format')}
+    file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id, **kwargs)
     response = {'url': f'{file.preview_url()}'}
     log.debug('url: %s', url)
     return JsonResponse(response)
 
 
-def get_formatted_name(user: CustomUser, name_input: str, format_name: str = ''):
-    if not format_name:
-        format_name = user.get_default_upload_name_format_display()
-    match format_name.lower():
-        case 'random':
-            name = rand_string()
-        case 'uuid':
-            name = str(uuid.uuid4())
-        case 'date':
-            name = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        case _:
-            name = name_input
-    if name != name_input:
-        name = name + os.path.splitext(name_input)[1]
-    return name
-
-
 def process_file_upload(f, user, **kwargs):
-    name = get_formatted_name(user, f.name, kwargs.get('format'))
-    kwargs.pop('format')
-    file = process_file(name, f, user.id, **kwargs)
+    file = process_file(f.name, f, user.id, **kwargs)
     data = {
         'files': [file.preview_url()],
         'url': file.preview_url(),
         'raw': file.get_url(),
-        'name': name,
+        'name': file.name,
         'size': file.size,
     }
     return JsonResponse(data)

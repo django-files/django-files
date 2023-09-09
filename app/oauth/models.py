@@ -39,8 +39,8 @@ class CustomUser(AbstractUser):
         default=False, verbose_name='No EXIF',
         help_text='Removes exif data from images on upload.')
     show_exif_preview = models.BooleanField(
-        default=False, verbose_name='EXIF Preview',
-        help_text='Shows exif data on previews and unfurls.')
+        default=True, verbose_name='EXIF Preview',
+        help_text='Default value if to show exif data on previews and unfurls.')
     default_upload_name_format = models.CharField(
         max_length=4, choices=UploadNameFormats.choices,
         default=UploadNameFormats.NAME

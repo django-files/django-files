@@ -26,6 +26,7 @@ class Files(models.Model):
     date = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='File Created Date.')
     edit = models.DateTimeField(auto_now=True, verbose_name='Edited', help_text='File Edited Date.')
     meta = models.JSONField(default=dict, blank=True, verbose_name="Metadata", help_text="JSON formatted metadata.")
+    meta_preview = models.BooleanField(default=True, help_text="Show metadata on previews.")
     password = models.CharField(max_length=255, null=True, blank=True, verbose_name='File Password')
     private = models.BooleanField(default=False, verbose_name='Private File')
     objects = FilesManager()
