@@ -32,7 +32,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     user = CustomUser.objects.get(id=user_id)
     log.info('user: %s', user)
     # process name first
-    name = get_formatted_name(user, f.name, kwargs.pop('name_format', None))
+    name = get_formatted_name(user, name, kwargs.pop('name_format', None))
     # we want to use a temporary local file to support cloud storage cases
     # this allows us to modify the file before upload
     file = Files(user=user, **kwargs)
