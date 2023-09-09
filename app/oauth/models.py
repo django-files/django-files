@@ -32,19 +32,16 @@ class CustomUser(AbstractUser):
     default_color = models.CharField(default=rand_color_hex, max_length=7)
     nav_color_1 = models.CharField(default='#130e36', max_length=7)
     nav_color_2 = models.CharField(default='#1e1c21', max_length=7)
-    remove_exif_geo = models.BooleanField(
-        default=False, verbose_name='No EXIF Geo',
-        help_text='Removes geo exif data from images on upload.')
-    remove_exif = models.BooleanField(
-        default=False, verbose_name='No EXIF',
-        help_text='Removes exif data from images on upload.')
-    show_exif_preview = models.BooleanField(
-        default=True, verbose_name='EXIF Preview',
-        help_text='Default value if to show exif data on previews and unfurls.')
-    default_upload_name_format = models.CharField(
-        max_length=4, choices=UploadNameFormats.choices,
-        default=UploadNameFormats.NAME
-    )
+    remove_exif_geo = models.BooleanField(default=False, verbose_name='No EXIF Geo',
+                                          help_text='Removes geo exif data from images on upload.')
+    remove_exif = models.BooleanField(default=False, verbose_name='No EXIF',
+                                      help_text='Removes exif data from images on upload.')
+    show_exif_preview = models.BooleanField(default=True, verbose_name='EXIF Preview',
+                                            help_text='Default value if to show exif data on previews and unfurls.')
+    default_upload_name_format = models.CharField(max_length=4, choices=UploadNameFormats.choices,
+                                                  default=UploadNameFormats.NAME)
+    default_file_private = models.BooleanField(default=False, verbose_name='Default File Private',
+                                               help_text="If enabled file default to private when not specified.")
     show_setup = models.BooleanField(default=False)
 
     def __str__(self):
