@@ -58,6 +58,8 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
             file.meta_preview = bool(strtobool(meta_preview))
         else:
             file.meta_preview = user.show_exif_preview
+        if (private := kwargs.get('private')) is not None:
+            file.private = bool(strtobool(private))
         file.save()
     log.info('file.file.name: %s', file.file.name)
     file.name = file.file.name
