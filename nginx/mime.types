@@ -46,4 +46,5 @@ types {
     text/plain                                       txt text;
     text/plain                                       tcl tk;
     text/plain                                       xml;
+    text/plain                                       yaml yml;
 }
