@@ -32,7 +32,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     user = CustomUser.objects.get(id=user_id)
     log.info('user: %s', user)
     # process name first
-    name = get_formatted_name(user, f.name, kwargs.pop('format'))
+    name = get_formatted_name(user, f.name, kwargs.pop('name_format'))
     # we want to use a temporary local file to support cloud storage cases
     # this allows us to modify the file before upload
     file = Files(user=user, **kwargs)
@@ -58,8 +58,6 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
             file.meta_preview = bool(strtobool(meta_preview))
         else:
             file.meta_preview = user.show_exif_preview
-        if (password := kwargs.get('password')):
-            file.password = password
         file.save()
     log.info('file.file.name: %s', file.file.name)
     file.name = file.file.name
