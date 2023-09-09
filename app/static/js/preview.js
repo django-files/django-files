@@ -51,7 +51,7 @@ $(document).ready(function () {
 
     // Set Password Hook Modal and Set Password handlers
     const setPasswordHookModal = new bootstrap.Modal(
-        '#set-password-file-modal',
+        '#setFilePasswordModal',
         {}
     )
     let pwhookID
@@ -184,7 +184,7 @@ $(document).ready(function () {
         show_toast('Password generated and copied!', 'info', '15000')
     })
 
-    $('#set-password-file-modal').on('shown.bs.modal', function () {
-        $(this).find('#password').focus()
+    $('#setFilePasswordModal').on('shown.bs.modal', function () {
+        $('#password').attr('type', 'password').focus()
     })
 })
