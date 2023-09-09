@@ -103,6 +103,18 @@ MESSAGE_TAGS = {
     message_constants.ERROR: 'danger',
 }
 
+CORS_ALLOW_HEADERS = (
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+    "format",
+    "expr",
+    "info",
+)
+
 CELERY_BEAT_SCHEDULE = {
     'app_init': {
         'task': 'home.tasks.app_init',
