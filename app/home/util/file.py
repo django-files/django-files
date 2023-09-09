@@ -3,7 +3,6 @@ import mimetypes
 import os
 import uuid
 import tempfile
-from distutils.util import strtobool
 from datetime import datetime
 # from django.conf import settings
 from django.core.files import File
@@ -13,6 +12,7 @@ from typing import IO
 from home.models import Files
 from home.util.image import ImageProcessor
 from home.util.rand import rand_string
+from home.util.misc import anytobool
 from home.tasks import send_discord_message
 from oauth.models import CustomUser
 
@@ -32,7 +32,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     user = CustomUser.objects.get(id=user_id)
     log.info('user: %s', user)
     # process name first
-    name = get_formatted_name(user, name, kwargs.pop('name_format', None))
+    name = get_formatted_name(user, name, kwargs.pop('format', None))
     # we want to use a temporary local file to support cloud storage cases
     # this allows us to modify the file before upload
     file = Files(user=user, **kwargs)
@@ -55,11 +55,11 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
         file.size = file.file.size
         log.info('file.size: %s', file.size)
         if (meta_preview := kwargs.get('meta_preview')) is not None:
-            file.meta_preview = bool(strtobool(meta_preview))
+            file.meta_preview = anytobool(meta_preview)
         else:
             file.meta_preview = user.show_exif_preview
         if (private := kwargs.get('private')) is not None:
-            file.private = bool(strtobool(private))
+            file.private = anytobool(private)
         else:
             file.private = user.default_file_private
         file.save()
