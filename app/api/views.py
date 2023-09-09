@@ -45,7 +45,6 @@ def auth_from_token(view):
 
 
 @csrf_exempt
-@require_http_methods(['OPTIONS', 'GET'])
 @auth_from_token
 def api_view(request):
     """
@@ -56,7 +55,7 @@ def api_view(request):
 
 
 @csrf_exempt
-@require_http_methods(['POST'])
+@require_http_methods(['OPTIONS', 'POST'])
 @auth_from_token
 def upload_view(request):
     """
@@ -78,7 +77,7 @@ def upload_view(request):
 
 
 @csrf_exempt
-@require_http_methods(['POST'])
+@require_http_methods(['OPTIONS', 'POST'])
 @auth_from_token
 def shorten_view(request):
     """
