@@ -68,7 +68,8 @@ def upload_view(request):
         if not (f := request.FILES.get('file')):
             return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
         kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
-                  'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed')}
+                  'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed'),
+                  'password': request.headers.get('password')}
         return process_file_upload(f, request.user, **kwargs)
     except Exception as error:
         log.exception(error)
@@ -220,7 +221,8 @@ def remote_view(request):
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
     kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
-              'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed')}
+              'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed'),
+              'password': request.headers.get('password')}
     file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id, **kwargs)
     response = {'url': f'{file.preview_url()}'}
     log.debug('url: %s', url)
