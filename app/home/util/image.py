@@ -8,10 +8,16 @@ log = logging.getLogger('app')
 
 class ImageProcessor(object):
 
-    def __init__(self, local_path: str, remove_exif: bool, remove_exif_geo: bool):
+    def __init__(self, local_path: str, remove_exif: bool, default_exif_geo: bool, ctx):
         self.local_path = local_path
-        self.remove_exif = remove_exif
-        self.remove_exif_geo = remove_exif_geo
+        if ctx.get('strip_exif') is not None:
+            self.remove_exif = ctx.get('strip_exif')
+        else:
+            self.remove_exif = remove_exif
+        if ctx.get('strip_gps') is not None:
+            self.remove_exif_geo = ctx.get('strip_gps')
+        else:
+            self.remove_exif_geo = default_exif_geo
         self.exif = {}
         self.meta = {}
 
