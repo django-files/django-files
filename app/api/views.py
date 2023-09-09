@@ -219,7 +219,8 @@ def remote_view(request):
     if not r.is_success:
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
-    kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'), 'format': request.headers.get('format')}
+    kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
+              'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed')}
     file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id, **kwargs)
     response = {'url': f'{file.preview_url()}'}
     log.debug('url: %s', url)
