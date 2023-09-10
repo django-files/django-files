@@ -219,8 +219,8 @@ paths:
 
   /invites/:
     post:
-      summary: Get all Invites
-      description: Get all Invites.
+      summary: Create an Invite
+      description: Create a new User Invite.
       tags:
         - Users
       security:
@@ -245,8 +245,8 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
 
     get:
-      summary: Create an Invite
-      description: Create a new User Invite.
+      summary: Get all Invites
+      description: Get all Invites.
       tags:
         - Users
       security:
