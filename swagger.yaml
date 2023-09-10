@@ -1,0 +1,400 @@
+openapi: 3.0.0
+
+info:
+  title: Django Files
+  description: |
+    Django Files: [https://github.com/django-files/django-files](https://github.com/django-files/django-files)
+  version: 0.7.4
+
+servers:
+  - url: /api
+    description: Main
+  - url: https://f-dev.cssnr.com/api
+    description: Main Dev
+  - url: https://f-s3.cssnr.com/api
+    description: S3 Dev
+  - url: https://f.cssnr.com/api
+    description: Test Prod
+  - url: http://localhost/api
+    description: Local
+  - url: https://intranet.cssnr.com/api
+    description: Intranet
+
+
+paths:
+  /upload/:
+    post:
+      summary: Upload a File
+      description: Upload a file to the server with optional parameters.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+
+      parameters:
+        - name: format
+          in: header
+          description: File Name Format
+          required: false
+          schema:
+            type: string
+        - name: expr
+          in: header
+          description: File Expiration
+          required: false
+          schema:
+            type: string
+
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                info:
+                  type: string
+
+      responses:
+        '200':
+          description: A JSON array of file details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileUploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+  /remote/:
+    post:
+      summary: Upload a Remote URL
+      description: Send a URL to be Downloaded as a File Upload.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/URL'
+            example:
+              url: http://example.com/images/john.png
+
+      responses:
+        '200':
+          description: A JSON array of file details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/URL'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+  /recent/:
+    get:
+      summary: Get Recent Uploads
+      description: Get the Preview URLs for Recently Uploaded Files.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+
+      parameters:
+        - name: amount
+          in: query
+          description: Amount of Files to Return
+          required: false
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: A JSON array of file Preview URLs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  example: http://example.com/u/john.jpg
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+  /stats/:
+    get:
+      summary: Get Raw File Stats
+      description: Get Raw File Stats.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+
+      parameters:
+        - name: amount
+          in: query
+          description: Amount of Files to Return
+          required: false
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: A JSON array of File Stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileStats'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+  /shorten/:
+    post:
+      summary: Shorten a URL
+      description: Shorten a URL using header parameters or a JSON encoded body.
+      tags:
+        - URLs
+      security:
+        - Authorization: []
+
+      parameters:
+        - name: url
+          in: header
+          description: URL to Shorten
+          required: false
+          schema:
+            type: string
+        - name: vanity
+          in: header
+          description: Vanity Name for URL
+          required: false
+          schema:
+            type: string
+        - name: max-views
+          in: header
+          description: Max URL Views
+          required: false
+          schema:
+            type: integer
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShortURL'
+            example:
+              url: http://example.com/really-long-url.html
+              vanity: ab12
+              max-views: 1
+
+      responses:
+        '200':
+          description: A JSON array of the Short URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/URL'
+              example:
+                url: http://example.com/s/ab12
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+  /invites/:
+    post:
+      summary: Create an Invite
+      description: Create a new User Invite.
+      tags:
+        - Users
+      security:
+        - Authorization: []
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Invite'
+
+      responses:
+        '200':
+          description: A JSON object of the Invites
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInvites'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    get:
+      summary: Get all Invites
+      description: Get all User Invites.
+      tags:
+        - Users
+      security:
+        - Authorization: []
+
+      responses:
+        '200':
+          description: A JSON array of the Invites
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserInvites'
+
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+components:
+  securitySchemes:
+    Authorization:
+      type: apiKey
+      in: header
+      name: Authorization
+
+
+  responses:
+    BadRequest:
+      description: Missing required or malformed parameter
+    UnauthorizedError:
+      description: Access token is missing or invalid
+
+
+  schemas:
+    FileUploadResponse:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+            example: http://example.com/u/john.jpg
+        url:
+          type: string
+          example: http://example.com/u/john.jpg
+        raw:
+          type: string
+          example: http://example.com/r/john.jpg
+        name:
+          type: string
+          example: john.jpg
+        size:
+          type: integer
+          format: int64
+          example: 1000
+
+    FileStats:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user:
+          type: integer
+          example: 1
+        stats:
+          type: object
+          example: unknown
+        created_at:
+          type: string
+          example: unknown
+        updated_at:
+          type: string
+          example: unknown
+
+    URL:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          example: http://example.com/u/john.png
+
+    ShortURL:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          example: http://example.com/s/ab12
+        vanity:
+          type: string
+          example: ab12
+        max-views:
+          type: string
+          example: 1
+
+    Invite:
+      type: object
+      properties:
+        expire:
+          type: string
+          example: 1mo
+        max_uses:
+          type: integer
+          example: 1
+        super_user:
+          type: boolean
+          example: false
+
+    UserInvites:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        invite:
+          type: string
+          example: abcdefgh12345678
+        owner:
+          type: integer
+          example: 1
+        expire:
+          type: string
+          example: 1mo
+        max_uses:
+          type: integer
+          example: 1
+        super_user:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          example: unknown
+        updated_at:
+          type: string
+          example: unknown
+
+
+security:
+  - Authorization: []

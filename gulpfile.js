@@ -42,11 +42,19 @@ gulp.task('jquery', () => {
         .pipe(gulp.dest('app/static/dist/jquery'))
 })
 
-// gulp.task('jscookie', () => {
-//     return gulp
-//         .src('node_modules/jscookie/cookie.js')
-//         .pipe(gulp.dest('app/static/dist/jscookie'))
-// })
+gulp.task('swagger-ui', () => {
+    return gulp
+        .src([
+            'node_modules/swagger-ui/dist/swagger-ui.css',
+            'node_modules/swagger-ui/dist/swagger-ui-bundle.js',
+            'node_modules/swagger-ui/dist/swagger-ui-standalone-preset.js',
+        ])
+        .pipe(gulp.dest('app/static/dist/swagger-ui'))
+})
+
+gulp.task('swagger-yaml', () => {
+    return gulp.src(['swagger.yaml']).pipe(gulp.dest('app/static/dist/'))
+})
 
 gulp.task(
     'default',
@@ -55,7 +63,8 @@ gulp.task(
         'bootstrap',
         'clipboard',
         'fontawesome',
-        'jquery'
-        // 'jscookie'
+        'jquery',
+        'swagger-ui',
+        'swagger-yaml'
     )
 )
