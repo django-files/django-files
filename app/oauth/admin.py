@@ -24,6 +24,7 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ('OAuth', {'fields': (
             'timezone', 'default_color', 'default_expire', 'nav_color_1', 'nav_color_2',
-            'remove_exif_geo', 'remove_exif', 'show_exif_preview', 'default_upload_name_format'
+            'remove_exif_geo', 'remove_exif', 'show_exif_preview', 'default_file_private',
+            'default_file_password', 'default_upload_name_format'
         )}),
     )

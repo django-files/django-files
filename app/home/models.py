@@ -113,13 +113,18 @@ class Files(models.Model):
             return gallery_url
         return self.get_url(False) + "?view=gallery"
 
+    def _get_password_query_string(self) -> str:
+        if self.password:
+            return f'?password={self.password}'
+        return ''
+
     def preview_url(self) -> str:
         site_settings = SiteSettings.objects.settings()
         uri = reverse('home:url-route', kwargs={'filename': self.file.name})
-        return site_settings.site_url + uri
+        return site_settings.site_url + uri + self._get_password_query_string()
 
     def preview_uri(self) -> str:
-        return reverse('home:url-route', kwargs={'filename': self.file.name})
+        return reverse('home:url-route', kwargs={'filename': self.file.name}) + self._get_password_query_string()
 
     def get_size(self) -> str:
         num = self.size
