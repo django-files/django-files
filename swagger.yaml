@@ -49,19 +49,19 @@ paths:
           required: false
           description: Strip Exif GPS Data
           schema:
-            type: bool
+            type: boolean
         - name: stip-exif
           in: header
           required: false
           description: Strip Exif Data
           schema:
-            type: bool
+            type: boolean
         - name: private
           description: Make File Private
           in: header
           required: false
           schema:
-            type: bool
+            type: boolean
         - name: password
           in: header
           required: false
