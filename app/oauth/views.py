@@ -46,6 +46,10 @@ def oauth_show(request):
     if request.user.is_authenticated:
         next_url = get_next_url(request)
         return HttpResponseRedirect(next_url)
+
+    if 'next' in request.GET:
+        log.debug('setting login_next_url to: %s', request.GET.get('next'))
+        request.session['login_next_url'] = request.GET.get('next')
     return render(request, 'login.html')
 
 
