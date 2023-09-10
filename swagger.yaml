@@ -20,12 +20,12 @@ servers:
 
 
 paths:
-  /upload:
+  /upload/:
     post:
       summary: Upload a File
       description: Upload a file to the server with optional parameters.
       tags:
-        - Main
+        - Files
       security:
         - Authorization: []
 
@@ -76,7 +76,7 @@ paths:
       summary: Upload a Remote URL
       description: Send a URL to a File to Upload.
       tags:
-        - Main
+        - Files
       security:
         - Authorization: []
 
@@ -101,12 +101,75 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
 
 
-  /shorten:
+  /recent/:
+    get:
+      summary: Get Recent Uploads
+      description: Get the Preview URLs for Recently Uploaded Files.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+
+      parameters:
+        - name: amount
+          in: query
+          description: Amount of Files to Return
+          required: false
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: A JSON array of file Preview URLs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  example: http://example.com/u/john.jpg
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+  /stats/:
+    get:
+      summary: Get Raw File Stats
+      description: Get Raw File Stats.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+
+      parameters:
+        - name: amount
+          in: query
+          description: Amount of Files to Return
+          required: false
+          schema:
+            type: integer
+
+      responses:
+        '200':
+          description: A JSON array of file Preview URLs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileStats'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+  /shorten/:
     post:
       summary: Shorten a URL
       description: Shorten a URL using header parameters or a JSON encoded body.
       tags:
-        - Main
+        - URLs
       security:
         - Authorization: []
 
@@ -128,7 +191,7 @@ paths:
           description: Max URL Views
           required: false
           schema:
-            type: string
+            type: integer
 
       requestBody:
         content:
@@ -137,6 +200,7 @@ paths:
               $ref: '#/components/schemas/ShortURL'
             example:
               url: http://example.com/really-long-url.html
+              vanity: ab12
 
       responses:
         '200':
@@ -147,6 +211,57 @@ paths:
                 $ref: '#/components/schemas/URL'
               example:
                 url: http://example.com/s/ab12
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+
+  /invites/:
+    post:
+      summary: Get all Invites
+      description: Get all Invites.
+      tags:
+        - Users
+      security:
+        - Authorization: []
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Invite'
+
+      responses:
+        '200':
+          description: A JSON object of the Invites
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInvites'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    get:
+      summary: Create an Invite
+      description: Create a new User Invite.
+      tags:
+        - Users
+      security:
+        - Authorization: []
+
+      responses:
+        '200':
+          description: A JSON array of the Invites
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserInvites'
+
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -169,26 +284,6 @@ components:
 
 
   schemas:
-    URL:
-      type: object
-      properties:
-        url:
-          type: string
-          example: http://example.com/u/john.png
-
-    ShortURL:
-      type: object
-      properties:
-        url:
-          type: string
-          example: http://example.com/s/ab12
-        vanity:
-          type: string
-          example: ab12
-        max-views:
-          type: string
-          example: 1
-
     FileUpload:
       type: object
       properties:
@@ -210,6 +305,88 @@ components:
           type: integer
           format: int64
           example: 1000
+
+    FileStats:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user:
+          type: integer
+          example: 1
+        stats:
+          type: object
+          example: unknown
+        created_at:
+          type: string
+          example: unknown
+        updated_at:
+          type: string
+          example: unknown
+
+    URL:
+      type: object
+      properties:
+        url:
+          type: string
+          example: http://example.com/u/john.png
+
+    ShortURL:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          example: http://example.com/s/ab12
+        vanity:
+          type: string
+          example: ab12
+        max-views:
+          type: string
+          example: 1
+
+    Invite:
+      type: object
+      properties:
+        expire:
+          type: string
+          example: 1mo
+        max_uses:
+          type: integer
+          example: 1
+        super_user:
+          type: boolean
+          example: false
+
+    UserInvites:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        invite:
+          type: string
+          example: abcdefgh12345678
+        owner:
+          type: integer
+          example: 1
+        expire:
+          type: string
+          example: 1mo
+        max_uses:
+          type: integer
+          example: 1
+        super_user:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          example: unknown
+        updated_at:
+          type: string
+          example: unknown
 
 
 security:
