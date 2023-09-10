@@ -44,13 +44,13 @@ paths:
           required: false
           schema:
             type: string
-        - name: strip_gps
+        - name: strip-gps
           in: header
           required: False
           description: Strip Exif GPS Data
           schema:
             type: bool
-        - name: stip_exif
+        - name: stip-exif
           in: header
           required: False
           description: Strip Exif Data
