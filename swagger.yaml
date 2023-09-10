@@ -38,7 +38,7 @@ paths:
           required: false
           schema:
             type: string
-        - name: expr
+        - name: expires-at
           in: header
           description: File Expiration
           required: false
