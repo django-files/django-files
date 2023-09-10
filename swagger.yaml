@@ -76,7 +76,7 @@ paths:
   /remote/:
     post:
       summary: Upload a Remote URL
-      description: Send a URL to a File to Upload.
+      description: Send a URL to be Downloaded as a File Upload.
       tags:
         - Files
       security:
@@ -155,11 +155,13 @@ paths:
 
       responses:
         '200':
-          description: A JSON array of file Preview URLs
+          description: A JSON array of File Stats
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileStats'
+                type: array
+                items:
+                  $ref: '#/components/schemas/FileStats'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -203,6 +205,7 @@ paths:
             example:
               url: http://example.com/really-long-url.html
               vanity: ab12
+              max-views: 1
 
       responses:
         '200':
@@ -248,7 +251,7 @@ paths:
 
     get:
       summary: Get all Invites
-      description: Get all Invites.
+      description: Get all User Invites.
       tags:
         - Users
       security:
