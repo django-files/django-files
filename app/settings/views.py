@@ -104,6 +104,7 @@ def user_view(request):
     request.user.show_exif_preview = form.cleaned_data['show_exif_preview']
     request.user.default_upload_name_format = form.cleaned_data['default_upload_name_format']
     request.user.default_file_private = form.cleaned_data['default_file_private']
+    request.user.default_file_password = form.cleaned_data['default_file_password']
     log.debug('form.cleaned_data.show_exif_preview: %s', form.cleaned_data['show_exif_preview'])
     log.debug('request.user.show_exif_preview: %s', request.user.show_exif_preview)
 

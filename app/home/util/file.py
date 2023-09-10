@@ -38,6 +38,12 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
         ctx['strip_exif'] = anytobool(strip_exif)
     if (strip_gps := kwargs.pop('strip_gps', None) is not None):
         ctx['strip_gps'] = anytobool(strip_gps)
+    if (auto_pw := kwargs.pop('auto_pw', None) is not None):
+        if anytobool(auto_pw):
+            kwargs['password'] = rand_string()
+    else:
+        if user.default_file_password:
+            kwargs['password'] = rand_string()
     # we want to use a temporary local file to support cloud storage cases
     # this allows us to modify the file before upload
     file = Files(user=user, **kwargs)

@@ -60,7 +60,6 @@
 
 ## Passwords and Private Files
 - [ ] Add support for nginx raw files to have signed urls.
-- [ ] Auto add password query string to preview/raw url clipboard buttons when pw set
 - [ ] Better access denied error page.
 
 ## Miscellaneous

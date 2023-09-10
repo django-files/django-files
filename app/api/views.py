@@ -71,7 +71,8 @@ def upload_view(request):
         kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
                   'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed'),
                   'password': request.headers.get('password'), 'private': request.headers.get('private'),
-                  'strip_gps': request.headers.get('strip-gps'), 'strip_exif': request.headers.get('strip-exif')}
+                  'strip_gps': request.headers.get('strip-gps'), 'strip_exif': request.headers.get('strip-exif'),
+                  'auto_pw': request.headers.get('auto-password')}
         return process_file_upload(f, request.user, **kwargs)
     except Exception as error:
         log.exception(error)
@@ -225,7 +226,8 @@ def remote_view(request):
     kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
               'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed'),
               'password': request.headers.get('password'), 'private': request.headers.get('private'),
-              'strip_gps': request.headers.get('strip-gps'), 'strip_exif': request.headers.get('strip-exif')}
+              'strip_gps': request.headers.get('strip-gps'), 'strip_exif': request.headers.get('strip-exif'),
+              'auto_pw': request.headers.get('auto-password')}
     file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id, **kwargs)
     response = {'url': f'{file.preview_url()}'}
     log.debug('url: %s', url)

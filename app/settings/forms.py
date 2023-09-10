@@ -39,6 +39,7 @@ class UserSettingsForm(forms.Form):
     remove_exif = forms.BooleanField(required=False)
     show_exif_preview = forms.BooleanField(required=False)
     default_file_private = forms.BooleanField(required=False)
+    default_file_password = forms.BooleanField(required=False)
     default_upload_name_format = forms.ChoiceField(choices=CustomUser.UploadNameFormats.choices)
 
     def clean_default_color(self):
