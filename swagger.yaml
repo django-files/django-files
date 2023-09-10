@@ -38,12 +38,37 @@ paths:
           required: false
           schema:
             type: string
-        - name: expr
+        - name: expires-at
           in: header
           description: File Expiration
           required: false
           schema:
             type: string
+        - name: strip-gps
+          in: header
+          required: false
+          description: Strip Exif GPS Data
+          schema:
+            type: boolean
+        - name: stip-exif
+          in: header
+          required: false
+          description: Strip Exif Data
+          schema:
+            type: boolean
+        - name: private
+          description: Make File Private
+          in: header
+          required: false
+          schema:
+            type: boolean
+        - name: password
+          in: header
+          required: false
+          description: Password to protect file with.
+          schema:
+            type: string
+
 
       requestBody:
         required: true

@@ -28,11 +28,16 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     :param kwargs: Extra Files Object Values
     :return: Files: The created Files object
     """
+    ctx = {}
     log.info('process_file_upload: name: %s', name)
     user = CustomUser.objects.get(id=user_id)
     log.info('user: %s', user)
     # process name first
     name = get_formatted_name(user, name, kwargs.pop('format', None))
+    if (strip_exif := kwargs.pop('strip_exif', None)) is not None:
+        ctx['strip_exif'] = anytobool(strip_exif)
+    if (strip_gps := kwargs.pop('strip_gps', None) is not None):
+        ctx['strip_gps'] = anytobool(strip_gps)
     # we want to use a temporary local file to support cloud storage cases
     # this allows us to modify the file before upload
     file = Files(user=user, **kwargs)
@@ -44,7 +49,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
             file_mime, _ = mimetypes.guess_type(name, strict=False)
         file_mime = file_mime or 'application/octet-stream'
         if file_mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
-            processor = ImageProcessor(fp.name, user.remove_exif, user.remove_exif_geo)
+            processor = ImageProcessor(fp.name, user.remove_exif, user.remove_exif_geo, ctx)
             processor.process_file()
             file.meta = processor.meta
             file.exif = processor.exif
