@@ -15,7 +15,7 @@ servers:
     description: S3 Dev
   - url: https://f.cssnr.com/api
     description: Test Prod
-  - url: http://localhost:8000/api
+  - url: http://localhost/api
     description: Local
   - url: https://intranet.cssnr.com/api
     description: Intranet

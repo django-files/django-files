@@ -10,6 +10,7 @@ from django.core import serializers
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import reverse, render
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -45,7 +46,7 @@ def auth_from_token(view):
 
 
 @csrf_exempt
-@auth_from_token
+@login_required
 def api_view(request):
     """
     View  /api/

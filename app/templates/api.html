@@ -41,11 +41,16 @@
 <script type="text/javascript" src="{% static 'dist/swagger-ui/swagger-ui-bundle.js' %}"></script>
 <script type="text/javascript" src="{% static 'dist/swagger-ui/swagger-ui-standalone-preset.js' %}"></script>
 
+{% csrf_token %}
+
 <script type="text/javascript">
+    {#const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value#}
+
     window.onload = function() {
         window.ui = SwaggerUIBundle({
             url: "{% static 'dist/swagger.yaml' %}",
             dom_id: '#swagger-ui',
+            persistAuthorization: true,
             presets: [
                 SwaggerUIBundle.presets.apis,
                 SwaggerUIStandalonePreset
