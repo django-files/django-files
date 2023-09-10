@@ -34,9 +34,9 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     log.info('user: %s', user)
     # process name first
     name = get_formatted_name(user, name, kwargs.pop('format', None))
-    if (strip_exif := kwargs.pop('strip_exif')) is not None:
+    if (strip_exif := kwargs.pop('strip_exif', None)) is not None:
         ctx['strip_exif'] = anytobool(strip_exif)
-    if (strip_gps := kwargs.pop('strip_gps')) is not None:
+    if (strip_gps := kwargs.pop('strip_gps', None) is not None):
         ctx['strip_gps'] = anytobool(strip_gps)
     # we want to use a temporary local file to support cloud storage cases
     # this allows us to modify the file before upload
