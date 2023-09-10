@@ -265,7 +265,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
 
         private_file.password = 'test123'
         private_file.save()
-        page.goto(f'{self.live_server_url}{private_file.preview_uri()}')
+        page.goto(f'{self.live_server_url}/u/{private_file.name}')
         page.locator('text=Unlock')
         self.screenshot(page, 'File-password')
 
