@@ -28,6 +28,11 @@ print(f'database_type: {database_type}')
 db_location = config('DATABSE_LOCATION', '/data/media/db/database.sqlite3')
 print(f'db_location: {db_location}')
 
+# we load the file secret key as we use this as a shared secret with nginx for signing
+with open('/data/media/db/secret.key') as f:
+    print("Loading secretkey from file.")
+    SECRET_KEY_FROM_FILE = f.read().strip()
+
 if config('SECRET', None) or config('SECRET_KEY', None):
     # ensure SECRET/SECRET_KEY is exactly 50 characters long
     secret_key = config('SECRET', None) or config('SECRET_KEY')
@@ -36,11 +41,10 @@ if config('SECRET', None) or config('SECRET_KEY', None):
         SECRET_KEY = key_prefix[:missing] + secret_key
     else:
         SECRET_KEY = secret_key[:50]
-    print(f'SECRET_KEY from ENV: {SECRET_KEY}')
+    print(f'Using SECRET_KEY from ENV: {SECRET_KEY}')
 else:
-    with open('/data/media/db/secret.key') as f:
-        SECRET_KEY = f.read().strip()
-    print(f'SECRET_KEY from FILE: {SECRET_KEY}')
+    SECRET_KEY = SECRET_KEY_FROM_FILE
+    print(f'Using SECRET_KEY from FILE: {SECRET_KEY}')
 
 DEBUG = config('DEBUG', 'False', bool)
 print(f'DEBUG: {DEBUG}')
