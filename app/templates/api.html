@@ -1,0 +1,61 @@
+{% load static %}
+
+<!doctype html>
+<html lang="en">
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>{{ site_settings.site_title }} API</title>
+
+    {% block meta %}
+        <meta name="title" content="{{ site_settings.site_title }} API"/>
+        <meta name="description" content="{{ site_settings.site_title }} Swagger API Explorer."/>
+        <meta property="og:title" content="{{ site_settings.site_title }} API">
+        <meta property="og:description" content="{{ site_settings.site_title }} Swagger API Explorer.">
+
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{{ request.build_absolute_uri }}">
+        <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo.png' %}">
+        <meta name="theme-color" content="{{ site_settings.site_color }}">
+    {% endblock %}
+
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" sizes="any">
+
+    <link rel="stylesheet" type="text/css" href="{% static 'dist/swagger-ui/swagger-ui.css' %}" />
+    <style>
+        .servers  {
+            display: none
+        }
+        .servers-title  {
+            display: none
+        }
+    </style>
+
+</head>
+<body>
+
+<div id="swagger-ui"></div>
+
+<script type="text/javascript" src="{% static 'dist/swagger-ui/swagger-ui-bundle.js' %}"></script>
+<script type="text/javascript" src="{% static 'dist/swagger-ui/swagger-ui-standalone-preset.js' %}"></script>
+
+<script type="text/javascript">
+    window.onload = function() {
+        window.ui = SwaggerUIBundle({
+            url: "{% static 'dist/swagger.yaml' %}",
+            dom_id: '#swagger-ui',
+            presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIStandalonePreset
+            ],
+            plugins: [
+                SwaggerUIBundle.plugins.DownloadUrl
+            ],
+        });
+    };
+</script>
+
+</body>
+</html>

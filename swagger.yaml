@@ -7,6 +7,8 @@ info:
   version: 0.7.4
 
 servers:
+  - url: /api
+    description: Main
   - url: https://f-dev.cssnr.com/api
     description: Main Dev
   - url: https://f-s3.cssnr.com/api
@@ -64,7 +66,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileUpload'
+                $ref: '#/components/schemas/FileUploadResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -284,7 +286,7 @@ components:
 
 
   schemas:
-    FileUpload:
+    FileUploadResponse:
       type: object
       properties:
         files:
@@ -327,6 +329,8 @@ components:
 
     URL:
       type: object
+      required:
+        - url
       properties:
         url:
           type: string

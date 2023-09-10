@@ -9,7 +9,7 @@ import validators
 from django.core import serializers
 from django.forms.models import model_to_dict
 from django.http import JsonResponse
-from django.shortcuts import reverse
+from django.shortcuts import reverse, render
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -51,7 +51,7 @@ def api_view(request):
     View  /api/
     """
     log.debug('%s - api_view: is_secure: %s', request.method, request.is_secure())
-    return JsonResponse({'status': 'online', 'user': request.user.id})
+    return render(request, 'api.html')
 
 
 @csrf_exempt
