@@ -44,6 +44,31 @@ paths:
           required: false
           schema:
             type: string
+        - name: strip_gps
+          in: header
+          required: False
+          description: Strip Exif GPS Data
+          schema:
+            type: bool
+        - name: stip_exif
+          in: header
+          required: False
+          description: Strip Exif Data
+          schema:
+            type: bool
+        - name: private
+          description: Make File Private
+          in: header
+          required: False
+          schema:
+            type: bool
+        - name: password
+          in: header
+          required: false
+          description: Password to protect file with.
+          schema:
+            type: string
+
 
       requestBody:
         required: true
