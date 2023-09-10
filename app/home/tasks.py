@@ -155,7 +155,7 @@ def process_stats():
         user_id = None if str(user_id) == '_totals' else user_id
         log.info('user_id: %s', user_id)
         log.info('_data: %s', _data)
-        stats = FileStats.objects.filter(user_id=user_id, created_at__day=now.day)
+        stats = FileStats.objects.filter(user_id=user_id, created_at__date=now)
         if stats:
             stats = stats[0]
             stats.stats = _data
