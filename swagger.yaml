@@ -46,20 +46,20 @@ paths:
             type: string
         - name: strip-gps
           in: header
-          required: False
+          required: false
           description: Strip Exif GPS Data
           schema:
             type: bool
         - name: stip-exif
           in: header
-          required: False
+          required: false
           description: Strip Exif Data
           schema:
             type: bool
         - name: private
           description: Make File Private
           in: header
-          required: False
+          required: false
           schema:
             type: bool
         - name: password
