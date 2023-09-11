@@ -20,8 +20,6 @@ if 'test' in sys.argv or 'test_coverage' in sys.argv:
     print(f'TEST dotenv_path: {dotenv_path}')
     env = load_dotenv(dotenv_path=dotenv_path)
     print(f'TEST env: {env}')
-    with open('/data/media/db/secret.key', 'w') as f:
-        f.write('ShbL8CHxZfOOQyZgo7aXtkvOnVrGv3dmJWgg45tVBP8VNfvwIu')
 else:
     dotenv_path = find_dotenv('settings.env', usecwd=True) or find_dotenv(usecwd=True)
     print(f'dotenv_path: {dotenv_path}')
@@ -35,12 +33,18 @@ db_location = config('DATABSE_LOCATION', '/data/media/db/database.sqlite3')
 print(f'db_location: {db_location}')
 
 # read secret key from file
-with open('/data/media/db/secret.key') as f:
+if Path('/data/media/db/secret.key').exists():
     print("Loading secretkey from file.")
-    SECRET_KEY = f.read().strip()
-if DEBUG:
-    # TODO: Do Not Echo Secret Key
-    print(f'SECRET_KEY: {SECRET_KEY}')
+    with open('/data/media/db/secret.key') as f:
+        SECRET_KEY = f.read().strip()
+elif config('SECRET', None) or config('SECRET_KEY'):
+    SECRET_KEY = config('SECRET', None) or config('SECRET_KEY')
+else:
+    print("WARNING: Using Temporary Secret Key")
+    SECRET_KEY = 'DO-NOT-USE-DO-NOT-USE-DO-NOT-USE-DO-NOT-USE-DO-NOT'
+
+# TODO: Do Not Echo Secret Key
+print(f'SECRET_KEY: {SECRET_KEY}')
 
 SITE_URL = config('SITE_URL', 'http://localhost')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '*', Csv())
