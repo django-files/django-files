@@ -1,6 +1,6 @@
 #!/bin/sh
-# https://github.com/nginxinc/docker-nginx/blob/master/stable/alpine-slim/docker-entrypoint.sh
 # vim:sw=4:ts=4:et
+# source: https://github.com/nginxinc/docker-nginx/blob/master/stable/alpine-slim/docker-entrypoint.sh
 
 set -e
 

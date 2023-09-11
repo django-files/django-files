@@ -48,8 +48,9 @@ RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
 COPY --from=node /work/app/static/dist/ /app/static/dist/
 
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/docker-entrypoint.sh /nginx-entrypoint.sh
 COPY nginx/mime.types /etc/nginx/raw-mime.types
+COPY nginx/docker-entrypoint.sh /nginx-entrypoint.sh
+COPY nginx/sign_secret.sh /sign_secret.sh
 COPY vector/vector.toml /etc/vector/vector.toml
 COPY docker/redis.conf /etc/redis/redis.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
