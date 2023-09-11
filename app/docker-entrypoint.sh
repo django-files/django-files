@@ -18,7 +18,7 @@ if [ -z "${SECRET}" ] || [ -z "${SECRET_KEY}" ];then
         python manage.py appstartup
 
     fi
-elif [-z "${SECRET}"];
+elif [-z "${SECRET}"]; then
     SECRET_KEY=$SECRET
 fi
 
