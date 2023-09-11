@@ -58,7 +58,7 @@ class Files(models.Model):
                     download_url = self.file.file._storage.url(
                         self.file.file.name,
                         parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
-                    cache.set(f"file.urlcache.download.{self.pk}", download_url, settings.AWS_QUERYSTRING_EXPIRE)
+                    cache.set(f"file.urlcache.download.{self.pk}", download_url, (settings.STATIC_QUERYSTRING_EXPIRE - 60))
                 return download_url
                 # skip cache behavior for local file storage
             url = self.file.url + '?download=true'
@@ -75,7 +75,7 @@ class Files(models.Model):
             # check if generic static url is cached if not generate and cache, honors AWS settings sign expire time
             if (url := cache.get(f"file.urlcache.raw.{self.pk}", )) is None:
                 url = self.file.url
-                cache.set(f"file.urlcache.raw.{self.pk}", url, settings.AWS_QUERYSTRING_EXPIRE)
+                cache.set(f"file.urlcache.raw.{self.pk}", url, (settings.STATIC_QUERYSTRING_EXPIRE - 60))
             return url
         return self.file.url + self._sign_nginx_url(self.file.url)
 

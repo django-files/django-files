@@ -6,8 +6,8 @@ import calendar
 from django.conf import settings
 
 
-def sign_nginx_urls(uri: str, **kwargs) -> str:
-    future = datetime.datetime.now() + datetime.timedelta(seconds=kwargs.get('expire', 999999999))
+def sign_nginx_urls(uri: str) -> str:
+    future = datetime.datetime.now() + datetime.timedelta(seconds=settings.STATIC_QUERYSTRING_EXPIRE)
     expiry = calendar.timegm(future.timetuple())
     secure_link = "{uri}{expiry} {key}".format(uri=uri, expiry=expiry,
                                                key=settings.SECRET_KEY_FROM_FILE).encode(encoding='utf-8')

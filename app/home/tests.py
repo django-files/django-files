@@ -305,7 +305,7 @@ class FilesTestCase(TestCase):
         print(f'file.get_url(): {file.get_url()}')
         print(f'file.preview_url(): {file.preview_url()}')
         print(f'file.preview_uri(): {file.preview_uri()}')
-        self.assertEqual(file.get_url(), '/r/gps.jpg')
+        self.assertRegex(file.get_url(), r'/r/gps\.jpg\?md5=.*&expires=.*')
         self.assertEqual(file.preview_url(), 'https://example.com/u/gps.jpg')
         self.assertEqual(file.preview_uri(), '/u/gps.jpg')
         self.assertEqual(file.mime, 'image/jpeg')
