@@ -18,7 +18,7 @@ if [ -z "${SECRET}" ] || [ -z "${SECRET_KEY}" ];then
         python manage.py appstartup
 
     fi
-else;
+else
     printf "${SECRET}${SECRET_KEY}" > /data/media/db/secret.key
 fi
 
