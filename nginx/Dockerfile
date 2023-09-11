@@ -10,5 +10,10 @@ ENV TZ=UTC
 
 #RUN usermod -u 1000 -o nginx && groupmod -g 1000 -o nginx
 
+
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY mime.types /etc/nginx/raw-mime.types
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+COPY sign_secret.sh /sign_secret.sh
+RUN chmod +x /sign_secret.sh

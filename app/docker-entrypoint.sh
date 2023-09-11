@@ -2,7 +2,10 @@
 
 set -ex
 
-if [ -z "${SECRET}" ] || [ -z "${SECRET_KEY}" ];then
+
+if [ -n "${SECRET}" ] || [ -n "${SECRET_KEY}" ];then
+    printf "${SECRET}${SECRET_KEY}" > /data/media/db/secret.key
+else
     if [ ! -f "/data/media/db/secret.key" ];then
         tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 50 > "/data/media/db/secret.key"
         echo "Created Secret Key File: /data/media/db/secret.key"

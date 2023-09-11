@@ -5,6 +5,7 @@ from django.core.cache import cache
 
 from home.managers import FilesManager, FileStatsManager, ShortURLsManager
 from home.util.storage import StoragesRouterFileField, use_s3
+from home.util.nginx import sign_nginx_urls
 from oauth.models import CustomUser
 from settings.models import SiteSettings
 
@@ -57,13 +58,12 @@ class Files(models.Model):
                     download_url = self.file.file._storage.url(
                         self.file.file.name,
                         parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
-                    cache.set(f"file.urlcache.download.{self.pk}", download_url, settings.AWS_QUERYSTRING_EXPIRE)
-                return download_url + self._pw_query_string()
+                    cache.set(f"file.urlcache.download.{self.pk}", download_url,
+                              (settings.STATIC_QUERYSTRING_EXPIRE - 60))
+                return download_url
                 # skip cache behavior for local file storage
-            return self.file.file._storage.url(
-                    self.file.file.name,
-                    parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'}
-                    )
+            url = self.file.url + '?download=true'
+            return url + self._sign_nginx_url(self.file.url).replace('?', '&')
         # ######## Custom Expire Generic Static URL (cloud only) ########
         if expire is not None:
             # we cant cache this since it will be a custom value
@@ -76,13 +76,12 @@ class Files(models.Model):
             # check if generic static url is cached if not generate and cache, honors AWS settings sign expire time
             if (url := cache.get(f"file.urlcache.raw.{self.pk}", )) is None:
                 url = self.file.url
-                cache.set(f"file.urlcache.raw.{self.pk}", url, settings.AWS_QUERYSTRING_EXPIRE)
+                cache.set(f"file.urlcache.raw.{self.pk}", url, (settings.STATIC_QUERYSTRING_EXPIRE - 60))
             return url
-        return self.file.url + self._pw_query_string()
+        return self.file.url + self._sign_nginx_url(self.file.url)
 
     def get_meta_static_url(self) -> str:
         """
-        We want an overrided static expire time for cloud storage objects when using meta.
         Otherwise some clients may cache an old meta url and it will fail to display when using signed urls.
         There may also be future cases where we dont want to issue this url for private/pw protected files.
         """
@@ -111,7 +110,14 @@ class Files(models.Model):
                 # intentionally expire cache before gallery url signing expires
                 cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
             return gallery_url
-        return self.get_url(False) + "?view=gallery"
+        url = self.file.url + "?view=gallery"
+        return url + self._sign_nginx_url(self.file.url).replace('?', '&')
+
+    def _sign_nginx_url(self, uri: str) -> str:
+        if use_s3():
+            # guard against using this in cloud settings, or at least not s3 for now
+            return ''
+        return sign_nginx_urls(uri)
 
     def _get_password_query_string(self) -> str:
         if self.password:
@@ -137,11 +143,6 @@ class Files(models.Model):
                 return f"{num:3.1f} {unit}B"
             num /= 1024.0
         return f"{num:.1f} YiB"
-
-    def _pw_query_string(self) -> str:
-        if self.password:
-            return f'?password={ self.password }'
-        return ''
 
 
 class FileStats(models.Model):

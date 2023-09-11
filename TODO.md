@@ -59,7 +59,6 @@
 - [ ] Users - GET PUT DELETE users
 
 ## Passwords and Private Files
-- [ ] Add support for nginx raw files to have signed urls.
 - [ ] Better access denied error page.
 
 ## Miscellaneous

@@ -36,11 +36,12 @@ if config('SECRET', None) or config('SECRET_KEY', None):
         SECRET_KEY = key_prefix[:missing] + secret_key
     else:
         SECRET_KEY = secret_key[:50]
-    print(f'SECRET_KEY from ENV: {SECRET_KEY}')
+    print(f'Using SECRET_KEY from ENV: {SECRET_KEY}')
 else:
     with open('/data/media/db/secret.key') as f:
+        print("Loading secretkey from file.")
         SECRET_KEY = f.read().strip()
-    print(f'SECRET_KEY from FILE: {SECRET_KEY}')
+    print(f'Using SECRET_KEY from FILE: {SECRET_KEY}')
 
 DEBUG = config('DEBUG', 'False', bool)
 print(f'DEBUG: {DEBUG}')
@@ -83,7 +84,7 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 AWS_S3_FILE_OVERWRITE = config('AWS_S3_FILE_OVERWRITE', False, bool)
-AWS_QUERYSTRING_EXPIRE = config('AWS_QUERYSTRING_EXPIRE', 14400, int)
+STATIC_QUERYSTRING_EXPIRE = config('STATIC_QUERYSTRING_EXPIRE', 14400, int)
 AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', None, str)
 AWS_S3_REGION_NAME = config('AWS_REGION_NAME', None, str)
 AWS_S3_CDN_URL = config('AWS_S3_CDN_URL', '', str)
