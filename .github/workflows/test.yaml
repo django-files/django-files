@@ -10,6 +10,8 @@ on:
 jobs:
   test:
     name: "Test"
+    env:
+      TEST: "True"
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: ${{ !contains(github.event.head_commit.message, '#notest') }}
@@ -54,8 +56,6 @@ jobs:
         env:
           DATABSE_LOCATION: /tmp/migration-test-db
         run: |
-          mkdir -p /data/media/db
-          echo "thisisverysecure" > /data/media/db/secret.key
           python manage.py migrate
           python manage.py makemigrations --dry-run --check --noinput
 
