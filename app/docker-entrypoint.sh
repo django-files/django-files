@@ -18,10 +18,10 @@ if [ -z "${SECRET}" ] || [ -z "${SECRET_KEY}" ];then
         python manage.py appstartup
 
     fi
-elif [-z "${SECRET}"]; then
-    SECRET_KEY=$SECRET
+else;
+    printf "${SECRET}${SECRET_KEY}" > /data/media/db/secret.key
 fi
 
-printf "${SECRET_KEY}" > /data/media/db/secret.key
+
 
 exec "$@"
