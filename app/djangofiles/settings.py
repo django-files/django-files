@@ -34,14 +34,12 @@ print(f'db_location: {db_location}')
 
 # read secret key from file
 if Path('/data/media/db/secret.key').exists():
-    print("Loading secretkey from file.")
+    print("Loading SECRET_KEY from file: /data/media/db/secret.key")
     with open('/data/media/db/secret.key') as f:
         SECRET_KEY = f.read().strip()
-elif config('SECRET', None) or config('SECRET_KEY'):
-    SECRET_KEY = config('SECRET', None) or config('SECRET_KEY')
 else:
-    print("WARNING: Using Temporary Secret Key")
-    SECRET_KEY = 'DO-NOT-USE-DO-NOT-USE-DO-NOT-USE-DO-NOT-USE-DO-NOT'
+    print("Loading SECRET_KEY from environment variable: SECRET or SECRET_KEY")
+    SECRET_KEY = config('SECRET', None) or config('SECRET_KEY')
 
 # TODO: Do Not Echo Secret Key
 print(f'SECRET_KEY: {SECRET_KEY}')
