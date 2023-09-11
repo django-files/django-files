@@ -54,6 +54,7 @@ jobs:
         env:
           DATABSE_LOCATION: /tmp/migration-test-db
         run: |
+          touch /data/media/db/secret.key
           python manage.py migrate
           python manage.py makemigrations --dry-run --check --noinput
 
