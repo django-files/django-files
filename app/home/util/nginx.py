@@ -11,7 +11,7 @@ def sign_nginx_urls(uri: str) -> str:
     expiry = calendar.timegm(future.timetuple())
     secure_link = "{uri}{expiry} {key}".format(uri=uri, expiry=expiry,
                                                key=settings.SECRET_KEY_FROM_FILE).encode(encoding='utf-8')
-    hash = hashlib.md5(secure_link).digest()
-    base64_hash = base64.urlsafe_b64encode(hash)
+    link_hash = hashlib.md5(secure_link).digest()
+    base64_hash = base64.urlsafe_b64encode(link_hash)
     str_hash = base64_hash.decode('utf-8').rstrip('=')
     return f"?md5={str_hash}&expires={expiry}"
