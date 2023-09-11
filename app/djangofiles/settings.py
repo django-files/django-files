@@ -10,12 +10,18 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+DEBUG = config('DEBUG', 'False', bool)
+print(f'DEBUG: {DEBUG}')
+APP_VERSION = config('APP_VERSION', 'DEV')
+
 # determine which env file to use
 if 'test' in sys.argv or 'test_coverage' in sys.argv:
     dotenv_path = find_dotenv('test.env', usecwd=True)
     print(f'TEST dotenv_path: {dotenv_path}')
     env = load_dotenv(dotenv_path=dotenv_path)
     print(f'TEST env: {env}')
+    with open('/data/media/db/secret.key', 'w') as f:
+        f.write('ShbL8CHxZfOOQyZgo7aXtkvOnVrGv3dmJWgg45tVBP8VNfvwIu')
 else:
     dotenv_path = find_dotenv('settings.env', usecwd=True) or find_dotenv(usecwd=True)
     print(f'dotenv_path: {dotenv_path}')
@@ -32,12 +38,9 @@ print(f'db_location: {db_location}')
 with open('/data/media/db/secret.key') as f:
     print("Loading secretkey from file.")
     SECRET_KEY = f.read().strip()
-# TODO: Do Not Echo Secret Key
-print(f'Using SECRET_KEY from FILE: {SECRET_KEY}')
-
-DEBUG = config('DEBUG', 'False', bool)
-print(f'DEBUG: {DEBUG}')
-APP_VERSION = config('APP_VERSION', 'DEV')
+if DEBUG:
+    # TODO: Do Not Echo Secret Key
+    print(f'SECRET_KEY: {SECRET_KEY}')
 
 SITE_URL = config('SITE_URL', 'http://localhost')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '*', Csv())
