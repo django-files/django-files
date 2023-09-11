@@ -58,7 +58,8 @@ class Files(models.Model):
                     download_url = self.file.file._storage.url(
                         self.file.file.name,
                         parameters={'ResponseContentDisposition': f'attachment; filename={self.file.file.name}'})
-                    cache.set(f"file.urlcache.download.{self.pk}", download_url, (settings.STATIC_QUERYSTRING_EXPIRE - 60))
+                    cache.set(f"file.urlcache.download.{self.pk}", download_url,
+                              (settings.STATIC_QUERYSTRING_EXPIRE - 60))
                 return download_url
                 # skip cache behavior for local file storage
             url = self.file.url + '?download=true'
