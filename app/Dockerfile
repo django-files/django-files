@@ -37,6 +37,7 @@ RUN addgroup -g 1000 app  &&\
 #    apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
 #COPY --from=node /app/app/static/dist /app/app/static/dist
+COPY 50-write-secret.sh /docker-entrypoint.d/50-write-secret.sh
 
 WORKDIR /app
 COPY --chown=app:app . .

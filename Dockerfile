@@ -45,9 +45,10 @@ RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
     apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
     apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
+COPY app/50-write-secret.sh /docker-entrypoint.d/50-write-secret.sh
+COPY nginx/60-sign-secret.sh /docker-entrypoint.d/60-sign-secret.sh
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/mime.types /etc/nginx/raw-mime.types
-COPY nginx/99-sign-secret.sh /docker-entrypoint.d/99-sign-secret.sh
 COPY vector/vector.toml /etc/vector/vector.toml
 COPY docker/redis.conf /etc/redis/redis.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -55,5 +56,5 @@ COPY docker/docker-entrypoint.sh /docker-entrypoint.sh
 
 COPY --chown=app:app app app
 
-CMD ["/usr/bin/supervisord"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 ENTRYPOINT ["bash", "/docker-entrypoint.sh"]

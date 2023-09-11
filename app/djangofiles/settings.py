@@ -28,22 +28,12 @@ print(f'database_type: {database_type}')
 db_location = config('DATABSE_LOCATION', '/data/media/db/database.sqlite3')
 print(f'db_location: {db_location}')
 
-# determine secret key to use
-if config('SECRET', None) or config('SECRET_KEY', None):
-    # TODO: Make sure this does not cause a bug with nginx signing
-    # ensure SECRET/SECRET_KEY is exactly 50 characters long
-    secret_key = config('SECRET', None) or config('SECRET_KEY')
-    if missing := 50 - len(secret_key):
-        key_prefix = 'django-files-app-secret-key-prefix'
-        SECRET_KEY = key_prefix[:missing] + secret_key
-    else:
-        SECRET_KEY = secret_key[:50]
-    print(f'Using SECRET_KEY from ENV: {SECRET_KEY}')
-else:
-    with open('/data/media/db/secret.key') as f:
-        print("Loading secretkey from file.")
-        SECRET_KEY = f.read().strip()
-    print(f'Using SECRET_KEY from FILE: {SECRET_KEY}')
+# read secret key from file
+with open('/data/media/db/secret.key') as f:
+    print("Loading secretkey from file.")
+    SECRET_KEY = f.read().strip()
+# TODO: Do Not Echo Secret Key
+print(f'Using SECRET_KEY from FILE: {SECRET_KEY}')
 
 DEBUG = config('DEBUG', 'False', bool)
 print(f'DEBUG: {DEBUG}')
