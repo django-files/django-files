@@ -42,4 +42,5 @@ docker build -t "${REGISTRY_HOST}/${REGISTRY_USER}/${REGISTRY_REPO}:${VERSION}" 
 #docker buildx build --platform linux/amd64,linux/arm64 --push  \
 #    -t "${REGISTRY_HOST}/${REGISTRY_USER}/${REGISTRY_REPO}:${VERSION}" .
 
-echo "docker run --rm -p 80:80 -v ./django-files:/data/media ${REGISTRY_HOST}/${REGISTRY_USER}/${REGISTRY_REPO}:${VERSION}"
+echo "docker stop django-files && docker rm django-files"
+echo "docker run --rm -p 80:80 -v ./django-files:/data/media --name django-files ghcr.io/django-files/django-files:latest"
