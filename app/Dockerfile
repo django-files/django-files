@@ -1,4 +1,4 @@
-FROM python:3.11-alpine as base
+FROM python:3.11-alpine AS python
 
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -17,8 +17,8 @@ FROM python:3.11-alpine
 ENV TZ=UTC
 ENV PYTHONUNBUFFERED 1
 
-COPY --from=base /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
-COPY --from=base /usr/local/bin/ /usr/local/bin/
+COPY --from=python /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --from=python /usr/local/bin/ /usr/local/bin/
 
 RUN addgroup -g 1000 app  &&\
     adduser -S -H -h /app -s /sbin/nologin -u 1000 -G app app  &&\

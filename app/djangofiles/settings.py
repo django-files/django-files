@@ -28,7 +28,9 @@ print(f'database_type: {database_type}')
 db_location = config('DATABSE_LOCATION', '/data/media/db/database.sqlite3')
 print(f'db_location: {db_location}')
 
+# determine secret key to use
 if config('SECRET', None) or config('SECRET_KEY', None):
+    # TODO: Make sure this does not cause a bug with nginx signing
     # ensure SECRET/SECRET_KEY is exactly 50 characters long
     secret_key = config('SECRET', None) or config('SECRET_KEY')
     if missing := 50 - len(secret_key):
