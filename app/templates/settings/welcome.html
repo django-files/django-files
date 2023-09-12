@@ -23,22 +23,22 @@
                     </div>
                     <form id="welcomeForm" action="{% url 'settings:welcome' %}">
                         <div class="modal-body">
-                            <div class="mb-3">
+                            <div class="">
                                 <label for="username" class="col-form-label">Username:</label>
                                 <input type="text" class="form-control" id="username" name="username"
                                        value="{{ request.user.username }}" aria-describedby="username-invalid" autofocus required>
                                 <div id="username-invalid" class="invalid-feedback"></div>
                             </div>
-                            <div class="mb-3">
+                            <div class="">
                                 <label for="password" class="col-form-label">Password:</label>
                                 <input type="password" class="form-control" id="password" name="password" aria-describedby="password-invalid" required>
                                 <div id="password-invalid" class="invalid-feedback"></div>
                             </div>
                             {% if request.user.is_superuser %}
-                                <div class="mb-3">
+                                <div class="">
                                     <label for="site_url" class="col-form-label">Site URL:</label>
                                     <input type="text" class="form-control" id="site_url" name="site_url"
-                                           value="{{ site_settings.site_url|default:'' }}" required>
+                                           value="{% if site_settings.site_url %}{{ site_settings.site_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% endif %}" required>
                                     <div id="site_url-invalid" class="invalid-feedback"></div>
                                 </div>
                             {% endif %}
