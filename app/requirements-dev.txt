@@ -22,6 +22,7 @@ psycopg[binary]
 pytest-playwright
 python-decouple
 python-dotenv
+python-magic
 pytimeparse2
 sentry-sdk
 uvicorn[standard]
