@@ -18,6 +18,4 @@ else
     fi
 fi
 
-touch /data/media/db/secret.key-ready
-
 echo "$0 - Finished"

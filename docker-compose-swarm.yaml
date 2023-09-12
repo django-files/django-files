@@ -6,6 +6,7 @@ services:
       context: ./nginx
       network: host
     image: ${REGISTRY_HOST}/${REGISTRY_GROUP}/djangofiles-nginx:${VERSION}
+    env_file: ${ENV_FILE}
     deploy:
       mode: global
       labels:
