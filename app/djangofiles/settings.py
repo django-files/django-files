@@ -10,6 +10,10 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+DEBUG = config('DEBUG', 'False', bool)
+print(f'DEBUG: {DEBUG}')
+APP_VERSION = config('APP_VERSION', 'DEV')
+
 # determine which env file to use
 if 'test' in sys.argv or 'test_coverage' in sys.argv:
     dotenv_path = find_dotenv('test.env', usecwd=True)
@@ -28,24 +32,17 @@ print(f'database_type: {database_type}')
 db_location = config('DATABSE_LOCATION', '/data/media/db/database.sqlite3')
 print(f'db_location: {db_location}')
 
-if config('SECRET', None) or config('SECRET_KEY', None):
-    # ensure SECRET/SECRET_KEY is exactly 50 characters long
-    secret_key = config('SECRET', None) or config('SECRET_KEY')
-    if missing := 50 - len(secret_key):
-        key_prefix = 'django-files-app-secret-key-prefix'
-        SECRET_KEY = key_prefix[:missing] + secret_key
-    else:
-        SECRET_KEY = secret_key[:50]
-    print(f'Using SECRET_KEY from ENV: {SECRET_KEY}')
-else:
+# read secret key from file
+if Path('/data/media/db/secret.key').exists():
+    print("Loading SECRET_KEY from file: /data/media/db/secret.key")
     with open('/data/media/db/secret.key') as f:
-        print("Loading secretkey from file.")
         SECRET_KEY = f.read().strip()
-    print(f'Using SECRET_KEY from FILE: {SECRET_KEY}')
+else:
+    print("Loading SECRET_KEY from environment variable: SECRET or SECRET_KEY")
+    SECRET_KEY = config('SECRET', None) or config('SECRET_KEY')
 
-DEBUG = config('DEBUG', 'False', bool)
-print(f'DEBUG: {DEBUG}')
-APP_VERSION = config('APP_VERSION', 'DEV')
+# TODO: Do Not Echo Secret Key
+print(f'SECRET_KEY: {SECRET_KEY}')
 
 SITE_URL = config('SITE_URL', 'http://localhost')
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '*', Csv())

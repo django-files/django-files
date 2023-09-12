@@ -2,18 +2,7 @@ FROM nginx:alpine-slim
 
 ENV TZ=UTC
 
-#RUN addgroup -g 1000 app  &&\
-#    adduser -S -H -h /app -s /sbin/nologin -u 1000 -G app app
-#    mkdir -p /logs  &&\
-#    touch /logs/nginx.access  &&\
-#    chown app:app /logs /logs/nginx.access
-
-#RUN usermod -u 1000 -o nginx && groupmod -g 1000 -o nginx
-
-
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY mime.types /etc/nginx/raw-mime.types
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
-COPY sign_secret.sh /sign_secret.sh
-RUN chmod +x /sign_secret.sh
+
+COPY --chmod=0755 60-sign-secret.sh /docker-entrypoint.d/60-sign-secret.sh
