@@ -99,9 +99,8 @@ class UserInvites(models.Model):
         return True
 
     def is_valid(self):
-        if self.max_uses:
-            if not self.uses < self.max_uses:
-                return False
+        if self.max_uses and self.uses >= self.max_uses:
+            return False
         if self.expire:
             delta = timezone.now() - self.created_at
             if self.expire <= delta.seconds:
@@ -122,7 +121,10 @@ class UserInvites(models.Model):
 
     def build_url(self):
         uri = reverse('home:invite', kwargs={'invite': self.invite})
-        return SiteSettings.objects.settings().site_url + uri
+        if SiteSettings.objects.settings().site_url:
+            return SiteSettings.objects.settings().site_url + uri
+        else:
+            return uri
 
 
 class Discord(models.Model):

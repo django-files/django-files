@@ -65,3 +65,17 @@ def is_hex(color: str) -> str:
     if not re.match('^#(?:[0-9a-f]{2}){3}$', color):
         raise ValidationError('Invalid Color HEX.')
     return color
+
+
+class WelcomeForm(forms.Form):
+    username = forms.CharField(max_length=128, strip=True)
+    password = forms.CharField(min_length=6, max_length=128, strip=True)
+    site_url = forms.CharField(max_length=255, strip=True, required=False)
+
+    def clean_site_url(self):
+        data = self.cleaned_data['site_url']
+        if data:
+            if not validators.url(data):
+                raise ValidationError('Invalid Site URL.')
+            return data.rstrip('/')
+        return None

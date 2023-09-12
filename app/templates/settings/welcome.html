@@ -6,6 +6,8 @@
 
 {% block head %}{% endblock %}
 
+{% block welcome %}{% endblock %}
+
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
@@ -29,6 +31,12 @@
                                 <label for="password" class="col-form-label">Password:</label>
                                 <input type="password" class="form-control" id="password" name="password" required>
                             </div>
+                            {% if request.user.is_superuser and not site_settings.site_url %}
+                                <div class="mb-3">
+                                    <label for="site_url" class="col-form-label">Site URL:</label>
+                                    <input type="text" class="form-control" id="site_url" name="site_url" required>
+                                </div>
+                            {% endif %}
                         </form>
                     </div>
                     <div class="modal-footer">

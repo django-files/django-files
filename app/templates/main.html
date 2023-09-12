@@ -111,6 +111,18 @@
 {% endblock %}
 
 <main class="flex-shrink-0">
+    {% if request.user.is_superuser %}
+        {% block welcome %}
+            {% if not site_settings.site_url %}
+                <div class="container-fluid">
+                    <div id="siteUrlWarning" class="alert alert-warning mt-2" role="alert">
+                        <strong>Important:</strong> The Site URL is not set!
+                        <a href="{% url 'settings:site' %}">Site Settings.</a>
+                    </div>
+                </div>
+            {% endif %}
+        {% endblock %}
+    {% endif %}
     {% block body %}{% endblock %}
 </main>
 
