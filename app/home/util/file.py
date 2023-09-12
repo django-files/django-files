@@ -1,5 +1,5 @@
 import logging
-import mimetypes
+import magic
 import os
 import uuid
 import tempfile
@@ -50,9 +50,8 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     with tempfile.NamedTemporaryFile(suffix=os.path.basename(name)) as fp:
         fp.write(f.read())
         fp.seek(0)
-        file_mime, _ = mimetypes.guess_type(name, strict=False)
-        if not file_mime:
-            file_mime, _ = mimetypes.guess_type(name, strict=False)
+        log.debug('fp.name: %s', fp.name)
+        file_mime = magic.from_file(fp.name, mime=True)
         file_mime = file_mime or 'application/octet-stream'
         if file_mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
             processor = ImageProcessor(fp.name, user.remove_exif, user.remove_exif_geo, ctx)
