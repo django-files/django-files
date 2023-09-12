@@ -4,6 +4,7 @@ services:
   nginx:
     build: ./nginx
     image: djangofiles-nginx:${VERSION:-latest}
+    env_file: settings.env
     deploy:
       mode: global
       labels:
