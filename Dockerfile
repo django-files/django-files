@@ -45,7 +45,7 @@ RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
     apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
     apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
-COPY app/50-write-secret.sh /docker-entrypoint.d/50-write-secret.sh
+#COPY app/50-write-secret.sh /docker-entrypoint.d/50-write-secret.sh
 COPY nginx/60-sign-secret.sh /docker-entrypoint.d/60-sign-secret.sh
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/mime.types /etc/nginx/raw-mime.types

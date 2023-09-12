@@ -18,7 +18,4 @@ else
     fi
 fi
 
-echo "Creating: /data/media/db/secret.key-ready"
-touch /data/media/db/secret.key-ready
-
 echo "$0 - Finished"
