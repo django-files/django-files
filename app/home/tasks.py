@@ -25,7 +25,8 @@ def app_init():
     log.info('app_init')
     site_settings, created = SiteSettings.objects.get_or_create(pk=1)
     if created:
-        if not site_settings.site_url:
+        if not site_settings.site_url and settings.SITE_URL:
+            log.info('site_settings.site_url updated')
             site_settings.site_url = settings.SITE_URL
             site_settings.save()
         log.info('site_settings created')

@@ -10,8 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from oauth.models import CustomUser, UserInvites
-from oauth.forms import LoginForm
-from settings.forms import SiteSettingsForm, UserSettingsForm
+from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
 from oauth.models import DiscordWebhooks
 
@@ -34,7 +33,6 @@ def site_view(request):
     if request.method != 'POST':
         invites = UserInvites.objects.all()
         context = {'site_settings': site_settings, 'invites': invites}
-        log.debug('context: %s', context)
         return render(request, 'settings/site.html', context)
 
     log.debug(request.POST)
@@ -45,6 +43,8 @@ def site_view(request):
     data = {'reload': False}
     log.debug(form.cleaned_data)
 
+    if not site_settings.site_url:
+        data['reload'] = True
     site_settings.site_url = form.cleaned_data['site_url']
     site_settings.site_title = form.cleaned_data['site_title']
     site_settings.site_description = form.cleaned_data['site_description']
@@ -118,16 +118,16 @@ def user_view(request):
 @login_required
 def welcome_view(request):
     """
-    View  /welcome/
+    View  /settings/welcome/
     """
     if not request.user.show_setup:
         return redirect('settings:site')
 
     if request.method == 'POST':
-        form = LoginForm(request.POST)
+        form = WelcomeForm(request.POST)
         if not form.is_valid():
             log.debug(form.errors)
-            return HttpResponse(status=400)
+            return JsonResponse(form.errors, status=400)
 
         user = CustomUser.objects.get(pk=request.user.pk)
         user.username = form.cleaned_data['username']
@@ -136,9 +136,13 @@ def welcome_view(request):
         log.debug('password: %s', form.cleaned_data['password'])
         user.show_setup = False
         user.save()
+        if request.user.is_superuser and form.cleaned_data['site_url']:
+            site_settings = SiteSettings.objects.settings()
+            site_settings.site_url = form.cleaned_data['site_url']
+            site_settings.save()
         login(request, user)
         request.session['login_redirect_url'] = reverse('settings:site')
-        messages.info(request, f'Welcome to Django Files {request.user.get_name}.')
+        messages.info(request, f'Welcome to Django Files {request.user.get_name()}.')
         return HttpResponse(status=200)
 
     return render(request, 'settings/welcome.html')

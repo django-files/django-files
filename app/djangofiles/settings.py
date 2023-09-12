@@ -44,7 +44,9 @@ else:
 # TODO: Do Not Echo Secret Key
 print(f'SECRET_KEY: {SECRET_KEY}')
 
-SITE_URL = config('SITE_URL', 'http://localhost')
+SITE_URL = config('SITE_URL', None)
+print(f'SITE_URL: {SITE_URL}')
+
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', '*', Csv())
 SESSION_COOKIE_AGE = config('SESSION_COOKIE_AGE', 3600 * 24 * 14, int)
 
