@@ -30,4 +30,8 @@ $(document).ready(function () {
             processData: false,
         })
     })
+
+    $('#welcomeModal').on('shown.bs.modal', function () {
+        $('#password').focus()
+    })
 })

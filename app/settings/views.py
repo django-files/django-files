@@ -118,7 +118,7 @@ def user_view(request):
 @login_required
 def welcome_view(request):
     """
-    View  /welcome/
+    View  /settings/welcome/
     """
     if not request.user.show_setup:
         return redirect('settings:site')

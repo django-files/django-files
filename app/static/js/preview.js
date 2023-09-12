@@ -62,12 +62,12 @@ $(document).ready(function () {
     })
 
     // Handle set password click confirmations
-    $('#confirm-set-password-hook-btn').click(function () {
+    $('#confirm-set-password-hook-btn').click(function (event) {
         event.preventDefault()
         if ($('#confirm-set-password-hook-btn').hasClass('disabled')) {
             return
         }
-        var formData = new $('#set-password-form').serialize()
+        let formData = new $('#set-password-form').serialize()
         console.log(formData)
         console.log(pwhookID)
         $.ajax({
@@ -82,7 +82,7 @@ $(document).ready(function () {
             success: function (response) {
                 console.log('response: ' + response)
                 setPasswordHookModal.hide()
-                message = 'Password set!'
+                let message = 'Password set!'
                 show_toast(message, 'success')
             },
             error: function (xhr, status, error) {
@@ -101,23 +101,24 @@ $(document).ready(function () {
     })
 
     // Handle toggling file private status
-    $('#toggle-private-btn').click(function () {
+    $('#toggle-private-btn').click(function (event) {
         event.preventDefault()
-        pvhookID = $(this).data('hook-id')
+        let pvhookID = $(this).data('hook-id')
         if ($('#toggle-private-btn').hasClass('disabled')) {
             return
         }
         console.log(pvhookID)
-        private_status = $('#privateStatus')
-        toggle_status = $('#toggleStatus')
-        toggle_text = $('#toggleText')
+        let private_status = $('#privateStatus')
+        let toggle_status = $('#toggleStatus')
+        let toggle_text = $('#toggleText')
         $.ajax({
             type: 'POST',
             url: `/ajax/toggle_private/file/${pvhookID}/`,
             headers: { 'X-CSRFToken': csrftoken },
             success: function (response) {
                 console.log('response: ' + response)
-                var isTrueSet = response === 'True'
+                let isTrueSet = response === 'True'
+                let message
                 if (isTrueSet) {
                     message = 'File made private!'
                     private_status.title = 'Private File'
@@ -156,7 +157,7 @@ $(document).ready(function () {
     })
 
     $('#unMaskPassword').click(function () {
-        var password_field = $('#password').get(0)
+        let password_field = $('#password').get(0)
         if (password_field.type === 'password') {
             password_field.type = 'text'
         } else {
@@ -165,16 +166,17 @@ $(document).ready(function () {
     })
 
     $('#copyPassword').click(function () {
-        var password_field = $('#password').get(0)
+        let password_field = $('#password').get(0)
         navigator.clipboard.writeText(password_field.value)
         show_toast('Password copied!', 'info', '15000')
     })
 
     $('#generatePassword').click(function () {
-        var chars =
+        // TODO: Cleanup this Listener
+        let chars =
             '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        var passwordLength = 12
-        var password = ''
+        let passwordLength = 12
+        let password = ''
         for (var i = 0; i <= passwordLength; i++) {
             var randomNumber = Math.floor(Math.random() * chars.length)
             password += chars.substring(randomNumber, randomNumber + 1)
@@ -185,6 +187,6 @@ $(document).ready(function () {
     })
 
     $('#setFilePasswordModal').on('shown.bs.modal', function () {
-        $('#password').attr('type', 'password').focus()
+        $('#password').focus()
     })
 })
