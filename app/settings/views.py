@@ -33,7 +33,6 @@ def site_view(request):
     if request.method != 'POST':
         invites = UserInvites.objects.all()
         context = {'site_settings': site_settings, 'invites': invites}
-        log.debug('context: %s', context)
         return render(request, 'settings/site.html', context)
 
     log.debug(request.POST)
@@ -128,7 +127,7 @@ def welcome_view(request):
         form = WelcomeForm(request.POST)
         if not form.is_valid():
             log.debug(form.errors)
-            return HttpResponse(status=400)
+            return JsonResponse(form.errors, status=400)
 
         user = CustomUser.objects.get(pk=request.user.pk)
         user.username = form.cleaned_data['username']
@@ -143,7 +142,7 @@ def welcome_view(request):
             site_settings.save()
         login(request, user)
         request.session['login_redirect_url'] = reverse('settings:site')
-        messages.info(request, f'Welcome to Django Files {request.user.get_name}.')
+        messages.info(request, f'Welcome to Django Files {request.user.get_name()}.')
         return HttpResponse(status=200)
 
     return render(request, 'settings/welcome.html')

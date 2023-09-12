@@ -21,15 +21,18 @@
                         <h1 class="modal-title fs-5" id="welcomeModalLabel">
                             <i class="fa-solid fa-user-lock me-2"></i> Set Credentials</h1>
                     </div>
-                    <div class="modal-body">
-                        <form id="welcomeForm" action="{% url 'settings:welcome' %}">
+                    <form id="welcomeForm" action="{% url 'settings:welcome' %}">
+                        <div class="modal-body">
                             <div class="mb-3">
                                 <label for="username" class="col-form-label">Username:</label>
-                                <input type="text" class="form-control" id="username" name="username" value="{{ request.user.username }}" autofocus required>
+                                <input type="text" class="form-control" id="username" name="username"
+                                       value="{{ request.user.username }}" aria-describedby="username-invalid" autofocus required>
+                                <div id="username-invalid" class="invalid-feedback"></div>
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="col-form-label">Password:</label>
-                                <input type="password" class="form-control" id="password" name="password" required>
+                                <input type="password" class="form-control" id="password" name="password" aria-describedby="password-invalid" required>
+                                <div id="password-invalid" class="invalid-feedback"></div>
                             </div>
                             {% if request.user.is_superuser and not site_settings.site_url %}
                                 <div class="mb-3">
@@ -37,12 +40,12 @@
                                     <input type="text" class="form-control" id="site_url" name="site_url" required>
                                 </div>
                             {% endif %}
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button id="saveCredentials" type="submit" class="btn btn-success col">
-                            <i class="fa-solid fa-fingerprint me-2"></i> Save Credentials</button>
-                    </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button id="saveCredentials" type="submit" class="btn btn-success col">
+                                <i class="fa-solid fa-fingerprint me-2"></i> Save Credentials</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

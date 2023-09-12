@@ -40,12 +40,11 @@ RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
     groupadd -g 101 nginx  &&  useradd -r -d /var/cache/nginx -M -u 101 -g 101 -s /usr/sbin/nologin nginx  &&\
     mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
     chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
-    apt-get -y install --no-install-recommends libmariadb-dev-compat pkg-config  \
+    apt-get -y install --no-install-recommends libmariadb-dev-compat pkg-config libmagic-dev  \
         supervisor nginx redis-server vector  &&\
     apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
     apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
-#COPY app/50-write-secret.sh /docker-entrypoint.d/50-write-secret.sh
 COPY nginx/60-sign-secret.sh /docker-entrypoint.d/60-sign-secret.sh
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/mime.types /etc/nginx/raw-mime.types
