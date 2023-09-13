@@ -14,13 +14,11 @@
 
     <td class="d-none d-sm-table-cell">
         <a class="clip link-body-emphasis text-decoration-none" role="button"
-           data-clipboard-text="{{ file.get_size }}">{{ file.get_size }}</a>
-    </td>
+           data-clipboard-text="{{ file.get_size }}">{{ file.get_size }}</a></td>
 
     <td class="d-none d-md-table-cell">
         <a class="clip link-body-emphasis text-decoration-none" role="button"
-           data-clipboard-text="{{ file.expr|default:'Never' }}">{{ file.expr|default:'Never' }}</a>
-    </td>
+           data-clipboard-text="{{ file.expr|default:'Never' }}">{{ file.expr|default:'Never' }}</a></td>
 
     <td class="d-none d-lg-table-cell">
         <a class="clip link-body-emphasis text-decoration-none" role="button"
@@ -39,7 +37,7 @@
            data-clipboard-text="{{ file.view }}">{{ file.view }}</a></td>
 
     <td class="text-center">
-        <a role="button" class="delete-file-btn" data-hook-id="{{ file.id }}" title="Delete">
+        <a role="button" class="delete-file-btn" data-pk="{{ file.pk }}" title="Delete">
             <i class="fa-regular fa-trash-can link-danger"></i></a></td>
 </tr>
 {% endif %}

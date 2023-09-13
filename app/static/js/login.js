@@ -38,25 +38,4 @@ $(document).ready(function () {
             processData: false,
         })
     })
-
-    // var vid = document.getElementById("bgvid");
-    // var pauseButton = document.querySelector("#pause");
-    //
-    // if (window.matchMedia('(prefers-reduced-motion)').matches) {
-    //     vid.removeAttribute("autoplay");
-    //     vid.pause();
-    //     pauseButton.innerHTML = "Play";
-    // }
-    //
-    // pauseButton.addEventListener("click", function() {
-    //     vid.classList.toggle("stopfade");
-    //     console.log('one');
-    //     if (vid.paused) {
-    //         vid.play();
-    //         pauseButton.innerHTML = "Pause";
-    //     } else {
-    //         vid.pause();
-    //         pauseButton.innerHTML = "Play";
-    //     }
-    // })
 })

@@ -50,7 +50,7 @@ services:
   worker:
     image: djangofiles-app:${VERSION:-latest}
     env_file: settings.env
-    command: "celery -A djangofiles worker -l INFO -c 2"
+    command: "celery -A djangofiles worker -l INFO -c 4"
     deploy:
       replicas: 1
     volumes:

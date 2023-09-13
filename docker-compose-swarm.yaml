@@ -57,7 +57,7 @@ services:
   worker:
     image: ${REGISTRY_HOST}/${REGISTRY_GROUP}/djangofiles-app:${VERSION}
     env_file: ${ENV_FILE}
-    command: "celery -A djangofiles worker -l INFO -c 2"
+    command: "celery -A djangofiles worker -l INFO -c 4"
     deploy:
       replicas: 1
     volumes:

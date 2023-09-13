@@ -13,7 +13,7 @@ from home.models import Files
 from home.util.image import ImageProcessor
 from home.util.rand import rand_string
 from home.util.misc import anytobool
-from home.tasks import send_discord_message
+from home.tasks import send_discord_message, new_file_websocket
 from oauth.models import CustomUser
 
 log = logging.getLogger('app')
@@ -29,7 +29,6 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     :return: Files: The created Files object
     """
     ctx = {}
-    log.info('process_file_upload: name: %s', name)
     user = CustomUser.objects.get(id=user_id)
     log.info('user: %s', user)
     # process name first
@@ -76,6 +75,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     log.info('file.file.name: %s', file.file.name)
     file.name = file.file.name
     file.save()
+    new_file_websocket.delay(file.pk)
     send_discord_message.delay(file.pk)
     return file
 

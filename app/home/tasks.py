@@ -2,7 +2,9 @@ import logging
 import httpx
 import json
 import urllib.parse
+from asgiref.sync import async_to_sync
 from celery import shared_task
+from channels.layers import get_channel_layer
 from django_redis import get_redis_connection
 from django.conf import settings
 from django.core.cache import cache
@@ -220,6 +222,19 @@ def process_vector_stats():
         client.delete(key)
         i += 1
     return f'Processed {i}/{len(keys)} Files/Keys'
+
+
+@shared_task()
+def new_file_websocket(pk):
+    log.debug('new_file_websocket: %s', pk)
+    file = Files.objects.get(pk=pk)
+    log.debug('file.user_id: %s', file.user_id)
+    channel_layer = get_channel_layer()
+    event = {
+        'type': 'websocket.send',
+        'text': json.dumps({'event': 'file-new', 'pk': pk}),
+    }
+    async_to_sync(channel_layer.group_send)(f'user-{file.user_id}', event)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')
