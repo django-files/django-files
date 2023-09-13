@@ -237,6 +237,17 @@ def new_file_websocket(pk):
     async_to_sync(channel_layer.group_send)(f'user-{file.user_id}', event)
 
 
+@shared_task()
+def delete_file_websocket(pk, user_id):
+    log.debug('delete_file_websocket pk: %s user_id: %s', pk, user_id)
+    channel_layer = get_channel_layer()
+    event = {
+        'type': 'websocket.send',
+        'text': json.dumps({'event': 'file-delete', 'pk': pk}),
+    }
+    async_to_sync(channel_layer.group_send)(f'user-{user_id}', event)
+
+
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')
 def send_discord_message(pk):
     # Send a Discord message for a new file
