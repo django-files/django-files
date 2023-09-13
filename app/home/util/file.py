@@ -75,7 +75,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     log.info('file.file.name: %s', file.file.name)
     file.name = file.file.name
     file.save()
-    new_file_websocket(file.pk)
+    new_file_websocket.delay(file.pk)
     send_discord_message.delay(file.pk)
     return file
 
