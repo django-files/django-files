@@ -1,12 +1,4 @@
 $(document).ready(function () {
-    // // Monitor home websockets for new data
-    // const socket = new WebSocket('wss://' + window.location.host + '/ws/home/');
-    // console.log('Websockets Connected.');
-    // socket.onmessage = function(event) {
-    //     let data = JSON.parse(event.data);
-    //     console.log(data);
-    // };
-
     // Form Control
     $('.form-control').focus(function () {
         $(this).removeClass('is-invalid')

@@ -2,6 +2,22 @@ $(document).ready(function () {
     // Get and set the csrf_token
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
+    // Monitor websockets for new data and update results
+    const socket = new WebSocket('wss://' + window.location.host + '/ws/home/')
+    console.log('Websockets Connected.')
+    socket.onmessage = function (event) {
+        let data = JSON.parse(event.data)
+        $.get(`/ajax/files/tdata/${data.pk}`, function (response) {
+            if ($('#files-table')) {
+                $('#files-table tbody').prepend(response)
+                localStorage.setItem('reloadSession', 'true')
+                let message = `New File Upload: ${data.pk}`
+                show_toast(message, 'success', '10000')
+                console.log(`Table Updated: ${data.pk}`)
+            }
+        })
+    }
+
     // Init the logout form click function
     $('.log-out').on('click', function (event) {
         $('#log-out').submit()

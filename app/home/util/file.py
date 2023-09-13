@@ -13,7 +13,7 @@ from home.models import Files
 from home.util.image import ImageProcessor
 from home.util.rand import rand_string
 from home.util.misc import anytobool
-from home.tasks import send_discord_message
+from home.tasks import send_discord_message, new_file_websocket
 from oauth.models import CustomUser
 
 log = logging.getLogger('app')
@@ -77,6 +77,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     file.name = file.file.name
     file.save()
     send_discord_message.delay(file.pk)
+    new_file_websocket.delay(file.pk)
     return file
 
 

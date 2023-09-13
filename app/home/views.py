@@ -7,6 +7,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render, reverse, get_object_or_404
+from django.template.loader import render_to_string
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -224,6 +225,18 @@ def shorten_short_view(request, short):
         q.save()
     clear_shorts_cache.delay()
     return HttpResponseRedirect(url)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(['GET'])
+def files_tdata_ajax(request, pk):
+    # View: /ajax/files/tdata/{pk}
+    log.debug('files_tdata_ajax: %s', pk)
+    q = get_object_or_404(Files, pk=pk)
+    response = render_to_string('files/table-tr.html', {'file': q})
+    log.debug(response)
+    return HttpResponse(response)
 
 
 @login_required

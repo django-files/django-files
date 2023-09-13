@@ -1,15 +1,17 @@
 {% load home_tags %}
 
 <p class="d-xl-none text-muted mb-0"><em>Some columns hidden due to narrow viewport.</em></p>
-<table class="table table-hover table-responsive" id="files-table">
-    <thead>
-        {% include 'files/table-head.html' %}
-    </thead>
-    <tbody>
-    {% for file in files %}
-        {% include 'files/table-tr.html' with file=file %}
-    {% endfor %}
-    </tbody>
-</table>
-
+<div class="table-responsive">
+    <table class="table table-hover table-responsive" id="files-table">
+        <caption class="sr-only">List of Files</caption>
+        <thead>
+            {% include 'files/table-head.html' %}
+        </thead>
+        <tbody>
+        {% for file in files %}
+            {% include 'files/table-tr.html' with file=file %}
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% include 'files/delete-modal.html' %}
