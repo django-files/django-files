@@ -29,7 +29,6 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     :return: Files: The created Files object
     """
     ctx = {}
-    log.info('process_file_upload: name: %s', name)
     user = CustomUser.objects.get(id=user_id)
     log.info('user: %s', user)
     # process name first
@@ -76,8 +75,8 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     log.info('file.file.name: %s', file.file.name)
     file.name = file.file.name
     file.save()
+    new_file_websocket(file.pk)
     send_discord_message.delay(file.pk)
-    new_file_websocket.delay(file.pk)
     return file
 
 

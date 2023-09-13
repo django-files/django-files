@@ -231,11 +231,12 @@ def shorten_short_view(request, short):
 @csrf_exempt
 @require_http_methods(['GET'])
 def files_tdata_ajax(request, pk):
-    # View: /ajax/files/tdata/{pk}
+    """
+    View  /ajax/files/tdata/<int:pk>/
+    """
     log.debug('files_tdata_ajax: %s', pk)
     q = get_object_or_404(Files, pk=pk)
     response = render_to_string('files/table-tr.html', {'file': q})
-    log.debug(response)
     return HttpResponse(response)
 
 
