@@ -227,12 +227,14 @@ def process_vector_stats():
 @shared_task()
 def new_file_websocket(pk):
     log.debug('new_file_websocket: %s', pk)
+    file = Files.objects.get(pk=pk)
+    log.debug('file.user_id: %s', file.user_id)
     channel_layer = get_channel_layer()
     event = {
         'type': 'websocket.send',
         'text': json.dumps({'pk': pk}),
     }
-    async_to_sync(channel_layer.group_send)('home', event)
+    async_to_sync(channel_layer.group_send)(f'user-{file.user_id}', event)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')
