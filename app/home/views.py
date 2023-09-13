@@ -1,7 +1,5 @@
-import httpx
 import logging
 import markdown
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -19,9 +17,8 @@ from home.models import Files, FileStats, ShortURLs
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
 from oauth.forms import UserForm
-from oauth.models import CustomUser, UserInvites
+from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.models import SiteSettings
-from oauth.models import DiscordWebhooks
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -199,7 +196,7 @@ def invite_view(request, invite=None):
             return JsonResponse(form.errors, status=400)
         login(request, user)
         request.session['login_redirect_url'] = reverse('settings:user')
-        messages.info(request, f'Welcome to Django Files {request.user.get_name}.')
+        messages.info(request, f'Welcome to Django Files {request.user.get_name()}.')
         return HttpResponse(status=200)
 
     log.debug('request.GET: %s', request.GET)
@@ -262,7 +259,7 @@ def delete_file_ajax(request, pk):
     TODO: Implement into /files/ using DELETE method
     """
     log.debug('del_hook_view_a: %s', pk)
-    file = Files.objects.get(pk=pk)
+    file = get_object_or_404(Files, pk=pk)
     if file.user != request.user:
         return HttpResponse(status=401)
     log.debug(file)
@@ -278,7 +275,7 @@ def set_password_file_ajax(request, pk):
     View  /ajax/set_password/file/<int:pk>/
     """
     log.debug('password_hook_view_a: %s', pk)
-    file = Files.objects.get(pk=pk)
+    file = get_object_or_404(Files, pk=pk)
     if file.user != request.user:
         return HttpResponse(status=401)
     log.debug(file)
@@ -295,7 +292,7 @@ def toggle_private_file_ajax(request, pk):
     View  /ajax/toggle_private/file/<int:pk>/
     """
     log.debug('toggle_private_hook_view_a: %s', pk)
-    file = Files.objects.get(pk=pk)
+    file = get_object_or_404(Files, pk=pk)
     if file.user != request.user:
         return HttpResponse(status=401)
     log.debug(file)
@@ -316,7 +313,7 @@ def delete_short_ajax(request, pk):
     TODO: Implement into /short/ using DELETE method
     """
     log.debug('del_hook_view_a: %s', pk)
-    short = ShortURLs.objects.get(pk=pk)
+    short = get_object_or_404(ShortURLs, pk=pk)
     if short.user != request.user:
         return HttpResponse(status=401)
     log.debug(short)
@@ -332,7 +329,7 @@ def delete_hook_ajax(request, pk):
     View  /ajax/delete/hook/<int:pk>/
     """
     log.debug('delete_hook_ajax: %s', pk)
-    webhook = DiscordWebhooks.objects.get(pk=pk)
+    webhook = get_object_or_404(DiscordWebhooks, pk=pk)
     if webhook.owner != request.user:
         return HttpResponse(status=404)
     log.debug(webhook)
@@ -408,26 +405,6 @@ def url_route_view(request, filename):
     else:
         log.debug('UNKNOWN')
         return render(request, 'embed/preview.html', context=ctx)
-
-
-def google_verify(request) -> bool:
-    if 'g_verified' in request.session and request.session['g_verified']:
-        return True
-    try:
-        url = 'https://www.google.com/recaptcha/api/siteverify'
-        data = {
-            'secret': settings.GOOGLE_SITE_SECRET,
-            'response': request.POST['g-recaptcha-response']
-        }
-        r = httpx.post(url, data=data, timeout=10)
-        if r.is_success:
-            if r.json()['success']:
-                request.session['g_verified'] = True
-                return True
-        return False
-    except Exception as error:
-        log.exception(error)
-        return False
 
 
 def file_lock(request, ctx):

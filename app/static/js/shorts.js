@@ -39,17 +39,11 @@ $(document).ready(function () {
     })
 
     // // Define Hook Modal and Delete handlers
-    let deleteShortModal
-    try {
-        deleteShortModal = new bootstrap.Modal('#delete-short-modal', {})
-    } catch (error) {
-        console.log('#delete-short-modal Not Found')
-    }
     let hookID
     $('.delete-short-btn').click(function () {
         hookID = $(this).data('hook-id')
         console.log(hookID)
-        deleteShortModal.show()
+        $('#delete-short-modal').modal('show')
     })
 
     // Handle delete click confirmations
@@ -61,7 +55,7 @@ $(document).ready(function () {
             headers: { 'X-CSRFToken': csrftoken },
             success: function (data) {
                 console.log('data: ' + data)
-                deleteShortModal.hide()
+                $('#delete-short-modal').modal('hide')
                 console.log('removing #short-' + hookID)
                 let count = $('#shorts-table tr').length
                 $('#short-' + hookID).remove()
@@ -75,7 +69,7 @@ $(document).ready(function () {
             error: function (jqXHR) {
                 console.log('jqXHR.status: ' + jqXHR.status)
                 console.log('jqXHR.statusText: ' + jqXHR.statusText)
-                deleteShortModal.hide()
+                $('#delete-short-modal').modal('hide')
                 let message = jqXHR.status + ': ' + jqXHR.statusText
                 show_toast(message, 'danger', '6000')
             },

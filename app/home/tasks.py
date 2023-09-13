@@ -232,7 +232,7 @@ def new_file_websocket(pk):
     channel_layer = get_channel_layer()
     event = {
         'type': 'websocket.send',
-        'text': json.dumps({'pk': pk}),
+        'text': json.dumps({'event': 'file-new', 'pk': pk}),
     }
     async_to_sync(channel_layer.group_send)(f'user-{file.user_id}', event)
 
