@@ -101,8 +101,9 @@ $(document).ready(function () {
     })
 
     // Handle toggling file private status
-    $('#toggle-private-btn').click(function (event) {
+    $('.toggle-private-btn').click(function (event) {
         event.preventDefault()
+        console.log("ping")
         let pvpk = $(this).data('pk')
         if ($('#toggle-private-btn').hasClass('disabled')) {
             return
@@ -190,74 +191,63 @@ $(document).ready(function () {
         $('#password').focus()
     })
 
-        const deleteHookModal = new bootstrap.Modal('#deleteFileModal', {})
-        let pk
-        $('.delete-file-btn').click(function () {
-            let pk = $(this).data('pk')
-            console.log(pk)
-            deleteHookModal.show()
-        })
 
+    // Set Expire Hook Modal and Set Expire handlers
+    let exprpk
+    $('.set-expr-btn').click(function () {
+        exprpk = $(this).data('pk')
+        console.log(exprpk)
+        $('#confirmFileExprBtn').data('pk', pk)
+        $('#setFileExprModal').modal('show')
+    })
 
-        // Set Expire Hook Modal and Set Expire handlers
-        const setExprHookModal = new bootstrap.Modal(
-            '#setFileExprModal',
-            {}
-        )
-        let exprpk
-        $('.set-expr-btn').click(function () {
-            exprpk = $(this).data('pk')
-            console.log(exprpk)
-            setExprHookModal.show()
-        })
-    
-        // Handle set expire click confirmations
-        $('#confirm-set-expr-hook-btn').click(function (event) {
-            event.preventDefault()
-            if ($('#confirm-set-expr-hook-btn').hasClass('disabled')) {
-                return
-            }
-            let formData = new $('#set-expr-form').serialize()
-            console.log(formData)
-            console.log(exprpk)
-            $.ajax({
-                type: 'POST',
-                url: `/ajax/set_expr/file/${exprpk}/`,
-                headers: { 'X-CSRFToken': csrftoken },
-                data: formData,
-                beforeSend: function () {
-                    console.log('beforeSend')
-                    $('#confirm-set-expr-hook-btn').addClass('disabled')
-                },
-                success: function (response) {
-                    console.log('response: ' + response)
-                    setExprHookModal.hide()
-                    let message = 'File Expiration set!'
-                    show_toast(message, 'success')
-                },
-                error: function (xhr, status, error) {
-                    console.log('xhr status: ' + xhr.status)
-                    console.log('status: ' + status)
-                    console.log('error: ' + error)
-                    setExprHookModal.hide()
-                    let message = xhr.status + ': ' + error
-                    show_toast(message, 'danger', '15000')
-                },
-                complete: function () {
-                    console.log('complete')
-                    $('#confirm-set-expr-hook-btn').removeClass('disabled')
-                    let expr = formData.replace('expr=', '')
-                    let expire_status = $('#expireStatus')
-                    expire_status.attr('title', `File Expires in ${expr}`);
-                    if (expr == '') {
-                        console.log("hiding")
-                        expire_status.hide();
-                    } else {
-                        console.log("showing")
-                        expire_status.show();
-                    }
+    // Handle set expire click confirmations
+    $('#confirmExprFileBtn').click(function (event) {
+        event.preventDefault()
+        if ($('#confirmFileExprBtn').hasClass('disabled')) {
+            return
+        }
+        let formData = new $('#set-expr-form').serialize()
+        console.log(formData)
+        console.log(exprpk)
+        $.ajax({
+            type: 'POST',
+            url: `/ajax/set_expr/file/${exprpk}/`,
+            headers: { 'X-CSRFToken': csrftoken },
+            data: formData,
+            beforeSend: function () {
+                console.log('beforeSend')
+                $('#confirmFileExprBtn').addClass('disabled')
+            },
+            success: function (response) {
+                console.log('response: ' + response)
+                $('#setFileExprModal').modal('hide')
+                let message = 'File Expiration set!'
+                show_toast(message, 'success')
+            },
+            error: function (xhr, status, error) {
+                console.log('xhr status: ' + xhr.status)
+                console.log('status: ' + status)
+                console.log('error: ' + error)
+                $('#setFileExprModal').modal('hide')
+                let message = xhr.status + ': ' + error
+                show_toast(message, 'danger', '15000')
+            },
+            complete: function () {
+                console.log('complete')
+                $('#confirmFileExprBtn').removeClass('disabled')
+                let expr = formData.replace('expr=', '')
+                let expire_status = $('#expireStatus')
+                expire_status.attr('title', `File Expires in ${expr}`);
+                if (expr == '') {
+                    console.log("hiding")
+                    expire_status.hide();
+                } else {
+                    console.log("showing")
+                    expire_status.show();
+                }
 
-                },
-            })
+            },
         })
+    })
 })

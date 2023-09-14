@@ -41,4 +41,8 @@
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
+    {% if request.user.is_authenticated %}
+    <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
+    {% endif %}
+
 {% endblock %}

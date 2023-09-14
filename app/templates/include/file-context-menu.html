@@ -9,7 +9,7 @@
                 <i class="fa-solid fa-hourglass fa-fw"></i><span class="text-end">&nbsp;Set Expiration</span></a>
         </li>
         <li>
-            <a role="button" id="toggle-private-btn" class="toggle-private-hook-btn dropdown-item" data-pk="{{ file.pk }}" title="Toggle Private">
+            <a role="button" class="toggle-private-btn toggle-private-hook-btn dropdown-item" data-pk="{{ file.pk }}" title="Toggle Private">
                 {% if file.private %}
                     <i id="toggleStatus" class="fa-solid fa-fw fa-lock-open "></i><span class="toggleText">&nbsp;Make Public</span>
                 {% else %}
