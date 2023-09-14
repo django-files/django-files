@@ -132,6 +132,10 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                             {% if not file.private and not file.password %}
                                 <i id="privateStatus" title="Public File" class="fa-solid fa-lock-open"></i>
                             {% endif %}
+                            {% if file.expr %}
+                                &nbsp;&nbsp;&nbsp;
+                                <i id="expireStatus" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass"></i>
+                            {% endif %}
                         </span>
                     </p>
                     <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>
