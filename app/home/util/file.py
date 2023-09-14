@@ -56,6 +56,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
             guess, _ = mimetypes.guess_type(name, strict=False)
             if guess and guess not in ['application/octet-stream']:
                 file_mime = guess
+        file_mime = file_mime or 'application/octet-stream'
         log.debug('file_mime: %s', file_mime)
         if file_mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
             processor = ImageProcessor(fp.name, user.remove_exif, user.remove_exif_geo, ctx)
