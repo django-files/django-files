@@ -34,11 +34,11 @@ print(f'db_location: {db_location}')
 
 # read secret key from file
 if Path('/data/media/db/secret.key').exists():
-    print("Loading SECRET_KEY from file: /data/media/db/secret.key")
+    print('Loading SECRET_KEY from file: /data/media/db/secret.key')
     with open('/data/media/db/secret.key') as f:
         SECRET_KEY = f.read().strip()
 else:
-    print("Loading SECRET_KEY from environment variable: SECRET or SECRET_KEY")
+    print('Loading SECRET_KEY from environment variable: SECRET or SECRET_KEY')
     SECRET_KEY = config('SECRET', None) or config('SECRET_KEY')
 
 # TODO: Do Not Echo Secret Key
@@ -104,15 +104,15 @@ MESSAGE_TAGS = {
 }
 
 CORS_ALLOW_HEADERS = (
-    "accept",
-    "authorization",
-    "content-type",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-    "format",
-    "expr",
-    "info",
+    'accept',
+    'authorization',
+    'content-type',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'format',
+    'expr',
+    'info',
 )
 
 CELERY_BEAT_SCHEDULE = {
@@ -222,6 +222,7 @@ INSTALLED_APPS = [
     'settings',
 ]
 if DEBUG:
+    INSTALLED_APPS.insert(0, 'daphne')
     INSTALLED_APPS += [
         'django_extensions',
         'debug_toolbar',

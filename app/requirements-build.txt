@@ -1,8 +1,8 @@
 boto3
 celery>=5,<6
 # coverage
-channels  # TODO: websockets: not in use
-channels-redis  # TODO: websockets: not in use
+channels
+channels-redis
 django>=4,<5
 # django-debug-toolbar>=4,<5
 django-celery-beat
