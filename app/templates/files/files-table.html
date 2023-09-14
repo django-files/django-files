@@ -1,4 +1,5 @@
 {% load home_tags %}
+{% load static %}
 
 <p class="d-xl-none text-muted mb-0"><em>Some columns hidden due to narrow viewport.</em></p>
 <div class="table-responsive">
@@ -6,16 +7,16 @@
         <caption class="sr-only">List of Files</caption>
         <thead>
         <tr>
-            <th scope="col" class="d-none d-sm-table-cell text-center" title="Database ID">ID</th>
-            <th scope="col" class="" title="File Name">File</th>
-            <th scope="col" class="d-none d-sm-table-cell" title="File Size">Size</th>
-            <th scope="col" class="d-none d-md-table-cell" title="File Expire">Expire</th>
-            <th scope="col" class="d-none d-lg-table-cell" title="MIME Type">MIME</th>
-            <th scope="col" class="d-none d-xl-table-cell" title="UTC Date">Date</th>
-            <th scope="col" class="d-none d-sm-table-cell" title="Password"><i class="fa-solid fa-key"></i></th>
-            <th scope="col" class="d-none d-sm-table-cell" title="Private"><i class="fa-solid fa-lock"></i></th>
-            <th scope="col" class="d-none d-sm-table-cell" title="Views"><i class="fa-solid fa-eye"></i></th>
-            <th scope="col" class="text-center" title="Delete File"><i class="fa-solid fa-recycle"></i></th>
+            <th scope="col" class="d-none d-sm-table-cell lead text-center" title="Database ID">ID</th>
+            <th scope="col" class="lead" title="File Name">File</th>
+            <th scope="col" class="d-none d-sm-table-cell lead" title="File Size">Size</th>
+            <th scope="col" class="d-none d-md-table-cell lead" title="File Expire">Expire</th>
+            <th scope="col" class="d-none d-lg-table-cell lead" title="MIME Type">MIME</th>
+            <th scope="col" class="d-none d-xl-table-cell lead" title="UTC Date">Date</th>
+            <th scope="col" class="d-none d-sm-table-cell lead" title="Password"><i class="fa-solid fa-key"></i></th>
+            <th scope="col" class="d-none d-sm-table-cell lead" title="Private"><i class="fa-solid fa-lock"></i></th>
+            <th scope="col" class="d-none d-sm-table-cell lead" title="Views"><i class="fa-solid fa-eye"></i></th>
+            <th scope="col" class="text-center lead" title="Delete File"><i class="fa-solid fa-ellipsis-vertical"></i></th>
         </tr>
         </thead>
         <tbody>
@@ -25,4 +26,10 @@
         </tbody>
     </table>
 </div>
-{% include 'files/delete-modal.html' %}
+{% include 'include/delete-modal.html' %}
+
+{% block tail %}
+    {% if request.user.is_authenticated %}
+    <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
+    {% endif %}
+{% endblock %}

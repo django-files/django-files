@@ -4,19 +4,19 @@ $(document).ready(function () {
 
     // Define Hook Modal and Delete handlers
     const deleteHookModal = new bootstrap.Modal('#deleteFileModal', {})
-    let hookID
+    let pk
     $('.delete-file-btn').click(function () {
-        hookID = $(this).data('hook-id')
-        console.log(hookID)
+        let pk = $(this).data('pk')
+        console.log(pk)
         deleteHookModal.show()
     })
 
     // Handle delete click confirmations
     $('#confirmDeleteFileBtn').click(function () {
-        console.log(hookID)
+        console.log(pk)
         $.ajax({
             type: 'POST',
-            url: `/ajax/delete/file/${hookID}/`,
+            url: `/ajax/delete/file/${pk}/`,
             headers: { 'X-CSRFToken': csrftoken },
             beforeSend: function () {
                 console.log('beforeSend')
@@ -24,14 +24,14 @@ $(document).ready(function () {
             success: function (response) {
                 console.log('response: ' + response)
                 deleteHookModal.hide()
-                console.log('removing #file-' + hookID)
+                console.log('removing #file-' + pk)
                 let count = $('#files-table tr').length
-                $('#file-' + hookID).remove()
+                $('#file-' + pk).remove()
                 if (count <= 2) {
                     console.log('removing #files-table@ #files-table')
                     $('#files-table').remove()
                 }
-                let message = 'File ' + hookID + ' Successfully Removed.'
+                let message = 'File ' + pk + ' Successfully Removed.'
                 show_toast(message, 'success')
             },
             error: function (xhr, status, error) {
@@ -54,10 +54,10 @@ $(document).ready(function () {
         '#setFilePasswordModal',
         {}
     )
-    let pwhookID
+    let pwpk
     $('.set-password-file-btn').click(function () {
-        pwhookID = $(this).data('hook-id')
-        console.log(pwhookID)
+        pwpk = $(this).data('pk')
+        console.log(pwpk)
         setPasswordHookModal.show()
     })
 
@@ -69,10 +69,10 @@ $(document).ready(function () {
         }
         let formData = new $('#set-password-form').serialize()
         console.log(formData)
-        console.log(pwhookID)
+        console.log(pwpk)
         $.ajax({
             type: 'POST',
-            url: `/ajax/set_password/file/${pwhookID}/`,
+            url: `/ajax/set_password/file/${pwpk}/`,
             headers: { 'X-CSRFToken': csrftoken },
             data: formData,
             beforeSend: function () {
@@ -103,17 +103,17 @@ $(document).ready(function () {
     // Handle toggling file private status
     $('#toggle-private-btn').click(function (event) {
         event.preventDefault()
-        let pvhookID = $(this).data('hook-id')
+        let pvpk = $(this).data('pk')
         if ($('#toggle-private-btn').hasClass('disabled')) {
             return
         }
-        console.log(pvhookID)
+        console.log(pvpk)
         let private_status = $('#privateStatus')
         let toggle_status = $('#toggleStatus')
         let toggle_text = $('#toggleText')
         $.ajax({
             type: 'POST',
-            url: `/ajax/toggle_private/file/${pvhookID}/`,
+            url: `/ajax/toggle_private/file/${pvpk}/`,
             headers: { 'X-CSRFToken': csrftoken },
             success: function (response) {
                 console.log('response: ' + response)
@@ -190,16 +190,24 @@ $(document).ready(function () {
         $('#password').focus()
     })
 
+        const deleteHookModal = new bootstrap.Modal('#deleteFileModal', {})
+        let pk
+        $('.delete-file-btn').click(function () {
+            let pk = $(this).data('pk')
+            console.log(pk)
+            deleteHookModal.show()
+        })
+
 
         // Set Expire Hook Modal and Set Expire handlers
         const setExprHookModal = new bootstrap.Modal(
             '#setFileExprModal',
             {}
         )
-        let exprhookID
+        let exprpk
         $('.set-expr-btn').click(function () {
-            exprhookID = $(this).data('hook-id')
-            console.log(exprhookID)
+            exprpk = $(this).data('pk')
+            console.log(exprpk)
             setExprHookModal.show()
         })
     
@@ -211,10 +219,10 @@ $(document).ready(function () {
             }
             let formData = new $('#set-expr-form').serialize()
             console.log(formData)
-            console.log(exprhookID)
+            console.log(exprpk)
             $.ajax({
                 type: 'POST',
-                url: `/ajax/set_expr/file/${exprhookID}/`,
+                url: `/ajax/set_expr/file/${exprpk}/`,
                 headers: { 'X-CSRFToken': csrftoken },
                 data: formData,
                 beforeSend: function () {

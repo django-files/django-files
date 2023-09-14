@@ -3,41 +3,44 @@
 
 {% if file.file %}
 <tr id="file-{{ file.id }}">
-    <td class="d-none d-sm-table-cell text-center">{{ file.id }}</td>
+    <td class="d-none d-sm-table-cell text-center align-middle">{{ file.id }}</td>
 
-    <td class="">
+    <td class="align-middle">
         <span class="d-none d-sm-inline">
             <a class="clip" role="button" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
                 <i class="fa-regular fa-clipboard text-white ms-2"></i></a></span>
-        <a class="link-body-emphasis" role="button" href="{{ file.preview_uri }}" >
+        <a class="link-body-emphasis lead" role="button" href="{{ file.preview_uri }}" >
             {{ file.name }}</a></td>
 
-    <td class="d-none d-sm-table-cell">
+    <td class="d-none d-sm-table-cell align-middle">
         <a class="clip link-body-emphasis text-decoration-none" role="button"
            data-clipboard-text="{{ file.get_size }}">{{ file.get_size }}</a></td>
 
-    <td class="d-none d-md-table-cell">
+    <td class="d-none d-md-table-cell align-middle">
         <a class="clip link-body-emphasis text-decoration-none" role="button"
            data-clipboard-text="{{ file.expr|default:'Never' }}">{{ file.expr|default:'Never' }}</a></td>
 
-    <td class="d-none d-lg-table-cell">
+    <td class="d-none d-lg-table-cell align-middle">
         <a class="clip link-body-emphasis text-decoration-none" role="button"
            data-clipboard-text="{{ file.mime }}">{{ file.mime }}</a></td>
 
-    <td class="d-none d-xl-table-cell">
+    <td class="d-none d-xl-table-cell align-middle">
         <a class="clip link-body-emphasis text-decoration-none" role="button"
            data-clipboard-text="{{ file.date|localtime }}">{{ file.date|localtime }}</a></td>
 
-    <td class="d-none d-sm-table-cell">{% if file.password %}<i class="fa-solid fa-key text-warning-emphasis"></i>{% endif %}</td>
+    <td class="d-none d-sm-table-cell align-middle">{% if file.password %}<i class="fa-solid fa-key text-warning-emphasis"></i>{% endif %}</td>
 
-    <td class="d-none d-sm-table-cell">{% if file.private %}<i class="fa-solid fa-lock text-warning-emphasis"></i>{% endif %}</td>
+    <td class="d-none d-sm-table-cell align-middle">{% if file.private %}<i class="fa-solid fa-lock text-warning-emphasis"></i>{% endif %}</td>
 
-    <td class="d-none d-sm-table-cell">
+    <td class="d-none d-sm-table-cell align-middle">
         <a class="clip link-body-emphasis text-decoration-none" role="button"
            data-clipboard-text="{{ file.view }}">{{ file.view }}</a></td>
 
-    <td class="text-center">
-        <a role="button" class="delete-file-btn" data-pk="{{ file.pk }}" title="Delete">
-            <i class="fa-regular fa-trash-can link-danger"></i></a></td>
+    <td class="d-none d-sm-table-cell text-center">
+        {% include 'include/file-context-menu.html' with file=file %}
+    </td>
 </tr>
+
+{% include 'include/set-password-modal.html' %}
+{% include 'include/set-expr-modal.html' %}
 {% endif %}
