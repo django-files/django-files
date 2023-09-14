@@ -90,6 +90,10 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                                 <button class="btn btn-outline-secondary float-end mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
                                 <ul class="dropdown-menu">
                                     <li>
+                                        <a role="button" class="set-expr-btn dropdown-item" data-hook-id="{{ file.id }}" title="Set Expiration">
+                                            <i class="fa-solid fa-hourglass fa-fw"></i><span class="text-end">&nbsp;Set Expiration</span></a>
+                                    </li>
+                                    <li>
                                         <a role="button" id="toggle-private-btn" class="toggle-private-hook-btn dropdown-item" data-hook-id="{{ file.id }}" title="Toggle Private">
                                             {% if file.private %}
                                                 <i id="toggleStatus" class="fa-solid fa-fw fa-lock-open "></i><span class="toggleText">&nbsp;Make Public</span>
@@ -132,10 +136,8 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                             {% if not file.private and not file.password %}
                                 <i id="privateStatus" title="Public File" class="fa-solid fa-lock-open"></i>
                             {% endif %}
-                            {% if file.expr %}
-                                &nbsp;&nbsp;&nbsp;
-                                <i id="expireStatus" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass"></i>
-                            {% endif %}
+                            &nbsp;&nbsp;&nbsp;
+                            <i id="expireStatus" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass" {% if not file.expr %}hidden{% endif %}></i>
                         </span>
                     </p>
                     <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>
@@ -183,6 +185,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
     </div>
     {% include 'files/delete-modal.html' %}
     {% include 'include/set-password-modal.html' %}
+    {% include 'include/set-expr-modal.html' %}
 {% endblock %}
 
 {% block footer %}{% endblock %}
