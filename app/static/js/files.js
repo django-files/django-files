@@ -1,6 +1,6 @@
 $(document).ready(function () {
     // Get and set the csrf_token
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
+    // const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     $('.delete-file-btn').click(function () {
         let pk = $(this).data('pk')
@@ -13,21 +13,8 @@ $(document).ready(function () {
     $('#confirmDeleteFileBtn').click(function () {
         let pk = $(this).data('pk')
         console.log(`Confirm Delete: pk: ${pk}`)
-        $.ajax({
-            url: `/ajax/delete/file/${pk}/`,
-            type: 'POST',
-            headers: { 'X-CSRFToken': csrftoken },
-            success: function (data) {
-                console.log(`File ${pk} Deleted. Websocket Processing.`)
-            },
-            error: function (jqXHR) {
-                let message = jqXHR.status + ': ' + jqXHR.statusText
-                show_toast(message, 'danger', '10000')
-            },
-            complete: function () {
-                $('#deleteFileModal').modal('hide')
-            },
-        })
+        socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
+        $('#deleteFileModal').modal('hide')
     })
 
     $('#user').change(function () {

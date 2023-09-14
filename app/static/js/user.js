@@ -9,11 +9,11 @@ $(document).ready(function () {
     socket.onmessage = function (event) {
         let data = JSON.parse(event.data)
         console.log(data)
-        let table = $('#files-table')
         if (data.event === 'file-new') {
             $.get(`/ajax/files/tdata/${data.pk}`, function (response) {
                 let message = `New File Upload: ${data.pk}`
                 show_toast(message, 'success', '10000')
+                let table = $('#files-table')
                 if (table.length) {
                     $('#files-table tbody').prepend(response)
                     console.log(`Table Updated: ${data.pk}`)
@@ -30,6 +30,7 @@ $(document).ready(function () {
         } else if (data.event === 'file-delete') {
             let message = `File Deleted: ${data.pk}`
             show_toast(message, 'success', '10000')
+            let table = $('#files-table')
             if (table.length) {
                 let count = $('#files-table tr').length
                 $(`#file-${data.pk}`).remove()
@@ -37,6 +38,14 @@ $(document).ready(function () {
                     console.log('removing #files-table@ #files-table')
                     table.remove()
                 }
+            }
+        } else {
+            console.log('no data.event')
+            if (data.message) {
+                console.log('sending data.message')
+                let bsClass =
+                    data.bsClass === undefined ? 'success' : data.bsClass
+                show_toast(data.message, bsClass, '10000')
             }
         }
     }
