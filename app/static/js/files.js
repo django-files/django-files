@@ -18,24 +18,14 @@ $(document).ready(function () {
             type: 'POST',
             headers: { 'X-CSRFToken': csrftoken },
             success: function (data) {
-                console.log('data: ' + data)
-                $('#deleteFileModal').modal('hide')
-                console.log(`removing #file-${pk}`)
-                let count = $('#files-table tr').length
-                $(`#file-${pk}`).remove()
-                if (count <= 2) {
-                    console.log('removing #files-table@ #files-table')
-                    $('#files-table').remove()
-                }
-                let message = `File ${pk} Successfully Removed.`
-                show_toast(message, 'success')
+                console.log(`File ${pk} Deleted. Websocket Processing.`)
             },
             error: function (jqXHR) {
-                console.log('jqXHR.status: ' + jqXHR.status)
-                console.log('jqXHR.statusText: ' + jqXHR.statusText)
-                $('#deleteFileModal').modal('hide')
                 let message = jqXHR.status + ': ' + jqXHR.statusText
                 show_toast(message, 'danger', '10000')
+            },
+            complete: function () {
+                $('#deleteFileModal').modal('hide')
             },
         })
     })

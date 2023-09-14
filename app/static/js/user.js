@@ -1,17 +1,20 @@
+console.log('Connecting to WebSocket...')
+const socket = new WebSocket('wss://' + window.location.host + '/ws/home/')
+
 $(document).ready(function () {
     // Get and set the csrf_token
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Monitor websockets for new data and update results
-    console.log('Connecting to WebSocket.')
-    const socket = new WebSocket('wss://' + window.location.host + '/ws/home/')
     socket.onmessage = function (event) {
         let data = JSON.parse(event.data)
+        console.log(data)
+        let table = $('#files-table')
         if (data.event === 'file-new') {
             $.get(`/ajax/files/tdata/${data.pk}`, function (response) {
                 let message = `New File Upload: ${data.pk}`
                 show_toast(message, 'success', '10000')
-                if ($('#files-table').length) {
+                if (table.length) {
                     $('#files-table tbody').prepend(response)
                     console.log(`Table Updated: ${data.pk}`)
                     $(`#file-${data.pk}`)
@@ -24,6 +27,17 @@ $(document).ready(function () {
                         })
                 }
             })
+        } else if (data.event === 'file-delete') {
+            let message = `File Deleted: ${data.pk}`
+            show_toast(message, 'success', '10000')
+            if (table.length) {
+                let count = $('#files-table tr').length
+                $(`#file-${data.pk}`).remove()
+                if (count <= 2) {
+                    console.log('removing #files-table@ #files-table')
+                    table.remove()
+                }
+            }
         }
     }
 

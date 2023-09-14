@@ -177,38 +177,42 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             </div>
         </div>
     </div>
-    {% include 'include/../files/delete-modal.html' %}
+    {% include 'files/delete-modal.html' %}
     {% include 'include/set-password-modal.html' %}
 {% endblock %}
 
-{% block footer %}
-    <script>
-        {% if render in 'text,code' %}
-        fetch("{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}{% if file.password %}?password={{ file.password }}{% endif %}")
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.text();
-        })
-        .then((data) => {
-            $('#text-preview').text(data);
-            let theme = document.documentElement.getAttribute('data-bs-theme');
-            if (theme != "dark") {
-                $('#code-dark').prop('disabled', true);
-                $('#code-light').prop('disabled', false);
-            }
-            $('#text-preview').each(function(i, block) {
-                hljs.highlightElement(block);
-            })
-        }).catch((error) => {
-            let message = "Error fetching {{ file.file.name }}: " + error
-            show_toast(message, bsClass = 'danger')
-        });
-        {% endif %}
-    </script>
-{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block tail %}
-    <script type="text/javascript" src="{% static 'js/preview.js' %}"></script>
+    {% if render in 'text,code' %}
+        <script type="text/javascript">
+            fetch(
+                '{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}{% if file.password %}?password={{ file.password }}{% endif %}',
+            )
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then((data) => {
+                    let textPreview = $('#text-preview').text(data);
+                    let theme = document.documentElement.getAttribute('data-bs-theme');
+                    if (theme !== 'dark') {
+                        $('#code-dark').prop('disabled', true);
+                        $('#code-light').prop('disabled', false);
+                    }
+                    textPreview.each(function (i, block) {
+                        hljs.highlightElement(block);
+                    });
+                })
+                .catch((error) => {
+                    let message = `Error fetching {{ file.file.name }}: ${error}`;
+                    show_toast(message, 'danger');
+                });
+        </script>
+    {% endif %}
+    {% if request.user.is_authenticated %}
+        <script type="text/javascript" src="{% static 'js/preview.js' %}"></script>
+    {% endif %}
 {% endblock %}
