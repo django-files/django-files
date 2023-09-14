@@ -138,7 +138,7 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': datetime.timedelta(minutes=config('PROCESS_VECTOR_STATS', 1, int)),
     },
     'refresh_gallery_static_urls_cache': {
-        'task': 'home.refresh_gallery_static_urls_cache',
+        'task': 'home.tasks.refresh_gallery_static_urls_cache',
         'schedule': crontab(minute='0', hour='9,21')
     }
 }
