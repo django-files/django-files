@@ -189,4 +189,67 @@ $(document).ready(function () {
     $('#setFilePasswordModal').on('shown.bs.modal', function () {
         $('#password').focus()
     })
+
+
+        // Set Expire Hook Modal and Set Expire handlers
+        const setExprHookModal = new bootstrap.Modal(
+            '#setFileExprModal',
+            {}
+        )
+        let exprhookID
+        $('.set-expr-btn').click(function () {
+            exprhookID = $(this).data('hook-id')
+            console.log(exprhookID)
+            setExprHookModal.show()
+        })
+    
+        // Handle set expire click confirmations
+        $('#confirm-set-expr-hook-btn').click(function (event) {
+            event.preventDefault()
+            if ($('#confirm-set-expr-hook-btn').hasClass('disabled')) {
+                return
+            }
+            let formData = new $('#set-expr-form').serialize()
+            console.log(formData)
+            console.log(exprhookID)
+            $.ajax({
+                type: 'POST',
+                url: `/ajax/set_expr/file/${exprhookID}/`,
+                headers: { 'X-CSRFToken': csrftoken },
+                data: formData,
+                beforeSend: function () {
+                    console.log('beforeSend')
+                    $('#confirm-set-expr-hook-btn').addClass('disabled')
+                },
+                success: function (response) {
+                    console.log('response: ' + response)
+                    setExprHookModal.hide()
+                    let message = 'File Expiration set!'
+                    show_toast(message, 'success')
+                },
+                error: function (xhr, status, error) {
+                    console.log('xhr status: ' + xhr.status)
+                    console.log('status: ' + status)
+                    console.log('error: ' + error)
+                    setExprHookModal.hide()
+                    let message = xhr.status + ': ' + error
+                    show_toast(message, 'danger', '15000')
+                },
+                complete: function () {
+                    console.log('complete')
+                    $('#confirm-set-expr-hook-btn').removeClass('disabled')
+                    let expr = formData.replace('expr=', '')
+                    let expire_status = $('#expireStatus')
+                    expire_status.attr('title', `File Expires in ${expr}`);
+                    if (expr == '') {
+                        console.log("hiding")
+                        expire_status.hide();
+                    } else {
+                        console.log("showing")
+                        expire_status.show();
+                    }
+
+                },
+            })
+        })
 })

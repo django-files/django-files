@@ -1,0 +1,36 @@
+
+<div class="modal fade" id="setFileExprModal" tabindex="-1" aria-labelledby="setFileExprModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="setFileExprModalLabel">Set File Expiration</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form class="row" id="set-expr-form" name="set-expr-form">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <p class="test-primary">Set the file's expiration. For examples, see <a href="https://github.com/onegreyonewhite/pytimeparse2" target="_blank" rel="noopener">this README.md</a>.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-10">
+                            <label for="expr" class="form-label">Expiration</label>
+                            <div class="input-group w-auto">
+                                <input type="text" class="form-control" id="expr" name="expr" autocomplete="off" value="{{ file.expr|default:'' }}"
+                                    aria-describedby="expr-invalid">
+                            </div>
+                            <div id="expr-invalid" class="invalid-feedback"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                    <button type="button" class="btn btn-success" id="confirm-set-expr-hook-btn">
+                        Set File Expiration <i class="fas fa-lock ms-1"></i></button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

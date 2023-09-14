@@ -287,6 +287,23 @@ def set_password_file_ajax(request, pk):
 @login_required
 @csrf_exempt
 @require_http_methods(['POST'])
+def set_expr_file_ajax(request, pk):
+    """
+    View  /ajax/set_expr/file/<int:pk>/
+    """
+    log.debug('expr_hook_view_a: %s', pk)
+    file = get_object_or_404(Files, pk=pk)
+    if file.user != request.user:
+        return HttpResponse(status=401)
+    log.debug(file)
+    file.expr = request.POST.get('expr')
+    file.save()
+    return HttpResponse(status=200)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(['POST'])
 def toggle_private_file_ajax(request, pk):
     """
     View  /ajax/toggle_private/file/<int:pk>/

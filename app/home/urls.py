@@ -23,6 +23,7 @@ urlpatterns = [
     path('ajax/delete/short/<int:pk>/', views.delete_short_ajax, name='delete-short'),
     path('ajax/delete/file/<int:pk>/', views.delete_file_ajax, name='delete-file'),
     path('ajax/set_password/file/<int:pk>/', views.set_password_file_ajax, name='set-password-file'),
+    path('ajax/set_expr/file/<int:pk>/', views.set_expr_file_ajax, name='set-expr-file'),
     path('ajax/toggle_private/file/<int:pk>/', views.toggle_private_file_ajax, name='toggle-private-file'),
     path('ajax/delete/hook/<int:pk>/', views.delete_hook_ajax, name='delete-hook'),
     path('u/<path:filename>', views.url_route_view, name='url-route'),
