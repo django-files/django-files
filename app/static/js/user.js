@@ -1,10 +1,11 @@
+console.log('Connecting to WebSocket...')
+const socket = new WebSocket('wss://' + window.location.host + '/ws/home/')
+
 $(document).ready(function () {
     // Get and set the csrf_token
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Monitor websockets for new data and update results
-    console.log('Connecting to WebSocket.')
-    const socket = new WebSocket('wss://' + window.location.host + '/ws/home/')
     socket.onmessage = function (event) {
         let data = JSON.parse(event.data)
         console.log(data)

@@ -14,7 +14,7 @@ functional but **Under Active Development**. Expect breaking changes until an of
 [release](https://github.com/django-files/django-files/releases) is made.
 
 Please open a [Feature Request](https://github.com/django-files/django-files/discussions/new?category=feature-requests)
-or submit an [Issue](https://github.com/cssnr/zipline-cli/issues/new) for any bugs.
+or submit an [Issue](https://github.com/django-files/django-files/issues/new) for any bugs.
 
 ## Table of Contents
 
@@ -330,4 +330,4 @@ docker compose down --remove-orphans
 
 ---
 [Feature Requests](https://github.com/django-files/django-files/discussions/new?category=feature-requests) |
-[Issues](https://github.com/cssnr/zipline-cli/issues/new) 
+[Issues](https://github.com/django-files/django-files/issues/new) 
