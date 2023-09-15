@@ -170,7 +170,7 @@ $(document).ready(function () {
     $('.set-expr-btn').click(function () {
         exprpk = $(this).data('pk')
         console.log(exprpk)
-        $('#confirmFileExprBtn').data('pk', pk)
+        $('#confirmFileExprBtn').data('pk', exprpk)
         $('#setFileExprModal').modal('show')
     })
 
