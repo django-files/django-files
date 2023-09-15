@@ -8,7 +8,7 @@ import tempfile
 # from django.conf import settings
 from django.core.files import File
 # from pathlib import Path
-from typing import IO
+from typing import BinaryIO
 
 from home.models import Files
 from home.util.image import ImageProcessor
@@ -20,7 +20,7 @@ from oauth.models import CustomUser
 log = logging.getLogger('app')
 
 
-def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
+def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     """
     Process File Uploads
     :param name: String: name of the file
@@ -29,17 +29,17 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     :param kwargs: Extra Files Object Values
     :return: Files: The created Files object
     """
-    log.info('name: %s', name)
-    log.info('f: %s', f)
-    log.info('user_id: %s', user_id)
-    log.info('kwargs: %s', kwargs)
+    log.debug('name: %s', name)
+    log.debug('f: %s', f)
+    log.debug('user_id: %s', user_id)
+    log.debug('kwargs: %s', kwargs)
     user = CustomUser.objects.get(id=user_id)
-    log.info('user: %s', user)
-    log.info('user.default_upload_name_format: %s', user.default_upload_name_format)
+    log.debug('user: %s', user)
+    log.debug('user.default_upload_name_format: %s', user.default_upload_name_format)
     _format = kwargs.pop('format', user.default_upload_name_format)
-    log.info('_format: %s', _format)
+    log.debug('_format: %s', _format)
     name = get_formatted_name(name, _format)
-    log.info('get_formatted_name: name: %s', name)
+    log.debug('get_formatted_name: name: %s', name)
     ctx = {}
     if strip_exif := kwargs.pop('strip_exif', None) is not None:
         ctx['strip_exif'] = anytobool(strip_exif)
@@ -72,9 +72,9 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
             file.exif = processor.exif
         file.file = File(fp, name=name)
         file.mime = file_mime
-        log.info('file.mime: %s', file.mime)
+        log.debug('file.mime: %s', file.mime)
         file.size = file.file.size
-        log.info('file.size: %s', file.size)
+        log.debug('file.size: %s', file.size)
         if (meta_preview := kwargs.get('meta_preview')) is not None:
             file.meta_preview = anytobool(meta_preview)
         else:
@@ -84,7 +84,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
         else:
             file.private = user.default_file_private
         file.save()
-    log.info('file.file.name: %s', file.file.name)
+    log.debug('file.file.name: %s', file.file.name)
     file.name = file.file.name
     file.save()
     new_file_websocket.delay(file.pk)
@@ -93,16 +93,18 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
 
 
 def get_formatted_name(name: str, _format: str = '') -> str:
+    # TODO: Handle names without a . by using mime-type
     log.debug('name: %s', name)
-    log.debug('_format: %s', _format)
     ext = os.path.splitext(name)[1]
     log.debug('ext: %s', ext)
-    match _format.lower():
-        case 'rand':
-            return rand_string() + ext
-        case 'uuid':
-            return uuid.uuid4().hex + ext
-        case 'date':
-            return datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ext
-        case _:
-            return name
+    log.debug('_format: %s', _format)
+    if _format:
+        match _format.lower():
+            case 'rand':
+                return rand_string() + ext
+            case 'uuid':
+                return uuid.uuid4().hex + ext
+            case 'date':
+                # TODO: Look into removing the : from filenames
+                return datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ext
+    return name

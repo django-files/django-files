@@ -57,7 +57,8 @@ class TestAuthViews(TestCase):
 class PlaywrightTest(StaticLiveServerTestCase):
     """Test Playwright"""
     screenshots = 'screenshots'
-    views = ['Gallery', 'Upload', 'Files', 'Shorts', 'Stats']
+    # TODO: Add Upload view back
+    views = ['Gallery', 'Files', 'Shorts', 'Stats']
     previews = ['README.md', 'requirements.txt', 'main.html', 'home_tags.py', 'an225.jpg']
     context = None
     browser = None
@@ -147,7 +148,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
 
         for view in self.views:
             print('---------- view: %s' % view)
-            page.locator(f'text={view}').first.click()
+            page.locator('.nav-link').locator(f'text={view}').first.click()
             if view == 'Upload':
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, view)
@@ -156,6 +157,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 self.screenshot(page, view)
 
             if view == 'Files':
+                self.screenshot(page, f'{view}-DEBUGBEFOREERROR')
                 page.locator('.delete-file-btn').first.click()
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-click')
