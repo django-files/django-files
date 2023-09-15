@@ -4,17 +4,20 @@ $(document).ready(function () {
 
     // Define Hook Modal and Delete handlers
     const deleteHookModal = new bootstrap.Modal('#deleteFileModal', {})
-    let pk
+
     $('.delete-file-btn').click(function () {
         let pk = $(this).data('pk')
-        console.log(pk)
-        deleteHookModal.show()
+        console.log(`Delete Button: pk: ${pk}`)
+        $('#confirmDeleteFileBtn').data('pk', pk)
+        $('#deleteFileModal').modal('show')
     })
 
     // Handle delete click confirmations
     $('#confirmDeleteFileBtn').click(function () {
-        console.log(pk)
+        let pk = $(this).data('pk')
+        console.log(`Confirm Delete: pk: ${pk}`)
         socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
+        $('#deleteFileModal').modal('hide')
     })
 
     // Set Password Hook Modal and Set Password handlers
