@@ -3,9 +3,11 @@ import logging
 # from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from io import BytesIO
 from typing import Optional
 
 from home.models import Files
+from home.util.file import process_file
 
 log = logging.getLogger('app')
 
@@ -61,6 +63,21 @@ class HomeConsumer(AsyncWebsocketConsumer):
     #         response.update(data)
     #     response.update(**kwargs)
     #     return response
+
+    def paste_text(self, *, user_id: int = None, text_data: str = None, **kwargs):
+        log.debug('paste_text')
+        log.debug('user_id: %s', user_id)
+        log.debug('text_data: %s', text_data)
+        log.debug('kwargs: %s', kwargs)
+        if not text_data:
+            return self._error('Text Data is Required.', **kwargs)
+        name = kwargs.pop('name') or 'paste.txt'
+        log.debug('name: %s', name)
+        f = BytesIO(bytes(text_data, 'utf-8'))
+        file = process_file(name, f, user_id, **kwargs)
+        log.debug('file.name: %s', file.name)
+        # return self._error('Not Implemented.', **kwargs)
+        # return self._success(f'File Created: {file.pk}')
 
     def delete_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
         """
