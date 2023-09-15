@@ -4,12 +4,23 @@
 <div class="dropdown">
     <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
     <ul class="dropdown-menu">
+        {% if '/u/' not in request.path %}
+        <li>
+            <a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}" title="Copy Share Link">
+                <i class="fa-solid fa-link fa-fw link-info"></i><span class="text-end">&nbsp;Copy Share Link</span></a>
+        </li>
+        <li>
+            <a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}" title="Copy Raw Link">
+                <i class="fa-solid fa-link fa-fw link-warning"></i><span class="text-end">&nbsp;Copy Raw Link</span></a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        {% endif%}
         <li>
             <a role="button" class="set-expr-btn dropdown-item" data-pk="{{ file.pk }}" title="Set Expiration">
                 <i class="fa-solid fa-hourglass fa-fw"></i><span class="text-end">&nbsp;Set Expiration</span></a>
         </li>
         <li>
-            <a role="button" class="toggle-private-btn toggle-private-hook-btn dropdown-item" data-pk="{{ file.pk }}" title="Toggle Private">
+            <a role="button" class="toggle-private-btn dropdown-item" data-pk="{{ file.pk }}" title="Toggle Private">
                 {% if file.private %}
                     <i id="toggleStatus" class="fa-solid fa-fw fa-lock-open "></i><span class="toggleText">&nbsp;Make Public</span>
                 {% else %}
