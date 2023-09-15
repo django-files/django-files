@@ -68,12 +68,7 @@ def upload_view(request):
     try:
         if not (f := request.FILES.get('file')):
             return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
-        # kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
-        #           'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed'),
-        #           'password': request.headers.get('password'), 'private': request.headers.get('private'),
-        #           'strip_gps': request.headers.get('strip-gps'), 'strip_exif': request.headers.get('strip-exif'),
-        #           'auto_pw': request.headers.get('auto-password')}
-        # TODO: Determine how to better handle expire
+        # TODO: Determine how to better handle expire and why info is still being used differently from other methods
         extra_args = parse_headers(request.headers, expr=parse_expire(request), info=request.POST.get('info'))
         log.debug('extra_args: %s', extra_args)
         log.debug('request.user: %s', request.user)
@@ -228,12 +223,6 @@ def remote_view(request):
     if not r.is_success:
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
-    # kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
-    #           'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed'),
-    #           'password': request.headers.get('password'), 'private': request.headers.get('private'),
-    #           'strip_gps': request.headers.get('strip-gps'), 'strip_exif': request.headers.get('strip-exif'),
-    #           'auto_pw': request.headers.get('auto-password')}
-    # TODO: Determine why info is still being used differently from other methods
     extra_args = parse_headers(request.headers, expr=parse_expire(request), info=request.POST.get('info'))
     log.debug('extra_args: %s', extra_args)
     file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id, **extra_args)
@@ -244,10 +233,14 @@ def remote_view(request):
 
 def parse_headers(headers: dict, **kwargs) -> dict:
     data = {}
-    # TODO: Determine why these values are not 1:1 - meta_preview:embed, auto_pw:auto-password
+    # TODO: IMPORTANT: Determine why these values are not 1:1 - meta_preview:embed
+    difference_mapping = {'embed': 'meta_preview'}
     for key in ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password']:
         if key in headers:
-            data[key.replace('-', '_')] = headers[key]
+            value = headers[key]
+            if key in difference_mapping:
+                key = difference_mapping[key]
+            data[key.replace('-', '_')] = value
     # data.update(**kwargs)
     for key, value in kwargs.items():
         if value is not None:

@@ -45,8 +45,8 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
         ctx['strip_exif'] = anytobool(strip_exif)
     if strip_gps := kwargs.pop('strip_gps', None) is not None:
         ctx['strip_gps'] = anytobool(strip_gps)
-    if auto_pw := kwargs.pop('auto_pw', None) is not None:
-        if anytobool(auto_pw):
+    if auto_password := kwargs.pop('auto_password', None) is not None:
+        if anytobool(auto_password):
             kwargs['password'] = rand_string()
     else:
         if user.default_file_password:
