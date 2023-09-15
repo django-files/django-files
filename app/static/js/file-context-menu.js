@@ -14,39 +14,7 @@ $(document).ready(function () {
     // Handle delete click confirmations
     $('#confirmDeleteFileBtn').click(function () {
         console.log(pk)
-        $.ajax({
-            type: 'POST',
-            url: `/ajax/delete/file/${pk}/`,
-            headers: { 'X-CSRFToken': csrftoken },
-            beforeSend: function () {
-                console.log('beforeSend')
-            },
-            success: function (response) {
-                console.log('response: ' + response)
-                deleteHookModal.hide()
-                console.log('removing #file-' + pk)
-                let count = $('#files-table tr').length
-                $('#file-' + pk).remove()
-                if (count <= 2) {
-                    console.log('removing #files-table@ #files-table')
-                    $('#files-table').remove()
-                }
-                let message = 'File ' + pk + ' Successfully Removed.'
-                show_toast(message, 'success')
-            },
-            error: function (xhr, status, error) {
-                console.log('xhr status: ' + xhr.status)
-                console.log('status: ' + status)
-                console.log('error: ' + error)
-                deleteHookModal.hide()
-                let message = xhr.status + ': ' + error
-                show_toast(message, 'danger', '15000')
-            },
-            complete: function () {
-                console.log('complete')
-                window.location.replace('/files/')
-            },
-        })
+        socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
     })
 
     // Set Password Hook Modal and Set Password handlers
