@@ -252,7 +252,11 @@ def delete_file_websocket(pk, user_id):
 def send_discord_message(pk):
     # Send a Discord message for a new file
     log.info('send_discord_message: pk: %s', pk)
-    file = Files.objects.get(pk=pk)
+    file = Files.objects.filter(pk=pk)
+    if not file:
+        log.warning('send_discord_message: 404 File Not Found - pk: %s', pk)
+        return f'404 File Not Found - pk: {pk}'
+    file = file[0]
     webhooks = DiscordWebhooks.objects.filter(owner=file.user)
     context = {'file': file}
     message = render_to_string('message/new-file.html', context)

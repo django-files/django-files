@@ -44,8 +44,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         method = getattr(self, method_name)
         response = await database_sync_to_async(method)(**data)
         log.debug(response)
-        if response:
-            return response
+        return response or {}
 
     @staticmethod
     def _error(message, **kwargs) -> dict:
