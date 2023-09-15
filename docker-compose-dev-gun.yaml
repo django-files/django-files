@@ -33,7 +33,7 @@ services:
     build: ./app
     image: djangofiles-app:${VERSION:-latest}
     env_file: settings.env
-    command: "sh -c 'python manage.py runserver 0.0.0.0:9000'"
+    command: "watchmedo auto-restart -d /app -p '*.py' -R -- gunicorn djangofiles.asgi:application -b 0.0.0.0:9000 -w 2 -k uvicorn.workers.UvicornWorker"
     deploy:
       mode: global
     volumes:
@@ -46,7 +46,6 @@ services:
   worker:
     image: djangofiles-app:${VERSION:-latest}
     env_file: settings.env
-#    command: "celery -A djangofiles worker -l INFO -c 2"
     command: "watchmedo auto-restart -d /app -p '*.py' -R -- celery -A djangofiles worker -l INFO -c 4"
     deploy:
       replicas: 1
