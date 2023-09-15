@@ -2,7 +2,7 @@
 
 {% if request.user.is_authenticated and request.user == file.user %}
 <div class="dropdown">
-    <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+    <button class="btn btn-outline-secondary btn-sm file-context-dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
     <ul class="dropdown-menu">
         {% if '/u/' not in request.path %}
         <li>
