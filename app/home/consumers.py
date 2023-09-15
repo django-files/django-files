@@ -71,8 +71,12 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('kwargs: %s', kwargs)
         if not text_data:
             return self._error('Text Data is Required.', **kwargs)
-        name = kwargs.pop('name') or 'paste.txt'
+        name = kwargs.pop('name', None)
         log.debug('name: %s', name)
+        if name:
+            kwargs.pop('format', None)
+        else:
+            name = 'text.txt'
         f = BytesIO(bytes(text_data, 'utf-8'))
         file = process_file(name, f, user_id, **kwargs)
         log.debug('file.name: %s', file.name)

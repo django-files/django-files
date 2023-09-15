@@ -1,5 +1,5 @@
 {% extends "main.html" %}
-{% block uppy_active %}active{% endblock %}
+{% block paste_active %}active{% endblock %}
 {% block title %}Paste Text{% endblock %}
 {% load home_tags %}
 {% load static %}
@@ -10,8 +10,7 @@
 
 {% block body %}
     <div class="container-fluid py-3 px-4">
-
-        <h1><i class="fa-solid fa-upload me-2"></i> Paste Text</h1>
+        <h1><i class="fa-regular fa-file-lines"></i> Paste Text</h1>
         <form method="post" action="{% url 'home:paste' %}" name="sendPaste" id="sendPaste">
             <div class="row g-3">
                 <div class="col-sm-6">
@@ -22,13 +21,13 @@
                 <div class="col-sm-3">
                     <label for="format" class="form-label">Name Format</label>
                     <select class="form-select" id="format" name="format">
-                        {% for choice, value in default_upload_name_formats %}
-                            <option value="{{ value }}" {% if choice == user.default_upload_name_format %}selected{% endif %}>{{ value }}</option>
+                        {% for value, display in default_upload_name_formats %}
+                            <option value="{{ value }}" {% if value == user.default_upload_name_format %}selected{% endif %}>{{ display }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-sm-3 d-grid">
-                    <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-hammer me-2"></i> Create</button>
+                <div class="col-sm-3 align-items-end">
+                    <button class="btn btn-outline-success w-100" type="submit"><i class="fa-solid fa-hammer me-2"></i> Create</button>
                 </div>
                 <div class="col-12 mb-3">
                     <label for="text_data" class="form-label">Text</label>
@@ -36,7 +35,6 @@
                 </div>
             </div>
         </form>
-
     </div>
 {% endblock %}
 

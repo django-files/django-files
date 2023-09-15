@@ -35,7 +35,8 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
     log.info('kwargs: %s', kwargs)
     user = CustomUser.objects.get(id=user_id)
     log.info('user: %s', user)
-    _format = kwargs.pop('format', user.get_default_upload_name_format_display())
+    log.info('user.default_upload_name_format: %s', user.default_upload_name_format)
+    _format = kwargs.pop('format', user.default_upload_name_format)
     log.info('_format: %s', _format)
     name = get_formatted_name(name, _format)
     log.info('get_formatted_name: name: %s', name)
@@ -92,13 +93,12 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
 
 
 def get_formatted_name(name: str, _format: str = '') -> str:
-    _format = _format or ''
     log.debug('name: %s', name)
     log.debug('_format: %s', _format)
     ext = os.path.splitext(name)[1]
     log.debug('ext: %s', ext)
     match _format.lower():
-        case 'random':
+        case 'rand':
             return rand_string() + ext
         case 'uuid':
             return uuid.uuid4().hex + ext

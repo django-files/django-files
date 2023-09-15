@@ -56,13 +56,13 @@
                     <label for="default_upload_name_format" class="form-label">Default Upload Format</label>
                     <select class="form-select" id="default_upload_name_format" name="default_upload_name_format"
                         aria-describedby="default_upload_name_format-help default_upload_name_format-invalid">
-                        {% for choice, value in default_upload_name_formats %}
-                            <option value="{{ choice }}" {% if choice == user.default_upload_name_format %}selected{% endif %}>{{ value }}</option>
+                        {% for value, display in default_upload_name_formats %}
+                            <option value="{{ value }}" {% if value == user.default_upload_name_format %}selected{% endif %}>{{ display }}</option>
                         {% endfor %}
                     </select>
                     <div id="default_upload_name_format_name_format-invalid" class="invalid-feedback"></div>
                     <div id="default_upload_name_format-help" class="form-text">
-                        For examples, see README.md.
+                        For examples, see <a href="https://github.com/django-files/django-files#table-of-contents" target="_blank">this README.md</a>.
                     </div>
                 </div>
             </div>
@@ -164,6 +164,7 @@
                 <p class="lead">No Webhooks Found. Perhaps you forgot to add one?</p>
             {% else %}
                 <table class="table table-responsive" id="discordWebhooksTable">
+                    <caption class="sr-only">Active Webhooks</caption>
                     <thead>
                     <tr>
                         <th scope="col" class="d-none d-sm-table-cell">ID</th>
@@ -286,6 +287,7 @@
             <p><kbd id="upload-url">{{ site_settings.site_url }}{% url 'home:upload' %}</kbd></p>
             <p>Uploads accept the following parameters. Click a tab above to view full examples.</p>
             <table class="table table-sm table-striped">
+                <caption class="sr-only">Custom Upload Options</caption>
                 <thead>
                 <tr>
                     <th scope="col">Key</th>
