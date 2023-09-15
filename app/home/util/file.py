@@ -92,6 +92,7 @@ def process_file(name: str, f: IO, user_id: int, **kwargs) -> Files:
 
 
 def get_formatted_name(name: str, _format: str = '') -> str:
+    _format = _format or ''
     log.debug('name: %s', name)
     log.debug('_format: %s', _format)
     ext = os.path.splitext(name)[1]
