@@ -3,7 +3,7 @@
 {% if request.user.is_authenticated and request.user == file.user %}
 <div class="dropdown">
     <button class="btn btn-outline-secondary btn-sm file-context-dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-    <ul class="dropdown-menu">
+    <ul class="dropdown-menu" id="file-{{ file.pk }}-dropdown">
         {% if '/u/' not in request.path %}
         <li>
             <a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
@@ -22,9 +22,9 @@
         <li>
             <a role="button" class="toggle-private-btn dropdown-item" data-pk="{{ file.pk }}" title="Toggle Private">
                 {% if file.private %}
-                    <i id="toggleStatus" class="fa-solid fa-fw fa-lock-open "></i><span class="toggleText">&nbsp;Make Public</span>
+                    <i id="privateDropdownIcon" class="fa-solid fa-fw fa-lock-open "></i>&nbsp;<span id="privateText">Make Public</span>
                 {% else %}
-                    <i id="toggleStatus" class="fa-solid fa-fw fa-lock"></i><span id="toggleText">&nbsp;Make Private</span>
+                    <i id="privateDropdownIcon" class="fa-solid fa-fw fa-lock"></i>&nbsp;<span id="privateText">Make Private</span>
                 {% endif %}
             </a>
         </li>

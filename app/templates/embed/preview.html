@@ -82,7 +82,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     {% endif %}
                 </div>
             <div class="col-lg-3 d-flex flex-column">
-                <div class="card-body">
+                <div id="file-{{ file.id }}" class="card-body">
                     <h3 class="card-title">{{ file.name }}
                         <span class="float-end mt-3">{% include 'include/file-context-menu.html' with file=file %}</span>
                     </h3>
@@ -97,19 +97,10 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% else %}
                             <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
                         {% endif %}
-                        <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
-                        <span class="text-center">
-                            &nbsp;&nbsp;&nbsp;
-                            {% if file.private and not file.password %}
-                                <i id="privateStatus" title="Private File" class="fa-solid fa-lock"></i>
-                            {% endif %}
-                            {% if file.password %}<i title="Password Protected File" class="fa-solid fa-key"></i>{% endif %}
-                            {% if not file.private and not file.password %}
-                                <i id="privateStatus" title="Public File" class="fa-solid fa-lock-open"></i>
-                            {% endif %}
-                            &nbsp;&nbsp;&nbsp;
-                            <i id="expireStatus" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass" {% if not file.expr %}hidden{% endif %}></i>
-                        </span>
+                        <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}&nbsp;&nbsp;&nbsp;
+                        <i id="privateStatus" title="Private File" class="fa-solid fa-lock" {% if not file.private %} style="display: none"{% endif %}></i>{% if file.password %}
+                        <i title="Password Protected File" class="fa-solid fa-key"></i>{% endif %}&nbsp;&nbsp;&nbsp;
+                        <i id="expireStatus" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass" {% if not file.expr %}hidden{% endif %}></i>
                     </p>
                     <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>
                     <p class="card-text">Uploaded {{ file.date }}</p>
