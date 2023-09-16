@@ -138,3 +138,24 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return {'expr': file[0].expr, 'event': 'set-expr-file', 'pk': file[0].id,
                     'file_name': file[0].name}
         return self._error('File not found.', **kwargs)
+
+    def set_password_file(self, *, user_id: int = None, pk: int = None, password: str = None, **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: Integer - File ID
+        :param password: String - File Password String
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug('set_password_file')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
+        if file := Files.objects.filter(pk=pk):
+            if user_id and file[0].user.id != user_id:
+                return self._error('File owned by another user.', **kwargs)
+            print(password)
+            file[0].password = password or ""
+            file[0].save()
+            # return self._success('File Expire Updated.', **kwargs)
+            return {'password': bool(file[0].password), 'event': 'set-password-file', 'pk': file[0].id,
+                    'file_name': file[0].name}
+        return self._error('File not found.', **kwargs)

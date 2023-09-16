@@ -84,6 +84,9 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             <div class="col-lg-3 d-flex flex-column">
                 <div id="file-{{ file.id }}" class="card-body">
                     <h3 class="card-title">{{ file.name }}
+                            <!-- This hidden password field is used to pass the password value to model on the files table.
+                                We should probably fetch this live instead to not store all pws in the page html -->
+                            <input type="hidden" class="file-password-value" value="{{ file.password }}">
                         <span class="float-end mt-3">{% include 'include/file-context-menu.html' with file=file %}</span>
                     </h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
@@ -98,8 +101,8 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                             <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
                         {% endif %}
                         <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
-                        &nbsp;&nbsp;&nbsp;<i id="privateStatus" title="Private File" class="fa-solid fa-lock" {% if not file.private %} style="display: none"{% endif %}></i>{% if file.password %}
-                        &nbsp;&nbsp;&nbsp;<i title="Password Protected File" class="fa-solid fa-key"></i>{% endif %}
+                        &nbsp;&nbsp;&nbsp;<i id="privateStatus" title="Private File" class="fa-solid fa-lock" {% if not file.private %} style="display: none"{% endif %}></i>
+                        &nbsp;&nbsp;&nbsp;<i id="passwordStatus" title="Password Protected File" class="fa-solid fa-key"{% if not file.password %} style="display: none"{% endif %}></i>
                         &nbsp;&nbsp;&nbsp;<i id="expireStatus" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass" {% if not file.expr %} style="display: none"{% endif %}></i>
                     </p>
                     <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>

@@ -9,9 +9,12 @@ $(document).ready(function () {
             handle_private_toggle(data)
         } else if (data.event === 'set-expr-file') {
             handle_set_expiration(data)
+        } else if (data.event === 'set-password-file') {
+            handle_password_set(data)
         }
     }
 
+    let pk
     // Define Hook Modal and Delete handlers
     const deleteHookModal = new bootstrap.Modal('#deleteFileModal', {})
 
@@ -35,10 +38,13 @@ $(document).ready(function () {
         '#setFilePasswordModal',
         {}
     )
-    let pwpk
+
     $('.set-password-file-btn').click(function () {
-        pwpk = $(this).data('pk')
-        console.log(pwpk)
+        pk = $(this).data('pk')
+        console.log(pk)
+        $('#confirm-set-password-hook-btn').data('pk', pk)
+        let passwordText = $(`#file-${pk}`).find('.file-password-value').val()
+        $('#setFilePasswordModal').find('#password').val(passwordText)
         setPasswordHookModal.show()
     })
 
@@ -48,38 +54,25 @@ $(document).ready(function () {
         if ($('#confirm-set-password-hook-btn').hasClass('disabled')) {
             return
         }
-        let formData = new $('#set-password-form').serialize()
-        console.log(formData)
-        console.log(pwpk)
-        $.ajax({
-            type: 'POST',
-            url: `/ajax/set_password/file/${pwpk}/`,
-            headers: { 'X-CSRFToken': csrftoken },
-            data: formData,
-            beforeSend: function () {
-                console.log('beforeSend')
-                $('#confirm-set-password-hook-btn').addClass('disabled')
-            },
-            success: function (response) {
-                console.log('response: ' + response)
-                setPasswordHookModal.hide()
-                let message = 'Password set!'
-                show_toast(message, 'success')
-            },
-            error: function (xhr, status, error) {
-                console.log('xhr status: ' + xhr.status)
-                console.log('status: ' + status)
-                console.log('error: ' + error)
-                setPasswordHookModal.hide()
-                let message = xhr.status + ': ' + error
-                show_toast(message, 'danger', '15000')
-            },
-            complete: function () {
-                console.log('complete')
-                $('#confirm-set-password-hook-btn').removeClass('disabled')
-            },
-        })
+        let formData = new $('#set-password-form').serializeArray()
+        socket.send(JSON.stringify({ method: 'set-password-file', pk: pk, password: formData[0].value }))
+        $(`#file-${pk}`).find('.file-password-value').val(formData[0].value)
     })
+
+    function handle_password_set(data) {
+        let message
+        let password_status_icon = $(`#file-${data.pk}`).find("#passwordStatus")
+        console.log(password_status_icon)
+        if (data.password) {
+            password_status_icon.show()
+            message = `Password set for ${data.file_name}`
+        } else {
+            password_status_icon.hide()
+            message = `Password unset for ${data.file_name}`
+        }
+        show_toast(message, 'success')
+        setPasswordHookModal.hide()
+    }
 
     $('.toggle-private-btn').click(function (event) {
         event.preventDefault()
@@ -146,7 +139,7 @@ $(document).ready(function () {
     })
 
 
-    let pk
+
     $('.set-expr-btn').click(function () {
         pk = $(this).data('pk')
         $('#confirmFileExprBtn').data('pk', pk)
