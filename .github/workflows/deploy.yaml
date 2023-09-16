@@ -66,16 +66,16 @@ jobs:
           echo steps.vars.outputs.config_path: ${{ steps.vars.outputs.config_path }}
           echo steps.vars.outputs.stack_name: ${{ steps.vars.outputs.stack_name }}
           echo ----------
-          ls -lah .
-          echo ----------
-          ls -lhR service-configs/services
-          echo ----------
-          echo service-configs/${{ steps.vars.outputs.config_path }}
-          cat service-configs/${{ steps.vars.outputs.config_path }}
-          echo ----------
           docker version
           docker info
-          echo ----------
+#          echo ----------
+#          ls -lah .
+#          echo ----------
+#          ls -lhR service-configs/services
+#          echo ----------
+#          echo service-configs/${{ steps.vars.outputs.config_path }}
+#          cat service-configs/${{ steps.vars.outputs.config_path }}
+#          echo ----------
 
       - name: "Update Compose"
         run: |
