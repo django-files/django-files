@@ -15,21 +15,21 @@ env:
   REGISTRY_GROUP: shane
   REGISTRY_HOST: registry.hosted-domains.com
   COMPOSE_FILE: docker-compose-swarm.yaml
-  CONFIGS_DIR: service-configs
   CONFIG_FILE: settings.env
-#  SERVICE_CONFIGS: hosted-domains/service-configs
+  #  SERVICE_CONFIGS: hosted-domains/service-configs
   SERVICE_CONFIGS: git@github.com:hosted-domains/service-configs.git
+  CONFIGS_DIR: service-configs
+
   ENV_NAMES: ${{ inputs.envs || 'dev,dev3' }}
   REPOSITORY_NAME: ${{ github.event.repository.name }}
 #  ENV_NAME: ${{ github.ref_name == 'master' && 'prod' || 'dev' }}
-#  TRAEFIK_HOST: ${{ github.ref_name == 'master' && '`prod-test-app.hosted-domains.com`' || '`dev-test-app.hosted-domains.com`' }}
 
 jobs:
   deploy:
     name: Stack Deploy
     runs-on: self-hosted
-    timeout-minutes: 5
-    if: ${{ !contains(github.event.head_commit.message, '#noci') }}
+    timeout-minutes: 15
+    if: ${{ !contains(github.event.head_commit.message, '#nodep') }}
 
     steps:
       - name: "Variables"
@@ -64,6 +64,7 @@ jobs:
           git remote add origin ${SERVICE_CONFIGS}
           git config core.sparseCheckout true
           IFS=','
+          echo ENV_NAMES ${ENV_NAMES}
           for ENV_NAME in ${ENV_NAMES}; do
             echo "services/${GITHUB_REPOSITORY}/${ENV_NAME}/${CONFIG_FILE}"
             echo "services/${GITHUB_REPOSITORY}/${ENV_NAME}/${CONFIG_FILE}" >> .git/info/sparse-checkout
@@ -81,12 +82,12 @@ jobs:
 #          sparse-checkout-cone-mode: false
 #          ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
 
-      - name: "Debug"
-        run: |
-          echo ----------
-          ls -lah .
-          echo ----------
-          ls -lhR service-configs
+#      - name: "Debug"
+#        run: |
+#          echo ----------
+#          ls -lah .
+#          echo ----------
+#          ls -lhR service-configs
 #          echo ----------
 #          echo steps.vars.outputs.config_path: ${{ steps.vars.outputs.config_path }}
 #          echo steps.vars.outputs.stack_name: ${{ steps.vars.outputs.stack_name }}
@@ -99,6 +100,8 @@ jobs:
       - name: "Update Compose"
         run: |
           IFS=','
+          echo ENV_NAMES ${ENV_NAMES}
+          echo ----------
           for ENV_NAME in ${ENV_NAMES}; do
             export STACK_NAME="${ENV_NAME}_${GITHUB_REPOSITORY_OWNER}_${REPOSITORY_NAME}"
             echo STACK_NAME ${STACK_NAME}
@@ -106,14 +109,39 @@ jobs:
             export STACK_COMPOSE="docker-compose-deploy-${ENV_NAME}.yaml"
             echo STACK_COMPOSE ${STACK_COMPOSE}
             stat "${COMPOSE_FILE}"
-            cp "${COMPOSE_FILE}" "${STACK_COMPOSE}"
+            cp -f "${COMPOSE_FILE}" "${STACK_COMPOSE}"
             sed -i "s/STACK_NAME/${STACK_NAME}/g" "${STACK_COMPOSE}"
+            echo ----------
             cat "${STACK_COMPOSE}"
           done
-          ls -lAh .
 
-#      - name: "Build Push Deploy"
-#        run: |
+      - name: "Node Install"
+        run: npm install
+
+      - name: "Build Push Deploy"
+        run: |
+          docker login --username "${{ secrets.REGISTRY_USER }}" --password "${{ secrets.REGISTRY_PASS }}" ${REGISTRY_HOST}
+          IFS=','
+          echo ENV_NAMES ${ENV_NAMES}
+          for ENV_NAME in ${ENV_NAMES}; do
+            echo ENV_NAME ${ENV_NAME}
+            export ENV_FILE="${CONFIGS_DIR}/services/${GITHUB_REPOSITORY}/${ENV_NAME}/${CONFIG_FILE}"
+            echo ENV_FILE ${ENV_FILE}
+            stat ${ENV_FILE}
+            set -a; . ${ENV_FILE}
+            echo TRAEFIK_HOST ${TRAEFIK_HOST}
+            export VERSION="${ENV_NAME}"
+            echo VERSION ${VERSION}
+            export STACK_NAME="${ENV_NAME}_${GITHUB_REPOSITORY_OWNER}_${REPOSITORY_NAME}"
+            echo STACK_NAME ${STACK_NAME}
+            export STACK_COMPOSE="docker-compose-deploy-${ENV_NAME}.yaml"
+            echo STACK_COMPOSE ${STACK_COMPOSE}
+            echo ----------
+            echo docker compose -f ${STACK_COMPOSE} build --force-rm
+            echo docker compose -f ${STACK_COMPOSE} push
+            echo docker stack deploy -c ${STACK_COMPOSE} --with-registry-auth --resolve-image always ${STACK_NAME}
+          done
+
 #          export ENV_FILE=service-configs/${{ steps.vars.outputs.config_path }}
 #          export VERSION=${GITHUB_REF_NAME}
 #          echo ----------
