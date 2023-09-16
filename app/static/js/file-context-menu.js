@@ -4,7 +4,6 @@ $(document).ready(function () {
 
     socket.addEventListener("message", function (event) {
         let data = JSON.parse(event.data)
-        console.log(data)
         if (data.event === 'toggle-private-file') {
             handle_private_toggle(data)
         } else if (data.event === 'set-expr-file') {
@@ -151,6 +150,10 @@ $(document).ready(function () {
         $('#setFileExprModal').modal('show')
     })
 
+    $('#setFileExprModal').on('shown.bs.modal', function () {
+        console.log($('#expr'))
+        $('#expr').trigger("focus")
+    })
 
     $('#confirmExprFileBtn').click(function (event) {
         event.preventDefault()
