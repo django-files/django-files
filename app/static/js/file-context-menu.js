@@ -151,10 +151,8 @@ $(document).ready(function () {
         pk = $(this).data('pk')
         $('#confirmFileExprBtn').data('pk', pk)
         let expireText = $(`#file-${pk}`).find('#expireText')
-        console.log(expireText.length)
         if (expireText.length > 0 ) {
             let value = expireText.html()
-            console.log(value)
             if (value == 'Never') {
                 value = ''
             }
@@ -170,8 +168,6 @@ $(document).ready(function () {
             return
         }
         let formData = new $('#set-expr-form').serializeArray()
-        console.log(formData[0].value)
-        console.log(pk)
         socket.send(JSON.stringify({ method: 'set-expr-file', pk: pk, expr: formData[0].value}))
         $('#setFileExprModal').modal('hide')
     })
