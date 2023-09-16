@@ -10,7 +10,9 @@
 
 {% block body %}
     <div class="container-fluid py-3 px-4">
-        <h1><i class="fa-regular fa-file-lines"></i> Paste Text</h1>
+
+    {% include 'include/upload-menu.html' with heading='Paste Text' fa_class='fa-regular fa-file-lines' %}
+
         <form method="post" action="{% url 'home:paste' %}" name="sendPaste" id="sendPaste">
             <div class="row g-3">
                 <div class="col-sm-6">
@@ -26,8 +28,9 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-sm-3 align-items-end">
-                    <button class="btn btn-outline-success w-100" type="submit"><i class="fa-solid fa-hammer me-2"></i> Create</button>
+                <div class="col-sm-3 d-flex flex-column">
+                    <button class="btn btn-outline-success mt-auto" type="submit">
+                        <i class="fa-regular fa-file-lines me-2"></i> Create</button>
                 </div>
                 <div class="col-12 mb-3">
                     <label for="text_data" class="form-label">Text</label>
