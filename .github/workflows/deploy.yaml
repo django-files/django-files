@@ -15,9 +15,11 @@ env:
   REGISTRY_GROUP: shane
   REGISTRY_HOST: registry.hosted-domains.com
   COMPOSE_FILE: docker-compose-swarm.yaml
+  CONFIGS_DIR: service-configs
   CONFIG_FILE: settings.env
-  SERVICE_CONFIGS: hosted-domains/service-configs
-  DEFAULT_ENVS: ${{ inputs.envs || 'dev,dev3' }}
+#  SERVICE_CONFIGS: hosted-domains/service-configs
+  SERVICE_CONFIGS: git@github.com:hosted-domains/service-configs.git
+  ENV_NAMES: ${{ inputs.envs || 'dev,dev3' }}
 #  ENV_NAME: ${{ github.ref_name == 'master' && 'prod' || 'dev' }}
 #  TRAEFIK_HOST: ${{ github.ref_name == 'master' && '`prod-test-app.hosted-domains.com`' || '`dev-test-app.hosted-domains.com`' }}
 
@@ -32,11 +34,8 @@ jobs:
       - name: "Variables"
         id: vars
         run: |
-          echo "config_path=services/${GITHUB_REPOSITORY}/${ENV_NAME}/${CONFIG_FILE}" >> "$GITHUB_OUTPUT"
-          echo "stack_name=${ENV_NAME}_${GITHUB_REPOSITORY/\//_}" >> "$GITHUB_OUTPUT"
-          echo ----------
           echo GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}
-          echo DEFAULT_ENVS: ${DEFAULT_ENVS}
+          echo ENV_NAMES: ${ENV_NAMES}
           echo REGISTRY_GROUP: ${REGISTRY_GROUP}
           echo REGISTRY_HOST: ${REGISTRY_HOST}
           echo COMPOSE_FILE: ${COMPOSE_FILE}
@@ -44,37 +43,55 @@ jobs:
           echo CONFIG_FILE: ${CONFIG_FILE}
           echo ENV_NAME: ${ENV_NAME}
           echo TRAEFIK_HOST: ${TRAEFIK_HOST}
-          echo ----------
+#          echo ----------
+#          echo "config_path=services/${GITHUB_REPOSITORY}/${ENV_NAME}/${CONFIG_FILE}" >> "$GITHUB_OUTPUT"
+#          echo "stack_name=${ENV_NAME}_${GITHUB_REPOSITORY/\//_}" >> "$GITHUB_OUTPUT"
 
       - name: "Checkout Repository"
         uses: actions/checkout@v3
 
       - name: "Checkout Service Configs"
-        uses: actions/checkout@v3
-        with:
-          repository: ${{ env.SERVICE_CONFIGS }}
-          ref: master
-          path: service-configs
-          sparse-checkout: |
-            services/$${ vars.GITHUB_REPOSITORY }}/dev/$${CONFIG_FILE}
-          sparse-checkout-cone-mode: false
-          ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
+        run: |
+          echo "${{ secrets.SERVICE_CONFIGS_KEY }}" > ./.ssh_key
+          chmod 0600 ./.ssh_key
+          mkdir ${CONFIG_FILE}
+          cd ${CONFIG_FILE}
+          git init
+          git config core.sshCommand "ssh -i ../.ssh_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
+          git remote add origin ${SERVICE_CONFIGS}
+          git config core.sparseCheckout true
+          IFS=','
+          for ENV_NAME in ${ENV_NAMES}; do
+            echo "services/${GITHUB_REPOSITORY}/${ENV_NAME}/${CONFIG_FILE}"
+            echo "services/${GITHUB_REPOSITORY}/${ENV_NAME}/${CONFIG_FILE}" >> .git/info/sparse-checkout
+          done
+          git pull origin master
+
+#      - name: "Checkout Service Configs"
+#        uses: actions/checkout@v3
+#        with:
+#          repository: ${{ env.SERVICE_CONFIGS }}
+#          ref: master
+#          path: service-configs
+#          sparse-checkout: |
+#            services/$${ vars.GITHUB_REPOSITORY }}/dev/$${CONFIG_FILE}
+#          sparse-checkout-cone-mode: false
+#          ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
 
       - name: "Debug"
         run: |
           echo ----------
-          echo steps.vars.outputs.config_path: ${{ steps.vars.outputs.config_path }}
-          echo steps.vars.outputs.stack_name: ${{ steps.vars.outputs.stack_name }}
-          echo ----------
           ls -lah .
           echo ----------
           ls -lhR service-configs
-          echo ----------
+#          echo ----------
+#          echo steps.vars.outputs.config_path: ${{ steps.vars.outputs.config_path }}
+#          echo steps.vars.outputs.stack_name: ${{ steps.vars.outputs.stack_name }}
 
-      - name: "Update Compose"
-        run: |
-          sed -i "s/STACK_NAME/${{ steps.vars.outputs.stack_name }}/g" "${COMPOSE_FILE}"
-          cat ${COMPOSE_FILE}
+#      - name: "Update Compose"
+#        run: |
+#          sed -i "s/STACK_NAME/${{ steps.vars.outputs.stack_name }}/g" "${COMPOSE_FILE}"
+#          cat ${COMPOSE_FILE}
 
 #      - name: "Build Push Deploy"
 #        run: |
