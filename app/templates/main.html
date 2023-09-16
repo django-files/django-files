@@ -57,8 +57,17 @@
                                             href="{% url 'home:index' %}">Home</a></li>
                     <li class="nav-item"><a class="nav-link {% block gallery_active %}{% endblock %}"
                                             href="{% url 'home:gallery' %}">Gallery</a></li>
-                    <li class="nav-item"><a class="nav-link {% block uppy_active %}{% endblock %}"
-                                            href="{% url 'home:uppy' %}">Upload</a></li>
+{#                    <li class="nav-item"><a class="nav-link {% block uppy_active %}{% endblock %}"#}
+{#                                            href="{% url 'home:uppy' %}">Upload</a></li>#}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">Upload</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item {% block uppy_active %}{% endblock %}" href="{% url 'home:uppy' %}">
+                                <i class="fa-solid fa-upload me-2"></i> Files</a></li>
+                            <li><a class="dropdown-item {% block paste_active %}{% endblock %}" href="{% url 'home:paste' %}">
+                                <i class="fa-regular fa-file-lines me-2"></i> Text</a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item"><a class="nav-link {% block files_active %}{% endblock %}"
                                             href="{% url 'home:files' %}">Files</a></li>
                     <li class="nav-item"><a class="nav-link {% block shorts_active %}{% endblock %}"

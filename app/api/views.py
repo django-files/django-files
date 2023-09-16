@@ -4,7 +4,6 @@ import io
 import json
 import logging
 import os
-
 import validators
 from django.core import serializers
 from django.forms.models import model_to_dict
@@ -16,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from pytimeparse2 import parse
-from typing import Optional
+from typing import Optional, BinaryIO
 
 from home.models import Files, FileStats, ShortURLs
 from home.util.file import process_file
@@ -62,18 +61,19 @@ def upload_view(request):
     """
     View  /upload/ and /api/upload
     """
+    log.debug('upload_view')
     log.debug(request.headers)
     log.debug(request.POST)
     log.debug(request.FILES)
     try:
         if not (f := request.FILES.get('file')):
             return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
-        kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
-                  'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed'),
-                  'password': request.headers.get('password'), 'private': request.headers.get('private'),
-                  'strip_gps': request.headers.get('strip-gps'), 'strip_exif': request.headers.get('strip-exif'),
-                  'auto_pw': request.headers.get('auto-password')}
-        return process_file_upload(f, request.user, **kwargs)
+        # TODO: Determine how to better handle expire and why info is still being used differently from other methods
+        extra_args = parse_headers(request.headers, expr=parse_expire(request), info=request.POST.get('info'))
+        log.debug('extra_args: %s', extra_args)
+        log.debug('request.user: %s', request.user)
+        log.debug('request.user.type: %s', type(request.user))
+        return process_file_upload(f, request.user.id, **extra_args)
     except Exception as error:
         log.exception(error)
         return JsonResponse({'error': str(error)}, status=500)
@@ -223,19 +223,35 @@ def remote_view(request):
     if not r.is_success:
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
-    kwargs = {'expr': parse_expire(request), 'info': request.POST.get('info'),
-              'format': request.headers.get('format'), 'meta_preview': request.headers.get('embed'),
-              'password': request.headers.get('password'), 'private': request.headers.get('private'),
-              'strip_gps': request.headers.get('strip-gps'), 'strip_exif': request.headers.get('strip-exif'),
-              'auto_pw': request.headers.get('auto-password')}
-    file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id, **kwargs)
+    extra_args = parse_headers(request.headers, expr=parse_expire(request), info=request.POST.get('info'))
+    log.debug('extra_args: %s', extra_args)
+    file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id, **extra_args)
     response = {'url': f'{file.preview_url()}'}
     log.debug('url: %s', url)
     return JsonResponse(response)
 
 
-def process_file_upload(f, user, **kwargs):
-    file = process_file(f.name, f, user.id, **kwargs)
+def parse_headers(headers: dict, **kwargs) -> dict:
+    data = {}
+    # TODO: IMPORTANT: Determine why these values are not 1:1 - meta_preview:embed
+    difference_mapping = {'embed': 'meta_preview'}
+    for key in ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password']:
+        if key in headers:
+            value = headers[key]
+            if key in difference_mapping:
+                key = difference_mapping[key]
+            data[key.replace('-', '_')] = value
+    # data.update(**kwargs)
+    for key, value in kwargs.items():
+        if value is not None:
+            data[key] = value
+    return data
+
+
+def process_file_upload(f: BinaryIO, user_id: int, **kwargs):
+    log.debug('user_id: %s', user_id)
+    log.debug('kwargs: %s', kwargs)
+    file = process_file(f.name, f, user_id, **kwargs)
     data = {
         'files': [file.preview_url()],
         'url': file.preview_url(),
@@ -255,7 +271,6 @@ def gen_short(vanity: Optional[str] = None, length: int = 4) -> str:
     rand = rand_string(length=length)
     while ShortURLs.objects.filter(short=rand):
         rand = rand_string(length=length)
-        continue
     return rand
 
 

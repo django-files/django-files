@@ -11,7 +11,7 @@
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
-        <h1><i class="fa-solid fa-upload me-2"></i> Upload</h1>
+        {% include 'include/upload-menu.html' with heading='Upload Files' fa_class='fa-solid fa-upload' %}
 
         <div id="uppy" class="mt-4"></div>
 

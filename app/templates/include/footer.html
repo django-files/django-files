@@ -4,7 +4,7 @@
     <div class="container-fluid">
         <div class="row">
 
-            <div class="col-12 col-lg-4">
+            <div class="col-12 col-lg-3">
                 {% if not request.user.is_authenticated %}
                     <p class="d-lg-none float-end text-end">
                         <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
@@ -16,7 +16,7 @@
             </div>
 
             {% if request.user.is_authenticated %}
-                <div class="col-12 col-lg-8 text-lg-end">
+                <div class="col-12 col-lg-9 text-lg-end">
                     <ul class="list-unstyled list-inline d-none d-md-block ps-0">
                         <li class="list-inline-item"><a href="{% url 'home:index' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
                             <i class="fa-solid fa-house-laptop me-1"></i> Home</a></li>
@@ -24,6 +24,8 @@
                             <i class="fa-regular fa-images me-1"></i> Gallery</a></li>
                         <li class="list-inline-item"><a href="{% url 'home:uppy' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
                             <i class="fa-solid fa-upload me-1"></i> Upload</a></li>
+                        <li class="list-inline-item"><a href="{% url 'home:paste' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                            <i class="fa-regular fa-file-lines me-1"></i> Paste</a></li>
                         <li class="list-inline-item"><a href="{% url 'home:files' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
                             <i class="fa-regular fa-folder-open me-1"></i> Files</a></li>
                         <li class="list-inline-item"><a href="{% url 'home:shorts' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
@@ -45,6 +47,8 @@
                             <i class="fa-regular fa-images "></i></a></li>
                         <li class="list-inline-item"><a href="{% url 'home:uppy' %}" title="Upload" class="link-body-emphasis ">
                             <i class="fa-solid fa-upload "></i></a></li>
+                        <li class="list-inline-item"><a href="{% url 'home:paste' %}" title="Paste" class="link-body-emphasis ">
+                            <i class="fa-regular fa-file-lines "></i></a></li>
                         <li class="list-inline-item"><a href="{% url 'home:files' %}" title="Files" class="link-body-emphasis ">
                             <i class="fa-regular fa-folder-open "></i></a></li>
                         <li class="list-inline-item"><a href="{% url 'home:shorts' %}" title="Shorts" class="link-body-emphasis ">

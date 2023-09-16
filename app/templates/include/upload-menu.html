@@ -1,0 +1,17 @@
+<div class="row">
+    <div class="col-12 col-md-6">
+        <h1><i class="{{ fa_class }} me-2"></i> {{ heading }}</h1>
+    </div>
+    <div class="col-12 col-md-6">
+        <nav class="text-lg-end float-md-end mt-2" aria-label="breadcrumb" style="--bs-breadcrumb-divider: '|';">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item "><a href="{% url 'home:uppy' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                    <i class="fa-solid fa-upload me-2"></i> Files</a></li>
+                {% if request.user.is_superuser %}
+                    <li class="breadcrumb-item"><a href="{% url 'home:paste' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                        <i class="fa-regular fa-file-lines me-2"></i> Text</a></li>
+                {% endif %}
+            </ol>
+        </nav>
+    </div>
+</div>
