@@ -20,6 +20,7 @@ env:
 #  SERVICE_CONFIGS: hosted-domains/service-configs
   SERVICE_CONFIGS: git@github.com:hosted-domains/service-configs.git
   ENV_NAMES: ${{ inputs.envs || 'dev,dev3' }}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
 #  ENV_NAME: ${{ github.ref_name == 'master' && 'prod' || 'dev' }}
 #  TRAEFIK_HOST: ${{ github.ref_name == 'master' && '`prod-test-app.hosted-domains.com`' || '`dev-test-app.hosted-domains.com`' }}
 
@@ -35,14 +36,16 @@ jobs:
         id: vars
         run: |
           echo GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}
+          echo GITHUB_REPOSITORY_OWNER: ${GITHUB_REPOSITORY_OWNER}
+          echo REPOSITORY_NAME: ${REPOSITORY_NAME}
           echo ENV_NAMES: ${ENV_NAMES}
           echo REGISTRY_GROUP: ${REGISTRY_GROUP}
           echo REGISTRY_HOST: ${REGISTRY_HOST}
           echo COMPOSE_FILE: ${COMPOSE_FILE}
           echo SERVICE_CONFIGS: ${SERVICE_CONFIGS}
           echo CONFIG_FILE: ${CONFIG_FILE}
-          echo ENV_NAME: ${ENV_NAME}
-          echo TRAEFIK_HOST: ${TRAEFIK_HOST}
+#          echo ENV_NAME: ${ENV_NAME}
+#          echo TRAEFIK_HOST: ${TRAEFIK_HOST}
 #          echo ----------
 #          echo "config_path=services/${GITHUB_REPOSITORY}/${ENV_NAME}/${CONFIG_FILE}" >> "$GITHUB_OUTPUT"
 #          echo "stack_name=${ENV_NAME}_${GITHUB_REPOSITORY/\//_}" >> "$GITHUB_OUTPUT"
@@ -92,6 +95,22 @@ jobs:
 #        run: |
 #          sed -i "s/STACK_NAME/${{ steps.vars.outputs.stack_name }}/g" "${COMPOSE_FILE}"
 #          cat ${COMPOSE_FILE}
+
+      - name: "Update Compose"
+        run: |
+          IFS=','
+          for ENV_NAME in ${ENV_NAMES}; do
+            export STACK_NAME="${ENV_NAME}_${GITHUB_REPOSITORY_OWNER}_${REPOSITORY_NAME}"
+            echo STACK_NAME ${STACK_NAME}
+            echo COMPOSE_FILE ${COMPOSE_FILE}
+            export STACK_COMPOSE="docker-compose-deploy-${ENV_NAME}.yaml"
+            echo STACK_COMPOSE ${STACK_COMPOSE}
+            stat "${COMPOSE_FILE}"
+            cp "${COMPOSE_FILE}" "${STACK_COMPOSE}"
+            sed -i "s/STACK_NAME/${STACK_NAME}/g" "${STACK_COMPOSE}"
+            cat "${STACK_COMPOSE}"
+          done
+          ls -lAh .
 
 #      - name: "Build Push Deploy"
 #        run: |
