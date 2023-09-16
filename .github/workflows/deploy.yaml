@@ -115,6 +115,11 @@ jobs:
             cat "${STACK_COMPOSE}"
           done
 
+      - name: "Setup Node 18"
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
       - name: "Node Install"
         run: npm install
 
