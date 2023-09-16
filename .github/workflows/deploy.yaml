@@ -54,8 +54,8 @@ jobs:
         run: |
           echo "${{ secrets.SERVICE_CONFIGS_KEY }}" > ./.ssh_key
           chmod 0600 ./.ssh_key
-          mkdir ${CONFIG_FILE}
-          cd ${CONFIG_FILE}
+          mkdir ${CONFIGS_DIR}
+          cd ${CONFIGS_DIR}
           git init
           git config core.sshCommand "ssh -i ../.ssh_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no"
           git remote add origin ${SERVICE_CONFIGS}
