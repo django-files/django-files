@@ -89,7 +89,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('toggle_private_file')
         log.debug('user_id: %s', user_id)
         log.debug('pk: %s', pk)
-        print("HITTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
         if file := Files.objects.filter(pk=pk):
             if user_id and file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
