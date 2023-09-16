@@ -46,19 +46,19 @@ jobs:
           echo TRAEFIK_HOST: ${TRAEFIK_HOST}
           echo ----------
 
-#      - name: "Checkout Repository"
-#        uses: actions/checkout@v3
-#
-#      - name: "Checkout Service Configs"
-#        uses: actions/checkout@v3
-#        with:
-#          repository: ${{ env.SERVICE_CONFIGS }}
-#          ref: master
-#          path: service-configs
-#          sparse-checkout: |
-#            services/$${ vars.GITHUB_REPOSITORY }}/$${ENV_NAME}/$${CONFIG_FILE}
-#          sparse-checkout-cone-mode: false
-#          ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
+      - name: "Checkout Repository"
+        uses: actions/checkout@v3
+
+      - name: "Checkout Service Configs"
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.SERVICE_CONFIGS }}
+          ref: master
+          path: service-configs
+          sparse-checkout: |
+            services/$${ vars.GITHUB_REPOSITORY }}/dev/$${CONFIG_FILE}
+          sparse-checkout-cone-mode: false
+          ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
 
       - name: "Debug"
         run: |
@@ -68,14 +68,11 @@ jobs:
           echo ----------
           docker version
           docker info
-#          echo ----------
-#          ls -lah .
-#          echo ----------
-#          ls -lhR service-configs/services
-#          echo ----------
-#          echo service-configs/${{ steps.vars.outputs.config_path }}
-#          cat service-configs/${{ steps.vars.outputs.config_path }}
-#          echo ----------
+          echo ----------
+          ls -lah .
+          echo ----------
+          ls -lhR service-configs/services
+          echo ----------
 
       - name: "Update Compose"
         run: |
