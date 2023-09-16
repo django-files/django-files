@@ -78,3 +78,23 @@ class HomeConsumer(AsyncWebsocketConsumer):
             # return self._success('File Deleted.', **kwargs)
             return {}
         return self._error('File not found.', **kwargs)
+
+    def toggle_private_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: Integer - File ID
+        :param expr: String - File Expire String
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug('toggle_private_file')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
+        print("HITTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
+        if file := Files.objects.filter(pk=pk):
+            if user_id and file[0].user.id != user_id:
+                return self._error('File owned by another user.', **kwargs)
+            file[0].private = not file[0].private
+            file[0].save()
+            # return self._success('File Expire Updated.', **kwargs)
+            return {'private': file[0].private, 'event': 'toggle-private-file', 'pk': file[0].id }
+        return self._error('File not found.', **kwargs)

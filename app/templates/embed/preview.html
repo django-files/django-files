@@ -82,7 +82,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     {% endif %}
                 </div>
             <div class="col-lg-3 d-flex flex-column">
-                <div class="card-body">
+                <div id="file-{{ file.id }}" class="card-body">
                     <h3 class="card-title">{{ file.name }}
                         <span class="float-end mt-3">{% include 'include/file-context-menu.html' with file=file %}</span>
                     </h3>
@@ -100,9 +100,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
                         <span class="text-center">
                             &nbsp;&nbsp;&nbsp;
-                            {% if file.private and not file.password %}
-                                <i id="privateStatus" title="Private File" class="fa-solid fa-lock"></i>
-                            {% endif %}
+                            <i id="privateStatus" title="Private File" class="fa-solid fa-lock" {% if not file.private %} hidden{% endif %}></i>
                             {% if file.password %}<i title="Password Protected File" class="fa-solid fa-key"></i>{% endif %}
                             {% if not file.private and not file.password %}
                                 <i id="privateStatus" title="Public File" class="fa-solid fa-lock-open"></i>

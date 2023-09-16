@@ -30,7 +30,7 @@
 
     <td class="d-none d-sm-table-cell align-middle">{% if file.password %}<i class="fa-solid fa-key text-warning-emphasis"></i>{% endif %}</td>
 
-    <td class="d-none d-sm-table-cell align-middle">{% if file.private %}<i class="fa-solid fa-lock text-warning-emphasis"></i>{% endif %}</td>
+    <td class="d-none d-sm-table-cell align-middle"><i id="privateStatus" class="fa-solid fa-lock text-warning-emphasis"{% if not file.private %} hidden{% endif %}></i></td>
 
     <td class="d-none d-sm-table-cell align-middle">
         <a class="clip link-body-emphasis text-decoration-none" role="button"

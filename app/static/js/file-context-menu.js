@@ -71,62 +71,38 @@ $(document).ready(function () {
         })
     })
 
-    // Handle toggling file private status
     $('.toggle-private-btn').click(function (event) {
         event.preventDefault()
-        console.log("ping")
-        let pvpk = $(this).data('pk')
-        if ($('#toggle-private-btn').hasClass('disabled')) {
-            return
-        }
-        console.log(pvpk)
-        let private_status = $('#privateStatus')
-        let toggle_status = $('#toggleStatus')
-        let toggle_text = $('#toggleText')
-        $.ajax({
-            type: 'POST',
-            url: `/ajax/toggle_private/file/${pvpk}/`,
-            headers: { 'X-CSRFToken': csrftoken },
-            success: function (response) {
-                console.log('response: ' + response)
-                let isTrueSet = response === 'True'
-                let message
-                if (isTrueSet) {
-                    message = 'File made private!'
-                    private_status.title = 'Private File'
-                    private_status
-                        .removeClass('fa-lock-open')
-                        .addClass('fa-lock')
-                    toggle_status
-                        .removeClass('fa-lock')
-                        .addClass('fa-lock-open')
-                    toggle_text.text(
-                        toggle_text.text().replace('Private', 'Public')
-                    )
-                } else {
-                    message = 'File made public!'
-                    private_status.title = 'Public File'
-                    private_status
-                        .removeClass('fa-lock')
-                        .addClass('fa-lock-open')
-                    toggle_status
-                        .removeClass('fa-lock-open')
-                        .addClass('fa-lock')
-                    toggle_text.text(
-                        toggle_text.text().replace('Public', 'Private')
-                    )
-                }
-                show_toast(message, 'success')
-            },
-            error: function (xhr, status, error) {
-                console.log('xhr status: ' + xhr.status)
-                console.log('status: ' + status)
-                console.log('error: ' + error)
-                let message = xhr.status + ': ' + error
-                show_toast(message, 'danger', '15000')
-            },
-        })
+        let pk = $(this).data('pk')
+        console.log(pk)
+        socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
     })
+
+    socket.onmessage = function (event) {
+        let data = JSON.parse(event.data)
+        let message
+        let dropdown_button_text = $(`#file-${data.pk}-dropdown`).find("#privateText")
+        let dropdown_button_icon = $(`#file-${data.pk}-dropdown`).find("#privateDropdownIcon")
+        let private_status_icon = $(`#file-${data.pk}`).find("#privateStatus")
+        console.log("data")
+        console.log(private_status_icon)
+        if (data.event === 'toggle-private-file') {
+            if (data.private) {
+                message = `File ${data.pk} set to private.`
+                private_status_icon.show()
+                dropdown_button_text.html('Make Public')
+                dropdown_button_icon.removeClass('fa-lock')
+                dropdown_button_icon.addClass('fa-lock-open')
+            } else {
+                message = `File ${data.pk} set to public.`
+                private_status_icon.hide()
+                dropdown_button_text.html('Make Private')
+                dropdown_button_icon.removeClass('fa-lock-open')
+                dropdown_button_icon.addClass('fa-lock')
+            }
+            show_toast(message, 'success')
+        }
+    }
 
     $('#unMaskPassword').click(function () {
         let password_field = $('#password').get(0)
