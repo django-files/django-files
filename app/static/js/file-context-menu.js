@@ -90,6 +90,7 @@ $(document).ready(function () {
             if (data.private) {
                 message = `File ${data.pk} set to private.`
                 private_status_icon.show()
+                private_status_icon.removeAttr('hidden')
                 dropdown_button_text.html('Make Public')
                 dropdown_button_icon.removeClass('fa-lock')
                 dropdown_button_icon.addClass('fa-lock-open')
