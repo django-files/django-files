@@ -62,7 +62,6 @@ $(document).ready(function () {
     function handle_password_set(data) {
         let message
         let password_status_icon = $(`#file-${data.pk}`).find("#passwordStatus")
-        console.log(password_status_icon)
         if (data.password) {
             password_status_icon.show()
             message = `Password set for ${data.file_name}`
