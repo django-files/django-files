@@ -30,13 +30,16 @@
         </li>
         <li>
             <a role="button" class="set-password-file-btn dropdown-item" data-pk="{{ file.pk }}" title="Set Password">
-                <i class="fas fa-key link-info fa-fw"></i>&nbsp;Set Password</a>
+                <i class="fas fa-key fa-fw"></i>&nbsp;Set Password</a>
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>
             <a role="button" class="delete-file-btn dropdown-item" data-pk="{{ file.pk }}" title="Delete">
                 <i class="fa-regular fa-trash-can link-danger fa-fw"></i><span class="text-end">&nbsp;Delete File</span></a>
         </li>
+           <!-- This hidden password field is used to pass the password value to model on the files table.
+    We should probably fetch this live instead to not store all pws in the page html -->
+    <input type="hidden" class="file-password-value" value='{{ file.password|default:"" }}'>
     </ul>
 </div>
 {% endif %}

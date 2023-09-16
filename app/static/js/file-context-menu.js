@@ -43,7 +43,7 @@ $(document).ready(function () {
         pk = $(this).data('pk')
         console.log(pk)
         $('#confirm-set-password-hook-btn').data('pk', pk)
-        let passwordText = $(`#file-${pk}`).find('.file-password-value').val()
+        let passwordText = $(`#file-${pk}-dropdown`).find('.file-password-value').val()
         $('#setFilePasswordModal').find('#password').val(passwordText)
         setPasswordHookModal.show()
     })

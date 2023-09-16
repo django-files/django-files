@@ -84,9 +84,6 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             <div class="col-lg-3 d-flex flex-column">
                 <div id="file-{{ file.id }}" class="card-body">
                     <h3 class="card-title">{{ file.name }}
-                            <!-- This hidden password field is used to pass the password value to model on the files table.
-                                We should probably fetch this live instead to not store all pws in the page html -->
-                            <input type="hidden" class="file-password-value" value="{{ file.password }}">
                         <span class="float-end mt-3">{% include 'include/file-context-menu.html' with file=file %}</span>
                     </h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>

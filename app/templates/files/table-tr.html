@@ -38,9 +38,6 @@
 
     <td class="d-none d-sm-table-cell text-center">
         {% include 'include/file-context-menu.html' with file=file %}
-        <!-- This hidden password field is used to pass the password value to model on the files table.
-            We should probably fetch this live instead to not store all pws in the page html -->
-        <input type="hidden" class="file-password-value" value="{{ file.password }}">
     </td>
 </tr>
 
