@@ -95,5 +95,5 @@ class HomeConsumer(AsyncWebsocketConsumer):
             file[0].private = not file[0].private
             file[0].save()
             # return self._success('File Expire Updated.', **kwargs)
-            return {'private': file[0].private, 'event': 'toggle-private-file', 'pk': file[0].id }
+            return {'private': file[0].private, 'event': 'toggle-private-file', 'pk': file[0].id}
         return self._error('File not found.', **kwargs)
