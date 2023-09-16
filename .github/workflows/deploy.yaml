@@ -66,12 +66,9 @@ jobs:
           echo steps.vars.outputs.config_path: ${{ steps.vars.outputs.config_path }}
           echo steps.vars.outputs.stack_name: ${{ steps.vars.outputs.stack_name }}
           echo ----------
-          docker version
-          docker info
-          echo ----------
           ls -lah .
           echo ----------
-          ls -lhR service-configs/services
+          ls -lhR service-configs
           echo ----------
 
       - name: "Update Compose"
