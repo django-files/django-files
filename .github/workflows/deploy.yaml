@@ -1,0 +1,103 @@
+name: Deploy
+
+on:
+  push:
+    branches-ignore:
+      - 'master'
+  workflow_dispatch:
+    inputs:
+      envs:
+        required: false
+        default: "dev,dev3"
+        type: string
+
+env:
+  REGISTRY_GROUP: shane
+  REGISTRY_HOST: registry.hosted-domains.com
+  COMPOSE_FILE: docker-compose-swarm.yaml
+  CONFIG_FILE: settings.env
+  SERVICE_CONFIGS: hosted-domains/service-configs
+  DEFAULT_ENVS: ${{ inputs.envs || 'dev,dev3' }}
+#  ENV_NAME: ${{ github.ref_name == 'master' && 'prod' || 'dev' }}
+#  TRAEFIK_HOST: ${{ github.ref_name == 'master' && '`prod-test-app.hosted-domains.com`' || '`dev-test-app.hosted-domains.com`' }}
+
+jobs:
+  deploy:
+    name: Stack Deploy
+    runs-on: self-hosted
+    timeout-minutes: 5
+    if: ${{ !contains(github.event.head_commit.message, '#noci') }}
+
+    steps:
+      - name: "Variables"
+        id: vars
+        run: |
+          echo "config_path=services/${GITHUB_REPOSITORY}/${ENV_NAME}/${CONFIG_FILE}" >> "$GITHUB_OUTPUT"
+          echo "stack_name=${ENV_NAME}_${GITHUB_REPOSITORY/\//_}" >> "$GITHUB_OUTPUT"
+          echo ----------
+          echo GITHUB_REPOSITORY: ${GITHUB_REPOSITORY}
+          echo DEFAULT_ENVS: ${DEFAULT_ENVS}
+          echo REGISTRY_GROUP: ${REGISTRY_GROUP}
+          echo REGISTRY_HOST: ${REGISTRY_HOST}
+          echo COMPOSE_FILE: ${COMPOSE_FILE}
+          echo SERVICE_CONFIGS: ${SERVICE_CONFIGS}
+          echo CONFIG_FILE: ${CONFIG_FILE}
+          echo ENV_NAME: ${ENV_NAME}
+          echo TRAEFIK_HOST: ${TRAEFIK_HOST}
+          echo ----------
+
+#      - name: "Checkout Repository"
+#        uses: actions/checkout@v3
+#
+#      - name: "Checkout Service Configs"
+#        uses: actions/checkout@v3
+#        with:
+#          repository: ${{ env.SERVICE_CONFIGS }}
+#          ref: master
+#          path: service-configs
+#          sparse-checkout: |
+#            services/$${ vars.GITHUB_REPOSITORY }}/$${ENV_NAME}/$${CONFIG_FILE}
+#          sparse-checkout-cone-mode: false
+#          ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
+
+      - name: "Debug"
+        run: |
+          echo ----------
+          echo steps.vars.outputs.config_path: ${{ steps.vars.outputs.config_path }}
+          echo steps.vars.outputs.stack_name: ${{ steps.vars.outputs.stack_name }}
+          echo ----------
+          ls -lah .
+          echo ----------
+          ls -lhR service-configs/services
+          echo ----------
+          echo service-configs/${{ steps.vars.outputs.config_path }}
+          cat service-configs/${{ steps.vars.outputs.config_path }}
+          echo ----------
+          docker version
+          docker info
+          echo ----------
+
+      - name: "Update Compose"
+        run: |
+          sed -i "s/STACK_NAME/${{ steps.vars.outputs.stack_name }}/g" "${COMPOSE_FILE}"
+          cat ${COMPOSE_FILE}
+
+#      - name: "Build Push Deploy"
+#        run: |
+#          export ENV_FILE=service-configs/${{ steps.vars.outputs.config_path }}
+#          export VERSION=${GITHUB_REF_NAME}
+#          echo ----------
+#          echo ENV_FILE: ${ENV_FILE}
+#          echo VERSION: ${VERSION}
+#          echo ----------
+#          echo REGISTRY_GROUP: ${REGISTRY_GROUP}
+#          echo REGISTRY_HOST: ${REGISTRY_HOST}
+#          echo TRAEFIK_HOST: ${TRAEFIK_HOST}
+#          echo ENV_NAME: ${ENV_NAME}
+#          echo ----------
+#          docker compose -f ${COMPOSE_FILE} build --force-rm
+#
+#          docker login --username '${{ secrets.REGISTRY_USER }}' --password '${{ secrets.REGISTRY_PASS }}' ${REGISTRY_HOST}
+#          docker compose -f ${COMPOSE_FILE} push
+#
+#          docker stack deploy -c ${COMPOSE_FILE} --with-registry-auth --resolve-image always ${{ steps.vars.outputs.stack_name }}
