@@ -2,7 +2,7 @@ $(document).ready(function () {
     // Get and set the csrf_token
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
-    socket.onmessage = function (event) {
+    socket.addEventListener("message", function (event) {
         let data = JSON.parse(event.data)
         console.log(data)
         if (data.event === 'toggle-private-file') {
@@ -12,11 +12,9 @@ $(document).ready(function () {
         } else if (data.event === 'set-password-file') {
             handle_password_set(data)
         }
-    }
+    });
 
     let pk
-    // Define Hook Modal and Delete handlers
-    const deleteHookModal = new bootstrap.Modal('#deleteFileModal', {})
 
     $('.delete-file-btn').click(function () {
         let pk = $(this).data('pk')

@@ -18,7 +18,7 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Monitor websockets for new data and update results
-    socket.onmessage = function (event) {
+    socket.addEventListener("message", function (event) {
         let data = JSON.parse(event.data)
         console.log(data)
         if (data.event === 'file-new') {
@@ -51,16 +51,8 @@ $(document).ready(function () {
                     table.remove()
                 }
             }
-        } else {
-            console.log('no data.event')
-            if (data.message) {
-                console.log('sending data.message')
-                let bsClass =
-                    data.bsClass === undefined ? 'success' : data.bsClass
-                show_toast(data.message, bsClass, '10000')
-            }
         }
-    }
+    });
 
     // Init the logout form click function
     $('.log-out').on('click', function () {
