@@ -16,6 +16,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from pytimeparse2 import parse
 from typing import Optional, BinaryIO
+from urllib.parse import urlparse
 
 from home.models import Files, FileStats, ShortURLs
 from home.util.file import process_file
@@ -219,15 +220,20 @@ def remote_view(request):
     if not validators.url(url):
         return JsonResponse({'error': 'Missing/Invalid URL'}, status=400)
 
-    r = httpx.get(url)
+    parsed_url = urlparse(url)
+    log.debug('parsed_url: %s', parsed_url)
+    name = os.path.basename(parsed_url.path)
+    log.debug('name: %s', name)
+
+    r = httpx.get(url, follow_redirects=True)
     if not r.is_success:
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
     extra_args = parse_headers(request.headers, expr=parse_expire(request), info=request.POST.get('info'))
     log.debug('extra_args: %s', extra_args)
-    file = process_file(os.path.basename(url), io.BytesIO(r.content), request.user.id, **extra_args)
+    file = process_file(name, io.BytesIO(r.content), request.user.id, **extra_args)
     response = {'url': f'{file.preview_url()}'}
-    log.debug('url: %s', url)
+    log.debug('response: %s', response)
     return JsonResponse(response)
 
 
