@@ -84,18 +84,15 @@ $(document).ready(function () {
         let dropdown_button_text = $(`#file-${data.pk}-dropdown`).find("#privateText")
         let dropdown_button_icon = $(`#file-${data.pk}-dropdown`).find("#privateDropdownIcon")
         let private_status_icon = $(`#file-${data.pk}`).find("#privateStatus")
-        console.log("data")
-        console.log(private_status_icon)
         if (data.event === 'toggle-private-file') {
             if (data.private) {
-                message = `File ${data.pk} set to private.`
+                message = `File ${data.file_name} set to private.`
                 private_status_icon.show()
-                private_status_icon.removeAttr('hidden')
                 dropdown_button_text.html('Make Public')
                 dropdown_button_icon.removeClass('fa-lock')
                 dropdown_button_icon.addClass('fa-lock-open')
             } else {
-                message = `File ${data.pk} set to public.`
+                message = `File ${data.file_name} set to public.`
                 private_status_icon.hide()
                 dropdown_button_text.html('Make Private')
                 dropdown_button_icon.removeClass('fa-lock-open')
