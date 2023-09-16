@@ -2,6 +2,16 @@ $(document).ready(function () {
     // Get and set the csrf_token
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
+    socket.onmessage = function (event) {
+        let data = JSON.parse(event.data)
+        console.log(data)
+        if (data.event === 'toggle-private-file') {
+            handle_private_toggle(data)
+        } else if (data.event === 'set-expr-file') {
+            handle_set_expiration(data)
+        }
+    }
+
     // Define Hook Modal and Delete handlers
     const deleteHookModal = new bootstrap.Modal('#deleteFileModal', {})
 
@@ -78,28 +88,25 @@ $(document).ready(function () {
         socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
     })
 
-    socket.onmessage = function (event) {
-        let data = JSON.parse(event.data)
-        if (data.event === 'toggle-private-file') {
-            let message
-            let dropdown_button_text = $(`#file-${data.pk}-dropdown`).find("#privateText")
-            let dropdown_button_icon = $(`#file-${data.pk}-dropdown`).find("#privateDropdownIcon")
-            let private_status_icon = $(`#file-${data.pk}`).find("#privateStatus")
-            if (data.private) {
-                message = `File ${data.file_name} set to private.`
-                private_status_icon.show()
-                dropdown_button_text.html('Make Public')
-                dropdown_button_icon.removeClass('fa-lock')
-                dropdown_button_icon.addClass('fa-lock-open')
-            } else {
-                message = `File ${data.file_name} set to public.`
-                private_status_icon.hide()
-                dropdown_button_text.html('Make Private')
-                dropdown_button_icon.removeClass('fa-lock-open')
-                dropdown_button_icon.addClass('fa-lock')
-            }
-            show_toast(message, 'success')
+    function handle_private_toggle(data) {
+        let message
+        let dropdown_button_text = $(`#file-${data.pk}-dropdown`).find("#privateText")
+        let dropdown_button_icon = $(`#file-${data.pk}-dropdown`).find("#privateDropdownIcon")
+        let private_status_icon = $(`#file-${data.pk}`).find("#privateStatus")
+        if (data.private) {
+            message = `File ${data.file_name} set to private.`
+            private_status_icon.show()
+            dropdown_button_text.html('Make Public')
+            dropdown_button_icon.removeClass('fa-lock')
+            dropdown_button_icon.addClass('fa-lock-open')
+        } else {
+            message = `File ${data.file_name} set to public.`
+            private_status_icon.hide()
+            dropdown_button_text.html('Make Private')
+            dropdown_button_icon.removeClass('fa-lock-open')
+            dropdown_button_icon.addClass('fa-lock')
         }
+        show_toast(message, 'success')
     }
 
     $('#unMaskPassword').click(function () {
@@ -169,25 +176,21 @@ $(document).ready(function () {
         $('#setFileExprModal').modal('hide')
     })
 
-    socket.onmessage = function (event) {
-        let data = JSON.parse(event.data)
-        if (data.event === 'set-expr-file') {
-            let data = JSON.parse(event.data)
-            let message
-            let expire_status_icon = $(`#file-${data.pk}`).find("#expireStatus")
-            let expire_status_text = $(`#file-${data.pk}`).find("#expireText")
-            if (data.expr != "") {
-                expire_status_icon.show()
-                expire_status_icon.attr('title', `File Expires in ${data.expr}`)
-                expire_status_text.html(data.expr)
-                message = `Set expire for file ${data.file_name} to ${data.expr}`
-            } else {
-                expire_status_icon.hide()
-                message = `Cleared expire for file ${data.file_name}`
-                expire_status_text.html('Never')
-            }
-            show_toast(message, 'success')
+    function handle_set_expiration(data) {
+        let message
+        let expire_status_icon = $(`#file-${data.pk}`).find("#expireStatus")
+        let expire_status_text = $(`#file-${data.pk}`).find("#expireText")
+        if (data.expr != "") {
+            expire_status_icon.show()
+            expire_status_icon.attr('title', `File Expires in ${data.expr}`)
+            expire_status_text.html(data.expr)
+            message = `Set expire for file ${data.file_name} to ${data.expr}`
+        } else {
+            expire_status_icon.hide()
+            message = `Cleared expire for file ${data.file_name}`
+            expire_status_text.html('Never')
         }
+        show_toast(message, 'success')
     }
 
 })
