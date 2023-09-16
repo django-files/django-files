@@ -3,7 +3,7 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     socket.addEventListener("message", function (event) {
-        console.log(data)
+        let data = JSON.parse(event.data)
         if (data.event === 'toggle-private-file') {
             handle_private_toggle(data)
         } else if (data.event === 'set-expr-file') {
