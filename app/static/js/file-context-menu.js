@@ -150,6 +150,10 @@ $(document).ready(function () {
         $('#setFileExprModal').modal('show')
     })
 
+    $('#setFileExprModal').on('shown.bs.modal', function () {
+        console.log($('#expr'))
+        $('#expr').trigger("focus")
+    })
 
     $('#confirmExprFileBtn').click(function (event) {
         event.preventDefault()

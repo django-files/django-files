@@ -36,4 +36,3 @@ function connect() {
 
     return ws
   }
-  
