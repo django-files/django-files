@@ -104,7 +104,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
-        :param expr: String - File Expire String
         :return: Dictionary - With Key: 'success': bool
         """
         log.debug('toggle_private_file')
@@ -117,5 +116,25 @@ class HomeConsumer(AsyncWebsocketConsumer):
             file[0].save()
             # return self._success('File Expire Updated.', **kwargs)
             return {'private': file[0].private, 'event': 'toggle-private-file', 'pk': file[0].id,
+                    'file_name': file[0].name}
+        return self._error('File not found.', **kwargs)
+
+    def set_expr_file(self, *, user_id: int = None, pk: int = None, expr: str = None, **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: Integer - File ID
+        :param expr: String - File Expire String
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug('set_expr_file')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
+        if file := Files.objects.filter(pk=pk):
+            if user_id and file[0].user.id != user_id:
+                return self._error('File owned by another user.', **kwargs)
+            file[0].expr = expr or ""
+            file[0].save()
+            # return self._success('File Expire Updated.', **kwargs)
+            return {'expr': file[0].expr, 'event': 'set-expr-file', 'pk': file[0].id,
                     'file_name': file[0].name}
         return self._error('File not found.', **kwargs)

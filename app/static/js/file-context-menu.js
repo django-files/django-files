@@ -80,11 +80,11 @@ $(document).ready(function () {
 
     socket.onmessage = function (event) {
         let data = JSON.parse(event.data)
-        let message
-        let dropdown_button_text = $(`#file-${data.pk}-dropdown`).find("#privateText")
-        let dropdown_button_icon = $(`#file-${data.pk}-dropdown`).find("#privateDropdownIcon")
-        let private_status_icon = $(`#file-${data.pk}`).find("#privateStatus")
         if (data.event === 'toggle-private-file') {
+            let message
+            let dropdown_button_text = $(`#file-${data.pk}-dropdown`).find("#privateText")
+            let dropdown_button_icon = $(`#file-${data.pk}-dropdown`).find("#privateDropdownIcon")
+            let private_status_icon = $(`#file-${data.pk}`).find("#privateStatus")
             if (data.private) {
                 message = `File ${data.file_name} set to private.`
                 private_status_icon.show()
@@ -139,62 +139,55 @@ $(document).ready(function () {
     })
 
 
-    // Set Expire Hook Modal and Set Expire handlers
-    let exprpk
+    let pk
     $('.set-expr-btn').click(function () {
-        exprpk = $(this).data('pk')
-        console.log(exprpk)
-        $('#confirmFileExprBtn').data('pk', exprpk)
+        pk = $(this).data('pk')
+        $('#confirmFileExprBtn').data('pk', pk)
+        let expireText = $(`#file-${pk}`).find('#expireText')
+        console.log(expireText.length)
+        if (expireText.length > 0 ) {
+            let value = expireText.html()
+            console.log(value)
+            if (value == 'Never') {
+                value = ''
+            }
+            $('#setFileExprModal').find('#expr').val(value)
+        }
         $('#setFileExprModal').modal('show')
     })
 
-    // Handle set expire click confirmations
+
     $('#confirmExprFileBtn').click(function (event) {
         event.preventDefault()
         if ($('#confirmFileExprBtn').hasClass('disabled')) {
             return
         }
-        let formData = new $('#set-expr-form').serialize()
-        console.log(formData)
-        console.log(exprpk)
-        $.ajax({
-            type: 'POST',
-            url: `/ajax/set_expr/file/${exprpk}/`,
-            headers: { 'X-CSRFToken': csrftoken },
-            data: formData,
-            beforeSend: function () {
-                console.log('beforeSend')
-                $('#confirmFileExprBtn').addClass('disabled')
-            },
-            success: function (response) {
-                console.log('response: ' + response)
-                $('#setFileExprModal').modal('hide')
-                let message = 'File Expiration set!'
-                show_toast(message, 'success')
-            },
-            error: function (xhr, status, error) {
-                console.log('xhr status: ' + xhr.status)
-                console.log('status: ' + status)
-                console.log('error: ' + error)
-                $('#setFileExprModal').modal('hide')
-                let message = xhr.status + ': ' + error
-                show_toast(message, 'danger', '15000')
-            },
-            complete: function () {
-                console.log('complete')
-                $('#confirmFileExprBtn').removeClass('disabled')
-                let expr = formData.replace('expr=', '')
-                let expire_status = $('#expireStatus')
-                expire_status.attr('title', `File Expires in ${expr}`);
-                if (expr == '') {
-                    console.log("hiding")
-                    expire_status.hide();
-                } else {
-                    console.log("showing")
-                    expire_status.show();
-                }
-
-            },
-        })
+        let formData = new $('#set-expr-form').serializeArray()
+        console.log(formData[0].value)
+        console.log(pk)
+        socket.send(JSON.stringify({ method: 'set-expr-file', pk: pk, expr: formData[0].value}))
+        $('#setFileExprModal').modal('hide')
     })
+
+    socket.onmessage = function (event) {
+        let data = JSON.parse(event.data)
+        if (data.event === 'set-expr-file') {
+            let data = JSON.parse(event.data)
+            let message
+            let expire_status_icon = $(`#file-${data.pk}`).find("#expireStatus")
+            let expire_status_text = $(`#file-${data.pk}`).find("#expireText")
+            if (data.expr != "") {
+                expire_status_icon.show()
+                expire_status_icon.attr('title', `File Expires in ${data.expr}`)
+                expire_status_text.html(data.expr)
+                message = `Set expire for file ${data.file_name} to ${data.expr}`
+            } else {
+                expire_status_icon.hide()
+                message = `Cleared expire for file ${data.file_name}`
+                expire_status_text.html('Never')
+            }
+            show_toast(message, 'success')
+        }
+    }
+
 })

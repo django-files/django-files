@@ -100,7 +100,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}&nbsp;&nbsp;&nbsp;
                         <i id="privateStatus" title="Private File" class="fa-solid fa-lock" {% if not file.private %} style="display: none"{% endif %}></i>{% if file.password %}
                         <i title="Password Protected File" class="fa-solid fa-key"></i>{% endif %}&nbsp;&nbsp;&nbsp;
-                        <i id="expireStatus" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass" {% if not file.expr %}hidden{% endif %}></i>
+                        <i id="expireStatus" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass" {% if not file.expr %} style="display: none"{% endif %}></i>
                     </p>
                     <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>
                     <p class="card-text">Uploaded {{ file.date }}</p>
