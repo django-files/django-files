@@ -1,5 +1,17 @@
 console.log('Connecting to WebSocket...')
-const socket = new WebSocket('wss://' + window.location.host + '/ws/home/')
+
+
+const socket = get_socket()
+
+function get_socket() {
+    if (location.protocol == 'https:') {
+        return new WebSocket('wss://' + window.location.host + '/ws/home/');
+    } else {
+        // TODO: guard against this happening outside of dev
+        return new WebSocket('ws://' + window.location.host + '/ws/home/');
+    }
+}
+
 
 $(document).ready(function () {
     // Get and set the csrf_token

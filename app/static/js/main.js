@@ -30,8 +30,6 @@ $(document).ready(function () {
 
     // ClipboardJS
     new ClipboardJS('.clip')
-
-    $(document).ready(function () {
         $('.clip').click(function () {
             var clipElement = $(this)
             clipElement.popover({
@@ -52,7 +50,6 @@ $(document).ready(function () {
                 }
             })
         })
-    })
 
     // Show custom toast-alert classes on load
     $('.toast-alert').each(function () {

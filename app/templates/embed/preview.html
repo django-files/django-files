@@ -1,7 +1,6 @@
 {% extends "main.html" %}
 {% load static %}
 {% load home_tags %}
-
 {% block title %}{{ file.name }}{% endblock %}
 
 {% block meta %}
@@ -85,35 +84,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             <div class="col-lg-3 d-flex flex-column">
                 <div class="card-body">
                     <h3 class="card-title">{{ file.name }}
-                        {% if request.user.is_authenticated and request.user == file.user %}
-                            <div class="dropdown">
-                                <button class="btn btn-outline-secondary float-end mt-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-                                <ul class="dropdown-menu">
-                                    <li>
-                                        <a role="button" class="set-expr-btn dropdown-item" data-hook-id="{{ file.id }}" title="Set Expiration">
-                                            <i class="fa-solid fa-hourglass fa-fw"></i><span class="text-end">&nbsp;Set Expiration</span></a>
-                                    </li>
-                                    <li>
-                                        <a role="button" id="toggle-private-btn" class="toggle-private-hook-btn dropdown-item" data-hook-id="{{ file.id }}" title="Toggle Private">
-                                            {% if file.private %}
-                                                <i id="toggleStatus" class="fa-solid fa-fw fa-lock-open "></i><span class="toggleText">&nbsp;Make Public</span>
-                                            {% else %}
-                                                <i id="toggleStatus" class="fa-solid fa-fw fa-lock"></i><span id="toggleText">&nbsp;Make Private</span>
-                                            {% endif %}
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a role="button" class="set-password-file-btn dropdown-item" data-hook-id="{{ file.id }}" title="Set Password">
-                                            <i class="fas fa-key link-info fa-fw"></i>&nbsp;Set Password</a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a role="button" class="delete-file-btn dropdown-item" data-hook-id="{{ file.id }}" title="Delete">
-                                            <i class="fa-regular fa-trash-can link-danger fa-fw"></i><span class="text-end">&nbsp;Delete File</span></a>
-                                    </li>
-                                </ul>
-                            </div>
-                        {% endif %}
+                        <span class="float-end mt-3">{% include 'include/file-context-menu.html' with file=file %}</span>
                     </h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                     {% if file.meta.PILImageWidth %}
@@ -183,7 +154,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             </div>
         </div>
     </div>
-    {% include 'files/delete-modal.html' %}
+    {% include 'include/delete-modal.html' %}
     {% include 'include/set-password-modal.html' %}
     {% include 'include/set-expr-modal.html' %}
 {% endblock %}
@@ -220,6 +191,6 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         </script>
     {% endif %}
     {% if request.user.is_authenticated %}
-        <script type="text/javascript" src="{% static 'js/preview.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
     {% endif %}
 {% endblock %}
