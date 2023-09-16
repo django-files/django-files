@@ -1,0 +1,46 @@
+{% extends "main.html" %}
+{% block paste_active %}active{% endblock %}
+{% block title %}Paste Text{% endblock %}
+{% load home_tags %}
+{% load static %}
+
+{% block head %}
+    <link href="{% static 'uppy/uppy.min.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block body %}
+    <div class="container-fluid py-3 px-4">
+
+    {% include 'include/upload-menu.html' with heading='Paste Text' fa_class='fa-regular fa-file-lines' %}
+
+        <form method="post" action="{% url 'home:paste' %}" name="sendPaste" id="sendPaste">
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <label for="name" class="form-label">Custom File Name</label>
+                    <input type="text" class="form-control" placeholder="Custom File Name" aria-label="name"
+                           id="name" name="name">
+                </div>
+                <div class="col-sm-3">
+                    <label for="format" class="form-label">Name Format</label>
+                    <select class="form-select" id="format" name="format">
+                        {% for value, display in default_upload_name_formats %}
+                            <option value="{{ value }}" {% if value == user.default_upload_name_format %}selected{% endif %}>{{ display }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-sm-3 d-flex flex-column">
+                    <button class="btn btn-outline-success mt-auto" type="submit">
+                        <i class="fa-regular fa-file-lines me-2"></i> Create</button>
+                </div>
+                <div class="col-12 mb-3">
+                    <label for="text_data" class="form-label">Text</label>
+                    <textarea class="form-control" id="text_data" name="text_data" rows="6" required></textarea>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block tail %}
+    <script type="text/javascript" src="{% static 'js/paste.js' %}"></script>
+{% endblock %}

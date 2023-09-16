@@ -130,6 +130,19 @@ def uppy_view(request):
 
 @csrf_exempt
 @cache_control(no_cache=True)
+@login_required
+def paste_view(request):
+    """
+    View  /paste/
+    """
+    context = {
+        'default_upload_name_formats': CustomUser.UploadNameFormats.choices,
+    }
+    return render(request, 'paste.html', context=context)
+
+
+@csrf_exempt
+@cache_control(no_cache=True)
 def pub_uppy_view(request):
     """
     View  /public/
