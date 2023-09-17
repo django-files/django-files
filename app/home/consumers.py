@@ -23,8 +23,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
     async def websocket_send(self, event):
         log.debug('websocket_send')
         log.debug(event)
-        log.debug(self.scope['client'])
-        log.debug(self.scope['user'])
+        log.debug('client: %s', self.scope['client'])
+        log.debug('user: %s', self.scope['user'])
         if self.scope['client'][1] is None:
             return log.debug('client 1 is None')
         await self.send(text_data=event['text'])
@@ -32,14 +32,31 @@ class HomeConsumer(AsyncWebsocketConsumer):
     async def websocket_receive(self, event):
         log.debug('websocket_receive')
         log.debug(event)
-        data = await self.process_message(event)
-        await self.send(text_data=json.dumps(data))
+        log.debug('client: %s', self.scope['client'])
+        log.debug('user: %s', self.scope['user'])
 
-    async def process_message(self, event) -> Optional[dict]:
+        # handle text messages
+        if 'ping' == event['text']:
+            log.debug('ping->pong')
+            return 'pong'
+
+        # handle json messages
+        try:
+            request = json.loads(event['text'])
+            data = await self.process_message(request)
+            await self.send(text_data=json.dumps(data))
+        except Exception as error:
+            log.exception(error)
+            return {'error': error}
+
+    async def process_message(self, request: dict) -> Optional[dict]:
+        # require authenticated user
+        if not self.scope['user']:
+            return self._error('Authentication Required!')
         data = {'user_id': self.scope['user'].id}
         log.debug('process_message: user_id: %s', data['user_id'])
-        log.debug(event)
-        data.update(json.loads(event['text']))
+        log.debug(request)
+        data.update(request)
         log.debug('data: %s', data)
         method_name = data.pop('method').replace('-', '_')
         log.debug('method_name: %s', method_name)
@@ -92,8 +109,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('delete_file')
         log.debug('user_id: %s', user_id)
         log.debug('pk: %s', pk)
-        if not user_id:
-            return self._error('Authentication Required!', **kwargs)
         if file := Files.objects.filter(pk=pk):
             if file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
