@@ -92,12 +92,12 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('delete_file')
         log.debug('user_id: %s', user_id)
         log.debug('pk: %s', pk)
+        if not user_id:
+            return self._error('Authentication Required!', **kwargs)
         if file := Files.objects.filter(pk=pk):
-            if user_id and file[0].user.id != user_id:
+            if file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
             file[0].delete()
-            # return self._success('File Deleted.', **kwargs)
-            return {}
         return self._error('File not found.', **kwargs)
 
     def toggle_private_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
