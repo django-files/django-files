@@ -2,9 +2,9 @@
 
 console.log('Connecting to WebSocket...')
 
-const socket = connect()
+const socket = wsConnect()
 
-function connect() {
+function wsConnect() {
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws/home/`)
 
@@ -21,12 +21,12 @@ function connect() {
         console.log(`Socket Close: ${event.code}: ${event.reason}`)
         if (event.code !== 1000) {
             $('#socketWarning').removeClass('d-none')
+            console.log(event)
+            setTimeout(function () {
+                console.log('Reconnecting...')
+                wsConnect()
+            }, 10 * 1000)
         }
-        console.log(event)
-        setTimeout(function () {
-            console.log('Reconnecting...')
-            connect()
-        }, 10000)
     }
 
     ws.onerror = function (event) {
