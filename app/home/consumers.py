@@ -37,21 +37,21 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('user: %s', self.scope['user'])
 
         # handle text messages
-        # if 'ping' == event['text']:
-        #     log.debug('ping->pong')
-        #     return await self.send(text_data='pong')
+        if 'ping' == event['text']:
+            # return await self.send(text_data='pong')
+            return log.debug('ping->pong')
 
         # handle json messages
         try:
             request = json.loads(event['text'])
         except Exception as error:
-            log.exception(error)
+            log.debug(error)
             return self._error(f'Error: {error}')
-        if 'method' in request:
-            data = await self.process_message(request)
-        else:
+        if 'method' not in request:
             return self._error('Unknown Request.')
-        await self.send(text_data=json.dumps(data))
+        data = await self.process_message(request)
+        if data:
+            await self.send(text_data=json.dumps(data))
 
     async def process_message(self, request: dict) -> Optional[dict]:
         # require authenticated user
