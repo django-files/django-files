@@ -10,6 +10,7 @@ function connect() {
 
     ws.onopen = function () {
         console.log('Socket Open')
+        $('#socketWarning').addClass('d-none')
     }
 
     ws.onmessage = function (event) {
@@ -17,11 +18,15 @@ function connect() {
     }
 
     ws.onclose = function (event) {
-        console.log(`Socket Close: ${event.reason}`)
+        console.log(`Socket Close: ${event.code}: ${event.reason}`)
+        if (event.code !== 1000) {
+            $('#socketWarning').removeClass('d-none')
+        }
+        console.log(event)
         setTimeout(function () {
             console.log('Reconnecting...')
             connect()
-        }, 15000)
+        }, 10000)
     }
 
     ws.onerror = function (event) {
