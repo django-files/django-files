@@ -39,7 +39,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         # handle text messages
         if 'ping' == event['text']:
             log.debug('ping->pong')
-            return 'pong'
+            return await self.send(text_data='pong')
 
         # handle json messages
         try:
@@ -64,7 +64,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('data: %s', data)
         method_name = data.pop('method').replace('-', '_')
         log.debug('method_name: %s', method_name)
-        method = getattr(self, method_name)
+        method = getattr(self, method_name, None)
+        if not method:
+            return self._error('No Method Provided!')
         response = await database_sync_to_async(method)(**data)
         log.debug(response)
         return response or {}
