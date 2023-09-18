@@ -37,9 +37,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('user: %s', self.scope['user'])
 
         # handle text messages
-        if 'ping' == event['text']:
-            log.debug('ping->pong')
-            return await self.send(text_data='pong')
+        # if 'ping' == event['text']:
+        #     log.debug('ping->pong')
+        #     return await self.send(text_data='pong')
 
         # handle json messages
         try:
