@@ -1,6 +1,6 @@
 import json
 import logging
-# from asgiref.sync import sync_to_async
+from asgiref.sync import async_to_sync
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from io import BytesIO
@@ -8,6 +8,7 @@ from typing import Optional
 
 from home.models import Files
 from home.util.file import process_file
+from oauth.models import CustomUser
 
 log = logging.getLogger('app')
 
@@ -43,11 +44,14 @@ class HomeConsumer(AsyncWebsocketConsumer):
         # handle json messages
         try:
             request = json.loads(event['text'])
-            data = await self.process_message(request)
-            await self.send(text_data=json.dumps(data))
         except Exception as error:
             log.exception(error)
-            return {'error': error}
+            return self._error(f'Error: {error}')
+        if 'method' in request:
+            data = await self.process_message(request)
+        else:
+            return self._error('Unknown Request.')
+        await self.send(text_data=json.dumps(data))
 
     async def process_message(self, request: dict) -> Optional[dict]:
         # require authenticated user
@@ -80,6 +84,16 @@ class HomeConsumer(AsyncWebsocketConsumer):
     #         response.update(data)
     #     response.update(**kwargs)
     #     return response
+
+    def authorize(self, *, authorization: str = None, **kwargs):
+        log.debug('authorize')
+        log.debug('authorization: %s', authorization)
+        user = CustomUser.objects.filter(authorization=authorization)
+        if not user:
+            return self._error('Invalid Authorization.')
+        self.scope['user'] = user[0]
+        async_to_sync(self.channel_layer.group_add)(f"user-{self.scope['user'].id}", self.channel_name)
+        return {'user': user[0].username}
 
     def paste_text(self, *, user_id: int = None, text_data: str = None, **kwargs):
         log.debug('paste_text')
