@@ -3,6 +3,7 @@ import logging
 from asgiref.sync import async_to_sync
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.forms.models import model_to_dict
 from io import BytesIO
 from typing import Optional
 
@@ -128,7 +129,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if file := Files.objects.filter(pk=pk):
             if file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
+            data = model_to_dict(file[0], exclude=['file', 'info', 'exif', 'date', 'edit', 'meta'])
             file[0].delete()
+            return data
         return self._error('File not found.', **kwargs)
 
     def toggle_private_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:

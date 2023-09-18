@@ -8,6 +8,7 @@ from channels.layers import get_channel_layer
 from django_redis import get_redis_connection
 from django.conf import settings
 from django.core.cache import cache
+from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
 from pytimeparse2 import parse
@@ -228,12 +229,18 @@ def process_vector_stats():
 def new_file_websocket(pk):
     log.debug('new_file_websocket: %s', pk)
     file = Files.objects.get(pk=pk)
-    log.debug('file.user_id: %s', file.user_id)
+    log.debug('file: %s', file)
+    data = model_to_dict(file, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta'])
+    log.debug('data: %s', data)
+    # TODO: Backwards Compatibility
+    data['pk'] = pk
+    data['event'] = 'file-new'
     channel_layer = get_channel_layer()
     event = {
         'type': 'websocket.send',
-        'text': json.dumps({'event': 'file-new', 'pk': pk}),
+        'text': json.dumps(data),
     }
+    log.debug('event: %s', event)
     async_to_sync(channel_layer.group_send)(f'user-{file.user_id}', event)
 
 
@@ -243,7 +250,7 @@ def delete_file_websocket(pk, user_id):
     channel_layer = get_channel_layer()
     event = {
         'type': 'websocket.send',
-        'text': json.dumps({'event': 'file-delete', 'pk': pk}),
+        'text': json.dumps({'event': 'file-delete', 'id': pk, 'pk': pk}),
     }
     async_to_sync(channel_layer.group_send)(f'user-{user_id}', event)
 
