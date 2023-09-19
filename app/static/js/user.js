@@ -3,7 +3,7 @@ $(document).ready(function () {
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
     // Monitor websockets for new data and update results
-    socket.addEventListener('message', function (event) {
+    socket.addEventListener('message', (event) => {
         console.log('user.js socket.addEventListener message function')
         let data = JSON.parse(event.data)
         console.log(data)

@@ -1,29 +1,37 @@
-// WebSocket JS
-
 console.log('Connecting to WebSocket...')
 
 let socket
 
-const socketMessageListener = (event) => {
-    console.log(event.data)
-}
-
-const socketOpenListener = (event) => {
-    console.log('Connected')
-    socket.send(event)
-    $('#socketWarning').addClass('d-none')
-}
-
-const socketCloseListener = (event) => {
-    if (socket && event.code !== 1000) {
-        console.error('Disconnected.')
-        $('#socketWarning').removeClass('d-none')
+$(document).ready(function () {
+    function wsConnect() {
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+        socket = new WebSocket(`${protocol}//${window.location.host}/ws/home/`)
+        socket.onopen = function (event) {
+            console.log('socket.onopen')
+            console.log(event)
+            $('#socketWarning').addClass('d-none')
+        }
+        socket.onmessage = function (event) {
+            console.log('socket.onmessage')
+            console.log(event)
+            console.log(`Message: ${event.data}`)
+        }
+        socket.onclose = function (event) {
+            console.log(`socket.onclose: ${event.code}`)
+            console.log(event)
+            if (event.code !== 1000) {
+                console.log('Unclean Close, Showing: #socketWarning')
+                $('#socketWarning').removeClass('d-none')
+            }
+            setTimeout(function () {
+                wsConnect()
+            }, 10 * 1000)
+        }
+        socket.onerror = function (event) {
+            console.error('socket.onerror')
+            console.log(event)
+            // socket.close()
+        }
     }
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    socket = new WebSocket(`${protocol}//${window.location.host}/ws/home/`)
-    socket.addEventListener('open', socketOpenListener)
-    socket.addEventListener('message', socketMessageListener)
-    socket.addEventListener('close', socketCloseListener)
-}
-
-socketCloseListener()
+    wsConnect()
+})
