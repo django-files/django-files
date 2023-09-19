@@ -9,7 +9,7 @@ $(document).ready(function () {
         socket.onopen = function (event) {
             console.log('socket.onopen')
             console.log(event)
-            $('#socketWarning').addClass('d-none')
+            // $('#socketWarning').addClass('d-none')
         }
         socket.onmessage = function (event) {
             console.log('socket.onmessage')
