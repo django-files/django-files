@@ -62,12 +62,11 @@
                     </ul>
                 </div>
             {% else %}
-                <div class="col-12 col-lg-8 d-none d-lg-block text-lg-end">
+                <div class="col-12 col-lg-9 d-none d-lg-block text-end">
                     <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
                         Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
                 </div>
             {% endif %}
-
         </div>
     </div>
 </footer>
