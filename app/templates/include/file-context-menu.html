@@ -1,20 +1,28 @@
 {% load home_tags %}
 
-{% if request.user.is_authenticated and request.user == file.user %}
+
 <div class="dropdown">
     <button class="btn btn-outline-secondary btn-sm file-context-dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-ellipsis-vertical"></i></button>
     <ul class="dropdown-menu" id="file-{{ file.pk }}-dropdown">
-        {% if '/u/' not in request.path %}
         <li>
             <a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
                 <i class="fa-solid fa-link fa-fw link-info"></i><span class="text-end">&nbsp;Copy Share Link</span></a>
         </li>
         <li>
             <a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}">
-                <i class="fa-solid fa-link fa-fw link-warning"></i><span class="text-end">&nbsp;Copy Raw Link</span></a>
+                <i class="fa-solid fa-link fa-fw"></i><span class="text-end">&nbsp;Copy Raw Link</span></a>
         </li>
         <li><hr class="dropdown-divider"></li>
-        {% endif%}
+        <li>
+            <a role="button" class="dropdown-item" href="{% url 'home:url-raw-redirect' file.file.name %}?download=true" download="{{ file.name }}">
+                <i class="fa-solid fa-download me-2 link-info"></i><span class="text-end">Download</span></a>
+        </li>
+        <li> <!-- eventually this should probably not show on things like executables or unviewbile in a browser natively type files -->
+            <a role="button" class="dropdown-item" href="{% url 'home:url-raw-redirect' file.file.name %}">
+                <i class="fa-solid fa-eye me-2"></i><span class="text-end">View Raw</span></a>
+        </li>
+        {% if request.user.is_authenticated and request.user == file.user %}
+        <li><hr class="dropdown-divider"></li>
         <li>
             <a role="button" class="set-expr-btn dropdown-item" data-pk="{{ file.pk }}" title="Set Expiration">
                 <i class="fa-solid fa-hourglass fa-fw"></i><span id="expireDropdownText" class="text-end">&nbsp;Set Expiration</span></a>
@@ -40,6 +48,6 @@
            <!-- This hidden password field is used to pass the password value to model on the files table.
     We should probably fetch this live instead to not store all pws in the page html -->
     <input type="hidden" class="file-password-value" value='{{ file.password|default:"" }}'>
+    {% endif %}
     </ul>
 </div>
-{% endif %}

@@ -118,28 +118,13 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                             {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s{% endif %}</p>
                     {% endif %}
                     <div class="row g-2 text-center mt-auto">
-                        <div class="col-12 ">
-                            <a class="btn btn-primary btn-lg d-block" role="button"
-                               href="{% url 'home:url-raw-redirect' file.file.name %}?download=true" download="{{ file.name }}">
-                                <i class="fa-solid fa-download me-2"></i> Download</a></div>
                         {% if code or text_preview %}
                             <div class="col-12 ">
                                 <a class="clip btn btn-success btn-lg d-block" role="button"
                                    data-clipboard-text="{% if code %}{{ code }}{% else %}{{ text_preview }}{% endif %}">
-                                    <i class="fa-regular fa-file-lines me-2"></i> Copy Text</a></div>
+                                    <i class="fa-regular fa-file-lines me-2"></i> Copy Text</a>
+                            </div>
                         {% endif %}
-                        <div class="col-12 ">
-                            <a class="btn btn-secondary btn-lg d-block" role="button"
-                               href="{% url 'home:url-raw-redirect' file.file.name %}">
-                                <i class="fa-solid fa-eye me-2"></i> View Raw</a></div>
-                        <div class="col-12 ">
-                            <a class="clip btn btn-outline-secondary btn-lg d-block" role="button"
-                               data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
-                                <i class="fa-solid fa-link me-2"></i> Preview URL</a></div>
-                        <div class="col-12 ">
-                            <a class="clip btn btn-outline-secondary btn-lg d-block" role="button"
-                               data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}">
-                                <i class="fa-solid fa-link me-2"></i> Raw URL</a></div>
                     </div>
                 </div>
             </div>

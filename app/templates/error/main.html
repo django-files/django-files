@@ -4,13 +4,12 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-    <div class="container-fluid py-3 px-4">
+    <div class="container-fluid py-3 px-4 text-center">
 
         {% block main %}{% endblock %}
-
-        <p>From here you can <a href="javascript:history.back()">Go Back</a> or
-            <a href="{% url 'home:index' %}">Go Home</a>.</p>
-
+            <p class="">From here you can <a class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover" href="javascript:history.back()">Go Back</a> or
+                <a class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover" href="{% url 'home:index' %}">Go Home</a>.
+            </p>
     </div>
 {% endblock %}
 
