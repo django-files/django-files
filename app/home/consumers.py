@@ -3,7 +3,7 @@ import logging
 from asgiref.sync import async_to_sync
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.forms.models import model_to_dict
+# from django.forms.models import model_to_dict
 from io import BytesIO
 from typing import Optional
 
