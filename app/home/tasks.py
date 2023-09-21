@@ -245,12 +245,16 @@ def new_file_websocket(pk):
 
 
 @shared_task()
-def delete_file_websocket(pk, user_id):
-    log.debug('delete_file_websocket pk: %s user_id: %s', pk, user_id)
+def delete_file_websocket(data: dict, user_id):
+    log.debug('delete_file_websocket')
+    log.debug('data: %s', data)
+    log.debug('delete_file_websocket pk: %s user_id: %s', data['id'], user_id)
+    data['event'] = 'file-delete'
+    data['pk'] = data['id']
     channel_layer = get_channel_layer()
     event = {
         'type': 'websocket.send',
-        'text': json.dumps({'event': 'file-delete', 'id': pk, 'pk': pk}),
+        'text': json.dumps(data),
     }
     async_to_sync(channel_layer.group_send)(f'user-{user_id}', event)
 

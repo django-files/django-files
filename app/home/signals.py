@@ -1,5 +1,6 @@
 from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
+from django.forms.models import model_to_dict
 
 from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache
 from home.tasks import delete_file_websocket
@@ -10,8 +11,9 @@ from oauth.models import DiscordWebhooks
 
 @receiver(pre_delete, sender=Files)
 def files_delete_signal(sender, instance, **kwargs):
+    data = model_to_dict(instance, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta'])
     instance.file.delete(True)
-    delete_file_websocket.delay(instance.pk, instance.user.id)
+    delete_file_websocket.delay(data, instance.user.id)
 
 
 @receiver(post_save, sender=Files)

@@ -60,7 +60,7 @@
                         <li class="list-inline-item"><a href="{% url 'settings:user' %}" title="User Settings" class="link-body-emphasis ">
                             <i class="fas fa-user-circle "></i></a></li>
                         {% if request.user.is_superuser %}
-                        <li class="list-inline-item"><a href="{% url 'settings:site' %}" title="Site Seettings" class="link-body-emphasis ">
+                        <li class="list-inline-item"><a href="{% url 'settings:site' %}" title="Site Settings" class="link-body-emphasis ">
                             <i class="fa-solid fa-gears "></i></a></li>
                         {% endif %}
                     </ul>

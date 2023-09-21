@@ -39,8 +39,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
 
         # handle text messages
         if 'ping' == event['text']:
-            # return await self.send(text_data='pong')
-            return log.debug('ping->pong')
+            log.debug('ping->pong')
+            return await self.send(text_data='pong')
 
         # handle json messages
         try:
@@ -129,10 +129,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if file := Files.objects.filter(pk=pk):
             if file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
-            data = model_to_dict(file[0], exclude=['file', 'info', 'exif', 'date', 'edit', 'meta'])
             file[0].delete()
-            return data
-        return self._error('File not found.', **kwargs)
+        else:
+            return self._error('File not found.', **kwargs)
 
     def toggle_private_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
         """
