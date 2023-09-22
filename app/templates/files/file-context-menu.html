@@ -1,37 +1,56 @@
 {% load home_tags %}
 
 <!-- TODO: ID's MUST be Unique -->
-<div class="dropdown fileContextDropdown">
+<div id="ctx-menu-{{ file.pk }}" class="dropdown fileContextDropdown">
     <button class="btn btn-outline-secondary file-context-dropdown my-0 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
         <i class="fa-solid fa-ellipsis-vertical"></i></button>
-{#    <a class="" role="button" data-bs-toggle="dropdown" aria-expanded="false">#}
-{#        <i class="fa-solid fa-ellipsis-vertical"></i></a>#}
+
     <ul class="dropdown-menu" id="file-{{ file.pk }}-dropdown">
+
         <li><a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
-            <i class="fa-solid fa-link fa-fw me-2 link-info"></i> Copy Share Link</a></li>
+            <i class="fa-solid fa-link fa-fw me-2 link-info"></i>
+            Copy Share Link</a></li>
+
         <li><a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}">
-            <i class="fa-solid fa-link fa-fw me-2"></i> Copy Raw Link</a></li>
+            <i class="fa-solid fa-link fa-fw me-2"></i>
+            Copy Raw Link</a></li>
+
         <li><hr class="dropdown-divider"></li>
+
         <li><a role="button" class="dropdown-item" href="{% url 'home:url-raw-redirect' file.file.name %}?download=true" download="{{ file.name }}">
-            <i class="fa-solid fa-download fa-fw me-2 link-info"></i> Download</a></li>
+            <i class="fa-solid fa-download fa-fw me-2 link-info"></i>
+            Download</a></li>
+
         <!-- eventually this should probably not show on things like executables or non-viewable in a browser natively type files -->
         <li><a role="button" class="dropdown-item" href="{% url 'home:url-raw-redirect' file.file.name %}">
-            <i class="fa-solid fa-eye fa-fw me-2"></i> View Raw</a></li>
+            <i class="fa-solid fa-eye fa-fw me-2"></i>
+            View Raw</a></li>
+
         {% if request.user.is_authenticated and request.user == file.user %}
             <li><hr class="dropdown-divider"></li>
-            <li><a role="button" class="set-expr-btn dropdown-item" data-pk="{{ file.pk }}" title="Set Expiration">
-                <i class="fa-solid fa-hourglass fa-fw me-2"></i> Set Expiration</a></li>
-            <li><a role="button" class="toggle-private-btn dropdown-item" data-pk="{{ file.pk }}" title="Toggle Private">
-                <i class="fa-solid fa-lock{% if not file.private %}-open{% endif %} fa-fw me-2 privateDropdownIcon"></i>
-                <span class="privateText">Make {% if file.private %}Public{% else %}Private{% endif %}</span></a></li>
-            <li><a role="button" class="set-password-file-btn dropdown-item" data-pk="{{ file.pk }}" title="Set Password">
-                <i class="fas fa-key fa-fw me-2"></i> Set Password</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a role="button" class="delete-file-btn dropdown-item" data-pk="{{ file.pk }}" title="Delete">
-                <i class="fa-regular fa-trash-can fa-fw me-2 link-danger"></i> Delete File</a></li>
-            <!-- This hidden password field is used to pass the password value to model on the files table. -->
-            <!-- TWe should probably fetch this live instead to not store all pws in the page html -->
-            <input type="hidden" class="file-password-value" value='{{ file.password|default:"" }}'>
+
+            <li><a role="button" class="ctx-set-expire-btn dropdown-item" title="Set Expiration">
+                <i class="fa-solid fa-hourglass fa-fw me-2"></i>
+                Set Expiration</a></li>
+
+{#            <li><a role="button" class="ctx-toggle-private-btn dropdown-item" data-pk="{{ file.pk }}" title="Toggle Private">#}
+{#                <i class="fa-solid fa-lock{% if not file.private %}-open{% endif %} fa-fw me-2 privateDropdownIcon"></i>#}
+{#                <span class="privateText">Make {% if file.private %}Public{% else %}Private{% endif %}</span></a></li>#}
+{##}
+{#            <li><a role="button" class="ctx-set-password-btn dropdown-item" data-pk="{{ file.pk }}" title="Set Password">#}
+{#                <i class="fas fa-key fa-fw me-2"></i>#}
+{#                Set Password</a></li>#}
+{##}
+{#            <li><hr class="dropdown-divider"></li>#}
+{##}
+{#            <li><a role="button" class="ctx-delete-btn dropdown-item" data-pk="{{ file.pk }}" title="Delete">#}
+{#                <i class="fa-regular fa-trash-can fa-fw me-2 link-danger"></i>#}
+{#                Delete File</a></li>#}
+{##}
+{#            <!-- This hidden password field is used to pass the password value to model on the files table. -->#}
+{#            <!-- TWe should probably fetch this live instead to not store all pws in the page html -->#}
+{#            <input type="hidden" name="current-password" value='{{ file.password|default:"" }}'>#}
         {% endif %}
+
     </ul>
 </div>

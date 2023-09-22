@@ -28,11 +28,11 @@
         <a class="clip link-body-emphasis text-decoration-none" role="button"
            data-clipboard-text="{{ file.date|localtime }}">{{ file.date|localtime }}</a></td>
 
-    <td class="d-none d-sm-table-cell align-middle">
-        <i class="fa-solid fa-key text-warning-emphasis passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i></td>
-
-    <td class="d-none d-sm-table-cell align-middle">
-        <i class="fa-solid fa-lock text-warning-emphasis privateStatus" {% if not file.private %}style="display: none"{% endif %}></i></td>
+{#    <td class="d-none d-sm-table-cell align-middle"> <!-- {{ file.password }} -->#}
+{#        <i class="fa-solid fa-key text-warning-emphasis passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i></td>#}
+{##}
+{#    <td class="d-none d-sm-table-cell align-middle">#}
+{#        <i class="fa-solid fa-lock text-warning-emphasis privateStatus" {% if not file.private %}style="display: none"{% endif %}></i></td>#}
 
     <td class="d-none d-sm-table-cell align-middle">
         <a class="clip link-body-emphasis text-decoration-none" role="button" data-clipboard-text="{{ file.view }}">{{ file.view }}</a></td>

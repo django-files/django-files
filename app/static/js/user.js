@@ -15,8 +15,9 @@ $(document).ready(function () {
                 if (table.length) {
                     $('#files-table tbody').prepend(response)
                     console.log(`Table Updated: ${data.pk}`)
+                    // TODO: Fix this madness
                     $(`#file-${data.pk}`)
-                        .find('.delete-file-btn')
+                        .find('.ctx-delete-btn')
                         .on('click', function () {
                             let pk = $(this).data('pk')
                             console.log(`Ajax Delete Button: ${pk}`)
