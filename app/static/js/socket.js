@@ -23,7 +23,7 @@ function wsConnect() {
     socket.onclose = function (event) {
         console.log(`socket.onclose: ${event.code}`)
         console.log(event)
-        if (event.code !== 1000) {
+        if (![1000, 1001].includes(event.code)) {
             console.log('Unclean Close, Showing: #socketWarning')
             $('#socketWarning').removeClass('d-none')
         }
