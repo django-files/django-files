@@ -67,3 +67,7 @@ class Command(BaseCommand):
         # TODO: test that this works, may need to move to a worker task
         cache.set('site_settings', model_to_dict(site_settings))
         self.stdout.write(self.style.SUCCESS('Created Cache site_settings'))
+
+        # Delete Latest Version Cache
+        # TODO: move this to an async app startup task and run check
+        cache.delete('latest_version')

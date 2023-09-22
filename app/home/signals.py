@@ -1,12 +1,17 @@
+from celery.signals import worker_ready
 from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
 from django.forms.models import model_to_dict
 
 from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache
-from home.tasks import delete_file_websocket
-from home.tasks import send_success_message
+from home.tasks import app_startup, delete_file_websocket, send_success_message
 from home.models import Files, FileStats, ShortURLs
 from oauth.models import DiscordWebhooks
+
+
+@worker_ready.connect
+def run_startup_task(sender, **kwargs):
+    app_startup.delay()
 
 
 @receiver(pre_delete, sender=Files)

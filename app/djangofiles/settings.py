@@ -8,6 +8,8 @@ from django.contrib.messages import constants as message_constants
 from pathlib import Path
 from sentry_sdk.integrations.django import DjangoIntegration
 
+VERSION_CHECK_URL = config('VERSION_CHECK_URL', 'https://github.com/django-files/django-files/releases/latest')
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEBUG = config('DEBUG', 'False', bool)
@@ -124,6 +126,10 @@ CELERY_BEAT_SCHEDULE = {
     'app_cleanup': {
         'task': 'home.tasks.app_cleanup',
         'schedule': datetime.timedelta(hours=config('APP_CLEANUP_HOUR', 1, int)),
+    },
+    'version_check': {
+        'task': 'home.tasks.version_check',
+        'schedule': datetime.timedelta(hours=config('VERSION_CHECK_HOUR', 1, int)),
     },
     'delete_expired_files': {
         'task': 'home.tasks.delete_expired_files',

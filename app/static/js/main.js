@@ -30,32 +30,40 @@ $(document).ready(function () {
 
     // ClipboardJS
     new ClipboardJS('.clip')
-        $('.clip').click(function () {
-            var clipElement = $(this)
-            clipElement.popover({
-                content: 'Copied',
-                placement: 'bottom',
-                trigger: 'manual',
-            })
-            clipElement.popover('show')
-            setTimeout(function () {
-                clipElement.popover('hide')
-            }, 2000)
-            $(document).on('click', function (e) {
-                if (
-                    !clipElement.is(e.target) &&
-                    clipElement.has(e.target).length === 0
-                ) {
-                    clipElement.popover('hide')
-                }
-            })
+    $('.clip').click(function () {
+        var clipElement = $(this)
+        clipElement.popover({
+            content: 'Copied',
+            placement: 'bottom',
+            trigger: 'manual',
         })
+        clipElement.popover('show')
+        setTimeout(function () {
+            clipElement.popover('hide')
+        }, 2000)
+        $(document).on('click', function (e) {
+            if (
+                !clipElement.is(e.target) &&
+                clipElement.has(e.target).length === 0
+            ) {
+                clipElement.popover('hide')
+            }
+        })
+    })
 
     // Show custom toast-alert classes on load
     $('.toast-alert').each(function () {
         let toastAlert = new bootstrap.Toast($(this))
         toastAlert.show()
     })
+
+    // Init all popover elements
+    const popoverTriggerList = document.querySelectorAll(
+        '[data-bs-toggle="popover"]'
+    )
+    const popoverList = [...popoverTriggerList].map(
+        (popoverTriggerEl) => new bootstrap.Popover(popoverTriggerEl)
+    )
 })
 
 // Generate a BS toast and show it

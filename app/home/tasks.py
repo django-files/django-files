@@ -1,4 +1,5 @@
 import logging
+import os
 import httpx
 import json
 import urllib.parse
@@ -11,6 +12,7 @@ from django.core.cache import cache
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
+from packaging import version
 from pytimeparse2 import parse
 
 from home.util.storage import use_s3
@@ -40,6 +42,31 @@ def app_init():
     #     log.info('public_user created: public')
     # else:
     #     log.warning('public_user already created: public')
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 5})
+def app_startup():
+    version_check.delay()
+    return 'app_startup - finished'
+
+
+@shared_task()
+def version_check():
+    if settings.DEBUG:
+        return f'Skipping Version Check due to DEBUG: {settings.DEBUG}'
+    app_version = version.parse(os.environ['APP_VERSION'])
+    log.debug('app_version: %s', app_version)
+    r = httpx.get(settings.VERSION_CHECK_URL, follow_redirects=True, timeout=10)
+    r.raise_for_status()
+    latest_version = version.parse(os.path.basename(r.url.path))
+    log.debug('latest_version: %s', latest_version)
+    if latest_version > app_version:
+        log.info('New Release Available: %s', latest_version)
+        cache.set('latest_version', latest_version.public, 12 * 60 * 60)
+        log.debug('SETTING CACHE -> latest_version: %s', latest_version.public)
+    else:
+        cache.delete('update_available')
+    return f'Current: ${app_version} - Latest: {latest_version}'
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 300})

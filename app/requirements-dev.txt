@@ -17,6 +17,7 @@ gunicorn
 httpx
 markdown
 mysqlclient
+packaging
 Pillow
 psycopg[binary]
 pytest-playwright
