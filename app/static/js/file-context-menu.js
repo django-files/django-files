@@ -1,9 +1,6 @@
 $(document).ready(function () {
-    // Get and set the csrf_token
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
-
-    socket.addEventListener("message", function (event) {
-        let data = JSON.parse(event.data)
+    socket.addEventListener('message', function (event) {
+        const data = JSON.parse(event.data)
         if (data.event === 'toggle-private-file') {
             handle_private_toggle(data)
         } else if (data.event === 'set-expr-file') {
@@ -11,12 +8,13 @@ $(document).ready(function () {
         } else if (data.event === 'set-password-file') {
             handle_password_set(data)
         }
-    });
+    })
 
-    let pk
+    // TODO: Stop Doing This
+    // let pk
 
     $('.delete-file-btn').click(function () {
-        let pk = $(this).data('pk')
+        const pk = $(this).data('pk')
         console.log(`Delete Button: pk: ${pk}`)
         $('#confirmDeleteFileBtn').data('pk', pk)
         $('#deleteFileModal').modal('show')
@@ -24,109 +22,75 @@ $(document).ready(function () {
 
     // Handle delete click confirmations
     $('#confirmDeleteFileBtn').click(function () {
-        let pk = $(this).data('pk')
+        const pk = $(this).data('pk')
         console.log(`Confirm Delete: pk: ${pk}`)
         socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
         $('#deleteFileModal').modal('hide')
     })
 
-    // Set Password Hook Modal and Set Password handlers
-    const setPasswordHookModal = new bootstrap.Modal(
-        '#setFilePasswordModal',
-        {}
-    )
-
     $('.set-password-file-btn').click(function () {
-        pk = $(this).data('pk')
-        console.log(pk)
+        const pk = $(this).data('pk')
+        console.log(`Set File Password Button: ${pk}`)
         $('#confirm-set-password-hook-btn').data('pk', pk)
-        let passwordText = $(`#file-${pk}-dropdown`).find('.file-password-value').val()
-        $('#setFilePasswordModal').find('#password').val(passwordText)
-        setPasswordHookModal.show()
+        const setFilePasswordModal = $('#setFilePasswordModal')
+        // TODO: Use Actual Selectors
+        const passwordText = $(`#file-${pk}-dropdown`)
+            .find('.file-password-value')
+            .val()
+        // TODO: Use Actual Selectors
+        setFilePasswordModal.find('#password').val(passwordText)
+        setFilePasswordModal.show()
     })
 
     // Handle set password click confirmations
     $('#confirm-set-password-hook-btn').click(function (event) {
         event.preventDefault()
-        if ($('#confirm-set-password-hook-btn').hasClass('disabled')) {
-            return
-        }
+        // TODO: pk is not defined here
         let formData = new $('#set-password-form').serializeArray()
-        socket.send(JSON.stringify({ method: 'set-password-file', pk: pk, password: formData[0].value }))
+        socket.send(
+            JSON.stringify({
+                method: 'set-password-file',
+                pk: pk,
+                password: formData[0].value,
+            })
+        )
+        // TODO: Use Actual Selectors
         $(`#file-${pk}`).find('.file-password-value').val(formData[0].value)
     })
-
-    function handle_password_set(data) {
-        let message
-        let password_status_icon = $(`#file-${data.pk}`).find("#passwordStatus")
-        if (data.password) {
-            password_status_icon.show()
-            message = `Password set for ${data.file_name}`
-        } else {
-            password_status_icon.hide()
-            message = `Password unset for ${data.file_name}`
-        }
-        show_toast(message, 'success')
-        setPasswordHookModal.hide()
-    }
 
     $('.toggle-private-btn').click(function (event) {
         event.preventDefault()
         let pk = $(this).data('pk')
-        console.log(pk)
+        console.log(`Toggle Private Button: ${pk}`)
         socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
     })
 
-    function handle_private_toggle(data) {
-        let message
-        let dropdown_button_text = $(`#file-${data.pk}-dropdown`).find("#privateText")
-        let dropdown_button_icon = $(`#file-${data.pk}-dropdown`).find("#privateDropdownIcon")
-        let private_status_icon = $(`#file-${data.pk}`).find("#privateStatus")
-        if (data.private) {
-            message = `File ${data.file_name} set to private.`
-            private_status_icon.show()
-            dropdown_button_text.html('Make Public')
-            dropdown_button_icon.removeClass('fa-lock')
-            dropdown_button_icon.addClass('fa-lock-open')
-        } else {
-            message = `File ${data.file_name} set to public.`
-            private_status_icon.hide()
-            dropdown_button_text.html('Make Private')
-            dropdown_button_icon.removeClass('fa-lock-open')
-            dropdown_button_icon.addClass('fa-lock')
-        }
-        show_toast(message, 'success')
-    }
-
     $('#unMaskPassword').click(function () {
-        let password_field = $('#password').get(0)
-        if (password_field.type === 'password') {
-            password_field.type = 'text'
-        } else {
-            password_field.type = 'password'
-        }
+        const password = $('#password')
+        const type = password.type === 'password' ? 'text' : 'password'
+        password.prop('type', type)
     })
 
-    $('#copyPassword').click(function () {
-        let password_field = $('#password').get(0)
-        navigator.clipboard.writeText(password_field.value)
+    $('#copyPassword').click(async function () {
+        await navigator.clipboard.writeText($('#password').val())
         show_toast('Password copied!', 'info', '15000')
     })
 
-    $('#generatePassword').click(function () {
+    $('#generatePassword').click(async function () {
         // TODO: Cleanup this Listener
-        let chars = '0123456789abcdefghijklmnopqrstuvwxyz!+()ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        let pwordLength = 15;
-        let password = '';
+        const chars =
+            '0123456789abcdefghijklmnopqrstuvwxyz!+()ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        const pwordLength = 15
+        let password = ''
 
-        const array = new Uint32Array(chars.length);
-        window.crypto.getRandomValues(array);
+        const array = new Uint32Array(chars.length)
+        window.crypto.getRandomValues(array)
 
         for (let i = 0; i < pwordLength; i++) {
-        password += chars[array[i] % chars.length];
+            password += chars[array[i] % chars.length]
         }
-        $('#password').get(0).value = password
-        navigator.clipboard.writeText(password)
+        $('#password').val(password)
+        await navigator.clipboard.writeText(password)
         show_toast('Password generated and copied!', 'info', '15000')
     })
 
@@ -134,52 +98,92 @@ $(document).ready(function () {
         $('#password').focus()
     })
 
-
-
     $('.set-expr-btn').click(function () {
-        pk = $(this).data('pk')
+        const pk = $(this).data('pk')
         $('#confirmFileExprBtn').data('pk', pk)
+        // TODO: Use Actual Selectors
         let expireText = $(`#file-${pk}`).find('#expireText')
-        if (expireText.length > 0 ) {
+        let expireModal = $('#setFileExprModal')
+        if (expireText.length > 0) {
             let value = expireText.html()
-            if (value == 'Never') {
+            if (value === 'Never') {
                 value = ''
             }
-            $('#setFileExprModal').find('#expr').val(value)
+            // TODO: Use Actual Selectors
+            expireModal.find('#expr').val(value)
         }
-        $('#setFileExprModal').modal('show')
+        expireModal.modal('show')
     })
 
     $('#setFileExprModal').on('shown.bs.modal', function () {
-        console.log($('#expr'))
-        $('#expr').trigger("focus")
+        $('#expr').trigger('focus')
     })
 
-    $('#confirmExprFileBtn').click(function (event) {
+    $('#set-expr-form').submit(function (event) {
         event.preventDefault()
-        if ($('#confirmFileExprBtn').hasClass('disabled')) {
-            return
-        }
+        // TODO: pk is not defined here
         let formData = new $('#set-expr-form').serializeArray()
-        socket.send(JSON.stringify({ method: 'set-expr-file', pk: pk, expr: formData[0].value}))
+        socket.send(
+            JSON.stringify({
+                method: 'set-expr-file',
+                pk: pk,
+                expr: formData[0].value,
+            })
+        )
         $('#setFileExprModal').modal('hide')
     })
-
-    function handle_set_expiration(data) {
-        let message
-        let expire_status_icon = $(`#file-${data.pk}`).find("#expireStatus")
-        let expire_status_text = $(`#file-${data.pk}`).find("#expireText")
-        if (data.expr != "") {
-            expire_status_icon.show()
-            expire_status_icon.attr('title', `File Expires in ${data.expr}`)
-            expire_status_text.html(data.expr)
-            message = `Set expire for file ${data.file_name} to ${data.expr}`
-        } else {
-            expire_status_icon.hide()
-            message = `Cleared expire for file ${data.file_name}`
-            expire_status_text.html('Never')
-        }
-        show_toast(message, 'success')
-    }
-
 })
+
+function handle_password_set(data) {
+    // TODO: Use Actual Selectors
+    const password_status_icon = $(`#file-${data.pk}`).find('.passwordStatus')
+    if (data.password) {
+        password_status_icon.show()
+        show_toast(`Password set for ${data.file_name}`, 'success')
+    } else {
+        password_status_icon.hide()
+        show_toast(`Password unset for ${data.file_name}`, 'success')
+    }
+    $('#setFilePasswordModal').hide()
+}
+
+function handle_private_toggle(data) {
+    // TODO: Re-write this function and selectors
+    // TODO: Use Logical Names for Selectors
+    let someDropdown = $(`#file-${data.pk}-dropdown`)
+    let dropdown_button_text = someDropdown.find('.privateText')
+    let dropdown_button_icon = someDropdown.find('.privateDropdownIcon')
+    // TODO: Use Actual Selectors
+    let private_status_icon = $(`#file-${data.pk}`).find('#privateStatus')
+    if (data.private) {
+        show_toast(`File ${data.file_name} set to private.`, 'success')
+        private_status_icon.show()
+        dropdown_button_text.html('Make Public')
+        dropdown_button_icon.removeClass('fa-lock').addClass('fa-lock-open')
+    } else {
+        show_toast(`File ${data.file_name} set to public.`, 'success')
+        private_status_icon.hide()
+        dropdown_button_text.html('Make Private')
+        dropdown_button_icon.removeClass('fa-lock-open').addClass('fa-lock')
+    }
+}
+
+function handle_set_expiration(data) {
+    // TODO: Use Logical Names for Selectors
+    let someSelector = $(`#file-${data.pk}`)
+    let expire_status_icon = someSelector.find('#expireStatus')
+    let expire_status_text = someSelector.find('#expireText')
+    if (data.expr !== '') {
+        expire_status_icon.show()
+        expire_status_icon.attr('title', `File Expires in ${data.expr}`)
+        expire_status_text.html(data.expr)
+        show_toast(
+            `Set expire for file ${data.file_name} to ${data.expr}`,
+            'success'
+        )
+    } else {
+        expire_status_icon.hide()
+        expire_status_text.html('Never')
+        show_toast(`Cleared expire for file ${data.file_name}`, 'success')
+    }
+}

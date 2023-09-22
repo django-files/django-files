@@ -84,7 +84,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             <div class="col-lg-3 d-flex flex-column">
                 <div id="file-{{ file.id }}" class="card-body">
                     <h3 class="card-title">{{ file.name }}
-                        <span class="float-end mt-3">{% include 'include/file-context-menu.html' with file=file %}</span>
+                        <span class="float-end mt-3">{% include 'files/file-context-menu.html' with file=file %}</span>
                     </h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                     {% if file.meta.PILImageWidth %}
@@ -98,9 +98,9 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                             <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
                         {% endif %}
                         <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
-                        &nbsp;&nbsp;&nbsp;<i id="privateStatus" title="Private File" class="fa-solid fa-lock" {% if not file.private %} style="display: none"{% endif %}></i>
-                        &nbsp;&nbsp;&nbsp;<i id="passwordStatus" title="Password Protected File" class="fa-solid fa-key"{% if not file.password %} style="display: none"{% endif %}></i>
-                        &nbsp;&nbsp;&nbsp;<i id="expireStatus" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass" {% if not file.expr %} style="display: none"{% endif %}></i>
+                        <i id="privateStatus" class="ms-2" title="Private File" class="fa-solid fa-lock" {% if not file.private %} style="display: none"{% endif %}></i>
+                        <i id="passwordStatus" class="ms-2" title="Password Protected File" class="fa-solid fa-key"{% if not file.password %} style="display: none"{% endif %}></i>
+                        <i id="expireStatus" class="ms-2" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass" {% if not file.expr %} style="display: none"{% endif %}></i>
                     </p>
                     <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>
                     <p class="card-text">Uploaded {{ file.date }}</p>
@@ -130,9 +130,9 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             </div>
         </div>
     </div>
-    {% include 'include/delete-modal.html' %}
-    {% include 'include/set-password-modal.html' %}
-    {% include 'include/set-expr-modal.html' %}
+    {% include 'files/delete-modal.html' %}
+    {% include 'files/set-password-modal.html' %}
+    {% include 'files/set-expr-modal.html' %}
 {% endblock %}
 
 {% block tail %}

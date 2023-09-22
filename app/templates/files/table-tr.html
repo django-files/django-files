@@ -9,7 +9,7 @@
         <span class="d-none d-sm-inline">
             <a class="clip" role="button" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
                 <i class="fa-regular fa-clipboard text-white ms-2"></i></a></span>
-        <a class="link-body-emphasis lead" role="button" href="{{ file.preview_uri }}" >
+        <a class="link-body-emphasis" role="button" href="{{ file.preview_uri }}">
             {{ file.name }}</a></td>
 
     <td class="d-none d-sm-table-cell align-middle">
@@ -28,17 +28,17 @@
         <a class="clip link-body-emphasis text-decoration-none" role="button"
            data-clipboard-text="{{ file.date|localtime }}">{{ file.date|localtime }}</a></td>
 
-    <td class="d-none d-sm-table-cell align-middle"><i id="passwordStatus" class="fa-solid fa-key text-warning-emphasis"{% if not file.password %} style="display: none"{% endif %}></i></td>
-
-    <td class="d-none d-sm-table-cell align-middle"><i id="privateStatus" class="fa-solid fa-lock text-warning-emphasis"{% if not file.private %} style="display: none"{% endif %}></i></td>
+    <td class="d-none d-sm-table-cell align-middle">
+        <i class="fa-solid fa-key text-warning-emphasis passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i></td>
 
     <td class="d-none d-sm-table-cell align-middle">
-        <a class="clip link-body-emphasis text-decoration-none" role="button"
-           data-clipboard-text="{{ file.view }}">{{ file.view }}</a></td>
+        <i class="fa-solid fa-lock text-warning-emphasis privateStatus" {% if not file.private %}style="display: none"{% endif %}></i></td>
+
+    <td class="d-none d-sm-table-cell align-middle">
+        <a class="clip link-body-emphasis text-decoration-none" role="button" data-clipboard-text="{{ file.view }}">{{ file.view }}</a></td>
 
     <td class="text-center">
-        {% include 'include/file-context-menu.html' with file=file %}
+        {% include 'files/file-context-menu.html' with file=file %}
     </td>
 </tr>
-
 {% endif %}
