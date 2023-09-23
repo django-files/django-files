@@ -17,7 +17,7 @@
            data-clipboard-text="{{ file.get_size }}">{{ file.get_size }}</a></td>
 
     <td class="d-none d-md-table-cell align-middle">
-        <a id="expireText" class="clip link-body-emphasis text-decoration-none" role="button"
+        <a class="clip link-body-emphasis text-decoration-none expire-link" role="button"
            data-clipboard-text="{{ file.expr|default:'Never' }}">{{ file.expr|default:'Never' }}</a></td>
 
     <td class="d-none d-lg-table-cell align-middle">

@@ -19,18 +19,17 @@ $(document).ready(function () {
         $('#set-expr-form input[name=pk]').val(pk)
 
         // TODO: Use Actual Selectors
-        let expireText = $(`#file-${pk}`).find('#expireText')
+        let expire = $(`#file-${pk} .expire-link`).text()
+        console.log(`expire: ${expire}`)
+        $('#set-expr-form input[name=expr]').val(expire)
+        const expireText = expire === 'Never' ? '' : expire
+        console.log(`expireText: ${expireText}`)
         let expireModal = $('#setFileExprModal')
-        if (expireText.length > 0) {
-            let value = expireText.html()
-            if (value === 'Never') {
-                value = ''
-            }
-            // TODO: Use Actual Selectors
-            expireModal.find('#expr').val(value)
-        }
+        // TODO: This is wrong, fix selector
+        expireModal.find('#expr').val(expireText)
         expireModal.modal('show')
     })
+
     // Form Submit
     $('#set-expr-form').submit(function (event) {
         event.preventDefault()
