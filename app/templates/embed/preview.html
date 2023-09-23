@@ -133,7 +133,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
     {% include 'files/delete-modal.html' %}
     {% include 'files/set-password-modal.html' %}
     {% include 'files/set-expr-modal.html' %}
-    <table class="d-none">{% include 'files/table-tr.html' with file=file %}</table>
+    <table class="d-none">{% include 'files/table-tr.html' with nocontextmenu=True %}</table>
 {% endblock %}
 
 {% block tail %}
