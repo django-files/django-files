@@ -19,7 +19,7 @@ $(document).ready(function () {
         $('#set-expr-form input[name=pk]').val(pk)
 
         // TODO: Use Actual Selectors
-        let expire = $(`#file-${pk} .expire-link`).text()
+        const expire = $(`#file-${pk} .expire-link`).text()
         console.log(`expire: ${expire}`)
         $('#set-expr-form input[name=expr]').val(expire)
         const expireText = expire === 'Never' ? '' : expire
@@ -142,21 +142,22 @@ $(document).ready(function () {
 
 function handle_set_expiration(data) {
     // TODO: Use Logical Names for Selectors and Cleanup Function
-    console.log(`handle_set_expiration: data: ${data}`)
-    let someSelector = $(`#file-${data.pk}`)
-    let expire_status_icon = someSelector.find('#expireStatus')
-    let expire_status_text = someSelector.find('#expireText')
-    if (data.expr !== '') {
-        expire_status_icon.show()
-        expire_status_icon.attr('title', `File Expires in ${data.expr}`)
-        expire_status_text.html(data.expr)
+    console.log(`handle_set_expiration`)
+    console.log(data)
+    let expireLink = $(`#file-${data.pk} .expire-link`)
+    let expireIcon = $('#expire-status-icon')
+    if (data.expr) {
+        expireLink.text(data.expr)
+        expireIcon.show()
+        expireIcon.attr('title', `File Expires in ${data.expr}`)
         show_toast(
             `Set expire for file ${data.file_name} to ${data.expr}`,
             'success'
         )
     } else {
-        expire_status_icon.hide()
-        expire_status_text.html('Never')
+        expireLink.text('Never')
+        expireIcon.hide()
+        expireIcon.attr('title', 'No Expiration')
         show_toast(`Cleared expire for file ${data.file_name}`, 'success')
     }
 }
@@ -164,7 +165,8 @@ function handle_set_expiration(data) {
 // function handle_private_toggle(data) {
 //     // TODO: Re-write this function and selectors
 //     // TODO: Use Logical Names for Selectors
-//     console.log(`handle_private_toggle: data: ${data}`)
+//     console.log(`handle_private_toggle`)
+//     console.log(data)
 //     let someDropdown = $(`#file-${data.pk}-dropdown`)
 //     let dropdown_button_text = someDropdown.find('.privateText')
 //     let dropdown_button_icon = someDropdown.find('.privateDropdownIcon')
@@ -185,7 +187,8 @@ function handle_set_expiration(data) {
 //
 // function handle_password_set(data) {
 //     // TODO: Use Actual Selectors
-//     console.log(`handle_password_set: data: ${data}`)
+//     console.log(`handle_password_set`)
+//     console.log(data)
 //     $(`#file-${data.pk} .passwordStatus`).toggle()
 //     if (data.password) {
 //         show_toast(`Password set for ${data.file_name}`, 'success')
