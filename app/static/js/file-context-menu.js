@@ -17,17 +17,13 @@ $(document).ready(function () {
         const pk = $(this).parent().parent().data('pk')
         console.log(`.ctx-set-expire-btn: pk: ${pk}`)
         $('#set-expr-form input[name=pk]').val(pk)
-
-        // TODO: Use Actual Selectors
-        const expire = $(`#file-${pk} .expire-link`).text()
-        console.log(`expire: ${expire}`)
-        $('#set-expr-form input[name=expr]').val(expire)
-        const expireText = expire === 'Never' ? '' : expire
+        const expireText = $(`#file-${pk} .expire-link`).text()
         console.log(`expireText: ${expireText}`)
-        let expireModal = $('#setFileExprModal')
-        // TODO: This is wrong, fix selector
-        expireModal.find('#expr').val(expireText)
-        expireModal.modal('show')
+        $('#set-expr-form input[name=expr]').val(expireText)
+        const expireValue = expireText === 'Never' ? '' : expireText
+        console.log(`expireValue: ${expireValue}`)
+        $('#expr').val(expireValue)
+        $('#setFileExprModal').modal('show')
     })
 
     // Form Submit
@@ -141,23 +137,23 @@ $(document).ready(function () {
 })
 
 function handle_set_expiration(data) {
-    // TODO: Use Logical Names for Selectors and Cleanup Function
+    // TODO: Update Consumer to send all model data w/ 1:1 names
     console.log(`handle_set_expiration`)
     console.log(data)
-    let expireLink = $(`#file-${data.pk} .expire-link`)
-    let expireIcon = $('#expire-status-icon')
+    let expireTableText = $(`#file-${data.pk} .expire-link`)
+    let expirePreviewIcon = $('#expire-status-icon')
     if (data.expr) {
-        expireLink.text(data.expr)
-        expireIcon.show()
-        expireIcon.attr('title', `File Expires in ${data.expr}`)
+        expireTableText.text(data.expr)
+        expirePreviewIcon.show()
+        expirePreviewIcon.attr('title', `File Expires in ${data.expr}`)
         show_toast(
             `Set expire for file ${data.file_name} to ${data.expr}`,
             'success'
         )
     } else {
-        expireLink.text('Never')
-        expireIcon.hide()
-        expireIcon.attr('title', 'No Expiration')
+        expireTableText.text('Never')
+        expirePreviewIcon.hide()
+        expirePreviewIcon.attr('title', 'No Expiration')
         show_toast(`Cleared expire for file ${data.file_name}`, 'success')
     }
 }
