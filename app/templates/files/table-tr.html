@@ -38,7 +38,7 @@
         <a class="clip link-body-emphasis text-decoration-none" role="button" data-clipboard-text="{{ file.view }}">{{ file.view }}</a></td>
 
     <td class="text-center">
-        {% include 'files/file-context-menu.html' with file=file %}
+        {% if not nocontextmenu %}{% include 'files/file-context-menu.html' with nocontextmenu=True %}{% endif %}
     </td>
 </tr>
 {% endif %}
