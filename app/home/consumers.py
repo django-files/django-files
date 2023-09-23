@@ -3,7 +3,7 @@ import logging
 from asgiref.sync import async_to_sync
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-# from django.forms.models import model_to_dict
+from django.forms.models import model_to_dict
 from io import BytesIO
 from typing import Optional
 
@@ -162,14 +162,18 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('set_expr_file')
         log.debug('user_id: %s', user_id)
         log.debug('pk: %s', pk)
+        log.debug('expr: %s', expr)
+        log.debug('kwargs: %s', kwargs)
         if file := Files.objects.filter(pk=pk):
             if user_id and file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
             file[0].expr = expr or ""
             file[0].save()
             # return self._success('File Expire Updated.', **kwargs)
-            return {'expr': file[0].expr, 'event': 'set-expr-file', 'pk': file[0].id,
-                    'file_name': file[0].name}
+            response = model_to_dict(file[0], exclude=['file'])
+            response.update({'event': 'set-expr-file'})
+            log.debug('response: %s', response)
+            return response
         return self._error('File not found.', **kwargs)
 
     def set_password_file(self, *, user_id: int = None, pk: int = None, password: str = None, **kwargs) -> dict:

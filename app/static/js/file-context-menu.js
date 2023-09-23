@@ -140,21 +140,23 @@ function handle_set_expiration(data) {
     // TODO: Update Consumer to send all model data w/ 1:1 names
     console.log(`handle_set_expiration`)
     console.log(data)
-    let expireTableText = $(`#file-${data.pk} .expire-link`)
+    let expireTableText = $(`#file-${data.id} .expire-link`)
     let expirePreviewIcon = $('#expire-status-icon')
+    console.log(`data.expr: ${data.expr}`)
     if (data.expr) {
+        console.log(`Setting "#file-${data.id} .expire-link" to "${data.expr}"`)
         expireTableText.text(data.expr)
         expirePreviewIcon.show()
         expirePreviewIcon.attr('title', `File Expires in ${data.expr}`)
         show_toast(
-            `Set expire for file ${data.file_name} to ${data.expr}`,
+            `Set expire for file ${data.name} to ${data.expr}`,
             'success'
         )
     } else {
         expireTableText.text('Never')
         expirePreviewIcon.hide()
         expirePreviewIcon.attr('title', 'No Expiration')
-        show_toast(`Cleared expire for file ${data.file_name}`, 'success')
+        show_toast(`Cleared expire for file ${data.name}`, 'success')
     }
 }
 
