@@ -17,6 +17,7 @@ $(document).ready(function () {
         const pk = $(this).parent().parent().data('pk')
         console.log(`.ctx-set-expire-btn: pk: ${pk}`)
         $('#set-expr-form input[name=pk]').val(pk)
+
         // TODO: Use Actual Selectors
         let expireText = $(`#file-${pk}`).find('#expireText')
         let expireModal = $('#setFileExprModal')
@@ -198,8 +199,8 @@ function handle_set_expiration(data) {
 function objectifyForm(formArray) {
     //serialize data function
     let returnArray = {}
-    for (let i = 0; i < formArray.length; i++) {
-        returnArray[formArray[i]['name']] = formArray[i]['value']
+    for (const element of formArray) {
+        returnArray[element['name']] = element['value']
     }
     return returnArray
 }
