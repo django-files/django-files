@@ -1,11 +1,11 @@
 {% load home_tags %}
 
 <!-- TODO: ID's MUST be Unique -->
-<div id="ctx-menu-{{ file.pk }}" class="dropdown fileContextDropdown">
+<div id="ctx-menu-{{ file.pk }}" class="dropdown fileContextDropdown" data-pk="{{ file.pk }}">
     <button class="btn btn-outline-secondary file-context-dropdown my-0 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
         <i class="fa-solid fa-ellipsis-vertical"></i></button>
 
-    <ul class="dropdown-menu" id="file-{{ file.pk }}-dropdown">
+    <ul class="dropdown-menu" id="file-{{ file.pk }}-dropdown" data-pk="{{ file.pk }}">
 
         <li><a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
             <i class="fa-solid fa-link fa-fw me-2 link-info"></i>

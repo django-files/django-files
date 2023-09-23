@@ -12,11 +12,11 @@ $(document).ready(function () {
     })
 
     // EXPIRE
-    //
-    $('.ctx-set-expire-btn').click(function () {
-        const pk = $(this).data('pk')
+    // Context Menu Click
+    $('.ctx-set-expire-btn').click(function (event) {
+        const pk = $(this).parent().parent().data('pk')
         console.log(`.ctx-set-expire-btn: pk: ${pk}`)
-        $('#confirmFileExprBtn').data('pk', pk)
+        $('#set-expr-form input[name=pk]').val(pk)
         // TODO: Use Actual Selectors
         let expireText = $(`#file-${pk}`).find('#expireText')
         let expireModal = $('#setFileExprModal')
@@ -30,26 +30,24 @@ $(document).ready(function () {
         }
         expireModal.modal('show')
     })
+    // Form Submit
+    $('#set-expr-form').submit(function (event) {
+        event.preventDefault()
+        console.log('#set-expr-form.submit')
+        let data = objectifyForm($('#set-expr-form').serializeArray())
+        data.method = 'set-expr-file'
+        console.log(data)
+        let jsonData = JSON.stringify(data)
+        console.log(jsonData)
+        socket.send(jsonData)
+        $('#setFileExprModal').modal('hide')
+    })
+    // Extras
     $('#setFileExprModal').on('shown.bs.modal', function () {
         $('#expr').trigger('focus')
     })
-    $('#set-expr-form').submit(function (event) {
-        event.preventDefault()
-        // TODO: pk is not defined here
-        console.log(`#set-expr-form.submit: pk: ${pk}`)
-        let formData = new $('#set-expr-form').serializeArray()
-        socket.send(
-            JSON.stringify({
-                method: 'set-expr-file',
-                pk: pk,
-                expr: formData[0].value,
-            })
-        )
-        $('#setFileExprModal').modal('hide')
-    })
 
     // // PASSWORD
-    // //
     // // Set Password Context Menu Button
     // $('.ctx-set-password-btn').click(function () {
     //     const pk = $(this).data('pk')
@@ -126,7 +124,6 @@ $(document).ready(function () {
     // })
 
     // // DELETE
-    // //
     // // Delete File Context Menu Button
     // $('.ctx-delete-btn').click(function () {
     //     const pk = $(this).data('pk')
@@ -144,7 +141,7 @@ $(document).ready(function () {
 })
 
 function handle_set_expiration(data) {
-    // TODO: Use Logical Names for Selectors
+    // TODO: Use Logical Names for Selectors and Cleanup Function
     console.log(`handle_set_expiration: data: ${data}`)
     let someSelector = $(`#file-${data.pk}`)
     let expire_status_icon = someSelector.find('#expireStatus')
@@ -197,3 +194,12 @@ function handle_set_expiration(data) {
 //     }
 //     $('#setFilePasswordModal').hide()
 // }
+
+function objectifyForm(formArray) {
+    //serialize data function
+    let returnArray = {}
+    for (let i = 0; i < formArray.length; i++) {
+        returnArray[formArray[i]['name']] = formArray[i]['value']
+    }
+    return returnArray
+}
