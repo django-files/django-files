@@ -4,9 +4,9 @@ $(document).ready(function () {
         if (data.event === 'set-expr-file') {
             // Expire
             handle_set_expiration(data)
-            // } else if (data.event === 'toggle-private-file') {
-            //     // Private
-            //     handle_private_toggle(data)
+        } else if (data.event === 'toggle-private-file') {
+            // Private
+            handle_private_toggle(data)
             // } else if (data.event === 'set-password-file') {
             //     // Password
             //     handle_password_set(data)
@@ -19,7 +19,7 @@ $(document).ready(function () {
         const pk = $(this).parent().parent().data('pk')
         console.log(`.ctx-set-expire-btn: pk: ${pk}`)
         $('#set-expr-form input[name=pk]').val(pk)
-        const expireText = $(`#file-${pk} .expire-link`).text()
+        const expireText = $(`#file-${pk} .expire-value`).text()
         console.log(`expireText: ${expireText}`)
         $('#set-expr-form input[name=expr]').val(expireText)
         const expireValue = expireText === 'Never' ? '' : expireText
@@ -44,15 +44,14 @@ $(document).ready(function () {
         $('#expr').trigger('focus').select()
     })
 
-    // // ---------- PRIVATE ----------
-    //
-    // // Private - Misc
-    // $('.ctx-toggle-private-btn').click(function (event) {
-    //     event.preventDefault()
-    //     let pk = $(this).data('pk')
-    //     console.log(`.ctx-toggle-private-btn: pk: ${pk}`)
-    //     socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
-    // })
+    // ---------- PRIVATE ----------
+    // Private - Toggle Click
+    $('.ctx-toggle-private-btn').click(function (event) {
+        event.preventDefault()
+        let pk = $(this).data('pk')
+        console.log(`.ctx-toggle-private-btn: pk: ${pk}`)
+        socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
+    })
 
     // // ---------- PASSWORD ----------
     //
@@ -155,9 +154,9 @@ $(document).ready(function () {
 
 // Expire
 function handle_set_expiration(data) {
-    console.log(`handle_set_expiration`)
+    console.log('handle_set_expiration')
     console.log(data)
-    const expireTableText = $(`#file-${data.id} .expire-link`)
+    const expireTableText = $(`#file-${data.id} .expire-value`)
     const expirePreviewIcon = $('#expire-status-icon')
     console.log(`data.expr: ${data.expr}`)
     if (data.expr) {
@@ -172,36 +171,39 @@ function handle_set_expiration(data) {
     }
 }
 
-// // Private
-// function handle_private_toggle(data) {
-//     // TODO: Re-write this function and selectors
-//     // TODO: Use Logical Names for Selectors
-//     console.log(`handle_private_toggle`)
-//     console.log(data)
-//     let someDropdown = $(`#file-${data.pk}-dropdown`)
-//     let dropdown_button_text = someDropdown.find('.privateText')
-//     let dropdown_button_icon = someDropdown.find('.privateDropdownIcon')
-//     // TODO: Use Actual Selectors
-//     let private_status_icon = $(`#file-${data.pk}`).find('#privateStatus')
-//     if (data.private) {
-//         show_toast(`File ${data.file_name} set to private.`, 'success')
-//         private_status_icon.show()
-//         dropdown_button_text.html('Make Public')
-//         dropdown_button_icon.removeClass('fa-lock').addClass('fa-lock-open')
-//     } else {
-//         show_toast(`File ${data.file_name} set to public.`, 'success')
-//         private_status_icon.hide()
-//         dropdown_button_text.html('Make Private')
-//         dropdown_button_icon.removeClass('fa-lock-open').addClass('fa-lock')
-//     }
-// }
+// Private
+function handle_private_toggle(data) {
+    // TODO: Re-write this function and selectors
+    // TODO: Use Logical Names for Selectors
+    console.log('handle_private_toggle')
+    console.log(data)
+    const ctx_text = $(`#ctx-menu-${data.id} .privateText`)
+    const ctx_icon = $(`#ctx-menu-${data.id} .privateDropdownIcon`)
+    const table_icon = $(`#file-${data.id} .privateStatus`)
+    const preview_icon = $(`#privateStatus`)
+    if (data.private) {
+        console.log('Making PRIVATE')
+        table_icon.show()
+        preview_icon.show()
+        ctx_text.text('Make Public')
+        ctx_icon.removeClass('fa-lock').addClass('fa-lock-open')
+        show_toast(`File ${data.name} set to private.`, 'success')
+    } else {
+        console.log('Making PUBLIC')
+        table_icon.hide()
+        preview_icon.hide()
+        ctx_text.text('Make Private')
+        ctx_icon.removeClass('fa-lock-open').addClass('fa-lock')
+        show_toast(`File ${data.name} set to public.`, 'success')
+    }
+}
 
 // // Password
 // function handle_password_set(data) {
 //     // TODO: Use Actual Selectors
 //     console.log(`handle_password_set`)
 //     console.log(data)
-//     $(`#file-${data.pk} .passwordStatus`).toggle()
+//     $(`#file-${data.id} .passwordStatus`).toggle()
 //     if (data.password) {
 //         show_toast(`Password set for ${data.file_name}`, 'success')
 //     } else {

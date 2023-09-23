@@ -147,9 +147,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 return self._error('File owned by another user.', **kwargs)
             file[0].private = not file[0].private
             file[0].save()
-            # return self._success('File Expire Updated.', **kwargs)
-            return {'private': file[0].private, 'event': 'toggle-private-file', 'pk': file[0].id,
-                    'file_name': file[0].name}
+            response = model_to_dict(file[0], exclude=['file'])
+            response.update({'event': 'toggle-private-file'})
+            log.debug('response: %s', response)
+            return response
         return self._error('File not found.', **kwargs)
 
     def set_expr_file(self, *, user_id: int = None, pk: int = None, expr: str = None, **kwargs) -> dict:

@@ -1,11 +1,11 @@
 {% load home_tags %}
 
 <!-- TODO: ID's MUST be Unique -->
-<div id="ctx-menu-{{ file.pk }}" class="dropdown fileContextDropdown" data-pk="{{ file.pk }}">
+<div id="ctx-menu-{{ file.pk }}" data-pk="{{ file.pk }}" class="dropdown fileContextDropdown">
     <button class="btn btn-outline-secondary file-context-dropdown my-0 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
         <i class="fa-solid fa-ellipsis-vertical"></i></button>
 
-    <ul class="dropdown-menu" id="file-{{ file.pk }}-dropdown" data-pk="{{ file.pk }}">
+    <ul class="dropdown-menu" >
 
         <li><a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
             <i class="fa-solid fa-link fa-fw me-2 link-info"></i>
@@ -21,7 +21,6 @@
             <i class="fa-solid fa-download fa-fw me-2 link-info"></i>
             Download</a></li>
 
-        <!-- eventually this should probably not show on things like executables or non-viewable in a browser natively type files -->
         <li><a role="button" class="dropdown-item" href="{% url 'home:url-raw-redirect' file.file.name %}">
             <i class="fa-solid fa-eye fa-fw me-2"></i>
             View Raw</a></li>
@@ -33,10 +32,10 @@
                 <i class="fa-solid fa-hourglass fa-fw me-2"></i>
                 Set Expiration</a></li>
 
-{#            <li><a role="button" class="ctx-toggle-private-btn dropdown-item" data-pk="{{ file.pk }}" title="Toggle Private">#}
-{#                <i class="fa-solid fa-lock{% if not file.private %}-open{% endif %} fa-fw me-2 privateDropdownIcon"></i>#}
-{#                <span class="privateText">Make {% if file.private %}Public{% else %}Private{% endif %}</span></a></li>#}
-{##}
+            <li><a role="button" class="ctx-toggle-private-btn dropdown-item" data-pk="{{ file.pk }}" title="Toggle Private">
+                <i class="fa-solid fa-lock{% if file.private %}-open{% endif %} fa-fw me-2 privateDropdownIcon"></i>
+                <span class="privateText">Make {% if file.private %}Public{% else %}Private{% endif %}</span></a></li>
+
 {#            <li><a role="button" class="ctx-set-password-btn dropdown-item" data-pk="{{ file.pk }}" title="Set Password">#}
 {#                <i class="fas fa-key fa-fw me-2"></i>#}
 {#                Set Password</a></li>#}
