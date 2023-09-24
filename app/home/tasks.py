@@ -54,19 +54,20 @@ def app_startup():
 def version_check():
     if settings.DEBUG:
         return f'Skipping Version Check due to DEBUG: {settings.DEBUG}'
-    app_version = version.parse(os.environ['APP_VERSION'])
+    app_version = os.environ.get('APP_VERSION')
+    if not app_version:
+        return 'Skipping Version Check due to APP_VERSION not set!'
+    app_version = version.parse(app_version)
     log.debug('app_version: %s', app_version)
-    r = httpx.get(settings.VERSION_CHECK_URL, follow_redirects=True, timeout=10)
+    r = httpx.head(settings.VERSION_CHECK_URL, follow_redirects=True, timeout=10)
     r.raise_for_status()
     latest_version = version.parse(os.path.basename(r.url.path))
-    log.debug('latest_version: %s', latest_version)
-    if latest_version > app_version:
-        log.info('New Release Available: %s', latest_version)
-        cache.set('latest_version', latest_version.public, 12 * 60 * 60)
-        log.debug('SETTING CACHE -> latest_version: %s', latest_version.public)
-    else:
-        cache.delete('update_available')
-    return f'Current: ${app_version} - Latest: {latest_version}'
+    site_settings = SiteSettings.objects.settings()
+    if site_settings.latest_version != str(latest_version):
+        site_settings.latest_version = str(latest_version)
+        site_settings.save()
+        return f'Version Updated: {latest_version}'
+    return 'No New Versions Found.'
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 300})

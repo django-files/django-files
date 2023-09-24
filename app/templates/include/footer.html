@@ -15,13 +15,13 @@
                     <a class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover"
                        href="https://github.com/django-files/django-files/releases/tag/{{ latest_version }}" target="_blank" rel="noopener">
                     <i class="fab fa-github"></i> Django Files</a>
-                    {% if latest_version %}
-                    <span class="d-inline-block text-success" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus"
-                          data-bs-title="Update Available" data-bs-content="Version: {{ latest_version }}">
-                        v{{ 'APP_VERSION'|get_config }} <i class="fa-solid fa-turn-up" ></i>
-                    </span>
+                    {% if request.user.is_authenticated and site_settings.update_available %}
+                        <a class="d-inline-block link-warning text-decoration-none" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus"
+                           data-bs-title="Update Available" data-bs-content="Version: v{{ site_settings.latest_version }}"
+                           href="https://github.com/django-files/django-files/releases/latest" target="_blank">
+                            v{{ 'APP_VERSION'|get_config }} <i class="fa-solid fa-turn-up" ></i></a>
                     {% else %}
-                        <span class="text-body-secondary">v{{ 'APP_VERSION'|get_config }}</span>
+                        <span class="text-success-emphasis">v{{ 'APP_VERSION'|get_config }}</span>
                     {% endif %}
                 </p>
             </div>

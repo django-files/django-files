@@ -127,10 +127,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'home.tasks.app_cleanup',
         'schedule': datetime.timedelta(hours=config('APP_CLEANUP_HOUR', 1, int)),
     },
-    # 'version_check': {
-    #     'task': 'home.tasks.version_check',
-    #     'schedule': datetime.timedelta(hours=config('VERSION_CHECK_HOUR', 1, int)),
-    # },
+    'version_check': {
+        'task': 'home.tasks.version_check',
+        'schedule': datetime.timedelta(hours=config('VERSION_CHECK_HOUR', 4, int)),
+    },
     'delete_expired_files': {
         'task': 'home.tasks.delete_expired_files',
         'schedule': datetime.timedelta(minutes=config('DELETE_EXPIRED_MIN', 15, int)),
