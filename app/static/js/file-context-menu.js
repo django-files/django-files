@@ -2,18 +2,7 @@ $(document).ready(function () {
     // ---------- EXPIRE ----------
 
     // Expire - Context Menu Click
-    $('.ctx-set-expire-btn').click(function () {
-        const pk = $(this).parent().parent().parent().data('pk')
-        console.log(`.ctx-set-expire-btn: pk: ${pk}`)
-        $('#set-expr-form input[name=pk]').val(pk)
-        const expireText = $(`#file-${pk} .expire-value`).text()
-        console.log(`expireText: ${expireText}`)
-        $('#set-expr-form input[name=expr]').val(expireText)
-        const expireValue = expireText === 'Never' ? '' : expireText
-        console.log(`expireValue: ${expireValue}`)
-        $('#expr').val(expireValue)
-        $('#setFileExprModal').modal('show')
-    })
+    $('.ctx-set-expire-btn').click(setExpireClick)
 
     // Expire - Form Submit
     $('#set-expr-form').submit(function (event) {
@@ -34,28 +23,12 @@ $(document).ready(function () {
     // ---------- PRIVATE ----------
 
     // Private - Toggle Click
-    $('.ctx-toggle-private-btn').click(function (event) {
-        const pk = $(this).parent().parent().parent().data('pk')
-        console.log(`.ctx-toggle-private-btn: pk: ${pk}`)
-        socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
-    })
+    $('.ctx-toggle-private-btn').click(togglePrivateClick)
 
     // ---------- PASSWORD ----------
 
     // Password - Set Password Context Menu Button
-    $('.ctx-set-password-btn').click(function () {
-        const pk = $(this).parent().parent().parent().data('pk')
-        console.log(`.ctx-set-password-btn: pk: ${pk}`)
-        $('#setFilePasswordModal input[name=pk]').val(pk)
-        const currentPassInput = $(
-            `#ctx-menu-${pk} input[name=current-file-password]`
-        )
-        console.log(`currentInput: ${currentPassInput}`)
-        const passwordText = currentPassInput.val()
-        console.log(`passwordText: ${passwordText}`)
-        $('#password').val(passwordText)
-        $('#setFilePasswordModal').modal('show')
-    })
+    $('.ctx-set-password-btn').click(setPasswordClick)
 
     // TODO: Review and Cleanup all other Password handlers
 
