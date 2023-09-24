@@ -20,4 +20,7 @@ class DiscordWebhooksAdmin(admin.ModelAdmin):
 class SiteSettingsAdmin(admin.ModelAdmin):
     model = SiteSettings
     list_display = ('id', 'site_url', 'oauth_reg', 'duo_auth',)
-    readonly_fields = ('id',)
+    exclude = ('latest_version', 'id',)
+
+    def has_add_permission(self, request, obj=None):
+        return False

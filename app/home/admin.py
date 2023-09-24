@@ -33,6 +33,9 @@ class FileStatsAdmin(admin.ModelAdmin):
     def view_user(self, obj):
         return obj.user
 
+    def has_add_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(ShortURLs)
 class ShortURLsAdmin(admin.ModelAdmin):
