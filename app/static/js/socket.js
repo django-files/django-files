@@ -24,9 +24,11 @@ function wsConnect() {
         console.log(`socket.onclose: ${event.code}`)
         console.log(event)
         if (![1000, 1001].includes(event.code)) {
-            console.log('Unclean Close, Showing Socket Warnings')
-            $('#socket-warning').removeClass('d-none')
-            $('#disconnected-toast').toast('show')
+            setTimeout(function () {
+                console.log('Unclean Close, Showing Socket Warnings')
+                $('#socket-warning').removeClass('d-none')
+                $('#disconnected-toast').toast('show')
+            }, 2 * 1000)
         }
         setTimeout(function () {
             wsConnect()
