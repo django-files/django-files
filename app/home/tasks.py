@@ -55,19 +55,30 @@ def version_check():
     if settings.DEBUG:
         return f'Skipping Version Check due to DEBUG: {settings.DEBUG}'
     app_version = os.environ.get('APP_VERSION')
-    if not app_version:
-        return 'Skipping Version Check due to APP_VERSION not set!'
+    if not app_version or app_version in ['DEV', 'latest']:
+        return 'Skipping Version Check due to APP_VERSION not set or invalid.'
     app_version = version.parse(app_version)
-    log.debug('app_version: %s', app_version)
-    r = httpx.head(settings.VERSION_CHECK_URL, follow_redirects=True, timeout=10)
-    r.raise_for_status()
-    latest_version = version.parse(os.path.basename(r.url.path))
+    log.info('app_version: %s', app_version)
+    r = httpx.head(settings.VERSION_CHECK_URL, timeout=10)
+    if r.status_code != 302:
+        return 'Error: Version Check URL Response did not return a 302.'
+    log.info('location: %s', r.headers['location'])
+    latest_version = version.parse(os.path.basename(r.headers['location']))
+    log.info('latest_version: %s', latest_version)
     site_settings = SiteSettings.objects.settings()
-    if site_settings.latest_version != str(latest_version):
-        site_settings.latest_version = str(latest_version)
-        site_settings.save()
-        return f'Version Updated: {latest_version}'
-    return 'No New Versions Found.'
+    log.info('site_settings.latest_version: %s', site_settings.latest_version)
+    if latest_version > app_version:
+        if str(latest_version) != site_settings.latest_version:
+            site_settings.latest_version = str(latest_version)
+            site_settings.save()
+            return f'New Update Found. Setting version to: {latest_version}'
+        return f'New Update already set. latest_version: {latest_version}'
+    else:
+        if site_settings.latest_version:
+            site_settings.latest_version = ''
+            site_settings.save()
+            return f'App Updated. Clearing latest_version: {latest_version}'
+        return f'No Update Available. Current Version: {app_version}'
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 300})

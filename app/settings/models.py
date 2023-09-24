@@ -1,6 +1,4 @@
-import os
 from django.db import models
-from packaging import version
 
 from home.util.rand import rand_color_hex
 from settings.managers import SiteSettingsManager
@@ -24,18 +22,18 @@ class SiteSettings(models.Model):
     duo_auth = models.BooleanField(default=False, verbose_name='Duo AUth',
                                    help_text='Require Duo Authentication')
     oauth_redirect_url = models.URLField(max_length=128, blank=True, null=True)
-    discord_client_id = models.CharField(max_length=32, default='')
-    discord_client_secret = models.CharField(max_length=128, default='')
-    github_client_id = models.CharField(max_length=32, default='')
-    github_client_secret = models.CharField(max_length=128, default='')
-    s3_region = models.CharField(max_length=16, default='')
-    s3_secret_key = models.CharField(max_length=128, default='')
-    s3_secret_key_id = models.CharField(max_length=128, default='')
+    discord_client_id = models.CharField(max_length=32, blank=True, default='')
+    discord_client_secret = models.CharField(max_length=128, blank=True, default='')
+    github_client_id = models.CharField(max_length=32, blank=True, default='')
+    github_client_secret = models.CharField(max_length=128, blank=True, default='')
+    s3_region = models.CharField(max_length=16, blank=True, default='')
+    s3_secret_key = models.CharField(max_length=128, blank=True, default='')
+    s3_secret_key_id = models.CharField(max_length=128, blank=True, default='')
     # TODO: we should gate actually saving this fields on verifying we can list bucket with the credentials
-    s3_bucket_name = models.CharField(max_length=128, default='')
-    s3_cdn = models.CharField(max_length=128, default='',
+    s3_bucket_name = models.CharField(max_length=128, blank=True, default='')
+    s3_cdn = models.CharField(max_length=128, blank=True, default='',
                               help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.')
-    latest_version = models.CharField(max_length=32, default='0.0.0')
+    latest_version = models.CharField(max_length=32, blank=True, default='0.0.0')
     objects = SiteSettingsManager()
 
     def __str__(self):
@@ -49,13 +47,3 @@ class SiteSettings(models.Model):
         if self.__class__.objects.count():
             self.pk = self.__class__.objects.first().pk
         super().save(*args, **kwargs)
-
-    def update_available(self, latest_version=None):
-        try:
-            app_version = version.parse(os.environ.get('APP_VERSION'))
-            latest_version = version.parse(latest_version or self.latest_version)
-            if latest_version > app_version:
-                return True
-            return False
-        except version.InvalidVersion:
-            return False
