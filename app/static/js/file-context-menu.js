@@ -17,7 +17,7 @@ $(document).ready(function () {
 
     // Expire - Context Menu Click
     $('.ctx-set-expire-btn').click(function () {
-        const pk = $(this).parent().parent().data('pk')
+        const pk = $(this).parent().parent().parent().data('pk')
         console.log(`.ctx-set-expire-btn: pk: ${pk}`)
         $('#set-expr-form input[name=pk]').val(pk)
         const expireText = $(`#file-${pk} .expire-value`).text()
@@ -49,8 +49,7 @@ $(document).ready(function () {
 
     // Private - Toggle Click
     $('.ctx-toggle-private-btn').click(function (event) {
-        event.preventDefault()
-        let pk = $(this).data('pk')
+        const pk = $(this).parent().parent().parent().data('pk')
         console.log(`.ctx-toggle-private-btn: pk: ${pk}`)
         socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
     })
@@ -59,7 +58,7 @@ $(document).ready(function () {
 
     // Password - Set Password Context Menu Button
     $('.ctx-set-password-btn').click(function () {
-        const pk = $(this).data('pk')
+        const pk = $(this).parent().parent().parent().data('pk')
         console.log(`.ctx-set-password-btn: pk: ${pk}`)
         $('#setFilePasswordModal input[name=pk]').val(pk)
         const currentPassInput = $(
@@ -91,9 +90,10 @@ $(document).ready(function () {
 
     // Password - Misc
     $('#unMaskPassword').click(function () {
+        // TODO: This needs a cookie to work properly
         const password = $('#password')
-        console.log(`#unMaskPassword: password: ${password}`)
-        const type = password.type === 'password' ? 'text' : 'password'
+        const type = password[0].type === 'password' ? 'text' : 'password'
+        console.log(`type: ${type}`)
         password.prop('type', type)
     })
 
