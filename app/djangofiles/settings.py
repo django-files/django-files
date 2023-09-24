@@ -129,7 +129,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     'version_check': {
         'task': 'home.tasks.version_check',
-        'schedule': datetime.timedelta(hours=config('VERSION_CHECK_HOUR', 4, int)),
+        'schedule': datetime.timedelta(hours=config('VERSION_CHECK_HOUR', 8, int)),
     },
     'delete_expired_files': {
         'task': 'home.tasks.delete_expired_files',
