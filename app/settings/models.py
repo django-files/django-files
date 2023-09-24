@@ -33,15 +33,18 @@ class SiteSettings(models.Model):
     s3_bucket_name = models.CharField(max_length=128, blank=True, default='')
     s3_cdn = models.CharField(max_length=128, blank=True, default='',
                               help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.')
-    latest_version = models.CharField(max_length=32, blank=True, default='0.0.0')
+    latest_version = models.CharField(max_length=32, blank=True, default='')
     objects = SiteSettingsManager()
 
     def __str__(self):
+        return self.site_url
+
+    def __repr__(self):
         return f'<SiteSettings(site_url={self.site_url})>'
 
     class Meta:
-        verbose_name = 'Setting'
-        verbose_name_plural = 'Settings'
+        verbose_name = 'Site Setting'
+        verbose_name_plural = 'Site Settings'
 
     def save(self, *args, **kwargs):
         if self.__class__.objects.count():
