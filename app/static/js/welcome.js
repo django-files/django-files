@@ -5,8 +5,8 @@ $(document).ready(function () {
 
     // Welcome Form Handler
     $('#welcomeForm').on('submit', function (event) {
-        console.log('saveCredentials on click function')
         event.preventDefault()
+        console.log('#welcomeForm.submit')
         let form = $(this)
         // let welcomeForm = $('#welcomeForm')
         let formData = new FormData(form[0])

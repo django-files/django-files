@@ -12,6 +12,7 @@ $(document).ready(function () {
     } catch (error) {
         console.log('#deleteDiscordHookModal Not Found')
     }
+    // TODO: Use a proper selector and NOT a hookID scoped variable
     let hookID
     $('.deleteDiscordHookBtn').click(function () {
         hookID = $(this).data('hook-id')

@@ -4,8 +4,8 @@ $(document).ready(function () {
 
     // Handle Shorts FORM Submit
     $('#shortsForm').on('submit', function (event) {
-        console.log('#shortsForm on submit function')
         event.preventDefault()
+        console.log('#shortsForm.submit')
         let form = $(this)
         console.log(form)
         // TODO: Simplify JSON Creation...

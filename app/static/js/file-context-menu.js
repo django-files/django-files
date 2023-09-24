@@ -52,13 +52,12 @@ $(document).ready(function () {
         // TODO: This needs a cookie to work properly
         const password = $('#password')
         const type = password[0].type === 'password' ? 'text' : 'password'
-        console.log(`type: ${type}`)
         password.prop('type', type)
     })
 
     // Password - Misc
-    // TODO: Why do we need a custom function for this vs clipboardjs
     $('#copyPassword').click(async function () {
+        // TODO: Use clipboardjs vs a custom function
         await navigator.clipboard.writeText($('#password').val())
         show_toast('Password copied!', 'info', '15000')
     })
@@ -66,7 +65,6 @@ $(document).ready(function () {
     // Password - Misc
     $('#generatePassword').click(async function () {
         // TODO: Cleanup this Listener
-        console.log('#generatePassword.click')
         const chars =
             '0123456789abcdefghijklmnopqrstuvwxyz!+()ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         const pwordLength = 15
@@ -96,7 +94,7 @@ $(document).ready(function () {
     // Delete -  Delete File Confirm Button
     $('#confirmDeleteFileBtn').click(function () {
         const pk = $(this).data('pk')
-        console.log(`#confirmDeleteFileBtn: pk: ${pk}`)
+        console.log(`#confirmDeleteFileBtn.click: pk: ${pk}`)
         socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
         if (window.location.pathname.startsWith('/u/')) {
             window.location.replace('/#files')
@@ -126,14 +124,13 @@ $(document).ready(function () {
 
 function handle_set_expiration(data) {
     // Expire Socket Handler
+    // TODO: title does not seem to live update using .attr method
     console.log('handle_set_expiration')
     console.log(data)
     const expireTableText = $(`#file-${data.id} .expire-value`)
     const expirePreviewIcon = $('#expire-status-icon')
-    console.log(`data.expr: ${data.expr}`)
     if (data.expr) {
         expireTableText.text(data.expr)
-        // TODO: title does not seem to live update using .attr method
         expirePreviewIcon.attr('title', `File Expires in ${data.expr}`).show()
         show_toast(`${data.name} - Expire set to: ${data.expr}`, 'success')
     } else {
@@ -145,8 +142,6 @@ function handle_set_expiration(data) {
 
 function handle_private_toggle(data) {
     // Private Socket Handler
-    // TODO: Re-write this function and selectors
-    // TODO: Use Logical Names for Selectors
     console.log('handle_private_toggle')
     console.log(data)
     const ctx_text = $(`#ctx-menu-${data.id} .privateText`)
@@ -174,7 +169,6 @@ function handle_password_set(data) {
     // Password Socket Handler
     console.log(`handle_password_set`)
     console.log(data)
-    // $(`#file-${data.id} .passwordStatus`).toggle()
     const table_icon = $(`#file-${data.id} .passwordStatus`)
     const preview_icon = $(`#passwordStatus`)
     console.log(table_icon)

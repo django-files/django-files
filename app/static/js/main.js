@@ -68,6 +68,7 @@ $(document).ready(function () {
 
 // Generate a BS toast and show it
 function show_toast(message, bsClass = 'info', delay = '5000') {
+    // TODO: Re-write this function!!!
     let toastContainer = $('.toast-container')
     let toast = $(
         '<div class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="' +
