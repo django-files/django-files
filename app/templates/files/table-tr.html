@@ -28,8 +28,8 @@
         <a class="clip link-body-emphasis text-decoration-none expire-value" role="button"
            data-clipboard-text="{{ file.expr|default:'Never' }}">{{ file.expr|default:'Never' }}</a></td>
 
-{#    <td class="d-none d-sm-table-cell align-middle"> <!-- {{ file.password }} -->#}
-{#        <i class="fa-solid fa-key text-warning-emphasis passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i></td>#}
+    <td class="d-none d-sm-table-cell align-middle"> <!-- {{ file.password }} -->
+        <i class="fa-solid fa-key text-warning-emphasis passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i></td>
 
     <td class="d-none d-sm-table-cell align-middle">
         <i class="fa-solid fa-lock text-warning-emphasis privateStatus" {% if not file.private %}style="display: none"{% endif %}></i></td>

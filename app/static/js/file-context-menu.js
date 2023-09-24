@@ -7,13 +7,14 @@ $(document).ready(function () {
         } else if (data.event === 'toggle-private-file') {
             // Private
             handle_private_toggle(data)
-            // } else if (data.event === 'set-password-file') {
-            //     // Password
-            //     handle_password_set(data)
+        } else if (data.event === 'set-password-file') {
+            // Password
+            handle_password_set(data)
         }
     })
 
     // ---------- EXPIRE ----------
+
     // Expire - Context Menu Click
     $('.ctx-set-expire-btn').click(function () {
         const pk = $(this).parent().parent().data('pk')
@@ -45,6 +46,7 @@ $(document).ready(function () {
     })
 
     // ---------- PRIVATE ----------
+
     // Private - Toggle Click
     $('.ctx-toggle-private-btn').click(function (event) {
         event.preventDefault()
@@ -53,85 +55,79 @@ $(document).ready(function () {
         socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
     })
 
-    // // ---------- PASSWORD ----------
-    //
-    // // Password - Set Password Context Menu Button
-    // $('.ctx-set-password-btn').click(function () {
-    //     const pk = $(this).data('pk')
-    //     console.log(`.ctx-set-password-btn: pk: ${pk}`)
-    //     $('#setFilePasswordModal input[name=pk]').val(pk)
-    //     const setFilePasswordModal = new bootstrap.Modal(
-    //         '#setFilePasswordModal'
-    //     )
-    //     // const setFilePasswordModal = $('#setFilePasswordModal')
-    //     // TODO: Use Actual Selectors
-    //     const currentPassInput = $(
-    //         `#ctx-menu-${pk} input[name=current-password]`
-    //     )
-    //     console.log(`currentInput: ${currentPassInput}`)
-    //     const passwordText = currentPassInput.val()
-    //     console.log(`passwordText: ${passwordText}`)
-    //     $('#password').val(passwordText)
-    //     setFilePasswordModal.show()
-    // })
-    //
-    // // Password - Set Password Form Submission
-    // $('#set-password-form').submit(function (event) {
-    //     event.preventDefault()
-    //     // TODO: pk is not defined here
-    //     const pk = $(this).data('pk')
-    //     console.log(`#set-password-form.submit: pk: ${pk}`)
-    //     let formData = new $('#set-password-form').serializeArray()
-    //     socket.send(
-    //         JSON.stringify({
-    //             method: 'set-password-file',
-    //             pk: pk,
-    //             password: formData[0].value,
-    //         })
-    //     )
-    //     // TODO: Use Actual Selectors
-    //     $(`#file-${pk}`).find('.file-password-value').val(formData[0].value)
-    // })
-    //
-    // // Password - Misc
-    // $('#unMaskPassword').click(function () {
-    //     const password = $('#password')
-    //     console.log(`#unMaskPassword: password: ${password}`)
-    //     const type = password.type === 'password' ? 'text' : 'password'
-    //     password.prop('type', type)
-    // })
-    //
-    // // Password - Misc
-    // // TODO: Why do we need a custom function for this vs clipboardjs
-    // $('#copyPassword').click(async function () {
-    //     await navigator.clipboard.writeText($('#password').val())
-    //     show_toast('Password copied!', 'info', '15000')
-    // })
-    //
-    // // Password - Misc
-    // $('#generatePassword').click(async function () {
-    //     // TODO: Cleanup this Listener
-    //     console.log('#generatePassword.click')
-    //     const chars =
-    //         '0123456789abcdefghijklmnopqrstuvwxyz!+()ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    //     const pwordLength = 15
-    //     let password = ''
-    //
-    //     const array = new Uint32Array(chars.length)
-    //     window.crypto.getRandomValues(array)
-    //
-    //     for (let i = 0; i < pwordLength; i++) {
-    //         password += chars[array[i] % chars.length]
-    //     }
-    //     $('#password').val(password)
-    //     await navigator.clipboard.writeText(password)
-    //     show_toast('Password generated and copied!', 'info', '15000')
-    // })
-    //
-    // // Password - Misc
-    // $('#setFilePasswordModal').on('shown.bs.modal', function () {
-    //     $('#password').focus()
-    // })
+    // ---------- PASSWORD ----------
+
+    // Password - Set Password Context Menu Button
+    $('.ctx-set-password-btn').click(function () {
+        const pk = $(this).data('pk')
+        console.log(`.ctx-set-password-btn: pk: ${pk}`)
+        $('#setFilePasswordModal input[name=pk]').val(pk)
+        const currentPassInput = $(
+            `#ctx-menu-${pk} input[name=current-file-password]`
+        )
+        console.log(`currentInput: ${currentPassInput}`)
+        const passwordText = currentPassInput.val()
+        console.log(`passwordText: ${passwordText}`)
+        $('#password').val(passwordText)
+        $('#setFilePasswordModal').modal('show')
+    })
+
+    // TODO: Review and Cleanup all other Password handlers
+
+    // Password - Set Password Form Submission
+    $('#set-password-form').submit(function (event) {
+        event.preventDefault()
+        console.log('#set-password-form.submit')
+        const data = objectifyForm($(this).serializeArray())
+        console.log(`data.password: ${data.password}`)
+        data.method = 'set-password-file'
+        console.log(data)
+        socket.send(JSON.stringify(data))
+        $(`#ctx-menu-${data.pk} input[name=current-file-password]`).val(
+            data.password
+        )
+        $('#setFilePasswordModal').modal('hide')
+    })
+
+    // Password - Misc
+    $('#unMaskPassword').click(function () {
+        const password = $('#password')
+        console.log(`#unMaskPassword: password: ${password}`)
+        const type = password.type === 'password' ? 'text' : 'password'
+        password.prop('type', type)
+    })
+
+    // Password - Misc
+    // TODO: Why do we need a custom function for this vs clipboardjs
+    $('#copyPassword').click(async function () {
+        await navigator.clipboard.writeText($('#password').val())
+        show_toast('Password copied!', 'info', '15000')
+    })
+
+    // Password - Misc
+    $('#generatePassword').click(async function () {
+        // TODO: Cleanup this Listener
+        console.log('#generatePassword.click')
+        const chars =
+            '0123456789abcdefghijklmnopqrstuvwxyz!+()ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        const pwordLength = 15
+        let password = ''
+
+        const array = new Uint32Array(chars.length)
+        window.crypto.getRandomValues(array)
+
+        for (let i = 0; i < pwordLength; i++) {
+            password += chars[array[i] % chars.length]
+        }
+        $('#password').val(password)
+        await navigator.clipboard.writeText(password)
+        show_toast('Password generated and copied!', 'info', '15000')
+    })
+
+    // Password - Misc
+    $('#setFilePasswordModal').on('shown.bs.modal', function () {
+        $('#password').focus().select()
+    })
 
     // ---------- DELETE ----------
 
@@ -193,19 +189,22 @@ function handle_private_toggle(data) {
     }
 }
 
-// // Password Socket Handler
-// function handle_password_set(data) {
-//     // TODO: Use Actual Selectors
-//     console.log(`handle_password_set`)
-//     console.log(data)
-//     $(`#file-${data.id} .passwordStatus`).toggle()
-//     if (data.password) {
-//         show_toast(`Password set for ${data.file_name}`, 'success')
-//     } else {
-//         show_toast(`Password unset for ${data.file_name}`, 'success')
-//     }
-//     $('#setFilePasswordModal').hide()
-// }
+// Password Socket Handler
+function handle_password_set(data) {
+    console.log(`handle_password_set`)
+    console.log(data)
+    // $(`#file-${data.id} .passwordStatus`).toggle()
+    const table_icon = $(`#file-${data.id} .passwordStatus`)
+    console.log(table_icon)
+    if (data.password) {
+        table_icon.show()
+        show_toast(`Password set for ${data.name}`, 'success')
+    } else {
+        table_icon.hide()
+        show_toast(`Password unset for ${data.name}`, 'success')
+    }
+    $('#setFilePasswordModal').modal('hide')
+}
 
 // Extras
 

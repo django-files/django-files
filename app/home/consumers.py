@@ -70,7 +70,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error('No Method Provided!')
         response = await database_sync_to_async(method)(**data)
         log.debug(response)
-        return response or {}
+        return response
 
     @staticmethod
     def _error(message, **kwargs) -> dict:
@@ -190,10 +190,11 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if file := Files.objects.filter(pk=pk):
             if user_id and file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
-            print(password)
+            log.debug('password: %s', password)
             file[0].password = password or ""
             file[0].save()
-            # return self._success('File Expire Updated.', **kwargs)
-            return {'password': bool(file[0].password), 'event': 'set-password-file', 'pk': file[0].id,
-                    'file_name': file[0].name}
+            response = model_to_dict(file[0], exclude=['file'])
+            response.update({'event': 'set-password-file'})
+            log.debug('response: %s', response)
+            return response
         return self._error('File not found.', **kwargs)
