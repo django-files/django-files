@@ -143,8 +143,10 @@ $(document).ready(function () {
     })
 })
 
-// Expire Socket Handler
+// Socket Handlers
+
 function handle_set_expiration(data) {
+    // Expire Socket Handler
     console.log('handle_set_expiration')
     console.log(data)
     const expireTableText = $(`#file-${data.id} .expire-value`)
@@ -162,8 +164,8 @@ function handle_set_expiration(data) {
     }
 }
 
-// Private Socket Handler
 function handle_private_toggle(data) {
+    // Private Socket Handler
     // TODO: Re-write this function and selectors
     // TODO: Use Logical Names for Selectors
     console.log('handle_private_toggle')
@@ -189,18 +191,21 @@ function handle_private_toggle(data) {
     }
 }
 
-// Password Socket Handler
 function handle_password_set(data) {
+    // Password Socket Handler
     console.log(`handle_password_set`)
     console.log(data)
     // $(`#file-${data.id} .passwordStatus`).toggle()
     const table_icon = $(`#file-${data.id} .passwordStatus`)
+    const preview_icon = $(`#passwordStatus`)
     console.log(table_icon)
     if (data.password) {
         table_icon.show()
+        preview_icon.show()
         show_toast(`Password set for ${data.name}`, 'success')
     } else {
         table_icon.hide()
+        preview_icon.hide()
         show_toast(`Password unset for ${data.name}`, 'success')
     }
     $('#setFilePasswordModal').modal('hide')
