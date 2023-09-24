@@ -1,18 +1,4 @@
 $(document).ready(function () {
-    socket.addEventListener('message', function (event) {
-        const data = JSON.parse(event.data)
-        if (data.event === 'set-expr-file') {
-            // Expire
-            handle_set_expiration(data)
-        } else if (data.event === 'toggle-private-file') {
-            // Private
-            handle_private_toggle(data)
-        } else if (data.event === 'set-password-file') {
-            // Password
-            handle_password_set(data)
-        }
-    })
-
     // ---------- EXPIRE ----------
 
     // Expire - Context Menu Click
@@ -139,7 +125,27 @@ $(document).ready(function () {
         const pk = $(this).data('pk')
         console.log(`#confirmDeleteFileBtn: pk: ${pk}`)
         socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
-        $('#deleteFileModal').modal('hide')
+        if (window.location.pathname.startsWith('/u/')) {
+            window.location.replace('/#files')
+        } else {
+            $('#deleteFileModal').modal('hide')
+        }
+    })
+
+    // ---------- SOCKET HANDLERS ----------
+
+    socket.addEventListener('message', function (event) {
+        const data = JSON.parse(event.data)
+        if (data.event === 'set-expr-file') {
+            // Expire
+            handle_set_expiration(data)
+        } else if (data.event === 'toggle-private-file') {
+            // Private
+            handle_private_toggle(data)
+        } else if (data.event === 'set-password-file') {
+            // Password
+            handle_password_set(data)
+        }
     })
 })
 

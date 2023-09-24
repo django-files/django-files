@@ -64,7 +64,7 @@ $(document).ready(function () {
 
 // Delete Click Handler
 function deleteFileClick() {
-    const pk = $(this).data('pk')
+    const pk = $(this).parent().parent().parent().data('pk')
     console.log(`.ctx-delete-btn: pk: ${pk}`)
     $('#confirmDeleteFileBtn').data('pk', pk)
     $('#deleteFileModal').modal('show')
