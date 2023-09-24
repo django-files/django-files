@@ -6,7 +6,7 @@ $(document).ready(function () {
         if ($('#password-button').hasClass('disabled')) {
             return
         }
-        let formData = new FormData($(this)[0])
+        let formData = new FormData($(this))
         $.ajax({
             url: $('#password-form').attr('action'),
             type: 'POST',

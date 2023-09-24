@@ -1,38 +1,41 @@
 console.log('Connecting to WebSocket...')
 
+let socket
 let ws
 
-const socket = connect()
-
-function connect() {
-    if (location.protocol == 'https:') {
-        ws = new WebSocket('wss://' + window.location.host + '/ws/home/');
-    } else {
-        // TODO: guard against this happening outside of dev
-        ws = new WebSocket('ws://' + window.location.host + '/ws/home/');
+function wsConnect() {
+    if (ws) {
+        console.log('closing existing connection')
+        ws.close()
     }
-    // ws.onopen = function() {
-    //   // subscribe to some channels
-    //   ws.send(JSON.stringify({
-    //       //.... some message the I must send when I connect ....
-    //   }));
-    // };
-  
-    ws.onmessage = function(e) {
-      console.log('Message:', e.data);
-    };
-  
-    ws.onclose = function(e) {
-      console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
-      setTimeout(function() {
-        connect();
-      }, 1000);
-    };
-  
-    ws.onerror = function(err) {
-      console.error('Socket encountered error: ', err.message, 'Closing socket');
-      ws.close();
-    };
-
-    return ws
-  }
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+    socket = new WebSocket(`${protocol}//${window.location.host}/ws/home/`)
+    socket.onopen = function (event) {
+        console.log('socket.onopen')
+        console.log(event)
+        // $('#socket-warning').addClass('d-none')
+    }
+    socket.onmessage = function (event) {
+        console.log('socket.onmessage')
+        console.log(event)
+        console.log(`Message: ${event.data}`)
+    }
+    socket.onclose = function (event) {
+        console.log(`socket.onclose: ${event.code}`)
+        console.log(event)
+        if (![1000, 1001].includes(event.code)) {
+            console.log('Unclean Close, Showing Socket Warnings')
+            $('#socket-warning').removeClass('d-none')
+            $('#disconnected-toast').toast('show')
+        }
+        setTimeout(function () {
+            wsConnect()
+        }, 10 * 1000)
+    }
+    socket.onerror = function (event) {
+        console.error('socket.onerror')
+        console.log(event)
+        // socket.close()
+    }
+}
+wsConnect()

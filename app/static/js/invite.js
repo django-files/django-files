@@ -1,7 +1,7 @@
 $(document).ready(function () {
     $('#inviteForm').on('submit', function (event) {
-        console.log('#inviteForm on submit function')
         event.preventDefault()
+        console.log('#inviteForm.submit')
         let form = $(this)
         console.log(form)
         $.ajax({

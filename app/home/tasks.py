@@ -1,4 +1,5 @@
 import logging
+import os
 import httpx
 import json
 import urllib.parse
@@ -8,8 +9,10 @@ from channels.layers import get_channel_layer
 from django_redis import get_redis_connection
 from django.conf import settings
 from django.core.cache import cache
+from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
+from packaging import version
 from pytimeparse2 import parse
 
 from home.util.storage import use_s3
@@ -39,6 +42,31 @@ def app_init():
     #     log.info('public_user created: public')
     # else:
     #     log.warning('public_user already created: public')
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 5})
+def app_startup():
+    version_check.delay()
+    return 'app_startup - finished'
+
+
+@shared_task()
+def version_check():
+    if settings.DEBUG:
+        return f'Skipping Version Check due to DEBUG: {settings.DEBUG}'
+    app_version = version.parse(os.environ['APP_VERSION'])
+    log.debug('app_version: %s', app_version)
+    r = httpx.get(settings.VERSION_CHECK_URL, follow_redirects=True, timeout=10)
+    r.raise_for_status()
+    latest_version = version.parse(os.path.basename(r.url.path))
+    log.debug('latest_version: %s', latest_version)
+    if latest_version > app_version:
+        log.info('New Release Available: %s', latest_version)
+        cache.set('latest_version', latest_version.public, 12 * 60 * 60)
+        log.debug('SETTING CACHE -> latest_version: %s', latest_version.public)
+    else:
+        cache.delete('update_available')
+    return f'Current: ${app_version} - Latest: {latest_version}'
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 300})
@@ -228,22 +256,32 @@ def process_vector_stats():
 def new_file_websocket(pk):
     log.debug('new_file_websocket: %s', pk)
     file = Files.objects.get(pk=pk)
-    log.debug('file.user_id: %s', file.user_id)
+    log.debug('file: %s', file)
+    data = model_to_dict(file, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta'])
+    log.debug('data: %s', data)
+    # TODO: Backwards Compatibility
+    data['pk'] = pk
+    data['event'] = 'file-new'
     channel_layer = get_channel_layer()
     event = {
         'type': 'websocket.send',
-        'text': json.dumps({'event': 'file-new', 'pk': pk}),
+        'text': json.dumps(data),
     }
+    log.debug('event: %s', event)
     async_to_sync(channel_layer.group_send)(f'user-{file.user_id}', event)
 
 
 @shared_task()
-def delete_file_websocket(pk, user_id):
-    log.debug('delete_file_websocket pk: %s user_id: %s', pk, user_id)
+def delete_file_websocket(data: dict, user_id):
+    log.debug('delete_file_websocket')
+    log.debug('data: %s', data)
+    log.debug('delete_file_websocket pk: %s user_id: %s', data['id'], user_id)
+    data['event'] = 'file-delete'
+    data['pk'] = data['id']
     channel_layer = get_channel_layer()
     event = {
         'type': 'websocket.send',
-        'text': json.dumps({'event': 'file-delete', 'pk': pk}),
+        'text': json.dumps(data),
     }
     async_to_sync(channel_layer.group_send)(f'user-{user_id}', event)
 

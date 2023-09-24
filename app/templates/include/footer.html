@@ -11,8 +11,19 @@
                             Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
                     </p>
                 {% endif %}
-                <p><a class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover" href="https://github.com/django-files/django-files" target="_blank">
-                    <i class="fab fa-github"></i> Django Files</a> <span class="text-body-secondary">v{{ 'APP_VERSION'|get_config }}</span></p>
+                <p>
+                    <a class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover"
+                       href="https://github.com/django-files/django-files/releases/tag/{{ latest_version }}" target="_blank" rel="noopener">
+                    <i class="fab fa-github"></i> Django Files</a>
+                    {% if latest_version %}
+                    <span class="d-inline-block text-success" tabindex="0" data-bs-toggle="popover" data-bs-trigger="hover focus"
+                          data-bs-title="Update Available" data-bs-content="Version: {{ latest_version }}">
+                        v{{ 'APP_VERSION'|get_config }} <i class="fa-solid fa-turn-up" ></i>
+                    </span>
+                    {% else %}
+                        <span class="text-body-secondary">v{{ 'APP_VERSION'|get_config }}</span>
+                    {% endif %}
+                </p>
             </div>
 
             {% if request.user.is_authenticated %}
@@ -34,8 +45,10 @@
                             <i class="fa-solid fa-chart-line me-1"></i> Stats</a></li>
                         <li class="list-inline-item"><a href="{% url 'settings:user' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
                             <i class="fas fa-user-circle me-1"></i> User</a></li>
+                        {% if request.user.is_superuser %}
                         <li class="list-inline-item"><a href="{% url 'settings:site' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
                             <i class="fa-solid fa-gears me-1"></i> Site</a></li>
+                        {% endif %}
                     </ul>
                 </div>
 
@@ -57,8 +70,10 @@
                             <i class="fa-solid fa-chart-line "></i></a></li>
                         <li class="list-inline-item"><a href="{% url 'settings:user' %}" title="User Settings" class="link-body-emphasis ">
                             <i class="fas fa-user-circle "></i></a></li>
-                        <li class="list-inline-item"><a href="{% url 'settings:site' %}" title="Site Seettings" class="link-body-emphasis ">
+                        {% if request.user.is_superuser %}
+                        <li class="list-inline-item"><a href="{% url 'settings:site' %}" title="Site Settings" class="link-body-emphasis ">
                             <i class="fa-solid fa-gears "></i></a></li>
+                        {% endif %}
                     </ul>
                 </div>
             {% else %}

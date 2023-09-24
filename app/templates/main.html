@@ -132,6 +132,16 @@
             {% endif %}
         {% endblock %}
     {% endif %}
+    {% block socketwarning %}
+        {% if request.user.is_authenticated %}
+            <div class="container-fluid">
+                <div id="socket-warning" class="alert alert-warning mt-2 d-none" role="alert">
+                    <strong>Warning:</strong> Disconnected from server!
+                    <a href="javascript:location.reload(true)">Reload</a>.
+                </div>
+            </div>
+        {% endif %}
+    {% endblock %}
     {% block body %}{% endblock %}
 </main>
 
@@ -164,6 +174,19 @@
                 </div>
             {% endfor %}
         {% endif %}{% endblock %}
+
+        <div id="disconnected-toast" role="alert" aria-live="assertive" aria-atomic="true" class="toast" data-bs-autohide="false">
+            <div class="toast-header">
+                <strong class="me-auto text-warning">Disconnected</strong>
+                <small>Server</small>
+{#                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>#}
+            </div>
+            <div class="toast-body">
+                 Websocket Connection Closed.
+                <strong><a href="javascript:location.reload(true)">Reload</a></strong>.
+            </div>
+        </div>
+
     </div>
 {% endblock %}
 
