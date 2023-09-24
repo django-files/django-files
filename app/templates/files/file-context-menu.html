@@ -25,6 +25,10 @@
             <i class="fa-solid fa-eye fa-fw me-2"></i>
             View Raw</a></li>
 
+        <!-- file-context-menu.html -->
+        <!-- request.user.is_authenticated: {{ request.user.is_authenticated }} -->
+        <!-- request.user: {{ request.user }} -->
+        <!-- file.user: {{ file.user }} -->
         {% if request.user.is_authenticated and request.user == file.user %}
             <li><hr class="dropdown-divider"></li>
 
@@ -39,13 +43,13 @@
 {#            <li><a role="button" class="ctx-set-password-btn dropdown-item" data-pk="{{ file.pk }}" title="Set Password">#}
 {#                <i class="fas fa-key fa-fw me-2"></i>#}
 {#                Set Password</a></li>#}
-{##}
-{#            <li><hr class="dropdown-divider"></li>#}
-{##}
-{#            <li><a role="button" class="ctx-delete-btn dropdown-item" data-pk="{{ file.pk }}" title="Delete">#}
-{#                <i class="fa-regular fa-trash-can fa-fw me-2 link-danger"></i>#}
-{#                Delete File</a></li>#}
-{##}
+
+            <li><hr class="dropdown-divider"></li>
+
+            <li><a role="button" class="ctx-delete-btn dropdown-item" data-pk="{{ file.pk }}" title="Delete">
+                <i class="fa-regular fa-trash-can fa-fw me-2 link-danger"></i>
+                Delete File</a></li>
+
 {#            <!-- This hidden password field is used to pass the password value to model on the files table. -->#}
 {#            <!-- TWe should probably fetch this live instead to not store all pws in the page html -->#}
 {#            <input type="hidden" name="current-password" value='{{ file.password|default:"" }}'>#}

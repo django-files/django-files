@@ -246,7 +246,7 @@ def files_tdata_ajax(request, pk):
     """
     log.debug('files_tdata_ajax: %s', pk)
     q = get_object_or_404(Files, pk=pk)
-    response = render_to_string('files/table-tr.html', {'file': q})
+    response = render_to_string('files/table-tr.html', {'file': q}, request)
     return HttpResponse(response)
 
 

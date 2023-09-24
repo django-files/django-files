@@ -133,26 +133,21 @@ $(document).ready(function () {
     //     $('#password').focus()
     // })
 
-    // // ---------- DELETE ----------
-    //
-    // // Delete - Delete File Context Menu Button
-    // $('.ctx-delete-btn').click(function () {
-    //     const pk = $(this).data('pk')
-    //     console.log(`.ctx-delete-btn: pk: ${pk}`)
-    //     $('#confirmDeleteFileBtn').data('pk', pk)
-    //     $('#deleteFileModal').modal('show')
-    // })
-    //
-    // // Delete -  Delete File Confirm Button
-    // $('#confirmDeleteFileBtn').click(function () {
-    //     const pk = $(this).data('pk')
-    //     console.log(`#confirmDeleteFileBtn: pk: ${pk}`)
-    //     socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
-    //     $('#deleteFileModal').modal('hide')
-    // })
+    // ---------- DELETE ----------
+
+    // Delete - Delete File Context Menu Button
+    $('.ctx-delete-btn').click(deleteFileClick)
+
+    // Delete -  Delete File Confirm Button
+    $('#confirmDeleteFileBtn').click(function () {
+        const pk = $(this).data('pk')
+        console.log(`#confirmDeleteFileBtn: pk: ${pk}`)
+        socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
+        $('#deleteFileModal').modal('hide')
+    })
 })
 
-// Expire
+// Expire Socket Handler
 function handle_set_expiration(data) {
     console.log('handle_set_expiration')
     console.log(data)
@@ -171,7 +166,7 @@ function handle_set_expiration(data) {
     }
 }
 
-// Private
+// Private Socket Handler
 function handle_private_toggle(data) {
     // TODO: Re-write this function and selectors
     // TODO: Use Logical Names for Selectors
@@ -198,7 +193,7 @@ function handle_private_toggle(data) {
     }
 }
 
-// // Password
+// // Password Socket Handler
 // function handle_password_set(data) {
 //     // TODO: Use Actual Selectors
 //     console.log(`handle_password_set`)
@@ -211,6 +206,8 @@ function handle_private_toggle(data) {
 //     }
 //     $('#setFilePasswordModal').hide()
 // }
+
+// Extras
 
 function objectifyForm(formArray) {
     // Convert .serializeArray() to Object (key: value)

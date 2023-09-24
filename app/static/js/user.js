@@ -15,15 +15,7 @@ $(document).ready(function () {
                 if (table.length) {
                     $('#files-table tbody').prepend(response)
                     console.log(`Table Updated: ${data.pk}`)
-                    // TODO: Fix this madness
-                    $(`#file-${data.pk}`)
-                        .find('.ctx-delete-btn')
-                        .on('click', function () {
-                            let pk = $(this).data('pk')
-                            console.log(`Ajax Delete Button: ${pk}`)
-                            $('#confirmDeleteFileBtn').data('pk', pk)
-                            $('#deleteFileModal').modal('show')
-                        })
+                    $(`#file-${data.pk} .ctx-delete-btn`).click(deleteFileClick)
                 }
             })
         } else if (data.event === 'file-delete') {
@@ -69,3 +61,11 @@ $(document).ready(function () {
         return false
     })
 })
+
+// Delete Click Handler
+function deleteFileClick() {
+    const pk = $(this).data('pk')
+    console.log(`.ctx-delete-btn: pk: ${pk}`)
+    $('#confirmDeleteFileBtn').data('pk', pk)
+    $('#deleteFileModal').modal('show')
+}
