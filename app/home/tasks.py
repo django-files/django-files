@@ -52,10 +52,8 @@ def app_startup():
 
 @shared_task()
 def version_check():
-    if settings.DEBUG:
-        return f'Skipping Version Check due to DEBUG: {settings.DEBUG}'
     app_version = os.environ.get('APP_VERSION')
-    if not app_version or app_version in ['DEV', 'latest']:
+    if not app_version or app_version.lower() in ['dev', 'latest']:
         return 'Skipping Version Check due to APP_VERSION not set or invalid.'
     app_version = version.parse(app_version)
     log.info('app_version: %s', app_version)

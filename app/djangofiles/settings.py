@@ -12,7 +12,7 @@ VERSION_CHECK_URL = config('VERSION_CHECK_URL', 'https://github.com/django-files
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEBUG = config('DEBUG', 'False', bool)
+DEBUG = config('DEBUG', False, bool)
 print(f'DEBUG: {DEBUG}')
 APP_VERSION = config('APP_VERSION', 'DEV')
 
@@ -78,7 +78,7 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = config('TZ', 'UTC')
 
 DJANGO_REDIS_IGNORE_EXCEPTIONS = config('REDIS_IGNORE_EXCEPTIONS', True, bool)
-USE_X_FORWARDED_HOST = config('USE_X_FORWARDED_HOST', 'False', bool)
+USE_X_FORWARDED_HOST = config('USE_X_FORWARDED_HOST', False, bool)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
@@ -86,9 +86,9 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 AWS_S3_FILE_OVERWRITE = config('AWS_S3_FILE_OVERWRITE', False, bool)
 STATIC_QUERYSTRING_EXPIRE = config('STATIC_QUERYSTRING_EXPIRE', 14400, int)
-AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', None, str)
-AWS_S3_REGION_NAME = config('AWS_REGION_NAME', None, str)
-AWS_S3_CDN_URL = config('AWS_S3_CDN_URL', '', str)
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', None)
+AWS_S3_REGION_NAME = config('AWS_REGION_NAME', None)
+AWS_S3_CDN_URL = config('AWS_S3_CDN_URL', None)
 
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', True, bool)
 NGINX_ACCESS_LOGS = config('NGINX_ACCESS_LOGS', '/logs/nginx.access')
