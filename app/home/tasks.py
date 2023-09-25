@@ -298,7 +298,7 @@ def delete_file_websocket(data: dict, user_id):
     async_to_sync(channel_layer.group_send)(f'user-{user_id}', event)
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 30})
 def send_discord_message(pk):
     # Send a Discord message for a new file
     log.info('send_discord_message: pk: %s', pk)
@@ -315,7 +315,7 @@ def send_discord_message(pk):
         send_discord.delay(hook.id, message)
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 30})
 def send_success_message(hook_pk):
     # Send a success message for new webhook
     site_settings = SiteSettings.objects.settings()
