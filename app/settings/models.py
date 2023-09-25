@@ -22,27 +22,29 @@ class SiteSettings(models.Model):
     duo_auth = models.BooleanField(default=False, verbose_name='Duo AUth',
                                    help_text='Require Duo Authentication')
     oauth_redirect_url = models.URLField(max_length=128, blank=True, null=True)
-    discord_client_id = models.CharField(max_length=32, blank=True, null=True)
-    discord_client_secret = models.CharField(max_length=128, blank=True, null=True)
-    github_client_id = models.CharField(max_length=32, blank=True, null=True)
-    github_client_secret = models.CharField(max_length=128, blank=True, null=True)
-    s3_region = models.CharField(max_length=16, blank=True, null=True)
-    s3_secret_key = models.CharField(max_length=128, blank=True, null=True)
-    s3_secret_key_id = models.CharField(max_length=128, blank=True, null=True)
+    discord_client_id = models.CharField(max_length=32, blank=True, default='')
+    discord_client_secret = models.CharField(max_length=128, blank=True, default='')
+    github_client_id = models.CharField(max_length=32, blank=True, default='')
+    github_client_secret = models.CharField(max_length=128, blank=True, default='')
+    s3_region = models.CharField(max_length=16, blank=True, default='')
+    s3_secret_key = models.CharField(max_length=128, blank=True, default='')
+    s3_secret_key_id = models.CharField(max_length=128, blank=True, default='')
     # TODO: we should gate actually saving this fields on verifying we can list bucket with the credentials
-    s3_bucket_name = models.CharField(max_length=128, blank=True, null=True)
-    s3_cdn = models.CharField(
-        max_length=128, blank=True, null=True,
-        help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.'
-    )
+    s3_bucket_name = models.CharField(max_length=128, blank=True, default='')
+    s3_cdn = models.CharField(max_length=128, blank=True, default='',
+                              help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.')
+    latest_version = models.CharField(max_length=32, blank=True, default='')
     objects = SiteSettingsManager()
 
     def __str__(self):
+        return self.site_url
+
+    def __repr__(self):
         return f'<SiteSettings(site_url={self.site_url})>'
 
     class Meta:
-        verbose_name = 'Setting'
-        verbose_name_plural = 'Settings'
+        verbose_name = 'Site Setting'
+        verbose_name_plural = 'Site Settings'
 
     def save(self, *args, **kwargs):
         if self.__class__.objects.count():

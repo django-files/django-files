@@ -22,6 +22,13 @@ if [ -z "${VERSION}" ];then
     fi
 fi
 
+#if [ -d "app" ];then
+#    if [ -f "app/.env" ];then
+#        sed -i '/APP_VERSION/d' app/.env
+#    fi
+#    echo "APP_VERSION=${VERSION}" >> app/.env
+#fi
+
 #if [ -z "${USERNAME}" ];then
 #    read -rp "Username: " USERNAME
 #fi

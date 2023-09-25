@@ -54,19 +54,31 @@ def app_startup():
 def version_check():
     if settings.DEBUG:
         return f'Skipping Version Check due to DEBUG: {settings.DEBUG}'
-    app_version = version.parse(os.environ['APP_VERSION'])
-    log.debug('app_version: %s', app_version)
-    r = httpx.get(settings.VERSION_CHECK_URL, follow_redirects=True, timeout=10)
-    r.raise_for_status()
-    latest_version = version.parse(os.path.basename(r.url.path))
-    log.debug('latest_version: %s', latest_version)
+    app_version = os.environ.get('APP_VERSION')
+    if not app_version or app_version in ['DEV', 'latest']:
+        return 'Skipping Version Check due to APP_VERSION not set or invalid.'
+    app_version = version.parse(app_version)
+    log.info('app_version: %s', app_version)
+    r = httpx.head(settings.VERSION_CHECK_URL, timeout=10)
+    if r.status_code != 302:
+        return 'Error: Version Check URL Response did not return a 302.'
+    log.info('location: %s', r.headers['location'])
+    latest_version = version.parse(os.path.basename(r.headers['location']))
+    log.info('latest_version: %s', latest_version)
+    site_settings = SiteSettings.objects.settings()
+    log.info('site_settings.latest_version: %s', site_settings.latest_version)
     if latest_version > app_version:
-        log.info('New Release Available: %s', latest_version)
-        cache.set('latest_version', latest_version.public, 12 * 60 * 60)
-        log.debug('SETTING CACHE -> latest_version: %s', latest_version.public)
+        if str(latest_version) != site_settings.latest_version:
+            site_settings.latest_version = str(latest_version)
+            site_settings.save()
+            return f'New Update Found. Setting version to: {latest_version}'
+        return f'New Update already set. latest_version: {latest_version}'
     else:
-        cache.delete('update_available')
-    return f'Current: ${app_version} - Latest: {latest_version}'
+        if site_settings.latest_version:
+            site_settings.latest_version = ''
+            site_settings.save()
+            return f'App Updated. Clearing latest_version: {latest_version}'
+        return f'No Update Available. Current Version: {app_version}'
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 300})
@@ -286,7 +298,7 @@ def delete_file_websocket(data: dict, user_id):
     async_to_sync(channel_layer.group_send)(f'user-{user_id}', event)
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 30})
 def send_discord_message(pk):
     # Send a Discord message for a new file
     log.info('send_discord_message: pk: %s', pk)
@@ -303,7 +315,7 @@ def send_discord_message(pk):
         send_discord.delay(hook.id, message)
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 30})
 def send_success_message(hook_pk):
     # Send a success message for new webhook
     site_settings = SiteSettings.objects.settings()

@@ -125,16 +125,17 @@ $(document).ready(function () {
 function handle_set_expiration(data) {
     // Expire Socket Handler
     // TODO: title does not seem to live update using .attr method
+    // TODO: clipboard-text does not seem to live update using .data method
     console.log('handle_set_expiration')
     console.log(data)
     const expireTableText = $(`#file-${data.id} .expire-value`)
     const expirePreviewIcon = $('#expire-status-icon')
     if (data.expr) {
-        expireTableText.text(data.expr)
+        expireTableText.text(data.expr).data('clipboard-text', data.expr)
         expirePreviewIcon.attr('title', `File Expires in ${data.expr}`).show()
         show_toast(`${data.name} - Expire set to: ${data.expr}`, 'success')
     } else {
-        expireTableText.text('Never')
+        expireTableText.text('Never').data('clipboard-text', 'Never')
         expirePreviewIcon.attr('title', 'No Expiration').hide()
         show_toast(`${data.name} - Cleared Expiration.`, 'success')
     }
