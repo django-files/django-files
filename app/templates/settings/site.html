@@ -7,7 +7,13 @@
 {% block title %}Site Settings{% endblock %}
 {% block fa_class %}fa-solid fa-gears{% endblock %}
 
-{% block head %}{% endblock %}
+{% block head %}
+    <style>
+        .fa-rotate:hover {
+            color: #ffc107;
+        }
+    </style>
+{% endblock %}
 
 {% block main %}
 {% localtime on %}
@@ -20,6 +26,7 @@
         {% else %}
             <a href="https://github.com/django-files/django-files/releases/latest" title="{{ 'APP_VERSION'|get_config }}" target="_blank" rel="noopener">
                 <span class="badge rounded-pill text-bg-success">Latest</span></a>
+            <a id="check-for-update" role="link" title="Check for Update"><i class="fa-solid fa-rotate"></i></a>
         {% endif %}
     </div>
 
