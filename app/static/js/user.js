@@ -39,6 +39,14 @@ $(document).ready(function () {
                     table.remove()
                 }
             }
+        } else if (data.event === 'message') {
+            console.log(`data.message: ${data.message}`)
+            let bsclass =
+                typeof data.bsclass === 'undefined' ? 'info' : data.bsclass
+            console.log(`bsclass: ${bsclass}`)
+            let delay = typeof data.delay === 'undefined' ? '10000' : data.delay
+            console.log(`delay: ${delay}`)
+            show_toast(data.message, data.bsclass, delay)
         }
     })
 

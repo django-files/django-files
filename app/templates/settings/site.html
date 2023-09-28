@@ -7,10 +7,29 @@
 {% block title %}Site Settings{% endblock %}
 {% block fa_class %}fa-solid fa-gears{% endblock %}
 
-{% block head %}{% endblock %}
+{% block head %}
+    <style>
+        .fa-rotate:hover {
+            color: #ffc107;
+        }
+    </style>
+{% endblock %}
 
 {% block main %}
 {% localtime on %}
+{#    <div class="float-end"></div>#}
+    <div>
+        Version: <a role="link" class="clip link-body-emphasis link-underline-opacity-25 link-underline-opacity-50-hover" data-clipboard-text="{{ 'APP_VERSION'|get_config }}">{{ 'APP_VERSION'|get_config }}</a>
+        {% if site_settings.latest_version %}
+            <a href="https://github.com/django-files/django-files/releases/latest" title="{{ 'APP_VERSION'|get_config }}" target="_blank" rel="noopener">
+                <span class="badge rounded-pill text-bg-warning ms-2">{{ site_settings.latest_version }}</span></a>
+        {% else %}
+            <a href="https://github.com/django-files/django-files/releases/latest" title="{{ 'APP_VERSION'|get_config }}" target="_blank" rel="noopener">
+                <span class="badge rounded-pill text-bg-success">Latest</span></a>
+            <a id="check-for-update" role="link" title="Check for Update"><i class="fa-solid fa-rotate"></i></a>
+        {% endif %}
+    </div>
+
     <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
         {% if user.is_superuser %}
             <div class="border border-warning-subtle rounded-2 p-3 my-2">
@@ -129,6 +148,7 @@
         <p class="lead mt-2">No Invites Found.</p>
     {% else %}
         <table class="table table-responsive mt-2" id="invitesTable">
+        <caption class="sr-only">User Invites</caption>
             <thead>
             <tr>
                 <th scope="col" class="d-none d-sm-table-cell">ID</th>

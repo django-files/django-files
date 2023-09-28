@@ -1,6 +1,7 @@
+import inspect
 import json
 import logging
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.forms.models import model_to_dict
@@ -8,8 +9,10 @@ from io import BytesIO
 from typing import Optional
 
 from home.models import Files
+from home.tasks import version_check
 from home.util.file import process_file
 from oauth.models import CustomUser
+from settings.models import SiteSettings
 
 log = logging.getLogger('app')
 
@@ -68,18 +71,23 @@ class HomeConsumer(AsyncWebsocketConsumer):
         method = getattr(self, method_name, None)
         if not method:
             return self._error('No Method Provided!')
-        response = await database_sync_to_async(method)(**data)
+        if inspect.iscoroutinefunction(method):
+            response = await method(**data)
+        else:
+            response = await database_sync_to_async(method)(**data)
         log.debug(response)
         return response
 
     @staticmethod
     def _error(message, **kwargs) -> dict:
+        # TODO: Look Into This Functionality
         response = {'success': False, 'bsClass': 'danger', 'message': message}
         response.update(**kwargs)
         return response
 
     # @staticmethod
     # def _success(data: Optional[Union[str, dict]] = None, **kwargs) -> dict:
+    #     # TODO: Look Into This Functionality
     #     response = {'success': True, 'bsClass': 'success'}
     #     if isinstance(data, str):
     #         response['message'] = data
@@ -198,3 +206,18 @@ class HomeConsumer(AsyncWebsocketConsumer):
             log.debug('response: %s', response)
             return response
         return self._error('File not found.', **kwargs)
+
+    async def check_for_update(self, *args, **kwargs) -> dict:
+        log.debug('async - check_for_update')
+        data = {'event': 'message', 'bsclass': 'info', 'delay': '2000', 'message': 'Checking for Update...'}
+        await self.send(text_data=json.dumps(data))
+        result = await sync_to_async(version_check)()
+        log.debug('result: %s', result)
+        site_settings = await database_sync_to_async(SiteSettings.objects.settings)()
+        if site_settings.latest_version:
+            message = f'Update Available: {site_settings.latest_version}'
+            bsclass, delay = 'warning', '6000'
+        else:
+            message = f'{site_settings.site_title} is Up-to-Date.'
+            bsclass, delay = 'success', '6000'
+        return {'event': 'message', 'bsclass': bsclass, 'delay': delay, 'message': message}

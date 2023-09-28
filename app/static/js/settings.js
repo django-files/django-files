@@ -134,4 +134,13 @@ $(document).ready(function () {
             processData: false,
         })
     })
+
+    // Handle Update Checks
+    $('#check-for-update').click(function (event) {
+        console.log('#check-for-update')
+        let data = { method: 'check-for-update' }
+        const jsonData = JSON.stringify(data)
+        console.log(`jsonData: ${jsonData}`)
+        socket.send(jsonData)
+    })
 })
