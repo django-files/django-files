@@ -27,7 +27,13 @@ function wsConnect() {
             setTimeout(function () {
                 console.log('Unclean Close, Showing Socket Warnings')
                 $('#socket-warning').removeClass('d-none')
-                $('#disconnected-toast').toast('show')
+                let toastEl = $('#disconnected-toast')
+                if (toastEl.length) {
+                    let toast = bootstrap.Toast.getOrCreateInstance(toastEl)
+                    if (!toast.isShown()) {
+                        toast.show()
+                    }
+                }
             }, 2 * 1000)
         }
         setTimeout(function () {
