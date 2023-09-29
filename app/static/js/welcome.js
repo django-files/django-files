@@ -9,11 +9,10 @@ $(document).ready(function () {
         console.log('#welcomeForm.submit')
         let form = $(this)
         // let welcomeForm = $('#welcomeForm')
-        let formData = new FormData(form[0])
         $.ajax({
             url: form.attr('action'),
             type: 'POST',
-            data: formData,
+            data: new FormData(this),
             success: function (response) {
                 console.log('response: ' + response)
                 location.reload()

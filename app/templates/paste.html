@@ -11,9 +11,9 @@
 {% block body %}
     <div class="container-fluid py-3 px-4">
 
-    {% include 'include/upload-menu.html' with heading='Paste Text' fa_class='fa-regular fa-file-lines' %}
+        {% include 'include/upload-menu.html' with heading='Paste Text' fa_class='fa-regular fa-file-lines' %}
 
-        <form method="post" action="{% url 'home:paste' %}" name="sendPaste" id="sendPaste">
+        <form method="post" action="{% url 'api:upload' %}" name="send-paste" id="send-paste">
             <div class="row g-3">
                 <div class="col-sm-6">
                     <label for="name" class="form-label">Custom File Name</label>
@@ -33,11 +33,12 @@
                         <i class="fa-regular fa-file-lines me-2"></i> Create</button>
                 </div>
                 <div class="col-12 mb-3">
-                    <label for="text_data" class="form-label">Text</label>
-                    <textarea class="form-control" id="text_data" name="text_data" rows="6" required></textarea>
+                    <label for="text" class="form-label">Text</label>
+                    <textarea class="form-control" id="text" name="text" rows="6" required></textarea>
                 </div>
             </div>
         </form>
+
     </div>
 {% endblock %}
 

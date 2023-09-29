@@ -63,17 +63,23 @@ def upload_view(request):
     View  /upload/ and /api/upload
     """
     log.debug('upload_view')
-    log.debug(request.headers)
+    # log.debug(request.headers)
     log.debug(request.POST)
     log.debug(request.FILES)
     try:
-        if not (f := request.FILES.get('file')):
-            return JsonResponse({'error': 'No File Found at Key: file'}, status=400)
+        post = request.POST.dict().copy()
+        f = request.FILES.get('file')
+        if not f and post.get('text'):
+            f = io.BytesIO(bytes(post.pop('text'), 'utf-8'))
+            f.name = post.pop('name', 'paste.txt') or 'paste.txt'
+            f.name = f.name if '.' in f.name else f.name + '.txt'
+        if not f:
+            return JsonResponse({'error': 'No file or text keys found.'}, status=400)
         # TODO: Determine how to better handle expire and why info is still being used differently from other methods
-        extra_args = parse_headers(request.headers, expr=parse_expire(request), info=request.POST.get('info'))
+        extra_args = parse_headers(request.headers, expr=parse_expire(request), **post)
+        log.debug('f.name: %s', f.name)
         log.debug('extra_args: %s', extra_args)
         log.debug('request.user: %s', request.user)
-        log.debug('request.user.type: %s', type(request.user))
         return process_file_upload(f, request.user.id, **extra_args)
     except Exception as error:
         log.exception(error)
@@ -207,6 +213,7 @@ def remote_view(request):
     View  /api/remote/
     """
     log.debug('%s - remote_view: is_secure: %s', request.method, request.is_secure())
+    log.debug('request.POST: %s', request.POST)
     body = request.body.decode()
     log.debug('body: %s', body)
     try:
@@ -229,7 +236,7 @@ def remote_view(request):
     if not r.is_success:
         return JsonResponse({'error': f'{r.status_code} Fetching {url}'}, status=400)
 
-    extra_args = parse_headers(request.headers, expr=parse_expire(request), info=request.POST.get('info'))
+    extra_args = parse_headers(request.headers, expr=parse_expire(request), **request.POST.dict())
     log.debug('extra_args: %s', extra_args)
     file = process_file(name, io.BytesIO(r.content), request.user.id, **extra_args)
     response = {'url': f'{file.preview_url()}'}
