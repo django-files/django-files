@@ -16,7 +16,6 @@
 {% endblock %}
 
 {% block main %}
-{% localtime on %}
 {#    <div class="float-end"></div>#}
     <div>
         Version: <a role="link" class="clip link-body-emphasis link-underline-opacity-25 link-underline-opacity-50-hover" data-clipboard-text="{{ 'APP_VERSION'|get_config }}">{{ 'APP_VERSION'|get_config }}</a>
@@ -51,6 +50,20 @@
                         <div id="site_title-help" class="form-text">
                             Site Title for UI and Meta.
                         </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="timezone" class="form-label">Global Timezone</label>
+                        <input class="form-control" list="timezoneOptions" id="timezone" name="timezone" autocomplete="timezone"
+                               value="{{ site_settings.timezone }}" placeholder="Type to Search...">
+                        <datalist id="timezoneOptions">
+                            {% for timezone in timezones %}
+                                <option value="{{ timezone }}"></option>
+                            {% endfor %}
+                        </datalist>
+                        <div id="timezone-invalid" class="invalid-feedback"></div>
+                        <div id="timezone-help" class="form-text">Timezone for Anonymous Users.</div>
                     </div>
                 </div>
                 <div class='row'>
@@ -188,7 +201,6 @@
     {% endif %}
     </section>
 
-{% endlocaltime %}
 {% endblock %}
 
 {% block tail %}

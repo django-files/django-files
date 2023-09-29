@@ -1,6 +1,6 @@
 $(document).ready(function () {
     // Form Control
-    $('.form-control').focus(function () {
+    $('.form-control').change(function () {
         $(this).removeClass('is-invalid')
     })
 

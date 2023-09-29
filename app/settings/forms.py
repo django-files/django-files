@@ -10,6 +10,7 @@ from pytimeparse2 import parse
 class SiteSettingsForm(forms.Form):
     site_url = forms.CharField(max_length=128)
     site_title = forms.CharField(max_length=64)
+    timezone = forms.ChoiceField(choices=zip(zoneinfo.available_timezones(), zoneinfo.available_timezones()))
     site_description = forms.CharField(max_length=155)
     site_color = forms.CharField(max_length=7)
     oauth_reg = forms.BooleanField(required=False)
@@ -61,12 +62,6 @@ class UserSettingsForm(forms.Form):
         return data
 
 
-def is_hex(color: str) -> str:
-    if not re.match('^#(?:[0-9a-f]{2}){3}$', color):
-        raise ValidationError('Invalid Color HEX.')
-    return color
-
-
 class WelcomeForm(forms.Form):
     username = forms.CharField(max_length=128, strip=True)
     password = forms.CharField(min_length=6, max_length=128, strip=True)
@@ -79,3 +74,9 @@ class WelcomeForm(forms.Form):
                 raise ValidationError('Invalid Site URL.')
             return data.rstrip('/')
         return None
+
+
+def is_hex(color: str) -> str:
+    if not re.match('^#(?:[0-9a-f]{2}){3}$', color):
+        raise ValidationError('Invalid Color HEX.')
+    return color
