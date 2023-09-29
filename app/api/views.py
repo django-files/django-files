@@ -256,7 +256,7 @@ def parse_headers(headers: dict, **kwargs) -> dict:
             data[key.replace('-', '_')] = value
     # data.update(**kwargs)
     for key, value in kwargs.items():
-        if value is not None:
+        if value in ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password']:
             data[key] = value
     return data
 
@@ -264,7 +264,8 @@ def parse_headers(headers: dict, **kwargs) -> dict:
 def process_file_upload(f: BinaryIO, user_id: int, **kwargs):
     log.debug('user_id: %s', user_id)
     log.debug('kwargs: %s', kwargs)
-    file = process_file(f.name, f, user_id, **kwargs)
+    name = kwargs.pop('name', f.name)
+    file = process_file(name, f, user_id, **kwargs)
     data = {
         'files': [file.preview_url()],
         'url': file.preview_url(),
