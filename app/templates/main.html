@@ -132,16 +132,6 @@
             {% endif %}
         {% endblock %}
     {% endif %}
-    {% block socketwarning %}
-        {% if request.user.is_authenticated %}
-            <div class="container-fluid">
-                <div id="socket-warning" class="alert alert-warning mt-2 d-none" role="alert">
-                    <strong>Warning:</strong> Disconnected from server!
-                    <a href="javascript:location.reload(true)">Reload</a>.
-                </div>
-            </div>
-        {% endif %}
-    {% endblock %}
     {% block body %}{% endblock %}
 </main>
 
