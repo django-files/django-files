@@ -64,10 +64,10 @@ def upload_view(request):
     """
     log.debug('upload_view')
     # log.debug(request.headers)
-    log.debug(request.POST)
+    post = request.POST.dict().copy()
+    log.debug(post)
     log.debug(request.FILES)
     try:
-        post = request.POST.dict().copy()
         f = request.FILES.get('file')
         if not f and post.get('text'):
             f = io.BytesIO(bytes(post.pop('text'), 'utf-8'))
@@ -256,7 +256,7 @@ def parse_headers(headers: dict, **kwargs) -> dict:
             data[key.replace('-', '_')] = value
     # data.update(**kwargs)
     for key, value in kwargs.items():
-        if value in ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password']:
+        if key in ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password']:
             data[key] = value
     return data
 
