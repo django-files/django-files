@@ -6,22 +6,23 @@ $(document).ready(function () {
     $('#send-paste').submit(function (event) {
         event.preventDefault()
         console.log('#send-paste.submit')
-        let formData = new FormData(this)
+        const formData = new FormData(this)
         const text = formData.get('text')
         const file = new Blob([text], { type: 'text/plain' })
         formData.delete('text')
-        const name = formData.get('name') || 'paste.txt'
-        console.log(name)
+        let name = formData.get('name') || 'paste.txt'
+        name = name.includes('.') ? name : name + '.txt'
+        console.log(`name: ${name}`)
         formData.append('file', file, name)
-
+        const form = $(this)
         $.ajax({
-            type: $(this).attr('method'),
-            url: $(this).attr('action'),
+            type: form.attr('method'),
+            url: form.attr('action'),
             data: formData,
             headers: { 'X-CSRFToken': csrftoken },
             success: function (data) {
                 console.log('JSON data: ' + JSON.stringify(data))
-                $(this).trigger('reset')
+                form.trigger('reset')
             },
             error: function (jqXHR) {
                 console.log('jqXHR.status: ' + jqXHR.status)
