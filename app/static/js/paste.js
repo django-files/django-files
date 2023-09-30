@@ -6,15 +6,22 @@ $(document).ready(function () {
     $('#send-paste').submit(function (event) {
         event.preventDefault()
         console.log('#send-paste.submit')
-        const form = $(this)
+        let formData = new FormData(this)
+        const text = formData.get('text')
+        const file = new Blob([text], { type: 'text/plain' })
+        formData.delete('text')
+        const name = formData.get('name') || 'paste.txt'
+        console.log(name)
+        formData.append('file', file, name)
+
         $.ajax({
-            type: form.attr('method'),
-            url: form.attr('action'),
-            data: new FormData(this),
+            type: $(this).attr('method'),
+            url: $(this).attr('action'),
+            data: formData,
             headers: { 'X-CSRFToken': csrftoken },
             success: function (data) {
-                console.log('data: ' + JSON.stringify(data))
-                form.trigger('reset')
+                console.log('JSON data: ' + JSON.stringify(data))
+                $(this).trigger('reset')
             },
             error: function (jqXHR) {
                 console.log('jqXHR.status: ' + jqXHR.status)
