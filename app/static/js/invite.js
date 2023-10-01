@@ -7,7 +7,7 @@ $(document).ready(function () {
         $.ajax({
             url: form.attr('action'),
             type: form.attr('method'),
-            data: new FormData(form[0]),
+            data: new FormData(this),
             success: function (data) {
                 console.log('data: ' + data)
                 location.reload()

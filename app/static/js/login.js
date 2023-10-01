@@ -5,11 +5,10 @@ $(document).ready(function () {
         if ($('#login-button').hasClass('disabled')) {
             return
         }
-        let formData = new FormData($(this)[0])
         $.ajax({
             url: $('#login-form').attr('action'),
             type: 'POST',
-            data: formData,
+            data: new FormData(this),
             crossDomain: true,
             beforeSend: function () {
                 $('#login-button').addClass('disabled')

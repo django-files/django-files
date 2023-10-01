@@ -6,11 +6,10 @@ $(document).ready(function () {
         if ($('#password-button').hasClass('disabled')) {
             return
         }
-        let formData = new FormData($(this))
         $.ajax({
             url: $('#password-form').attr('action'),
             type: 'POST',
-            data: formData,
+            data: new FormData($(this)),
             crossDomain: true,
             beforeSend: function () {
                 $('#login-button').addClass('disabled')

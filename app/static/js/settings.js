@@ -59,7 +59,7 @@ $(document).ready(function () {
         $.ajax({
             url: window.location.pathname,
             type: form.attr('method'),
-            data: new FormData(form[0]),
+            data: new FormData(this),
             headers: { 'X-CSRFToken': csrftoken },
             success: function (data) {
                 console.log('data: ' + JSON.stringify(data))
@@ -106,7 +106,7 @@ $(document).ready(function () {
         let form = $(this)
         console.log(form)
         // TODO: Simplify JSON Creation...
-        let data = new FormData(form[0])
+        let data = new FormData(this)
         data.forEach((value, key) => (data[key] = value))
         $.ajax({
             type: form.attr('method'),

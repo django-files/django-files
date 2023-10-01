@@ -32,7 +32,11 @@ def site_view(request):
 
     if request.method != 'POST':
         invites = UserInvites.objects.all()
-        context = {'site_settings': site_settings, 'invites': invites}
+        context = {
+            'site_settings': site_settings,
+            'invites': invites,
+            'timezones': sorted(zoneinfo.available_timezones()),
+        }
         return render(request, 'settings/site.html', context)
 
     log.debug(request.POST)
@@ -47,6 +51,7 @@ def site_view(request):
         data['reload'] = True
     site_settings.site_url = form.cleaned_data['site_url']
     site_settings.site_title = form.cleaned_data['site_title']
+    site_settings.timezone = form.cleaned_data['timezone']
     site_settings.site_description = form.cleaned_data['site_description']
     site_settings.site_color = form.cleaned_data['site_color']
     site_settings.pub_load = form.cleaned_data['pub_load']
@@ -86,6 +91,7 @@ def user_view(request):
 
     request.user.first_name = form.cleaned_data['first_name']
     request.user.timezone = form.cleaned_data['timezone']
+    # request.session['timezone'] = form.cleaned_data['timezone']
     request.user.default_expire = form.cleaned_data['default_expire']
 
     if request.user.default_color != form.cleaned_data['default_color']:

@@ -1,3 +1,4 @@
+import zoneinfo
 from django.db import models
 
 from home.util.rand import rand_color_hex
@@ -5,9 +6,12 @@ from settings.managers import SiteSettingsManager
 
 
 class SiteSettings(models.Model):
+    TIMEZONE_CHOICES = zip(sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()))
+
     id = models.AutoField(primary_key=True)
     site_url = models.URLField(max_length=128, blank=True, null=True, verbose_name='Site URL')
     site_title = models.CharField(max_length=64, default='Django Files', verbose_name='Site Title')
+    timezone = models.CharField(max_length=255, choices=TIMEZONE_CHOICES, default='America/Los_Angeles')
     site_description = models.TextField(max_length=155, verbose_name='Site Description',
                                         default=('A Feature Packed Self-Hosted Django/Docker File Manager for '
                                                  'Sharing Files with ShareX, Flameshot and Much more...'))

@@ -9,7 +9,7 @@ $(document).ready(function () {
         let form = $(this)
         console.log(form)
         // TODO: Simplify JSON Creation...
-        let data = new FormData(form[0])
+        let data = new FormData(this)
         data.forEach((value, key) => (data[key] = value))
         $.ajax({
             type: form.attr('method'),
