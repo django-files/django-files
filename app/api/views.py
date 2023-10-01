@@ -76,7 +76,9 @@ def upload_view(request):
         if not f:
             return JsonResponse({'error': 'No file or text keys found.'}, status=400)
         # TODO: Determine how to better handle expire and why info is still being used differently from other methods
-        extra_args = parse_headers(request.headers, expr=parse_expire(request), **post)
+        expire = parse_expire(request)
+        log.debug('expire: %s', expire)
+        extra_args = parse_headers(request.headers, expr=expire, **post)
         log.debug('f.name: %s', f.name)
         log.debug('extra_args: %s', extra_args)
         log.debug('request.user: %s', request.user)
@@ -245,10 +247,13 @@ def remote_view(request):
 
 
 def parse_headers(headers: dict, **kwargs) -> dict:
+    # TODO: Review This Function
+    allowed = ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password', 'expr']
     data = {}
     # TODO: IMPORTANT: Determine why these values are not 1:1 - meta_preview:embed
     difference_mapping = {'embed': 'meta_preview'}
-    for key in ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password']:
+    # TODO: This should probably do the same thing in both loops
+    for key in allowed:
         if key in headers:
             value = headers[key]
             if key in difference_mapping:
@@ -256,7 +261,7 @@ def parse_headers(headers: dict, **kwargs) -> dict:
             data[key.replace('-', '_')] = value
     # data.update(**kwargs)
     for key, value in kwargs.items():
-        if key in ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password']:
+        if key.lower() in allowed:
             data[key] = value
     return data
 
