@@ -248,7 +248,7 @@ def remote_view(request):
 
 def parse_headers(headers: dict, **kwargs) -> dict:
     # TODO: Review This Function
-    allowed = ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password', 'expr']
+    allowed = ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password']
     data = {}
     # TODO: IMPORTANT: Determine why these values are not 1:1 - meta_preview:embed
     difference_mapping = {'embed': 'meta_preview'}
