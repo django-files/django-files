@@ -153,7 +153,8 @@ def welcome_view(request):
         messages.info(request, f'Welcome to Django Files {request.user.get_name()}.')
         return HttpResponse(status=200)
 
-    return render(request, 'settings/welcome.html')
+    context = {'timezones': sorted(zoneinfo.available_timezones())}
+    return render(request, 'settings/welcome.html', context)
 
 
 @login_required
