@@ -140,11 +140,13 @@ def welcome_view(request):
         log.debug('username: %s', form.cleaned_data['username'])
         user.set_password(form.cleaned_data['password'])
         log.debug('password: %s', form.cleaned_data['password'])
+        user.timezone = form.cleaned_data['timezone']
         user.show_setup = False
         user.save()
         if request.user.is_superuser and form.cleaned_data['site_url']:
             site_settings = SiteSettings.objects.settings()
             site_settings.site_url = form.cleaned_data['site_url']
+            site_settings.timezone = form.cleaned_data['timezone']
             site_settings.save()
         login(request, user)
         request.session['login_redirect_url'] = reverse('settings:site')

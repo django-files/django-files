@@ -46,6 +46,9 @@ $(document).ready(function () {
     })
 
     $('#welcomeModal').on('shown.bs.modal', function () {
+        const timeZone = new window.Intl.DateTimeFormat().resolvedOptions()
+            .timeZone
+        $('#timezone').val(timeZone)
         $('#password').focus()
     })
 })
