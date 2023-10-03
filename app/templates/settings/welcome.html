@@ -34,6 +34,17 @@
                                 <input type="password" class="form-control" id="password" name="password" aria-describedby="password-invalid" required>
                                 <div id="password-invalid" class="invalid-feedback"></div>
                             </div>
+                            <div class="">
+                                <label for="timezone" class="form-label">Timezone</label>
+                                <input class="form-control" list="timezoneOptions" id="timezone" name="timezone" autocomplete="timezone"
+                                       value="{{ site_settings.timezone }}" placeholder="Type to Search...">
+                                <datalist id="timezoneOptions">
+                                    {% for timezone in timezones %}
+                                        <option value="{{ timezone }}"></option>
+                                    {% endfor %}
+                                </datalist>
+                                <div id="timezone-invalid" class="invalid-feedback"></div>
+                            </div>
                             {% if request.user.is_superuser %}
                                 <div class="">
                                     <label for="site_url" class="col-form-label">Site URL:</label>
