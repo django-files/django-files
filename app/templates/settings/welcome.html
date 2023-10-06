@@ -23,16 +23,36 @@
                     </div>
                     <form id="welcomeForm" action="{% url 'settings:welcome' %}">
                         <div class="modal-body">
+                            {% comment %}
+                            <div class="">
+                                <label for="first_name" class="form-label">Display Name (Optional)</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" autocomplete="given-name"
+                                       value="{{ user.first_name }}" aria-describedby="first_name-help first_name-invalid">
+                                <div id="first_name-invalid" class="invalid-feedback"></div>
+                                <div id="first_name-help" class="form-text">
+                                    Display Name used in place of Username.
+                                </div>
+                            </div>
+                            {% endcomment %}
                             <div class="">
                                 <label for="username" class="col-form-label">Username:</label>
                                 <input type="text" class="form-control" id="username" name="username"
                                        value="{{ request.user.username }}" aria-describedby="username-invalid" autofocus required>
                                 <div id="username-invalid" class="invalid-feedback"></div>
+                                <div id="username-help" class="form-text">Username for Logging In.</div>
                             </div>
                             <div class="">
                                 <label for="password" class="col-form-label">Password:</label>
-                                <input type="password" class="form-control" id="password" name="password" aria-describedby="password-invalid" required>
+                                <input type="password" class="form-control" id="password" name="password" aria-describedby="password-invalid"
+                                       {% if not request.session.oauth_provider %}required{% endif %}>
                                 <div id="password-invalid" class="invalid-feedback"></div>
+                                <div id="username-help" class="form-text">
+                                    {% if request.session.oauth_provider %}
+                                        Leave blank to disallow local login.
+                                    {% else %}
+                                        Password for Logging In.
+                                    {% endif %}
+                                </div>
                             </div>
                             <div class="">
                                 <label for="timezone" class="form-label">Timezone</label>
@@ -49,7 +69,7 @@
                                 <div class="">
                                     <label for="site_url" class="col-form-label">Site URL:</label>
                                     <input type="text" class="form-control" id="site_url" name="site_url"
-                                           value="{% if site_settings.site_url %}{{ site_settings.site_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% endif %}" required>
+                                           value="{% if 'SITE_URL'|get_config %}{{ 'SITE_URL'|get_config }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% endif %}" required>
                                     <div id="site_url-invalid" class="invalid-feedback"></div>
                                 </div>
                             {% endif %}

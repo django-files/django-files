@@ -24,19 +24,28 @@ from oauth.models import DiscordWebhooks
 log = logging.getLogger('app')
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 20, 'countdown': 3})
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 10, 'countdown': 1})
 def app_init():
     # App Init Task - Only Runs on First Startup, then is Disabled
     log.info('app_init')
-    site_settings, created = SiteSettings.objects.get_or_create(pk=1)
-    if created:
-        if not site_settings.site_url and settings.SITE_URL:
-            log.info('site_settings.site_url updated')
-            site_settings.site_url = settings.SITE_URL
-            site_settings.save()
-        log.info('site_settings created')
-    else:
-        log.warning('site_settings already created')
+
+    # site_settings = SiteSettings.objects.settings()
+    # if settings.SITE_URL:
+    #     log.info('site_settings.site_url updated')
+    #     site_settings.site_url = settings.SITE_URL
+    #     site_settings.save()
+
+    username = os.environ.get('USERNAME', 'admin')
+    password = os.environ.get('PASSWORD', '12345')
+    local = bool(os.environ.get('USERNAME') and os.environ.get('PASSWORD'))
+    oauth = bool(os.environ.get('OAUTH_REDIRECT_URL'))
+    if not oauth or local:
+        CustomUser.objects.create_superuser(username=username, password=password)
+        log.info('Initial User Created')
+        log.info(f'Username: {username}')
+        log.info(f'Password: {password}')
+    return 'app_init - finished'
+
     # public_user, created = CustomUser.objects.get_or_create(username='public')
     # if created:
     #     log.info('public_user created: public')
@@ -46,12 +55,35 @@ def app_init():
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 5})
 def app_startup():
-    version_check.delay()
+    log.info('app_startup')
+    # Ensure SiteSettings model
+    site_settings = SiteSettings.objects.settings()
+    # Queue Version Check
+    version_check.apply_async(countdown=5)
+    # Flush template cache
+    cache.delete_pattern('*.decorators.cache.*')
+    log.info('Flushed Template Cache')
+    # Warm site_settings cache
+    cache.set('site_settings', model_to_dict(site_settings))
+    log.info('Created Cache: site_settings')
+    # Ensure USERNAME and PASSWORD are set
+    if bool(os.environ.get('USERNAME') and os.environ.get('PASSWORD')):
+        users = CustomUser.objects.all()
+        if user := users.filter(username=os.environ.get('USERNAME')):
+            user[0].set_password(os.environ.get('PASSWORD'))
+            log.info('Password Ensured for user: %s', user.username)
+        else:
+            user = CustomUser.objects.create_superuser(
+                username=os.environ.get('USERNAME'),
+                password=os.environ.get('PASSWORD'),
+            )
+            log.info('Custom User Created: %s', user.username)
     return 'app_startup - finished'
 
 
 @shared_task()
 def version_check():
+    log.info('version_check')
     app_version = os.environ.get('APP_VERSION')
     if not app_version or app_version.lower() in ['dev', 'latest']:
         return 'Skipping Version Check due to APP_VERSION not set or invalid.'

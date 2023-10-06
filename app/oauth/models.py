@@ -44,7 +44,6 @@ class CustomUser(AbstractUser):
                                                help_text="If enabled file default to private when not specified.")
     default_file_password = models.BooleanField(default=False, verbose_name='Auto File Password',
                                                 help_text='Generates file password on upload.')
-    show_setup = models.BooleanField(default=False)
 
     def __str__(self):
         return self.get_name()

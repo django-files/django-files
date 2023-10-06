@@ -126,7 +126,9 @@ def welcome_view(request):
     """
     View  /settings/welcome/
     """
-    if not request.user.show_setup:
+    site_settings = SiteSettings.objects.settings()
+
+    if not site_settings.show_setup:
         return redirect('settings:site')
 
     if request.method == 'POST':
@@ -135,13 +137,17 @@ def welcome_view(request):
             log.debug(form.errors)
             return JsonResponse(form.errors, status=400)
 
+        if not request.session.get('oauth_provider') and not form.cleaned_data['password']:
+            return JsonResponse({'password': 'This Field is Required.'}, status=400)
+
+        site_settings.show_setup = False
+        site_settings.save()
         user = CustomUser.objects.get(pk=request.user.pk)
         user.username = form.cleaned_data['username']
         log.debug('username: %s', form.cleaned_data['username'])
         user.set_password(form.cleaned_data['password'])
         log.debug('password: %s', form.cleaned_data['password'])
         user.timezone = form.cleaned_data['timezone']
-        user.show_setup = False
         user.save()
         if request.user.is_superuser and form.cleaned_data['site_url']:
             site_settings = SiteSettings.objects.settings()
