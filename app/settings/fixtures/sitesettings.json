@@ -1,10 +1,12 @@
 [
-  {
-    "model": "settings.SiteSettings",
-    "pk": 1,
-    "fields": {
-      "site_url": "https://example.com",
-      "discord_client_id": 123
+    {
+        "model": "settings.sitesettings",
+        "pk": 1,
+        "fields": {
+            "discord_client_id": 123,
+            "site_url": "https://example.com",
+            "timezone": "America/Los_Angeles",
+            "show_setup": false
+        }
     }
-  }
 ]
