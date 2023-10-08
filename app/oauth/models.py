@@ -58,7 +58,7 @@ class CustomUser(AbstractUser):
         # TODO: Let User Choose Profile Icon or Chose by Active Login
         if hasattr(self, 'discord') and getattr(self.discord, 'avatar'):
             return f'https://cdn.discordapp.com/avatars/' \
-                   f'{ self.discord.id }/{ self.discord.avatar }.png'
+                   f'{self.discord.id}/{self.discord.avatar}.png'
         if hasattr(self, 'github') and getattr(self.github, 'avatar'):
             return self.github.avatar
         # TODO: Let User Upload an Avatar
