@@ -38,6 +38,7 @@ class SiteSettings(models.Model):
     s3_cdn = models.CharField(max_length=128, blank=True, default='',
                               help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.')
     latest_version = models.CharField(max_length=32, blank=True, default='')
+    show_setup = models.BooleanField(default=True)
     objects = SiteSettingsManager()
 
     def __str__(self):

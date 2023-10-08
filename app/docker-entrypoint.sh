@@ -17,7 +17,6 @@ if echo "${*}" | grep -q "gun\|runserver";then
     # TODO: Use flock so this only runs once
     python manage.py migrate
     python manage.py collectstatic --noinput -v 0
-    python manage.py appstartup
 else
     echo "Sleeping for 5 seconds: ${*}"
     sleep 5

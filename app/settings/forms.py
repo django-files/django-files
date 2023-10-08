@@ -64,10 +64,9 @@ class UserSettingsForm(forms.Form):
 
 class WelcomeForm(forms.Form):
     username = forms.CharField(max_length=128, strip=True)
-    password = forms.CharField(min_length=6, max_length=128, strip=True)
+    password = forms.CharField(min_length=6, max_length=128, strip=True, required=False)
     site_url = forms.CharField(max_length=255, strip=True, required=False)
-    timezone = forms.ChoiceField(choices=zip(zoneinfo.available_timezones(), zoneinfo.available_timezones()),
-                                 required=False)
+    timezone = forms.ChoiceField(choices=zip(zoneinfo.available_timezones(), zoneinfo.available_timezones()))
 
     def clean_site_url(self):
         data = self.cleaned_data['site_url']

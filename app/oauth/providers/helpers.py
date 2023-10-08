@@ -65,8 +65,9 @@ def get_next_url(request) -> str:
     """
     Determine 'next' parameter
     """
+    site_settings = SiteSettings.objects.settings()
     log.debug('get_next_url')
-    if request.user.is_authenticated and request.user.show_setup:
+    if request.user.is_authenticated and site_settings.show_setup:
         return reverse('settings:welcome')
     if 'next' in request.GET:
         log.debug('next in request.GET: %s', str(request.GET['next']))

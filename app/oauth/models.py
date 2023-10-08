@@ -44,7 +44,6 @@ class CustomUser(AbstractUser):
                                                help_text="If enabled file default to private when not specified.")
     default_file_password = models.BooleanField(default=False, verbose_name='Auto File Password',
                                                 help_text='Generates file password on upload.')
-    show_setup = models.BooleanField(default=False)
 
     def __str__(self):
         return self.get_name()
@@ -59,7 +58,7 @@ class CustomUser(AbstractUser):
         # TODO: Let User Choose Profile Icon or Chose by Active Login
         if hasattr(self, 'discord') and getattr(self.discord, 'avatar'):
             return f'https://cdn.discordapp.com/avatars/' \
-                   f'{ self.discord.id }/{ self.discord.avatar }.png'
+                   f'{self.discord.id}/{self.discord.avatar}.png'
         if hasattr(self, 'github') and getattr(self.github, 'avatar'):
             return self.github.avatar
         # TODO: Let User Upload an Avatar
