@@ -23,7 +23,7 @@ ISO Speed: {{ file.exif.ISOSpeedRatings }}{% endif %}{% if file.exif.ExposureTim
 Exposure Time: {{ file.exif.ExposureTime }} s{% endif %}
 {% endif %}{% if file.meta.PILImageWidth %}
 Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}
-{{ file.mime }} uploaded by {{ file.user.get_name }} on {{ file.date }}">
+{{ file.mime }} uploaded by {{ file.user.get_name }} on {{ file.date|date:"D \t\h\e jS\, M Y \a\t f a T" }}">
 
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
