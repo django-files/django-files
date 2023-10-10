@@ -145,6 +145,36 @@
 {% endblock %}
 
 {% if request.user.is_authenticated %}
+    <div id="keybinds-modal" class="modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Keybinds</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6">
+                            <p><kbd>A</kbd> Upload Files</p>
+                            <p><kbd>S</kbd> User Settings</p>
+                            {% if request.user.is_superuser %}
+                                <p><kbd>D</kbd> Site Settings</p>
+                            {% endif %}
+                            <p><kbd>F</kbd> Files</p>
+                            <p><kbd>G</kbd> Gallery</p>
+                            <p><kbd>H</kbd> Home</p>
+                        </div>
+                        <div class="col-xs-12 col-sm-6">
+                            <p><kbd>R</kbd> Short URL's</p>
+                            <p><kbd>T</kbd> Upload Text</p>
+                            <p><kbd>X</kbd> ShareX Files Uploader</p>
+                            <p><kbd>K</kbd> Keyboard Shortcuts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <form id="log-out" action="{% url 'oauth:logout' %}" method="POST">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -189,6 +219,7 @@
     {% if request.user.is_authenticated %}
         <script type="text/javascript" src="{% static 'js/socket.js' %}"></script>
         <script type="text/javascript" src="{% static 'js/user.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/keybinds.js' %}"></script>
     {% endif %}
 {% endblock %}
 
