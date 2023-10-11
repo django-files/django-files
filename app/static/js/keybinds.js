@@ -1,7 +1,7 @@
 function checkKey(event) {
     const formElements = ['INPUT', 'TEXTAREA', 'SELECT', 'OPTION']
     if (!formElements.includes(event.target.tagName)) {
-        // console.log(event.keyCode)
+        console.log(event.keyCode)
         if (event.keyCode === 65) {
             window.location = '/uppy/' // A
         } else if (event.keyCode === 83) {
@@ -22,7 +22,7 @@ function checkKey(event) {
             window.location = '/admin/settings/sitesettings/1/change/' // Y
         } else if (event.keyCode === 88) {
             window.location = '/settings/sharex/' // X
-        } else if (event.keyCode === 75) {
+        } else if (event.keyCode === 75 || event.keyCode === 90) {
             $('#keybinds-modal').modal('toggle') // K
         }
     }
