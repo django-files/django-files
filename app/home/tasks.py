@@ -1,7 +1,10 @@
+import datetime
 import logging
 import os
 import httpx
 import json
+# import shutil
+import zipfile
 import urllib.parse
 from asgiref.sync import async_to_sync
 from celery import shared_task
@@ -9,9 +12,11 @@ from channels.layers import get_channel_layer
 from django_redis import get_redis_connection
 from django.conf import settings
 from django.core.cache import cache
+from django.core.management import call_command
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
+from io import StringIO
 from packaging import version
 from pytimeparse2 import parse
 
@@ -19,7 +24,7 @@ from home.util.storage import use_s3
 from home.models import Files, FileStats, ShortURLs
 from oauth.models import CustomUser
 from settings.models import SiteSettings
-from oauth.models import DiscordWebhooks
+from oauth.models import DiscordWebhooks, UserBackups
 
 log = logging.getLogger('app')
 
@@ -374,3 +379,31 @@ def send_discord(hook_pk, message):
     except Exception as error:
         log.exception(error)
         raise
+
+
+@shared_task()
+def backup_user(user_id: int):
+    log.debug('backup_user: %s', user_id)
+    files = Files.objects.filter(user_id=user_id)
+    log.debug(files)
+    if not files:
+        return False
+    ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    # shutil.make_archive(f'{ts}.zip', 'zip', dir_name)
+    buffer = StringIO()
+    call_command('dumpdata', 'home.Files', verbosity=0, stdout=buffer)
+    buffer.seek(0)
+    json_name = f'{user_id}_{ts}.json'
+    log.debug('json_name: %s', json_name)
+    with open(os.path.join(settings.MEDIA_ROOT, json_name), 'w') as f:
+        f.write(buffer.read())
+    backup = UserBackups.objects.create(user_id=user_id, filename=f'{user_id}_{ts}.zip')
+    with zipfile.ZipFile(os.path.join(settings.MEDIA_ROOT, backup.filename), 'w') as f:
+        f.write(os.path.join(settings.MEDIA_ROOT, json_name), arcname=json_name)
+        for file in files:
+            log.debug('adding path: %s', os.path.join(settings.MEDIA_ROOT, file.name))
+            f.write(os.path.join(settings.MEDIA_ROOT, file.name), arcname=os.path.join('files', file.name))
+    backup.finished = True
+    backup.save()
+    # TODO: send user notification here or with model signal
+    return backup.id

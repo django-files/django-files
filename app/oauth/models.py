@@ -171,3 +171,12 @@ class Github(models.Model):
     class Meta:
         verbose_name = 'Github'
         verbose_name_plural = 'Githubs'
+
+
+class UserBackups(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    filename = models.CharField(max_length=64, verbose_name='Backup File Name')
+    finished = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Backup Created Date.')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='Backup Updated Date.')

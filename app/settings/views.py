@@ -12,7 +12,7 @@ from django.views.decorators.http import require_http_methods
 from oauth.models import CustomUser, UserInvites
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
-from oauth.models import DiscordWebhooks
+from oauth.models import DiscordWebhooks, UserBackups
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -72,8 +72,10 @@ def user_view(request):
     """
     log.debug('user_view: %s', request.method)
     if request.method != 'POST':
+        backups = UserBackups.objects.filter(user=request.user)
         webhooks = DiscordWebhooks.objects.get_request(request)
         context = {
+            'backups': backups,
             'webhooks': webhooks,
             'timezones': sorted(zoneinfo.available_timezones()),
             'default_upload_name_formats': CustomUser.UploadNameFormats.choices,
