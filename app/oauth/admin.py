@@ -1,8 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.utils.html import format_html
 
-from oauth.models import CustomUser, Discord, Github, UserInvites
+from home.util.storage import use_s3
+from oauth.models import CustomUser, Discord, Github, UserInvites, UserBackups
 
+# admin.site.register(UserBackups)
 admin.site.register(Discord)
 admin.site.register(Github)
 
@@ -28,3 +31,19 @@ class CustomUserAdmin(UserAdmin):
             'default_file_password', 'default_upload_name_format'
         )}),
     )
+
+
+@admin.register(UserBackups)
+class UserBackupsAdmin(admin.ModelAdmin):
+    model = UserBackups
+    list_display = ('id', 'show_file', 'user', 'finished',)
+    list_filter = ('user', 'finished',)
+    readonly_fields = ('id', 'file', 'finished',)
+    search_fields = ('id', 'file',)
+    ordering = ('-created_at',)
+
+    @staticmethod
+    def show_file(obj):
+        print(f'obj.file.name: {obj.file.name}')
+        print(f'obj.get_gallery_url(): {obj.get_gallery_url()}')
+        return format_html('<a href="{0}">{1}</a>', obj.get_gallery_url(), obj.file.name)

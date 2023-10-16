@@ -143,4 +143,41 @@ $(document).ready(function () {
         console.log(`jsonData: ${jsonData}`)
         socket.send(jsonData)
     })
+
+    // Handle Backup Delete
+    $('.delete-backup').click(function () {
+        const dataID = $(this).data('id')
+        console.log(`.delete-backup click dataID: ${dataID}`)
+        $('#confirmDeleteDiscordHookBtn').data('id', dataID)
+        $('#deleteDiscordHookModal').modal('show')
+    })
+
+    // const exampleModal = document.getElementById('deleteDiscordHookModal')
+    // console.log(exampleModal)
+    // if (exampleModal) {
+    //     exampleModal.addEventListener('show.bs.modal', (event) => {
+    //         // Button that triggered the modal
+    //         // dataID = $('#confirmDeleteDiscordHookBtn').data('id')
+    //         // console.log(`dataID: ${dataID}`)
+    //         // console.log(event)
+    //         // const button = event.relatedTarget
+    //         // console.log(button)
+    //         // // Extract info from data-bs-* attributes
+    //         // const dataID = button.getAttribute('data-id')
+    //         // console.log(`dataID: ${dataID}`)
+    //         // // If necessary, you could initiate an Ajax request here
+    //         // // and then do the updating in a callback.
+    //         //
+    //         // // Update the modal's content.
+    //         // const modalTitle = exampleModal.querySelector('.modal-title')
+    //         // console.log(modalTitle)
+    //         // const modalBodyInput = exampleModal.querySelector(
+    //         //     '#confirmDeleteDiscordHookBtn'
+    //         // )
+    //         // console.log(modalBodyInput)
+    //         //
+    //         // modalTitle.textContent = `New message to ${dataID}`
+    //         // modalBodyInput.value = dataID
+    //     })
+    // }
 })

@@ -397,12 +397,14 @@ def backup_user(user_id: int):
     log.debug('json_name: %s', json_name)
     with open(os.path.join(settings.MEDIA_ROOT, json_name), 'w') as f:
         f.write(buffer.read())
-    backup = UserBackups.objects.create(user_id=user_id, filename=f'{user_id}_{ts}.zip')
-    with zipfile.ZipFile(os.path.join(settings.MEDIA_ROOT, backup.filename), 'w') as f:
+    backup_filename = f'{user_id}_{ts}.zip'
+    backup = UserBackups.objects.create(user_id=user_id)
+    with zipfile.ZipFile(os.path.join(settings.MEDIA_ROOT, backup_filename), 'w') as f:
         f.write(os.path.join(settings.MEDIA_ROOT, json_name), arcname=json_name)
         for file in files:
             log.debug('adding path: %s', os.path.join(settings.MEDIA_ROOT, file.name))
             f.write(os.path.join(settings.MEDIA_ROOT, file.name), arcname=os.path.join('files', file.name))
+    backup.file = backup_filename
     backup.finished = True
     backup.save()
     # TODO: send user notification here or with model signal

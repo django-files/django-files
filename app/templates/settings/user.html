@@ -167,9 +167,9 @@
             <thead>
             <tr>
                 <th scope="col" class="d-none d-sm-table-cell">ID</th>
-                <th scope="col" class="d-none d-sm-table-cell">Guild ID</th>
-                <th scope="col">Channel ID</th>
-                <th scope="col" class="d-none d-md-table-cell">Date</th>
+                <th scope="col" class="d-none d-sm-table-cell">File</th>
+                <th scope="col">Ready</th>
+                <th scope="col" class="d-none d-md-table-cell">Created</th>
                 <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>
             </tr>
             </thead>
@@ -177,15 +177,15 @@
             {% for data in backups %}
                 <tr id="webhook-{{ data.id }}">
                     <th scope="row" class="d-none d-sm-table-cell">{{ data.id }}</th>
-                    <td><a class="clip link-body-emphasis text-decoration-none" role="button"
-                           data-clipboard-text="{{ data.guild_id }}">{{ data.guild_id }}</a></td>
+                    <td><a class="link-body-emphasis text-decoration-none" role="link"
+                           href="{{ data.get_gallery_url }}">{{ data.file.name }}</a></td>
                     <td class="d-none d-sm-table-cell">
                         <a class="clip link-body-emphasis text-decoration-none" role="button"
-                           data-clipboard-text="{{ data.channel_id }}">{{ data.channel_id }}</a></td>
+                           data-clipboard-text="{{ data.finished|yesno }}">{{ data.finished|yesno }}</a></td>
                     <td class="d-none d-md-table-cell">
                         <a class="clip link-body-emphasis text-decoration-none" role="button"
                            data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a></td>
-                    <td class="text-center"><a role="button" class="deleteDiscordHookBtn" data-hook-id="{{ data.id }}" title="Delete">
+                    <td class="text-center"><a role="button" class="delete-backup" data-id="{{ data.id }}" title="Delete">
                         <i class="fa-regular fa-trash-can link-danger"></i></a></td>
                 </tr>
             {% endfor %}

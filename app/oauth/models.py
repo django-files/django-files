@@ -7,7 +7,9 @@ from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from home.util.nginx import sign_nginx_urls
 from home.util.rand import rand_string, rand_color_hex
+from home.util.storage import StoragesRouterFileField, use_s3
 from oauth.managers import DiscordWebhooksManager, UserInvitesManager
 from settings.models import SiteSettings
 
@@ -174,9 +176,25 @@ class Github(models.Model):
 
 
 class UserBackups(models.Model):
+    upload_to = '.'
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    filename = models.CharField(max_length=64, verbose_name='Backup File Name')
-    finished = models.BooleanField(default=False)
+    file = StoragesRouterFileField(null=True, blank=True, upload_to=upload_to)
+    finished = models.BooleanField(default=False, verbose_name='Backup Completed.')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Backup Created Date.')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='Backup Updated Date.')
+
+    def _sign_nginx_url(self, uri: str) -> str:
+        if use_s3():
+            # guard against using this in cloud settings, or at least not s3 for now
+            return ''
+        return sign_nginx_urls(uri)
+
+    def get_gallery_url(self) -> str:
+        """Generates a static url for use on a gallery page."""
+        if not self.file:
+            return ''
+        if use_s3():
+            return self.file._storage.url(self.file.name, expire=86400)
+        url = self.file.url + "?view=gallery"
+        return url + self._sign_nginx_url(self.file.url).replace('?', '&')
