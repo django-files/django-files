@@ -63,9 +63,18 @@ gulp.task('datatables', () => {
             'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.mjs',
             'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.mjs',
             'node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css',
-            'node_modules/datatables.net/js/jquery.dataTables.min.js'
+            'node_modules/datatables.net/js/jquery.dataTables.min.js',
+            'node_modules/datatables.net-plugins/sorting/datetime-moment.js'
         ])
         .pipe(gulp.dest('app/static/dist/datatables'))
+})
+
+gulp.task('moment', () => {
+    return gulp
+        .src([
+            'node_modules/moment/min/moment-with-locales.min.js',
+        ])
+        .pipe(gulp.dest('app/static/dist/moment'))
 })
 
 
@@ -78,6 +87,7 @@ gulp.task(
         'datatables',
         'fontawesome',
         'jquery',
+        'moment',
         'swagger-ui',
         'swagger-yaml'
     )

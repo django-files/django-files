@@ -22,7 +22,7 @@
 
     <td class="d-none d-xl-table-cell align-middle">
         <a class="clip link-body-emphasis text-decoration-none" role="button"
-           data-clipboard-text="{{ file.date|localtime }}">{{ file.date|localtime }}</a></td>
+           data-clipboard-text="{{ file.date|date:'c' }}">{{ file.date|date:'c' }}</a></td>
 
     <td class="d-none d-md-table-cell align-middle">
         <a class="clip link-body-emphasis text-decoration-none expire-value" role="button"

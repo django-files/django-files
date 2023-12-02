@@ -15,9 +15,11 @@
         "bootstrap": "^5.3.1",
         "clipboard": "^2.0.11",
         "datatables.net-bs5": "^1.13.8",
+        "datatables.net-plugins": "^1.13.6",
         "gulp": "^4.0.2",
         "highlight.js": "^11.8.0",
         "jquery": "^3.6.4",
+        "moment": "^2.29.4",
         "swagger-ui": "^5.6.2"
     },
     "scripts": {
