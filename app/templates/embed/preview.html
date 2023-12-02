@@ -49,19 +49,22 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
     <style>
         {{ css|safe }}
     </style>
+    <link rel="stylesheet" href="{% static 'css/preview.css' %}">
 {% endblock %}
 
 {% block nav1color %}{{ file.user.nav_color_1 }}{% endblock %}
 {% block nav2color %}{{ file.user.nav_color_2 }}{% endblock %}
 
 {% block body %}
-    <div class="container-fluid py-2 px-2">
+    <div class="container-fluid py-2 px-2" id="container-main">
         <div class="card">
             <div class="row g-0">
-                <div class="col-lg-9">
                     {# TODO: Fix this so that we dont check mime type in the template and the view #}
                     {% if render == 'image' %}
+                    <div container>
                         <img src="{{ static_url }}" alt="{{ file.name }}" class="card-img-left img-fluid">
+                        <button class="openbtn" onclick="openNav()"><<</button>
+                    </div>
                     {% elif render == 'video' %}
                         <video class="mw-100 pt-2 ps-2 pe-2" controls>
                             <source src="{{ static_url }}" type="video/mp4">
@@ -80,8 +83,9 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     {% else %}
                         <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
                     {% endif %}
-                </div>
-            <div class="col-lg-3 d-flex flex-column">
+            </div>
+            <div id="previewSidebar" class="sidebar">
+                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
                 <div id="file-{{ file.id }}" class="card-body">
                     <h3 class="card-title">{{ file.name }}
                         <span class="float-end mt-3">{% include 'files/file-context-menu.html' with file=file %}</span>
@@ -121,7 +125,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% if code or text_preview %}
                             <div class="col-12 ">
                                 <a class="clip btn btn-success btn-lg d-block" role="button"
-                                   data-clipboard-text="{% if code %}{{ code }}{% else %}{{ text_preview }}{% endif %}">
+                                data-clipboard-text="{% if code %}{{ code }}{% else %}{{ text_preview }}{% endif %}">
                                     <i class="fa-regular fa-file-lines me-2"></i> Copy Text</a>
                             </div>
                         {% endif %}
@@ -165,6 +169,17 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 });
         </script>
     {% endif %}
+    <script>
+        function openNav() {
+          document.getElementById("previewSidebar").style.width = "350px";
+          document.getElementById("container-main").style.marginRight = "25%";
+        }
+        
+        function closeNav() {
+          document.getElementById("previewSidebar").style.width = "0";
+          document.getElementById("container-main").style.marginRight= "0";
+        }
+    </script>
     {% if request.user.is_authenticated %}
         <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
     {% endif %}
