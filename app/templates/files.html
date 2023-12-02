@@ -43,6 +43,12 @@
     <script src="{% static 'dist/datatables/jquery.dataTables.js' %}"></script>
     <script src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
     <script>
-        new DataTable('#files-table');
+        new DataTable('#files-table', {
+            lengthMenu: [
+                [10, 25, 50, 100, -1],
+                [10, 25, 50, 100, 'All']
+            ],
+            pageLength: -1
+        });
     </script>
 {% endblock %}
