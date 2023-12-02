@@ -56,12 +56,27 @@ gulp.task('swagger-yaml', () => {
     return gulp.src(['swagger.yaml']).pipe(gulp.dest('app/static/dist/'))
 })
 
+gulp.task('datatables', () => {
+    return gulp
+        .src([
+            'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js',
+            'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.mjs',
+            'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.mjs',
+            'node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css',
+            'node_modules/datatables.net-bs5/css/dataTables.bootstrap5.css',
+            'node_modules/datatables.net/js/jquery.dataTables.js'
+        ])
+        .pipe(gulp.dest('app/static/dist/datatables'))
+})
+
+
 gulp.task(
     'default',
     gulp.parallel(
         'animate',
         'bootstrap',
         'clipboard',
+        'datatables',
         'fontawesome',
         'jquery',
         'swagger-ui',

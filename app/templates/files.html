@@ -40,5 +40,10 @@
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
-
+    <script type="text/javascript" src="{% static 'dist/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'dist/datatables/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
+    <script>
+        new DataTable('#files-table');
+    </script>
 {% endblock %}
