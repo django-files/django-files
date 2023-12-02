@@ -45,4 +45,17 @@
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/shorts.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
+    <script src="{% static 'dist/datatables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
+    <script>
+        new DataTable('#shorts-table', {
+            lengthMenu: [
+                [10, 25, 50, 100, -1],
+                [10, 25, 50, 100, 'All']
+            ],
+            pageLength: -1
+        });
+    </script>
 {% endblock %}
