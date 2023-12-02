@@ -6,7 +6,9 @@
 {% block files_active %}active{% endblock %}
 {% block title %}Files{% endblock %}
 
-{% block head %}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
+{% endblock %}
 
 {% block body %}
     <div class="container-fluid py-3 px-4">
@@ -40,7 +42,7 @@
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
-    <script src="{% static 'dist/datatables/jquery.dataTables.js' %}"></script>
+    <script src="{% static 'dist/datatables/jquery.dataTables.min.js' %}"></script>
     <script src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
     <script>
         new DataTable('#files-table', {

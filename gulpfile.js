@@ -63,8 +63,7 @@ gulp.task('datatables', () => {
             'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.mjs',
             'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.mjs',
             'node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css',
-            'node_modules/datatables.net-bs5/css/dataTables.bootstrap5.css',
-            'node_modules/datatables.net/js/jquery.dataTables.js'
+            'node_modules/datatables.net/js/jquery.dataTables.min.js'
         ])
         .pipe(gulp.dest('app/static/dist/datatables'))
 })
