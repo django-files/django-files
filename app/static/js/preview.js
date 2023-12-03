@@ -6,16 +6,16 @@ document.getElementById('openSidebar').addEventListener('click', openSidebar)
 document.getElementById('closeSidebar').addEventListener('click', closeSidebar)
 
 const previewSidebar = document.getElementById('previewSidebar')
-const sidebarWidth = '350px'
+const previewSidebarWidth = '350px'
 
 function domLoaded() {
     if (Cookies.get('previewSidebar')) {
-        previewSidebar.style.width = sidebarWidth
+        previewSidebar.style.width = previewSidebarWidth
     }
 }
 
 function openSidebar() {
-    previewSidebar.style.width = sidebarWidth
+    previewSidebar.style.width = previewSidebarWidth
     Cookies.set('previewSidebar', 'enabled')
 }
 
