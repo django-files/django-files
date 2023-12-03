@@ -324,7 +324,7 @@ class FilesTestCase(TestCase):
         self.assertEqual(file.preview_uri(), '/u/gps.jpg')
         self.assertEqual(file.mime, 'image/jpeg')
         self.assertEqual(file.size, 3412)
-        self.assertEqual(file.get_size(), '3.3 KiB')
+        self.assertEqual(file.get_size(), '3.4 KB')
         self.assertEqual(file.exif, exif_data)
         self.assertEqual(file.meta, meta_data)
         response = self.client.get(reverse('home:url-route', kwargs={'filename': file.name}), follow=True)
