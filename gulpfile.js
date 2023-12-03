@@ -64,19 +64,19 @@ gulp.task('datatables', () => {
             'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.mjs',
             'node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css',
             'node_modules/datatables.net/js/jquery.dataTables.min.js',
-            'node_modules/datatables.net-plugins/sorting/file-size.min.js'
+            'node_modules/datatables.net-plugins/sorting/file-size.min.js',
+            'node_modules/datatables.net-plugins/dataRender/datetime.min.js',
+            'node_modules/datatables.net-datetime/dist/dataTables.dateTime.min.js',
+            'node_modules/moment/moment.js',
         ])
         .pipe(gulp.dest('app/static/dist/datatables'))
 })
 
 gulp.task('moment', () => {
     return gulp
-        .src([
-            'node_modules/moment/min/moment-with-locales.min.js',
-        ])
+        .src(['node_modules/moment/min/moment-with-locales.min.js'])
         .pipe(gulp.dest('app/static/dist/moment'))
 })
-
 
 gulp.task(
     'default',

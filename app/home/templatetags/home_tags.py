@@ -52,7 +52,11 @@ def bytes_human(num):
 def convert_str_date(value):
     if not value:
         return ''
-    return str(datetime.datetime.strptime(value, '%Y:%m:%d %H:%M:%S').strftime('%m/%d/%Y %H:%M:%S'))
+    try:
+        return str(datetime.datetime.strptime(value, '%Y:%m:%d %H:%M:%S').strftime('%m/%d/%Y %H:%M:%S'))
+    except Exception as error:
+        logger.info(error)
+        return ''
 
 
 @register.filter(name="sort_mimes")

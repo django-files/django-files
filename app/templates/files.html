@@ -42,26 +42,29 @@
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
-    <script src="{% static 'dist/datatables/file-size.min.js' %}"></script>
-    <script src="{% static 'dist/datatables/jquery.dataTables.min.js' %}"></script>
-    <script src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
-    
+    <script type="text/javascript" src="{% static 'dist/datatables/moment.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/jquery.dataTables.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/file-size.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
+
     <script>
     $(document).ready(function() {
         $('#files-table').DataTable({
+            processing: true,
             order: [[0, 'desc']],
             lengthMenu: [
                 [10, 25, 50, 100, -1],
-                [10, 25, 50, 100, 'All']
+                [10, 25, 50, 100, 'All'],
             ],
             pageLength: -1,
             saveState: true,
             columnDefs: [
-            {
-                type: 'file-size',
-                targets: 2
-            }
-        ]
+                { targets: 2, type: 'file-size' },
+                { targets: 4, render: DataTable.render.datetime( 'DD MMM YYYY, kk:mm' ), },
+                { targets: [6, 7, 9], orderable: false }
+            ],
         });
     });
     </script>
