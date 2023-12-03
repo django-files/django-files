@@ -60,11 +60,9 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         <div class="card">
             <div class="row g-0">
                     {# TODO: Fix this so that we dont check mime type in the template and the view #}
-                    {% if render == 'image' %}
                     <div container>
-                        <img src="{{ static_url }}" alt="{{ file.name }}" class="card-img-left img-fluid">
-                        <button class="openbtn" onclick="openNav()"><<</button>
-                    </div>
+                    {% if render == 'image' %}
+                        <img src="{{ static_url }}" alt="{{ file.name }}" class="card-img-top img-fluid">
                     {% elif render == 'video' %}
                         <video class="mw-100 pt-2 ps-2 pe-2" controls>
                             <source src="{{ static_url }}" type="video/mp4">
@@ -83,12 +81,20 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     {% else %}
                         <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
                     {% endif %}
+                    <button class="openbtn" onclick="openNav()"><i class="fa-solid fa-square-caret-left"></i></button>
+                    <div class="context-placement" data-bs-toggle="dropdown">
+                        <i class="fa-regular fa-square-caret-down"></i>
+                        <button class="file-context-dropdown my-0 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" hidden></button>
+                        {% include 'files/file-context-menu.html' with file=file %}</div>
+                    </div>
             </div>
             <div id="previewSidebar" class="sidebar">
                 <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
                 <div id="file-{{ file.id }}" class="card-body">
                     <h3 class="card-title">{{ file.name }}
-                        <span class="float-end mt-3">{% include 'files/file-context-menu.html' with file=file %}</span>
+                        <span class="float-end mt-3"><button class="btn btn-outline-secondary file-context-dropdown my-0 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-regular fa-square-caret-down"></i>
+                        </button>{% include 'files/file-context-menu.html' with file=file %}</span>
                     </h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                     {% if file.meta.PILImageWidth %}
@@ -172,12 +178,10 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
     <script>
         function openNav() {
           document.getElementById("previewSidebar").style.width = "350px";
-          document.getElementById("container-main").style.marginRight = "25%";
         }
         
         function closeNav() {
           document.getElementById("previewSidebar").style.width = "0";
-          document.getElementById("container-main").style.marginRight= "0";
         }
     </script>
     {% if request.user.is_authenticated %}

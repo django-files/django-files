@@ -428,7 +428,7 @@ def url_route_view(request, filename):
         file.view += 1
         file.save()
         return render(request, 'embed/markdown.html', context=ctx)
-    elif file.mime.startswith('text/') or file.mime in code_mimes:
+    elif file.mime.startswith('text/') or file.mime in code_mimes or file.mime in ['application/javascript']:
         log.debug('CODE')
         ctx['render'] = 'code'
         return render(request, 'embed/preview.html', context=ctx)

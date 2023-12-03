@@ -11,17 +11,14 @@ body {
     right: 0;
     background-color:rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(6px);
-    overflow-x: hidden;
+    overflow: hidden;
     transition: 0.5s;
     padding-top: 60px;
   }
   
   .sidebar a {
     padding: 8px 8px 8px 32px;
-    text-decoration: none;
-    font-size: 25px;
     color: #818181;
-    display: block;
     transition: 0.3s;
   }
   
@@ -47,6 +44,22 @@ body {
     position: absolute;
     top: 0px;
     right: 0px;
+  }
+
+  .context-placement {
+    font-size: 20px;
+    cursor: pointer;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    position: absolute;
+    top: 0px;
+    right: 50px;
+  }
+
+  .context-placement:hover {
+    background-color: #7b7b7b;
   }
   
   .openbtn:hover {
