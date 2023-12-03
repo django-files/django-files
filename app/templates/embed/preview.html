@@ -60,41 +60,53 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         <div class="card">
             <div class="row g-0">
                     {# TODO: Fix this so that we dont check mime type in the template and the view #}
-                <div container>
-                    {% if render == 'image' %}
-                        <img src="{{ static_url }}" alt="{{ file.name }}" class="img img-fluid">
-                    {% elif render == 'video' %}
-                        <video class="mw-100 pt-2 ps-2 pe-2" controls>
-                            <source src="{{ static_url }}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                    {% elif render == 'audio' %}
-                        <audio class="w-100" controls>
-                            <source src="{{ static_url }}" type="{{ file.mime }}">
-                            Your browser does not support the audio tag.
-                        </audio>
-                    {% elif render in 'text,code' %}
-                        <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
-                        <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
-                        <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
-                        <pre class="pt-3 ps-3"><code id="text-preview"><i class="fas fa-spinner fa-pulse"></i></code></pre>
-                    {% else %}
-                        <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
-                    {% endif %}
-                    <button class="openbtn" onclick="openNav()"><i class="fa-solid fa-square-caret-left"></i></button>
-                    <div class="context-placement" id="context-placement" data-bs-toggle="dropdown">
-                        <i class="fa-regular fa-square-caret-down"></i>
-                        <button class="file-context-dropdown my-0 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" hidden></button>
-                        {% include 'files/file-context-menu.html' with file=file %}</div>
+                    <div class="container">
+                        {% if render == 'image' %}
+                            <img src="{{ static_url }}" alt="{{ file.name }}" class="card-img-top img-fluid">
+                        {% elif render == 'video' %}
+                            <video class="mw-100 pt-2 ps-2 pe-2" controls>
+                                <source src="{{ static_url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        {% elif render == 'audio' %}
+                            <audio class="w-100" controls>
+                                <source src="{{ static_url }}" type="{{ file.mime }}">
+                                Your browser does not support the audio tag.
+                            </audio>
+                        {% elif render in 'text,code' %}
+                            <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
+                            <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
+                            <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
+                            <pre class="pt-3 ps-3"><code id="text-preview"><i class="fas fa-spinner fa-pulse"></i></code></pre>
+                        {% else %}
+                            <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
+                        {% endif %}
+                        <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
+                        <div class="context-placement" data-bs-toggle="dropdown">
+                            <i class="fa-regular fa-square-caret-down"></i>
+                            <button class="file-context-dropdown my-0 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" hidden></button>
+                            {% include 'files/file-context-menu.html' with file=file %}
+                        </div>
                     </div>
-                </div>
-                <div id="previewSidebar" class="sidebar">
-                    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-                    <div id="file-{{ file.id }}" class="card-body">
-                        <h3 class="card-title">{{ file.name }}</h3>
-                        <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
-                        {% if file.meta.PILImageWidth %}
-                        <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
+            </div>
+            <div id="previewSidebar" class="sidebar">
+                <a role="button" class="closebtn" id="closeSidebar">&times;</a>
+                <div id="file-{{ file.id }}" class="card-body">
+                    <h3 class="card-title">{{ file.name }}
+                        <span class="float-end mt-3"><button class="btn btn-outline-secondary file-context-dropdown my-0 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-regular fa-square-caret-down"></i>
+                        </button>{% include 'files/file-context-menu.html' with file=file %}</span>
+                    </h3>
+                    <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
+                    {% if file.meta.PILImageWidth %}
+                    <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
+                    {% endif %}
+                    {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
+                    <p class="card-text mt-0">
+                        {% if 'image' in file.mime %}
+                            <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
+                        {% else %}
+                            <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
                         {% endif %}
                         {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
                         <p class="card-text mt-0">
@@ -172,8 +184,9 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 });
         </script>
     {% endif %}
-    <script type="text/javascript" src="{% static 'js/preview.js' %}"></script>
     {% if request.user.is_authenticated %}
         <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
     {% endif %}
+    <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/preview.js' %}"></script>
 {% endblock %}
