@@ -2,8 +2,8 @@
 
 document.addEventListener('DOMContentLoaded', domLoaded)
 
-document.getElementById('open-nav').addEventListener('click', openSidebar)
-document.getElementById('close-nav').addEventListener('click', closeSidebar)
+document.getElementById('openSidebar').addEventListener('click', openSidebar)
+document.getElementById('closeSidebar').addEventListener('click', closeSidebar)
 
 const previewSidebar = document.getElementById('previewSidebar')
 const sidebarWidth = '350px'
