@@ -9,14 +9,14 @@ const previewSidebar = document.getElementById('previewSidebar')
 const sidebarWidth = '350px'
 
 function domLoaded() {
-    if (Cookies.get('previewSidebar') === 'open') {
+    if (Cookies.get('previewSidebar')) {
         previewSidebar.style.width = sidebarWidth
     }
 }
 
 function openSidebar() {
     previewSidebar.style.width = sidebarWidth
-    Cookies.set('previewSidebar', 'open')
+    Cookies.set('previewSidebar', 'enabled')
 }
 
 function closeSidebar() {
