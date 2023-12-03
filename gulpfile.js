@@ -36,6 +36,12 @@ gulp.task('fontawesome', () => {
         .pipe(gulp.dest('app/static/dist/fontawesome'))
 })
 
+gulp.task('js-cookie', () => {
+    return gulp
+        .src('node_modules/js-cookie/dist/js.cookie.min.js')
+        .pipe(gulp.dest('app/static/dist/js-cookie'))
+})
+
 gulp.task('jquery', () => {
     return gulp
         .src('node_modules/jquery/dist/jquery.min.js')
@@ -63,6 +69,7 @@ gulp.task(
         'bootstrap',
         'clipboard',
         'fontawesome',
+        'js-cookie',
         'jquery',
         'swagger-ui',
         'swagger-yaml'
