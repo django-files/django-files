@@ -42,13 +42,12 @@
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
+    <script src="{% static 'dist/datatables/file-size.min.js' %}"></script>
     <script src="{% static 'dist/datatables/jquery.dataTables.min.js' %}"></script>
-    <script src="{% static 'dist/moment/moment-with-locales.min.js' %}"></script>
     <script src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
-    <script src="{% static 'dist/datatables/datetime-moment.js' %}"></script>
+    
     <script>
     $(document).ready(function() {
-        $.fn.dataTable.moment( 'MMM. DD, YYYY, h:m' )
         $('#files-table').DataTable({
             order: [[0, 'desc']],
             lengthMenu: [
@@ -59,8 +58,8 @@
             saveState: true,
             columnDefs: [
             {
-                name: "date-format",
-                render: DataTable.render.datetime()
+                type: 'file-size',
+                targets: 2
             }
         ]
         });

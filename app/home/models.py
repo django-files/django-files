@@ -138,11 +138,11 @@ class Files(models.Model):
 
     @staticmethod
     def get_size_of(num: int) -> str:
-        for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
-            if abs(num) < 1024.0:
+        for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
+            if abs(num) < 1000.0:
                 return f"{num:3.1f} {unit}B"
-            num /= 1024.0
-        return f"{num:.1f} YiB"
+            num /= 1000.0
+        return f"{num:.1f} YB"
 
 
 class FileStats(models.Model):
