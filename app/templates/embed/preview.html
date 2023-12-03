@@ -172,21 +172,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 });
         </script>
     {% endif %}
-    <script>
-        $(".card-body").fadeOut(200);
-        function openNav() {
-          document.getElementById("previewSidebar").style.width = "350px";
-          document.getElementById("context-placement").style.right = "355px";
-          $(".openbtn").hide();
-          $(".card-body").fadeIn(200);
-        }  
-        function closeNav() {
-          document.getElementById("previewSidebar").style.width = "0";
-          document.getElementById("context-placement").style.right = "50px";
-          $(".openbtn").show();
-          $(".card-body").fadeOut(200);
-        }
-    </script>
+    <script type="text/javascript" src="{% static 'js/preview.js' %}"></script>
     {% if request.user.is_authenticated %}
         <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
     {% endif %}
