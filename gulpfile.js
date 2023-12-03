@@ -23,6 +23,21 @@ gulp.task('clipboard', () => {
         .pipe(gulp.dest('app/static/dist/clipboard'))
 })
 
+gulp.task('datatables', () => {
+    return gulp
+        .src([
+            'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.js',
+            'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.min.mjs',
+            'node_modules/datatables.net-bs5/js/dataTables.bootstrap5.mjs',
+            'node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css',
+            'node_modules/datatables.net/js/jquery.dataTables.min.js',
+            'node_modules/datatables.net-plugins/sorting/file-size.min.js',
+            'node_modules/datatables.net-plugins/dataRender/datetime.min.js',
+            'node_modules/datatables.net-datetime/dist/dataTables.dateTime.min.js',
+        ])
+        .pipe(gulp.dest('app/static/dist/datatables'))
+})
+
 gulp.task('fontawesome', () => {
     return gulp
         .src(
@@ -48,6 +63,12 @@ gulp.task('jquery', () => {
         .pipe(gulp.dest('app/static/dist/jquery'))
 })
 
+gulp.task('moment', () => {
+    return gulp
+        .src(['node_modules/moment/min/moment.min.js'])
+        .pipe(gulp.dest('app/static/dist/moment'))
+})
+
 gulp.task('swagger-ui', () => {
     return gulp
         .src([
@@ -68,9 +89,11 @@ gulp.task(
         'animate',
         'bootstrap',
         'clipboard',
+        'datatables',
         'fontawesome',
         'js-cookie',
         'jquery',
+        'moment',
         'swagger-ui',
         'swagger-yaml'
     )

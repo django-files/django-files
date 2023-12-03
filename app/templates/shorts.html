@@ -6,7 +6,9 @@
 {% block shorts_active %}active{% endblock %}
 {% block title %}Shorts{% endblock %}
 
-{% block head %}{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
+{% endblock %}
 
 {% block body %}
     <div class="container-fluid py-3 px-4">
@@ -45,4 +47,26 @@
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/shorts.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
+    <script src="{% static 'dist/datatables/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#shorts-table').DataTable({
+                order: [],
+                processing: true,
+                saveState: true,
+                pageLength: -1,
+                lengthMenu: [
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, 'All'],
+                ],
+                columnDefs: [
+                    { targets: [3, 4], orderable: false },
+                ],
+            });
+        });
+    </script>
 {% endblock %}

@@ -12,14 +12,19 @@ function domLoaded() {
     if (Cookies.get('previewSidebar')) {
         previewSidebar.style.width = previewSidebarWidth
     }
+    $(".card-body").fadeOut(200);
 }
 
 function openSidebar() {
     previewSidebar.style.width = previewSidebarWidth
     Cookies.set('previewSidebar', 'enabled')
+    $(".openbtn").hide();
+    $(".card-body").fadeIn(300);
 }
 
 function closeSidebar() {
     previewSidebar.style.width = '0'
     Cookies.remove('previewSidebar')
+    $(".openbtn").show();
+    $(".card-body").fadeOut(200);
 }

@@ -42,6 +42,7 @@ body {
     padding: 10px 15px;
     border: none;
     position: absolute;
+    transition: .5s;
     top: 0px;
     right: 0px;
   }
@@ -56,19 +57,19 @@ body {
     position: absolute;
     top: 0px;
     right: 50px;
+    transition: .5s;
+  }
+
+  .context-placement {
+    transition: 0.3s;
   }
 
   .context-placement:hover {
-    background-color: #7b7b7b;
+    background-color: #444;
   }
   
   .openbtn:hover {
     background-color: #444;
-  }
-  
-  #main {
-    transition: margin-left .5s;
-    padding: 16px;
   }
   
   /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
