@@ -6,15 +6,16 @@ document.getElementById('open-nav').addEventListener('click', openSidebar)
 document.getElementById('close-nav').addEventListener('click', closeSidebar)
 
 const previewSidebar = document.getElementById('previewSidebar')
+const sidebarWidth = '350px'
 
 function domLoaded() {
     if (Cookies.get('previewSidebar') === 'open') {
-        previewSidebar.style.width = '350px'
+        previewSidebar.style.width = sidebarWidth
     }
 }
 
 function openSidebar() {
-    previewSidebar.style.width = '350px'
+    previewSidebar.style.width = sidebarWidth
     Cookies.set('previewSidebar', 'open')
 }
 
