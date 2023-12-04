@@ -2,20 +2,47 @@
 
 document.addEventListener('DOMContentLoaded', domLoaded)
 
+window.addEventListener('resize', checkSize)
+
 const previewSidebar = $('#previewSidebar')
 const contextPlacement = $('#contextPlacement')
 const sidebarCard = $('.sidebarCard')
 const openSidebarButton = $('#openSidebar')
 
-openSidebarButton.on('click', openSidebar)
-$('#closeSidebar').on('click', closeSidebar)
+openSidebarButton.on('click', openSidebarCallback)
+$('#closeSidebar').on('click', closeSidebarCallback)
+
+const sidebarMaxWidth = 780
 
 function domLoaded() {
-    if (window.innerWidth >= 780) {
+    if (window.innerWidth >= sidebarMaxWidth) {
         if (!Cookies.get('previewSidebar')) {
             openSidebar()
         }
     }
+}
+
+/**
+ * TODO: Add method to know if side bar is expanded or collapsed
+ */
+function checkSize() {
+    if (window.innerWidth >= sidebarMaxWidth) {
+        if (!Cookies.get('previewSidebar')) {
+            openSidebar()
+        }
+    } else {
+        closeSidebar()
+    }
+}
+
+function openSidebarCallback() {
+    openSidebar()
+    Cookies.remove('previewSidebar')
+}
+
+function closeSidebarCallback() {
+    closeSidebar()
+    Cookies.set('previewSidebar', 'disabled', { expires: 365 })
 }
 
 function openSidebar() {
@@ -25,7 +52,6 @@ function openSidebar() {
     }
     openSidebarButton.hide()
     sidebarCard.fadeIn(300)
-    Cookies.remove('previewSidebar')
 }
 
 function closeSidebar() {
@@ -35,5 +61,4 @@ function closeSidebar() {
     }
     openSidebarButton.show()
     sidebarCard.fadeOut(200)
-    Cookies.set('previewSidebar', 'disabled', { expires: 365 })
 }
