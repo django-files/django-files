@@ -1,5 +1,5 @@
 body {
-    font-family: "Lato", sans-serif;
+    font-family: Lato, sans-serif;
   }
   
   .sidebar {
@@ -9,7 +9,7 @@ body {
     z-index: 1;
     top: 0;
     right: 0;
-    background-color:rgba(0, 0, 0, 0.5);
+    background-color:rgba(0 0 0 / 0.5);
     backdrop-filter: blur(6px);
     overflow: hidden;
     transition: 0.5s;
@@ -34,14 +34,14 @@ body {
     margin-left: 50px;
   }
 
-  .fileContextDropdownMenu {
-    background-color:rgba(0, 0, 0, 0.5);
+  .file-context-dropdown-menu {
+    background-color:rgba(0 0 0 / 0.5);
   }
   
   .openbtn {
     font-size: 20px;
     cursor: pointer;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0 0 0 / 0.5);
     color: white;
     padding: 10px 15px;
     border: none;
@@ -77,7 +77,7 @@ body {
   }
   
   /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
-  @media screen and (max-height: 450px) {
+  @media screen and (max-height <= 450px) {
     .sidebar {padding-top: 15px;}
     .sidebar a {font-size: 18px;}
   }
