@@ -8,6 +8,8 @@ document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
 const previewSidebar = document.getElementById('previewSidebar');
 const previewSidebarWidth = '350px';
 
+const contextPlacement = document.getElementById("context-placement")
+
 function domLoaded() {
     if (Cookies.get('previewSidebar')) {
         previewSidebar.style.width = previewSidebarWidth;
@@ -18,7 +20,9 @@ function domLoaded() {
 
 function openSidebar() {
     previewSidebar.style.width = previewSidebarWidth;
-    document.getElementById("context-placement").style.right = "355px";
+    if (contextPlacement) {
+        contextPlacement.style.right = "355px";
+    }
     Cookies.set('previewSidebar', 'enabled');
     $(".openbtn").hide();
     $(".sidebar-text").fadeIn(300);
@@ -26,7 +30,9 @@ function openSidebar() {
 
 function closeSidebar() {
     previewSidebar.style.width = '0';
-    document.getElementById("context-placement").style.right = "50px";
+    if (contextPlacement) {
+        contextPlacement.style.right = "50px";
+    }
     Cookies.remove('previewSidebar');
     $(".openbtn").show();
     $(".sidebar-text").fadeOut(200);
