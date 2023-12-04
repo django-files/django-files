@@ -9,7 +9,7 @@ body {
     z-index: 1;
     top: 0;
     right: 0;
-    background-color:rgba(0 0 0 / 0.5);
+    background-color:rgba(0 0 0 / 50%);
     backdrop-filter: blur(6px);
     overflow: hidden;
     transition: 0.5s;
@@ -35,13 +35,13 @@ body {
   }
 
   .file-context-dropdown-menu {
-    background-color:rgba(0 0 0 / 0.5);
+    background-color:rgba(0 0 0 / 50%);
   }
   
   .openbtn {
     font-size: 20px;
     cursor: pointer;
-    background-color: rgba(0 0 0 / 0.5);
+    background-color: rgba(0 0 0 / 50%);
     color: white;
     padding: 10px 15px;
     border: none;
@@ -54,7 +54,7 @@ body {
   .context-placement {
     font-size: 20px;
     cursor: pointer;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 50%);
     color: white;
     padding: 10px 15px;
     border: none;

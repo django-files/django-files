@@ -15,6 +15,7 @@ function domLoaded() {
         $('.sidebar-text').fadeOut(200)
     } else {
         previewSidebar.style.width = previewSidebarWidth
+        contextPlacement.style.right = '365px'
     }
 }
 
