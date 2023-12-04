@@ -12,9 +12,9 @@ const contextPlacement = document.getElementById("context-placement")
 
 function domLoaded() {
     if (Cookies.get('previewSidebar')) {
-        previewSidebar.style.width = previewSidebarWidth;
-    } else {
         $(".sidebar-text").fadeOut(200);
+    } else {
+        previewSidebar.style.width = previewSidebarWidth;
     }
 }
 
@@ -23,7 +23,7 @@ function openSidebar() {
     if (contextPlacement) {
         contextPlacement.style.right = "355px";
     }
-    Cookies.set('previewSidebar', 'enabled');
+    Cookies.remove('previewSidebar');
     $(".openbtn").hide();
     $(".sidebar-text").fadeIn(300);
 }
@@ -33,7 +33,7 @@ function closeSidebar() {
     if (contextPlacement) {
         contextPlacement.style.right = "50px";
     }
-    Cookies.remove('previewSidebar');
+    Cookies.set('previewSidebar', 'enabled');
     $(".openbtn").show();
     $(".sidebar-text").fadeOut(200);
 }
