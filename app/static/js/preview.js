@@ -34,5 +34,5 @@ function closeSidebar() {
     }
     openSidebarButton.show()
     sidebarCard.fadeOut(200)
-    Cookies.set('previewSidebar', 'disabled')
+    Cookies.set('previewSidebar', 'disabled', { expires: 365 })
 }
