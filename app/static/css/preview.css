@@ -33,6 +33,10 @@ body {
     font-size: 36px;
     margin-left: 50px;
   }
+
+  .fileContextDropdownMenu {
+    background-color:rgba(0, 0, 0, 0.5);
+  }
   
   .openbtn {
     font-size: 20px;
@@ -43,8 +47,8 @@ body {
     border: none;
     position: absolute;
     transition: .5s;
-    top: 0px;
-    right: 0px;
+    top: 5px;
+    right: 10px;
   }
 
   .context-placement {
@@ -55,8 +59,8 @@ body {
     padding: 10px 15px;
     border: none;
     position: absolute;
-    top: 0px;
-    right: 50px;
+    top: 5px;
+    right: 60px;
     transition: .5s;
   }
 

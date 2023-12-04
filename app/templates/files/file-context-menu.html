@@ -2,7 +2,7 @@
 
 <div id="ctx-menu-{{ file.pk }}" data-pk="{{ file.pk }}" class="dropdown fileContextDropdown">
 
-    <ul class="dropdown-menu" >
+    <ul class="dropdown-menu fileContextDropdownMenu" >
 
         <li><a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
             <i class="fa-solid fa-link fa-fw me-2 link-info"></i>
