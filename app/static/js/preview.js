@@ -2,9 +2,8 @@
 
 document.addEventListener('DOMContentLoaded', domLoaded)
 
-const previewSidebar = document.getElementById('previewSidebar')
-const contextPlacement = document.getElementById('contextPlacement')
-
+const previewSidebar = $('#previewSidebar')
+const contextPlacement = $('#contextPlacement')
 const sidebarCard = $('.sidebarCard')
 const openSidebarButton = $('#openSidebar')
 
@@ -18,9 +17,9 @@ function domLoaded() {
 }
 
 function openSidebar() {
-    previewSidebar.style.width = '360px'
+    previewSidebar.css('width', '360px')
     if (contextPlacement) {
-        contextPlacement.style.right = '365px'
+        contextPlacement.css('right', '365px')
     }
     openSidebarButton.hide()
     sidebarCard.fadeIn(300)
@@ -28,9 +27,9 @@ function openSidebar() {
 }
 
 function closeSidebar() {
-    previewSidebar.style.width = '0'
+    previewSidebar.css('width', '0')
     if (contextPlacement) {
-        contextPlacement.style.right = '60px'
+        contextPlacement.css('right', '60px')
     }
     openSidebarButton.show()
     sidebarCard.fadeOut(200)
