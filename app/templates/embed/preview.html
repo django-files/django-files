@@ -82,16 +82,16 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                             <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
                         {% endif %}
                         <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
-                            <div class="context-placement" data-bs-toggle="dropdown" id="context-placement">
+                            <div class="context-placement" data-bs-toggle="dropdown" id="contextPlacement">
                                 <i class="fa-regular fa-square-caret-down"></i>
                                 <button class="file-context-dropdown my-0 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" hidden></button>
-                                {% include 'files/file-context-menu.html' with file=file %}
+                                {% include 'files/file-context-menu.html' with file=file extraclass='dropdown-menu-end' %}
                             </div>
                     </div>
             </div>
             <div id="previewSidebar" class="sidebar">
                 <a role="button" class="closebtn" id="closeSidebar">&times;</a>
-                <div id="file-{{ file.id }}" class="card-body sidebar-text">
+                <div id="file-{{ file.id }}" class="card-body" id="sidebarCard">
                     <h3 class="card-title">{{ file.name }}</h3>
                     <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                     {% if file.meta.PILImageWidth %}
