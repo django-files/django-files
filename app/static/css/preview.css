@@ -54,7 +54,7 @@ body {
   .context-placement {
     font-size: 20px;
     cursor: pointer;
-    background-color: rgba(0, 0, 0, 50%);
+    background-color: rgba(0 0 0 / 50%);
     color: white;
     padding: 10px 15px;
     border: none;
