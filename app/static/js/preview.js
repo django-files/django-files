@@ -14,8 +14,7 @@ function domLoaded() {
     if (Cookies.get('previewSidebar')) {
         $('.sidebar-text').fadeOut(200)
     } else {
-        previewSidebar.style.width = previewSidebarWidth
-        contextPlacement.style.right = '365px'
+        openSidebar()
     }
 }
 

@@ -58,11 +58,11 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
 {% block body %}
     <div class="container-fluid py-2 px-2" id="container-main">
         <div class="card">
-            <div class="row g-0">
+            <div class="row">
                     {# TODO: Fix this so that we dont check mime type in the template and the view #}
-                    <div class="container">
+                    <div class="container card-img">
                         {% if render == 'image' %}
-                            <img src="{{ static_url }}" alt="{{ file.name }}" class="img-fluid">
+                            <img src="{{ static_url }}" alt="{{ file.name }}" class="card-img">
                         {% elif render == 'video' %}
                             <video class="mw-100 pt-2 ps-2 pe-2" controls>
                                 <source src="{{ static_url }}" type="video/mp4">
