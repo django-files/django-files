@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', domLoaded)
 const previewSidebar = document.getElementById('previewSidebar')
 const contextPlacement = document.getElementById('contextPlacement')
 
-const sidebarCard = $('#sidebarCard')
+const sidebarCard = $('.sidebarCard')
 const openSidebarButton = $('#openSidebar')
 
 openSidebarButton.on('click', openSidebar)
