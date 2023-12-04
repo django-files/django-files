@@ -11,8 +11,10 @@ openSidebarButton.on('click', openSidebar)
 $('#closeSidebar').on('click', closeSidebar)
 
 function domLoaded() {
-    if (!Cookies.get('previewSidebar')) {
-        openSidebar()
+    if (window.innerWidth >= 780) {
+        if (!Cookies.get('previewSidebar')) {
+            openSidebar()
+        }
     }
 }
 
