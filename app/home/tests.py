@@ -251,7 +251,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.locator('text=1/120 s')
         self.screenshot(page, f'Preview-{control}')
 
-        page.locator('.fileContextDropdown').click()
+        page.locator('.context-placement').click()
         page.locator('text=View Raw').click()
         page.wait_for_load_state()
         self.screenshot(page, f'Raw-{control}')
