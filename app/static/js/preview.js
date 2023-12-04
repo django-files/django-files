@@ -2,30 +2,29 @@
 
 document.addEventListener('DOMContentLoaded', domLoaded)
 
-document.getElementById('openSidebar').addEventListener('click', openSidebar)
-document.getElementById('closeSidebar').addEventListener('click', closeSidebar)
-
 const previewSidebar = document.getElementById('previewSidebar')
-const previewSidebarWidth = '360px'
+const contextPlacement = document.getElementById('contextPlacement')
 
-const contextPlacement = document.getElementById('context-placement')
+const sidebarCard = $('#sidebarCard')
+const openSidebarButton = $('#openSidebar')
+
+openSidebarButton.on('click', openSidebar)
+$('#closeSidebar').on('click', closeSidebar)
 
 function domLoaded() {
-    if (Cookies.get('previewSidebar')) {
-        $('.sidebar-text').fadeOut(200)
-    } else {
+    if (!Cookies.get('previewSidebar')) {
         openSidebar()
     }
 }
 
 function openSidebar() {
-    previewSidebar.style.width = previewSidebarWidth
+    previewSidebar.style.width = '360px'
     if (contextPlacement) {
         contextPlacement.style.right = '365px'
     }
+    openSidebarButton.hide()
+    sidebarCard.fadeIn(300)
     Cookies.remove('previewSidebar')
-    $('.openbtn').hide()
-    $('.sidebar-text').fadeIn(300)
 }
 
 function closeSidebar() {
@@ -33,7 +32,7 @@ function closeSidebar() {
     if (contextPlacement) {
         contextPlacement.style.right = '60px'
     }
-    Cookies.set('previewSidebar', 'enabled')
-    $('.openbtn').show()
-    $('.sidebar-text').fadeOut(200)
+    openSidebarButton.show()
+    sidebarCard.fadeOut(200)
+    Cookies.set('previewSidebar', 'disabled')
 }
