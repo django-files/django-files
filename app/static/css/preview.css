@@ -1,44 +1,44 @@
 body {
     font-family: Lato, sans-serif;
-  }
-  
-  .sidebar {
+}
+
+.sidebar {
     height: 100%;
     width: 0;
     position: absolute;
     z-index: 1;
     top: 0;
     right: 0;
-    background-color:rgba(0 0 0 / 50%);
+    background-color: rgba(0 0 0 / 50%);
     backdrop-filter: blur(6px);
     overflow: hidden;
     transition: 0.5s;
     padding-top: 60px;
-  }
-  
-  .sidebar a {
+}
+
+.sidebar a {
     padding: 8px 8px 8px 32px;
     color: #818181;
     transition: 0.3s;
-  }
-  
-  .sidebar a:hover {
+}
+
+.sidebar a:hover {
     color: #f1f1f1;
-  }
-  
-  .sidebar .closebtn {
+}
+
+.sidebar .closebtn {
     position: absolute;
     top: 0;
     right: 25px;
     font-size: 36px;
     margin-left: 50px;
-  }
+}
 
-  .file-context-dropdown-menu {
-    background-color:rgba(0 0 0 / 50%);
-  }
-  
-  .openbtn {
+.file-context-dropdown-menu {
+    background-color: rgba(0 0 0 / 50%);
+}
+
+.openbtn {
     font-size: 20px;
     cursor: pointer;
     background-color: rgba(0 0 0 / 50%);
@@ -46,12 +46,12 @@ body {
     padding: 10px 15px;
     border: none;
     position: absolute;
-    transition: .5s;
+    transition: 0.5s;
     top: 5px;
     right: 10px;
-  }
+}
 
-  .context-placement {
+.context-placement {
     font-size: 20px;
     cursor: pointer;
     background-color: rgba(0 0 0 / 50%);
@@ -61,23 +61,23 @@ body {
     position: absolute;
     top: 5px;
     right: 60px;
-    transition: .5s;
-  }
-
-  .context-placement {
     transition: 0.3s;
-  }
+}
 
-  .context-placement:hover {
+.context-placement:hover {
     background-color: #444;
-  }
-  
-  .openbtn:hover {
+}
+
+.openbtn:hover {
     background-color: #444;
-  }
-  
-  /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
-  @media screen and (max-height <= 450px) {
-    .sidebar {padding-top: 15px;}
-    .sidebar a {font-size: 18px;}
-  }
+}
+
+/* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+@media screen and (max-height <= 450px) {
+    .sidebar {
+        padding-top: 15px;
+    }
+    .sidebar a {
+        font-size: 18px;
+    }
+}
