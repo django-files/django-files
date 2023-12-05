@@ -179,6 +179,10 @@
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
     </form>
+    <form id="user-credentials">
+        <input type="hidden" id="site-url" value="{{ 'SITE_URL'|get_config }}">
+        <input type="hidden" id="auth-token" value="{{ user.authorization }}">
+    </form>
 {% endif %}
 
 {% block toast %}

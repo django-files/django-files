@@ -53,10 +53,10 @@ input:not(:focus):valid ~ .floating-label {
 
 .btn-primary {
     background: #565aa9;
-    border: #24295E
+    border: #24295e;
 }
 
 .btn-primary:hover {
-    background: #383F98;
-    border: #24295E
+    background: #383f98;
+    border: #24295e;
 }
