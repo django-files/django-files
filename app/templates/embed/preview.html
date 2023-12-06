@@ -88,13 +88,22 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 {% include 'files/file-context-menu.html' with file=file extraclass='dropdown-menu-end' %}
             </div>
         </div>
-        <div id="previewSidebar" class="sidebar d-flex">
-            <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-square-xmark"></i></a>
-            <div id="file-{{ file.id }}" class="card-body sidebarCard px-3">
-                <h3 class="card-title">{{ file.name }}</h3>
-                <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
-                {% if file.meta.PILImageWidth %}
-                    <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
+
+    </div>
+    <div id="previewSidebar" class="sidebar d-flex">
+        <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></i></a>
+        <div id="file-{{ file.id }}" class="card-body sidebarCard px-3">
+            <h3 class="card-title">{{ file.name }}</h3>
+            <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
+            {% if file.meta.PILImageWidth %}
+            <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
+            {% endif %}
+            {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
+            <p class="card-text mt-0">
+                {% if 'image' in file.mime %}
+                    <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
+                {% else %}
+                    <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
                 {% endif %}
                 {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
                 <p class="card-text mt-0">
