@@ -56,7 +56,8 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
 {% block nav2color %}{{ file.user.nav_color_2 }}{% endblock %}
 
 {% block body %}
-    <div class="container-fluid p-2 flex-grow-1" style="position: relative;">
+    <div class="container-fluid p-2 h-100">
+    <div class="h-100" style="position: relative;">
         <div class="card">
             {# TODO: Fix this so that we dont check mime type in the template and the view #}
             <div class="container-fluid card-img">
@@ -88,7 +89,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 {% include 'files/file-context-menu.html' with file=file extraclass='dropdown-menu-end' %}
             </div>
         </div>
-        <div id="previewSidebar" class="sidebar vh-100">
+        <div id="previewSidebar" class="sidebar h-100">
             <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
             <div id="file-{{ file.id }}" class="card-body sidebarCard px-3">
                 <h3 class="card-title">{{ file.name }}</h3>
@@ -142,6 +143,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 </div>
             </div>
         </div>
+    </div>
     </div>
     {% include 'files/delete-modal.html' %}
     {% include 'files/set-password-modal.html' %}
