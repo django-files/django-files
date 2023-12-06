@@ -81,3 +81,7 @@ body {
         font-size: 18px;
     }
 }
+
+.preview-image {
+  object-fit: contain;
+}
