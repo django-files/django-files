@@ -56,7 +56,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
 {% block nav2color %}{{ file.user.nav_color_2 }}{% endblock %}
 
 {% block body %}
-    <div class="container-fluid p-2">
+    <div class="container-fluid p-2 flex-grow-1">
         <div class="card">
             {# TODO: Fix this so that we dont check mime type in the template and the view #}
             <div class="container-fluid card-img">
@@ -87,59 +87,59 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 </div>
                 {% include 'files/file-context-menu.html' with file=file extraclass='dropdown-menu-end' %}
             </div>
-            <div id="previewSidebar" class="sidebar">
-                <a role="button" class="closebtn" id="closeSidebar">&times;</a>
-                <div id="file-{{ file.id }}" class="card-body sidebarCard">
-                    <h3 class="card-title">{{ file.name }}</h3>
-                    <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
-                    {% if file.meta.PILImageWidth %}
-                    <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
-                    {% endif %}
-                    {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
-                    <p class="card-text mt-0">
-                        {% if 'image' in file.mime %}
-                            <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
-                        {% else %}
-                            <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
-                        {% endif %}
-                    </p>
-                    {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
-                    <p class="card-text mt-0">
-                        {% if 'image' in file.mime %}
-                            <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
-                        {% else %}
-                            <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
-                        {% endif %}
-                        <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
-                        <i id="privateStatus" title="Private File" class="fa-solid fa-lock ms-2" {% if not file.private %}style="display: none"{% endif %}></i>
-                        <i id="passwordStatus" title="Password Protected File" class="fa-solid fa-key ms-2" {% if not file.password %}style="display: none"{% endif %}></i>
-                        <i id="expire-status-icon" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass ms-2" {% if not file.expr %} style="display: none"{% endif %}></i>
-                    </p>
-                    <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>
-                    <p class="card-text">Uploaded {{ file.date }}</p>
-                    {% if file.meta_preview and file.exif %}
-                        <p class="card-text text-body-secondary">
-                            {% if file.exif.DateTime %}<b>Taken On:</b> {{ file.exif.DateTimeOriginal|convert_str_date }}<br>{% endif %}
-                            {% if file.exif.Model %}<b>Camera:</b> {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}<br>{% endif %}
-                            {% if file.meta.GPSArea %}<b>Location:</b> {{ file.meta.GPSArea }}<br>{% endif %}
-                            {% if file.exif.GPSInfo.6 %}<b>Elevation:</b> {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
-                        <p class="card-text text-body-secondary me-auto">
-                            {% if file.exif.LensModel %}<b>Lens: </b>{{ file.exif.LensModel }}<br>{% endif %}
-                            {% if file.exif.FocalLength %}<b>Focal Length:</b> {{ file.exif.FocalLength|floatformat:"0" }}mm<br>{% endif %}
-                            {% if file.exif.FNumber %}<b>Aperture:</b> 𝑓 {{ file.exif.FNumber }}<br>{% endif %}
-                            {% if file.exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ file.exif.ISOSpeedRatings }}<br>{% endif %}
-                            {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s{% endif %}</p>
-                    {% endif %}
-                    <div class="row g-2 text-center mt-auto">
-                        {% if code or text_preview %}
-                            <div class="col-12 ">
-                                <a class="clip btn btn-success btn-lg d-block" role="button"
-                                data-clipboard-text="{% if code %}{{ code }}{% else %}{{ text_preview }}{% endif %}">
-                                    <i class="fa-regular fa-file-lines me-2"></i> Copy Text</a>
-                            </div>
-                        {% endif %}
+        </div>
+    </div>
+    <div id="previewSidebar" class="sidebar d-flex">
+        <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-square-xmark"></i></a>
+        <div id="file-{{ file.id }}" class="card-body sidebarCard px-3">
+            <h3 class="card-title">{{ file.name }}</h3>
+            <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
+            {% if file.meta.PILImageWidth %}
+            <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
+            {% endif %}
+            {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
+            <p class="card-text mt-0">
+                {% if 'image' in file.mime %}
+                    <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
+                {% else %}
+                    <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
+                {% endif %}
+            </p>
+            {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
+            <p class="card-text mt-0">
+                {% if 'image' in file.mime %}
+                    <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
+                {% else %}
+                    <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
+                {% endif %}
+                <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
+                <i id="privateStatus" title="Private File" class="fa-solid fa-lock ms-2" {% if not file.private %}style="display: none"{% endif %}></i>
+                <i id="passwordStatus" title="Password Protected File" class="fa-solid fa-key ms-2" {% if not file.password %}style="display: none"{% endif %}></i>
+                <i id="expire-status-icon" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass ms-2" {% if not file.expr %} style="display: none"{% endif %}></i>
+            </p>
+            <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>
+            <p class="card-text">Uploaded {{ file.date }}</p>
+            {% if file.meta_preview and file.exif %}
+                <p class="card-text text-body-secondary">
+                    {% if file.exif.DateTime %}<b>Taken On:</b> {{ file.exif.DateTimeOriginal|convert_str_date }}<br>{% endif %}
+                    {% if file.exif.Model %}<b>Camera:</b> {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}<br>{% endif %}
+                    {% if file.meta.GPSArea %}<b>Location:</b> {{ file.meta.GPSArea }}<br>{% endif %}
+                    {% if file.exif.GPSInfo.6 %}<b>Elevation:</b> {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
+                <p class="card-text text-body-secondary me-auto">
+                    {% if file.exif.LensModel %}<b>Lens: </b>{{ file.exif.LensModel }}<br>{% endif %}
+                    {% if file.exif.FocalLength %}<b>Focal Length:</b> {{ file.exif.FocalLength|floatformat:"0" }}mm<br>{% endif %}
+                    {% if file.exif.FNumber %}<b>Aperture:</b> 𝑓 {{ file.exif.FNumber }}<br>{% endif %}
+                    {% if file.exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ file.exif.ISOSpeedRatings }}<br>{% endif %}
+                    {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s{% endif %}</p>
+            {% endif %}
+            <div class="row g-2 text-center mt-auto">
+                {% if code or text_preview %}
+                    <div class="col-12 ">
+                        <a class="clip btn btn-success btn-lg d-block" role="button"
+                        data-clipboard-text="{% if code %}{{ code }}{% else %}{{ text_preview }}{% endif %}">
+                            <i class="fa-regular fa-file-lines me-2"></i> Copy Text</a>
                     </div>
-                </div>
+                {% endif %}
             </div>
         </div>
     </div>
