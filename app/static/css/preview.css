@@ -3,7 +3,6 @@ body {
 }
 
 .sidebar {
-    height: 100%;
     width: 0;
     position: absolute;
     top: 0;
@@ -82,5 +81,5 @@ body {
 }
 
 .preview-image {
-  object-fit: contain;
+    object-fit: contain;
 }
