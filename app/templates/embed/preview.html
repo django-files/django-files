@@ -88,8 +88,8 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 {% include 'files/file-context-menu.html' with file=file extraclass='dropdown-menu-end' %}
             </div>
         </div>
-        <div id="previewSidebar" class="sidebar d-flex">
-            <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-square-xmark"></i></a>
+        <div id="previewSidebar" class="sidebar vh-100">
+            <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
             <div id="file-{{ file.id }}" class="card-body sidebarCard px-3">
                 <h3 class="card-title">{{ file.name }}</h3>
                 <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
