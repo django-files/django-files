@@ -104,14 +104,6 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     {% else %}
                         <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
                     {% endif %}
-                </p>
-                {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
-                <p class="card-text mt-0">
-                    {% if 'image' in file.mime %}
-                        <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
-                    {% else %}
-                        <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
-                    {% endif %}
                     <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
                     <i id="privateStatus" title="Private File" class="fa-solid fa-lock ms-2" {% if not file.private %}style="display: none"{% endif %}></i>
                     <i id="passwordStatus" title="Password Protected File" class="fa-solid fa-key ms-2" {% if not file.password %}style="display: none"{% endif %}></i>
