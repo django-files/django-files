@@ -51,7 +51,10 @@
 
     <!-- 9: Menu -->
     <td class="text-center">
-        {% if not nocontextmenu %}{% include 'files/file-context-menu.html' %}{% endif %}
+        <button class="btn btn-secondary file-context-dropdown my-0 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa-regular fa-square-caret-down"></i>
+        </button>{% if not nocontextmenu %}{% include 'files/file-context-menu.html' %}{% endif %}
+        
     </td>
 </tr>
 {% endif %}

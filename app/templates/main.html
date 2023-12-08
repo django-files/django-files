@@ -34,7 +34,7 @@
     {% block head %}{% endblock %}
 
 </head>
-<body class="d-flex flex-column h-100">
+<body class="d-flex flex-column h-100 vh-100">
 
 {% block navbar %}
 <header>
@@ -94,7 +94,7 @@
                                         <i class="fa-solid fa-gears me-2"></i> Site Settings</a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item clip" data-clipboard-text="{{ 'SITE_URL'|get_config }}" href="javascript:">
+                                <li><a class="dropdown-item clip" data-clipboard-text="{{ site_settings.site_url }}" href="javascript:">
                                     <i class="fa-solid fa-globe me-2"></i> Copy URL</a></li>
                                 <li><a class="dropdown-item clip" data-clipboard-text="{{ user.authorization }}" href="javascript:">
                                     <i class="fa-solid fa-key me-2"></i> Copy Token</a></li>
@@ -119,7 +119,7 @@
 </header>
 {% endblock %}
 
-<main class="flex-shrink-0">
+<main class="flex-grow-1">
     {% if request.user.is_superuser %}
         {% block welcome %}
             {% if not site_settings.site_url %}
@@ -178,6 +178,10 @@
     <form id="log-out" action="{% url 'oauth:logout' %}" method="POST">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    </form>
+    <form id="user-credentials">
+        <input type="hidden" id="site-url" value="{{ site_settings.site_url }}">
+        <input type="hidden" id="auth-token" value="{{ user.authorization }}">
     </form>
 {% endif %}
 
