@@ -41,7 +41,7 @@ RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
     mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
     chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
     apt-get -y install --no-install-recommends libmariadb-dev-compat pkg-config libmagic-dev  \
-        supervisor nginx redis-server vector  &&\
+        supervisor nginx redis-server vector=0.33.0-1  &&\
     apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
     apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
