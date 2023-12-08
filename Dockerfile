@@ -4,7 +4,7 @@ ENV TZ=UTC
 ENV NODE_ENV=production
 WORKDIR /work
 COPY ["package.json", "package-lock.json", "gulpfile.js", "swagger.yaml", "/work/"]
-RUN npm install
+RUN npm install --verbose
 
 
 FROM python:3.11-slim AS python
