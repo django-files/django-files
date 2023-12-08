@@ -60,7 +60,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
     <div class="h-100" style="position: relative;">
         <div class="card h-100">
             {# TODO: Fix this so that we dont check mime type in the template and the view #}
-            <div class="container-fluid card-img h-100">
+            <div class="container-fluid card-img">
                 {% if render == 'image' %}
                     <img src="{{ static_url }}" alt="{{ file.name }}" class="img-fluid preview-image">
                 {% elif render == 'video' %}
