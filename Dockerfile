@@ -1,4 +1,4 @@
-FROM node:16-bookworm-slim AS node
+FROM node:20-bookworm-slim AS node
 
 ENV TZ=UTC
 ENV NODE_ENV=production
