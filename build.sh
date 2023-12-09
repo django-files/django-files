@@ -45,7 +45,7 @@ docker build -t "${REGISTRY_HOST}/${REGISTRY_USER}/${REGISTRY_REPO}:${VERSION}" 
 
 #docker push "${REGISTRY_HOST}/${REGISTRY_USER}/${REGISTRY_REPO}:${VERSION}"
 
-#docker buildx create --use
+#docker buildx create --use --name builder
 #docker buildx build --platform linux/amd64,linux/arm64 --push  \
 #    -t "${REGISTRY_HOST}/${REGISTRY_USER}/${REGISTRY_REPO}:${VERSION}" .
 

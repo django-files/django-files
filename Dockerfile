@@ -1,10 +1,10 @@
-FROM node:18-bookworm-slim AS node
+FROM node:16-bookworm-slim AS node
 
 ENV TZ=UTC
 ENV NODE_ENV=production
 WORKDIR /work
 COPY ["package.json", "package-lock.json", "gulpfile.js", "swagger.yaml", "/work/"]
-RUN npm install --verbose
+RUN npm install
 
 
 FROM python:3.11-slim AS python
