@@ -47,7 +47,7 @@ function closeSidebarCallback() {
 
 function openSidebar() {
     previewSidebar.css('width', '360px')
-    previewSidebar.css('border-right', '1px ridge rgba(66, 69, 73, 1)')
+    previewSidebar.css('border-right', '1px ridge rgba(66 69 73 / 100%)')
     if (contextPlacement) {
         contextPlacement.css('right', '365px')
     }
