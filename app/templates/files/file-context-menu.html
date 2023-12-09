@@ -4,11 +4,11 @@
 
     <ul class="dropdown-menu file-context-dropdown-menu {{ extraclass }}" >
 
-        <li><a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{{ file.preview_uri }}">
+        <li><a role="button" class="clip dropdown-item" data-clipboard-text="{{ site_settings.site_url }}{{ file.preview_uri }}">
             <i class="fa-solid fa-link fa-fw me-2 link-info"></i>
             Copy Share Link</a></li>
 
-        <li><a role="button" class="clip dropdown-item" data-clipboard-text="{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}">
+        <li><a role="button" class="clip dropdown-item" data-clipboard-text="{{ site_settings.site_url }}{% url 'home:url-raw-redirect' file.file.name %}">
             <i class="fa-solid fa-link fa-fw me-2"></i>
             Copy Raw Link</a></li>
 

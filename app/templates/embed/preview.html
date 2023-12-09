@@ -147,7 +147,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
     {% if render in 'text,code' %}
         <script type="text/javascript">
             fetch(
-                '{{ request.scheme }}://{{ request.get_host }}{% url 'home:url-raw-redirect' file.file.name %}{% if file.password %}?password={{ file.password }}{% endif %}',
+                '{{ site_settings.site_url }}{% url 'home:url-raw-redirect' file.file.name %}{% if file.password %}?password={{ file.password }}{% endif %}',
             )
                 .then((response) => {
                     if (!response.ok) {
