@@ -24,7 +24,7 @@ class SiteSettingsForm(forms.Form):
 
     def clean_site_url(self):
         data = self.cleaned_data['site_url'].strip()
-        if not validators.url(data):
+        if not validators.url(data, simple_host=True):
             raise ValidationError('Invalid Site URL.')
         return data.rstrip('/')
 
@@ -71,7 +71,7 @@ class WelcomeForm(forms.Form):
     def clean_site_url(self):
         data = self.cleaned_data['site_url']
         if data:
-            if not validators.url(data):
+            if not validators.url(data, simple_host=True):
                 raise ValidationError('Invalid Site URL.')
             return data.rstrip('/')
         return None
