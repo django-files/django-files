@@ -17,7 +17,7 @@
 
         <meta property="og:type" content="website">
         <meta property="og:url" content="{{ request.build_absolute_uri }}">
-        <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo.png' %}">
+        <meta property="og:image" content="{{ site_settings.site_url }}{% static 'images/logo.png' %}">
         <meta name="theme-color" content="{{ site_settings.site_color }}">
     {% endblock %}
 
