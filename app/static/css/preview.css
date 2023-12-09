@@ -8,6 +8,11 @@
     overflow: hidden;
     transition: 0.5s;
     padding-top: 60px;
+    border-top-right-radius:9px;
+    border-bottom-right-radius:9px;
+    border-top: 1px ridge rgba(66, 69, 73, 1);
+    border-right: 1px ridge rgba(66, 69, 73, 1);
+    border-bottom: 1px ridge rgba(66, 69, 73, 1);
 }
 
 .sidebar a {
