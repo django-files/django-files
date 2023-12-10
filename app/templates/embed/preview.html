@@ -92,7 +92,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         <div id="previewSidebar" class="sidebar h-100">
             <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
             <div id="file-{{ file.id }}" class="card-body sidebarCard px-3">
-                <h3 class="card-title">{{ file.name }}</h3>
+                <h3 class="card-title text-break">{{ file.name }}</h3>
                 <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
                 {% if file.meta.PILImageWidth %}
                     <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>

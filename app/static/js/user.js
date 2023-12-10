@@ -1,6 +1,33 @@
+const filesTableOptions = {
+    order: [],
+    processing: true,
+    saveState: true,
+    pageLength: -1,
+    lengthMenu: [
+        [10, 25, 50, 100, 250, -1],
+        [10, 25, 50, 100, 250, 'All'],
+    ],
+    columnDefs: [
+        { targets: 2, type: 'file-size' },
+        {
+            targets: 4,
+            render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
+        },
+        { targets: [6, 7, 9], orderable: false },
+    ],
+}
+
+let filesDataTable = null
+
 $(document).ready(function () {
     // Get and set the csrf_token
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
+
+    // If page has a files table, initialize datatables on files table
+    let filesTable = $('#files-table')
+    if (filesTable) {
+        filesDataTable = filesTable.DataTable(filesTableOptions)
+    }
 
     // Monitor websockets for new data and update results
     socket.addEventListener('message', (event) => {
@@ -11,9 +38,10 @@ $(document).ready(function () {
             $.get(`/ajax/files/tdata/${data.pk}`, function (response) {
                 let message = `New File Upload: ${data.pk}`
                 show_toast(message, 'success', '10000')
-                let table = $('#files-table')
-                if (table.length) {
-                    $('#files-table tbody').prepend(response)
+                if (filesTable.length) {
+                    // $('#files-table tbody').prepend(response)
+                    filesDataTable.row.add($(response)).draw()
+                    console.log(response)
                     console.log(`Table Updated: ${data.pk}`)
                     $(`#file-${data.pk} .ctx-set-expire-btn`).click(
                         setExpireClick
