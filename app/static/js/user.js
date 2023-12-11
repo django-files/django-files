@@ -1,30 +1,6 @@
 // Get and set the csrf_token
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
-// Define Datatables inside filesTable.length because render uses DataTable.render
-let filesDataTable
-const filesTable = $('#files-table')
-if (filesTable.length) {
-    filesDataTable = filesTable.DataTable({
-        order: [0, 'desc'],
-        processing: true,
-        saveState: true,
-        pageLength: -1,
-        lengthMenu: [
-            [10, 25, 50, 100, 250, -1],
-            [10, 25, 50, 100, 250, 'All'],
-        ],
-        columnDefs: [
-            { targets: 2, type: 'file-size' },
-            {
-                targets: 4,
-                render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
-            },
-            { targets: [6, 7, 9], orderable: false },
-        ],
-    })
-}
-
 // Monitor websockets for new data and update results
 socket.addEventListener('message', (event) => {
     console.log('user.js socket.addEventListener message function')
@@ -35,10 +11,7 @@ socket.addEventListener('message', (event) => {
             let message = `New File Upload: ${data.pk}`
             show_toast(message, 'success', '10000')
             if (filesTable.length) {
-                // $('#files-table tbody').prepend(response)
                 // console.log(response)
-                filesDataTable.row.add($(response)).draw()
-                // filesDataTable.sort()
                 console.log(`Table Updated: ${data.pk}`)
                 $(`#file-${data.pk} .ctx-set-expire-btn`).click(setExpireClick)
                 $(`#file-${data.pk} .ctx-toggle-private-btn`).click(
