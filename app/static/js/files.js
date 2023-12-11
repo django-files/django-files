@@ -1,7 +1,9 @@
-// Define Datatables inside filesTable.length because render uses DataTable.render
+// JS for Files
+
 const filesTable = $('#files-table')
+
 let filesDataTable
-if (DataTable !== undefined) {
+if (typeof DataTable !== 'undefined' && filesTable.length) {
     filesDataTable = filesTable.DataTable({
         order: [0, 'desc'],
         processing: true,
@@ -28,7 +30,7 @@ socket?.addEventListener('message', (event) => {
     let data = JSON.parse(event.data)
     if (data.event === 'file-new') {
         $.get(`/ajax/files/tdata/${data.pk}`, function (response) {
-            if (filesTable.length) {
+            if (filesTable.length && filesDataTable) {
                 filesDataTable.row.add($(response)).draw()
                 console.log(`Table Updated: ${data.pk}`)
             }
@@ -36,7 +38,7 @@ socket?.addEventListener('message', (event) => {
     }
 })
 
-$('#user').change(function () {
+$('#user').on('change', function () {
     let user = $(this).val()
     console.log('user: ' + user)
     if (user) {

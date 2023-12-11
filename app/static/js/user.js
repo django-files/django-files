@@ -1,6 +1,7 @@
+// JS for logged in Users
+
 // Get and set the csrf_token
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
-
 
 // Monitor websockets for new data and update results
 socket.addEventListener('message', (event) => {
@@ -8,20 +9,28 @@ socket.addEventListener('message', (event) => {
     let data = JSON.parse(event.data)
     console.log(data)
     if (data.event === 'file-new') {
-        $.get(`/ajax/files/tdata/${data.pk}`, function (response) {
+        $.get(`/ajax/files/tdata/${data.pk}`, function () {
             let message = `New File Upload: ${data.pk}`
             show_toast(message, 'success', '10000')
             if (filesTable.length) {
                 // console.log(response)
                 console.log(`Table Updated: ${data.pk}`)
-                $(`#file-${data.pk} .ctx-set-expire-btn`).click(setExpireClick)
-                $(`#file-${data.pk} .ctx-toggle-private-btn`).click(
+                $(`#file-${data.pk} .ctx-set-expire-btn`).on(
+                    'click',
+                    setExpireClick
+                )
+                $(`#file-${data.pk} .ctx-toggle-private-btn`).on(
+                    'click',
                     togglePrivateClick
                 )
-                $(`#file-${data.pk} .ctx-set-password-btn`).click(
+                $(`#file-${data.pk} .ctx-set-password-btn`).on(
+                    'click',
                     setPasswordClick
                 )
-                $(`#file-${data.pk} .ctx-delete-btn`).click(deleteFileClick)
+                $(`#file-${data.pk} .ctx-delete-btn`).on(
+                    'click',
+                    deleteFileClick
+                )
             }
         })
     } else if (data.event === 'file-delete') {
@@ -47,14 +56,14 @@ socket.addEventListener('message', (event) => {
 })
 
 // Init the logout form click function
-$('.log-out').on('click', function () {
-    $('#log-out').submit()
-    return false
+$('.log-out').on('click', function (event) {
+    event.preventDefault()
+    $('#log-out').trigger('submit')
 })
 
 // Init the flush-cache click function
-$('#flush-cache').click(function () {
-    console.log('flush-cache clicked...')
+$('#flush-cache').on('click', function () {
+    console.log('#flush-cache click function')
     $.ajax({
         url: '/flush-cache/',
         type: 'POST',
@@ -77,7 +86,7 @@ $('#flush-cache').click(function () {
 // Set Expire Handler
 function setExpireClick() {
     const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`.ctx-set-expire-btn: pk: ${pk}`)
+    console.log(`setExpireClick: ${pk}`)
     $('#set-expr-form input[name=pk]').val(pk)
     const expireText = $(`#file-${pk} .expire-value`).text()
     console.log(`expireText: ${expireText}`)
@@ -91,29 +100,27 @@ function setExpireClick() {
 // Toggle Private Handler
 function togglePrivateClick() {
     const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`.ctx-toggle-private-btn: pk: ${pk}`)
+    console.log(`togglePrivateClick: ${pk}`)
     socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
 }
 
 // Set Password Handler
 function setPasswordClick() {
     const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`.ctx-set-password-btn: pk: ${pk}`)
+    console.log(`setPasswordClick: ${pk}`)
     $('#setFilePasswordModal input[name=pk]').val(pk)
-    const currentPassInput = $(
-        `#ctx-menu-${pk} input[name=current-file-password]`
-    )
-    console.log(`currentInput: ${currentPassInput}`)
-    const passwordText = currentPassInput.val()
-    console.log(`passwordText: ${passwordText}`)
-    $('#password').val(passwordText)
+    const input = $(`#ctx-menu-${pk} input[name=current-file-password]`)
+    console.log('input:', input)
+    const password = input.val()
+    console.log(`password: ${password}`)
+    $('#password').val(input.val())
     $('#setFilePasswordModal').modal('show')
 }
 
 // Delete Click Handler
 function deleteFileClick() {
     const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`.ctx-delete-btn: pk: ${pk}`)
+    console.log(`deleteFileClick: ${pk}`)
     $('#confirmDeleteFileBtn').data('pk', pk)
     $('#deleteFileModal').modal('show')
 }
