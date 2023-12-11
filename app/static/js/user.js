@@ -1,6 +1,7 @@
 // Get and set the csrf_token
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
+
 // Monitor websockets for new data and update results
 socket.addEventListener('message', (event) => {
     console.log('user.js socket.addEventListener message function')
