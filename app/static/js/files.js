@@ -27,7 +27,35 @@ if (typeof DataTable !== 'undefined' && filesTable.length) {
 socket?.addEventListener('message', (event) => {
     console.log('socket: files.js:', event)
     let data = JSON.parse(event.data)
-    if (data.event === 'file-delete') {
+    if (data.event === 'file-new') {
+        $.get(`/ajax/files/tdata/${data.pk}`, function (response) {
+            console.log(`Table Updated: ${data.pk}`)
+            // console.log(response)
+            if (filesTable.length) {
+                if (filesTable.length && filesDataTable) {
+                    filesDataTable.row.add($(response)).draw()
+                } else {
+                    $('#files-table tbody').prepend(response)
+                }
+                $(`#file-${data.pk} .ctx-set-expire-btn`).on(
+                    'click',
+                    setExpireClick
+                )
+                $(`#file-${data.pk} .ctx-toggle-private-btn`).on(
+                    'click',
+                    togglePrivateClick
+                )
+                $(`#file-${data.pk} .ctx-set-password-btn`).on(
+                    'click',
+                    setPasswordClick
+                )
+                $(`#file-${data.pk} .ctx-delete-btn`).on(
+                    'click',
+                    deleteFileClick
+                )
+            }
+        })
+    } else if (data.event === 'file-delete') {
         if (filesTable.length) {
             let count = $('#files-table tr').length
             $(`#file-${data.pk}`).remove()

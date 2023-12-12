@@ -39,16 +39,13 @@
     </div>
 {% endblock %}
 
-{% block js_dependencies %}
+{% block tail %}
     <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/jquery.dataTables.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/file-size.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
-{% endblock %}
-
-{% block tail %}
-    <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
 {% endblock %}

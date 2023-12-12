@@ -99,35 +99,7 @@ $('#confirmDeleteFileBtn').on('click', function () {
 socket?.addEventListener('message', (event) => {
     console.log('socket: file-context-menu.js:', event)
     const data = JSON.parse(event.data)
-    if (data.event === 'file-new') {
-        $.get(`/ajax/files/tdata/${data.pk}`, function (response) {
-            console.log(`Table Updated: ${data.pk}`)
-            // console.log(response)
-            if (filesTable.length) {
-                if (filesTable.length && filesDataTable) {
-                    filesDataTable.row.add($(response)).draw()
-                } else {
-                    $('#files-table tbody').prepend(response)
-                }
-                $(`#file-${data.pk} .ctx-set-expire-btn`).on(
-                    'click',
-                    setExpireClick
-                )
-                $(`#file-${data.pk} .ctx-toggle-private-btn`).on(
-                    'click',
-                    togglePrivateClick
-                )
-                $(`#file-${data.pk} .ctx-set-password-btn`).on(
-                    'click',
-                    setPasswordClick
-                )
-                $(`#file-${data.pk} .ctx-delete-btn`).on(
-                    'click',
-                    deleteFileClick
-                )
-            }
-        })
-    } else if (data.event === 'set-expr-file') {
+    if (data.event === 'set-expr-file') {
         // Expire
         handle_set_expiration(data)
     } else if (data.event === 'toggle-private-file') {

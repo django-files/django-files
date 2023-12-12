@@ -220,7 +220,6 @@
     <script type="text/javascript" src="{% static 'dist/fontawesome/js/all.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/clipboard/clipboard.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
-    {% block js_dependencies %}{% endblock %}
     {% if request.user.is_authenticated %}
         <script type="text/javascript" src="{% static 'js/socket.js' %}"></script>
         <script type="text/javascript" src="{% static 'js/user.js' %}"></script>
