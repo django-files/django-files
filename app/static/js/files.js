@@ -38,7 +38,7 @@ socket?.addEventListener('message', (event) => {
     }
 })
 
-$('#user').on('change', function () {
+$('#user').on('change', () => {
     let user = $(this).val()
     console.log('user: ' + user)
     if (user) {
