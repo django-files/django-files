@@ -47,4 +47,6 @@ types {
     text/plain                                       tcl tk;
     text/plain                                       xml;
     text/plain                                       yaml yml;
+
+    application/pdf                                  pdf;
 }
