@@ -19,10 +19,8 @@
     </tr>
     </thead>
     {% for file in files %}
-        {% include 'files/table-tr.html' with file=file %}
+        {% include 'files/table-row.html' with file=file %}
     {% endfor %}
 </table>
 
-{% include 'files/delete-modal.html' %}
-{% include 'files/set-password-modal.html' %}
-{% include 'files/set-expr-modal.html' %}
+{% include 'files/modals.html' %}

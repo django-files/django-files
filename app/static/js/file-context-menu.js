@@ -1,13 +1,15 @@
+// JS for Context Menu
+// TODO: Review EVERYTHING in this file
+
 // Expire - Context Menu Click
-$('.ctx-set-expire-btn').on('click', setExpireClick)
+$('.ctx-expire').on('click', setExpireClick)
 
 // Expire - Form Submit
 $('#set-expr-form').on('submit', function (event) {
     console.log('#set-expr-form.submit')
     event.preventDefault()
-    const data = objectifyForm($('#set-expr-form').serializeArray())
-    data.method = 'set-expr-file'
-    // console.log(data)
+    const data = genData($('#set-expr-form').serializeArray(), 'set-expr-file')
+    console.log(data)
     socket.send(JSON.stringify(data))
     $('#setFileExprModal').modal('hide')
 })
@@ -18,21 +20,32 @@ $('#setFileExprModal').on('shown.bs.modal', function () {
 })
 
 // Private - Toggle Click
-$('.ctx-toggle-private-btn').on('click', togglePrivateClick)
+$('.ctx-private').on('click', togglePrivateClick)
 
 // Password - Set Password Context Menu Button
-$('.ctx-set-password-btn').on('click', setPasswordClick)
+$('.ctx-password').on('click', setPasswordClick)
 
 // TODO: Review and Cleanup all other Password handlers
 
 // Password - Set Password Form Submission
-$('#set-password-form').on('submit', function (event) {
-    console.log('#set-password-form.submit')
+$('#set-password-form').on('submit', (event) => {
+    console.log('#set-password-form.submit', event)
     event.preventDefault()
-    const data = objectifyForm($(this).serializeArray())
-    // console.log(`data.password: ${data.password}`)
-    data.method = 'set-password-file'
-    // console.log(data)
+    // console.log('this', this)
+    const data = genData(
+        $('#set-password-form').serializeArray(),
+        'set-password-file'
+    )
+    // const formData = new FormData(event.target)
+    // console.log('formData:', formData)
+    // console.log('formData.password:', formData.get('password'))
+    // const data = {
+    //     method: 'set-password-file',
+    //     pk: formData.get('pk').toString(),
+    //     password: formData.get('password').toString(),
+    // }
+    console.log(data)
+    console.log(`data.pk: ${data.pk}`)
     socket.send(JSON.stringify(data))
     $(`#ctx-menu-${data.pk} input[name=current-file-password]`).val(
         data.password
@@ -80,7 +93,7 @@ $('#setFilePasswordModal').on('shown.bs.modal', function () {
 })
 
 // Delete - Delete File Context Menu Button
-$('.ctx-delete-btn').on('click', deleteFileClick)
+$('.ctx-delete').on('click', deleteFileClick)
 
 // Delete -  Delete File Confirm Button
 $('#confirmDeleteFileBtn').on('click', function () {
@@ -222,11 +235,17 @@ function handle_password_set(data) {
 
 // Misc
 
-function objectifyForm(formArray) {
+/**
+ *
+ * @param {Array} serializeArray
+ * @param {String} method
+ * @return {Object}
+ */
+function genData(serializeArray, method) {
     // Convert .serializeArray() to Object (key: value)
-    let returnArray = {}
-    for (const element of formArray) {
-        returnArray[element['name']] = element['value']
+    const data = { method: method }
+    for (const element of serializeArray) {
+        data[element['name']] = element['value']
     }
-    return returnArray
+    return data
 }

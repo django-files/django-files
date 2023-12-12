@@ -37,22 +37,16 @@ socket?.addEventListener('message', (event) => {
                 } else {
                     $('#files-table tbody').prepend(response)
                 }
-                $(`#file-${data.pk} .ctx-set-expire-btn`).on(
-                    'click',
-                    setExpireClick
-                )
-                $(`#file-${data.pk} .ctx-toggle-private-btn`).on(
+                $(`#file-${data.pk} .ctx-expire`).on('click', setExpireClick)
+                $(`#file-${data.pk} .ctx-private`).on(
                     'click',
                     togglePrivateClick
                 )
-                $(`#file-${data.pk} .ctx-set-password-btn`).on(
+                $(`#file-${data.pk} .ctx-password`).on(
                     'click',
                     setPasswordClick
                 )
-                $(`#file-${data.pk} .ctx-delete-btn`).on(
-                    'click',
-                    deleteFileClick
-                )
+                $(`#file-${data.pk} .ctx-delete`).on('click', deleteFileClick)
             }
         })
     } else if (data.event === 'file-delete') {

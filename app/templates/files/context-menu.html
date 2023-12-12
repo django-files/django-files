@@ -22,22 +22,22 @@
     {% if request.user.is_authenticated and request.user == file.user %}
         <li><hr class="dropdown-divider"></li>
         <li>
-            <a role="button" class="dropdown-item ctx-set-expire-btn" title="Set Expiration" data-ctx-expire>
+            <a role="button" class="dropdown-item ctx-expire" title="Set Expiration">
                 <i class="fa-solid fa-hourglass fa-fw me-2"></i>Set Expiration</a>
         </li>
         <li>
-            <a role="button" class="ctx-toggle-private-btn dropdown-item" title="Toggle Private">
+            <a role="button" class="dropdown-item ctx-private" title="Toggle Private">
                 <i class="fa-solid fa-lock{% if file.private %}-open{% endif %} fa-fw me-2 privateDropdownIcon"></i>
                 <span class="privateText">Make{% if file.private %}Public{% else %}Private{% endif %}</span></a>
         </li>
         <li>
-            <a role="button" class="ctx-set-password-btn dropdown-item" title="Set Password">
+            <a role="button" class="dropdown-item ctx-password" title="Set Password">
                 <i class="fas fa-key fa-fw me-2"></i>Set Password</a>
         </li>
         <input type="hidden" name="current-file-password" value="{{ file.password|default:'' }}">
         <li><hr class="dropdown-divider"></li>
         <li>
-            <a role="button" class="ctx-delete-btn dropdown-item" title="Delete">
+            <a role="button" class="dropdown-item ctx-delete" title="Delete">
                 <i class="fa-regular fa-trash-can fa-fw me-2 link-danger"></i>Delete File</a>
         </li>
     {% endif %}
