@@ -28,36 +28,23 @@ socket?.addEventListener('message', (event) => {
     console.log('socket: files.js:', event)
     let data = JSON.parse(event.data)
     if (data.event === 'file-new') {
-        $.get(`/ajax/files/tdata/${data.pk}`, function (response) {
-            console.log(`Table Updated: ${data.pk}`)
-            // console.log(response)
+        $.get(`/ajax/files/tdata/${data.pk}`, (response) => {
+            console.log(`Table Updated: ${data.pk}`, response)
             if (filesTable.length) {
-                if (filesTable.length && filesDataTable) {
+                if (filesDataTable) {
                     filesDataTable.row.add($(response)).draw()
                 } else {
-                    $('#files-table tbody').prepend(response)
+                    filesDataTable.find('tbody').prepend(response)
                 }
-                $(`#file-${data.pk} .ctx-expire`).on('click', setExpireClick)
-                $(`#file-${data.pk} .ctx-private`).on(
-                    'click',
-                    togglePrivateClick
-                )
-                $(`#file-${data.pk} .ctx-password`).on(
-                    'click',
-                    setPasswordClick
-                )
-                $(`#file-${data.pk} .ctx-delete`).on('click', deleteFileClick)
             }
+            const row = $('#file-78')
+            row.find('.ctx-expire').on('click', cxtSetExpire)
+            row.find('.ctx-private').on('click', ctxSetPrivate)
+            row.find('.ctx-password').on('click', ctxSetPassword)
+            row.find('.ctx-delete').on('click', ctxDeleteFile)
         })
     } else if (data.event === 'file-delete') {
-        if (filesTable.length) {
-            let count = $('#files-table tr').length
-            $(`#file-${data.pk}`).remove()
-            if (count <= 2) {
-                console.log('removing #files-table@ #files-table')
-                filesTable.remove()
-            }
-        }
+        $(`#file-${data.pk}`).remove()
     }
 })
 

@@ -38,12 +38,12 @@ $('#flush-cache').on('click', (event) => {
         url: '/flush-cache/',
         type: 'POST',
         headers: { 'X-CSRFToken': csrftoken },
-        success: function (response) {
+        success: (response) => {
             console.log('response: ' + response)
             alert('Cache Flush Successfully Sent...')
             location.reload()
         },
-        error: function (jqXHR) {
+        error: (jqXHR) => {
             console.log('jqXHR.status: ' + jqXHR.status)
             console.log('jqXHR.statusText: ' + jqXHR.statusText)
             let message = jqXHR.status + ': ' + jqXHR.statusText
