@@ -9,30 +9,8 @@ socket.addEventListener('message', (event) => {
     let data = JSON.parse(event.data)
     console.log(data)
     if (data.event === 'file-new') {
-        $.get(`/ajax/files/tdata/${data.pk}`, function () {
-            let message = `New File Upload: ${data.pk}`
-            show_toast(message, 'success', '10000')
-            if (filesTable.length) {
-                // console.log(response)
-                console.log(`Table Updated: ${data.pk}`)
-                $(`#file-${data.pk} .ctx-set-expire-btn`).on(
-                    'click',
-                    setExpireClick
-                )
-                $(`#file-${data.pk} .ctx-toggle-private-btn`).on(
-                    'click',
-                    togglePrivateClick
-                )
-                $(`#file-${data.pk} .ctx-set-password-btn`).on(
-                    'click',
-                    setPasswordClick
-                )
-                $(`#file-${data.pk} .ctx-delete-btn`).on(
-                    'click',
-                    deleteFileClick
-                )
-            }
-        })
+        let message = `New File Upload: ${data.pk}`
+        show_toast(message, 'success', '10000')
     } else if (data.event === 'file-delete') {
         let message = `File Deleted: ${data.pk}`
         show_toast(message, 'success', '10000')
@@ -82,45 +60,3 @@ $('#flush-cache').on('click', function () {
     })
     return false
 })
-
-// Set Expire Handler
-function setExpireClick() {
-    const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`setExpireClick: ${pk}`)
-    $('#set-expr-form input[name=pk]').val(pk)
-    const expireText = $(`#file-${pk} .expire-value`).text()
-    console.log(`expireText: ${expireText}`)
-    $('#set-expr-form input[name=expr]').val(expireText)
-    const expireValue = expireText === 'Never' ? '' : expireText
-    console.log(`expireValue: ${expireValue}`)
-    $('#expr').val(expireValue)
-    $('#setFileExprModal').modal('show')
-}
-
-// Toggle Private Handler
-function togglePrivateClick() {
-    const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`togglePrivateClick: ${pk}`)
-    socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
-}
-
-// Set Password Handler
-function setPasswordClick() {
-    const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`setPasswordClick: ${pk}`)
-    $('#setFilePasswordModal input[name=pk]').val(pk)
-    const input = $(`#ctx-menu-${pk} input[name=current-file-password]`)
-    console.log('input:', input)
-    const password = input.val()
-    console.log(`password: ${password}`)
-    $('#password').val(input.val())
-    $('#setFilePasswordModal').modal('show')
-}
-
-// Delete Click Handler
-function deleteFileClick() {
-    const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`deleteFileClick: ${pk}`)
-    $('#confirmDeleteFileBtn').data('pk', pk)
-    $('#deleteFileModal').modal('show')
-}
