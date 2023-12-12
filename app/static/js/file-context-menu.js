@@ -96,9 +96,38 @@ $('#confirmDeleteFileBtn').on('click', function () {
 
 // ---------- SOCKET HANDLERS ----------
 
-socket.addEventListener('message', function (event) {
+socket?.addEventListener('message', (event) => {
+    console.log('socket: file-context-menu.js:', event)
     const data = JSON.parse(event.data)
-    if (data.event === 'set-expr-file') {
+    if (data.event === 'file-new') {
+        $.get(`/ajax/files/tdata/${data.pk}`, function (response) {
+            console.log(`Table Updated: ${data.pk}`)
+            // console.log(response)
+            if (filesTable.length) {
+                if (filesTable.length && filesDataTable) {
+                    filesDataTable.row.add($(response)).draw()
+                } else {
+                    $('#files-table tbody').prepend(response)
+                }
+                $(`#file-${data.pk} .ctx-set-expire-btn`).on(
+                    'click',
+                    setExpireClick
+                )
+                $(`#file-${data.pk} .ctx-toggle-private-btn`).on(
+                    'click',
+                    togglePrivateClick
+                )
+                $(`#file-${data.pk} .ctx-set-password-btn`).on(
+                    'click',
+                    setPasswordClick
+                )
+                $(`#file-${data.pk} .ctx-delete-btn`).on(
+                    'click',
+                    deleteFileClick
+                )
+            }
+        })
+    } else if (data.event === 'set-expr-file') {
         // Expire
         handle_set_expiration(data)
     } else if (data.event === 'toggle-private-file') {
@@ -109,6 +138,50 @@ socket.addEventListener('message', function (event) {
         handle_password_set(data)
     }
 })
+
+// Event Listeners
+
+// Set Expire Listener
+function setExpireClick() {
+    const pk = $(this).parent().parent().parent().data('pk')
+    console.log(`setExpireClick: ${pk}`)
+    $('#set-expr-form input[name=pk]').val(pk)
+    const expireText = $(`#file-${pk} .expire-value`).text()
+    console.log(`expireText: ${expireText}`)
+    $('#set-expr-form input[name=expr]').val(expireText)
+    const expireValue = expireText === 'Never' ? '' : expireText
+    console.log(`expireValue: ${expireValue}`)
+    $('#expr').val(expireValue)
+    $('#setFileExprModal').modal('show')
+}
+
+// Toggle Private Listener
+function togglePrivateClick() {
+    const pk = $(this).parent().parent().parent().data('pk')
+    console.log(`togglePrivateClick: ${pk}`)
+    socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
+}
+
+// Set Password Listener
+function setPasswordClick() {
+    const pk = $(this).parent().parent().parent().data('pk')
+    console.log(`setPasswordClick: ${pk}`)
+    $('#setFilePasswordModal input[name=pk]').val(pk)
+    const input = $(`#ctx-menu-${pk} input[name=current-file-password]`)
+    console.log('input:', input)
+    const password = input.val()
+    console.log(`password: ${password}`)
+    $('#password').val(input.val())
+    $('#setFilePasswordModal').modal('show')
+}
+
+// Delete Click Listener
+function deleteFileClick() {
+    const pk = $(this).parent().parent().parent().data('pk')
+    console.log(`deleteFileClick: ${pk}`)
+    $('#confirmDeleteFileBtn').data('pk', pk)
+    $('#deleteFileModal').modal('show')
+}
 
 // Socket Handlers
 
@@ -174,6 +247,8 @@ function handle_password_set(data) {
     }
     $('#setFilePasswordModal').modal('hide')
 }
+
+// Misc
 
 function objectifyForm(formArray) {
     // Convert .serializeArray() to Object (key: value)

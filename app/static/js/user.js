@@ -4,24 +4,15 @@
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
 // Monitor websockets for new data and update results
-socket.addEventListener('message', (event) => {
-    console.log('user.js socket.addEventListener message function')
+socket?.addEventListener('message', (event) => {
+    console.log('socket: user.js:', event)
     let data = JSON.parse(event.data)
-    console.log(data)
     if (data.event === 'file-new') {
         let message = `New File Upload: ${data.pk}`
         show_toast(message, 'success', '10000')
     } else if (data.event === 'file-delete') {
         let message = `File Deleted: ${data.pk}`
         show_toast(message, 'success', '10000')
-        if (filesTable.length) {
-            let count = $('#files-table tr').length
-            $(`#file-${data.pk}`).remove()
-            if (count <= 2) {
-                console.log('removing #files-table@ #files-table')
-                filesTable.remove()
-            }
-        }
     } else if (data.event === 'message') {
         console.log(`data.message: ${data.message}`)
         let bsclass =
@@ -34,14 +25,15 @@ socket.addEventListener('message', (event) => {
 })
 
 // Init the logout form click function
-$('.log-out').on('click', function (event) {
+$('.log-out').on('click', (event) => {
     event.preventDefault()
     $('#log-out').trigger('submit')
 })
 
 // Init the flush-cache click function
-$('#flush-cache').on('click', function () {
-    console.log('#flush-cache click function')
+$('#flush-cache').on('click', (event) => {
+    console.log('#flush-cache click')
+    event.preventDefault()
     $.ajax({
         url: '/flush-cache/',
         type: 'POST',
@@ -58,5 +50,4 @@ $('#flush-cache').on('click', function () {
             show_toast(message, 'danger', '10000')
         },
     })
-    return false
 })
