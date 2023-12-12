@@ -60,7 +60,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
     <div class="h-100" style="position: relative;">
         <div class="card h-100">
             {# TODO: Fix this so that we dont check mime type in the template and the view #}
-            <div class="container-fluid card-img">
+            <div class="container-fluid card-img h-100">
                 {% if render == 'image' %}
                     <img src="{{ static_url }}" alt="{{ file.name }}" class="img-fluid preview-image">
                 {% elif render == 'video' %}
@@ -73,6 +73,8 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         <source src="{{ static_url }}" type="{{ file.mime }}">
                         Your browser does not support the audio tag.
                     </audio>
+                {% elif file.mime == 'application/pdf' %}
+                    <embed src="{{ static_url }}" type="application/pdf" frameBorder="0" scrolling="auto" width="100%" class="h-100 pt-3 mt-5 pb-5"></embed>                
                 {% elif render in 'text,code' %}
                     <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
                     <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
