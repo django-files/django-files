@@ -5,7 +5,6 @@
 <!doctype html>
 <html lang="en" class="h-100">
 <head>
-
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {% if 'DEBUG'|get_config %}<meta name="robots" content="noindex, nofollow">{% endif %}
@@ -32,112 +31,129 @@
     <script type="text/javascript" src="{% static 'bootstrap/theme.js' %}"></script>
 
     {% block head %}{% endblock %}
-
 </head>
-<body class="d-flex flex-column h-100 vh-100">
+<body class="d-flex flex-column h-100">
 
 {% block navbar %}
 <header>
-    <nav class="navbar navbar-expand-md navbar-dark border-bottom"
-         style="background-image: linear-gradient(15deg,
-                 {% block nav1color %}{{ user.nav_color_1|default:"#130e36" }}{% endblock %} 0%,
-                 {% block nav2color %}{{ user.nav_color_2|default:"#1e1c21" }}{% endblock %} 100%);">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{% url 'home:index' %}">
-                <img src="{% static 'images/logo.png' %}" width="30" height="30" alt="logo"></a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                {% if request.user.is_authenticated %}
-                <ul class="navbar-nav me-auto mb-2 mb-sm-0">
-                    <li class="nav-item"><a class="nav-link {% block home_active %}{% endblock %}"
-                                            href="{% url 'home:index' %}">Home</a></li>
-                    <li class="nav-item"><a class="nav-link {% block gallery_active %}{% endblock %}"
-                                            href="{% url 'home:gallery' %}">Gallery</a></li>
-{#                    <li class="nav-item"><a class="nav-link {% block uppy_active %}{% endblock %}"#}
-{#                                            href="{% url 'home:uppy' %}">Upload</a></li>#}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">Upload</a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item {% block uppy_active %}{% endblock %}" href="{% url 'home:uppy' %}">
-                                <i class="fa-solid fa-upload me-2"></i> Files</a></li>
-                            <li><a class="dropdown-item {% block paste_active %}{% endblock %}" href="{% url 'home:paste' %}">
-                                <i class="fa-regular fa-file-lines me-2"></i> Text</a></li>
-                        </ul>
+<nav class="navbar navbar-expand-md navbar-dark border-bottom" style="background-image: linear-gradient(15deg,
+    {% block nav1color %}{{ user.nav_color_1|default:"#130e36" }}{% endblock %} 0%,
+    {% block nav2color %}{{ user.nav_color_2|default:"#1e1c21" }}{% endblock %} 100%);">
+<div class="container-fluid">
+    <a class="navbar-brand" href="{% url 'home:index' %}">
+        <img src="{% static 'images/logo.png' %}" width="30" height="30" alt="logo"></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        {% if request.user.is_authenticated %}
+        <ul class="navbar-nav me-auto mb-2 mb-sm-0">
+            <li class="nav-item">
+                <a class="nav-link {% block home_active %}{% endblock %}" href="{% url 'home:index' %}">Home</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% block gallery_active %}{% endblock %}" href="{% url 'home:gallery' %}">Gallery</a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">Upload</a>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item {% block uppy_active %}{% endblock %}" href="{% url 'home:uppy' %}">
+                            <i class="fa-solid fa-upload me-2"></i> Files</a>
                     </li>
-                    <li class="nav-item"><a class="nav-link {% block files_active %}{% endblock %}"
-                                            href="{% url 'home:files' %}">Files</a></li>
-                    <li class="nav-item"><a class="nav-link {% block shorts_active %}{% endblock %}"
-                                            href="{% url 'home:shorts' %}">Shorts</a></li>
-                    <li class="nav-item"><a class="nav-link {% block stats_active %}{% endblock %}"
-                        href="{% url 'home:stats' %}">Stats</a></li>
+                    <li>
+                        <a class="dropdown-item {% block paste_active %}{% endblock %}" href="{% url 'home:paste' %}">
+                            <i class="fa-regular fa-file-lines me-2"></i> Text</a>
+                    </li>
                 </ul>
-                {% endif %}
-                <ul class="navbar-nav ms-auto">
-                    {% if not request.user.is_authenticated %}
-                        <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="btn btn-outline-info" role="button">
-                            Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
-                    {% else %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {{ user.get_name }} <i class="fas fa-angle-down mx-1"></i>
-                                <img src="{{ user.get_avatar }}"
-                                     class="rounded-circle mx-2 d-none d-sm-inline d-md-inline d-lg-inline d-xl-inline" height="26" width="26" alt="P"></a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item {% block user_active_dd %}{% endblock %}" href="{% url 'settings:user' %}">
-                                    <i class="fas fa-user-circle me-2"></i> User Settings</a></li>
-                                {% if request.user.is_superuser %}
-                                    <li><a class="dropdown-item {% block site_active_dd %}{% endblock %}" href="{% url 'settings:site' %}">
-                                        <i class="fa-solid fa-gears me-2"></i> Site Settings</a></li>
-                                {% endif %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item clip" data-clipboard-text="{{ site_settings.site_url }}" href="javascript:">
-                                    <i class="fa-solid fa-globe me-2"></i> Copy URL</a></li>
-                                <li><a class="dropdown-item clip" data-clipboard-text="{{ user.authorization }}" href="javascript:">
-                                    <i class="fa-solid fa-key me-2"></i> Copy Token</a></li>
-                                {% if request.user.is_superuser %}
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-warning" href="{% url 'admin:settings_sitesettings_change' 1 %}">
-                                        <i class="fa-solid fa-plane-departure me-2"></i> Admin</a></li>
-                                {% endif %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-info" role="button" target="_blank" id="flush-cache">
-                                    <i class="fa-solid fa-toilet me-2"></i> Flush Cache</a></li>
-                                <div class="dropdown-divider"></div>
-                                <li><a class="dropdown-item log-out text-danger" role="button">
-                                    <i class="fas fa-sign-out-alt me-2"></i> Log Out</a></li>
-                            </ul>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% block files_active %}{% endblock %}" href="{% url 'home:files' %}">Files</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% block shorts_active %}{% endblock %}" href="{% url 'home:shorts' %}">Shorts</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% block stats_active %}{% endblock %}" href="{% url 'home:stats' %}">Stats</a>
+            </li>
+        </ul>
+        {% endif %}
+        <ul class="navbar-nav ms-auto">
+            {% if not request.user.is_authenticated %}
+                <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="btn btn-outline-info" role="button">
+                    Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
+            {% else %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ user.get_name }} <i class="fas fa-angle-down mx-1"></i>
+                        <img src="{{ user.get_avatar }}" class="rounded-circle mx-2 d-none d-sm-inline d-md-inline d-lg-inline d-xl-inline" height="26" width="26" alt="P"></a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        <li>
+                            <a class="dropdown-item {% block user_active_dd %}{% endblock %}" href="{% url 'settings:user' %}">
+                                <i class="fas fa-user-circle me-2"></i> User Settings</a>
                         </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
+                        {% if request.user.is_superuser %}
+                            <li>
+                                <a class="dropdown-item {% block site_active_dd %}{% endblock %}" href="{% url 'settings:site' %}">
+                                    <i class="fa-solid fa-gears me-2"></i> Site Settings</a>
+                            </li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item clip" data-clipboard-text="{{ site_settings.site_url }}" href="javascript:">
+                                <i class="fa-solid fa-globe me-2"></i> Copy URL</a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item clip" data-clipboard-text="{{ user.authorization }}" href="javascript:">
+                                <i class="fa-solid fa-key me-2"></i> Copy Token</a>
+                        </li>
+                        {% if request.user.is_superuser %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-warning" href="{% url 'admin:settings_sitesettings_change' 1 %}">
+                                    <i class="fa-solid fa-plane-departure me-2"></i> Admin</a>
+                            </li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-info" role="button" target="_blank" id="flush-cache">
+                                <i class="fa-solid fa-toilet me-2"></i> Flush Cache</a>
+                        </li>
+                        <div class="dropdown-divider"></div>
+                        <li>
+                            <a class="dropdown-item log-out text-danger" role="button">
+                                <i class="fas fa-sign-out-alt me-2"></i> Log Out</a>
+                        </li>
+                    </ul>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+</div> <!-- nav-container -->
+</nav>
 </header>
 {% endblock %}
 
 <main class="flex-grow-1">
-    {% if request.user.is_superuser %}
-        {% block welcome %}
-            {% if not site_settings.site_url %}
-                <div class="container-fluid">
-                    <div id="siteUrlWarning" class="alert alert-warning mt-2" role="alert">
-                        <strong>Important:</strong> The Site URL is not set!
-                        <a href="{% url 'settings:site' %}">Site Settings.</a>
-                    </div>
+{% if request.user.is_superuser %}
+    {% block welcome %}
+        {% if not site_settings.site_url %}
+            <div class="container-fluid">
+                <div id="siteUrlWarning" class="alert alert-warning mt-2" role="alert">
+                    <strong>Important:</strong> The Site URL is not set!
+                    <a href="{% url 'settings:site' %}">Site Settings.</a>
                 </div>
-            {% endif %}
-        {% endblock %}
-    {% endif %}
-    {% block body %}{% endblock %}
+            </div>
+        {% endif %}
+    {% endblock %}
+{% endif %}
+{% block body %}{% endblock %}
 </main>
 
 {% block backtotop %}
     <button type="button" class="btn btn-secondary btn-floating opacity-50" id="back-to-top">
-        <i class="fas fa-arrow-up"></i></button>
+        <i class="fas fa-arrow-up"></i>
+    </button>
 {% endblock %}
 
 {% block footer %}
@@ -198,19 +214,16 @@
                 </div>
             {% endfor %}
         {% endif %}{% endblock %}
-
         <div id="disconnected-toast" role="alert" aria-live="assertive" aria-atomic="true" class="toast" data-bs-autohide="false">
             <div class="toast-header">
                 <strong class="me-auto text-warning">Disconnected</strong>
                 <small>Server</small>
-{#                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>#}
             </div>
             <div class="toast-body">
                  Websocket Connection Closed.
                 <strong><a href="javascript:location.reload(true)">Reload</a></strong>.
             </div>
         </div>
-
     </div>
 {% endblock %}
 

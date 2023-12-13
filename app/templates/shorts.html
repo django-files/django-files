@@ -11,44 +11,42 @@
 {% endblock %}
 
 {% block body %}
-    <div class="container-fluid py-3 px-4">
+<div class="container-fluid py-3 px-4">
 
-        <h1><i class="fa-solid fa-link me-2"></i> Shorts</h1>
+    <h1><i class="fa-solid fa-link me-2"></i> Shorts</h1>
 
-        <form id="shortsForm" method="post" action="{% url 'home:shorten' %}">
-            <div class="row g-3">
-                <div class="col-12">
-                    <input type="text" class="form-control" placeholder="Reeeaaalllyyy Long URL" aria-label="URL"
-                           id="url" name="url" required>
-                </div>
-                <div class="col-sm-6">
-                    <input type="text" class="form-control" placeholder="Vanity Name" aria-label="Vanity"
-                           id="vanity" name="vanity">
-                </div>
-                <div class="col-sm-3">
-                    <input type="text" class="form-control" placeholder="Max Views" aria-label="Max-Views"
-                           id="max-views" name="max-views">
-                </div>
-                <div class="col-sm-3 d-grid">
-                    <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-hammer me-2"></i> Create</button>
-                </div>
+    <form id="shortsForm" method="post" action="{% url 'home:shorten' %}">
+        <div class="row g-3">
+            <div class="col-12">
+                <input type="text" class="form-control" placeholder="Reeeaaalllyyy Long URL" aria-label="URL"
+                       id="url" name="url" required>
             </div>
-        </form>
+            <div class="col-sm-6">
+                <input type="text" class="form-control" placeholder="Vanity Name" aria-label="Vanity"
+                       id="vanity" name="vanity">
+            </div>
+            <div class="col-sm-3">
+                <input type="text" class="form-control" placeholder="Max Views" aria-label="Max-Views"
+                       id="max-views" name="max-views">
+            </div>
+            <div class="col-sm-3 d-grid">
+                <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-hammer me-2"></i> Create</button>
+            </div>
+        </div>
+    </form>
 
-        {% if not shorts %}
-            <p class="lead">Short URLs will show up here once created...</p>
-        {% else %}
-            <p class="lead mt-2">Total Shorts: <strong>{{ shorts|length }}</strong></p>
-            {% include 'include/shorts-table.html' with shorts=shorts  %}
-        {% endif %}
+    {% if not shorts %}
+        <p class="lead">Short URLs will show up here once created...</p>
+    {% else %}
+        <p class="lead mt-2">Total Shorts: <strong>{{ shorts|length }}</strong></p>
+        {% include 'include/shorts-table.html' with shorts=shorts  %}
+    {% endif %}
 
-    </div>
+</div>
 {% endblock %}
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/shorts.js' %}"></script>
-{#    <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>#}
-{#    <script type="text/javascript" src="{% static 'js/files.js' %}"></script>#}
     <script src="{% static 'dist/datatables/jquery.dataTables.min.js' %}"></script>
     <script src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
 

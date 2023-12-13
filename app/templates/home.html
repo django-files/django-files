@@ -9,63 +9,65 @@
 {% block head %}{% endblock %}
 
 {% block body %}
-    <div class="container-fluid py-3 px-4">
+<div class="container-fluid py-3 px-4">
 
-        <h1><i class="fa-solid fa-house-laptop me-2"></i> {{ site_settings.site_title }}</h1>
+    <h1><i class="fa-solid fa-house-laptop me-2"></i> {{ site_settings.site_title }}</h1>
 
-            {% if not stats %}
-                <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
-            {% else %}
-                {% with stats=stats|first  %}
-                    <div class="row">
-                        {% include 'include/stats-card.html' with title="Total Files" data=stats.stats.count %}
-                        {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
-                        {% include 'include/stats-card.html' with title="Total Shorts" data=stats.stats.shorts %}
-                    </div>
-                    {% include 'include/stats-table.html' with stats=stats count=6 %}
-                    <p><a class="btn btn-sm btn-outline-warning me-2" role="button" id="updateStatsBtn"
-                          data-target-url="{% url 'home:update-stats' %}">
-                            <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>
-                        <a class="btn btn-sm btn-outline-light me-2" role="button"
-                           href="{% url 'home:stats' %}">
-                            <i class="fa-solid fa-chart-bar"></i> View Stats</a>{% if stats %}
-                            <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>{% endif %}</p>
-                {% endwith %}
-            {% endif %}
-
-            <h2 id="files">Files</h2>
-            {% if not files %}
-                <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
-            {% else %}
-                <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
-                {% include 'files/table.html' with files=files|slice:":10"  %}
-                {% if files|length > 10 %}
-                    <p><em>This list is truncated to 10 files. <span class="d-inline-block">
-                        <a href="{% url 'home:files' %}">View All Files</a></span></em></p>
+    {% if not stats %}
+        <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
+    {% else %}
+        {% with stats=stats|first  %}
+            <div class="row">
+                {% include 'include/stats-card.html' with title="Total Files" data=stats.stats.count %}
+                {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
+                {% include 'include/stats-card.html' with title="Total Shorts" data=stats.stats.shorts %}
+            </div>
+            {% include 'include/stats-table.html' with stats=stats count=6 %}
+            <p>
+                <a class="btn btn-sm btn-outline-warning me-2" role="button" id="updateStatsBtn" data-target-url="{% url 'home:update-stats' %}">
+                    <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>
+                <a class="btn btn-sm btn-outline-light me-2" role="button" href="{% url 'home:stats' %}">
+                    <i class="fa-solid fa-chart-bar"></i> View Stats</a>
+                {% if stats %}
+                    <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>
                 {% endif %}
-            {% endif %}
+            </p>
+        {% endwith %}
+    {% endif %}
 
-            <h2 id="shorts">Shorts</h2>
-            <form id="quick-short-form" action="{% url 'home:shorten' %}">
-                <div class="input-group my-2">
-                    <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
-                           aria-label="Recipient's username" aria-describedby="create-short-btn" required>
-                    <button class="btn btn-outline-success" type="submit" id="create-short-btn"
-                            data-target-url="{% url 'home:shorten' %}"><i class="fa-solid fa-hammer me-2"></i> Shorten</button>
-                </div>
-            </form>
-            <p><em><a href="{% url 'home:shorts' %}">More Short Options</a></em></p>
-            {% if not shorts %}
-                <p class="lead">Short URLs will show up here once created...</p>
-            {% else %}
-                {% include 'include/shorts-table.html' with shorts=shorts|slice:":10"  %}
-                {% if shorts|length > 10 %}
-                    <p><em>This list is truncated to 10 shorts. <span class="d-inline-block">
-                        <a href="{% url 'home:shorts' %}">View All Shorts</a></span></em></p>
-                {% endif %}
-            {% endif %}
+    <h2 id="files">Files</h2>
+    {% if not files %}
+        <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
+    {% else %}
+        <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
+        {% include 'files/table.html' with files=files|slice:":10"  %}
+        {% if files|length > 10 %}
+            <p><em>This list is truncated to 10 files. <span class="d-inline-block">
+                <a href="{% url 'home:files' %}">View All Files</a></span></em></p>
+        {% endif %}
+    {% endif %}
 
-    </div>
+    <h2 id="shorts">Shorts</h2>
+    <form id="quick-short-form" action="{% url 'home:shorten' %}">
+        <div class="input-group my-2">
+            <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
+                   aria-label="Recipient's username" aria-describedby="create-short-btn" required>
+            <button class="btn btn-outline-success" type="submit" id="create-short-btn"
+                    data-target-url="{% url 'home:shorten' %}"><i class="fa-solid fa-hammer me-2"></i> Shorten</button>
+        </div>
+    </form>
+    <p><em><a href="{% url 'home:shorts' %}">More Short Options</a></em></p>
+    {% if not shorts %}
+        <p class="lead">Short URLs will show up here once created...</p>
+    {% else %}
+        {% include 'include/shorts-table.html' with shorts=shorts|slice:":10"  %}
+        {% if shorts|length > 10 %}
+            <p><em>This list is truncated to 10 shorts. <span class="d-inline-block">
+                <a href="{% url 'home:shorts' %}">View All Shorts</a></span></em></p>
+        {% endif %}
+    {% endif %}
+
+</div>
 {% endblock %}
 
 {% block tail %}
