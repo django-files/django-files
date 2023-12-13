@@ -29,15 +29,17 @@ socket?.addEventListener('message', (event) => {
     let data = JSON.parse(event.data)
     if (data.event === 'file-new') {
         $.get(`/ajax/files/tdata/${data.pk}`, (response) => {
-            console.log(`Table Updated: ${data.pk}`, response)
+            console.log(`Table Updated: ${data.pk}`)
+            // console.log('response:', response)
             if (filesTable.length) {
                 if (filesDataTable) {
                     filesDataTable.row.add($(response)).draw()
                 } else {
-                    filesDataTable.find('tbody').prepend(response)
+                    filesTable.find('tbody').prepend(response)
                 }
             }
-            const row = $('#file-78')
+            const row = $(`#file-${data.pk}`)
+            // console.log('row:', row)
             row.find('.ctx-expire').on('click', cxtSetExpire)
             row.find('.ctx-private').on('click', ctxSetPrivate)
             row.find('.ctx-password').on('click', ctxSetPassword)
