@@ -1,3 +1,5 @@
+// JS for Keyboard Shortcuts
+
 let keysPressed = {}
 window.onblur = function () {
     keysPressed = {}

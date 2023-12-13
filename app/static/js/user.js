@@ -1,4 +1,4 @@
-// JS for logged in Users
+// JS for Authenticated Users
 
 // Get and set the csrf_token
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
@@ -38,12 +38,12 @@ $('#flush-cache').on('click', function (event) {
         url: '/flush-cache/',
         type: 'POST',
         headers: { 'X-CSRFToken': csrftoken },
-        success: (response) => {
+        success: function (response) {
             console.log('response: ' + response)
             alert('Cache Flush Successfully Sent...')
             location.reload()
         },
-        error: (jqXHR) => {
+        error: function (jqXHR) {
             console.log('jqXHR.status: ' + jqXHR.status)
             console.log('jqXHR.statusText: ' + jqXHR.statusText)
             let message = jqXHR.status + ': ' + jqXHR.statusText
