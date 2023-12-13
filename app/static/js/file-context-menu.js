@@ -1,8 +1,8 @@
 // JS for Context Menu
 
-// const fileExpireModal = $('#fileExpireModal')
-// const filePasswordModal = $('#filePasswordModal')
-// const fileDeleteModal = $('#fileDeleteModal')
+const fileExpireModal = $('#fileExpireModal')
+const filePasswordModal = $('#filePasswordModal')
+const fileDeleteModal = $('#fileDeleteModal')
 
 // Context Menu Listeners
 
@@ -19,10 +19,10 @@ $('#set-expr-form').on('submit', (event) => {
     const data = genData($('#set-expr-form').serializeArray(), 'set-expr-file')
     console.log('data:', data)
     socket.send(JSON.stringify(data))
-    $('#fileExpireModal').modal('hide')
+    fileExpireModal.modal('hide')
 })
 
-$('#fileExpireModal').on('shown.bs.modal', () => {
+fileExpireModal.on('shown.bs.modal', () => {
     $('#expr').trigger('focus').trigger('select')
 })
 
@@ -41,7 +41,7 @@ $('#set-password-form').on('submit', (event) => {
     $(`#ctx-menu-${data.pk} input[name=current-file-password]`).val(
         data.password
     )
-    $('#filePasswordModal').modal('hide')
+    filePasswordModal.modal('hide')
 })
 
 $('#unMaskPassword').on('click', () => {
@@ -64,7 +64,7 @@ $('#generatePassword').on('click', async () => {
     show_toast('Password generated and copied!', 'info', '15000')
 })
 
-$('#filePasswordModal').on('shown.bs.modal', () => {
+filePasswordModal.on('shown.bs.modal', () => {
     $('#password').trigger('focus').trigger('select')
 })
 
@@ -79,7 +79,7 @@ $('#confirmDeleteFileBtn').on('click', (event) => {
     if (window.location.pathname.startsWith('/u/')) {
         window.location.replace('/#files')
     } else {
-        $('#fileDeleteModal').modal('hide')
+        fileDeleteModal.modal('hide')
     }
 })
 
@@ -95,7 +95,7 @@ function cxtSetExpire() {
     const expireValue = expire === 'Never' ? '' : expire
     console.log(`expireValue: ${expireValue}`)
     $('#expr').val(expireValue)
-    $('#fileExpireModal').modal('show')
+    fileExpireModal.modal('show')
 }
 
 function ctxSetPrivate() {
@@ -107,21 +107,20 @@ function ctxSetPrivate() {
 function ctxSetPassword() {
     const pk = $(this).parent().parent().parent().data('pk')
     console.log(`ctxSetPassword pk: ${pk}`, this)
-    $('#filePasswordModal input[name=pk]').val(pk)
-    // filePasswordModal.find('input[name=pk]').val(pk)
+    filePasswordModal.find('input[name=pk]').val(pk)
     const input = $(`#ctx-menu-${pk} input[name=current-file-password]`)
     // console.log('input:', input)
     const password = input.val().toString().trim()
     console.log(`password: ${password}`)
     $('#password').val(input.val())
-    $('#filePasswordModal').modal('show')
+    filePasswordModal.modal('show')
 }
 
 function ctxDeleteFile() {
     const pk = $(this).parent().parent().parent().data('pk')
     console.log(`ctxDeleteFile pk: ${pk}`, this)
     $('#confirmDeleteFileBtn').data('pk', pk)
-    $('#fileDeleteModal').modal('show')
+    fileDeleteModal.modal('show')
 }
 
 // Socket Handlers
@@ -191,7 +190,7 @@ function handle_password_set(data) {
         preview_icon.hide()
         show_toast(`Password unset for ${data.name}`, 'success')
     }
-    $('#filePasswordModal').modal('hide')
+    filePasswordModal.modal('hide')
 }
 
 // Misc
