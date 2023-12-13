@@ -108,9 +108,11 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
                     {% endif %}
                     <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
-                    <i id="privateStatus" title="Private File" class="fa-solid fa-lock ms-2" {% if not file.private %}style="display: none"{% endif %}></i>
-                    <i id="passwordStatus" title="Password Protected File" class="fa-solid fa-key ms-2" {% if not file.password %}style="display: none"{% endif %}></i>
-                    <i id="expire-status-icon" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass ms-2" {% if not file.expr %} style="display: none"{% endif %}></i>
+                    <i id="previewIcon" title="Private File" class="fa-solid fa-lock ms-2 {% if not file.private %}d-none{% endif %}"></i>
+                    <i title="Password Protected File" class="fa-solid fa-key ms-2 passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i>
+                    <span class="ms-2 {% if not file.expr %}d-none{% endif %} expire-icon" title="File Expires in {{ file.expr }}">
+                        <i class="fa-solid fa-hourglass"></i>
+                    </span>
                 </p>
                 <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>
                 <p class="card-text">Uploaded {{ file.date }}</p>
@@ -138,12 +140,11 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 </div>
             </div>
         </div>
+        <table class="d-none">
+            {% include 'files/table-row.html' with nocontextmenu=True %}
+        </table>
     </div>
     </div>
-{#    TODO: Look Into This Include #}
-    <table class="d-none">
-        {% include 'files/table-row.html' with nocontextmenu=True %}
-    </table>
 {% endblock %}
 
 {% block tail %}

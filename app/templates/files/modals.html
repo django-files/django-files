@@ -11,7 +11,8 @@
         <div class="modal-body">
             <div class="row">
                 <div class="col-md-12">
-                    <p class="text-primary">Set the file's expiration. For examples, see
+                    <p class="text-primary">
+                        Set the file's expiration. For examples, see
                         <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
                            target="_blank" rel="noopener">this README.md</a>.
                     </p>
@@ -21,8 +22,7 @@
                 <div class="col-md-10">
                     <label for="expr" class="form-label">Expiration</label>
                     <div class="input-group w-auto">
-                        <input type="text" class="form-control" id="expr" name="expr" autocomplete="off" value="{{ file.expr|default:'' }}"
-                               aria-describedby="expr-invalid">
+                        <input type="text" class="form-control" id="expr" name="expr" autocomplete="off" value="{{ file.expr|default:'' }}">
                     </div>
                 </div>
             </div>
@@ -49,16 +49,17 @@
         <div class="modal-body">
             <div class="row">
                 <div class="col-md-12">
-                    <p class="text-primary">Setting a password will prevent others from accessing the file without the password.
+                    <p class="text-primary">
+                        Setting a password will prevent others from accessing the file without the password.
                         If the file is private, this will allow others to access the file with the password.
                     </p>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-10">
-                    <label for="password" class="form-label">Password</label>
+                    <label for="file-password" class="form-label">Password</label>
                     <div class="input-group w-auto">
-                        <input type="text" class="form-control" id="password" name="password" autocomplete="off" aria-describedby="password-invalid">
+                        <input type="text" class="form-control" id="file-password" name="password" autocomplete="off">
                         <button type="button" title="Umask password." id="password-unmask" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye me-1"></i></button>
                         <button type="button" title="Copy Password" id="password-copy" class="btn btn-warning btn-sm"><i class="fa-regular fa-copy"></i></button>
                         <button type="button" title="Generate new password." id="password-generate" class="btn btn-info btn-sm"><i class="fa-solid fa-key"></i></button>

@@ -6,6 +6,7 @@ const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 socket?.addEventListener('message', function (event) {
     // console.log('socket: user.js:', event)
     let data = JSON.parse(event.data)
+    console.log('socket: user.js:', data)
     if (data.event === 'file-new') {
         let message = `New File Upload: ${data.pk}`
         show_toast(message, 'success', '10000')
