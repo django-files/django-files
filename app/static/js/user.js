@@ -3,9 +3,8 @@
 // Get and set the csrf_token
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
-// Monitor websockets for new data and update results
 socket?.addEventListener('message', function (event) {
-    console.log('socket: user.js:', event)
+    // console.log('socket: user.js:', event)
     let data = JSON.parse(event.data)
     if (data.event === 'file-new') {
         let message = `New File Upload: ${data.pk}`

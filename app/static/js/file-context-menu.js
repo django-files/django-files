@@ -9,31 +9,46 @@ $('.ctx-private').on('click', ctxSetPrivate)
 $('.ctx-password').on('click', ctxSetPassword)
 $('.ctx-delete').on('click', ctxDeleteFile)
 
+socket?.addEventListener('message', function (event) {
+    // console.log('socket: file-context-menu.js:', event)
+    const data = JSON.parse(event.data)
+    if (data.event === 'set-expr-file') {
+        handle_set_expiration(data)
+    } else if (data.event === 'toggle-private-file') {
+        handle_private_toggle(data)
+    } else if (data.event === 'set-password-file') {
+        handle_password_set(data)
+    }
+})
+
 // Expire Form
 
+fileExpireModal.on('shown.bs.modal', function (event) {
+    console.log('fileExpireModal shown.bs.modal:', event, this)
+    $(this).find('input').trigger('focus').trigger('select')
+})
+
 $('#modal-expire-form').on('submit', function (event) {
-    console.log('#modal-expire-form submit:', event)
+    console.log('#modal-expire-form submit:', event, this)
     event.preventDefault()
-    const data = genData($(this).serializeArray(), 'set-expr-file')
+    const data = genData($(this), 'set-expr-file')
     console.log('data:', data)
     socket.send(JSON.stringify(data))
     fileExpireModal.modal('hide')
 })
 
-fileExpireModal.on('shown.bs.modal', function (event) {
-    $('#expr').trigger('focus').trigger('select')
-})
-
 // Password Form
 // TODO: Cleanup Password Forms
 
+filePasswordModal.on('shown.bs.modal', function (event) {
+    console.log('filePasswordModal shown.bs.modal:', event, this)
+    $(this).find('input').trigger('focus').trigger('select')
+})
+
 $('#modal-password-form').on('submit', function (event) {
-    console.log('#set-password form.submit:', event)
+    console.log('#modal-password-form submit:', event, this)
     event.preventDefault()
-    const data = genData(
-        $('#modal-password-form').serializeArray(),
-        'set-password-file'
-    )
+    const data = genData($(this), 'set-password-file')
     console.log('data:', data)
     socket.send(JSON.stringify(data))
     $(`#ctx-menu-${data.pk} input[name=current-file-password]`).val(
@@ -42,36 +57,33 @@ $('#modal-password-form').on('submit', function (event) {
     filePasswordModal.modal('hide')
 })
 
-$('#unMaskPassword').on('click', function (event) {
-    // TODO: This needs a cookie to work properly
-    console.log('#unMaskPassword click:')
-    const password = $('#password')
-    const type = password.attr('type') === 'password' ? 'text' : 'password'
-    password.prop('type', type)
+$('#password-unmask').on('click', function (event) {
+    console.log('#password-unmask click:', event)
+    const input = $('#password')
+    const type = input.attr('type') === 'password' ? 'text' : 'password'
+    input.prop('type', type)
 })
 
-$('#copyPassword').on('click', async function (event) {
+$('#password-copy').on('click', async function (event) {
+    console.log('#password-copy click:', event)
     await navigator.clipboard.writeText($('#password').val())
     show_toast('Password copied!', 'info', '15000')
 })
 
-$('#generatePassword').on('click', async function (event) {
+$('#password-generate').on('click', async function (event) {
+    console.log('#password-generate click:', event)
     const password = genRand(12)
     $('#password').val(password)
     await navigator.clipboard.writeText(password)
     show_toast('Password generated and copied!', 'info', '15000')
 })
 
-filePasswordModal.on('shown.bs.modal', function (event) {
-    $('#password').trigger('focus').trigger('select')
-})
-
 // Delete File Form
 
 $('#confirm-delete').on('click', function (event) {
-    // TODO: Handle ELSE Better
+    // TODO: Handle IF/ELSE Better
     const pk = $(this).data('pk')
-    console.log(`#confirm-delete.click pk: ${pk}`)
+    console.log(`#confirm-delete click: pk: ${pk}`, event, this)
     socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
     if (window.location.pathname.startsWith('/u/')) {
         window.location.replace('/#files')
@@ -85,7 +97,6 @@ $('#confirm-delete').on('click', function (event) {
 function cxtSetExpire() {
     const pk = $(this).parent().parent().parent().data('pk')
     console.log(`cxtSetExpire pk: ${pk}`, this)
-    // $('#modal-expire-form input[name=pk]').val(pk)
     fileExpireModal.find('input[name=pk]').val(pk)
     const expire = $(`#file-${pk} .expire-value`).text().trim()
     console.log(`expire: ${expire}`)
@@ -121,18 +132,6 @@ function ctxDeleteFile() {
 }
 
 // Socket Handlers
-
-socket?.addEventListener('message', function (event) {
-    console.log('socket: file-context-menu.js:', event)
-    const data = JSON.parse(event.data)
-    if (data.event === 'set-expr-file') {
-        handle_set_expiration(data)
-    } else if (data.event === 'toggle-private-file') {
-        handle_private_toggle(data)
-    } else if (data.event === 'set-password-file') {
-        handle_password_set(data)
-    }
-})
 
 function handle_set_expiration(data) {
     // TODO: title does not seem to live update using .attr method
@@ -191,14 +190,14 @@ function handle_password_set(data) {
 }
 
 /**
- * Convert serializeArray to Object
- * @param {Array} serializeArray
- * @param {String} method
+ * Convert Form Object to Object
+ * @param {jQuery} form $(this) from on submit event
+ * @param {String} method The method key value
  * @return {Object}
  */
-function genData(serializeArray, method) {
+function genData(form, method) {
     const data = { method: method }
-    for (const element of serializeArray) {
+    for (const element of form.serializeArray()) {
         data[element['name']] = element['value']
     }
     return data
@@ -211,13 +210,13 @@ function genData(serializeArray, method) {
  */
 function genRand(length) {
     const chars =
-        '0123456789abcdefghijklmnopqrstuvwxyz!+()ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    let password = ''
-    const array = new Uint32Array(chars.length)
-    window.crypto.getRandomValues(array)
-
-    for (let i = 0; i < length; i++) {
-        password += chars[array[i] % chars.length]
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    let result = ''
+    let counter = 0
+    while (counter < length) {
+        const rand = Math.floor(Math.random() * chars.length)
+        result += chars.charAt(rand)
+        counter += 1
     }
-    return password
+    return result
 }

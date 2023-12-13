@@ -1,3 +1,5 @@
+// JS for Web Sockets
+
 console.log('Connecting to WebSocket...')
 
 let socket
@@ -11,18 +13,15 @@ function wsConnect() {
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
     socket = new WebSocket(`${protocol}//${window.location.host}/ws/home/`)
     socket.onopen = function (event) {
-        console.log('socket.onopen')
-        console.log(event)
+        console.log('socket.onopen:', event)
         // $('#socket-warning').addClass('d-none')
     }
-    socket.onmessage = function (event) {
-        console.log('socket.onmessage')
-        console.log(event)
-        console.log(`Message: ${event.data}`)
-    }
+    // socket.onmessage = function (event) {
+    //     console.log('socket.onmessage:', event)
+    //     console.log(`Message: ${event.data}`)
+    // }
     socket.onclose = function (event) {
-        console.log(`socket.onclose: ${event.code}`)
-        console.log(event)
+        console.log(`socket.onclose: ${event.code}:`, event)
         if (![1000, 1001].includes(event.code)) {
             setTimeout(function () {
                 console.log('Unclean Close, Showing Socket Warnings')
@@ -41,8 +40,7 @@ function wsConnect() {
         }, 10 * 1000)
     }
     socket.onerror = function (event) {
-        console.error('socket.onerror')
-        console.log(event)
+        console.error('socket.onerror:', event)
         // socket.close()
     }
 }

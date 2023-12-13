@@ -25,7 +25,7 @@ if (typeof DataTable !== 'undefined' && filesTable.length) {
 }
 
 socket?.addEventListener('message', function (event) {
-    console.log('socket: files.js:', event)
+    // console.log('socket: files.js:', event)
     let data = JSON.parse(event.data)
     if (data.event === 'file-new') {
         $.get(`/ajax/files/tdata/${data.pk}`, (response) => {
@@ -46,6 +46,7 @@ socket?.addEventListener('message', function (event) {
             row.find('.ctx-delete').on('click', ctxDeleteFile)
         })
     } else if (data.event === 'file-delete') {
+        console.log(`File Deleted: ${data.pk}`)
         $(`#file-${data.pk}`).remove()
     }
 })
