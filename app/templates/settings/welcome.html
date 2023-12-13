@@ -69,7 +69,13 @@
                                 <div class="">
                                     <label for="site_url" class="col-form-label">Site URL:</label>
                                     <input type="text" class="form-control" id="site_url" name="site_url"
-                                           value="{% if 'SITE_URL'|get_config %}{{ 'SITE_URL'|get_config }}{% else %}{{ site_settings.site_url }}{% endif %}" required>
+                                        {% if 'SITE_URL'|get_config %}
+                                           value="{{ 'SITE_URL'|get_config }}"
+                                        {% elif site_settings.site_url %}
+                                           value="{{ site_settings.site_url }}"
+                                        {% else %}
+                                           value=""
+                                        {% endif %} required>
                                     <div id="site_url-invalid" class="invalid-feedback"></div>
                                 </div>
                             {% endif %}

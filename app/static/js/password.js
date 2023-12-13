@@ -1,9 +1,10 @@
 // JS for Embed Password
 
-// Password form handler
 $('#password-form').on('submit', function (event) {
+    console.log('#password-form on submit', event)
     event.preventDefault()
-    if ($('#password-button').hasClass('disabled')) {
+    const passwordButton = $('#password-button')
+    if (passwordButton.hasClass('disabled')) {
         return
     }
     $.ajax({
@@ -12,26 +13,23 @@ $('#password-form').on('submit', function (event) {
         data: new FormData($(this)),
         crossDomain: true,
         beforeSend: function () {
-            $('#login-button').addClass('disabled')
+            passwordButton.addClass('disabled')
         },
-        success: function (response) {
-            console.log('response: ' + response)
-            if (response.redirect) {
-                console.log('response.redirect: ' + response.redirect)
-                // window.location.href = response.redirect
-                return window.location.replace(response.redirect)
+        success: function (data) {
+            console.log('data:', data)
+            if (data.redirect) {
+                console.log(`data.redirect: ${data.redirect}`)
+                // window.location.href = data.redirect
+                return window.location.replace(data.redirect)
             }
             location.reload()
         },
-        error: function (xhr, status, error) {
-            console.log('xhr: ' + xhr)
-            console.log('status: ' + status)
-            console.log('error: ' + error)
+        error: function (jqXHR) {
+            console.log('jqXHR:', jqXHR)
             $('#password-form input').addClass('is-invalid')
         },
         complete: function () {
-            console.log('complete')
-            $('#password-button').removeClass('disabled')
+            passwordButton.removeClass('disabled')
         },
         cache: false,
         contentType: false,

@@ -31,12 +31,12 @@ fileExpireModal.on('shown.bs.modal', function (event) {
 $('#modal-expire-form').on('submit', function (event) {
     console.log('#modal-expire-form submit:', event)
     event.preventDefault()
-    // const data = genData($(this), 'set-expr-file')
-    const data = {
-        method: 'set-expr-file',
-        pk: $(this).find('input[name=pk]').val(),
-        expr: $(this).find('input[name=expr]').val().trim(),
-    }
+    // const data = {
+    //     method: 'set-expr-file',
+    //     pk: $(this).find('input[name=pk]').val(),
+    //     expr: $(this).find('input[name=expr]').val().trim(),
+    // }
+    const data = genData($(this), 'set-expr-file')
     console.log('data:', data)
     socket.send(JSON.stringify(data))
     fileExpireModal.modal('hide')
@@ -53,12 +53,12 @@ filePasswordModal.on('shown.bs.modal', function (event) {
 $('#modal-password-form').on('submit', function (event) {
     console.log('#modal-password-form submit:', event)
     event.preventDefault()
-    // const data = genData($(this), 'set-password-file')
-    const data = {
-        method: 'set-password-file',
-        pk: $(this).find('input[name=pk]').val(),
-        password: $(this).find('input[name=password]').val().trim(),
-    }
+    // const data = {
+    //     method: 'set-password-file',
+    //     pk: $(this).find('input[name=pk]').val(),
+    //     password: $(this).find('input[name=password]').val().trim(),
+    // }
+    const data = genData($(this), 'set-password-file')
     console.log('data:', data)
     socket.send(JSON.stringify(data))
     $(`#ctx-menu-${data.pk} input[name=current-file-password]`).val(
@@ -69,21 +69,21 @@ $('#modal-password-form').on('submit', function (event) {
 
 $('#password-unmask').on('click', function (event) {
     console.log('#password-unmask click:', event)
-    const input = $('#file-password')
+    const input = $('#password')
     const type = input.attr('type') === 'password' ? 'text' : 'password'
     input.prop('type', type)
 })
 
 $('#password-copy').on('click', async function (event) {
     console.log('#password-copy click:', event)
-    await navigator.clipboard.writeText($('#file-password').val())
+    await navigator.clipboard.writeText($('#password').val())
     show_toast('Password copied!', 'info', '15000')
 })
 
 $('#password-generate').on('click', async function (event) {
     console.log('#password-generate click:', event)
     const password = genRand(12)
-    $('#file-password').val(password)
+    $('#password').val(password)
     await navigator.clipboard.writeText(password)
     show_toast('Password generated and copied!', 'info', '15000')
 })
@@ -130,7 +130,7 @@ function ctxSetPassword() {
     // console.log('input:', input)
     const password = input.val().toString().trim()
     console.log(`password: ${password}`)
-    // $('#file-password').val(input.val())
+    // $('#password').val(input.val())
     filePasswordModal.find('input[name=password]').val(password)
     filePasswordModal.modal('show')
 }
@@ -212,16 +212,16 @@ function genRand(length) {
     return result
 }
 
-// /**
-//  * Convert Form Object to Object
-//  * @param {jQuery} form $(this) from on submit event
-//  * @param {String} method The method key value
-//  * @return {Object}
-//  */
-// function genData(form, method) {
-//     const data = { method: method }
-//     for (const element of form.serializeArray()) {
-//         data[element['name']] = element['value']
-//     }
-//     return data
-// }
+/**
+ * Convert Form Object to Object
+ * @param {jQuery} form $(this) from on submit event
+ * @param {String} method The method key value
+ * @return {Object}
+ */
+function genData(form, method) {
+    const data = { method: method }
+    for (const element of form.serializeArray()) {
+        data[element['name']] = element['value']
+    }
+    return data
+}

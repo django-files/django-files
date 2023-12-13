@@ -1,8 +1,10 @@
 // JS for Login
 
 $('#login-form').on('submit', function (event) {
+    console.log('#login-form on submit', event)
     event.preventDefault()
-    if ($('#login-button').hasClass('disabled')) {
+    const loginButton = $('#login-button')
+    if (loginButton.hasClass('disabled')) {
         return
     }
     $.ajax({
@@ -11,26 +13,24 @@ $('#login-form').on('submit', function (event) {
         data: new FormData(this),
         crossDomain: true,
         beforeSend: function () {
-            $('#login-button').addClass('disabled')
+            loginButton.addClass('disabled')
         },
-        success: function (response) {
-            console.log('response: ' + response)
-            if (response.redirect) {
-                console.log('response.redirect: ' + response.redirect)
+        success: function (data) {
+            console.log('data:', data)
+            if (data.redirect) {
+                console.log(`data.redirect: ${data.redirect}`)
                 // window.location.href = response.redirect
-                return window.location.replace(response.redirect)
+                window.location.replace(data.redirect)
+            } else {
+                location.reload()
             }
-            location.reload()
         },
-        error: function (xhr, status, error) {
-            console.log('xhr: ' + xhr)
-            console.log('status: ' + status)
-            console.log('error: ' + error)
+        error: function (jqXHR) {
+            console.log('jqXHR:', jqXHR)
             $('#login-form input').addClass('is-invalid')
         },
         complete: function () {
-            console.log('complete')
-            $('#login-button').removeClass('disabled')
+            loginButton.removeClass('disabled')
         },
         cache: false,
         contentType: false,

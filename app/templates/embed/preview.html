@@ -108,9 +108,9 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
                     {% endif %}
                     <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
-                    <i id="previewIcon" title="Private File" class="fa-solid fa-lock ms-2 {% if not file.private %}d-none{% endif %}"></i>
+                    <i title="Private File" class="fa-solid fa-lock ms-2" id="previewIcon" {% if not file.private %}style="display: none"{% endif %}></i>
                     <i title="Password Protected File" class="fa-solid fa-key ms-2 passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i>
-                    <span class="ms-2 {% if not file.expr %}d-none{% endif %} expire-icon" title="File Expires in {{ file.expr }}">
+                    <span title="File Expires in {{ file.expr }}" class="ms-2 expire-icon" {% if not file.expr %}style="display: none"{% endif %}>
                         <i class="fa-solid fa-hourglass"></i>
                     </span>
                 </p>

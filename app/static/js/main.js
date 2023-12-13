@@ -1,6 +1,6 @@
 // JS included everywhere
 
-$(window).on('load', function () {
+document.addEventListener('DOMContentLoaded', function () {
     // Show custom toast-alert classes on load
     $('.toast-alert').each(function () {
         let toastAlert = new bootstrap.Toast($(this))
@@ -19,7 +19,7 @@ const popoverList = [...popoverTriggerList].map(
 
 // Form Control
 
-$('.form-control').on('change', function () {
+$('.form-control').on('focus change input', function () {
     $(this).removeClass('is-invalid')
 })
 
@@ -50,22 +50,19 @@ if (backToTop) {
 new ClipboardJS('.clip')
 
 $('.clip').on('click', function () {
-    var clipElement = $(this)
-    clipElement.popover({
+    const element = $(this)
+    element.popover({
         content: 'Copied',
         placement: 'bottom',
         trigger: 'manual',
     })
-    clipElement.popover('show')
+    element.popover('show')
     setTimeout(function () {
-        clipElement.popover('hide')
+        element.popover('hide')
     }, 2000)
     $(document).on('click', function (e) {
-        if (
-            !clipElement.is(e.target) &&
-            clipElement.has(e.target).length === 0
-        ) {
-            clipElement.popover('hide')
+        if (!element.is(e.target) && element.has(e.target).length === 0) {
+            element.popover('hide')
         }
     })
 })
@@ -80,13 +77,29 @@ $('.clip').on('click', function () {
 function show_toast(message, bsClass = 'info', delay = '5000') {
     let toastContainer = $('.toast-container')
     let toastEl = $(
-        '<div class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="' +
-            delay +
-            '"><div class="d-flex"><div class="toast-body"></div><button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div></div>'
+        `<div class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${delay}">` +
+            '<div class="d-flex"><div class="toast-body"></div>' +
+            '<button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div></div>'
     )
     toastEl.find('.toast-body').text(message)
-    toastEl.addClass('text-bg-' + bsClass)
+    toastEl.addClass(`text-bg-${bsClass}`)
     toastContainer.append(toastEl)
     let toast = new bootstrap.Toast(toastEl)
     toast.show()
+}
+
+/**
+ * Loop through form errors and display them
+ * @param {jQuery} form
+ * @param {jQuery.jqXHR} jqXHR
+ */
+function form400handler(form, jqXHR) {
+    let data = jqXHR.responseJSON
+    console.log('jqXHR.responseJSON data:', data)
+    $(form.prop('elements')).each(function () {
+        if (Object.hasOwn(data, this.name)) {
+            $(`#${this.name}-invalid`).empty().append(data[this.name])
+            $(this).addClass('is-invalid')
+        }
+    })
 }

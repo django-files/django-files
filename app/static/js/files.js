@@ -53,7 +53,7 @@ socket?.addEventListener('message', function (event) {
 
 $('#user').on('change', function (event) {
     let user = $(this).val()
-    console.log('user: ' + user)
+    console.log(`user: ${user}`)
     if (user) {
         let url = new URL(location.href)
         url.searchParams.set('user', user)

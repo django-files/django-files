@@ -1,46 +1,48 @@
 // JS for Site Settings
 
+// TODO: Verify No Errors
 // Define Delete Modal and Delete Button class handler
-let deleteDiscordHookModal
-try {
-    deleteDiscordHookModal = new bootstrap.Modal('#deleteDiscordHookModal', {})
-} catch (error) {
-    console.log('#deleteDiscordHookModal Not Found')
-}
+// let deleteDiscordHookModal
+// try {
+//     deleteDiscordHookModal = new bootstrap.Modal('#deleteDiscordHookModal', {})
+// } catch (error) {
+//     console.log('#deleteDiscordHookModal Not Found')
+// }
+const deleteDiscordHookModal = $('#deleteDiscordHookModal')
 
 // TODO: Use a proper selector
 let hookID
 $('.deleteDiscordHookBtn').on('click', function () {
+    console.log('.deleteDiscordHookBtn on click', event)
     hookID = $(this).data('hook-id')
     console.log(hookID)
-    deleteDiscordHookModal.show()
+    deleteDiscordHookModal.modal('show')
 })
 
 // Handle Confirm Delete Clicks
-$('#confirmDeleteDiscordHookBtn').on('click', function () {
-    console.log(hookID)
+$('#confirmDeleteDiscordHookBtn').on('click', function (event) {
+    console.log('#confirmDeleteDiscordHookBtn on click', event)
+    console.log(`hookID: ${hookID}`)
     $.ajax({
         type: 'POST',
         url: `/ajax/delete/hook/${hookID}/`,
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
-            console.log('data: ' + data)
-            deleteDiscordHookModal.hide()
+            console.log('data:', data)
+            deleteDiscordHookModal.modal('hide')
             console.log(`removing #wehook-${hookID}`)
-            let count = $('#discordWebhooksTable tr').length
+            const count = $('#discordWebhooksTable tr').length
             $(`#webhook-${hookID}`).remove()
             if (count <= 2) {
                 console.log('removing #discordWebhooksTable@')
                 $('#discordWebhooksTable').remove()
             }
-            let message = `Webhoook ${hookID} Successfully Removed.`
+            const message = `Webhoook ${hookID} Successfully Removed.`
             show_toast(message, 'success')
         },
         error: function (jqXHR) {
-            console.log('jqXHR.status: ' + jqXHR.status)
-            console.log('jqXHR.statusText: ' + jqXHR.statusText)
-            deleteDiscordHookModal.hide()
-            let message = 'Error: ' + jqXHR.statusText
+            deleteDiscordHookModal.modal('hide')
+            const message = `${jqXHR.status}: ${jqXHR.statusText}`
             show_toast(message, 'danger', '10000')
         },
     })
@@ -48,7 +50,7 @@ $('#confirmDeleteDiscordHookBtn').on('click', function () {
 
 // Handle profile save button click and response
 $('#settingsForm').on('submit', function (event) {
-    console.log('#settingsForm on submit function')
+    console.log('#settingsForm on submit', event)
     event.preventDefault()
     let form = $(this)
     console.log(form)
@@ -58,11 +60,10 @@ $('#settingsForm').on('submit', function (event) {
         data: new FormData(this),
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
-            console.log('data: ' + JSON.stringify(data))
-            if (data['reload']) {
+            console.log('data:', data)
+            if (data.reload) {
                 alert(
-                    'Settings changed require reload to take effect.\n' +
-                        'The page will now refresh...'
+                    'Settings changed require reload to take effect.\nThe page will now refresh...'
                 )
                 location.reload()
             } else {
@@ -71,23 +72,11 @@ $('#settingsForm').on('submit', function (event) {
             }
         },
         error: function (jqXHR) {
-            console.log('jqXHR.status: ' + jqXHR.status)
-            console.log('jqXHR.statusText: ' + jqXHR.statusText)
-            show_toast(jqXHR.statusText, 'danger', '6000')
             if (jqXHR.status === 400) {
-                let data = jqXHR.responseJSON
-                console.log(data)
-                $(form.prop('elements')).each(function () {
-                    if (data.hasOwnProperty(this.name)) {
-                        $('#' + this.name + '-invalid')
-                            .empty()
-                            .append(data[this.name])
-                        $(this).addClass('is-invalid')
-                    }
-                })
-            } else {
-                alert(jqXHR.statusText)
+                form400handler.call(this, form, jqXHR)
             }
+            const message = `${jqXHR.status}: ${jqXHR.statusText}`
+            show_toast(message, 'danger', '6000')
         },
         cache: false,
         contentType: false,
@@ -97,12 +86,12 @@ $('#settingsForm').on('submit', function (event) {
 
 // Handle Invites Form
 $('#invitesForm').on('submit', function (event) {
-    console.log('#invitesForm on submit function')
+    console.log('#invitesForm on submit', event)
     event.preventDefault()
-    let form = $(this)
+    const form = $(this)
     console.log(form)
     // TODO: Simplify JSON Creation...
-    let data = new FormData(this)
+    const data = new FormData(this)
     data.forEach((value, key) => (data[key] = value))
     $.ajax({
         type: form.attr('method'),
@@ -110,18 +99,16 @@ $('#invitesForm').on('submit', function (event) {
         data: JSON.stringify(data),
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
-            console.log('data: ' + JSON.stringify(data))
-            alert('Invite Created: ' + data['invite'])
+            console.log('data:', data)
+            alert(`Invite Created: ${data.invite}`)
             location.reload()
         },
         error: function (jqXHR) {
-            console.log('jqXHR.status: ' + jqXHR.status)
-            console.log('jqXHR.statusText: ' + jqXHR.statusText)
-            // TODO: Replace this with real error handling
             if (jqXHR.status === 400) {
-                show_toast(jqXHR.responseJSON['error'], 'danger', '6000')
+                const message = `${jqXHR.status}: ${jqXHR.responseJSON.error}`
+                show_toast(message, 'danger', '6000')
             } else {
-                let message = jqXHR.status + ': ' + jqXHR.statusText
+                const message = `${jqXHR.status}: ${jqXHR.statusText}`
                 show_toast(message, 'danger', '6000')
             }
         },
@@ -134,8 +121,7 @@ $('#invitesForm').on('submit', function (event) {
 // Handle Update Checks
 $('#check-for-update').on('click', function (event) {
     console.log('#check-for-update')
-    let data = { method: 'check-for-update' }
-    const jsonData = JSON.stringify(data)
-    console.log(`jsonData: ${jsonData}`)
-    socket.send(jsonData)
+    const data = JSON.stringify({ method: 'check-for-update' })
+    console.log('data:', data)
+    socket.send(data)
 })

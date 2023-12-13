@@ -12,7 +12,7 @@ const openSidebarButton = $('#openSidebar')
 openSidebarButton.on('click', openSidebarCallback)
 $('#closeSidebar').on('click', closeSidebarCallback)
 
-const sidebarMaxWidth = 780
+const sidebarMaxWidth = 768
 
 function domLoaded() {
     if (window.innerWidth >= sidebarMaxWidth) {
@@ -22,9 +22,7 @@ function domLoaded() {
     }
 }
 
-/**
- * TODO: Add method to know if side bar is expanded or collapsed
- */
+// TODO: Add method to know if side bar is expanded or collapsed
 function checkSize() {
     if (window.innerWidth >= sidebarMaxWidth) {
         if (!Cookies.get('previewSidebar')) {

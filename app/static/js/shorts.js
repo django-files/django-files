@@ -1,11 +1,12 @@
 // JS for shorts
 
+const deleteShortModal = $('#delete-short-modal')
+
 // Handle Shorts FORM Submit
 $('#shortsForm').on('submit', function (event) {
+    console.log('#shortsForm on submit', event)
     event.preventDefault()
-    console.log('#shortsForm.submit')
-    let form = $(this)
-    console.log(form)
+    const form = $(this)
     // TODO: Simplify JSON Creation...
     let data = new FormData(this)
     data.forEach((value, key) => (data[key] = value))
@@ -15,18 +16,16 @@ $('#shortsForm').on('submit', function (event) {
         data: JSON.stringify(data),
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
-            console.log('data: ' + JSON.stringify(data))
-            alert('Short Created: ' + data['url'])
+            console.log('data:', data)
+            alert(`Short Created: ${data.url}`)
             location.reload()
         },
         error: function (jqXHR) {
-            console.log('jqXHR.status: ' + jqXHR.status)
-            console.log('jqXHR.statusText: ' + jqXHR.statusText)
-            // TODO: Replace this with real error handling
             if (jqXHR.status === 400) {
-                show_toast(jqXHR.responseJSON['error'], 'danger', '6000')
+                const message = `${jqXHR.status}: ${jqXHR.responseJSON.error}`
+                show_toast(message, 'danger', '6000')
             } else {
-                let message = jqXHR.status + ': ' + jqXHR.statusText
+                const message = `${jqXHR.status}: ${jqXHR.statusText}`
                 show_toast(message, 'danger', '6000')
             }
         },
@@ -42,7 +41,7 @@ let hookID
 $('.delete-short-btn').on('click', function () {
     hookID = $(this).data('hook-id')
     console.log(hookID)
-    $('#delete-short-modal').modal('show')
+    deleteShortModal.modal('show')
 })
 
 // Handle delete click confirmations
@@ -53,23 +52,21 @@ $('#short-delete-confirm').on('click', function () {
         url: `/ajax/delete/short/${hookID}/`,
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
-            console.log('data: ' + data)
-            $('#delete-short-modal').modal('hide')
-            console.log('removing #short-' + hookID)
+            console.log('data:', data)
+            deleteShortModal.modal('hide')
+            console.log(`removing #short-${hookID}`)
             let count = $('#shorts-table tr').length
-            $('#short-' + hookID).remove()
+            $('#short-${hookID}').remove()
             if (count <= 2) {
                 console.log('removing #shorts-table@ #shorts-table')
                 $('#shorts-table').remove()
             }
-            let message = 'Short URL ' + hookID + ' Successfully Removed.'
+            let message = `Short URL ${hookID} Successfully Removed.`
             show_toast(message, 'success')
         },
         error: function (jqXHR) {
-            console.log('jqXHR.status: ' + jqXHR.status)
-            console.log('jqXHR.statusText: ' + jqXHR.statusText)
-            $('#delete-short-modal').modal('hide')
-            let message = jqXHR.status + ': ' + jqXHR.statusText
+            deleteShortModal.modal('hide')
+            const message = `${jqXHR.status}: ${jqXHR.statusText}`
             show_toast(message, 'danger', '6000')
         },
     })

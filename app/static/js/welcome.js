@@ -1,12 +1,19 @@
 // JS for Welcome
 // TODO: Look into cleaning up welcomeModal definitions
 
-$(window).on('load', function () {
-    let welcomeModal = new bootstrap.Modal('#welcomeModal', {})
-    welcomeModal.show()
+const welcomeModal = $('#welcomeModal')
+
+document.addEventListener('DOMContentLoaded', function () {
+    // let welcomeModal = new bootstrap.Modal('#welcomeModal', {})
+    const siteUrl = $('#site_url')
+    if (!siteUrl.val()) {
+        console.log('Set site_url from window.location.origin', window.location)
+        siteUrl.val(window.location.origin)
+    }
+    welcomeModal.modal('show')
 })
 
-$('#welcomeModal').on('shown.bs.modal', function () {
+welcomeModal.on('shown.bs.modal', function () {
     const timeZone = new window.Intl.DateTimeFormat().resolvedOptions().timeZone
     $('#timezone').val(timeZone)
     $('#password').trigger('focus')
@@ -15,37 +22,22 @@ $('#welcomeModal').on('shown.bs.modal', function () {
 $('#welcomeForm').on('submit', function (event) {
     event.preventDefault()
     console.log('#welcomeForm.submit', event)
-    let form = $(this)
+    const form = $(this)
     // let welcomeForm = $('#welcomeForm')
     $.ajax({
         url: form.attr('action'),
         type: 'POST',
         data: new FormData(this),
-        success: function (response) {
-            console.log('response: ' + response)
+        success: function (data) {
+            console.log('data:', data)
             location.reload()
         },
         error: function (jqXHR) {
-            console.log('jqXHR.status: ' + jqXHR.status)
-            console.log('jqXHR.statusText: ' + jqXHR.statusText)
             if (jqXHR.status === 400) {
-                let data = jqXHR.responseJSON
-                console.log(data)
-                $(form.prop('elements')).each(function () {
-                    if (data.hasOwnProperty(this.name)) {
-                        $('#' + this.name + '-invalid')
-                            .empty()
-                            .append(data[this.name])
-                        $(this).addClass('is-invalid')
-                    }
-                })
-            } else {
-                let message = jqXHR.status + ': ' + jqXHR.statusText
-                show_toast(message, 'danger', '6000')
+                form400handler.call(this, form, jqXHR)
             }
-        },
-        complete: function () {
-            console.log('complete')
+            const message = `${jqXHR.status}: ${jqXHR.statusText}`
+            show_toast(message, 'danger', '6000')
         },
         cache: false,
         contentType: false,

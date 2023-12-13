@@ -26,6 +26,7 @@
     },
     "scripts": {
         "copy-static": "npx gulp",
-        "postinstall": "npm run copy-static"
+        "postinstall": "npm run copy-static",
+        "eslint": "npx eslint app/static/js"
     }
 }

@@ -6,14 +6,12 @@ $('#updateStatsBtn').on('click', function () {
         type: 'POST',
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
-            console.log('data: ' + JSON.stringify(data))
+            console.log('data:', data)
             alert('Stats Update Submitted. Page will now Reload...')
             location.reload()
         },
         error: function (jqXHR) {
-            console.log('jqXHR.status: ' + jqXHR.status)
-            console.log('jqXHR.statusText: ' + jqXHR.statusText)
-            let message = jqXHR.status + ': ' + jqXHR.statusText
+            let message = `${jqXHR.status}: ${jqXHR.statusText}`
             show_toast(message, 'danger', '6000')
         },
         cache: false,
