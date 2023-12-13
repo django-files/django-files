@@ -4,7 +4,7 @@
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
 // Monitor websockets for new data and update results
-socket?.addEventListener('message', (event) => {
+socket?.addEventListener('message', function (event) {
     console.log('socket: user.js:', event)
     let data = JSON.parse(event.data)
     if (data.event === 'file-new') {
@@ -25,13 +25,13 @@ socket?.addEventListener('message', (event) => {
 })
 
 // Init the logout form click function
-$('.log-out').on('click', (event) => {
+$('.log-out').on('click', function (event) {
     event.preventDefault()
     $('#log-out').trigger('submit')
 })
 
 // Init the flush-cache click function
-$('#flush-cache').on('click', (event) => {
+$('#flush-cache').on('click', function (event) {
     console.log('#flush-cache click')
     event.preventDefault()
     $.ajax({

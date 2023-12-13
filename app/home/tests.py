@@ -173,7 +173,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-click')
 
-                page.locator('#confirmDeleteFileBtn').click()
+                page.locator('#confirm-delete').click()
                 # page.wait_for_timeout(timeout=500)
                 # self.screenshot(page, f'{view}-delete-deleted')
 

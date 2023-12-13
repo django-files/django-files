@@ -24,7 +24,7 @@ if (typeof DataTable !== 'undefined' && filesTable.length) {
     })
 }
 
-socket?.addEventListener('message', (event) => {
+socket?.addEventListener('message', function (event) {
     console.log('socket: files.js:', event)
     let data = JSON.parse(event.data)
     if (data.event === 'file-new') {
@@ -50,7 +50,7 @@ socket?.addEventListener('message', (event) => {
     }
 })
 
-$('#user').on('change', () => {
+$('#user').on('change', function (event) {
     let user = $(this).val()
     console.log('user: ' + user)
     if (user) {

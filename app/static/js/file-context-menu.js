@@ -4,8 +4,6 @@ const fileExpireModal = $('#fileExpireModal')
 const filePasswordModal = $('#filePasswordModal')
 const fileDeleteModal = $('#fileDeleteModal')
 
-// Context Menu Listeners
-
 $('.ctx-expire').on('click', cxtSetExpire)
 $('.ctx-private').on('click', ctxSetPrivate)
 $('.ctx-password').on('click', ctxSetPassword)
@@ -13,27 +11,27 @@ $('.ctx-delete').on('click', ctxDeleteFile)
 
 // Expire Form
 
-$('#set-expr-form').on('submit', (event) => {
-    console.log('#set-expr-form submit:', event)
+$('#modal-expire-form').on('submit', function (event) {
+    console.log('#modal-expire-form submit:', event)
     event.preventDefault()
-    const data = genData($('#set-expr-form').serializeArray(), 'set-expr-file')
+    const data = genData($(this).serializeArray(), 'set-expr-file')
     console.log('data:', data)
     socket.send(JSON.stringify(data))
     fileExpireModal.modal('hide')
 })
 
-fileExpireModal.on('shown.bs.modal', () => {
+fileExpireModal.on('shown.bs.modal', function (event) {
     $('#expr').trigger('focus').trigger('select')
 })
 
 // Password Form
 // TODO: Cleanup Password Forms
 
-$('#set-password-form').on('submit', (event) => {
+$('#modal-password-form').on('submit', function (event) {
     console.log('#set-password form.submit:', event)
     event.preventDefault()
     const data = genData(
-        $('#set-password-form').serializeArray(),
+        $('#modal-password-form').serializeArray(),
         'set-password-file'
     )
     console.log('data:', data)
@@ -44,7 +42,7 @@ $('#set-password-form').on('submit', (event) => {
     filePasswordModal.modal('hide')
 })
 
-$('#unMaskPassword').on('click', () => {
+$('#unMaskPassword').on('click', function (event) {
     // TODO: This needs a cookie to work properly
     console.log('#unMaskPassword click:')
     const password = $('#password')
@@ -52,29 +50,28 @@ $('#unMaskPassword').on('click', () => {
     password.prop('type', type)
 })
 
-$('#copyPassword').on('click', async () => {
+$('#copyPassword').on('click', async function (event) {
     await navigator.clipboard.writeText($('#password').val())
     show_toast('Password copied!', 'info', '15000')
 })
 
-$('#generatePassword').on('click', async () => {
+$('#generatePassword').on('click', async function (event) {
     const password = genRand(12)
     $('#password').val(password)
     await navigator.clipboard.writeText(password)
     show_toast('Password generated and copied!', 'info', '15000')
 })
 
-filePasswordModal.on('shown.bs.modal', () => {
+filePasswordModal.on('shown.bs.modal', function (event) {
     $('#password').trigger('focus').trigger('select')
 })
 
 // Delete File Form
 
-$('#confirmDeleteFileBtn').on('click', (event) => {
+$('#confirm-delete').on('click', function (event) {
     // TODO: Handle ELSE Better
-    // const pk = $(this).data('pk')
-    const pk = $('#confirmDeleteFileBtn').data('pk')
-    console.log(`#confirmDeleteFileBtn.click: pk: ${pk}`)
+    const pk = $(this).data('pk')
+    console.log(`#confirm-delete.click pk: ${pk}`)
     socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
     if (window.location.pathname.startsWith('/u/')) {
         window.location.replace('/#files')
@@ -88,12 +85,12 @@ $('#confirmDeleteFileBtn').on('click', (event) => {
 function cxtSetExpire() {
     const pk = $(this).parent().parent().parent().data('pk')
     console.log(`cxtSetExpire pk: ${pk}`, this)
-    $('#set-expr-form input[name=pk]').val(pk)
+    // $('#modal-expire-form input[name=pk]').val(pk)
+    fileExpireModal.find('input[name=pk]').val(pk)
     const expire = $(`#file-${pk} .expire-value`).text().trim()
     console.log(`expire: ${expire}`)
-    $('#set-expr-form input[name=expr]').val(expire)
     const expireValue = expire === 'Never' ? '' : expire
-    console.log(`expireValue: ${expireValue}`)
+    console.log(`expireInput: ${expireValue}`)
     $('#expr').val(expireValue)
     fileExpireModal.modal('show')
 }
@@ -119,13 +116,13 @@ function ctxSetPassword() {
 function ctxDeleteFile() {
     const pk = $(this).parent().parent().parent().data('pk')
     console.log(`ctxDeleteFile pk: ${pk}`, this)
-    $('#confirmDeleteFileBtn').data('pk', pk)
+    $('#confirm-delete').data('pk', pk)
     fileDeleteModal.modal('show')
 }
 
 // Socket Handlers
 
-socket?.addEventListener('message', (event) => {
+socket?.addEventListener('message', function (event) {
     console.log('socket: file-context-menu.js:', event)
     const data = JSON.parse(event.data)
     if (data.event === 'set-expr-file') {
@@ -178,7 +175,7 @@ function handle_private_toggle(data) {
 }
 
 function handle_password_set(data) {
-    console.log('handle_password_setL', data)
+    console.log('handle_password_set', data)
     const table_icon = $(`#file-${data.id} .passwordStatus`)
     const preview_icon = $(`#passwordStatus`)
     if (data.password) {
@@ -192,8 +189,6 @@ function handle_password_set(data) {
     }
     filePasswordModal.modal('hide')
 }
-
-// Misc
 
 /**
  * Convert serializeArray to Object
