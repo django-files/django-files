@@ -214,7 +214,7 @@
                 </div>
             {% endfor %}
         {% endif %}{% endblock %}
-        <div id="disconnected-toast" role="alert" aria-live="assertive" aria-atomic="true" class="toast" data-bs-autohide="false">
+        <div id="disconnected-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
             <div class="toast-header">
                 <strong class="me-auto text-warning">Disconnected</strong>
                 <small>Server</small>
@@ -224,15 +224,13 @@
                 <strong><a href="javascript:location.reload(true)">Reload</a></strong>.
             </div>
         </div>
-    </div>
-{#    <div class="d-none">#}
         <div id="toast" class="toast align-items-center border-0 mt-3" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body"></div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
-{#    </div>#}
+    </div>
 {% endblock %}
 
 {% block js %}

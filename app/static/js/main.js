@@ -72,11 +72,13 @@ $('.clip').on('click', function () {
  * @function showToast
  * @param {String} message
  * @param {String} bsClass
+ * @param {String} delay
  */
-function show_toast(message, bsClass = 'success') {
+function show_toast(message, bsClass = 'success', delay = '6000') {
     let element = $('#toast').clone()
     element.removeAttr('id').addClass(`text-bg-${bsClass}`)
     element.find('.toast-body').text(message)
+    element.toast({ delay: parseInt(delay) })
     element.appendTo('.toast-container').toast('show')
 }
 
