@@ -23,10 +23,9 @@ $('#welcomeForm').on('submit', function (event) {
     event.preventDefault()
     console.log('#welcomeForm submit', event)
     const form = $(this)
-    // let welcomeForm = $('#welcomeForm')
     $.ajax({
-        url: form.attr('action'),
         type: 'POST',
+        url: form.attr('action'),
         data: new FormData(this),
         success: function (data) {
             console.log('data:', data)

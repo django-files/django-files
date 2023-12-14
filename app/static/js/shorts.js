@@ -6,13 +6,11 @@ const deleteShortModal = $('#delete-short-modal')
 $('#shortsForm').on('submit', function (event) {
     console.log('#shortsForm submit', event)
     event.preventDefault()
-    const form = $(this)
-    // TODO: Simplify JSON Creation...
     let data = new FormData(this)
     data.forEach((value, key) => (data[key] = value))
     $.ajax({
-        type: form.attr('method'),
-        url: form.attr('action'),
+        type: $(this).attr('method'),
+        url: $(this).attr('action'),
         data: JSON.stringify(data),
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
@@ -46,7 +44,7 @@ $('.delete-short-btn').on('click', function () {
 
 // Handle delete click confirmations
 $('#short-delete-confirm').on('click', function () {
-    console.log(hookID)
+    console.log(`#short-delete-confirm click hookID: ${hookID}`)
     $.ajax({
         type: 'POST',
         url: `/ajax/delete/short/${hookID}/`,
@@ -55,13 +53,13 @@ $('#short-delete-confirm').on('click', function () {
             console.log('data:', data)
             deleteShortModal.modal('hide')
             console.log(`removing #short-${hookID}`)
-            let count = $('#shorts-table tr').length
-            $('#short-${hookID}').remove()
-            if (count <= 2) {
+            $(`#short-${hookID}`).remove()
+            const count = $('#shorts-table tr').length
+            if (count <= 1) {
                 console.log('removing #shorts-table@ #shorts-table')
                 $('#shorts-table').remove()
             }
-            let message = `Short URL ${hookID} Successfully Removed.`
+            const message = `Short URL ${hookID} Successfully Removed.`
             show_toast(message, 'success')
         },
         error: function (jqXHR) {
@@ -69,5 +67,8 @@ $('#short-delete-confirm').on('click', function () {
             const message = `${jqXHR.status}: ${jqXHR.statusText}`
             show_toast(message, 'danger', '6000')
         },
+        cache: false,
+        contentType: false,
+        processData: false,
     })
 })

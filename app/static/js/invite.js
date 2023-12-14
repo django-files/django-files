@@ -5,8 +5,8 @@ $('#inviteForm').on('submit', function (event) {
     event.preventDefault()
     const form = $(this)
     $.ajax({
-        url: form.attr('action'),
         type: form.attr('method'),
+        url: form.attr('action'),
         data: new FormData(this),
         success: function (data) {
             console.log('data:', data)

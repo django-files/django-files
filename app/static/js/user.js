@@ -32,8 +32,8 @@ $('#flush-cache').on('click', function (event) {
     // console.log('#flush-cache click', event)
     event.preventDefault()
     $.ajax({
-        url: '/flush-cache/',
         type: 'POST',
+        url: '/flush-cache/',
         headers: { 'X-CSRFToken': csrftoken },
         success: function () {
             alert('Cache Flush Successfully Sent...')
@@ -43,5 +43,8 @@ $('#flush-cache').on('click', function (event) {
             const message = `${jqXHR.status}: ${jqXHR.statusText}`
             show_toast(message, 'danger', '6000')
         },
+        cache: false,
+        contentType: false,
+        processData: false,
     })
 })

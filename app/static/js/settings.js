@@ -37,6 +37,9 @@ $('#confirmDeleteDiscordHookBtn').on('click', function (event) {
             const message = `${jqXHR.status}: ${jqXHR.statusText}`
             show_toast(message, 'danger', '10000')
         },
+        cache: false,
+        contentType: false,
+        processData: false,
     })
 })
 
@@ -47,8 +50,8 @@ $('#settingsForm').on('submit', function (event) {
     let form = $(this)
     console.log(form)
     $.ajax({
-        url: window.location.pathname,
         type: form.attr('method'),
+        url: window.location.pathname,
         data: new FormData(this),
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {

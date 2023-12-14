@@ -8,10 +8,9 @@ $('#login-form').on('submit', function (event) {
         return
     }
     $.ajax({
-        url: $('#login-form').attr('action'),
         type: 'POST',
+        url: $('#login-form').attr('action'),
         data: new FormData(this),
-        crossDomain: true,
         beforeSend: function () {
             loginButton.addClass('disabled')
         },

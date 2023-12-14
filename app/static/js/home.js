@@ -3,11 +3,11 @@
 $('#quick-short-form').on('submit', function (event) {
     console.log('#quick-short-form submit', event)
     event.preventDefault()
-    const jsonData = { url: $('#long-url').val() }
+    const data = { url: $('#long-url').val() }
     $.ajax({
-        url: $('#quick-short-form').attr('action'),
         type: 'POST',
-        data: JSON.stringify(jsonData),
+        url: $(this).attr('action'),
+        data: JSON.stringify(data),
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
             console.log('data:', data)

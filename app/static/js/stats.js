@@ -2,8 +2,8 @@
 
 $('#updateStatsBtn').on('click', function () {
     $.ajax({
-        url: $('#updateStatsBtn').attr('data-target-url'),
         type: 'POST',
+        url: $(this).attr('data-target-url'),
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
             console.log('data:', data)
