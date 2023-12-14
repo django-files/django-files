@@ -4,7 +4,6 @@
 const welcomeModal = $('#welcomeModal')
 
 document.addEventListener('DOMContentLoaded', function () {
-    // let welcomeModal = new bootstrap.Modal('#welcomeModal', {})
     const siteUrl = $('#site_url')
     if (!siteUrl.val()) {
         console.log('Set site_url from window.location.origin', window.location)

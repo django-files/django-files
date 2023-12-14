@@ -1,6 +1,5 @@
 // JS for Home Page
 
-// Generate Short URLs BUTTON
 $('#quick-short-form').on('submit', function (event) {
     console.log('#quick-short-form on submit', event)
     event.preventDefault()

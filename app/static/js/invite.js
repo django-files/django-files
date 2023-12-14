@@ -25,7 +25,6 @@ $('#inviteForm').on('submit', function (event) {
     })
 })
 
-// Handle invite code searches
 $('#inviteSearch').on('submit', function (event) {
     console.log('#inviteSearch.submit', event)
     event.preventDefault()

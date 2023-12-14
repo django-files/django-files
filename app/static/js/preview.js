@@ -1,7 +1,6 @@
 // JS for embed/preview.html
 
 document.addEventListener('DOMContentLoaded', domLoaded)
-
 window.addEventListener('resize', checkSize)
 
 const previewSidebar = $('#previewSidebar')

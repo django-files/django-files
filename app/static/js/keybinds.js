@@ -11,7 +11,6 @@ document.addEventListener('keyup', (event) => {
 
 /**
  * Keyboard keydown Callback
- * TODO: Remove JQuery
  * @function handleKeybinds
  * @param {KeyboardEvent} event
  */

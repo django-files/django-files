@@ -1,13 +1,5 @@
 // JS for Site Settings
 
-// TODO: Verify No Errors
-// Define Delete Modal and Delete Button class handler
-// let deleteDiscordHookModal
-// try {
-//     deleteDiscordHookModal = new bootstrap.Modal('#deleteDiscordHookModal', {})
-// } catch (error) {
-//     console.log('#deleteDiscordHookModal Not Found')
-// }
 const deleteDiscordHookModal = $('#deleteDiscordHookModal')
 
 // TODO: Use a proper selector

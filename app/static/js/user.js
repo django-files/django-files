@@ -1,6 +1,5 @@
 // JS for Authenticated Users
 
-// Get and set the csrf_token
 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
 socket?.addEventListener('message', function (event) {
@@ -24,13 +23,11 @@ socket?.addEventListener('message', function (event) {
     }
 })
 
-// Init the logout form click function
 $('.log-out').on('click', function (event) {
     event.preventDefault()
     $('#log-out').trigger('submit')
 })
 
-// Init the flush-cache click function
 $('#flush-cache').on('click', function (event) {
     console.log('#flush-cache click')
     event.preventDefault()

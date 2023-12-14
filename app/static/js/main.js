@@ -8,14 +8,14 @@ document.addEventListener('DOMContentLoaded', function () {
     })
 })
 
-// Init all popover elements
+// Init popovers and tooltips
 
-const popoverTriggerList = document.querySelectorAll(
-    '[data-bs-toggle="popover"]'
-)
-const popoverList = [...popoverTriggerList].map(
-    (popoverTriggerEl) => new bootstrap.Popover(popoverTriggerEl)
-)
+document
+    .querySelectorAll('[data-bs-toggle="popover"]')
+    .forEach((el) => new bootstrap.Popover(el))
+document
+    .querySelectorAll('[data-bs-toggle="tooltip"]')
+    .forEach((el) => new bootstrap.Tooltip(el))
 
 // Form Control
 
