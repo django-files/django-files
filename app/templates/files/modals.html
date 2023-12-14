@@ -6,33 +6,25 @@
         <h1 class="modal-title fs-5" id="fileExpireModalLabel">Set File Expiration</h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
-    <form class="row" id="modal-expire-form" name="modal-expire-form">
-        <input type="hidden" name="pk" value="">
-        <div class="modal-body">
-            <div class="row">
-                <div class="col-md-12">
-                    <p class="text-primary">
-                        Set the file's expiration. For examples, see
-                        <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
-                           target="_blank" rel="noopener">this README.md</a>.
-                    </p>
-                </div>
+    <div class="modal-body">
+        <p class="">
+            Set the file's expiration. For examples, see
+            <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
+               target="_blank" rel="noopener">this README.md</a>.
+        </p>
+        <form class="row" id="modal-expire-form" name="modal-expire-form">
+            <input type="hidden" name="pk" value="">
+            <label for="expr" class="form-label">Expiration</label>
+            <div class="input-group w-100">
+                <input type="text" class="form-control" id="expr" name="expr" autocomplete="off" value="{{ file.expr|default:'' }}">
             </div>
-            <div class="row">
-                <div class="col-md-10">
-                    <label for="expr" class="form-label">Expiration</label>
-                    <div class="input-group w-auto">
-                        <input type="text" class="form-control" id="expr" name="expr" autocomplete="off" value="{{ file.expr|default:'' }}">
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="submit" class="btn btn-success" id="confirm-expire-btn">
-                Set File Expiration <i class="fas fa-lock ms-1"></i></button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-    </form>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-success" id="confirm-expire-btn" form="modal-expire-form">
+            Set File Expiration <i class="fas fa-lock ms-1"></i></button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    </div>
 </div> <!-- modal-content -->
 </div> <!-- modal-dialog -->
 </div> <!-- modal -->
