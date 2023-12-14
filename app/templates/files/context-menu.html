@@ -28,7 +28,7 @@
         <li>
             <a role="button" class="dropdown-item ctx-private" title="Toggle Private">
                 <i class="fa-solid fa-lock{% if file.private %}-open{% endif %} fa-fw me-2 privateIcon"></i>
-                <span class="privateText">Make{% if file.private %}Public{% else %}Private{% endif %}</span></a>
+                <span class="privateText">Make {% if file.private %}Public{% else %}Private{% endif %}</span></a>
         </li>
         <li>
             <a role="button" class="dropdown-item ctx-password" title="Set Password">
