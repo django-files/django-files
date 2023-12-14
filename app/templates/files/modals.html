@@ -44,35 +44,27 @@
         <h1 class="modal-title fs-5" id="filePasswordModalModalLabel">Set File Password</h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
-    <form class="row" id="modal-password-form" name="modal-password-form">
-        <input type="hidden" name="pk" value="">
-        <div class="modal-body">
-            <div class="row">
-                <div class="col-md-12">
-                    <p class="text-primary">
-                        Setting a password will prevent others from accessing the file without the password.
-                        If the file is private, this will allow others to access the file with the password.
-                    </p>
-                </div>
+    <div class="modal-body">
+        <p class="">
+            Setting a password will prevent others from accessing the file without the password.
+            If the file is private, this will allow others to access the file with the password.
+        </p>
+        <form class="row" id="modal-password-form" name="modal-password-form">
+            <input type="hidden" name="pk" value="">
+            <label for="password" class="form-label">Password</label>
+            <div class="input-group w-100">
+                <input type="text" class="form-control" id="password" name="password" autocomplete="off">
+                <button type="button" title="Umask password." id="password-unmask" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye me-1"></i></button>
+                <button type="button" title="Copy Password" id="password-copy" class="btn btn-warning btn-sm"><i class="fa-regular fa-copy"></i></button>
+                <button type="button" title="Generate new password." id="password-generate" class="btn btn-info btn-sm"><i class="fa-solid fa-key"></i></button>
             </div>
-            <div class="row">
-                <div class="col-md-10">
-                    <label for="password" class="form-label">Password</label>
-                    <div class="input-group w-auto">
-                        <input type="text" class="form-control" id="password" name="password" autocomplete="off">
-                        <button type="button" title="Umask password." id="password-unmask" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye me-1"></i></button>
-                        <button type="button" title="Copy Password" id="password-copy" class="btn btn-warning btn-sm"><i class="fa-regular fa-copy"></i></button>
-                        <button type="button" title="Generate new password." id="password-generate" class="btn btn-info btn-sm"><i class="fa-solid fa-key"></i></button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="submit" class="btn btn-success">
-                Set Password <i class="fas fa-lock ms-1"></i></button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-    </form>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-success" form="modal-password-form">
+            Set Password <i class="fas fa-lock ms-1"></i></button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    </div>
 </div> <!-- modal-content -->
 </div> <!-- modal-dialog -->
 </div> <!-- modal -->

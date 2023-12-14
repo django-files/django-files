@@ -4,26 +4,26 @@
 <ul class="dropdown-menu file-context-dropdown-menu {{ extraclass }}" >
     <li>
         <a role="button" class="clip dropdown-item" data-clipboard-text="{{ site_settings.site_url }}{{ file.preview_uri }}">
-            <i class="fa-solid fa-link fa-fw me-2 link-info"></i>Copy Share Link</a>
+            <i class="fa-solid fa-link fa-fw me-2 link-info"></i> Copy Share Link</a>
     </li>
     <li>
         <a role="button" class="clip dropdown-item" data-clipboard-text="{{ site_settings.site_url }}{% url 'home:url-raw-redirect' file.file.name %}">
-            <i class="fa-solid fa-link fa-fw me-2"></i>Copy Raw Link</a>
+            <i class="fa-solid fa-link fa-fw me-2"></i> Copy Raw Link</a>
     </li>
     <li><hr class="dropdown-divider"></li>
     <li>
         <a role="button" class="dropdown-item" href="{% url 'home:url-raw-redirect' file.file.name %}?download=true" download="{{ file.name }}">
-            <i class="fa-solid fa-download fa-fw me-2 link-info"></i>Download</a>
+            <i class="fa-solid fa-download fa-fw me-2 link-info"></i> Download</a>
     </li>
     <li>
         <a role="button" class="dropdown-item" href="{% url 'home:url-raw-redirect' file.file.name %}">
-            <i class="fa-solid fa-eye fa-fw me-2"></i>View Raw</a>
+            <i class="fa-solid fa-eye fa-fw me-2"></i> View Raw</a>
     </li>
     {% if request.user.is_authenticated and request.user == file.user %}
         <li><hr class="dropdown-divider"></li>
         <li>
             <a role="button" class="dropdown-item ctx-expire" title="Set Expiration">
-                <i class="fa-solid fa-hourglass fa-fw me-2"></i>Set Expiration</a>
+                <i class="fa-solid fa-hourglass fa-fw me-2"></i> Set Expiration</a>
         </li>
         <li>
             <a role="button" class="dropdown-item ctx-private" title="Toggle Private">
@@ -32,13 +32,13 @@
         </li>
         <li>
             <a role="button" class="dropdown-item ctx-password" title="Set Password">
-                <i class="fas fa-key fa-fw me-2"></i>Set Password</a>
+                <i class="fas fa-key fa-fw me-2"></i> Set Password</a>
         </li>
         <input type="hidden" name="current-file-password" value="{{ file.password|default:'' }}">
         <li><hr class="dropdown-divider"></li>
         <li>
             <a role="button" class="dropdown-item ctx-delete" title="Delete">
-                <i class="fa-regular fa-trash-can fa-fw me-2 link-danger"></i>Delete File</a>
+                <i class="fa-regular fa-trash-can fa-fw me-2 link-danger"></i> Delete File</a>
         </li>
     {% endif %}
 </ul>
