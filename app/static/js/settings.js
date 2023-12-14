@@ -4,8 +4,8 @@ const deleteDiscordHookModal = $('#deleteDiscordHookModal')
 
 // TODO: Use a proper selector
 let hookID
-$('.deleteDiscordHookBtn').on('click', function () {
-    console.log('.deleteDiscordHookBtn on click', event)
+$('.deleteDiscordHookBtn').on('click', function (event) {
+    console.log('.deleteDiscordHookBtn click', event)
     hookID = $(this).data('hook-id')
     console.log(hookID)
     deleteDiscordHookModal.modal('show')
@@ -13,7 +13,7 @@ $('.deleteDiscordHookBtn').on('click', function () {
 
 // Handle Confirm Delete Clicks
 $('#confirmDeleteDiscordHookBtn').on('click', function (event) {
-    console.log('#confirmDeleteDiscordHookBtn on click', event)
+    console.log('#confirmDeleteDiscordHookBtn click', event)
     console.log(`hookID: ${hookID}`)
     $.ajax({
         type: 'POST',
@@ -42,7 +42,7 @@ $('#confirmDeleteDiscordHookBtn').on('click', function (event) {
 
 // Handle profile save button click and response
 $('#settingsForm').on('submit', function (event) {
-    console.log('#settingsForm on submit', event)
+    console.log('#settingsForm submit', event)
     event.preventDefault()
     let form = $(this)
     console.log(form)
@@ -78,7 +78,7 @@ $('#settingsForm').on('submit', function (event) {
 
 // Handle Invites Form
 $('#invitesForm').on('submit', function (event) {
-    console.log('#invitesForm on submit', event)
+    console.log('#invitesForm submit', event)
     event.preventDefault()
     const form = $(this)
     console.log(form)
@@ -112,7 +112,7 @@ $('#invitesForm').on('submit', function (event) {
 
 // Handle Update Checks
 $('#check-for-update').on('click', function (event) {
-    console.log('#check-for-update')
+    console.log('#check-for-update click', event)
     const data = JSON.stringify({ method: 'check-for-update' })
     console.log('data:', data)
     socket.send(data)

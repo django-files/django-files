@@ -1,7 +1,7 @@
 // JS for Invites
 
 $('#inviteForm').on('submit', function (event) {
-    console.log('#inviteForm.submit', event)
+    console.log('#inviteForm submit', event)
     event.preventDefault()
     const form = $(this)
     $.ajax({
@@ -26,7 +26,7 @@ $('#inviteForm').on('submit', function (event) {
 })
 
 $('#inviteSearch').on('submit', function (event) {
-    console.log('#inviteSearch.submit', event)
+    console.log('#inviteSearch submit', event)
     event.preventDefault()
     const invite = $(this)[0].invite.value.trim()
     console.log('invite:', invite)

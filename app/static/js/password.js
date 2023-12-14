@@ -1,7 +1,7 @@
 // JS for Embed Password
 
 $('#password-form').on('submit', function (event) {
-    console.log('#password-form on submit', event)
+    console.log('#password-form submit', event)
     event.preventDefault()
     const passwordButton = $('#password-button')
     if (passwordButton.hasClass('disabled')) {

@@ -10,7 +10,7 @@ $('.ctx-password').on('click', ctxSetPassword)
 $('.ctx-delete').on('click', ctxDeleteFile)
 
 socket?.addEventListener('message', function (event) {
-    // console.log('socket: file-context-menu.js:', event)
+    // console.log('socket.message: file-context-menu.js:', event)
     const data = JSON.parse(event.data)
     if (data.event === 'set-expr-file') {
         messageExpire(data)
@@ -93,7 +93,7 @@ $('#password-generate').on('click', async function (event) {
 $('#confirm-delete').on('click', function (event) {
     // TODO: Handle IF/ELSE Better
     const pk = $(this).data('pk')
-    console.log(`#confirm-delete click: pk: ${pk}`, event)
+    console.log(`#confirm-delete click pk: ${pk}`, event)
     socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
     if (window.location.pathname.startsWith('/u/')) {
         window.location.replace('/#files')

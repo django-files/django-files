@@ -14,13 +14,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
 welcomeModal.on('shown.bs.modal', function () {
     const timeZone = new window.Intl.DateTimeFormat().resolvedOptions().timeZone
+    console.log('timeZone:', timeZone)
     $('#timezone').val(timeZone)
     $('#password').trigger('focus')
 })
 
 $('#welcomeForm').on('submit', function (event) {
     event.preventDefault()
-    console.log('#welcomeForm.submit', event)
+    console.log('#welcomeForm submit', event)
     const form = $(this)
     // let welcomeForm = $('#welcomeForm')
     $.ajax({

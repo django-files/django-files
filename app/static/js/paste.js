@@ -2,7 +2,7 @@
 
 $('#send-paste').on('submit', function (event) {
     event.preventDefault()
-    console.log('#send-paste.submit', event)
+    console.log('#send-paste submit', event)
     const formData = new FormData(this)
     const text = formData.get('text')
     const file = new Blob([text], { type: 'text/plain' })

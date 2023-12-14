@@ -68,24 +68,16 @@ $('.clip').on('click', function () {
 })
 
 /**
- * Show Toast with message and optional bsClass and delay
- * TODO: Re-write this function
+ * Show Bootstrap Toast
+ * @function showToast
  * @param {String} message
  * @param {String} bsClass
- * @param {String} delay
  */
-function show_toast(message, bsClass = 'info', delay = '5000') {
-    let toastContainer = $('.toast-container')
-    let toastEl = $(
-        `<div class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="${delay}">` +
-            '<div class="d-flex"><div class="toast-body"></div>' +
-            '<button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div></div>'
-    )
-    toastEl.find('.toast-body').text(message)
-    toastEl.addClass(`text-bg-${bsClass}`)
-    toastContainer.append(toastEl)
-    let toast = new bootstrap.Toast(toastEl)
-    toast.show()
+function show_toast(message, bsClass = 'success') {
+    let element = $('#toast').clone()
+    element.removeAttr('id').addClass(`text-bg-${bsClass}`)
+    element.find('.toast-body').text(message)
+    element.appendTo('.toast-container').toast('show')
 }
 
 /**

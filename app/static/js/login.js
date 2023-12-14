@@ -1,7 +1,7 @@
 // JS for Login
 
 $('#login-form').on('submit', function (event) {
-    console.log('#login-form on submit', event)
+    console.log('#login-form submit', event)
     event.preventDefault()
     const loginButton = $('#login-button')
     if (loginButton.hasClass('disabled')) {

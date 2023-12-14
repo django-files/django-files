@@ -4,7 +4,7 @@ const deleteShortModal = $('#delete-short-modal')
 
 // Handle Shorts FORM Submit
 $('#shortsForm').on('submit', function (event) {
-    console.log('#shortsForm on submit', event)
+    console.log('#shortsForm submit', event)
     event.preventDefault()
     const form = $(this)
     // TODO: Simplify JSON Creation...

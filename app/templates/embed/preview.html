@@ -88,10 +88,10 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     <i class="fa-regular fa-square-caret-down"></i>
                     <button class="file-context-dropdown my-0 py-0" type="button" aria-expanded="false" hidden></button>
                 </div>
-                {% include 'files/context-menu.html' with file=file extraclass='dropdown-menu-end' %}
+                {% include 'files/ctx-menu.html' with file=file extraclass='dropdown-menu-end' %}
             </div>
         </div>
-        {% include 'files/modals.html' %}
+        {% include 'files/ctx-modals.html' %}
         <div id="previewSidebar" class="sidebar h-100">
             <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
             <div id="file-{{ file.id }}" class="card-body sidebarCard px-3">

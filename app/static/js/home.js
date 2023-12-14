@@ -1,7 +1,7 @@
 // JS for Home Page
 
 $('#quick-short-form').on('submit', function (event) {
-    console.log('#quick-short-form on submit', event)
+    console.log('#quick-short-form submit', event)
     event.preventDefault()
     const jsonData = { url: $('#long-url').val() }
     $.ajax({
