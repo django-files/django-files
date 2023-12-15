@@ -1,11 +1,10 @@
 // JS for Web Sockets
-// TODO: Move Everything Here for Auto Reconnect
+// TODO: Look Into Moving Everything Here for Auto Reconnect
 
 console.log('Connecting to WebSocket...')
 
 let socket
 let ws
-let disconnected = false
 
 function wsConnect() {
     if (ws) {
@@ -17,22 +16,26 @@ function wsConnect() {
     socket = new WebSocket(`${protocol}//${window.location.host}/ws/home/`)
     socket.onopen = function (event) {
         console.log('WebSocket Connected.', event)
-        if (disconnected) {
-            show_toast('Reconnected to Server!', 'success', '15000')
+        if (toast.isShown()) {
+            $('#disconnected-toast-title')
+                .removeClass('text-warning')
+                .addClass('text-success')
+                .text('Connected')
         }
     }
     // socket.onmessage = function (event) {
     //     console.log('socket.onmessage:', event)
     // }
     socket.onclose = function (event) {
-        // console.log(`socket.onclose: event.code: ${event.code}`)
         if (![1000, 1001].includes(event.code)) {
+            console.warn('WebSocket Disconnected!')
             setTimeout(function () {
-                console.warn('WebSocket Disconnected:', event)
+                $('#disconnected-toast-title')
+                    .removeClass('text-success')
+                    .addClass('text-warning')
+                    .text('Reconnecting...')
                 if (!toast.isShown()) {
-                    // console.log('Showing Disconnect Toast:', toast)
                     toast.show()
-                    disconnected = true
                 }
             }, 2 * 1000)
         }
