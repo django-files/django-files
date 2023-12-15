@@ -367,6 +367,20 @@ def delete_hook_ajax(request, pk):
     return HttpResponse(status=204)
 
 
+@login_required
+@csrf_exempt
+@require_http_methods(['POST'])
+def check_password_file_ajax(request, pk):
+    """
+    View  /ajax/check_password/file/<int:pk>/
+    """
+    log.debug('check_password_file_ajax: %s', pk)
+    file = get_object_or_404(Files, pk=pk)
+    if file.password != request.POST.get('password'):
+        return HttpResponse(status=401)
+    return HttpResponse(status=200)
+
+
 @require_http_methods(['GET'])
 def raw_redirect_view(request, filename):
     """
