@@ -3,6 +3,7 @@
 
 console.log('Connecting to WebSocket...')
 
+let disconnected = false
 let socket
 let ws
 
@@ -16,6 +17,7 @@ function wsConnect() {
     socket = new WebSocket(`${protocol}//${window.location.host}/ws/home/`)
     socket.onopen = function (event) {
         console.log('WebSocket Connected.', event)
+        disconnected = false
         if (toast.isShown()) {
             $('#disconnected-toast-title')
                 .removeClass('text-warning')
@@ -28,23 +30,28 @@ function wsConnect() {
     // }
     socket.onclose = function (event) {
         if (![1000, 1001].includes(event.code)) {
-            console.warn('WebSocket Disconnected!')
-            setTimeout(function () {
-                $('#disconnected-toast-title')
-                    .removeClass('text-success')
-                    .addClass('text-warning')
-                    .text('Reconnecting...')
-                if (!toast.isShown()) {
+            if (!disconnected) {
+                console.warn('WebSocket Disconnected!', event)
+            }
+            if (!toast.isShown()) {
+                setTimeout(function () {
+                    disconnected = true
+                    $('#disconnected-toast-title')
+                        .removeClass('text-success')
+                        .addClass('text-warning')
+                        .text('Reconnecting...')
                     toast.show()
-                }
-            }, 2 * 1000)
+                }, 2 * 1000)
+            }
         }
         setTimeout(function () {
             wsConnect()
         }, 10 * 1000)
     }
     socket.onerror = function (event) {
-        console.error('WebSocket Error:', event)
+        if (!disconnected) {
+            console.error('WebSocket Error:', event)
+        }
     }
 }
 wsConnect()
