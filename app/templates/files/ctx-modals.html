@@ -1,0 +1,79 @@
+
+<div class="modal fade" id="fileExpireModal" tabindex="-1" aria-labelledby="fileExpireModalLabel" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+    <div class="modal-header">
+        <h1 class="modal-title fs-5" id="fileExpireModalLabel">Set File Expiration</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <p>
+            Set the file's expiration. For examples, see
+            <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
+               target="_blank" rel="noopener">this README.md</a>.
+        </p>
+        <form id="modal-expire-form" name="modal-expire-form">
+            <input type="hidden" name="pk" value="">
+            <label for="expr" class="form-label">Expiration</label>
+            <div class="input-group w-100">
+                <input type="text" class="form-control" id="expr" name="expr" autocomplete="off" value="{{ file.expr|default:'' }}">
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-success" id="confirm-expire-btn" form="modal-expire-form">
+            Set File Expiration <i class="fas fa-lock ms-1"></i></button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    </div>
+</div> <!-- modal-content -->
+</div> <!-- modal-dialog -->
+</div> <!-- modal -->
+
+<div class="modal fade" id="filePasswordModal" tabindex="-1" aria-labelledby="filePasswordModalModalLabel" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+    <div class="modal-header">
+        <h1 class="modal-title fs-5" id="filePasswordModalModalLabel">Set File Password</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <p>
+            Setting a password will prevent others from accessing the file without the password.
+            If the file is private, this will allow others to access the file with the password.
+        </p>
+        <form id="modal-password-form" name="modal-password-form">
+            <input type="hidden" name="pk" value="">
+            <label for="password" class="form-label">Password</label>
+            <div class="input-group w-100">
+                <input type="text" class="form-control" id="password" name="password" autocomplete="off">
+                <button type="button" title="Umask password." id="password-unmask" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye me-1"></i></button>
+                <button type="button" title="Copy Password" id="password-copy" class="btn btn-warning btn-sm"><i class="fa-regular fa-copy"></i></button>
+                <button type="button" title="Generate new password." id="password-generate" class="btn btn-info btn-sm"><i class="fa-solid fa-key"></i></button>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-success" form="modal-password-form">
+            Set Password <i class="fas fa-lock ms-1"></i></button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    </div>
+</div> <!-- modal-content -->
+</div> <!-- modal-dialog -->
+</div> <!-- modal -->
+
+<div class="modal fade" id="fileDeleteModal" tabindex="-1" aria-labelledby="fileDeleteModalLabel" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+    <div class="modal-header">
+        <h1 class="modal-title fs-5" id="fileDeleteModalLabel">Delete File</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">Are you sure you want to delete this file?</div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-danger" id="confirm-delete">
+            Delete <i class="fa-regular fa-trash-can ms-1"></i></button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    </div>
+</div> <!-- modal-content -->
+</div> <!-- modal-dialog -->
+</div> <!-- modal -->

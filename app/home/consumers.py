@@ -6,6 +6,7 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.forms.models import model_to_dict
 from io import BytesIO
+from pytimeparse2 import parse
 from typing import Optional
 
 from home.models import Files
@@ -81,8 +82,14 @@ class HomeConsumer(AsyncWebsocketConsumer):
     @staticmethod
     def _error(message, **kwargs) -> dict:
         # TODO: Look Into This Functionality
-        response = {'success': False, 'bsClass': 'danger', 'message': message}
+        response = {
+            'success': False,
+            'bsClass': 'danger',
+            'event': 'message',
+            'message': message,
+        }
         response.update(**kwargs)
+        log.debug(response)
         return response
 
     # @staticmethod
@@ -176,6 +183,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if file := Files.objects.filter(pk=pk):
             if user_id and file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
+            if expr and not parse(expr):
+                return self._error(f'Invalid Expire: {expr}', **kwargs)
             file[0].expr = expr or ""
             file[0].save()
             # return self._success('File Expire Updated.', **kwargs)

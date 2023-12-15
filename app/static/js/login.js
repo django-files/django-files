@@ -1,40 +1,38 @@
-// Document Dot Ready
-$(document).ready(function () {
-    $('#login-form').on('submit', function (event) {
-        event.preventDefault()
-        if ($('#login-button').hasClass('disabled')) {
-            return
-        }
-        $.ajax({
-            url: $('#login-form').attr('action'),
-            type: 'POST',
-            data: new FormData(this),
-            crossDomain: true,
-            beforeSend: function () {
-                $('#login-button').addClass('disabled')
-            },
-            success: function (response) {
-                console.log('response: ' + response)
-                if (response.redirect) {
-                    console.log('response.redirect: ' + response.redirect)
-                    // window.location.href = response.redirect
-                    return window.location.replace(response.redirect)
-                }
+// JS for Login
+
+$('#login-form').on('submit', function (event) {
+    console.log('#login-form submit', event)
+    event.preventDefault()
+    const loginButton = $('#login-button')
+    if (loginButton.hasClass('disabled')) {
+        return console.warn('Double Click Prevented!')
+    }
+    $.ajax({
+        type: 'POST',
+        url: $('#login-form').attr('action'),
+        data: new FormData(this),
+        beforeSend: function () {
+            loginButton.addClass('disabled')
+        },
+        success: function (data) {
+            console.log('data:', data)
+            if (data.redirect) {
+                console.log(`data.redirect: ${data.redirect}`)
+                // window.location.href = response.redirect
+                window.location.replace(data.redirect)
+            } else {
                 location.reload()
-            },
-            error: function (xhr, status, error) {
-                console.log('xhr: ' + xhr)
-                console.log('status: ' + status)
-                console.log('error: ' + error)
-                $('#login-form input').addClass('is-invalid')
-            },
-            complete: function () {
-                console.log('complete')
-                $('#login-button').removeClass('disabled')
-            },
-            cache: false,
-            contentType: false,
-            processData: false,
-        })
+            }
+        },
+        error: function (jqXHR) {
+            console.log('jqXHR:', jqXHR)
+            $('#login-form input').addClass('is-invalid')
+        },
+        complete: function () {
+            loginButton.removeClass('disabled')
+        },
+        cache: false,
+        contentType: false,
+        processData: false,
     })
 })

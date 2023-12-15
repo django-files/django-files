@@ -1,197 +1,227 @@
-$(document).ready(function () {
-    // ---------- EXPIRE ----------
+// JS for Context Menu
 
-    // Expire - Context Menu Click
-    $('.ctx-set-expire-btn').click(setExpireClick)
+const fileExpireModal = $('#fileExpireModal')
+const filePasswordModal = $('#filePasswordModal')
+const fileDeleteModal = $('#fileDeleteModal')
 
-    // Expire - Form Submit
-    $('#set-expr-form').submit(function (event) {
-        event.preventDefault()
-        console.log('#set-expr-form.submit')
-        const data = objectifyForm($('#set-expr-form').serializeArray())
-        data.method = 'set-expr-file'
-        console.log(data)
-        socket.send(JSON.stringify(data))
-        $('#setFileExprModal').modal('hide')
-    })
+$('.ctx-expire').on('click', cxtSetExpire)
+$('.ctx-private').on('click', ctxSetPrivate)
+$('.ctx-password').on('click', ctxSetPassword)
+$('.ctx-delete').on('click', ctxDeleteFile)
 
-    // Expire - Focus Input
-    $('#setFileExprModal').on('shown.bs.modal', function () {
-        $('#expr').trigger('focus').select()
-    })
-
-    // ---------- PRIVATE ----------
-
-    // Private - Toggle Click
-    $('.ctx-toggle-private-btn').click(togglePrivateClick)
-
-    // ---------- PASSWORD ----------
-
-    // Password - Set Password Context Menu Button
-    $('.ctx-set-password-btn').click(setPasswordClick)
-
-    // TODO: Review and Cleanup all other Password handlers
-
-    // Password - Set Password Form Submission
-    $('#set-password-form').submit(function (event) {
-        event.preventDefault()
-        console.log('#set-password-form.submit')
-        const data = objectifyForm($(this).serializeArray())
-        console.log(`data.password: ${data.password}`)
-        data.method = 'set-password-file'
-        console.log(data)
-        socket.send(JSON.stringify(data))
-        $(`#ctx-menu-${data.pk} input[name=current-file-password]`).val(
-            data.password
-        )
-        $('#setFilePasswordModal').modal('hide')
-    })
-
-    // Password - Misc
-    $('#unMaskPassword').click(function () {
-        // TODO: This needs a cookie to work properly
-        const password = $('#password')
-        const type = password[0].type === 'password' ? 'text' : 'password'
-        password.prop('type', type)
-    })
-
-    // Password - Misc
-    $('#copyPassword').click(async function () {
-        // TODO: Use clipboardjs vs a custom function
-        await navigator.clipboard.writeText($('#password').val())
-        show_toast('Password copied!', 'info', '15000')
-    })
-
-    // Password - Misc
-    $('#generatePassword').click(async function () {
-        // TODO: Cleanup this Listener
-        const chars =
-            '0123456789abcdefghijklmnopqrstuvwxyz!+()ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        const pwordLength = 15
-        let password = ''
-
-        const array = new Uint32Array(chars.length)
-        window.crypto.getRandomValues(array)
-
-        for (let i = 0; i < pwordLength; i++) {
-            password += chars[array[i] % chars.length]
-        }
-        $('#password').val(password)
-        await navigator.clipboard.writeText(password)
-        show_toast('Password generated and copied!', 'info', '15000')
-    })
-
-    // Password - Misc
-    $('#setFilePasswordModal').on('shown.bs.modal', function () {
-        $('#password').focus().select()
-    })
-
-    // ---------- DELETE ----------
-
-    // Delete - Delete File Context Menu Button
-    $('.ctx-delete-btn').click(deleteFileClick)
-
-    // Delete -  Delete File Confirm Button
-    $('#confirmDeleteFileBtn').click(function () {
-        const pk = $(this).data('pk')
-        console.log(`#confirmDeleteFileBtn.click: pk: ${pk}`)
-        socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
-        if (window.location.pathname.startsWith('/u/')) {
-            window.location.replace('/#files')
-        } else {
-            $('#deleteFileModal').modal('hide')
-        }
-    })
-
-    // ---------- SOCKET HANDLERS ----------
-
-    socket.addEventListener('message', function (event) {
-        const data = JSON.parse(event.data)
-        if (data.event === 'set-expr-file') {
-            // Expire
-            handle_set_expiration(data)
-        } else if (data.event === 'toggle-private-file') {
-            // Private
-            handle_private_toggle(data)
-        } else if (data.event === 'set-password-file') {
-            // Password
-            handle_password_set(data)
-        }
-    })
+socket?.addEventListener('message', function (event) {
+    // console.log('socket.message: file-context-menu.js:', event)
+    const data = JSON.parse(event.data)
+    if (data.event === 'set-expr-file') {
+        messageExpire(data)
+    } else if (data.event === 'toggle-private-file') {
+        messagePrivate(data)
+    } else if (data.event === 'set-password-file') {
+        messagePassword(data)
+    }
 })
+
+// Expire Form
+
+fileExpireModal.on('shown.bs.modal', function (event) {
+    console.log('fileExpireModal shown.bs.modal:', event)
+    $(this).find('input').trigger('focus').trigger('select')
+})
+
+$('#modal-expire-form').on('submit', function (event) {
+    console.log('#modal-expire-form submit:', event)
+    event.preventDefault()
+    // const data = {
+    //     method: 'set-expr-file',
+    //     pk: $(this).find('input[name=pk]').val(),
+    //     expr: $(this).find('input[name=expr]').val().trim(),
+    // }
+    const data = genData($(this), 'set-expr-file')
+    console.log('data:', data)
+    socket.send(JSON.stringify(data))
+    fileExpireModal.modal('hide')
+})
+
+// Password Form
+// TODO: Cleanup Password Forms
+
+filePasswordModal.on('shown.bs.modal', function (event) {
+    console.log('filePasswordModal shown.bs.modal:', event)
+    $(this).find('input').trigger('focus').trigger('select')
+})
+
+$('#modal-password-form').on('submit', function (event) {
+    console.log('#modal-password-form submit:', event)
+    event.preventDefault()
+    // const data = {
+    //     method: 'set-password-file',
+    //     pk: $(this).find('input[name=pk]').val(),
+    //     password: $(this).find('input[name=password]').val().trim(),
+    // }
+    const data = genData($(this), 'set-password-file')
+    console.log('data:', data)
+    socket.send(JSON.stringify(data))
+    $(`#ctx-menu-${data.pk} input[name=current-file-password]`).val(
+        data.password
+    )
+    filePasswordModal.modal('hide')
+})
+
+$('#password-unmask').on('click', function (event) {
+    console.log('#password-unmask click:', event)
+    const input = $('#password')
+    const type = input.attr('type') === 'password' ? 'text' : 'password'
+    input.prop('type', type)
+})
+
+$('#password-copy').on('click', async function (event) {
+    console.log('#password-copy click:', event)
+    await navigator.clipboard.writeText($('#password').val())
+    show_toast('Password copied!', 'info')
+})
+
+$('#password-generate').on('click', async function (event) {
+    console.log('#password-generate click:', event)
+    const password = genRand(12)
+    $('#password').val(password)
+    await navigator.clipboard.writeText(password)
+    show_toast('Password generated and copied!', 'info')
+})
+
+// Delete File Form
+
+$('#confirm-delete').on('click', function (event) {
+    // TODO: Handle IF/ELSE Better
+    const pk = $(this).data('pk')
+    console.log(`#confirm-delete click pk: ${pk}`, event)
+    socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
+    if (window.location.pathname.startsWith('/u/')) {
+        window.location.replace('/#files')
+    } else {
+        fileDeleteModal.modal('hide')
+    }
+})
+
+// Event Listeners
+
+function cxtSetExpire() {
+    const pk = $(this).parent().parent().parent().data('pk')
+    console.log(`cxtSetExpire pk: ${pk}`)
+    fileExpireModal.find('input[name=pk]').val(pk)
+    const expire = $(`#file-${pk} .expire-value`).text().trim()
+    console.log(`expire: ${expire}`)
+    const expireValue = expire === 'Never' ? '' : expire
+    console.log(`expireInput: ${expireValue}`)
+    $('#expr').val(expireValue)
+    fileExpireModal.modal('show')
+}
+
+function ctxSetPrivate() {
+    const pk = $(this).parent().parent().parent().data('pk')
+    console.log(`ctxSetPrivate pk: ${pk}`)
+    socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
+}
+
+function ctxSetPassword() {
+    const pk = $(this).parent().parent().parent().data('pk')
+    console.log(`ctxSetPassword pk: ${pk}`)
+    filePasswordModal.find('input[name=pk]').val(pk)
+    const input = $(`#ctx-menu-${pk} input[name=current-file-password]`)
+    // console.log('input:', input)
+    const password = input.val().toString().trim()
+    console.log(`password: ${password}`)
+    // $('#password').val(input.val())
+    filePasswordModal.find('input[name=password]').val(password)
+    filePasswordModal.modal('show')
+}
+
+function ctxDeleteFile() {
+    const pk = $(this).parent().parent().parent().data('pk')
+    console.log(`ctxDeleteFile pk: ${pk}`)
+    $('#confirm-delete').data('pk', pk)
+    fileDeleteModal.modal('show')
+}
 
 // Socket Handlers
 
-function handle_set_expiration(data) {
-    // Expire Socket Handler
-    // TODO: title does not seem to live update using .attr method
-    // TODO: clipboard-text does not seem to live update using .data method
-    console.log('handle_set_expiration')
-    console.log(data)
-    const expireTableText = $(`#file-${data.id} .expire-value`)
-    const expirePreviewIcon = $('#expire-status-icon')
+function messageExpire(data) {
+    console.log('messageExpire:', data)
+    const expireText = $(`#file-${data.id} .expire-value`)
+    const expireIcon = $(`#file-${data.id} .expire-icon`)
     if (data.expr) {
-        expireTableText.text(data.expr).data('clipboard-text', data.expr)
-        expirePreviewIcon.attr('title', `File Expires in ${data.expr}`).show()
+        expireText.text(data.expr).data('clipboard-text', data.expr)
+        expireIcon.attr('title', `File Expires in ${data.expr}`).show()
         show_toast(`${data.name} - Expire set to: ${data.expr}`, 'success')
     } else {
-        expireTableText.text('Never').data('clipboard-text', 'Never')
-        expirePreviewIcon.attr('title', 'No Expiration').hide()
+        expireText.text('Never').data('clipboard-text', 'Never')
+        expireIcon.attr('title', 'No Expiration').hide()
         show_toast(`${data.name} - Cleared Expiration.`, 'success')
     }
 }
 
-function handle_private_toggle(data) {
-    // Private Socket Handler
-    console.log('handle_private_toggle')
-    console.log(data)
-    const ctx_text = $(`#ctx-menu-${data.id} .privateText`)
-    const ctx_icon = $(`#ctx-menu-${data.id} .privateDropdownIcon`)
-    const table_icon = $(`#file-${data.id} .privateStatus`)
-    const preview_icon = $(`#privateStatus`)
+function messagePrivate(data) {
+    // TODO: Cleanup Selectors
+    console.log('messagePrivate:', data)
+    const privateStatus = $(`#file-${data.id} .privateStatus`)
+    const previewIcon = $(`#previewIcon`)
+    const ctxPrivateText = $(`#ctx-menu-${data.id} .privateText`)
+    const ctxPrivateIcon = $(`#ctx-menu-${data.id} .privateIcon`)
     if (data.private) {
-        console.log('Making PRIVATE')
-        table_icon.show()
-        preview_icon.show()
-        ctx_text.text('Make Public')
-        ctx_icon.removeClass('fa-lock').addClass('fa-lock-open')
+        privateStatus.show()
+        previewIcon.show()
+        ctxPrivateText.text('Make Public')
+        ctxPrivateIcon.removeClass('fa-lock').addClass('fa-lock-open')
         show_toast(`File ${data.name} set to private.`, 'success')
     } else {
-        console.log('Making PUBLIC')
-        table_icon.hide()
-        preview_icon.hide()
-        ctx_text.text('Make Private')
-        ctx_icon.removeClass('fa-lock-open').addClass('fa-lock')
+        privateStatus.hide()
+        previewIcon.hide()
+        ctxPrivateText.text('Make Private')
+        ctxPrivateIcon.removeClass('fa-lock-open').addClass('fa-lock')
         show_toast(`File ${data.name} set to public.`, 'success')
     }
 }
 
-function handle_password_set(data) {
-    // Password Socket Handler
-    console.log(`handle_password_set`)
-    console.log(data)
-    const table_icon = $(`#file-${data.id} .passwordStatus`)
-    const preview_icon = $(`#passwordStatus`)
-    console.log(table_icon)
+function messagePassword(data) {
+    console.log('messagePassword', data)
+    const passwordStatus = $(`#file-${data.id} .passwordStatus`)
     if (data.password) {
-        table_icon.show()
-        preview_icon.show()
+        passwordStatus.show()
         show_toast(`Password set for ${data.name}`, 'success')
     } else {
-        table_icon.hide()
-        preview_icon.hide()
+        passwordStatus.hide()
         show_toast(`Password unset for ${data.name}`, 'success')
     }
-    $('#setFilePasswordModal').modal('hide')
+    filePasswordModal.modal('hide')
 }
 
-// Extras
-
-function objectifyForm(formArray) {
-    // Convert .serializeArray() to Object (key: value)
-    let returnArray = {}
-    for (const element of formArray) {
-        returnArray[element['name']] = element['value']
+/**
+ * Generate Random String at length
+ * @param {Number} length
+ * @return {String}
+ */
+function genRand(length) {
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    let result = ''
+    let counter = 0
+    while (counter < length) {
+        const rand = Math.floor(Math.random() * chars.length)
+        result += chars.charAt(rand)
+        counter += 1
     }
-    return returnArray
+    return result
+}
+
+/**
+ * Convert Form Object to Object
+ * @param {jQuery} form $(this) from on submit event
+ * @param {String} method The method key value
+ * @return {Object}
+ */
+function genData(form, method) {
+    const data = { method: method }
+    for (const element of form.serializeArray()) {
+        data[element['name']] = element['value']
+    }
+    return data
 }

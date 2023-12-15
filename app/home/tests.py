@@ -169,11 +169,11 @@ class PlaywrightTest(StaticLiveServerTestCase):
             if view == 'Files':
                 page.locator('.file-context-dropdown').first.click()
                 self.screenshot(page, f'{view}-file-context-dropdown')
-                page.locator('.ctx-delete-btn').first.click()
+                page.locator('.ctx-delete').first.click()
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-click')
 
-                page.locator('#confirmDeleteFileBtn').click()
+                page.locator('#confirm-delete').click()
                 # page.wait_for_timeout(timeout=500)
                 # self.screenshot(page, f'{view}-delete-deleted')
 

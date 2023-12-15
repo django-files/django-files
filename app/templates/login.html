@@ -11,73 +11,67 @@
 {% block navbar %}{% endblock %}
 
 {% block body %}
-    <main class="h-100">
+<video poster="{% static 'video/loop.jpg' %}" id="bgvid" playsinline autoplay muted loop>
+    <source src="{% static 'video/loop.mp4' %}" type="video/mp4" id="bgvidsrc">
+</video>
 
-        <video poster="{% static 'video/loop.jpg' %}" id="bgvid" playsinline autoplay muted loop>
-            <source src="{% static 'video/loop.mp4' %}" type="video/mp4" id="bgvidsrc">
-        </video>
+<div class="d-flex flex-column align-items-center h-100">
+<div id="login-outer" class="animate__animated animate__fadeIn ">
+    <div class="text-center">
+        <img class="img-responsive" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
+        <h3 class="text-center text-white mt-2">{{ site_settings.site_title }}</h3>
+    </div>
 
-        <div class="d-flex flex-column h-100 align-items-center">
-            <div class="d-flex flex-grow-1 justify-content-center align-items-center">
-                <div id="login-outer" class="animate__animated animate__fadeIn ">
-                    <div class="text-center">
-                        <img class="img-responsive" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
-                        <h3 class="text-center text-white mt-2">{{ site_settings.site_title }}</h3>
-                    </div>
+    <form class="submit-once" method="POST" name="login-form" id="login-form" action="{% url 'oauth:login' %}">
+        {% csrf_token %}
 
-                    <form class="submit-once" method="POST" name="login-form" id="login-form" action="{% url 'oauth:login' %}">
-                        {% csrf_token %}
+        <div class="col mt-4">
+            <label class="visually-hidden" for="username"></label>
+            <input type="text" class="form-control" id="username" name="username" autocomplete="username" required autofocus>
+            <span class="form-label floating-label text-white">username</span>
+        </div>
 
-                        <div class="col mt-4">
-                            <label class="sr-only" for="username"></label>
-                            <input type="text" class="form-control" id="username" name="username" autocomplete="username" required autofocus>
-                            <span class="form-label floating-label text-white">username</span>
-                        </div>
-
-                        <div class="col">
-                            <label class="sr-only" for="password"></label>
-                            <input type="password" class="form-control" id="password" name="password" autocomplete="password"
-                                   aria-describedby="passwordFeedback" required>
-                            <span class="form-label floating-label text-white">password</span>
-                            <div id="passwordFeedback" class="invalid-feedback">
-                                Invalid Username or Password.
-                            </div>
-                        </div>
-
-                        {% if request.GET.next %}
-                            <input type="hidden" name="next" value="{{ request.GET.next }}">
-                        {% elif request.session.login_next_url %}
-                            <input type="hidden" name="next" value="{{ request.session.login_next_url }}">
-                        {% endif %}
-
-                        <div class="d-grid gap-2">
-                            <button id="login-button" class="btn btn-secondary opacity-75" type="submit">
-                                <i class="fas fa-sign-in-alt"></i> Local Login</button>
-                            {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
-                                <a href="{% url 'oauth:discord' %}?next={{ request.path }}" class="btn btn-primary opacity-75" role="button">
-                                    <i class="fa-brands fa-discord"></i> Discord Login</a>
-                            {% endif %}
-                            {% if site_settings.github_client_id or 'GITHUB_CLIENT_ID'|get_config %}
-                                <a href="{% url 'oauth:github' %}?next={{ request.path }}" class="btn btn-dark opacity-75" role="button">
-                                    <i class="fa-brands fa-github"></i> GitHub Login</a>
-                            {% endif %}
-                        </div>
-
-                        <div id="login-message" class="mt-2">
-                            {% if messages %}
-                                <ul class="list-group text-center">
-                                    {% for message in messages %}
-                                        <li class="list-group-item list-group-item-{{ message.tags }}">{{ message }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% endif %}
-                        </div>
-                    </form>
-                </div>
+        <div class="col">
+            <label class="visually-hidden" for="password"></label>
+            <input type="password" class="form-control" id="password" name="password" autocomplete="password"
+                   aria-describedby="passwordFeedback" required>
+            <span class="form-label floating-label text-white">password</span>
+            <div id="passwordFeedback" class="invalid-feedback">
+                Invalid Username or Password.
             </div>
         </div>
 
-    </main>
+        {% if request.GET.next %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+        {% elif request.session.login_next_url %}
+            <input type="hidden" name="next" value="{{ request.session.login_next_url }}">
+        {% endif %}
+
+        <div class="d-grid gap-2">
+            <button id="login-button" class="btn btn-secondary opacity-75" type="submit">
+                <i class="fas fa-sign-in-alt"></i> Local Login</button>
+            {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
+                <a href="{% url 'oauth:discord' %}?next={{ request.path }}" class="btn btn-primary opacity-75" role="button">
+                    <i class="fa-brands fa-discord"></i> Discord Login</a>
+            {% endif %}
+            {% if site_settings.github_client_id or 'GITHUB_CLIENT_ID'|get_config %}
+                <a href="{% url 'oauth:github' %}?next={{ request.path }}" class="btn btn-dark opacity-75" role="button">
+                    <i class="fa-brands fa-github"></i> GitHub Login</a>
+            {% endif %}
+        </div>
+
+        <div id="login-message" class="mt-2">
+            {% if messages %}
+                <ul class="list-group text-center">
+                    {% for message in messages %}
+                        <li class="list-group-item list-group-item-{{ message.tags }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    </form>
+</div> <!-- login-outer -->
+</div> <!-- d-flex -->
 {% endblock %}
 
 {% block footer %}{% endblock %}

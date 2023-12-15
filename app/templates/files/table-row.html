@@ -3,58 +3,50 @@
 
 {% if file.file %}
 <tr id="file-{{ file.id }}">
-    <!-- 0: ID -->
+{#  <!-- 0: ID --> #}
     <td class="d-none d-sm-table-cell text-center align-middle">
         {{ file.id }}
     </td>
-
-    <!-- 1: Name -->
+{#  <!-- 1: Name --> #}
     <td class="align-middle">
         <span class="d-none d-sm-inline">
             <a class="link-body-emphasis clip" role="button" data-clipboard-text="{{ site_settings.site_url }}{{ file.preview_uri }}">
-                <i class="fa-regular fa-clipboard ms-2"></i></a></span>
+                <i class="fa-regular fa-clipboard ms-2"></i></a>
+        </span>
         <a class="link-body-emphasis" role="button" href="{{ file.preview_uri }}">
             {{ file.name }}</a>
     </td>
-
-    <!-- 2: Size -->
+{#  <!-- 2: Size --> #}
     <td class="d-none d-sm-table-cell align-middle clip" data-clipboard-text="{{ file.get_size }}">
         {{ file.get_size }}
     </td>
-
-    <!-- 3: Mime -->
+{#  <!-- 3: Mime --> #}
     <td class="d-none d-lg-table-cell align-middle clip" data-clipboard-text="{{ file.mime }}">
         {{ file.mime }}
     </td>
-
-    <!-- 4: Date -->
+{#  <!-- 4: Date --> #}
     <td class="d-none d-xl-table-cell align-middle clip" data-clipboard-text="{{ file.date|date:'c' }}">
         {{ file.date|date:'c' }}
     </td>
-
-    <!-- 5: Expire -->
-    <td class="d-none d-md-table-cell align-middle clip" data-clipboard-text="{{ file.expr|default:'Never' }}">
+{#  <!-- 5: Expire --> #}
+    <td class="d-none d-md-table-cell align-middle clip expire-value" data-clipboard-text="{{ file.expr|default:'Never' }}">
         {{ file.expr|default:'Never' }}
     </td>
-
-    <!-- 6: Password -->
+{#  <!-- 6: Password --> #}
     <td class="d-none d-sm-table-cell align-middle"> <!-- {{ file.password }} -->
         <i class="fa-solid fa-key text-warning-emphasis passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i></td>
-
-    <!-- 7: Private -->
+{#  <!-- 7: Private --> #}
     <td class="d-none d-sm-table-cell align-middle">
         <i class="fa-solid fa-lock text-warning-emphasis privateStatus" {% if not file.private %}style="display: none"{% endif %}></i></td>
-
-    <!-- 8: Views -->
+{#  <!-- 8: Views --> #}
     <td class="d-none d-sm-table-cell align-middle">
         <a class="clip link-body-emphasis text-decoration-none" role="button" data-clipboard-text="{{ file.view }}">{{ file.view }}</a></td>
-
-    <!-- 9: Menu -->
+{#  <!-- 9: Menu --> #}
     <td class="text-center">
         <button class="btn btn-secondary file-context-dropdown my-0 py-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="fa-regular fa-square-caret-down"></i>
-        </button>{% if not nocontextmenu %}{% include 'files/file-context-menu.html' %}{% endif %}
-        
+        </button>
+        {% if not nocontextmenu %}{% include 'files/ctx-menu.html' %}{% endif %}
     </td>
 </tr>
 {% endif %}

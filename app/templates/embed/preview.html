@@ -88,9 +88,10 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     <i class="fa-regular fa-square-caret-down"></i>
                     <button class="file-context-dropdown my-0 py-0" type="button" aria-expanded="false" hidden></button>
                 </div>
-                {% include 'files/file-context-menu.html' with file=file extraclass='dropdown-menu-end' %}
+                {% include 'files/ctx-menu.html' with file=file extraclass='dropdown-menu-end' %}
             </div>
         </div>
+        {% include 'files/ctx-modals.html' %}
         <div id="previewSidebar" class="sidebar h-100">
             <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
             <div id="file-{{ file.id }}" class="card-body sidebarCard px-3">
@@ -107,9 +108,11 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
                     {% endif %}
                     <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
-                    <i id="privateStatus" title="Private File" class="fa-solid fa-lock ms-2" {% if not file.private %}style="display: none"{% endif %}></i>
-                    <i id="passwordStatus" title="Password Protected File" class="fa-solid fa-key ms-2" {% if not file.password %}style="display: none"{% endif %}></i>
-                    <i id="expire-status-icon" title="File Expires in {{ file.expr }}" class="fa-solid fa-hourglass ms-2" {% if not file.expr %} style="display: none"{% endif %}></i>
+                    <i title="Private File" class="fa-solid fa-lock ms-2" id="previewIcon" {% if not file.private %}style="display: none"{% endif %}></i>
+                    <i title="Password Protected File" class="fa-solid fa-key ms-2 passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i>
+                    <span title="File Expires in {{ file.expr }}" class="ms-2 expire-icon" {% if not file.expr %}style="display: none"{% endif %}>
+                        <i class="fa-solid fa-hourglass"></i>
+                    </span>
                 </p>
                 <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>
                 <p class="card-text">Uploaded {{ file.date }}</p>
@@ -137,12 +140,11 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 </div>
             </div>
         </div>
+        <table class="d-none">
+            {% include 'files/table-row.html' with nocontextmenu=True %}
+        </table>
     </div>
     </div>
-    {% include 'files/delete-modal.html' %}
-    {% include 'files/set-password-modal.html' %}
-    {% include 'files/set-expr-modal.html' %}
-    <table class="d-none">{% include 'files/table-tr.html' with nocontextmenu=True %}</table>
 {% endblock %}
 
 {% block tail %}
@@ -169,8 +171,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     });
                 })
                 .catch((error) => {
-                    let message = `Error fetching {{ file.file.name }}: ${error}`;
-                    show_toast(message, 'danger');
+                    show_toast(`Error fetching {{ file.file.name }}: ${error}`, 'danger');
                 });
         </script>
     {% endif %}

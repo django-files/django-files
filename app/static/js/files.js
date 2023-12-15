@@ -24,23 +24,34 @@ if (typeof DataTable !== 'undefined' && filesTable.length) {
     })
 }
 
-// Monitor websockets for new data and update results
-socket?.addEventListener('message', (event) => {
-    console.log('files.js socket.addEventListener message:', event)
+socket?.addEventListener('message', function (event) {
+    // console.log('socket.message: files.js:', event)
+    if (!filesTable.length) {
+        return console.log('filesTable not found in DOM')
+    }
     let data = JSON.parse(event.data)
     if (data.event === 'file-new') {
         $.get(`/ajax/files/tdata/${data.pk}`, function (response) {
-            if (filesTable.length && filesDataTable) {
+            if (filesDataTable) {
                 filesDataTable.row.add($(response)).draw()
-                console.log(`Table Updated: ${data.pk}`)
+            } else {
+                filesTable.find('tbody').prepend(response)
             }
+            const row = $(`#file-${data.pk}`)
+            row.find('.ctx-expire').on('click', cxtSetExpire)
+            row.find('.ctx-private').on('click', ctxSetPrivate)
+            row.find('.ctx-password').on('click', ctxSetPassword)
+            row.find('.ctx-delete').on('click', ctxDeleteFile)
         })
+    } else if (data.event === 'file-delete') {
+        console.log(`File Deleted: ${data.pk}`)
+        $(`#file-${data.pk}`).remove()
     }
 })
 
-$('#user').on('change', function () {
+$('#user').on('change', function (event) {
     let user = $(this).val()
-    console.log('user: ' + user)
+    console.log(`user: ${user}`)
     if (user) {
         let url = new URL(location.href)
         url.searchParams.set('user', user)

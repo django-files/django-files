@@ -246,7 +246,7 @@ def files_tdata_ajax(request, pk):
     """
     log.debug('files_tdata_ajax: %s', pk)
     q = get_object_or_404(Files, pk=pk)
-    response = render_to_string('files/table-tr.html', {'file': q}, request)
+    response = render_to_string('files/table-row.html', {'file': q}, request)
     return HttpResponse(response)
 
 
@@ -365,6 +365,19 @@ def delete_hook_ajax(request, pk):
     log.debug(webhook)
     webhook.delete()
     return HttpResponse(status=204)
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def check_password_file_ajax(request, pk):
+    """
+    View  /ajax/check_password/file/<int:pk>/
+    """
+    log.debug('check_password_file_ajax: %s', pk)
+    file = get_object_or_404(Files, pk=pk)
+    if file.password != request.POST.get('password'):
+        return HttpResponse(status=401)
+    return HttpResponse(status=200)
 
 
 @require_http_methods(['GET'])

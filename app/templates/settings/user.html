@@ -165,7 +165,7 @@
                 <p class="lead">No Webhooks Found. Perhaps you forgot to add one?</p>
             {% else %}
                 <table class="table table-responsive" id="discordWebhooksTable">
-                    <caption class="sr-only">Active Webhooks</caption>
+                    <caption class="visually-hidden">Active Webhooks</caption>
                     <thead>
                     <tr>
                         <th scope="col" class="d-none d-sm-table-cell">ID</th>
@@ -293,7 +293,7 @@
             <p><kbd id="upload-url">{{ site_settings.site_url }}{% url 'home:upload' %}</kbd></p>
             <p>Uploads accept the following parameters. Click a tab above to view full examples.</p>
             <table class="table table-sm table-striped">
-                <caption class="sr-only">Custom Upload Options</caption>
+                <caption class="visually-hidden">Custom Upload Options</caption>
                 <thead>
                 <tr>
                     <th scope="col">Key</th>

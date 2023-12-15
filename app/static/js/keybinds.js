@@ -1,3 +1,5 @@
+// JS for Keyboard Shortcuts
+
 let keysPressed = {}
 window.onblur = function () {
     keysPressed = {}
@@ -9,7 +11,6 @@ document.addEventListener('keyup', (event) => {
 
 /**
  * Keyboard keydown Callback
- * TODO: Remove JQuery
  * @function handleKeybinds
  * @param {KeyboardEvent} event
  */

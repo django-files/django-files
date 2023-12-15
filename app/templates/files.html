@@ -7,48 +7,45 @@
 {% block title %}Files{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
 {% endblock %}
 
 {% block body %}
-    <div class="container-fluid py-3 px-4">
+<div class="container-fluid py-3 px-4">
 
-        <h1><i class="fa-regular fa-folder-open me-2"></i> Files</h1>
+    <h1><i class="fa-regular fa-folder-open me-2"></i> Files</h1>
 
-        {% if request.user.is_superuser %}
-            <div class="float-end">
-                <select id="user" name="user" class="form-select" aria-label="Default select example">
-                    <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
-                    <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
-                    {% for user in users %}
-                        <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        {% endif %}
+    {% if request.user.is_superuser %}
+        <div class="float-end">
+            <select id="user" name="user" class="form-select" aria-label="Default select example">
+                <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
+                <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
+                {% for user in users %}
+                    <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    {% endif %}
 
-        <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
+    <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
 
-        {% if not files %}
-            <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
-        {% else %}
-            <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
-            {% include 'files/files-table.html' with files=files  %}
-        {% endif %}
+    {% if not files %}
+        <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
+    {% else %}
+        <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
+        {% include 'files/table.html' with files=files  %}
+    {% endif %}
 
-    </div>
+</div>
 {% endblock %}
 
-{% block js_dependencies %}
+{% block tail %}
     <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/jquery.dataTables.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/file-size.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
-{% endblock %}
-
-{% block tail %}
-    <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
 {% endblock %}

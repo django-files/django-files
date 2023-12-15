@@ -1,49 +1,57 @@
+// JS for Web Sockets
+// TODO: Look Into Moving Everything Here for Auto Reconnect
+
 console.log('Connecting to WebSocket...')
 
+let disconnected = false
 let socket
 let ws
 
 function wsConnect() {
     if (ws) {
-        console.log('closing existing connection')
+        console.warn('Closing Existing WebSocket Connection!')
         ws.close()
     }
+    const toast = bootstrap.Toast.getOrCreateInstance($('#disconnected-toast'))
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
     socket = new WebSocket(`${protocol}//${window.location.host}/ws/home/`)
     socket.onopen = function (event) {
-        console.log('socket.onopen')
-        console.log(event)
-        // $('#socket-warning').addClass('d-none')
+        console.log('WebSocket Connected.', event)
+        disconnected = false
+        if (toast.isShown()) {
+            $('#disconnected-toast-title')
+                .removeClass('text-warning')
+                .addClass('text-success')
+                .text('Connected')
+        }
     }
-    socket.onmessage = function (event) {
-        console.log('socket.onmessage')
-        console.log(event)
-        console.log(`Message: ${event.data}`)
-    }
+    // socket.onmessage = function (event) {
+    //     console.log('socket.onmessage:', event)
+    // }
     socket.onclose = function (event) {
-        console.log(`socket.onclose: ${event.code}`)
-        console.log(event)
         if (![1000, 1001].includes(event.code)) {
-            setTimeout(function () {
-                console.log('Unclean Close, Showing Socket Warnings')
-                $('#socket-warning').removeClass('d-none')
-                let toastEl = $('#disconnected-toast')
-                if (toastEl.length) {
-                    let toast = bootstrap.Toast.getOrCreateInstance(toastEl)
-                    if (!toast.isShown()) {
-                        toast.show()
-                    }
-                }
-            }, 2 * 1000)
+            if (!disconnected) {
+                console.warn('WebSocket Disconnected!', event)
+            }
+            if (!toast.isShown()) {
+                setTimeout(function () {
+                    disconnected = true
+                    $('#disconnected-toast-title')
+                        .removeClass('text-success')
+                        .addClass('text-warning')
+                        .text('Reconnecting...')
+                    toast.show()
+                }, 2 * 1000)
+            }
         }
         setTimeout(function () {
             wsConnect()
         }, 10 * 1000)
     }
     socket.onerror = function (event) {
-        console.error('socket.onerror')
-        console.log(event)
-        // socket.close()
+        if (!disconnected) {
+            console.error('WebSocket Error:', event)
+        }
     }
 }
 wsConnect()

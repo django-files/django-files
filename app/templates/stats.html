@@ -11,92 +11,92 @@
 {% endblock %}
 
 {% block body %}
-    <div class="container-fluid py-3 px-4">
+<div class="container-fluid py-3 px-4">
 
-        <h1><i class="fa-solid fa-chart-line me-2"></i> Stats</h1>
+    <h1><i class="fa-solid fa-chart-line me-2"></i> Stats</h1>
 
-        {% if not stats %}
-            <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
-        {% endif %}
-        {% with stats=stats|first  %}
-        {% if stats %}
+    {% if not stats %}
+        <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
+    {% endif %}
+    {% with stats=stats|first  %}
+    {% if stats %}
+
+        <div class="row">
+            {% include 'include/stats-card.html' with title="Total Files" data=stats.stats.count %}
+            {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
+            {% include 'include/stats-card.html' with title="Total Shorts" data=stats.stats.shorts %}
+        </div>
+
+        {% include 'include/stats-table.html' with stats=stats count=0 %}
+
+    {% endif %}
+
+    <p><a class="btn btn-sm btn-outline-warning me-2" role="button" id="updateStatsBtn"
+          data-target-url="{% url 'home:update-stats' %}">
+        <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>{% if stats %}
+        <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>{% endif %}</p>
+
+    {% if stats %}
 
             <div class="row">
-                {% include 'include/stats-card.html' with title="Total Files" data=stats.stats.count %}
-                {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
-                {% include 'include/stats-card.html' with title="Total Shorts" data=stats.stats.shorts %}
+                <div class="col">
+                    <!-- Prepare a DOM with a defined width and height for ECharts -->
+                    <div id="stats" class="w-100" style="min-width: 340px;height: 400px;"></div>
+                </div>
             </div>
 
-            {% include 'include/stats-table.html' with stats=stats count=0 %}
+            <!-- TODO: Use Something Else? Or Fix! -->
+            {{ days|json_script:"days" }}
+            {{ files|json_script:"files" }}
+            {{ size|json_script:"size" }}
+            <script type="text/javascript">
+                // Django Data
+                const labels = JSON.parse(document.getElementById('days').textContent);
+                console.log(labels);
+                const files = JSON.parse(document.getElementById('files').textContent);
+                console.log(files);
+                const size = JSON.parse(document.getElementById('size').textContent);
+                console.log(size);
 
-        {% endif %}
+                // Initialize the echarts instance based on the prepared dom
+                let chart = echarts.init(document.getElementById('stats'));
 
-        <p><a class="btn btn-sm btn-outline-warning me-2" role="button" id="updateStatsBtn"
-              data-target-url="{% url 'home:update-stats' %}">
-            <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>{% if stats %}
-            <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>{% endif %}</p>
+                // Specify the configuration items and data for the chart
+                let option = {
+                    title: {
+                        text: 'Stats',
+                        textStyle: {
+                            color: '#fff'
+                        }
+                    },
+                    tooltip: {},
+                    legend: {
+                        data: ['Files']
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: labels
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [
+                        {
+                            name: 'Files',
+                            type: 'line',
+                            data: files
+                        }
+                    ]
+                };
 
-        {% if stats %}
+                // Display the chart using the configuration items and data just specified.
+                chart.setOption(option);
+            </script>
 
-                <div class="row">
-                    <div class="col">
-                        <!-- Prepare a DOM with a defined width and height for ECharts -->
-                        <div id="stats" class="w-100" style="min-width: 340px;height: 400px;"></div>
-                    </div>
-                </div>
+    {% endif %}
+    {% endwith %}
 
-                <!-- TODO: Use Something Else? Or Fix! -->
-                {{ days|json_script:"days" }}
-                {{ files|json_script:"files" }}
-                {{ size|json_script:"size" }}
-                <script type="text/javascript">
-                    // Django Data
-                    const labels = JSON.parse(document.getElementById('days').textContent);
-                    console.log(labels);
-                    const files = JSON.parse(document.getElementById('files').textContent);
-                    console.log(files);
-                    const size = JSON.parse(document.getElementById('size').textContent);
-                    console.log(size);
-
-                    // Initialize the echarts instance based on the prepared dom
-                    let chart = echarts.init(document.getElementById('stats'));
-
-                    // Specify the configuration items and data for the chart
-                    let option = {
-                        title: {
-                            text: 'Stats',
-                            textStyle: {
-                                color: '#fff'
-                            }
-                        },
-                        tooltip: {},
-                        legend: {
-                            data: ['Files']
-                        },
-                        xAxis: {
-                            type: 'category',
-                            data: labels
-                        },
-                        yAxis: {
-                            type: 'value'
-                        },
-                        series: [
-                            {
-                                name: 'Files',
-                                type: 'line',
-                                data: files
-                            }
-                        ]
-                    };
-
-                    // Display the chart using the configuration items and data just specified.
-                    chart.setOption(option);
-                </script>
-
-        {% endif %}
-        {% endwith %}
-
-    </div>
+</div>
 {% endblock %}
 
 {% block tail %}

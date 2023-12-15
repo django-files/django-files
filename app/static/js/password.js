@@ -1,41 +1,42 @@
-// Document Dot Ready
-$(document).ready(function () {
-    // Password form handler
-    $('#password-form').on('submit', function (event) {
-        event.preventDefault()
-        if ($('#password-button').hasClass('disabled')) {
-            return
-        }
-        $.ajax({
-            url: $('#password-form').attr('action'),
-            type: 'POST',
-            data: new FormData($(this)),
-            crossDomain: true,
-            beforeSend: function () {
-                $('#login-button').addClass('disabled')
-            },
-            success: function (response) {
-                console.log('response: ' + response)
-                if (response.redirect) {
-                    console.log('response.redirect: ' + response.redirect)
-                    // window.location.href = response.redirect
-                    return window.location.replace(response.redirect)
-                }
-                location.reload()
-            },
-            error: function (xhr, status, error) {
-                console.log('xhr: ' + xhr)
-                console.log('status: ' + status)
-                console.log('error: ' + error)
-                $('#password-form input').addClass('is-invalid')
-            },
-            complete: function () {
-                console.log('complete')
-                $('#password-button').removeClass('disabled')
-            },
-            cache: false,
-            contentType: false,
-            processData: false,
-        })
+// JS for Embed Password
+
+// $('#password-form').on('submit', function (event) {
+//     window.location.replace($('#password-form').attr('action'))
+// })
+
+$('#password-form').on('submit', function (event) {
+    console.log('#password-form submit', event)
+    event.preventDefault()
+    const passwordButton = $('#password-button')
+    if (passwordButton.hasClass('disabled')) {
+        return
+    }
+    const password = $('#password').val()
+    $.ajax({
+        type: 'POST',
+        url: $('#password-form').attr('action'),
+        data: new FormData(this),
+        beforeSend: function () {
+            passwordButton.addClass('disabled')
+        },
+        success: function (data) {
+            console.log('data:', data)
+            const url = new URL(
+                window.location.origin + window.location.pathname
+            )
+            url.searchParams.append('password', password)
+            window.location.replace(url.href)
+        },
+        error: function (jqXHR) {
+            console.log('jqXHR:', jqXHR)
+            $('#password-form input').addClass('is-invalid')
+            show_toast('Invalid Password.', 'warning')
+        },
+        complete: function () {
+            passwordButton.removeClass('disabled')
+        },
+        cache: false,
+        contentType: false,
+        processData: false,
     })
 })
