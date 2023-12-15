@@ -83,17 +83,36 @@ function show_toast(message, bsClass = 'success', delay = '6000') {
 }
 
 /**
+ * Error Message responseJSON.error or jqXHR.statusText
+ * @param {jQuery.jqXHR} jqXHR
+ */
+function messageErrorHandler(jqXHR) {
+    if (jqXHR.responseJSON?.error) {
+        const message = `${jqXHR.status}: ${jqXHR.responseJSON.error}`
+        show_toast(message, 'danger')
+    } else {
+        const message = `${jqXHR.status}: ${jqXHR.statusText}`
+        show_toast(message, 'danger')
+    }
+}
+
+/**
  * Loop through form errors and display them
+ * formErrorHandler.call(this, form, jqXHR)
  * @param {jQuery} form
  * @param {jQuery.jqXHR} jqXHR
  */
-function form400handler(form, jqXHR) {
-    let data = jqXHR.responseJSON
-    console.log('jqXHR.responseJSON data:', data)
-    $(form.prop('elements')).each(function () {
-        if (Object.hasOwn(data, this.name)) {
-            $(`#${this.name}-invalid`).empty().append(data[this.name])
-            $(this).addClass('is-invalid')
-        }
-    })
+function formErrorHandler(form, jqXHR) {
+    if (jqXHR.status === 400) {
+        let data = jqXHR.responseJSON
+        console.log('jqXHR.responseJSON data:', data)
+        $(form.prop('elements')).each(function () {
+            if (Object.hasOwn(data, this.name)) {
+                $(`#${this.name}-invalid`).empty().append(data[this.name])
+                $(this).addClass('is-invalid')
+            }
+        })
+    }
+    const message = `${jqXHR.status}: ${jqXHR.statusText}`
+    show_toast(message, 'danger')
 }

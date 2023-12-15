@@ -4,6 +4,7 @@ $('#inviteForm').on('submit', function (event) {
     console.log('#inviteForm submit', event)
     event.preventDefault()
     const form = $(this)
+    console.log('form:', form)
     $.ajax({
         type: form.attr('method'),
         url: form.attr('action'),
@@ -13,11 +14,7 @@ $('#inviteForm').on('submit', function (event) {
             location.reload()
         },
         error: function (jqXHR) {
-            if (jqXHR.status === 400) {
-                form400handler.call(this, form, jqXHR)
-            }
-            const message = `${jqXHR.status}: ${jqXHR.statusText}`
-            show_toast(message, 'danger', '6000')
+            formErrorHandler.call(this, form, jqXHR)
         },
         cache: false,
         contentType: false,

@@ -6,27 +6,22 @@ const deleteShortModal = $('#delete-short-modal')
 $('#shortsForm').on('submit', function (event) {
     console.log('#shortsForm submit', event)
     event.preventDefault()
-    let data = new FormData(this)
+    const form = $(this)
+    console.log('form:', form)
+    const data = new FormData(this)
     data.forEach((value, key) => (data[key] = value))
     $.ajax({
-        type: $(this).attr('method'),
-        url: $(this).attr('action'),
+        type: form.attr('method'),
+        url: form.attr('action'),
         data: JSON.stringify(data),
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
             console.log('data:', data)
+            form.trigger('reset')
             alert(`Short Created: ${data.url}`)
             location.reload()
         },
-        error: function (jqXHR) {
-            if (jqXHR.status === 400) {
-                const message = `${jqXHR.status}: ${jqXHR.responseJSON.error}`
-                show_toast(message, 'danger', '6000')
-            } else {
-                const message = `${jqXHR.status}: ${jqXHR.statusText}`
-                show_toast(message, 'danger', '6000')
-            }
-        },
+        error: messageErrorHandler,
         cache: false,
         contentType: false,
         processData: false,
@@ -64,8 +59,7 @@ $('#short-delete-confirm').on('click', function () {
         },
         error: function (jqXHR) {
             deleteShortModal.modal('hide')
-            const message = `${jqXHR.status}: ${jqXHR.statusText}`
-            show_toast(message, 'danger', '6000')
+            messageErrorHandler(jqXHR)
         },
         cache: false,
         contentType: false,

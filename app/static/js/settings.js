@@ -34,8 +34,7 @@ $('#confirmDeleteDiscordHookBtn').on('click', function (event) {
         },
         error: function (jqXHR) {
             deleteDiscordHookModal.modal('hide')
-            const message = `${jqXHR.status}: ${jqXHR.statusText}`
-            show_toast(message, 'danger', '10000')
+            messageErrorHandler(jqXHR)
         },
         cache: false,
         contentType: false,
@@ -47,8 +46,8 @@ $('#confirmDeleteDiscordHookBtn').on('click', function (event) {
 $('#settingsForm').on('submit', function (event) {
     console.log('#settingsForm submit', event)
     event.preventDefault()
-    let form = $(this)
-    console.log(form)
+    const form = $(this)
+    console.log('form:', form)
     $.ajax({
         type: form.attr('method'),
         url: window.location.pathname,
@@ -57,21 +56,15 @@ $('#settingsForm').on('submit', function (event) {
         success: function (data) {
             console.log('data:', data)
             if (data.reload) {
-                alert(
-                    'Settings changed require reload to take effect.\nThe page will now refresh...'
-                )
+                alert('Settings changed require reload...')
                 location.reload()
             } else {
                 let message = 'Settings Saved Successfully.'
-                show_toast(message, 'success', '6000')
+                show_toast(message, 'success')
             }
         },
         error: function (jqXHR) {
-            if (jqXHR.status === 400) {
-                form400handler.call(this, form, jqXHR)
-            }
-            const message = `${jqXHR.status}: ${jqXHR.statusText}`
-            show_toast(message, 'danger', '6000')
+            formErrorHandler.call(this, form, jqXHR)
         },
         cache: false,
         contentType: false,
@@ -84,8 +77,7 @@ $('#invitesForm').on('submit', function (event) {
     console.log('#invitesForm submit', event)
     event.preventDefault()
     const form = $(this)
-    console.log(form)
-    // TODO: Simplify JSON Creation...
+    console.log('form:', form)
     const data = new FormData(this)
     data.forEach((value, key) => (data[key] = value))
     $.ajax({
@@ -98,15 +90,7 @@ $('#invitesForm').on('submit', function (event) {
             alert(`Invite Created: ${data.invite}`)
             location.reload()
         },
-        error: function (jqXHR) {
-            if (jqXHR.status === 400) {
-                const message = `${jqXHR.status}: ${jqXHR.responseJSON.error}`
-                show_toast(message, 'danger', '6000')
-            } else {
-                const message = `${jqXHR.status}: ${jqXHR.statusText}`
-                show_toast(message, 'danger', '6000')
-            }
-        },
+        error: messageErrorHandler,
         cache: false,
         contentType: false,
         processData: false,

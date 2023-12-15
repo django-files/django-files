@@ -23,6 +23,7 @@ $('#welcomeForm').on('submit', function (event) {
     event.preventDefault()
     console.log('#welcomeForm submit', event)
     const form = $(this)
+    console.log('form:', form)
     $.ajax({
         type: 'POST',
         url: form.attr('action'),
@@ -32,11 +33,7 @@ $('#welcomeForm').on('submit', function (event) {
             location.reload()
         },
         error: function (jqXHR) {
-            if (jqXHR.status === 400) {
-                form400handler.call(this, form, jqXHR)
-            }
-            const message = `${jqXHR.status}: ${jqXHR.statusText}`
-            show_toast(message, 'danger', '6000')
+            formErrorHandler.call(this, form, jqXHR)
         },
         cache: false,
         contentType: false,

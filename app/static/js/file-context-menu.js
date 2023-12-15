@@ -77,7 +77,7 @@ $('#password-unmask').on('click', function (event) {
 $('#password-copy').on('click', async function (event) {
     console.log('#password-copy click:', event)
     await navigator.clipboard.writeText($('#password').val())
-    show_toast('Password copied!', 'info', '15000')
+    show_toast('Password copied!', 'info')
 })
 
 $('#password-generate').on('click', async function (event) {
@@ -85,7 +85,7 @@ $('#password-generate').on('click', async function (event) {
     const password = genRand(12)
     $('#password').val(password)
     await navigator.clipboard.writeText(password)
-    show_toast('Password generated and copied!', 'info', '15000')
+    show_toast('Password generated and copied!', 'info')
 })
 
 // Delete File Form

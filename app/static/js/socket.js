@@ -18,7 +18,7 @@ function wsConnect() {
     socket.onopen = function (event) {
         console.log('WebSocket Connected.', event)
         if (disconnected) {
-            show_toast('Reconnected to Server!', 'success', '60000')
+            show_toast('Reconnected to Server!', 'success', '15000')
         }
     }
     // socket.onmessage = function (event) {

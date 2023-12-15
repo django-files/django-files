@@ -5,6 +5,10 @@ $('#send-paste').on('submit', function (event) {
     console.log('#send-paste submit', event)
     const formData = new FormData(this)
     const text = formData.get('text')
+    if (!text) {
+        show_toast('Text is Empty.', 'danger')
+        return
+    }
     const file = new Blob([text], { type: 'text/plain' })
     formData.delete('text')
     let name = formData.get('name').toString() || 'paste.txt'
@@ -12,6 +16,7 @@ $('#send-paste').on('submit', function (event) {
     console.log(`name: ${name}`)
     formData.append('file', file, name)
     const form = $(this)
+    console.log('form:', form)
     $.ajax({
         type: form.attr('method'),
         url: form.attr('action'),
@@ -21,15 +26,7 @@ $('#send-paste').on('submit', function (event) {
             console.log('data:', data)
             form.trigger('reset')
         },
-        error: function (jqXHR) {
-            if (jqXHR.status === 400) {
-                const message = `${jqXHR.status}: ${jqXHR.responseJSON.error}`
-                show_toast(message, 'danger', '6000')
-            } else {
-                const message = `${jqXHR.status}: ${jqXHR.statusText}`
-                show_toast(message, 'danger', '6000')
-            }
-        },
+        error: messageErrorHandler,
         cache: false,
         contentType: false,
         processData: false,

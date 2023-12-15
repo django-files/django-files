@@ -10,10 +10,7 @@ $('#updateStatsBtn').on('click', function () {
             alert('Stats Update Submitted. Page will now Reload...')
             location.reload()
         },
-        error: function (jqXHR) {
-            let message = `${jqXHR.status}: ${jqXHR.statusText}`
-            show_toast(message, 'danger', '6000')
-        },
+        error: messageErrorHandler,
         cache: false,
         contentType: false,
         processData: false,

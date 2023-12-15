@@ -5,7 +5,7 @@ $('#login-form').on('submit', function (event) {
     event.preventDefault()
     const loginButton = $('#login-button')
     if (loginButton.hasClass('disabled')) {
-        return
+        return console.warn('Double Click Prevented!')
     }
     $.ajax({
         type: 'POST',
