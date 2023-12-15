@@ -367,7 +367,6 @@ def delete_hook_ajax(request, pk):
     return HttpResponse(status=204)
 
 
-@login_required
 @csrf_exempt
 @require_http_methods(['POST'])
 def check_password_file_ajax(request, pk):
