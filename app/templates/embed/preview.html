@@ -171,8 +171,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     });
                 })
                 .catch((error) => {
-                    let message = `Error fetching {{ file.file.name }}: ${error}`;
-                    show_toast(message, 'danger');
+                    show_toast(`Error fetching {{ file.file.name }}: ${error}`, 'danger');
                 });
         </script>
     {% endif %}

@@ -5,20 +5,18 @@ const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 socket?.addEventListener('message', function (event) {
     console.log('socket.message: user.js:', event)
     let data = JSON.parse(event.data)
+    // console.log('data:', data)
     if (data.event === 'file-new') {
-        let message = `New File Upload: ${data.pk}`
-        show_toast(message, 'success', '10000')
+        const message = `New File Upload: ${data.pk}`
+        show_toast(message, 'success')
     } else if (data.event === 'file-delete') {
-        let message = `File Deleted: ${data.pk}`
-        show_toast(message, 'success', '10000')
+        const message = `File Deleted: ${data.pk}`
+        show_toast(message, 'success')
     } else if (data.event === 'message') {
         console.log(`data.message: ${data.message}`)
-        let bsclass =
-            typeof data.bsclass === 'undefined' ? 'info' : data.bsclass
-        console.log(`bsclass: ${bsclass}`)
-        let delay = typeof data.delay === 'undefined' ? '10000' : data.delay
-        console.log(`delay: ${delay}`)
-        show_toast(data.message, data.bsclass, delay)
+        const bsClass = data.bsClass || 'info'
+        const delay = data.delay || '6000'
+        show_toast(data.message, bsClass, delay)
     }
 })
 
