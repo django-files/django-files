@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
+from urllib.parse import urlencode
 
 from api.views import process_file_upload, parse_expire
 from home.models import Files, FileStats, ShortURLs
@@ -395,7 +396,10 @@ def raw_redirect_view(request, filename):
     response = HttpResponse(status=302)
     if use_s3():
         view = True
-    response['Location'] = file.get_url(view=view, download=request.GET.get('download', False))
+    url = file.get_url(view, request.GET.get('download', False))
+    if request.GET:
+        url += '&' + urlencode(request.GET)
+    response['Location'] = url
     return response
 
 

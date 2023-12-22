@@ -122,15 +122,13 @@ function formErrorHandler(form, jqXHR) {
 /**
  * DeBounce Function
  * @function debounce
- * @param {Function} func
+ * @param {Function} fn
  * @param {Number} timeout
  */
-function debounce(func, timeout = 300) {
+function debounce(fn, timeout = 300) {
     let timeoutID
     return (...args) => {
         clearTimeout(timeoutID)
-        timeoutID = setTimeout(() => {
-            func.apply(this, args)
-        }, timeout)
+        timeoutID = setTimeout(() => fn(...args), timeout)
     }
 }
