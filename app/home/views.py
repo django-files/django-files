@@ -397,8 +397,8 @@ def raw_redirect_view(request, filename):
     if use_s3():
         view = True
     url = file.get_url(view, request.GET.get('download', False))
-    if request.GET:
-        url += '&' + urlencode(request.GET)
+    if 'view' in request.GET:
+        url += '&' + urlencode({'view': 'gallery'})
     response['Location'] = url
     return response
 
