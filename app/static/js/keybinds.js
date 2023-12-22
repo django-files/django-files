@@ -2,29 +2,34 @@
 
 const keyLocations = {
     KeyA: '/uppy/',
-    KeyS: '/settings/user/',
     KeyD: '/settings/site/',
     KeyF: '/files/',
     KeyG: '/gallery/',
     KeyH: '/',
     KeyR: '/shorts/',
+    KeyS: '/settings/user/',
     KeyT: '/paste/',
-    KeyY: '/admin/settings/sitesettings/1/change/',
     KeyX: '/settings/sharex/',
+    KeyY: '/admin/settings/sitesettings/1/change/',
 }
+
+const tagNames = ['INPUT', 'TEXTAREA', 'SELECT', 'OPTION']
 
 window.addEventListener('keydown', (e) => {
     // console.log('handleKeyboard:', e)
-    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.repeat) {
+    if (
+        e.altKey ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.shiftKey ||
+        e.repeat ||
+        tagNames.includes(e.target.tagName)
+    ) {
         return
     }
-    const tagNames = ['INPUT', 'TEXTAREA', 'SELECT', 'OPTION']
-    if (tagNames.includes(e.target.tagName)) {
-        return
-    }
-    if (keyLocations[e.code]) {
-        window.location = keyLocations[e.code]
-    } else if (['KeyZ', 'KeyK'].includes(e.code)) {
+    if (['KeyZ', 'KeyK'].includes(e.code)) {
         $('#keybinds-modal').modal('toggle')
+    } else if (keyLocations[e.code]) {
+        window.location = keyLocations[e.code]
     }
 })
