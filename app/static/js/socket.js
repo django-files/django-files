@@ -1,11 +1,12 @@
 // JS for Web Sockets
 // TODO: Look Into Moving Everything Here for Auto Reconnect
 
-console.log('Connecting to WebSocket...')
-
 let disconnected = false
 let socket
 let ws
+
+console.log('Connecting to WebSocket...')
+wsConnect()
 
 function wsConnect() {
     if (ws) {
@@ -54,4 +55,3 @@ function wsConnect() {
         }
     }
 }
-wsConnect()
