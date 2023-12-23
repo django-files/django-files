@@ -12,4 +12,5 @@ urlpatterns = [
     path('recent/', views.recent_view, name='recent'),
     path('remote/', views.remote_view, name='remote'),
     path('stats/', views.stats_view, name='stats'),
+    path('delete/<path:idname>', views.delete_view, name='delete'),
 ]
