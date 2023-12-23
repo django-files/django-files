@@ -208,11 +208,11 @@ def recent_view(request):
 
 
 @csrf_exempt
-@require_http_methods(['OPTIONS', 'DELETE'])
+@require_http_methods(['DELETE'])
 @auth_from_token
 def delete_view(request, idname):
     """
-    View  /api/delete/{id or name}/
+    View  /api/delete/{id or name}
     """
     if idname.isnumeric():
         kwargs = {'id': int(idname)}
