@@ -208,7 +208,7 @@ def recent_view(request):
 
 
 @csrf_exempt
-@require_http_methods(['OPTIONS', 'DELETE', 'GET'])
+@require_http_methods(['OPTIONS', 'DELETE'])
 @auth_from_token
 def delete_view(request, idname):
     """
