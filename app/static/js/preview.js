@@ -12,6 +12,7 @@ openSidebarButton.on('click', openSidebarCallback)
 $('#closeSidebar').on('click', closeSidebarCallback)
 
 const sidebarMaxWidth = 768
+let sidebarOpen = false
 
 function domLoaded() {
     if (window.innerWidth >= sidebarMaxWidth) {
@@ -21,14 +22,17 @@ function domLoaded() {
     }
 }
 
-// TODO: Add method to know if side bar is expanded or collapsed
 function checkSize() {
     if (window.innerWidth >= sidebarMaxWidth) {
-        if (!Cookies.get('previewSidebar')) {
-            openSidebar()
+        if (!sidebarOpen) {
+            if (!Cookies.get('previewSidebar')) {
+                openSidebar()
+            }
         }
     } else {
-        closeSidebar()
+        if (sidebarOpen) {
+            closeSidebar()
+        }
     }
 }
 
@@ -43,6 +47,7 @@ function closeSidebarCallback() {
 }
 
 function openSidebar() {
+    sidebarOpen = true
     previewSidebar.css('width', '360px')
     previewSidebar.css('border-right', '1px ridge rgba(66 69 73 / 100%)')
     if (contextPlacement) {
@@ -53,6 +58,7 @@ function openSidebar() {
 }
 
 function closeSidebar() {
+    sidebarOpen = false
     previewSidebar.css('width', '0')
     previewSidebar.css('border-right', '0px')
     if (contextPlacement) {
