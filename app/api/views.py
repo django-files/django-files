@@ -7,8 +7,8 @@ import os
 import validators
 from django.core import serializers
 from django.forms.models import model_to_dict
-from django.http import JsonResponse
-from django.shortcuts import reverse, render
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, reverse, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
@@ -140,7 +140,7 @@ def shorten_view(request):
 @require_http_methods(['OPTIONS', 'GET', 'POST'])
 @auth_from_token
 @cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix='stats')
+@cache_page(cache_seconds, key_prefix='invites')
 @vary_on_headers('Authorization')
 @vary_on_cookie
 def invites_view(request):
@@ -205,6 +205,23 @@ def recent_view(request):
     data = [file.preview_url() for file in files]
     log.debug('data: %s', data)
     return JsonResponse(data, safe=False, status=200)
+
+
+@csrf_exempt
+@require_http_methods(['DELETE'])
+@auth_from_token
+def delete_view(request, idname):
+    """
+    View  /api/delete/{id or name}
+    """
+    if idname.isnumeric():
+        kwargs = {'id': int(idname)}
+    else:
+        kwargs = {'name': idname}
+    file = get_object_or_404(Files, user=request.user, **kwargs)
+    log.debug(file)
+    file.delete()
+    return HttpResponse(status=204)
 
 
 @csrf_exempt
