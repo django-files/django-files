@@ -205,42 +205,38 @@ def recent_view(request):
 
 
 @csrf_exempt
-@require_http_methods(['DELETE'])
+@require_http_methods(['DELETE', 'GET', 'OPTIONS', 'POST'])
 @auth_from_token
-def delete_view(request, idname):
+def file_view(request, idname):
     """
-    View  /api/delete/{id or name}
+    View  /api/file/{id or name}
     """
     if idname.isnumeric():
         kwargs = {'id': int(idname)}
     else:
         kwargs = {'name': idname}
     file = get_object_or_404(Files, user=request.user, **kwargs)
-    log.debug(file)
-    file.delete()
-    return HttpResponse(status=204)
-
-
-@csrf_exempt
-@require_http_methods(['POST', 'GET'])
-@auth_from_token
-def edit_view(request, idname):
-    """
-    View  /api/edit/{id or name}
-    """
-    if idname.isnumeric():
-        kwargs = {'id': int(idname)}
-    else:
-        kwargs = {'name': idname}
-    file = get_object_or_404(Files, user=request.user, **kwargs)
-    log.debug(file)
-    log.debug('file.expr: %s' % file.expr)
-    log.debug(request.POST)
-    data = get_json_body(request)
-    if not data:
-        return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
-    Files.objects.filter(id=file.id).update(**data)
-    return HttpResponse(status=204)
+    log.debug('file_view: ' + request.method + ': ' + file.name)
+    try:
+        if request.method == 'DELETE':
+            file.delete()
+            return HttpResponse(status=204)
+        elif request.method == 'POST':
+            log.debug(request.POST)
+            data = get_json_body(request)
+            if not data:
+                return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
+            Files.objects.filter(id=file.id).update(**data)
+            file = Files.objects.get(id=file.id)
+            response = json.loads(serializers.serialize('json', [file]))[0]['fields']
+            log.debug('response: %s' % response)
+            return JsonResponse(response, status=200)
+        elif request.method == 'GET':
+            response = json.loads(serializers.serialize('json', [file]))[0]['fields']
+            log.debug('response: %s' % response)
+            return JsonResponse(response, status=200)
+    except Exception as error:
+        return JsonResponse({'error': f'{error}'}, status=400)
 
 
 def get_json_body(request):
