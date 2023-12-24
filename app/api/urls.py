@@ -13,4 +13,5 @@ urlpatterns = [
     path('remote/', views.remote_view, name='remote'),
     path('stats/', views.stats_view, name='stats'),
     path('delete/<path:idname>', views.delete_view, name='delete'),
+    path('edit/<path:idname>', views.edit_view, name='edit'),
 ]

@@ -95,20 +95,16 @@ def shorten_view(request):
     """
     View  /shorten/ and /api/shorten
     """
-    body = request.body.decode()
     try:
         url = request.headers.get('url')
         vanity = request.headers.get('vanity')
         max_views = request.headers.get('max-views')
         if not url:
-            try:
-                data = json.loads(body)
-                log.debug('data: %s', data)
-                url = data.get('url', url)
-                vanity = data.get('vanity', vanity)
-                max_views = data.get('max-views', max_views)
-            except Exception as error:
-                log.debug(error)
+            data = get_json_body(request)
+            log.debug('data: %s', data)
+            url = data.get('url', url)
+            vanity = data.get('vanity', vanity)
+            max_views = data.get('max-views', max_views)
         if not url:
             return JsonResponse({'error': 'Missing Required Value: url'}, status=400)
 
@@ -149,9 +145,10 @@ def invites_view(request):
     """
     log.debug('%s - invites_view: is_secure: %s', request.method, request.is_secure())
     if request.method == 'POST':
-        body = request.body.decode()
-        data = json.loads(body)
+        data = get_json_body(request)
         log.debug('data: %s', data)
+        if not data:
+            return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
         invite = UserInvites.objects.create(
             owner=request.user,
             expire=parse(data.get('expire', 0)) or 0,
@@ -225,6 +222,36 @@ def delete_view(request, idname):
 
 
 @csrf_exempt
+@require_http_methods(['POST', 'GET'])
+@auth_from_token
+def edit_view(request, idname):
+    """
+    View  /api/edit/{id or name}
+    """
+    if idname.isnumeric():
+        kwargs = {'id': int(idname)}
+    else:
+        kwargs = {'name': idname}
+    file = get_object_or_404(Files, user=request.user, **kwargs)
+    log.debug(file)
+    log.debug('file.expr: %s' % file.expr)
+    log.debug(request.POST)
+    data = get_json_body(request)
+    if not data:
+        return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
+    Files.objects.filter(id=file.id).update(**data)
+    return HttpResponse(status=204)
+
+
+def get_json_body(request):
+    try:
+        return json.loads(request.body.decode())
+    except Exception as error:
+        log.debug(error)
+        return {}
+
+
+@csrf_exempt
 @require_http_methods(['OPTIONS', 'POST'])
 @auth_from_token
 def remote_view(request):
@@ -233,13 +260,10 @@ def remote_view(request):
     """
     log.debug('%s - remote_view: is_secure: %s', request.method, request.is_secure())
     log.debug('request.POST: %s', request.POST)
-    body = request.body.decode()
-    log.debug('body: %s', body)
-    try:
-        data = json.loads(body)
-    except Exception as error:
-        log.debug(error)
-        return JsonResponse({'error': f'{error}'}, status=400)
+    data = get_json_body(request)
+    log.debug('data: %s', data)
+    if not data:
+        return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
 
     url = data.get('url')
     log.debug('url: %s', url)
