@@ -206,10 +206,15 @@ def recent_view(request):
     amount = int(request.GET.get('amount', 10))
     log.debug('amount: %s', amount)
     files = Files.objects.filter(user=request.user).order_by('-id')[:amount]
+    log.debug('files: %s', files)
     log.debug(files)
-    data = [file.preview_url() for file in files]
-    log.debug('data: %s', data)
-    return JsonResponse(data, safe=False, status=200)
+    response = []
+    for file in files:
+        data = model_to_dict(file, exclude=['file'])
+        data['url'] = file.preview_url()
+        response.append(data)
+    log.debug('response: %s', response)
+    return JsonResponse(response, safe=False, status=200)
 
 
 @csrf_exempt
@@ -236,11 +241,11 @@ def file_view(request, idname):
                 return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
             Files.objects.filter(id=file.id).update(**data)
             file = Files.objects.get(id=file.id)
-            response = json.loads(serializers.serialize('json', [file]))[0]['fields']
+            response = model_to_dict(file, exclude=['file'])
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
         elif request.method == 'GET':
-            response = json.loads(serializers.serialize('json', [file]))[0]['fields']
+            response = model_to_dict(file, exclude=['file'])
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
     except Exception as error:
