@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render, reverse, get_object_or_404
 from django.template.loader import render_to_string
+from django.views.decorators.common import no_append_slash
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -13,7 +14,7 @@ from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
 from urllib.parse import urlencode
 
-from api.views import process_file_upload, parse_expire
+from api.views import auth_from_token, process_file_upload, parse_expire
 from home.models import Files, FileStats, ShortURLs
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
@@ -381,7 +382,9 @@ def check_password_file_ajax(request, pk):
     return HttpResponse(status=200)
 
 
+@no_append_slash
 @require_http_methods(['GET'])
+@auth_from_token(no_fail=True)
 def raw_redirect_view(request, filename):
     """
     View /raw/<path:filename>

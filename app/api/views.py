@@ -1,4 +1,3 @@
-import functools
 import httpx
 import io
 import json
@@ -14,6 +13,7 @@ from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from functools import wraps
 from pytimeparse2 import parse
 from typing import Optional, BinaryIO
 from urllib.parse import urlparse
@@ -29,20 +29,28 @@ log = logging.getLogger('app')
 cache_seconds = 60*60*4
 
 
-def auth_from_token(view):
-    @functools.wraps(view)
+def auth_from_token(view=None, no_fail=False):
+    @wraps(view)
     def wrapper(request, *args, **kwargs):
-        # TODO: Only Allow Token Auth, or else cache will prevent user switching
-        if request.user.is_authenticated:
+        if getattr(request, 'user', None) and request.user.is_authenticated:
             return view(request, *args, **kwargs)
-        authorization = request.headers.get('Authorization') or request.headers.get('Token')
+        authorization = (
+                request.headers.get('Authorization') or
+                request.headers.get('Token') or
+                request.GET.get('token')
+        )
         if authorization:
             user = CustomUser.objects.filter(authorization=authorization)
             if user:
                 request.user = user[0]
                 return view(request, *args, **kwargs)
-        return JsonResponse({'error': 'Invalid Authorization'}, status=401)
-    return wrapper
+        if not no_fail:
+            return JsonResponse({'error': 'Invalid Authorization'}, status=401)
+        return view(request, *args, **kwargs)
+    if view:
+        return wrapper
+    else:
+        return lambda func: auth_from_token(func, no_fail)
 
 
 @csrf_exempt
