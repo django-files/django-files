@@ -21,8 +21,8 @@ function wsConnect() {
         disconnected = false
         if (toast.isShown()) {
             $('#disconnected-toast-title')
-                .removeClass('text-warning')
-                .addClass('text-success')
+                .removeClass('text-danger')
+                .addClass('text-warning')
                 .text('Connected')
         }
     }
@@ -38,8 +38,8 @@ function wsConnect() {
                 setTimeout(function () {
                     disconnected = true
                     $('#disconnected-toast-title')
-                        .removeClass('text-success')
-                        .addClass('text-warning')
+                        .removeClass('text-warning')
+                        .addClass('text-danger')
                         .text('Reconnecting...')
                     toast.show()
                 }, 2 * 1000)
