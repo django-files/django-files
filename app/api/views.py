@@ -1,4 +1,3 @@
-import functools
 import httpx
 import io
 import json
@@ -14,10 +13,12 @@ from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from functools import wraps
 from pytimeparse2 import parse
 from typing import Optional, BinaryIO
 from urllib.parse import urlparse
 
+from home.tasks import clear_files_cache
 from home.models import Files, FileStats, ShortURLs
 from home.util.file import process_file
 from home.util.rand import rand_string
@@ -29,20 +30,28 @@ log = logging.getLogger('app')
 cache_seconds = 60*60*4
 
 
-def auth_from_token(view):
-    @functools.wraps(view)
+def auth_from_token(view=None, no_fail=False):
+    @wraps(view)
     def wrapper(request, *args, **kwargs):
-        # TODO: Only Allow Token Auth, or else cache will prevent user switching
-        if request.user.is_authenticated:
+        if getattr(request, 'user', None) and request.user.is_authenticated:
             return view(request, *args, **kwargs)
-        authorization = request.headers.get('Authorization') or request.headers.get('Token')
+        authorization = (
+                request.headers.get('Authorization') or
+                request.headers.get('Token') or
+                request.GET.get('token')
+        )
         if authorization:
             user = CustomUser.objects.filter(authorization=authorization)
             if user:
                 request.user = user[0]
                 return view(request, *args, **kwargs)
-        return JsonResponse({'error': 'Invalid Authorization'}, status=401)
-    return wrapper
+        if not no_fail:
+            return JsonResponse({'error': 'Invalid Authorization'}, status=401)
+        return view(request, *args, **kwargs)
+    if view:
+        return wrapper
+    else:
+        return lambda func: auth_from_token(func, no_fail)
 
 
 @csrf_exempt
@@ -95,20 +104,16 @@ def shorten_view(request):
     """
     View  /shorten/ and /api/shorten
     """
-    body = request.body.decode()
     try:
         url = request.headers.get('url')
         vanity = request.headers.get('vanity')
         max_views = request.headers.get('max-views')
         if not url:
-            try:
-                data = json.loads(body)
-                log.debug('data: %s', data)
-                url = data.get('url', url)
-                vanity = data.get('vanity', vanity)
-                max_views = data.get('max-views', max_views)
-            except Exception as error:
-                log.debug(error)
+            data = get_json_body(request)
+            log.debug('data: %s', data)
+            url = data.get('url', url)
+            vanity = data.get('vanity', vanity)
+            max_views = data.get('max-views', max_views)
         if not url:
             return JsonResponse({'error': 'Missing Required Value: url'}, status=400)
 
@@ -149,9 +154,10 @@ def invites_view(request):
     """
     log.debug('%s - invites_view: is_secure: %s', request.method, request.is_secure())
     if request.method == 'POST':
-        body = request.body.decode()
-        data = json.loads(body)
+        data = get_json_body(request)
         log.debug('data: %s', data)
+        if not data:
+            return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
         invite = UserInvites.objects.create(
             owner=request.user,
             expire=parse(data.get('expire', 0)) or 0,
@@ -201,27 +207,63 @@ def recent_view(request):
     amount = int(request.GET.get('amount', 10))
     log.debug('amount: %s', amount)
     files = Files.objects.filter(user=request.user).order_by('-id')[:amount]
+    log.debug('files: %s', files)
     log.debug(files)
-    data = [file.preview_url() for file in files]
-    log.debug('data: %s', data)
-    return JsonResponse(data, safe=False, status=200)
+    response = []
+    for file in files:
+        data = model_to_dict(file, exclude=['file'])
+        data['url'] = file.preview_url()
+        response.append(data)
+    log.debug('response: %s', response)
+    return JsonResponse(response, safe=False, status=200)
 
 
 @csrf_exempt
-@require_http_methods(['DELETE'])
+@require_http_methods(['DELETE', 'GET', 'OPTIONS', 'POST'])
 @auth_from_token
-def delete_view(request, idname):
+def file_view(request, idname):
     """
-    View  /api/delete/{id or name}
+    View  /api/file/{id or name}
     """
     if idname.isnumeric():
         kwargs = {'id': int(idname)}
     else:
         kwargs = {'name': idname}
     file = get_object_or_404(Files, user=request.user, **kwargs)
-    log.debug(file)
-    file.delete()
-    return HttpResponse(status=204)
+    log.debug('file_view: ' + request.method + ': ' + file.name)
+    try:
+        if request.method == 'DELETE':
+            file.delete()
+            return HttpResponse(status=204)
+        elif request.method == 'POST':
+            log.debug(request.POST)
+            data = get_json_body(request)
+            if not data:
+                return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
+            if 'expr' in data and not parse(data['expr']):
+                data['expr'] = ''
+            Files.objects.filter(id=file.id).update(**data)
+            file = Files.objects.get(id=file.id)
+            response = model_to_dict(file, exclude=['file'])
+            # TODO: Determine why we have to manually flush file cache here
+            #       The Website seems to flush, but not the api/recent/ endpoint
+            clear_files_cache.delay()
+            log.debug('response: %s' % response)
+            return JsonResponse(response, status=200)
+        elif request.method == 'GET':
+            response = model_to_dict(file, exclude=['file'])
+            log.debug('response: %s' % response)
+            return JsonResponse(response, status=200)
+    except Exception as error:
+        return JsonResponse({'error': f'{error}'}, status=400)
+
+
+def get_json_body(request):
+    try:
+        return json.loads(request.body.decode())
+    except Exception as error:
+        log.debug(error)
+        return {}
 
 
 @csrf_exempt
@@ -233,13 +275,10 @@ def remote_view(request):
     """
     log.debug('%s - remote_view: is_secure: %s', request.method, request.is_secure())
     log.debug('request.POST: %s', request.POST)
-    body = request.body.decode()
-    log.debug('body: %s', body)
-    try:
-        data = json.loads(body)
-    except Exception as error:
-        log.debug(error)
-        return JsonResponse({'error': f'{error}'}, status=400)
+    data = get_json_body(request)
+    log.debug('data: %s', data)
+    if not data:
+        return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
 
     url = data.get('url')
     log.debug('url: %s', url)
