@@ -18,6 +18,7 @@ from pytimeparse2 import parse
 from typing import Optional, BinaryIO
 from urllib.parse import urlparse
 
+from home.tasks import clear_files_cache
 from home.models import Files, FileStats, ShortURLs
 from home.util.file import process_file
 from home.util.rand import rand_string
@@ -239,9 +240,14 @@ def file_view(request, idname):
             data = get_json_body(request)
             if not data:
                 return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
+            if 'expr' in data and not parse(data['expr']):
+                data['expr'] = ''
             Files.objects.filter(id=file.id).update(**data)
             file = Files.objects.get(id=file.id)
             response = model_to_dict(file, exclude=['file'])
+            # TODO: Determine why we have to manually flush file cache here
+            #       The Website seems to flush, but not the api/recent/ endpoint
+            clear_files_cache.delay()
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
         elif request.method == 'GET':
