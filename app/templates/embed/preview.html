@@ -114,7 +114,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         <i class="fa-solid fa-hourglass"></i>
                     </span>
                 </p>
-                <p class="card-text mx-0 mb-0">Uploader: <img src="{{ file.user.get_avatar }}" class="rounded-circle mx-2 d-none d-sm-inline d-md-inline d-lg-inline d-xl-inline" height="26" width="26" alt="P"></a> {{ file.user.get_name }}</p>
+                <p class="card-text mx-0 mb-0"><img src="{{ file.user.get_avatar }}" class="rounded-circle mx-0 d-none d-sm-inline d-md-inline d-lg-inline d-xl-inline" height="26" width="26" alt="P"></a> {{ file.user.get_name }}</p>
                 <p class="card-text">Uploaded {{ file.date }}</p>
                 {% if file.meta_preview and file.exif %}
                     <p class="card-text text-body-secondary">
