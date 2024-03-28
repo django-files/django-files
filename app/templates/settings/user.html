@@ -17,7 +17,7 @@
     <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
         <div class="border border-success-subtle rounded-2 p-3 my-2">
 
-            <div class="row">
+            <div class="row mt-1">
                 <div class="col-md-6">
                     <label for="first_name" class="form-label">First Name</label>
                     <input type="text" class="form-control" id="first_name" name="first_name" autocomplete="given-name"
@@ -42,7 +42,7 @@
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row mt-1">
                 <div class="col-md-6">
                     <label for="default_expire" class="form-label">Default Expire</label>
                     <input type="text" class="form-control" id="default_expire" name="default_expire" autocomplete="expiration"
@@ -64,6 +64,22 @@
                     <div id="default_upload_name_format_name_format-invalid" class="invalid-feedback"></div>
                     <div id="default_upload_name_format-help" class="form-text">
                         For examples, see <a href="https://github.com/django-files/django-files#table-of-contents" target="_blank" rel="noopener">this README.md</a>.
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-1">
+                <div class="col-md-6">
+                    <label for="user_avatar_choice" class="form-label">Avatar Source</label>
+                    <select class="form-select" id="user_avatar_choice" name="user_avatar_choice"
+                        aria-describedby="user_avatar_choice-help user_avatar_choice-invalid">
+                        {% for value, display in user_avatar_choices %}
+                            <option value="{{ value }}" {% if value == user.user_avatar_choice %}selected{% endif %}>{{ display }}</option>
+                        {% endfor %}
+                    </select>
+                    <div id="user_avatar_choice_choice-invalid" class="invalid-feedback"></div>
+                    <div id="user_avatar_choice-help" class="form-text">
+                        Select the source for avatar. For details, see <a href="https://github.com/django-files/django-files#table-of-contents" target="_blank" rel="noopener">this README.md</a>.
                     </div>
                 </div>
             </div>
