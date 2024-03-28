@@ -42,6 +42,7 @@ class UserSettingsForm(forms.Form):
     default_file_private = forms.BooleanField(required=False)
     default_file_password = forms.BooleanField(required=False)
     default_upload_name_format = forms.ChoiceField(choices=CustomUser.UploadNameFormats.choices)
+    user_avatar_choice = forms.ChoiceField(choices=CustomUser.UserAvatarChoices.choices)
 
     def clean_default_color(self):
         return is_hex(self.cleaned_data['default_color'].strip().lower())

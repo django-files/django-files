@@ -7,14 +7,17 @@ from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from decouple import config
 from home.util.rand import rand_string, rand_color_hex
 from oauth.managers import DiscordWebhooksManager, UserInvitesManager
 from settings.models import SiteSettings
+from home.models import Files
 
 
 def rand_invite():
     return rand_string(16)
 
+site_settings = SiteSettings.objects.settings()
 
 class CustomUser(AbstractUser):
     TIMEZONE_CHOICES = zip(sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()))
@@ -53,15 +56,27 @@ class CustomUser(AbstractUser):
 
     def get_name(self):
         return self.first_name or self.username
+    
+    class UserAvatarChoices(models.TextChoices):
+        if site_settings.discord_client_id:
+            DISCORD = "DC", _("Discord")
+        if site_settings.github_client_id:
+            GITHUB = "GH", _("Github")
+        STORAGE = "DF", _("Local/Cloud Storage")
+
+    user_avatar_choice = models.CharField(max_length=2, choices=UserAvatarChoices.choices,
+                                          default=UserAvatarChoices.STORAGE)
 
     def get_avatar(self):
         # TODO: Let User Choose Profile Icon or Chose by Active Login
-        if hasattr(self, 'discord') and getattr(self.discord, 'avatar'):
+        if self.user_avatar_choice == "DC":
             return f'https://cdn.discordapp.com/avatars/' \
                    f'{self.discord.id}/{self.discord.avatar}.png'
-        if hasattr(self, 'github') and getattr(self.github, 'avatar'):
+        if self.user_avatar_choice == "GH":
             return self.github.avatar
-        # TODO: Let User Upload an Avatar
+        if self.user_avatar_choice == "DF":
+            avatar = Files.objects.get(avatar=True)
+            return avatar[0].meta_static_url
         return static('images/assets/default.png')
 
 

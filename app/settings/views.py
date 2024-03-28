@@ -77,6 +77,7 @@ def user_view(request):
             'webhooks': webhooks,
             'timezones': sorted(zoneinfo.available_timezones()),
             'default_upload_name_formats': CustomUser.UploadNameFormats.choices,
+            'user_avatar_choices': CustomUser.UserAvatarChoices.choices
         }
         log.debug('context: %s', context)
         return render(request, 'settings/user.html', context)
@@ -109,6 +110,7 @@ def user_view(request):
     request.user.remove_exif = form.cleaned_data['remove_exif']
     request.user.show_exif_preview = form.cleaned_data['show_exif_preview']
     request.user.default_upload_name_format = form.cleaned_data['default_upload_name_format']
+    request.user.user_avatar_choice = form.cleaned_data['user_avatar_choice']
     request.user.default_file_private = form.cleaned_data['default_file_private']
     request.user.default_file_password = form.cleaned_data['default_file_password']
     log.debug('form.cleaned_data.show_exif_preview: %s', form.cleaned_data['show_exif_preview'])
