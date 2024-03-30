@@ -1,16 +1,22 @@
+from django.core.exceptions import ObjectDoesNotExist
+
 from home.models import Files
 
 
 def process_avatar(user):
+    avatar_url = None
     if user.user_avatar_choice == "DC":
         avatar_url = f'https://cdn.discordapp.com/avatars/' \
                 f'{user.discord.id}/{user.discord.avatar}.png'
     elif user.user_avatar_choice == "GH":
         avatar_url = user.github.avatar
     elif user.user_avatar_choice == "DF":
-        avatar = Files.objects.filter(user=user, avatar=True)
-        avatar_url = avatar[0].get_meta_static_url()
-    else:
-        # we need a fallback image to return if all condtitions fail
-        avatar_url = ''
+        try:
+            avatar = Files.objects.get(user=user, avatar=True)
+            avatar_url = avatar.get_meta_static_url()
+        except ObjectDoesNotExist:
+            pass
+    if not avatar_url or avatar_url == "":
+        # if avatar_url fails to be set for any reason fallback to a safe default
+        avatar_url = '/static/default_avatar.png'
     return avatar_url
