@@ -11,7 +11,6 @@ from decouple import config
 from home.util.rand import rand_string, rand_color_hex
 from oauth.managers import DiscordWebhooksManager, UserInvitesManager
 from settings.models import SiteSettings
-from home.models import Files
 
 
 def rand_invite():
@@ -66,18 +65,6 @@ class CustomUser(AbstractUser):
 
     user_avatar_choice = models.CharField(max_length=2, choices=UserAvatarChoices.choices,
                                           default=UserAvatarChoices.STORAGE)
-
-    def get_avatar(self):
-        # TODO: Let User Choose Profile Icon or Chose by Active Login
-        if self.user_avatar_choice == "DC":
-            return f'https://cdn.discordapp.com/avatars/' \
-                   f'{self.discord.id}/{self.discord.avatar}.png'
-        if self.user_avatar_choice == "GH":
-            return self.github.avatar
-        if self.user_avatar_choice == "DF":
-            avatar = Files.objects.get(avatar=True)
-            return avatar[0].meta_static_url
-        return static('images/assets/default.png')
 
 
 class UserInvites(models.Model):
