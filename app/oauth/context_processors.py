@@ -1,4 +1,3 @@
-from multiprocessing import process
 from home.models import Files
 
 
@@ -16,8 +15,10 @@ def process_avatar(user):
         avatar_url = ''
     return avatar_url
 
+
 def current_user_avatar_url_processor(request):
     return {"current_user_avatar_url": process_avatar(request.user)}
+
 
 def current_file_avatar_url_processor(request):
     if not (filename := request.resolver_match.kwargs.get('filename')):
