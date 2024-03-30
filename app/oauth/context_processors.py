@@ -20,7 +20,7 @@ def current_user_avatar_url_processor(request):
     return {"current_user_avatar_url": process_avatar(request.user)}
 
 def current_file_avatar_url_processor(request):
-    if not (filename := request.resolver_match.kwargs['filename']):
+    if not (filename := request.resolver_match.kwargs.get('filename')):
         return {}
     file_user = Files.objects.get(name=filename).user
     return {"file_avatar_url": process_avatar(file_user)}
