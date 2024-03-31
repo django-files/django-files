@@ -5,10 +5,10 @@ from home.models import Files
 
 def process_avatar(user):
     avatar_url = None
-    if user.user_avatar_choice == "DC":
+    if user.user_avatar_choice == "DC" and user.discord:
         avatar_url = f'https://cdn.discordapp.com/avatars/' \
                 f'{user.discord.id}/{user.discord.avatar}.png'
-    elif user.user_avatar_choice == "GH":
+    elif user.user_avatar_choice == "GH" and user.github:
         avatar_url = user.github.avatar
     elif user.user_avatar_choice == "DF":
         try:
