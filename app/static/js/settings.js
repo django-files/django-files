@@ -1,6 +1,7 @@
 // JS for Site Settings
 
 const deleteDiscordHookModal = $('#deleteDiscordHookModal')
+const changeAvatarModal = $('#avatarUploadModal')
 
 // TODO: Use a proper selector
 let hookID
@@ -9,6 +10,13 @@ $('.deleteDiscordHookBtn').on('click', function (event) {
     hookID = $(this).data('hook-id')
     console.log(hookID)
     deleteDiscordHookModal.modal('show')
+})
+
+$('.uploadAvatarHookBtn').on('click', function (event) {
+    console.log('.uploadAvatarHookBtn click', event)
+    hookID = $(this).data('hook-id')
+    console.log(hookID)
+    changeAvatarModal.modal('show')
 })
 
 // Handle Confirm Delete Clicks

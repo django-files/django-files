@@ -16,6 +16,8 @@ from home.util.rand import rand_string
 from home.util.misc import anytobool
 from home.tasks import send_discord_message, new_file_websocket
 from oauth.models import CustomUser
+from django.core.exceptions import ObjectDoesNotExist
+
 
 log = logging.getLogger('app')
 
@@ -51,9 +53,20 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     else:
         if user.default_file_password:
             kwargs['password'] = rand_string()
+    #######
+    # if it is an avatar upload we want to replace the existing avatar file
+    #######
     # we want to use a temporary local file to support cloud storage cases
     # this allows us to modify the file before upload
-    file = Files(user=user, **kwargs)
+    # if it is an avatar upload we want to replace the existing avatar file
+    if kwargs.get("avatar") == "True":
+        log.info('This is an avatar upload.')
+        try:
+            file = Files.objects.get(avatar=True)
+        except ObjectDoesNotExist:
+            file = Files(user=user, **kwargs)
+    else:
+        file = Files(user=user, **kwargs)
     with tempfile.NamedTemporaryFile(suffix=os.path.basename(name)) as fp:
         fp.write(f.read())
         fp.seek(0)

@@ -15,7 +15,6 @@ def rand_invite():
     return rand_string(16)
 
 
-
 class CustomUser(AbstractUser):
     TIMEZONE_CHOICES = zip(sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()))
 

@@ -1,0 +1,68 @@
+{% load static %}
+
+<link href="{% static 'uppy/uppy.min.css' %}" rel="stylesheet">
+
+<div class="modal fade" id="avatarUploadModal" tabindex="-1" aria-labelledby="avatarUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="avatarUploadModalLabel">Upload New Avatar</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            {% comment %} <div class="modal-body">Are you sure you want to delete this file?</div> {% endcomment %}
+            <div class="modal-footer">
+                {% comment %} <button type="button" class="btn btn-danger" id="confirm-delete">
+                    Delete <i class="fa-regular fa-trash-can ms-1"></i></button> {% endcomment %}
+                    <div class="container-fluid py-3 px-4 h-100">
+                    <div id="uppy"></div>
+                    </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div> <!-- modal-content -->
+    </div> <!-- modal-dialog -->
+</div> <!-- modal -->
+
+<script type="module">
+    import {
+        Uppy,
+        Dashboard,
+        Webcam,
+        Audio,
+        ScreenCapture,
+        XHRUpload,
+    } from "{% static 'uppy/uppy.min.js' %}";
+
+    const uppy = new Uppy({ debug: true, autoProceed: false })
+        .use(Dashboard, {
+            inline: true,
+            theme: 'auto',
+            target: '#uppy',
+            showProgressDetails: true,
+            showLinkToFileUploadResult: true,
+            autoOpenFileEditor: true,
+            proudlyDisplayPoweredByUppy: false,
+            note: 'Django Files Avatar Upload',
+            height: 380,
+            width: '100%',
+            metaFields: [
+                {id: 'name', name: 'Name', placeholder: 'File Name'},
+                {id: 'Expires-At', name: 'Expires At', placeholder: 'File Expiration Time.'},
+                {id: 'info', name: 'Info', placeholder: 'Information about the file.'}
+            ],
+            browserBackButtonClose: false
+        })
+        .use(Webcam, { target: Dashboard })
+        .use(Audio, { target: Dashboard })
+        .use(ScreenCapture, { target: Dashboard })
+        .use(XHRUpload, {
+            endpoint: "{% url 'api:upload' %}",
+            headers: {
+                "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
+                "avatar": "True"
+            },
+        })
+
+    uppy.on("success", (fileCount) => {
+        console.log(`${fileCount} files uploaded`);
+    });
+</script>
