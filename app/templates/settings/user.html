@@ -74,8 +74,8 @@
                     <select class="form-select" id="user_avatar_choice" name="user_avatar_choice"
                         aria-describedby="user_avatar_choice-help user_avatar_choice-invalid">
                         {% for value, display in user_avatar_choices %}
-                            {% if not site_settings.discord_client_id and display == "Discord" and not 'DISCORD_CLIENT_ID'|get_config %}
-                            {% elif not site_settings.github_client_id and display == "Github" and not 'GITHUB_CLIENT_ID'|get_config %}
+                            {% if not site_settings.discord_client_id and display == "Discord" and not 'DISCORD_CLIENT_ID'|get_config and not user.discord %}
+                            {% elif not site_settings.github_client_id and display == "Github" and not 'GITHUB_CLIENT_ID'|get_config and not user.github %}
                             {% else %}
                             <option value="{{ value }}" {% if value == user.user_avatar_choice %}selected{% endif %}>{{ display }}</option>
                             {% endif %}
