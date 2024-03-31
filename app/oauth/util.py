@@ -18,5 +18,5 @@ def process_avatar(user):
             pass
     if not avatar_url or avatar_url == "":
         # if avatar_url fails to be set for any reason fallback to a safe default
-        avatar_url = '/static/default_avatar.png'
+        avatar_url = '/static/images/default_avatar.png'
     return avatar_url
