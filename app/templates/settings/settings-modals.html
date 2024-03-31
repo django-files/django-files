@@ -51,9 +51,7 @@
             ],
             browserBackButtonClose: false
         })
-        .use(Webcam, { target: Dashboard })
-        .use(Audio, { target: Dashboard })
-        .use(ScreenCapture, { target: Dashboard })
+        .use(Webcam, { target: Dashboard, modes: ['picture']})
         .use(XHRUpload, {
             endpoint: "{% url 'api:upload' %}",
             headers: {
