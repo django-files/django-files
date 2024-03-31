@@ -36,7 +36,7 @@ def home_view(request):
     View  /
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
-    files = Files.objects.get_request(request, avatar=False)
+    files = Files.objects.get_request(request)
     stats = FileStats.objects.get_request(request)
     shorts = ShortURLs.objects.get_request(request)
     context = {'files': files, 'stats': stats, 'shorts': shorts}
@@ -82,14 +82,14 @@ def files_view(request):
         log.debug('user.type: %s', type(user))
         if user:
             if user == "0":
-                files = Files.objects.all()
+                files = Files.objects.filtered_request(request)
             else:
-                files = Files.objects.filter(user_id=int(user), avatar=False)
+                files = Files.objects.filtered_request(user_id=int(user))
         else:
-            files = Files.objects.get_request(request, avatar=False)
+            files = Files.objects.get_request(request)
         context.update({'files': files})
     else:
-        files = Files.objects.get_request(request, avatar=False)
+        files = Files.objects.get_request(request)
         context = {'files': files}
     return render(request, 'files.html', context)
 
