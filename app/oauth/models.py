@@ -15,8 +15,6 @@ def rand_invite():
     return rand_string(16)
 
 
-site_settings = SiteSettings.objects.settings()
-
 
 class CustomUser(AbstractUser):
     TIMEZONE_CHOICES = zip(sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()))
@@ -57,10 +55,8 @@ class CustomUser(AbstractUser):
         return self.first_name or self.username
 
     class UserAvatarChoices(models.TextChoices):
-        if site_settings.discord_client_id:
-            DISCORD = "DC", _("Discord")
-        if site_settings.github_client_id:
-            GITHUB = "GH", _("Github")
+        DISCORD = "DC", _("Discord")
+        GITHUB = "GH", _("Github")
         STORAGE = "DF", _("Local/Cloud Storage")
 
     user_avatar_choice = models.CharField(max_length=2, choices=UserAvatarChoices.choices,
