@@ -84,7 +84,7 @@ def files_view(request):
             if user == "0":
                 files = Files.objects.filtered_request(request)
             else:
-                files = Files.objects.filtered_request(user_id=int(user))
+                files = Files.objects.filtered_request(request, user_id=int(user))
         else:
             files = Files.objects.get_request(request)
         context.update({'files': files})
