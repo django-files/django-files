@@ -3,7 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from home.models import Files
 
 
-def process_avatar(user):
+def get_user_avatar_url(user):
     avatar_url = None
     try:
         if user.user_avatar_choice == "DC" and user.discord:

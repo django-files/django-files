@@ -20,7 +20,7 @@ from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
 from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
-from oauth.util import process_avatar
+from oauth.util import get_user_avatar_url
 from settings.models import SiteSettings
 
 log = logging.getLogger('app')
@@ -426,7 +426,7 @@ def url_route_view(request, filename):
         'render': file.mime.split('/', 1)[0],
         "static_url": file.get_url(view=use_s3()),
         "static_meta_url": file.get_meta_static_url(),
-        "file_avatar_url": process_avatar(file.user)
+        "file_avatar_url": get_user_avatar_url(file.user)
     }
     if lock := file_lock(request, ctx=ctx):
         return lock
