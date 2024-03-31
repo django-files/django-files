@@ -32,7 +32,13 @@
         XHRUpload,
     } from "{% static 'uppy/uppy.min.js' %}";
 
-    const uppy = new Uppy({ debug: true, autoProceed: false })
+    const uppy = new Uppy({ 
+        debug: true,
+        autoProceed: false,
+        restrictions: {
+            allowedFileTypes: ['.jpeg', '.jpg', '.png', '.gif']
+        }
+    })
         .use(Dashboard, {
             inline: true,
             theme: 'auto',
