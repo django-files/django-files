@@ -62,7 +62,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     if kwargs.get("avatar") == "True":
         log.info('This is an avatar upload.')
         try:
-            file = Files.objects.get(avatar=True)
+            file = Files.objects.get(user=user, avatar=True)
         except ObjectDoesNotExist:
             file = Files(user=user, **kwargs)
     else:
