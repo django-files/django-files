@@ -60,12 +60,15 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     # this allows us to modify the file before upload
     # if it is an avatar upload we want to replace the existing avatar file
     if kwargs.get("avatar") == "True":
-        log.info('This is an avatar upload.')
+        log.debug('This is an avatar upload.')
+        # avatar should not expire
+        kwargs.pop('expire', None)
         try:
-            file = Files.objects.get(user=user, avatar=True)
+            file = Files.objects.get(user=user, **kwargs)
         except ObjectDoesNotExist:
             file = Files(user=user, **kwargs)
     else:
+        # otherwise normally create file
         file = Files(user=user, **kwargs)
     with tempfile.NamedTemporaryFile(suffix=os.path.basename(name)) as fp:
         fp.write(f.read())
