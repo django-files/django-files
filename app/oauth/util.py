@@ -12,7 +12,8 @@ def get_user_avatar_url(user):
         elif user.user_avatar_choice == "GH" and user.github:
             avatar_url = user.github.avatar
         elif user.user_avatar_choice == "DF":
-            avatar = Files.objects.filter(user=user, avatar=True)[0] # filter just in case a user users admin to set more than 1 file as avatar
+            # filter vs get just in case a user users admin to set more than 1 file as avatar
+            avatar = Files.objects.filter(user=user, avatar=True)[0]
             avatar_url = avatar.get_meta_static_url()
     except (ObjectDoesNotExist, IndexError):
         pass
