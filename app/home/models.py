@@ -31,6 +31,7 @@ class Files(models.Model):
     password = models.CharField(max_length=255, null=True, blank=True, verbose_name='File Password')
     private = models.BooleanField(default=False, verbose_name='Private File')
     objects = FilesManager()
+    avatar = models.BooleanField(default=False, help_text="Determines file is a user avatar.")
 
     def __str__(self):
         return f'<File(id={self.id} size={self.size} name={self.name})>'

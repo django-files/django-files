@@ -81,9 +81,9 @@ def files_view(request):
         log.debug('user.type: %s', type(user))
         if user:
             if user == "0":
-                files = Files.objects.all()
+                files = Files.objects.filtered_request(request)
             else:
-                files = Files.objects.filter(user_id=int(user))
+                files = Files.objects.filtered_request(request, user_id=int(user))
         else:
             files = Files.objects.get_request(request)
         context.update({'files': files})
@@ -424,7 +424,8 @@ def url_route_view(request, filename):
         'file': file,
         'render': file.mime.split('/', 1)[0],
         "static_url": file.get_url(view=use_s3()),
-        "static_meta_url": file.get_meta_static_url()
+        "static_meta_url": file.get_meta_static_url(),
+        "file_avatar_url": file.user.get_avatar_url()
     }
     if lock := file_lock(request, ctx=ctx):
         return lock

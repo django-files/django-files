@@ -101,7 +101,8 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
                 {% endif %}
                 {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
-                <p class="card-text mt-0">
+                <p class="card-text mb-2"><img src="{{ file_avatar_url }}" class="rounded-circle mx-0 d-none d-sm-inline d-md-inline d-lg-inline d-xl-inline" height="26" width="26" alt="P"></a> {{ file.user.get_name }}</p>
+                <p class="card-text mt-0 mb-0">
                     {% if 'image' in file.mime %}
                         <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
                     {% else %}
@@ -114,7 +115,6 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         <i class="fa-solid fa-hourglass"></i>
                     </span>
                 </p>
-                <p class="card-text mx-0 mb-0">Uploader: {{ file.user.get_name }}</p>
                 <p class="card-text">Uploaded {{ file.date }}</p>
                 {% if file.meta_preview and file.exif %}
                     <p class="card-text text-body-secondary">

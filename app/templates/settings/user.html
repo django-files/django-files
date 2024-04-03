@@ -17,7 +17,7 @@
     <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
         <div class="border border-success-subtle rounded-2 p-3 my-2">
 
-            <div class="row">
+            <div class="row mt-1">
                 <div class="col-md-6">
                     <label for="first_name" class="form-label">First Name</label>
                     <input type="text" class="form-control" id="first_name" name="first_name" autocomplete="given-name"
@@ -42,7 +42,7 @@
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row mt-1">
                 <div class="col-md-6">
                     <label for="default_expire" class="form-label">Default Expire</label>
                     <input type="text" class="form-control" id="default_expire" name="default_expire" autocomplete="expiration"
@@ -65,6 +65,30 @@
                     <div id="default_upload_name_format-help" class="form-text">
                         For examples, see <a href="https://github.com/django-files/django-files#table-of-contents" target="_blank" rel="noopener">this README.md</a>.
                     </div>
+                </div>
+            </div>
+
+            <div class="row mt-1">
+                <div class="col-md-6">
+                    <label for="user_avatar_choice" class="form-label">Avatar Source</label>
+                    <select class="form-select" id="user_avatar_choice" name="user_avatar_choice"
+                        aria-describedby="user_avatar_choice-help user_avatar_choice-invalid">
+                        {% for value, display in user_avatar_choices %}
+                            {% if not site_settings.discord_client_id and display == "Discord" and not 'DISCORD_CLIENT_ID'|get_config or not user.discord and display == "Discord" %}
+                            {% elif not site_settings.github_client_id and display == "Github" and not 'GITHUB_CLIENT_ID'|get_config or not user.github and display == "Github" %}
+                            {% else %}
+                            <option value="{{ value }}" {% if value == user.user_avatar_choice %}selected{% endif %}>{{ display }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <div id="user_avatar_choice_choice-invalid" class="invalid-feedback"></div>
+                    <div id="user_avatar_choice-help" class="form-text">
+                        Select the source for avatar. For details, see <a href="https://github.com/django-files/django-files#table-of-contents" target="_blank" rel="noopener">this README.md</a>.
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <a role="button" class="uploadAvatarHookBtn btn btn-lg btn-outline-info mt-4" data-hook-id="{{ data.id }}" title="Upload User Avatar">
+                        <i class="fa-solid fa-user-astronaut me-2"></i> Upload User Avatar</a>
                 </div>
             </div>
 
@@ -338,25 +362,11 @@
         <i class="fa-solid fa-key me-2"></i> Copy Token</a></p>
     <p><kbd>{{ user.authorization }}</kbd></p>
 
-    <div class="modal fade" id="deleteDiscordHookModal" tabindex="-1" aria-labelledby="exampleModalLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Delete Webhook</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">Are you sure you want to delete this webhook?</div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" id="confirmDeleteDiscordHookBtn">Delete <i
-                            class="fa-regular fa-trash-can ms-1"></i></button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'settings/user-settings-modals.html' %}
     </section>
 {% endblock %}
+
+
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/settings.js' %}"></script>

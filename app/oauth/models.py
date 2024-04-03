@@ -3,13 +3,13 @@ import zoneinfo
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.shortcuts import reverse
-from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from home.util.rand import rand_string, rand_color_hex
 from oauth.managers import DiscordWebhooksManager, UserInvitesManager
 from settings.models import SiteSettings
+from django.core.exceptions import ObjectDoesNotExist
 
 
 def rand_invite():
@@ -54,15 +54,32 @@ class CustomUser(AbstractUser):
     def get_name(self):
         return self.first_name or self.username
 
-    def get_avatar(self):
-        # TODO: Let User Choose Profile Icon or Chose by Active Login
-        if hasattr(self, 'discord') and getattr(self.discord, 'avatar'):
-            return f'https://cdn.discordapp.com/avatars/' \
-                   f'{self.discord.id}/{self.discord.avatar}.png'
-        if hasattr(self, 'github') and getattr(self.github, 'avatar'):
-            return self.github.avatar
-        # TODO: Let User Upload an Avatar
-        return static('images/assets/default.png')
+    def get_avatar_url(self):
+        avatar_url = None
+        try:
+            if self.user_avatar_choice == "DC" and hasattr(self, 'discord') and getattr(self.discord, 'avatar'):
+                avatar_url = f'https://cdn.discordapp.com/avatars/' \
+                        f'{self.discord.id}/{self.discord.avatar}.png'
+            elif self.user_avatar_choice == "GH" and hasattr(self, 'github') and getattr(self.github, 'avatar'):
+                avatar_url = self.github.avatar
+            elif self.user_avatar_choice == "DF":
+                # filter vs get just in case a user users admin to set more than 1 file as avatar
+                avatar = self.files_set.filter(avatar=True)[0]
+                avatar_url = avatar.get_meta_static_url()
+        except (ObjectDoesNotExist, IndexError):
+            pass
+        if not avatar_url or avatar_url == "":
+            # if avatar_url fails to be set for any reason fallback to a safe default
+            avatar_url = '/static/images/default_avatar.png'
+        return avatar_url
+
+    class UserAvatarChoices(models.TextChoices):
+        DISCORD = "DC", _("Discord")
+        GITHUB = "GH", _("Github")
+        STORAGE = "DF", _("Local/Cloud Storage")
+
+    user_avatar_choice = models.CharField(max_length=2, choices=UserAvatarChoices.choices,
+                                          default=UserAvatarChoices.STORAGE)
 
 
 class UserInvites(models.Model):
