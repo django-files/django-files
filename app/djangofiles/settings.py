@@ -263,8 +263,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.static',
-                'settings.context_processors.site_settings_processor',
-                'oauth.context_processors.current_user_avatar_url_processor'
+                'settings.context_processors.site_settings_processor'
             ],
         },
     },

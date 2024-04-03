@@ -62,7 +62,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     if kwargs.get("avatar") == "True":
         log.debug('This is an avatar upload.')
         # avatar should not expire
-        kwargs.pop('expire', None)
+        kwargs.pop('expr', None)
         try:
             file = Files.objects.get(user=user, **kwargs)
         except ObjectDoesNotExist:
