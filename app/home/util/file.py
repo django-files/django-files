@@ -64,7 +64,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
         # avatar should not expire
         kwargs.pop('expr', None)
         try:
-            file = Files.objects.get(user=user, **kwargs)
+            file = Files.objects.get(user=user, avatar=True)
         except ObjectDoesNotExist:
             file = Files(user=user, **kwargs)
     else:
