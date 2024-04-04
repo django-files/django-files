@@ -95,7 +95,7 @@ class Files(models.Model):
                 )
                 cache.set(f"file.urlcache.meta_static.{self.pk}", meta_static_url, 10800)
             return meta_static_url
-        return self.get_url(False)
+        return self.get_url(True)
 
     def get_gallery_url(self) -> str:
         """Generates a static url for use on a gallery page."""
@@ -111,8 +111,7 @@ class Files(models.Model):
                 # intentionally expire cache before gallery url signing expires
                 cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
             return gallery_url
-        url = self.file.url + "?view=gallery"
-        return url + self._sign_nginx_url(self.file.url).replace('?', '&')
+        return self.file.url + self._sign_nginx_url(self.file.url).replace('?', '&')
 
     def _sign_nginx_url(self, uri: str) -> str:
         if use_s3():

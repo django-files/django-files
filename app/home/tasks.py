@@ -244,57 +244,6 @@ def process_stats():
 
 
 @shared_task()
-def process_vector_stats():
-    # Process Vector Stats
-    # TODO: Add try, expect, finally for deleting keys
-    log.info('process_vector_stats')
-    client = get_redis_connection('vector')
-    _, keys = client.scan(0, '*', 1000)
-    i = 0
-    for key in keys:
-        log.info('Processing Key: %s', key)
-        raw = client.lrange(key, 0, -1)
-        if not raw:
-            log.warning('No Data for Key: %s', key)
-            client.delete(key)
-            continue
-        try:
-            data = json.loads(raw[0])
-        except Exception as error:
-            log.warning('Error Loading JSON for Key: %s: %s', key, error)
-            client.delete(key)
-            continue
-        log.info(data)
-        full_uri = data['request'].split()[1]
-        log.info('full_uri: %s', full_uri)
-        if '?' in full_uri:
-            uri, query = full_uri.split('?', 1)
-        else:
-            uri, query = full_uri, None
-        log.info('query: %s', query)
-        if query:
-            qs = urllib.parse.parse_qs(query) or {}
-            log.info('qs: %s', qs)
-            if qs.get('view'):
-                log.info('Not Processing due to QS: %s: %s', uri, qs)
-                client.delete(key)
-                continue
-        name = uri.replace('/r/', '')
-        file = Files.objects.filter(name=name)
-        if not file:
-            log.warning('404 File Not Found: %s', name)
-            client.delete(key)
-            continue
-        else:
-            file = file[0]
-        file.view += 1
-        file.save()
-        client.delete(key)
-        i += 1
-    return f'Processed {i}/{len(keys)} Files/Keys'
-
-
-@shared_task()
 def new_file_websocket(pk):
     log.debug('new_file_websocket: %s', pk)
     file = Files.objects.get(pk=pk)
