@@ -35,13 +35,13 @@ COPY --from=python /usr/local/lib/python3.11/site-packages/ /usr/local/lib/pytho
 COPY --from=python /usr/local/bin/ /usr/local/bin/
 
 RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
-    curl --proto '=https' --tlsv1.2 -sSfL https://sh.vector.dev | bash  &&\
+    curl --proto '=https' --tlsv1.2 -sSfL https://sh.vector.dev | VECTOR_VERSION=0.33.0 bash -s -- -y &&\
     groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin/nologin app  &&\
     groupadd -g 101 nginx  &&  useradd -r -d /var/cache/nginx -M -u 101 -g 101 -s /usr/sbin/nologin nginx  &&\
     mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
     chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
     apt-get -y install --no-install-recommends libmariadb-dev-compat pkg-config libmagic-dev  \
-        supervisor nginx redis-server vector=0.33.0-1  &&\
+        supervisor nginx redis-server &&\
     apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
     apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
