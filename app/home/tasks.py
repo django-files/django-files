@@ -2,11 +2,9 @@ import logging
 import os
 import httpx
 import json
-import urllib.parse
 from asgiref.sync import async_to_sync
 from celery import shared_task
 from channels.layers import get_channel_layer
-from django_redis import get_redis_connection
 from django.conf import settings
 from django.core.cache import cache
 from django.forms.models import model_to_dict
