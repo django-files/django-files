@@ -80,4 +80,4 @@ class SiteSettings(models.Model):
         return bytes_to_human_read(self.global_storage_quota)
 
     def get_default_user_storage_quota_human_read(self):
-        return bytes_to_human_read(self.global_storage_quota)
+        return bytes_to_human_read(self.default_user_storage_quota)
