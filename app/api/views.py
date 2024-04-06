@@ -81,11 +81,11 @@ def upload_view(request):
         f = request.FILES.get('file')
         if any(pq := process_storage_quotas(request.user, f.size)):
             if pq[1]:
-                error = 'Upload Failed: Global storage quota exceeded.'
+                message = 'Upload Failed: Global storage quota exceeded.'
             elif pq[0]:
-                error = 'Upload Failed: User storage quota exceeded.'
-            log.error(error)
-            return JsonResponse({'error': error}, status=400)
+                message = 'Upload Failed: User storage quota exceeded.'
+            log.error(message)
+            return JsonResponse({'error': True, 'message': message}, status=400)
         if not f and post.get('text'):
             f = io.BytesIO(bytes(post.pop('text'), 'utf-8'))
             f.name = post.pop('name', 'paste.txt') or 'paste.txt'
@@ -102,7 +102,7 @@ def upload_view(request):
         return process_file_upload(f, request.user.id, **extra_args)
     except Exception as error:
         log.exception(error)
-        return JsonResponse({'error': str(error)}, status=500)
+        return JsonResponse({'error': True, 'message': str(error)}, status=500)
 
 
 @csrf_exempt

@@ -19,20 +19,18 @@ def process_storage_quotas(user: CustomUser, size: int) -> List[bool]:
 
 def increment_storage_usage(file: Files):
     # add new file to existing storage quota
-    increase = (file.size // 1000000)
-    SiteSettings.objects.filter(id=1).update(global_storage_usage=F('global_storage_usage') + increase)
-    CustomUser.objects.filter(pk=file.user.pk).update(storage_usage=F('storage_usage') + increase)
+    SiteSettings.objects.filter(id=1).update(global_storage_usage=F('global_storage_usage') + file.size)
+    CustomUser.objects.filter(pk=file.user.pk).update(storage_usage=F('storage_usage') + file.size)
 
 
 def decrement_storage_usage(size: int, user_pk: int):
-    decrease = (size // 1000000)
-    CustomUser.objects.filter(pk=user_pk).update(storage_usage=F('storage_usage') - decrease)
-    SiteSettings.objects.filter(pk=1).update(global_storage_usage=F('global_storage_usage') - decrease)
+    CustomUser.objects.filter(pk=user_pk).update(storage_usage=F('storage_usage') - size)
+    SiteSettings.objects.filter(pk=1).update(global_storage_usage=F('global_storage_usage') - size)
 
 
 def regenerate_user_storage(user: CustomUser):
     if len(files := Files.objects.filter(user=user)) > 0:
-        user.storage_usage = (files.aggregate(Sum('size'))['size__sum'] // 1000000)
+        user.storage_usage = files.aggregate(Sum('size'))['size__sum']
     else:
         user.storage_usage = 0
     user.save()
@@ -42,7 +40,7 @@ def regenerate_global_storage():
     # refresh global storage ammount from scratch
     settings = SiteSettings.objects.get(id=1)
     if len(files := Files.objects.all()) > 0:
-        settings.global_storage_usage = (files.aggregate(Sum('size'))['size__sum'] // 1000000)
+        settings.global_storage_usage = files.aggregate(Sum('size'))['size__sum']
     else:
         settings.global_storage_usage = 0
     settings.save()

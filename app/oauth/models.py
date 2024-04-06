@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from home.util.rand import rand_string, rand_color_hex
+from home.util.misc import bytes_to_human_read
 from oauth.managers import DiscordWebhooksManager, UserInvitesManager
 from settings.models import SiteSettings
 from django.core.exceptions import ObjectDoesNotExist
@@ -44,8 +45,8 @@ class CustomUser(AbstractUser):
                                                help_text="If enabled file default to private when not specified.")
     default_file_password = models.BooleanField(default=False, verbose_name='Auto File Password',
                                                 help_text='Generates file password on upload.')
-    storage_quota = models.PositiveBigIntegerField(default=0, help_text='User\'s storage quota in megabytes.')
-    storage_usage = models.PositiveBigIntegerField(default=0, help_text='Total storage used by user in megabytes.')
+    storage_quota = models.PositiveBigIntegerField(default=0, help_text='User\'s storage quota in bytes.')
+    storage_usage = models.PositiveBigIntegerField(default=0, help_text='Total storage used by user in bytes.')
 
     def __str__(self):
         return self.get_name()
@@ -83,17 +84,17 @@ class CustomUser(AbstractUser):
     user_avatar_choice = models.CharField(max_length=2, choices=UserAvatarChoices.choices,
                                           default=UserAvatarChoices.STORAGE)
 
-    def get_storage_quota_bytes(self) -> int:
-        return self.storage_quota * 1000000
-
-    def get_storage_usage_bytes(self) -> int:
-        return self.storage_usage * 1000000
-
     def get_remaining_quota_bytes(self) -> int:
-        return (self.storage_quota - self.storage_usage) * 1000000
+        return self.storage_quota - self.storage_usage
 
     def get_storage_usage_pct(self):
         return int((self.storage_usage / self.storage_quota) * 100)
+
+    def get_storage_used_human_read(self):
+        return bytes_to_human_read(self.storage_usage)
+
+    def get_storage_quota_human_read(self):
+        return bytes_to_human_read(self.storage_quota)
 
 
 class UserInvites(models.Model):

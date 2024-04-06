@@ -23,7 +23,7 @@
                     <div class="progress" role="progressbar" id="storage_quota" name="storage_quota" aria-label="Example with label"
                     aria-valuenow="2" aria-valuemin="0" aria-valuemax="100" style="height: 35px">
                         <div class="progress-bar overflow-visible" style="width: {{ user.get_storage_usage_pct }}%">
-                            ({{ user.storage_usage }}MB/{{ user.storage_quota }}MB) {{ user.get_storage_usage_pct }}%
+                            ({{ user.get_storage_used_human_read }}/{{ user.get_storage_quota_human_read }}) {{ user.get_storage_usage_pct }}%
                         </div>
                     </div>
                 </div>

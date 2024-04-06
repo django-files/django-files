@@ -2,6 +2,7 @@ import zoneinfo
 from django.db import models
 
 from home.util.rand import rand_color_hex
+from home.util.misc import bytes_to_human_read
 from settings.managers import SiteSettingsManager
 
 
@@ -40,14 +41,14 @@ class SiteSettings(models.Model):
     latest_version = models.CharField(max_length=32, blank=True, default='')
     default_user_storage_quota = models.PositiveBigIntegerField(
         default=0,
-        help_text="Default storage capacity for new users in megabytes."
+        help_text="Default storage capacity for new users in bytes."
         )
     global_storage_quota = models.PositiveBigIntegerField(
         default=0,
-        help_text="Total storage capacity for entire django files deployment in megabytes."
+        help_text="Total storage capacity for entire django files deployment in bytes."
         )
     global_storage_usage = models.PositiveBigIntegerField(default=0,
-                                                          help_text="Current global storage usage in megabytes.")
+                                                          help_text="Current global storage usage in bytes.")
     show_setup = models.BooleanField(default=True)
     objects = SiteSettingsManager()
 
@@ -66,17 +67,17 @@ class SiteSettings(models.Model):
             self.pk = self.__class__.objects.first().pk
         super().save(*args, **kwargs)
 
-    def get_default_user_storage_quota_bytes(self):
-        return self.default_user_storage_quota * 1000000
-
-    def get_global_storage_quota_bytes(self):
-        return self.global_storage_quota * 1000000
-
-    def get_global_storage_usage_bytes(self):
-        return self.global_storage_usage * 1000000
-
     def get_remaining_global_storage_quota_bytes(self):
-        return (self.global_storage_quota - self.global_storage_usage) * 1000000
+        return self.global_storage_quota - self.global_storage_usage
 
     def get_global_storage_quota_usage_pct(self) -> int:
         return int((self.global_storage_usage / self.global_storage_quota) * 100)
+
+    def get_global_storage_usage_human_read(self):
+        return bytes_to_human_read(self.global_storage_usage)
+
+    def get_global_storage_quota_human_read(self):
+        return bytes_to_human_read(self.global_storage_quota)
+
+    def get_default_user_storage_quota_human_read(self):
+        return bytes_to_human_read(self.global_storage_quota)

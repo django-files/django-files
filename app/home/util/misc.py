@@ -10,3 +10,23 @@ def anytobool(value):
         return True
     logging.debug('FAIL')
     return False
+
+
+def human_read_to_byte(size):
+    try:
+        int(size)
+        return size
+    except ValueError:
+        pass
+    factors = {'KB': 1000, 'MB': 1000000, 'GB': 1000000000, 'TB': 1000000000}
+    if (unit := size[-2:].upper()) in factors:
+        return factors[unit]*int(size[:-2])
+
+
+def bytes_to_human_read(size):
+    factors = ['B', 'KB', 'MB', 'GB', 'TB']
+    factor = 0
+    while size > 1000:
+        factor += 1
+        size = size // 1000
+    return f'{size} {factors[factor]}'

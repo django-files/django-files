@@ -3,7 +3,7 @@ import validators
 import zoneinfo
 from django import forms
 from oauth.models import CustomUser
-from settings.utils import human_read_to_mbyte
+from home.util.misc import human_read_to_byte
 from django.core.exceptions import ValidationError
 from pytimeparse2 import parse
 
@@ -26,7 +26,7 @@ class SiteSettingsForm(forms.Form):
         data = self.cleaned_data['global_storage_quota']
         if not data:
             return ''
-        quota_bytes = human_read_to_mbyte(data)
+        quota_bytes = human_read_to_byte(data)
         if not quota_bytes:
             raise ValidationError('Invalid byte value.')
         return quota_bytes
@@ -35,7 +35,7 @@ class SiteSettingsForm(forms.Form):
         data = self.cleaned_data['default_user_storage_quota']
         if not data:
             return ''
-        quota_bytes = human_read_to_mbyte(data)
+        quota_bytes = human_read_to_byte(data)
         if not quota_bytes:
             raise ValidationError('Invalid byte value.')
         return quota_bytes
