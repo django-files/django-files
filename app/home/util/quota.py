@@ -26,7 +26,7 @@ def increment_storage_usage(file: Files):
 
 def decrement_storage_usage(size: int, user_pk: int):
     print(f'[{ user_pk }]Bytes to remove from storage counter { size }')
-    decrease = ((size // 1000000))
+    decrease = (size // 1000000)
     print(f'TO BE REDUCED BY: { decrease }')
     CustomUser.objects.filter(pk=user_pk).update(storage_usage=F('storage_usage') - decrease)
     SiteSettings.objects.filter(pk=1).update(global_storage_usage=F('global_storage_usage') - decrease)
