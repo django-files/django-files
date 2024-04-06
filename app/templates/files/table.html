@@ -23,4 +23,21 @@
     {% endfor %}
 </table>
 
+<div id="media-outer" class="d-none">
+    <img id="media-image" src="{% static 'images/assets/loading.gif' %}" alt="" class="d-block img-thumbnail rounded border-white mx-auto mw-100">
+</div>
+
+{% block head %}
+    <style type="text/css">
+        #media-outer {
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+{% endblock %}
+
+{% block tail %}
+    <script type="text/javascript" src="{% static 'dist/popper/popper.min.js' %}"></script>
+{% endblock %}
+
 {% include 'files/ctx-modals.html' %}

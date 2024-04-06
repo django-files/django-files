@@ -67,6 +67,12 @@ gulp.task('moment', () => {
         .pipe(gulp.dest('app/static/dist/moment'))
 })
 
+gulp.task('popper', () => {
+    return gulp
+        .src('node_modules/@popperjs/core/dist/umd/popper.min.js')
+        .pipe(gulp.dest('app/static/dist/popper'))
+})
+
 gulp.task('swagger-ui', () => {
     return gulp
         .src([
@@ -92,6 +98,7 @@ gulp.task(
         'js-cookie',
         'jquery',
         'moment',
+        'popper',
         'swagger-ui',
         'swagger-yaml'
     )

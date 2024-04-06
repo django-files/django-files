@@ -2,7 +2,7 @@
 {% load home_tags %}
 
 {% if file.file %}
-<tr id="file-{{ file.id }}">
+<tr id="file-{{ file.id }}" data-raw-url="{% url 'home:url-raw-redirect' file.file.name %}">
 {#  <!-- 0: ID --> #}
     <td class="d-none d-sm-table-cell text-center align-middle">
         {{ file.id }}

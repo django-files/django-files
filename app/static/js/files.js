@@ -58,3 +58,57 @@ $('#user').on('change', function (event) {
         location.href = url.toString()
     }
 })
+
+const mediaOuter = document.getElementById('media-outer')
+const mediaImage = document.getElementById('media-image')
+const loadingImage = '/static/images/assets/loading.gif'
+
+const virtualElement = {
+    getBoundingClientRect: generateGetBoundingClientRect(),
+}
+
+const instance = Popper.createPopper(virtualElement, mediaOuter)
+
+document.addEventListener('mousemove', ({ clientX: x, clientY: y }) => {
+    virtualElement.getBoundingClientRect = generateGetBoundingClientRect(x, y)
+    instance.update()
+})
+
+function generateGetBoundingClientRect(x = 0, y = 0) {
+    return () => ({
+        width: 0,
+        height: 0,
+        top: y,
+        right: x,
+        bottom: y,
+        left: x,
+    })
+}
+
+document.querySelectorAll('tr[id*="file-"]').forEach((el) => {
+    el.addEventListener('mouseover', onMouseOver)
+    el.addEventListener('mouseout', onMouseOut)
+})
+
+function onMouseOver(event) {
+    console.debug('onMouseOver', event)
+    instance.update()
+    const tr = event.target.closest('tr')
+    console.log('tr:', tr)
+    console.log('url:', tr.dataset.rawUrl)
+    const imageExtensions = /\.(gif|ico|jpeg|jpg|png|svg|webp)$/i
+    if (tr.dataset.rawUrl.match(imageExtensions)) {
+        mediaImage.src = loadingImage
+        mediaImage.src = tr.dataset.rawUrl
+        mediaOuter.classList.remove('d-none')
+    } else {
+        mediaOuter.classList.add('d-none')
+        mediaImage.src = loadingImage
+    }
+}
+
+function onMouseOut(event) {
+    console.debug('onMouseOut', event)
+    mediaOuter.classList.add('d-none')
+    mediaImage.src = loadingImage
+}
