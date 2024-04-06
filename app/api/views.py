@@ -1,3 +1,4 @@
+from copyreg import remove_extension
 import httpx
 import io
 import json
@@ -5,6 +6,7 @@ import logging
 import os
 import validators
 from django.core import serializers
+from django.contrib import messages
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
@@ -23,6 +25,7 @@ from home.models import Files, FileStats, ShortURLs
 from home.util.file import process_file
 from home.util.rand import rand_string
 from home.util.misc import anytobool
+from home.util.quota import process_storage_quotas
 from oauth.models import CustomUser, UserInvites
 from settings.models import SiteSettings
 
@@ -78,6 +81,13 @@ def upload_view(request):
     log.debug(request.FILES)
     try:
         f = request.FILES.get('file')
+        if any(pq := process_storage_quotas(request.user, f.size)):
+            if pq[1]:
+                error = 'Upload Failed: Global storage quota exceeded.'
+            elif pq[0]:
+                error = 'Upload Failed: User storage quota exceeded.'
+            log.error(error)
+            return JsonResponse({'error': error}, status=400)
         if not f and post.get('text'):
             f = io.BytesIO(bytes(post.pop('text'), 'utf-8'))
             f.name = post.pop('name', 'paste.txt') or 'paste.txt'

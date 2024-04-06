@@ -32,7 +32,18 @@
     <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
         {% if user.is_superuser %}
             <div class="border border-warning-subtle rounded-2 p-3 my-2">
-                <div class="row">
+                {% if user.storage_quota %}
+                <div class="row mt-1">
+                    <div class="col-md-6">
+                        <label for="storage_quota" class="form-label">Global Storage Quota Usage</label>
+                        <div class="progress" role="progressbar" id="storage_quota" name="storage_quota" aria-label="Example with label"
+                        aria-valuenow="2" aria-valuemin="0" aria-valuemax="100" style="height: 35px">
+                            <div class="progress-bar overflow-visible" style="width: {{ site_settings.get_global_storage_quota_usage_pct }}%">({{ site_settings.global_storage_usage }}MB/{{ site_settings.global_storage_quota }}MB) {{ site_settings.get_global_storage_quota_usage_pct }}%</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="row mt-2">
                     <div class="col-md-6">
                         <label for="site_url" class="form-label">Site URL</label>
                         <input type="text" class="form-control" id="site_url" name="site_url" placeholder=""
@@ -52,7 +63,23 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <label for="global_storage_quota" class="form-label">Global Storage Quota</label>
+                        <input class="form-control" id="global_storage_quota" name="global_storage_quota"
+                               value="{{ site_settings.global_storage_quota }}">
+                        <div id="global_storage_quota-invalid" class="global_storage_quota-feedback"></div>
+                        <div id="global_storage_quota-help" class="form-text">Storage quota total storage used in megabytes.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="default_user_storage_quota " class="form-label">User Default Storage Quota</label>
+                        <input class="form-control" id="default_user_storage_quota" name="default_user_storage_quota"
+                               value="{{ site_settings.default_user_storage_quota }}">
+                        <div id="default_user_storage_quota-invalid" class="invalid-feedback"></div>
+                        <div id="default_user_storage_quota-help" class="form-text">Default per user storage quota in megabytes.</div>
+                    </div>
+                </div>
+                <div class="row mt-2">
                     <div class="col-md-6">
                         <label for="timezone" class="form-label">Global Timezone</label>
                         <input class="form-control" list="timezoneOptions" id="timezone" name="timezone" autocomplete="timezone"
@@ -66,7 +93,7 @@
                         <div id="timezone-help" class="form-text">Timezone for Anonymous Users.</div>
                     </div>
                 </div>
-                <div class='row'>
+                <div class='row mt-2'>
                     <div class="mb-3">
                         <label for="site_description" class="form-label">Site Description</label>
                         <textarea class="form-control" id="site_description" name="site_description" rows="2" >{{ site_settings.site_description }}</textarea>

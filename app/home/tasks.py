@@ -7,6 +7,7 @@ from asgiref.sync import async_to_sync
 from celery import shared_task
 from channels.layers import get_channel_layer
 from django_redis import get_redis_connection
+from django.db.models import Sum
 from django.conf import settings
 from django.core.cache import cache
 from django.forms.models import model_to_dict
@@ -71,7 +72,7 @@ def app_startup():
         users = CustomUser.objects.all()
         if user := users.filter(username=os.environ.get('USERNAME')):
             user[0].set_password(os.environ.get('PASSWORD'))
-            log.info('Password Ensured for user: %s', user.username)
+            log.info('Password Ensured for user: %s', user[0].username)
         else:
             user = CustomUser.objects.create_superuser(
                 username=os.environ.get('USERNAME'),
@@ -156,7 +157,7 @@ def clear_stats_cache():
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 2, 'countdown': 30})
 def refresh_gallery_static_urls_cache():
-    # Process file stats
+    # Refresh cached gallery files to handle case where url signing expired
     log.info('----- START gallery cache refresh -----')
     if use_s3:
         files = Files.objects.all()
