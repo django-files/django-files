@@ -30,7 +30,7 @@ class SiteSettingsForm(forms.Form):
         if not quota_bytes:
             raise ValidationError('Invalid byte value.')
         return quota_bytes
-    
+
     def clean_default_user_storage_quota(self):
         data = self.cleaned_data['default_user_storage_quota']
         if not data:
@@ -65,7 +65,6 @@ class UserSettingsForm(forms.Form):
     default_upload_name_format = forms.ChoiceField(choices=CustomUser.UploadNameFormats.choices)
     user_avatar_choice = forms.ChoiceField(choices=CustomUser.UserAvatarChoices.choices)
 
-
     def clean_default_color(self):
         return is_hex(self.cleaned_data['default_color'].strip().lower())
 
@@ -83,7 +82,7 @@ class UserSettingsForm(forms.Form):
         if not expire:
             raise ValidationError('Invalid expiration value.')
         return data
-    
+
 
 class WelcomeForm(forms.Form):
     username = forms.CharField(max_length=128, strip=True)

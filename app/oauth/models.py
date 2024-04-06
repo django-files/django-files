@@ -82,18 +82,18 @@ class CustomUser(AbstractUser):
 
     user_avatar_choice = models.CharField(max_length=2, choices=UserAvatarChoices.choices,
                                           default=UserAvatarChoices.STORAGE)
-    
+
     def get_storage_quota_bytes(self) -> int:
         return self.storage_quota * 1000000
-    
+
     def get_storage_usage_bytes(self) -> int:
         return self.storage_usage * 1000000
-    
+
     def get_remaining_quota_bytes(self) -> int:
         return (self.storage_quota - self.storage_usage) * 1000000
-    
+
     def get_storage_usage_pct(self):
-        return (self.storage_usage / self.storage_quota) * 100
+        return int((self.storage_usage / self.storage_quota) * 100)
 
 
 class UserInvites(models.Model):

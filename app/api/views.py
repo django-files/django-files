@@ -1,4 +1,3 @@
-from copyreg import remove_extension
 import httpx
 import io
 import json
@@ -6,7 +5,6 @@ import logging
 import os
 import validators
 from django.core import serializers
-from django.contrib import messages
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404

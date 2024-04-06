@@ -38,9 +38,16 @@ class SiteSettings(models.Model):
     s3_cdn = models.CharField(max_length=128, blank=True, default='',
                               help_text='Replaces s3 hostname on urls to allow cdn use in front of s3 bucket.')
     latest_version = models.CharField(max_length=32, blank=True, default='')
-    default_user_storage_quota = models.PositiveBigIntegerField(default=0, help_text="Default storage capacity for new users in megabytes.")
-    global_storage_quota = models.PositiveBigIntegerField(default=0, help_text="Total storage capacity for entire django files deployment in megabytes.")
-    global_storage_usage = models.PositiveBigIntegerField(default=0, help_text="Current global storage usage in megabytes.")
+    default_user_storage_quota = models.PositiveBigIntegerField(
+        default=0,
+        help_text="Default storage capacity for new users in megabytes."
+        )
+    global_storage_quota = models.PositiveBigIntegerField(
+        default=0,
+        help_text="Total storage capacity for entire django files deployment in megabytes."
+        )
+    global_storage_usage = models.PositiveBigIntegerField(default=0,
+                                                          help_text="Current global storage usage in megabytes.")
     show_setup = models.BooleanField(default=True)
     objects = SiteSettingsManager()
 
@@ -64,12 +71,12 @@ class SiteSettings(models.Model):
 
     def get_global_storage_quota_bytes(self):
         return self.global_storage_quota * 1000000
-    
+
     def get_global_storage_usage_bytes(self):
         return self.global_storage_usage * 1000000
-    
+
     def get_remaining_global_storage_quota_bytes(self):
         return (self.global_storage_quota - self.global_storage_usage) * 1000000
-    
+
     def get_global_storage_quota_usage_pct(self) -> int:
         return int((self.global_storage_usage / self.global_storage_quota) * 100)

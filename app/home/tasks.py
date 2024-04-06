@@ -7,7 +7,6 @@ from asgiref.sync import async_to_sync
 from celery import shared_task
 from channels.layers import get_channel_layer
 from django_redis import get_redis_connection
-from django.db.models import Sum
 from django.conf import settings
 from django.core.cache import cache
 from django.forms.models import model_to_dict
@@ -18,6 +17,7 @@ from pytimeparse2 import parse
 
 from home.util.storage import use_s3
 from home.models import Files, FileStats, ShortURLs
+from home.util.quota import regenerate_all_storage_values
 from oauth.models import CustomUser
 from settings.models import SiteSettings
 from oauth.models import DiscordWebhooks
@@ -79,6 +79,7 @@ def app_startup():
                 password=os.environ.get('PASSWORD'),
             )
             log.info('Custom User Created: %s', user.username)
+    regenerate_all_storage_values()
     return 'app_startup - finished'
 
 

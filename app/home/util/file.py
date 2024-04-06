@@ -15,6 +15,7 @@ from home.models import Files
 from home.util.image import ImageProcessor
 from home.util.rand import rand_string
 from home.util.misc import anytobool
+from home.util.quota import increment_storage_usage
 from home.tasks import send_discord_message, new_file_websocket
 from oauth.models import CustomUser
 
@@ -99,6 +100,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     log.debug('file.file.name: %s', file.file.name)
     file.name = file.file.name
     file.save()
+    increment_storage_usage(file)
     new_file_websocket.apply_async(args=[file.pk], priority=0)
     send_discord_message.delay(file.pk)
     return file
