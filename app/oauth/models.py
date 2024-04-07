@@ -96,6 +96,12 @@ class CustomUser(AbstractUser):
     def get_storage_quota_human_read(self):
         return bytes_to_human_read(self.storage_quota)
 
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            settings = SiteSettings.objects.get(id=1)
+            self.storage_quota = settings.default_user_storage_quota
+        super(CustomUser, self).save(*args, **kwargs)
+
 
 class UserInvites(models.Model):
     id = models.AutoField(primary_key=True)
