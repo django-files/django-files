@@ -25,18 +25,18 @@ class SiteSettingsForm(forms.Form):
     def clean_global_storage_quota(self):
         data = self.cleaned_data['global_storage_quota']
         if not data:
-            return ''
+            return 0
         quota_bytes = human_read_to_byte(data)
-        if not quota_bytes:
+        if not isinstance(quota_bytes, int):
             raise ValidationError('Invalid byte value.')
         return quota_bytes
 
     def clean_default_user_storage_quota(self):
         data = self.cleaned_data['default_user_storage_quota']
         if not data:
-            return ''
+            return 0
         quota_bytes = human_read_to_byte(data)
-        if not quota_bytes:
+        if not isinstance(quota_bytes, int):
             raise ValidationError('Invalid byte value.')
         return quota_bytes
 

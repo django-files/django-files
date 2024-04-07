@@ -1,4 +1,5 @@
 import logging
+from math import log10, floor
 
 
 def anytobool(value):
@@ -12,20 +13,28 @@ def anytobool(value):
     return False
 
 
-def human_read_to_byte(size) -> int:
+def human_read_to_byte(size):
     try:
         return int(size)
     except ValueError:
         pass
-    factors = {'KB': 1000, 'MB': 1000000, 'GB': 1000000000, 'TB': 1000000000}
-    if (unit := size[-2:].upper()) in factors:
-        return int(factors[unit]*round(float(size[:-2]), 2))
+    factors = {'B': 0, 'KB': 1, 'MB': 2, 'GB': 3, 'TB': 4, 'PB': 5, 
+               'K': 1, 'M': 2, 'G': 3, 'T': 4, 'P': 5}
+    try:
+        if not any(c.isdigit() for c in size[-2:]):
+            unit, size = size[-2:], size[:-2]
+        elif not any(c.isdigit() for c in size[-1:]):
+            unit, size = size[-1:], size[:-1]
+        unit, size = unit.strip().upper(), size.strip()
+        return int(float(size)* pow(1000, factors[unit]))
+    except ValueError:
+        # if we are unable to extract float, the input is invalid, form will raise validation error on None
+        return
 
 
-def bytes_to_human_read(size):
-    factors = ['B', 'KB', 'MB', 'GB', 'TB']
-    factor = 0
-    while size > 1000:
-        factor += 1
-        size = size / 1000
-    return f'{round(size, 2)} {factors[factor]}'
+def bytes_to_human_read(size) -> str:
+    if size:
+        factors = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
+        factor = floor(log10(size)/3)
+        return f'{size * pow(10, -factor * 3):.2f} {factors[factor]}'
+    return '0'

@@ -32,7 +32,7 @@
     <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
         {% if user.is_superuser %}
             <div class="border border-warning-subtle rounded-2 p-3 my-2">
-                {% if user.storage_quota %}
+                {% if site_settings.global_storage_quota %}
                 <div class="row mt-1">
                     <div class="col-md-6">
                         <label for="storage_quota" class="form-label">Global Storage Quota Usage</label>
@@ -71,14 +71,14 @@
                         <input class="form-control" id="global_storage_quota" name="global_storage_quota"
                                value="{{ site_settings.get_global_storage_quota_human_read }}">
                         <div id="global_storage_quota-invalid" class="global_storage_quota-feedback"></div>
-                        <div id="global_storage_quota-help" class="form-text">Storage quota total storage used in megabytes.</div>
+                        <div id="global_storage_quota-help" class="form-text">Total storage quota for this deployment. 0 is unlimited.</div>
                     </div>
                     <div class="col-md-6">
                         <label for="default_user_storage_quota " class="form-label">User Default Storage Quota</label>
                         <input class="form-control" id="default_user_storage_quota" name="default_user_storage_quota"
                                value="{{ site_settings.get_default_user_storage_quota_human_read }}">
                         <div id="default_user_storage_quota-invalid" class="invalid-feedback"></div>
-                        <div id="default_user_storage_quota-help" class="form-text">Default per user storage quota in megabytes.</div>
+                        <div id="default_user_storage_quota-help" class="form-text">Default per user storage quota. 0 is unlimited.</div>
                     </div>
                 </div>
                 <div class="row mt-2">

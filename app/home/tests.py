@@ -265,6 +265,25 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.goto(f'{self.live_server_url}/404')
         self.screenshot(page, 'Error-404-authed')
 
+        print('--- test_quotas ---')
+        page.goto(f'{self.live_server_url}/settings/site/')
+        page.get_by_label('Global Storage Quota').fill('750KB')
+        page.locator('#save-settings').click()
+        page.wait_for_timeout(timeout=500)
+        page.reload()
+        self.screenshot(page, 'Site Settings with Global Quota Near Full')
+
+        page.goto(f'{self.live_server_url}/uppy/')
+        with page.expect_file_chooser() as fc_info:
+            page.locator('.uppy-DashboardTab-iconMyDevice').click()
+        file_chooser = fc_info.value
+        file_chooser.set_files(".assets/an225.jpg")
+        page.locator('.uppy-c-btn-primary').click()
+        page.wait_for_timeout(timeout=500)
+        self.screenshot(page, 'Upload Failed by Global Quota')
+
+
+        ###### LOGOUT HAPPENS HERE #############
         page.goto(f'{self.live_server_url}/')
         page.locator('#navbarDropdown').click()
         page.locator('.log-out').click()
