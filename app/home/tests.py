@@ -282,8 +282,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Upload Failed by Global Quota')
 
-
-        ###### LOGOUT HAPPENS HERE #############
+        # LOGOUT HAPPENS HERE
         page.goto(f'{self.live_server_url}/')
         page.locator('#navbarDropdown').click()
         page.locator('.log-out').click()

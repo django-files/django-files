@@ -18,7 +18,7 @@ def human_read_to_byte(size):
         return int(size)
     except ValueError:
         pass
-    factors = {'B': 0, 'KB': 1, 'MB': 2, 'GB': 3, 'TB': 4, 'PB': 5, 
+    factors = {'B': 0, 'KB': 1, 'MB': 2, 'GB': 3, 'TB': 4, 'PB': 5,
                'K': 1, 'M': 2, 'G': 3, 'T': 4, 'P': 5}
     try:
         if not any(c.isdigit() for c in size[-2:]):
@@ -26,7 +26,7 @@ def human_read_to_byte(size):
         elif not any(c.isdigit() for c in size[-1:]):
             unit, size = size[-1:], size[:-1]
         unit, size = unit.strip().upper(), size.strip()
-        return int(float(size)* pow(1000, factors[unit]))
+        return int(float(size) * pow(1000, factors[unit]))
     except ValueError:
         # if we are unable to extract float, the input is invalid, form will raise validation error on None
         return
