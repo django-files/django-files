@@ -37,9 +37,9 @@
                     <div class="col-md-6">
                         <label for="storage_quota" class="form-label">Global Storage Quota Usage</label>
                         <div class="progress" role="progressbar" id="storage_quota" name="storage_quota" aria-label="Example with label"
-                        aria-valuenow="2" aria-valuemin="0" aria-valuemax="100" style="height: 35px">
-                            <div class="progress-bar overflow-visible" style="width: {{ site_settings.get_global_storage_quota_usage_pct }}%">
-                                ({{ site_settings.get_global_storage_usage_human_read }}/{{ site_settings.get_global_storage_quota_human_read }}) {{ site_settings.get_global_storage_quota_usage_pct }}%
+                        aria-valuenow="2" aria-valuemin="0" aria-valuemax="100" style="height: 35px; font-size: large">
+                            <div class="progress-bar overflow-visible {% if site_settings.get_global_storage_quota_usage_pct > 95 %}bg-danger{% elif site_settings.get_global_storage_quota_usage_pct > 85 %}bg-warning{% endif %}" style="width: {{ site_settings.get_global_storage_quota_usage_pct }}%">
+                                <b>({{ site_settings.get_global_storage_usage_human_read }}/{{ site_settings.get_global_storage_quota_human_read }}) {{ site_settings.get_global_storage_quota_usage_pct }}%</b>
                             </div>
                         </div>
                     </div>

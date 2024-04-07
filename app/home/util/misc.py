@@ -12,15 +12,14 @@ def anytobool(value):
     return False
 
 
-def human_read_to_byte(size):
+def human_read_to_byte(size) -> int:
     try:
-        int(size)
-        return size
+        return int(size)
     except ValueError:
         pass
     factors = {'KB': 1000, 'MB': 1000000, 'GB': 1000000000, 'TB': 1000000000}
     if (unit := size[-2:].upper()) in factors:
-        return factors[unit]*int(size[:-2])
+        return int(factors[unit]*round(float(size[:-2]),2))
 
 
 def bytes_to_human_read(size):
@@ -28,5 +27,5 @@ def bytes_to_human_read(size):
     factor = 0
     while size > 1000:
         factor += 1
-        size = size // 1000
-    return f'{size} {factors[factor]}'
+        size = size / 1000
+    return f'{round(size, 2)} {factors[factor]}'
