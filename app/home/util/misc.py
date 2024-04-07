@@ -19,7 +19,7 @@ def human_read_to_byte(size) -> int:
         pass
     factors = {'KB': 1000, 'MB': 1000000, 'GB': 1000000000, 'TB': 1000000000}
     if (unit := size[-2:].upper()) in factors:
-        return int(factors[unit]*round(float(size[:-2]),2))
+        return int(factors[unit]*round(float(size[:-2]), 2))
 
 
 def bytes_to_human_read(size):
