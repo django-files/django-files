@@ -5,32 +5,32 @@
 [![Coverage](https://img.shields.io/codacy/coverage/7c41f4f6526c4233ba1304bfb45981c4?label=Coverage&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/dashboard)
 [![GitHub release (with filter)](https://img.shields.io/github/v/release/django-files/django-files?logo=github&label=Release)](https://github.com/django-files/django-files/releases/latest)
 [![](https://repository-images.githubusercontent.com/672712475/52cf00a8-31de-4b0a-8522-63670bb4314a)](https://github.com/django-files/django-files)
+
 # Django Files
 
-A Self-Hosted Django File Manager for Uploading and Sharing;
-designed to work with client apps such as [ShareX](https://github.com/ShareX/ShareX) and
-[Flameshot](https://github.com/flameshot-org/flameshot). Django Files is currently 
-functional but **Under Active Development**. Expect breaking changes until an official 
-[release](https://github.com/django-files/django-files/releases) is made.
+A Self-Hosted Sharing Focused File Manager;
+designed to work with client apps such as [ShareX](https://github.com/ShareX/ShareX),
+[Flameshot](https://github.com/flameshot-org/flameshot) and [iOS Shortcuts](https://support.apple.com/guide/shortcuts/welcome/ios). Django Files is currently **Under Active Development**. Expect breaking changes until an official
+major version [release](https://github.com/django-files/django-files/releases) is made.
 
 Please open a [Feature Request](https://github.com/django-files/django-files/discussions/new?category=feature-requests)
 or submit an [Issue](https://github.com/django-files/django-files/issues/new) for any bugs.
 
 ## Table of Contents
 
-*   [Overview](#overview)
-*   [Running](#running)
+-   [Overview](#overview)
+-   [Running](#running)
     -   [Docker Run](#docker-run)
     -   [Docker Compose](#docker-compose)
-*   [Features](#features)
-*   [Screen Shots](#screen-shots)
-*   [Usage](#usage)
+-   [Features](#features)
+-   [Screen Shots](#screen-shots)
+-   [Usage](#usage)
     -   [Files](#files)
     -   [Short URL](#short-urls)
-*   [Variables](#variables)
-*   [Database](#database)
-*   [Dev Deploy](#dev-deploy)
-*   [Frameworks](#frameworks)
+-   [Variables](#variables)
+-   [Database](#database)
+-   [Dev Deploy](#dev-deploy)
+-   [Frameworks](#frameworks)
 
 ## Overview
 
@@ -45,18 +45,20 @@ or UI using [Uppy](https://uppy.io/).
 > **Warning**
 >
 > This is currently in Beta.  
-> Expect breaking changes without migrations.  
+> Expect breaking changes without migrations.
 
 For Extra Options See: [Variables](#variables)
 
 ### Default Login Credentials
+
+You can and should override the default credentials with environment variables or settings.env.
 
 -   **Username:** `admin`
 -   **Password:** `12345`
 
 ### Docker Run:
 
-You must use a volume mounted to `/data/media` to store files, database and sessions. 
+You must use a volume mounted to `/data/media` to store files, database and sessions.
 
 Short one-liner to run in foreground:
 
@@ -83,23 +85,24 @@ docker run --name "django-files" -d --restart unless-stopped  \
 ```
 
 ### Docker Compose:
-You must use `media_dir` or mount a volume to `/data/media` to store files, database, and sessions. 
+
+You must use `media_dir` or mount a volume to `/data/media` to store files (if not using s3), the database(if using sqlite), and sessions.
 To use a local mount, replace `media_dir` with `/path/to/folder` you want to store the data locally
-and remove the `volumes` section from the bottom. Default username/passwors is `admin/2345`
+and remove the `volumes` section from the bottom.
 
 ```yaml
 version: '3'
 
 services:
-  django-files:
-    image: ghcr.io/django-files/django-files:latest
-    volumes:
-      - media_dir:/data/media
-    ports:
-      - "80:80"
+    django-files:
+        image: ghcr.io/django-files/django-files:latest
+        volumes:
+            - media_dir:/data/media
+        ports:
+            - '80:80'
 
 volumes:
-  media_dir:
+    media_dir:
 ```
 
 Or Manually Specify a Username and Password:
@@ -108,18 +111,18 @@ Or Manually Specify a Username and Password:
 version: '3'
 
 services:
-  django-files:
-    image: ghcr.io/django-files/django-files:latest
-    environment:
-      USERNAME: "cooluser"
-      PASSWORD: "secretpassword"
-    volumes:
-      - media_dir:/data/media
-    ports:
-      - "80:80"
+    django-files:
+        image: ghcr.io/django-files/django-files:latest
+        environment:
+            USERNAME: 'cooluser'
+            PASSWORD: 'secretpassword'
+        volumes:
+            - media_dir:/data/media
+        ports:
+            - '80:80'
 
 volumes:
-  media_dir:
+    media_dir:
 ```
 
 Then Finally:
@@ -134,76 +137,84 @@ For a Docker Swarm and Traefik example, see: [docker-compose-prod.yaml](docker-c
 ## Features
 
 Quick Rundown of Available Features. Many more features are in-progress and not listed here.
-Eventually all features will be added to this list. 
-You can find some planned features and known issues on the [TODO.md](TODO.md). Until then, feel free to 
+You can find some planned features and known issues on the [TODO.md](TODO.md). Until then, feel free to
 [Submit a Feature Request](https://github.com/django-files/django-files/discussions/new?category=feature-requests).
 
 ### Core
-*   Local Storage with Optional S3 Storage
-*   Ready-to-use ShareX and Flameshot scripts
-*   Google Chrome and Mozilla Firefox Web Extension
-*   Optional Duo Two-Factor Authentication
-*   Optional Sentry Error Reporting
+
+-   Local or S3 file storage
+-   Ready-to-use ShareX and Flameshot scripts
+-   Google Chrome and Mozilla Firefox Web Extension
+-   Optional Duo Two-Factor Authentication
+-   Optional Sentry Error Reporting
+-   Optional user and global storage quotas
+-   Optional public upload function
 
 ### Auth
-*   Multiple Users, Local, and Optional OAuth
-*   Connect account to any configured OAuth Service
-*   Configure OAuth Services from the UI (no restart required)
-*   Supports: Discord, GitHub
+
+-   Multiple Users, Local, and Optional OAuth
+-   Connect existing accounts to configured OAuth Services
+-   Configure OAuth Services from the UI (no restart required)
+-   Oauth Currently Supports: Discord, GitHub, [Request Another](https://github.com/django-files/django-files/discussions/new?category=feature-requests)
 
 ### UI Features
-*   Home Page; with Overview and Stats
-*   Stats Page; with Stats and Graphs (WIP)
-*   Gallery; to Preview Files
-*   Upload; with Drag and Drop
-*   Files; View and Delete
-*   Short URLs; View, Create, and Delete Shorts
-*   Settings; Configure Settings via UI
-*   Django Admin to Manage all data for Superusers
-*   Preview Page for Embeds with optional file metadata
+
+-   Home Page; with Overview and Stats
+-   Stats Page; with Stats and Graphs (WIP)
+-   Gallery; to Preview Image Files
+-   Upload; with Drag and Drop
+-   Files; View and Delete
+-   Short URLs; View, Create, and Delete Shorts
+-   Settings; Configure Settings via UI
+-   Django Admin to Manage all data for Superusers
+-   Preview Page for Embeds with optional file metadata
 
 ### User Settings
-*   ShareX File and URL Configuration
-*   Flameshot Script
-*   Example Scripts
-*   Default Expiration for Files
-*   Remove EXIF Data on Upload OR Remove EXIF GPS Only
-*   Custom Embed Color
-*   Custom Navbar Colors
-*   Connect to OAuth Account (if oauth configured)
+
+-   ShareX File and URL Configuration Generator
+-   Upload Automation Scripts: Flameshot Script, Other Example Scripts
+-   Per User Default Expiration for Files
+-   Metadata control: Remove EXIF Data on Upload OR Remove EXIF GPS Only
+-   Theme Customization: Custom Embed Color and Navbar Colors
+-   Avatars: Select local or oauth sourced avatar.
 
 ### Site Settings
-*   Site URL, Title, Description, Theme Color
-*   Enable Public Uploads at `/upload`
-*   Enable OAuth Registration (if oauth configured)
-*   Enable Two-Factor Registration (if duo configured)
+
+-   Site URL, Title, Description, Theme Color
+-   Enable OAuth Registration (if oauth configured)
+-   Enable Two-Factor Registration (if duo configured)
 
 ### Files
-*   File Expiration
-*   View Counting
-*   EXIF Metadata Preview
-*   Private Files (Beta)
-*   Password-Protected Files (Beta)
+
+-   File Expiration
+-   View Counting
+-   EXIF Metadata Preview
+-   Private Files
+-   Password-Protected Files
+-   Syntax highligting for code/text files.
 
 ### FileStats
-*   Total Files
-*   Total Size
-*   Total Short URLs
-*   Total Views (WIP)
-*   Individual MIME Type Stats
+
+-   Total Files
+-   Total Size
+-   Total Short URLs
+-   Total Views
+-   Individual MIME Type Stats
 
 ### Short URLs
-*   Vanity URLs
-*   View Counting
-*   Max Views
+
+-   Vanity URLs
+-   Use Counting
+-   Max Uses
 
 ### External
-*   Firefox Extension:https://addons.mozilla.org/addon/django-files
-*   Chrome Extension: https://chrome.google.com/webstore/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej
+
+-   Firefox Extension:https://addons.mozilla.org/addon/django-files
+-   Chrome Extension: https://chrome.google.com/webstore/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej
 
 ## Screen Shots
 
-There are some Screen Shots available on the GitHub Pages site by selecting 
+There are some Screen Shots available on the GitHub Pages site by selecting
 [Screen Shots](https://django-files.github.io/screenshots.html) from the menu.
 
 -   [https://django-files.github.io/](https://django-files.github.io/)
@@ -215,25 +226,27 @@ Django Files is backwards compatible with
 client upload settings.
 
 ### Files
+
 Upload Endpoint: `/api/upload/`  
 Response Type: JSON
 
 ```json
 {
-  "files": ["full-url"],
-  "url": "full-url",
-  "name": "file-name",
-  "size": "size-bytes"
+    "files": ["full-url"],
+    "url": "full-url",
+    "name": "file-name",
+    "size": "size-bytes"
 }
 ```
 
 ### Short URLs
+
 Upload Endpoint: `/api/shorten/`  
 Response Type: JSON
 
 ```json
 {
-  "url": "full-short-url"
+    "url": "full-short-url"
 }
 ```
 
@@ -242,46 +255,44 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 ## Variables
 
 > **Important**
-> 
+>
 > **NO VARIABLES ARE REQUIRED!** All are optional.
 >
 > OAuth may be configured from the UI.  
-> AWS/Duo/Sentry **require** environment variables.  
+> AWS/Duo/Sentry **require** environment variables.
 
-| Variable                  | Description       | Example                                              |
-|---------------------------|-------------------|------------------------------------------------------|
-| SECRET                    | App Secret        | `JYGTKLztZxVdu5NXuhXGaSkLJosiiQyBhFJ4LAHrJ5YHigQqq7` |
-| SITE_URL                  | Site URL          | `https://example.com`                                |
-| USERNAME                  | Local Username    | `admin`                                              |
-| PASSWORD                  | Local Password    | `PSZX7TgiSg6aB6sZ`                                   |
-| SUPER_USERS               | Discord User IDs  | `111150265075298304,111148006983614464`              |
-| DISCORD_CLIENT_ID         | Discord Client ID | `1135676900124135484`                                |
-| DISCORD_CLIENT_SECRET     | Discord Secret    | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
-| GITHUB_CLIENT_ID          | GitHub Client ID  | `1135676900124135484`                                |
-| GITHUB_CLIENT_SECRET      | GitHub Secret     | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
-| OAUTH_REDIRECT_URL        | Discord Redirect  | `https://example.com/oauth/callback/`                |
-| AWS_REGION_NAME           | AWS Region Name   | `us-east-1`                                          |
-| AWS_ACCESS_KEY_ID         | AWS IAM User Key  | `AKIEAKADFGASDFASGSDAFSDF`                           |
-| AWS_SECRET_ACCESS_KEY     | AWS IAM Secret    | `eVJsrhftrv2fcwyYcy323Sfhe5svy5436r557`              |
-| AWS_STORAGE_BUCKET_NAME   | Name of s3 bucket | `my-s3-bucket`                                       |
-| STATIC_QUERYSTRING_EXPIRE | static link expire| `300`                                                |
-| AWS_S3_CDN_URL            | proxy or cdn url  | `https://examples3cdndomain.com`                     |
-| DUO_API_HOST              | DUO API Host      | `api-abc123.duosecurity.com`                         |
-| DUO_CLIENT_ID             | DUO Client ID     | `nmoNmuLM72WB3RsNkwuv`                               |
-| DUO_CLIENT_SECRET         | DUO Secret        | `nmoNmuLM72WB3RsNkwuvnmoNmuLM72WB3RsNkwuv`           |
-| SENTRY_URL                | Sentry URL        | `https://a5cb357a@o133337.ingest.sentry.io/1234567`  |
-| SENTRY_ENVIRONMENT        | Sentry ENV        | `prod`                                               |
+| Variable                  | Description        | Example                                              |
+| ------------------------- | ------------------ | ---------------------------------------------------- |
+| SECRET                    | App Secret         | `JYGTKLztZxVdu5NXuhXGaSkLJosiiQyBhFJ4LAHrJ5YHigQqq7` |
+| SITE_URL                  | Site URL           | `https://example.com`                                |
+| USERNAME                  | Local Username     | `admin`                                              |
+| PASSWORD                  | Local Password     | `PSZX7TgiSg6aB6sZ`                                   |
+| SUPER_USERS               | Discord User IDs   | `111150265075298304,111148006983614464`              |
+| DISCORD_CLIENT_ID         | Discord Client ID  | `1135676900124135484`                                |
+| DISCORD_CLIENT_SECRET     | Discord Secret     | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
+| GITHUB_CLIENT_ID          | GitHub Client ID   | `1135676900124135484`                                |
+| GITHUB_CLIENT_SECRET      | GitHub Secret      | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
+| OAUTH_REDIRECT_URL        | Discord Redirect   | `https://example.com/oauth/callback/`                |
+| AWS_REGION_NAME           | AWS Region Name    | `us-east-1`                                          |
+| AWS_ACCESS_KEY_ID         | AWS IAM User Key   | `AKIEAKADFGASDFASGSDAFSDF`                           |
+| AWS_SECRET_ACCESS_KEY     | AWS IAM Secret     | `eVJsrhftrv2fcwyYcy323Sfhe5svy5436r557`              |
+| AWS_STORAGE_BUCKET_NAME   | Name of s3 bucket  | `my-s3-bucket`                                       |
+| STATIC_QUERYSTRING_EXPIRE | static link expire | `300`                                                |
+| AWS_S3_CDN_URL            | proxy or cdn url   | `https://examples3cdndomain.com`                     |
+| DUO_API_HOST              | DUO API Host       | `api-abc123.duosecurity.com`                         |
+| DUO_CLIENT_ID             | DUO Client ID      | `nmoNmuLM72WB3RsNkwuv`                               |
+| DUO_CLIENT_SECRET         | DUO Secret         | `nmoNmuLM72WB3RsNkwuvnmoNmuLM72WB3RsNkwuv`           |
+| SENTRY_URL                | Sentry URL         | `https://a5cb357a@o133337.ingest.sentry.io/1234567`  |
+| SENTRY_ENVIRONMENT        | Sentry ENV         | `prod`                                               |
 
 ## Database
 
-No changes or additional configuration is required for `sqlite3`.
-
-*   sqlite3 - **default** - zero configuration, works out of the box
-*   mysql - must set up and maintain your own database
-*   postgresql - must set up and maintain your own database
+-   sqlite3 - **default** - zero configuration, works out of the box
+-   mysql - must set up and maintain your own database
+-   postgresql - must set up and maintain your own database
 
 | Variable      | Description                          |
-|---------------|--------------------------------------|
+| ------------- | ------------------------------------ |
 | DATABASE_TYPE | `sqlite3` or `mysql` or `postgresql` |
 | DATABASE_NAME | Database name                        |
 | DATABASE_USER | Database username                    |
@@ -320,14 +331,23 @@ docker compose logs -f
 docker compose down --remove-orphans
 ```
 
+Auto restarting dev deployment using settings.env for config.
+
+```text
+_file="docker-compose-dev.yaml";while true;do docker compose -f "${_file}" down --remove-orphans;sep 10;docker compose -f "${_file}" up --build --remove-orphans -d --force-recreate;docker compose -f "${_file}" logs -f;echo sleep 1;sleep 1;done
+```
+
 ## Frameworks/Credits
 
-*   Django (4.x) https://www.djangoproject.com/
-*   Celery (5.x) https://docs.celeryproject.org/
-*   Font Awesome (6.x) http://fontawesome.io/
-*   Bootstrap (5.3) http://getbootstrap.com/
-*   Uppy (3.x) https://uppy.io/
+-   Python (3.11) https://www.python.org/
+-   Django (4.x) https://www.djangoproject.com/
+-   Celery (5.x) https://docs.celeryproject.org/
+-   Font Awesome (6.x) http://fontawesome.io/
+-   Bootstrap (5.3) http://getbootstrap.com/
+-   Uppy (3.x) https://uppy.io/
+-   Highlight.js (11.x) https://highlightjs.org/
+-   Datatables (1.13.x ) https://datatables.net/
+-   Swagger (5.x) https://swagger.io/
 
----
 [Feature Requests](https://github.com/django-files/django-files/discussions/new?category=feature-requests) |
-[Issues](https://github.com/django-files/django-files/issues/new) 
+[Issues](https://github.com/django-files/django-files/issues/new)
