@@ -22,7 +22,7 @@ from home.tasks import clear_files_cache
 from home.models import Files, FileStats, ShortURLs
 from home.util.file import process_file
 from home.util.rand import rand_string
-from home.util.misc import anytobool
+from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
 from oauth.models import CustomUser, UserInvites
 from settings.models import SiteSettings
@@ -171,6 +171,7 @@ def invites_view(request):
             expire=parse(data.get('expire', 0)) or 0,
             max_uses=data.get('max_uses', 1),
             super_user=anytobool(data.get('super_user', False)),
+            storage_quota=human_read_to_byte(data.get('storage_quota', None))
         )
         log.debug(invite)
         log.debug(model_to_dict(invite))

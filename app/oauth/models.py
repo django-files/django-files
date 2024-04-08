@@ -97,7 +97,8 @@ class CustomUser(AbstractUser):
         return bytes_to_human_read(self.storage_quota)
 
     def save(self, *args, **kwargs):
-        if not self.pk:
+        if not self.pk and self.storage_quota is None:
+            # user creation or if invite did not specify quota
             settings = SiteSettings.objects.get(id=1)
             self.storage_quota = settings.default_user_storage_quota
         super(CustomUser, self).save(*args, **kwargs)
@@ -114,6 +115,8 @@ class UserInvites(models.Model):
     super_user = models.BooleanField(default=False, verbose_name='Super', help_text='Invited Users are Super Users.')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Invite Created Date.')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='Invite Updated Date.')
+    storage_quota = models.PositiveBigIntegerField(default=None, null=True, blank=True,
+                                                   help_text='Futureser\'s storage quota in bytes.')
     objects = UserInvitesManager()
 
     def __str__(self):
@@ -162,6 +165,12 @@ class UserInvites(models.Model):
             return SiteSettings.objects.settings().site_url + uri
         else:
             return uri
+
+    def get_storage_quota_human_read(self):
+        if self.storage_quota is None:
+            # we want this only when its not set, and not when its 0
+            return
+        return bytes_to_human_read(self.storage_quota)
 
 
 class Discord(models.Model):
