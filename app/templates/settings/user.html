@@ -67,8 +67,16 @@
                     </div>
                 </div>
             </div>
-
+            <hr class="mt-4 mb-4"/>
             <div class="row mt-1">
+                <div class="col-md-2 d-flex align-items-center justicy-content-center">
+                <img src="{{ user.get_avatar_url }}" class="rounded-circle mx-5" height="96" width="96" alt="P"></a>
+                </div>
+                <div class="col-md-4 d-flix justify-content-left">
+                    <a role="button" class="uploadAvatarHookBtn btn btn-lg btn-outline-info mt-4" data-hook-id="{{ data.id }}" title="Upload User Avatar">
+                        <i class="fa-solid fa-user-astronaut me-2"></i> Upload User Avatar</a>
+                </div>
+                {% if not site_settings.discord_client_id and display == "Discord" and not 'DISCORD_CLIENT_ID'|get_config or not user.discord and display == "Discord" and not site_settings.github_client_id and display == "Github" and not 'GITHUB_CLIENT_ID'|get_config or not user.github and display == "Github" %}
                 <div class="col-md-6">
                     <label for="user_avatar_choice" class="form-label">Avatar Source</label>
                     <select class="form-select" id="user_avatar_choice" name="user_avatar_choice"
@@ -86,12 +94,9 @@
                         Select the source for avatar. For details, see <a href="https://github.com/django-files/django-files#table-of-contents" target="_blank" rel="noopener">this README.md</a>.
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <a role="button" class="uploadAvatarHookBtn btn btn-lg btn-outline-info mt-4" data-hook-id="{{ data.id }}" title="Upload User Avatar">
-                        <i class="fa-solid fa-user-astronaut me-2"></i> Upload User Avatar</a>
-                </div>
+                {% endif %}
             </div>
-
+            <hr class="mt-4 mb-4"/>
             <div class="row my-2 pt-3">
                 <h4>File Defaults</h4>
                 <div class="col mx-sm-4 fs-5">
