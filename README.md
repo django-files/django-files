@@ -27,6 +27,8 @@ or submit an [Issue](https://github.com/django-files/django-files/issues/new) fo
 -   [Usage](#usage)
     -   [Files](#files)
     -   [Short URL](#short-urls)
+    -   [User Settings](#user-settings)
+    -   [Site Settings](#site-settings)
 -   [Variables](#variables)
 -   [Database](#database)
 -   [Dev Deploy](#dev-deploy)
@@ -249,8 +251,36 @@ Response Type: JSON
     "url": "full-short-url"
 }
 ```
-
 You can parse the URL with JSON keys `url` or Zipline style `files[0]`
+
+### User Settings
+- Avatar: Can be reuploaded if set to Local/Cloud.
+- Avatar Source: If to use oauth avatars, or local avatars. (Oauth avatars cannot be changed via django files.)
+- First Name: User's first name, for personaliation of username display.
+- Timezone: User's timezone, will show times in user's local time when logged in.
+- Default Expire: The default file expiration for files uploaded with out an expiration for this user.
+- Default Upload Format: The default file name format for files uploaded without a specific file name format.
+- Strip All EXIF Data: Strips all exif metadata from images on upload. (Changes do not apply to existing uploads)
+- Strip GPS EXIF Data: Strips GPS meta data from images on upload. (Changes do not apply to existing uploads)
+- Private Files: Make uploads private by default unless otherwise specified. (Changes do not apply to existing uploads)
+- Password Protected File: Make uploads password protected by default unless otherwise specified. (Changes do not apply to existing uploads)
+- Enabled EXIF Embeds: If to show exif metadata on unfurls/embeds.
+- Appearance Embed Color: Color of embeds/unfurls for shared links.
+- Appearance Nav Colors: Color of navbar for this user and anonymous users viewing shared user files.
+- Discord Webhooks: Discord webhooks to trigger when a file is uploaded.
+
+
+### Site Settings
+
+- Site URL: The site url to use, used to generate links.
+- Site Title: Site title in browser and unfurls.
+- Global Storage Quota: The storage quota for the entire django files deployment.
+- User Default Storage Quota: The default storage quota for new users without a specified quota.
+- Timezone: global timezone for django files deployment. Default TZ anonymous users see.
+- Site Description: Site description shown on unfurled links for clients that show url unfurls.
+- Enable Public Uploads: /public : Anonymous users can upload.
+- Enable Oauth Registration: Allows ANY user to sign up via oauth login.
+
 
 ## Variables
 
