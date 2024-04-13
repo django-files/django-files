@@ -68,7 +68,9 @@ class SiteSettings(models.Model):
         super().save(*args, **kwargs)
 
     def get_remaining_global_storage_quota_bytes(self):
-        return self.global_storage_quota - self.global_storage_usage
+        if self.global_storage_quota:
+            return self.global_storage_quota - self.global_storage_usage
+        return 0
 
     def get_global_storage_quota_usage_pct(self) -> int:
         return int((self.global_storage_usage / self.global_storage_quota) * 100)

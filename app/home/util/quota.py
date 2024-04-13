@@ -7,13 +7,16 @@ from settings.models import SiteSettings
 
 
 def process_storage_quotas(user: CustomUser, size: int) -> List[bool]:
+    # returns true if quota exceeded
     settings = SiteSettings.objects.get(id=1)
     user_quota = False
     global_quota = False
-    if user.get_remaining_quota_bytes() < size:
+    if (user_quota_bytes := user.get_remaining_quota_bytes()) != 0 and user_quota_bytes < size:
         user_quota = True
-    if settings.get_remaining_global_storage_quota_bytes() < size:
+    if (global_quota_bytes := settings.get_remaining_global_storage_quota_bytes()) != 0 and global_quota_bytes < size:
         global_quota = True
+    print(global_quota_bytes, user_quota_bytes)
+    print(size)
     return [user_quota, global_quota]
 
 

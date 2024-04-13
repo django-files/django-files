@@ -85,8 +85,10 @@ class CustomUser(AbstractUser):
                                           default=UserAvatarChoices.STORAGE)
 
     def get_remaining_quota_bytes(self) -> int:
-        return self.storage_quota - self.storage_usage
-
+        if self.storage_quota:
+            return self.storage_quota - self.storage_usage
+        return 0
+    
     def get_storage_usage_pct(self):
         return int((self.storage_usage / self.storage_quota) * 100)
 
