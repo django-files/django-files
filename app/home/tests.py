@@ -201,7 +201,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         self.screenshot(page, 'Settings-User')
 
         page.locator('#show_exif_preview').click()
-        page.locator('#save-settings').click()
+        page.reload()
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-User-save-settings')
 
@@ -218,7 +218,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         self.screenshot(page, 'Public-disabled-redirect')
 
         page.locator('#pub_load').click()
-        page.locator('#save-settings').click()
+        page.reload()
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Settings-Site-save-settings')
 
@@ -268,7 +268,6 @@ class PlaywrightTest(StaticLiveServerTestCase):
         print('--- test_quotas ---')
         page.goto(f'{self.live_server_url}/settings/site/')
         page.get_by_label('Global Storage Quota').fill('750KB')
-        page.locator('#save-settings').click()
         page.wait_for_timeout(timeout=500)
         page.reload()
         self.screenshot(page, 'Site Settings with Global Quota Near Full')
