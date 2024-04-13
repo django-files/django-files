@@ -63,11 +63,19 @@ const mediaOuter = document.getElementById('media-outer')
 const mediaImage = document.getElementById('media-image')
 const loadingImage = '/static/images/assets/loading.gif'
 
+// let mediaWidth = parseInt(window.innerWidth * 0.5)
+// mediaImage.style.maxWidth = `${mediaWidth}px`
+mediaImage.style.maxWidth = '320px'
+
 const virtualElement = {
     getBoundingClientRect: generateGetBoundingClientRect(),
 }
 
 const instance = Popper.createPopper(virtualElement, mediaOuter)
+
+mediaImage.onload = function (event) {
+    instance.update()
+}
 
 document.addEventListener('mousemove', ({ clientX: x, clientY: y }) => {
     virtualElement.getBoundingClientRect = generateGetBoundingClientRect(x, y)
@@ -78,14 +86,15 @@ function generateGetBoundingClientRect(x = 0, y = 0) {
     return () => ({
         width: 0,
         height: 0,
-        top: y,
+        top: y + 23,
         right: x,
         bottom: y,
         left: x,
     })
 }
 
-document.querySelectorAll('tr[id*="file-"]').forEach((el) => {
+document.querySelectorAll('tr[id*="file-"]').forEach((element) => {
+    const el = element.querySelector('.file-link')
     el.addEventListener('mouseover', onMouseOver)
     el.addEventListener('mouseout', onMouseOut)
 })

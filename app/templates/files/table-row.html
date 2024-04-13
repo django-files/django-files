@@ -8,12 +8,12 @@
         {{ file.id }}
     </td>
 {#  <!-- 1: Name --> #}
-    <td class="align-middle">
+    <td class="align-middle file-name">
         <span class="d-none d-sm-inline">
             <a class="link-body-emphasis clip" role="button" data-clipboard-text="{{ site_settings.site_url }}{{ file.preview_uri }}">
                 <i class="fa-regular fa-clipboard ms-2"></i></a>
         </span>
-        <a class="link-body-emphasis" role="button" href="{{ file.preview_uri }}">
+        <a class="link-body-emphasis file-link" role="button" href="{{ file.preview_uri }}">
             {{ file.name }}</a>
     </td>
 {#  <!-- 2: Size --> #}
