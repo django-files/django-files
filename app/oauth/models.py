@@ -88,7 +88,7 @@ class CustomUser(AbstractUser):
         if self.storage_quota:
             return self.storage_quota - self.storage_usage
         return 0
-    
+
     def get_storage_usage_pct(self):
         return int((self.storage_usage / self.storage_quota) * 100)
 
