@@ -193,18 +193,19 @@ def invite_view(request, invite=None):
         form = UserForm(request.POST)
         if not form.is_valid():
             return JsonResponse(form.errors, status=400)
-
         log.debug('username: %s', form.cleaned_data['username'])
         log.debug('password: %s', form.cleaned_data['password'])
         if invite.super_user:
             user = CustomUser.objects.create_superuser(
                 username=form.cleaned_data['username'],
                 password=form.cleaned_data['password'],
+                storage_quota=invite.storage_quota,
             )
         else:
             user = CustomUser.objects.create_user(
                 username=form.cleaned_data['username'],
                 password=form.cleaned_data['password'],
+                storage_quota=invite.storage_quota,
             )
         log.debug('user: %s', user)
         if not invite.use_invite(user.id):

@@ -17,3 +17,4 @@ node_modules/
 app/static/admin/
 app/static/debug_toolbar/
 app/static/django_extensions/
+.python_history

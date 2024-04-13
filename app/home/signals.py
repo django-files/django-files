@@ -7,6 +7,7 @@ from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache
 from home.tasks import app_startup, delete_file_websocket, send_success_message
 from home.models import Files, FileStats, ShortURLs
 from oauth.models import DiscordWebhooks
+from home.util.quota import decrement_storage_usage
 
 
 @worker_ready.connect
@@ -17,6 +18,7 @@ def run_startup_task(sender, **kwargs):
 @receiver(pre_delete, sender=Files)
 def files_delete_signal(sender, instance, **kwargs):
     data = model_to_dict(instance, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta'])
+    decrement_storage_usage(instance.file.size, instance.user.pk)
     instance.file.delete(True)
     delete_file_websocket.apply_async(args=[data, instance.user.id], priority=0)
 

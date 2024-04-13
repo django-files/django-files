@@ -3,6 +3,7 @@ import validators
 import zoneinfo
 from django import forms
 from oauth.models import CustomUser
+from home.util.misc import human_read_to_byte
 from django.core.exceptions import ValidationError
 from pytimeparse2 import parse
 
@@ -18,6 +19,26 @@ class SiteSettingsForm(forms.Form):
     two_factor = forms.BooleanField(required=False)
     duo_auth = forms.BooleanField(required=False)
     s3_bucket_name = forms.CharField(max_length=128, required=False)
+    global_storage_quota = forms.CharField(max_length=128, required=False)
+    default_user_storage_quota = forms.CharField(max_length=128, required=False)
+
+    def clean_global_storage_quota(self):
+        data = self.cleaned_data['global_storage_quota']
+        if not data:
+            return 0
+        quota_bytes = human_read_to_byte(data)
+        if not isinstance(quota_bytes, int):
+            raise ValidationError('Invalid byte value.')
+        return quota_bytes
+
+    def clean_default_user_storage_quota(self):
+        data = self.cleaned_data['default_user_storage_quota']
+        if not data:
+            return 0
+        quota_bytes = human_read_to_byte(data)
+        if not isinstance(quota_bytes, int):
+            raise ValidationError('Invalid byte value.')
+        return quota_bytes
 
     def clean_site_color(self):
         return is_hex(self.cleaned_data['site_color'].strip().lower())
@@ -59,7 +80,7 @@ class UserSettingsForm(forms.Form):
             return ''
         expire = parse(data)
         if not expire:
-            raise ValidationError('Invalid Expiration Value.')
+            raise ValidationError('Invalid expiration value.')
         return data
 
 

@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from home.util.rand import rand_string, rand_color_hex
+from home.util.misc import bytes_to_human_read
 from oauth.managers import DiscordWebhooksManager, UserInvitesManager
 from settings.models import SiteSettings
 from django.core.exceptions import ObjectDoesNotExist
@@ -44,6 +45,8 @@ class CustomUser(AbstractUser):
                                                help_text="If enabled file default to private when not specified.")
     default_file_password = models.BooleanField(default=False, verbose_name='Auto File Password',
                                                 help_text='Generates file password on upload.')
+    storage_quota = models.PositiveBigIntegerField(default=0, help_text='User\'s storage quota in bytes.')
+    storage_usage = models.PositiveBigIntegerField(default=0, help_text='Total storage used by user in bytes.')
 
     def __str__(self):
         return self.get_name()
@@ -81,6 +84,27 @@ class CustomUser(AbstractUser):
     user_avatar_choice = models.CharField(max_length=2, choices=UserAvatarChoices.choices,
                                           default=UserAvatarChoices.STORAGE)
 
+    def get_remaining_quota_bytes(self) -> int:
+        if self.storage_quota:
+            return self.storage_quota - self.storage_usage
+        return 0
+
+    def get_storage_usage_pct(self):
+        return int((self.storage_usage / self.storage_quota) * 100)
+
+    def get_storage_used_human_read(self):
+        return bytes_to_human_read(self.storage_usage)
+
+    def get_storage_quota_human_read(self):
+        return bytes_to_human_read(self.storage_quota)
+
+    def save(self, *args, **kwargs):
+        if not self.pk and self.storage_quota is None:
+            # user creation or if invite did not specify quota
+            settings = SiteSettings.objects.get(id=1)
+            self.storage_quota = settings.default_user_storage_quota
+        super(CustomUser, self).save(*args, **kwargs)
+
 
 class UserInvites(models.Model):
     id = models.AutoField(primary_key=True)
@@ -93,6 +117,8 @@ class UserInvites(models.Model):
     super_user = models.BooleanField(default=False, verbose_name='Super', help_text='Invited Users are Super Users.')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Invite Created Date.')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated', help_text='Invite Updated Date.')
+    storage_quota = models.PositiveBigIntegerField(default=None, null=True, blank=True,
+                                                   help_text='Futureser\'s storage quota in bytes.')
     objects = UserInvitesManager()
 
     def __str__(self):
@@ -141,6 +167,12 @@ class UserInvites(models.Model):
             return SiteSettings.objects.settings().site_url + uri
         else:
             return uri
+
+    def get_storage_quota_human_read(self):
+        if self.storage_quota is None:
+            # we want this only when its not set, and not when its 0
+            return
+        return bytes_to_human_read(self.storage_quota)
 
 
 class Discord(models.Model):
