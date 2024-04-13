@@ -277,7 +277,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         with page.expect_file_chooser() as fc_info:
             page.locator('.uppy-DashboardTab-iconMyDevice').click()
         file_chooser = fc_info.value
-        file_chooser.set_files(".assets/an225.jpg")
+        file_chooser.set_files("../.assets/an225.jpg")
         page.locator('.uppy-c-btn-primary').click()
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, 'Upload Failed by Global Quota')
