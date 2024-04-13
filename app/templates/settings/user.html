@@ -16,6 +16,32 @@
 
     <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
         <div class="border border-success-subtle rounded-2 p-3 my-2">
+            <div class="row mt-1">
+                <div class="col-md-3 d-flex justify-content-center">
+                    <img src="{{ user.get_avatar_url }}" role="button" class="rounded-circle mx-5 uploadAvatarHookBtn"
+                    {% if user.user_avatar_choice == "DF" %}
+                    data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Upload new avatar"
+                    {% endif%}
+                    height="128" width="128" alt="Avatar" ></a>
+                </div>
+                <div class="col-md-3">
+                    <label for="user_avatar_choice mt-4" class="form-label">Avatar Source</label>
+                    <select class="form-select" id="user_avatar_choice" name="user_avatar_choice"
+                        aria-describedby="user_avatar_choice-help user_avatar_choice-invalid">
+                        {% for value, display in user_avatar_choices %}
+                            {% if not site_settings.discord_client_id and display == "Discord" and not 'DISCORD_CLIENT_ID'|get_config or not user.discord and display == "Discord" %}
+                            {% elif not site_settings.github_client_id and display == "Github" and not 'GITHUB_CLIENT_ID'|get_config or not user.github and display == "Github" %}
+                            {% else %}
+                            <option value="{{ value }}" {% if value == user.user_avatar_choice %}selected{% endif %}>{{ display }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <div id="user_avatar_choice_choice-invalid" class="invalid-feedback"></div>
+                    <div id="user_avatar_choice-help" class="form-text">
+                        Select the source for avatar.
+                    </div>
+                </div>
+            </div>
 
             <div class="row">
                 <div class="col-md-6">
@@ -68,35 +94,6 @@
                 </div>
             </div>
             <hr class="mt-4 mb-0"/>
-            <div class="row mt-1">
-                <h4 class="">Avatar Settings</h4>
-                <div class="col-md-3 d-flex justify-content-center">
-                <img src="{{ user.get_avatar_url }}" class="rounded-circle mx-5" height="96" width="96" alt="P"></a>
-                </div>
-                <div class="col-md-3 d-flex justify-content-center mb-4">
-                    <a role="button" class="uploadAvatarHookBtn justify-content-center btn btn-lg btn-outline-info mt-4" data-hook-id="{{ data.id }}" title="Upload User Avatar">
-                        <i class="fa-solid fa-user-astronaut me-2"></i> Upload User Avatar</a>
-                </div>
-                {% comment %} {% if not site_settings.discord_client_id and display == "Discord" and not 'DISCORD_CLIENT_ID'|get_config or not user.discord and display == "Discord" and not site_settings.github_client_id and display == "Github" and not 'GITHUB_CLIENT_ID'|get_config or not user.github and display == "Github" %} {% endcomment %}
-                <div class="col-md-6">
-                    <label for="user_avatar_choice mt-4" class="form-label">Avatar Source</label>
-                    <select class="form-select" id="user_avatar_choice" name="user_avatar_choice"
-                        aria-describedby="user_avatar_choice-help user_avatar_choice-invalid">
-                        {% for value, display in user_avatar_choices %}
-                            {% if not site_settings.discord_client_id and display == "Discord" and not 'DISCORD_CLIENT_ID'|get_config or not user.discord and display == "Discord" %}
-                            {% elif not site_settings.github_client_id and display == "Github" and not 'GITHUB_CLIENT_ID'|get_config or not user.github and display == "Github" %}
-                            {% else %}
-                            <option value="{{ value }}" {% if value == user.user_avatar_choice %}selected{% endif %}>{{ display }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-                    <div id="user_avatar_choice_choice-invalid" class="invalid-feedback"></div>
-                    <div id="user_avatar_choice-help" class="form-text">
-                        Select the source for avatar.
-                    </div>
-                </div>
-                {% comment %} {% endif %} {% endcomment %}
-            </div>
             <hr class="mt-4 mb-4"/>
             <div class="row my-2 pt-3">
                 <h4>File Defaults</h4>
@@ -376,4 +373,9 @@
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/settings.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/popperjs/popper.min.js' %}"></script>
+    <script>
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    </script>
 {% endblock %}
