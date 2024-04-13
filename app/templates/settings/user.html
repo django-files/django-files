@@ -376,7 +376,6 @@
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/settings.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/popperjs/popper.min.js' %}"></script>
     <script>
         const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
         const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
