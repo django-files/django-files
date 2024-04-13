@@ -17,6 +17,7 @@ from pytimeparse2 import parse
 
 from home.util.storage import use_s3
 from home.models import Files, FileStats, ShortURLs
+from home.util.quota import regenerate_all_storage_values
 from oauth.models import CustomUser
 from settings.models import SiteSettings
 from oauth.models import DiscordWebhooks
@@ -71,13 +72,14 @@ def app_startup():
         users = CustomUser.objects.all()
         if user := users.filter(username=os.environ.get('USERNAME')):
             user[0].set_password(os.environ.get('PASSWORD'))
-            log.info('Password Ensured for user: %s', user.username)
+            log.info('Password Ensured for user: %s', user[0].username)
         else:
             user = CustomUser.objects.create_superuser(
                 username=os.environ.get('USERNAME'),
                 password=os.environ.get('PASSWORD'),
             )
             log.info('Custom User Created: %s', user.username)
+    regenerate_all_storage_values()
     return 'app_startup - finished'
 
 
@@ -156,7 +158,7 @@ def clear_stats_cache():
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 2, 'countdown': 30})
 def refresh_gallery_static_urls_cache():
-    # Process file stats
+    # Refresh cached gallery files to handle case where url signing expired
     log.info('----- START gallery cache refresh -----')
     if use_s3:
         files = Files.objects.all()

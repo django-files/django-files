@@ -20,11 +20,11 @@ class CustomUserAdmin(UserAdmin):
     list_filter = ('is_superuser',)
     search_fields = ('username',)
     ordering = ('first_name',)
-    readonly_fields = ('last_name',)
+    readonly_fields = ('last_name', 'storage_usage')
     fieldsets = UserAdmin.fieldsets + (
         ('OAuth', {'fields': (
             'timezone', 'default_color', 'default_expire', 'nav_color_1', 'nav_color_2',
             'remove_exif_geo', 'remove_exif', 'show_exif_preview', 'default_file_private',
-            'default_file_password', 'default_upload_name_format'
+            'default_file_password', 'default_upload_name_format', 'storage_quota', 'storage_usage'
         )}),
     )

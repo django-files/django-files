@@ -22,7 +22,8 @@ from home.tasks import clear_files_cache
 from home.models import Files, FileStats, ShortURLs
 from home.util.file import process_file
 from home.util.rand import rand_string
-from home.util.misc import anytobool
+from home.util.misc import anytobool, human_read_to_byte
+from home.util.quota import process_storage_quotas
 from oauth.models import CustomUser, UserInvites
 from settings.models import SiteSettings
 
@@ -78,6 +79,13 @@ def upload_view(request):
     log.debug(request.FILES)
     try:
         f = request.FILES.get('file')
+        if any(pq := process_storage_quotas(request.user, f.size)):
+            if pq[1]:
+                message = 'Upload Failed: Global storage quota exceeded.'
+            elif pq[0]:
+                message = 'Upload Failed: User storage quota exceeded.'
+            log.error(message)
+            return JsonResponse({'error': True, 'message': message}, status=400)
         if not f and post.get('text'):
             f = io.BytesIO(bytes(post.pop('text'), 'utf-8'))
             f.name = post.pop('name', 'paste.txt') or 'paste.txt'
@@ -94,7 +102,7 @@ def upload_view(request):
         return process_file_upload(f, request.user.id, **extra_args)
     except Exception as error:
         log.exception(error)
-        return JsonResponse({'error': str(error)}, status=500)
+        return JsonResponse({'error': True, 'message': str(error)}, status=500)
 
 
 @csrf_exempt
@@ -163,6 +171,7 @@ def invites_view(request):
             expire=parse(data.get('expire', 0)) or 0,
             max_uses=data.get('max_uses', 1),
             super_user=anytobool(data.get('super_user', False)),
+            storage_quota=human_read_to_byte(data.get('storage_quota', None))
         )
         log.debug(invite)
         log.debug(model_to_dict(invite))

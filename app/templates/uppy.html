@@ -26,6 +26,10 @@
             XHRUpload,
         } from "{% static 'uppy/uppy.min.js' %}";
 
+        function getResponseError(responseText, response) {
+            return new Error(JSON.parse(responseText).message);
+        }
+
         const uppy = new Uppy({ debug: true, autoProceed: false })
             .use(Dashboard, {
                 inline: true,
@@ -53,10 +57,15 @@
                 headers: {
                     "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
                 },
+                getResponseError: getResponseError
             })
 
         uppy.on("success", (fileCount) => {
             console.log(`${fileCount} files uploaded`);
+        });
+
+        uppy.on('upload-error', (file, error, response) => {
+            console.log(`${response.body.message}`)
         });
     </script>
 {% endblock %}
