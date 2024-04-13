@@ -17,15 +17,15 @@
     <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
         <div class="border border-success-subtle rounded-2 p-3 my-2">
             <div class="row mt-1">
-                <div class="col-md-3 d-flex justify-content-center">
+                <div class="col-md-2 d-flex justify-content-center">
                     <img src="{{ user.get_avatar_url }}" role="button" class="rounded-circle mx-5 uploadAvatarHookBtn"
                     {% if user.user_avatar_choice == "DF" %}
                     data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Upload new avatar"
                     {% endif%}
                     height="128" width="128" alt="Avatar" ></a>
                 </div>
-                <div class="col-md-3">
-                    <label for="user_avatar_choice mt-4" class="form-label">Avatar Source</label>
+                <div class="col-md-2 mt-2">
+                    <label for="user_avatar_choice mt-5" class="form-label">Avatar Source</label>
                     <select class="form-select" id="user_avatar_choice" name="user_avatar_choice"
                         aria-describedby="user_avatar_choice-help user_avatar_choice-invalid">
                         {% for value, display in user_avatar_choices %}
@@ -93,11 +93,10 @@
                     </div>
                 </div>
             </div>
-            <hr class="mt-4 mb-0"/>
-            <hr class="mt-4 mb-4"/>
-            <div class="row my-2 pt-3">
-                <h4>File Defaults</h4>
+            <hr class="mt-4"/>
+            <div class="row">
                 <div class="col mx-sm-4 fs-5">
+                    <h4>File Defaults</h4>
                     <div class="form-check form-switch px-lg-5">
                         <input class="form-check-input" type="checkbox" id="remove_exif" name="remove_exif" {{ request.user.remove_exif|if_true:"checked" }}>
                         <label class="form-check-label" for="remove_exif">
@@ -110,12 +109,7 @@
                             Strip GPS EXIF Data
                         </label>
                     </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="show_exif_preview" name="show_exif_preview" {{ request.user.show_exif_preview|if_true:"checked" }}>
-                        <label class="form-check-label" for="show_exif_preview">
-                          Enable EXIF Embeds
-                        </label>
-                    </div>
+
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="default_file_private" name="default_file_private" {{ request.user.default_file_private|if_true:"checked" }}>
                         <label class="form-check-label" for="default_file_private">
@@ -125,7 +119,16 @@
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="default_file_password" name="default_file_password" {{ request.user.default_file_password|if_true:"checked" }}>
                         <label class="form-check-label" for="default_file_password">
-                          Automatically set file password on upload.
+                          Password Protected Files
+                        </label>
+                    </div>
+                </div>
+                <div class="col mx-sm-4 fs-5">
+                    <h4>User Settings</h4>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="show_exif_preview" name="show_exif_preview" {{ request.user.show_exif_preview|if_true:"checked" }}>
+                        <label class="form-check-label" for="show_exif_preview">
+                          Enable EXIF Embeds
                         </label>
                     </div>
                 </div>
