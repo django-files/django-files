@@ -1,7 +1,12 @@
 // JS for Site Settings
 
+// $(document).on('blur', saveOptions)
+
+$('#settingsForm').on('change', saveOptions)
+
 const deleteDiscordHookModal = $('#deleteDiscordHookModal')
 const changeAvatarModal = $('#avatarUploadModal')
+const settingsForm = $('#settingsForm')
 
 // TODO: Use a proper selector
 let hookID
@@ -43,36 +48,6 @@ $('#confirmDeleteDiscordHookBtn').on('click', function (event) {
         error: function (jqXHR) {
             deleteDiscordHookModal.modal('hide')
             messageErrorHandler(jqXHR)
-        },
-        cache: false,
-        contentType: false,
-        processData: false,
-    })
-})
-
-// Handle profile save button click and response
-$('#settingsForm').on('submit', function (event) {
-    console.log('#settingsForm submit', event)
-    event.preventDefault()
-    const form = $(this)
-    console.log('form:', form)
-    $.ajax({
-        type: form.attr('method'),
-        url: window.location.pathname,
-        data: new FormData(this),
-        headers: { 'X-CSRFToken': csrftoken },
-        success: function (data) {
-            console.log('data:', data)
-            if (data.reload) {
-                alert('Settings changed require reload...')
-                location.reload()
-            } else {
-                let message = 'Settings Saved Successfully.'
-                show_toast(message, 'success')
-            }
-        },
-        error: function (jqXHR) {
-            formErrorHandler.call(this, form, jqXHR)
         },
         cache: false,
         contentType: false,

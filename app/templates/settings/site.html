@@ -68,9 +68,10 @@
                 <div class="row mt-2">
                     <div class="col-md-6">
                         <label for="global_storage_quota" class="form-label">Global Storage Quota</label>
-                        <input class="form-control" id="global_storage_quota" name="global_storage_quota"
-                               value="{{ site_settings.get_global_storage_quota_human_read }}">
-                        <div id="global_storage_quota-invalid" class="global_storage_quota-feedback"></div>
+                        <input type="text" class="form-control" id="global_storage_quota" name="global_storage_quota"
+                               value="{{ site_settings.get_global_storage_quota_human_read }}"
+                               aria-describedby="global_storage_quota-help global_storage_quota-invalid">
+                        <div id="global_storage_quota-invalid" class="invalid-feedback"></div>
                         <div id="global_storage_quota-help" class="form-text">Total storage quota for this deployment. 0 is unlimited.</div>
                     </div>
                     <div class="col-md-6">
@@ -145,13 +146,6 @@
                         <input type="color" class="form-control form-control-color" id="site_color" name="site_color"
                                value="{{ site_settings.site_color }}" title="Default Color" aria-describedby="site_color-invalid">
                         <div id="site_color-invalid" class="invalid-feedback"></div>
-                    </div>
-                </div>
-
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-lg btn-outline-warning" id="save-settings">
-                            <i class="fa-solid fa-floppy-disk me-2"></i> Save Settings</button>
                     </div>
                 </div>
             </div>

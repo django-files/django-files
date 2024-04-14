@@ -54,7 +54,8 @@ jobs:
       - name: "Test Migrations"
         working-directory: app
         env:
-          DATABSE_LOCATION: /tmp/migration-test-db
+          DATABASE_LOCATION: /tmp/migration-test-db
+          SECRET_KEY: alsdfjalksdjfllkjdfkerioqweroiu
         run: |
           python manage.py migrate
           python manage.py makemigrations --dry-run --check --noinput

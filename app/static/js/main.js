@@ -85,6 +85,45 @@ function show_toast(message, bsClass = 'success', delay = '6000') {
 }
 
 /**
+ * Save Options
+ * @function saveOptions
+ * @param {InputEvent} event
+ */
+function saveOptions(event) {
+    console.debug(`saveOptions: ${event.type}`, event)
+    const form = $(settingsForm)
+    // console.debug('form', form)
+    const data = new FormData(settingsForm[0])
+    // console.debug('data', data)
+    $.ajax({
+        type: 'post',
+        url: window.location.pathname,
+        data: data,
+        headers: { 'X-CSRFToken': csrftoken },
+        success: success,
+        error: error,
+        cache: false,
+        contentType: false,
+        processData: false,
+    })
+    function error(jqXHR) {
+        formErrorHandler.call(this, form, jqXHR)
+    }
+    function success(data) {
+        console.debug('success:', data, event)
+        if (data.reload) {
+            alert('Settings changed require reload...')
+            location.reload()
+        } else {
+            // let message = 'Settings Saved Successfully.'
+            // show_toast(message, 'success')
+            event.target.classList.add('is-valid')
+            setTimeout(() => event.target.classList.remove('is-valid'), 3000)
+        }
+    }
+}
+
+/**
  * Error Message responseJSON.error or jqXHR.statusText
  * @param {jQuery.jqXHR} jqXHR
  */
