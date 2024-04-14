@@ -21,7 +21,7 @@ class ImageProcessor(object):
             self.remove_exif_geo = default_exif_geo
         self.exif = {}
         self.meta = {}
-        self.tmp_thumb = os.path.splitext(self.local_path)[0] + "_thumb" +os.path.splitext(self.local_path)[1]
+        self.tmp_thumb = os.path.splitext(self.local_path)[0] + "_thumb" + os.path.splitext(self.local_path)[1]
 
     def process_file(self) -> None:
         # TODO: Concatenate Logic to This Function

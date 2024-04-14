@@ -45,7 +45,7 @@ class Files(models.Model):
 
     def get_url(self, view: bool = False, download: bool = False, expire: int = None) -> str:
         """Gets a static url to a file object.
-        view counts url retrival as a view
+        view counts url retrieval as a view
         download makes the static url force download
         expire overrides the signing expire time for cloud storage urls
         """

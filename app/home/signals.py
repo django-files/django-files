@@ -17,8 +17,9 @@ def run_startup_task(sender, **kwargs):
 
 @receiver(pre_delete, sender=Files)
 def files_delete_signal(sender, instance, **kwargs):
-    data = model_to_dict(instance, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta'])
+    data = model_to_dict(instance, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta', 'thumb'])
     decrement_storage_usage(instance.file.size, instance.user.pk)
+    instance.thumb.delete(True)
     instance.file.delete(True)
     delete_file_websocket.apply_async(args=[data, instance.user.id], priority=0)
 
