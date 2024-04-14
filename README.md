@@ -49,18 +49,20 @@ or UI using [Uppy](https://uppy.io/).
 > This is currently in Beta.  
 > Expect breaking changes without migrations.
 
+You must use `media_dir` or mount a volume to `/data/media` to store files (if not using s3), the database(if using sqlite), and sessions.
+To use a local mount, replace `media_dir` with `/path/to/folder` you want to store the data locally
+and remove the `volumes` section from the bottom.
+
 For Extra Options See: [Variables](#variables)
 
 ### Default Login Credentials
 
-You can and should override the default credentials with environment variables or settings.env.
+You **should** override the default credentials with environment variables or settings.env. You will be prompted to set your password on first login.
 
 -   **Username:** `admin`
 -   **Password:** `12345`
 
 ### Docker Run:
-
-You must use a volume mounted to `/data/media` to store files, database and sessions.
 
 Short one-liner to run in foreground:
 
@@ -88,10 +90,6 @@ docker run --name "django-files" -d --restart unless-stopped  \
 
 ### Docker Compose:
 
-You must use `media_dir` or mount a volume to `/data/media` to store files (if not using s3), the database(if using sqlite), and sessions.
-To use a local mount, replace `media_dir` with `/path/to/folder` you want to store the data locally
-and remove the `volumes` section from the bottom.
-
 ```yaml
 version: '3'
 
@@ -107,6 +105,7 @@ volumes:
     media_dir:
 ```
 
+Instead of using a settings.env you can specify any settings variables via the environment section in the docker compose file.
 Or Manually Specify a Username and Password:
 
 ```yaml
@@ -128,7 +127,6 @@ volumes:
 ```
 
 Then Finally:
-
 ```bash
 vim docker-compose.yaml
 docker compose up --remove-orphans --force-recreate --detach
@@ -145,9 +143,9 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 ### Core
 
 -   Local or S3 file storage
--   Ready-to-use ShareX and Flameshot scripts
+-   Ready-to-use ShareX, Flameshot, iOS Shortcuts upload scripts
+-   Customizable branding and appearance. Dark + light modes.
 -   Google Chrome and Mozilla Firefox Web Extension
--   Optional Duo Two-Factor Authentication
 -   Optional Sentry Error Reporting
 -   Optional user and global storage quotas
 -   Optional public upload function
@@ -158,6 +156,9 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 -   Connect existing accounts to configured OAuth Services
 -   Configure OAuth Services from the UI (no restart required)
 -   Oauth Currently Supports: Discord, GitHub, [Request Another](https://github.com/django-files/django-files/discussions/new?category=feature-requests)
+-   Optional Duo Two-Factor Authentication
+-   Generate Invite links and Invite users to your django-files instance.
+
 
 ### UI Features
 
@@ -173,18 +174,10 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 
 ### User Settings
 
--   ShareX File and URL Configuration Generator
--   Upload Automation Scripts: Flameshot Script, Other Example Scripts
 -   Per User Default Expiration for Files
 -   Metadata control: Remove EXIF Data on Upload OR Remove EXIF GPS Only
--   Theme Customization: Custom Embed Color and Navbar Colors
+-   Theme Customization: Custom Embed Color and Navbar Colors per user
 -   Avatars: Select local or oauth sourced avatar.
-
-### Site Settings
-
--   Site URL, Title, Description, Theme Color
--   Enable OAuth Registration (if oauth configured)
--   Enable Two-Factor Registration (if duo configured)
 
 ### Files
 
