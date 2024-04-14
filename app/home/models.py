@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F
 from django.shortcuts import reverse
 from django.conf import settings
 from django.core.cache import cache
@@ -48,8 +49,7 @@ class Files(models.Model):
         expire overrides the signing expire time for cloud storage urls
         """
         if view:
-            self.view += 1
-            self.save()
+            Files.objects.filter(pk=self.pk).update(view=F('view')+1)
         # ######## Download Static URL ########
         if download:
             # check if download url cached, if not serve new one
