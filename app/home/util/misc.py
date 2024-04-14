@@ -1,15 +1,16 @@
 import logging
 from math import log10, floor
 
+log = logging.getLogger('app')
+
 
 def anytobool(value):
-    logging.debug('true_false: %s', value)
+    log.debug('true_false: %s', value)
     if not isinstance(value, str):
         return bool(value)
-    logging.debug('value: %s', value)
     if value.lower() in ['true', 'yes', 'on', '1']:
         return True
-    logging.debug('FAIL')
+    log.debug('FAIL')
     return False
 
 
@@ -27,9 +28,9 @@ def human_read_to_byte(size):
             unit, size = size[-1:], size[:-1]
         unit, size = unit.strip().upper(), size.strip()
         return int(float(size) * pow(1000, factors[unit]))
-    except ValueError:
+    except Exception as error:
         # if we are unable to extract float, the input is invalid, form will raise validation error on None
-        return
+        log.debug(error)
 
 
 def bytes_to_human_read(size) -> str:

@@ -68,9 +68,10 @@
                 <div class="row mt-2">
                     <div class="col-md-6">
                         <label for="global_storage_quota" class="form-label">Global Storage Quota</label>
-                        <input class="form-control" id="global_storage_quota" name="global_storage_quota"
-                               value="{{ site_settings.get_global_storage_quota_human_read }}">
-                        <div id="global_storage_quota-invalid" class="global_storage_quota-feedback"></div>
+                        <input type="text" class="form-control" id="global_storage_quota" name="global_storage_quota"
+                               value="{{ site_settings.get_global_storage_quota_human_read }}"
+                               aria-describedby="global_storage_quota-help global_storage_quota-invalid">
+                        <div id="global_storage_quota-invalid" class="invalid-feedback"></div>
                         <div id="global_storage_quota-help" class="form-text">Total storage quota for this deployment. 0 is unlimited.</div>
                     </div>
                     <div class="col-md-6">
