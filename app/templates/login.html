@@ -26,14 +26,14 @@
         {% csrf_token %}
 
         <div class="form-floating mb-2 mt-4">
-            <input type="username" id="username" name="username" class="form-control" autocomplete="username" placeholder="Username" required autofocus>
+            <input type="username" id="username" name="username" class="form-control" autocomplete="username" placeholder="Username" aria-describedby="Username" required autofocus>
             <label for="floatingInput">Username</label>
           </div>
         <div class="form-floating">
-            <input type="password" class="form-control" id="password" name="password" autocomplete="password" placeholder="Password">
+            <input type="password" class="form-control" id="password" name="password" autocomplete="password" placeholder="Password" aria-describedby="Password">
             <label for="floatingPassword">Password</label>
         </div>
-        <div id="passwordFeedback" class="invalid-feedback">
+        <div id="passwordFeedback" class="invalid-feedback" aria-describedby="Username or Password feedback.">
             Invalid Username or Password.
         </div>
 

@@ -45,3 +45,7 @@ video {
     background: #383f98;
     border: #24295e;
 }
+
+.btn {
+    height: 50px;
+}
