@@ -1,4 +1,6 @@
 import logging
+import os
+from io import BytesIO
 from PIL import Image, ExifTags, TiffImagePlugin
 
 from home.util.geolocation import city_state_from_exif
@@ -20,6 +22,7 @@ class ImageProcessor(object):
             self.remove_exif_geo = default_exif_geo
         self.exif = {}
         self.meta = {}
+        self.tmp_thumb = os.path.splitext(self.local_path)[0] + "_thumb" +os.path.splitext(self.local_path)[1]
 
     def process_file(self) -> None:
         # TODO: Concatenate Logic to This Function
@@ -36,6 +39,7 @@ class ImageProcessor(object):
             if area := city_state_from_exif(exif_clean.get('GPSInfo')):
                 self.meta['GPSArea'] = area
             self.exif = self.cast(exif_clean)
+            self.process_thumbnail()
 
     def _handle_exif(self, image: Image) -> tuple:
         # TODO: Remove Basic Logic from here and put it all in one function
@@ -92,3 +96,9 @@ class ImageProcessor(object):
             if 'P' in image.mode:
                 new.putpalette(image.getpalette())
             new.save(local_path)
+
+    def process_thumbnail(self):
+        image = Image.open(self.local_path)
+        image.thumbnail((128, 128))
+        log.info("Writing temporary thumbnail to : %s", self.tmp_thumb)
+        image.save(self.tmp_thumb)

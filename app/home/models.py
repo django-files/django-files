@@ -33,6 +33,7 @@ class Files(models.Model):
     private = models.BooleanField(default=False, verbose_name='Private File')
     objects = FilesManager()
     avatar = models.BooleanField(default=False, help_text="Determines file is a user avatar.")
+    thumb = StoragesRouterFileField(upload_to='./.thumbs/', null=True)
 
     def __str__(self):
         return f'<File(id={self.id} size={self.size} name={self.name})>'
@@ -99,20 +100,21 @@ class Files(models.Model):
 
     def get_gallery_url(self) -> str:
         """Generates a static url for use on a gallery page."""
+        use = self.thumb if self.thumb else self.file
         if use_s3():
             # only want cache for s3
             # override signing expire on gallery urls to avoid cached gallery pages from failing to load
             # TODO: access protected member, look into how to better handle this
             if (gallery_url := cache.get(f"file.urlcache.gallery.{self.pk}")) is None:
                 gallery_url = self.file.file._storage.url(
-                    self.file.file.name,
+                    use.file.name,
                     expire=86400
                 )
                 # intentionally expire cache before gallery url signing expires
                 cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
             return gallery_url
-        url = self.file.url + "?view=gallery"
-        return url + self._sign_nginx_url(self.file.url).replace('?', '&')
+        url = use.url + "?view=gallery"
+        return url + self._sign_nginx_url(use.url).replace('?', '&')
 
     def _sign_nginx_url(self, uri: str) -> str:
         if use_s3():

@@ -5,7 +5,6 @@
 -   [ ] Review ALL the `get_url` methods in the Files Model
 -   [ ] Look into `utils.s3` and `utils.storage` files
 -   [ ] Add tests for `/raw/` and other S3 functions
--   [ ] Thumbnails
 
 ## TopBugs
 

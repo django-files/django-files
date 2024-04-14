@@ -99,7 +99,9 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
         file.save()
     log.debug('file.file.name: %s', file.file.name)
     file.name = file.file.name
-    file.save()
+    with open(processor.tmp_thumb, 'rb') as thumb:
+        file.thumb = File(thumb, name=name)
+        file.save()
     increment_storage_usage(file)
     new_file_websocket.apply_async(args=[file.pk], priority=0)
     send_discord_message.delay(file.pk)
