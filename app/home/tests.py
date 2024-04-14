@@ -347,7 +347,7 @@ class FilesTestCase(TestCase):
         response = self.client.get(reverse('home:url-route', kwargs={'filename': file.name}), follow=True)
         self.assertEqual(response.status_code, 200)
         files = Files.objects.filter(user=self.user)
-        self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
+        self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files) + 1)  # account for thumbnail added files
 
         print('--- Testing: API:REMOTE')
         url = 'https://raw.githubusercontent.com/django-files/django-files/master/.assets/gps.jpg'

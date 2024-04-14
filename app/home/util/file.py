@@ -32,7 +32,6 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     :param kwargs: Extra Files Object Values
     :return: Files: The created Files object
     """
-    processed_thumb = False
     log.debug('name: %s', name)
     log.debug('f: %s', f)
     log.debug('user_id: %s', user_id)
@@ -81,7 +80,6 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
         log.debug('file_mime: %s', file_mime)
         if file_mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
             processor = ImageProcessor(fp.name, user.remove_exif, user.remove_exif_geo, ctx)
-            processed_thumb = True
             processor.process_file()
             file.meta = processor.meta
             file.exif = processor.exif
