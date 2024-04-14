@@ -1,6 +1,5 @@
 import logging
 import os
-from io import BytesIO
 from PIL import Image, ExifTags, TiffImagePlugin
 
 from home.util.geolocation import city_state_from_exif
@@ -99,6 +98,6 @@ class ImageProcessor(object):
 
     def process_thumbnail(self):
         image = Image.open(self.local_path)
-        image.thumbnail((128, 128))
+        image.thumbnail((512, 512))
         log.info("Writing temporary thumbnail to : %s", self.tmp_thumb)
         image.save(self.tmp_thumb)

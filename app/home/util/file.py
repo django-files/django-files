@@ -32,6 +32,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     :param kwargs: Extra Files Object Values
     :return: Files: The created Files object
     """
+    processed_thumb = False
     log.debug('name: %s', name)
     log.debug('f: %s', f)
     log.debug('user_id: %s', user_id)
@@ -80,6 +81,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
         log.debug('file_mime: %s', file_mime)
         if file_mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
             processor = ImageProcessor(fp.name, user.remove_exif, user.remove_exif_geo, ctx)
+            processed_thumb = True
             processor.process_file()
             file.meta = processor.meta
             file.exif = processor.exif
@@ -96,12 +98,14 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
             file.private = anytobool(private)
         else:
             file.private = user.default_file_private
-        file.save()
+        if processed_thumb:
+            with open(processor.tmp_thumb, 'rb') as thumb:
+                file.thumb = File(thumb, name=name)
+                file.save()
+            os.remove(processor.tmp_thumb)
     log.debug('file.file.name: %s', file.file.name)
     file.name = file.file.name
-    with open(processor.tmp_thumb, 'rb') as thumb:
-        file.thumb = File(thumb, name=name)
-        file.save()
+    file.save()
     increment_storage_usage(file)
     new_file_websocket.apply_async(args=[file.pk], priority=0)
     send_discord_message.delay(file.pk)
