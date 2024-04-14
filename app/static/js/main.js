@@ -91,9 +91,9 @@ function show_toast(message, bsClass = 'success', delay = '6000') {
  */
 function saveOptions(event) {
     console.debug(`saveOptions: ${event.type}`, event)
-    const form = settingsForm[0]
+    const form = $(settingsForm)
     // console.debug('form', form)
-    const data = new FormData(form)
+    const data = new FormData(settingsForm[0])
     // console.debug('data', data)
     $.ajax({
         type: 'post',
@@ -110,13 +110,15 @@ function saveOptions(event) {
         formErrorHandler.call(this, form, jqXHR)
     }
     function success(data) {
-        // console.debug('success:', data)
+        console.debug('success:', data, event)
         if (data.reload) {
             alert('Settings changed require reload...')
             location.reload()
         } else {
             // let message = 'Settings Saved Successfully.'
             // show_toast(message, 'success')
+            event.target.classList.add('is-valid')
+            setTimeout(() => event.target.classList.remove('is-valid'), 3000)
         }
     }
 }
