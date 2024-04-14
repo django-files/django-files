@@ -1,8 +1,11 @@
 import logging
 import os
 from PIL import Image, ExifTags, TiffImagePlugin, ImageOps
+from django.core.files import File
+from io import BytesIO
 
 from home.util.geolocation import city_state_from_exif
+from home.models import Files
 
 log = logging.getLogger('app')
 
@@ -38,7 +41,6 @@ class ImageProcessor(object):
             if area := city_state_from_exif(exif_clean.get('GPSInfo')):
                 self.meta['GPSArea'] = area
             self.exif = self.cast(exif_clean)
-            self.process_thumbnail()
 
     def _handle_exif(self, image: Image) -> tuple:
         # TODO: Remove Basic Logic from here and put it all in one function
@@ -96,9 +98,18 @@ class ImageProcessor(object):
                 new.putpalette(image.getpalette())
             new.save(local_path)
 
-    def process_thumbnail(self):
-        image = Image.open(self.local_path)
+
+def thumbnail_processor(file: Files, file_bytes: BytesIO=None):
+    tmp_file = f'/tmp/thumb_{file.name}'
+    print(file.name)
+    file_bytes = BytesIO(file_bytes) if file_bytes else BytesIO(file.file.read())
+    with Image.open(file_bytes) as image:
         image = ImageOps.exif_transpose(image)
+        # TODO: check resolution is not already small, if it is don't bother generating a thumbnail
         image.thumbnail((512, 512))
-        log.info("Writing temporary thumbnail to : %s", self.tmp_thumb)
-        image.save(self.tmp_thumb)
+        image.save(tmp_file)
+    with open(tmp_file, 'rb') as thumb:
+        # we cannot call update, we must explicitly save, here since the hooks that upload the file will not happen
+        file.thumb = File(thumb, name=file.name)
+        file.save()
+    os.remove(tmp_file)
