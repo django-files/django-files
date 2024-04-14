@@ -256,15 +256,15 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 ### User Settings
 - Avatar: Can be reuploaded if set to Local/Cloud.
 - Avatar Source: If to use oauth avatars, or local avatars. (Oauth avatars cannot be changed via django files.)
-- First Name: User's first name, for personaliation of username display.
+- First Name: User's first name, for personalization of username display.
 - Timezone: User's timezone, will show times in user's local time when logged in.
 - Default Expire: The default file expiration for files uploaded with out an expiration for this user.
 - Default Upload Format: The default file name format for files uploaded without a specific file name format.
-- Strip All EXIF Data: Strips all exif metadata from images on upload. (Changes do not apply to existing uploads)
+- Strip All EXIF Data: Strips all EXIF metadata from images on upload. (Changes do not apply to existing uploads)
 - Strip GPS EXIF Data: Strips GPS meta data from images on upload. (Changes do not apply to existing uploads)
 - Private Files: Make uploads private by default unless otherwise specified. (Changes do not apply to existing uploads)
 - Password Protected File: Make uploads password protected by default unless otherwise specified. (Changes do not apply to existing uploads)
-- Enabled EXIF Embeds: If to show exif metadata on unfurls/embeds.
+- Enabled EXIF Embeds: If to show EXIF metadata on unfurls/embeds.
 - Appearance Embed Color: Color of embeds/unfurls for shared links.
 - Appearance Nav Colors: Color of navbar for this user and anonymous users viewing shared user files.
 - Discord Webhooks: Discord webhooks to trigger when a file is uploaded.
