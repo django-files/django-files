@@ -25,20 +25,16 @@
     <form class="submit-once" method="POST" name="login-form" id="login-form" action="{% url 'oauth:login' %}">
         {% csrf_token %}
 
-        <div class="col mt-4">
-            <label class="visually-hidden" for="username"></label>
-            <input type="text" class="form-control" id="username" name="username" autocomplete="username" required autofocus>
-            <span class="form-label floating-label text-white">username</span>
+        <div class="form-floating mb-2 mt-4">
+            <input type="username" id="username" name="username" class="form-control" autocomplete="username" placeholder="Username" required autofocus>
+            <label for="floatingInput">Username</label>
+          </div>
+        <div class="form-floating">
+            <input type="password" class="form-control" id="password" name="password" autocomplete="password" placeholder="Password">
+            <label for="floatingPassword">Password</label>
         </div>
-
-        <div class="col">
-            <label class="visually-hidden" for="password"></label>
-            <input type="password" class="form-control" id="password" name="password" autocomplete="password"
-                   aria-describedby="passwordFeedback" required>
-            <span class="form-label floating-label text-white">password</span>
-            <div id="passwordFeedback" class="invalid-feedback">
-                Invalid Username or Password.
-            </div>
+        <div id="passwordFeedback" class="invalid-feedback">
+            Invalid Username or Password.
         </div>
 
         {% if request.GET.next %}
@@ -47,7 +43,7 @@
             <input type="hidden" name="next" value="{{ request.session.login_next_url }}">
         {% endif %}
 
-        <div class="d-grid gap-2">
+        <div class="d-grid gap-2 mt-3">
             <button id="login-button" class="btn btn-secondary opacity-75" type="submit">
                 <i class="fas fa-sign-in-alt"></i> Local Login</button>
             {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}

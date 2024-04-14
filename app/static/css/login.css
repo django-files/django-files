@@ -25,6 +25,7 @@ video {
 
 #login-outer {
     border-radius: 25px;
+    width: 300px;
     background: rgba(0 0 0 / 30%);
     margin: auto;
     padding: 25px;
@@ -33,22 +34,6 @@ video {
 
 .form-control {
     background: rgba(0 0 0 / 30%);
-}
-
-.floating-label {
-    position: relative;
-    pointer-events: none;
-    top: -30px;
-    left: 10px;
-    transition: 0.2s ease all;
-}
-
-input:focus ~ .floating-label,
-input:not(:focus):valid ~ .floating-label {
-    top: -60px;
-    left: 5px;
-    font-size: 14px;
-    opacity: 1;
 }
 
 .btn-primary {
