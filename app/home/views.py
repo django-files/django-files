@@ -444,8 +444,11 @@ def url_route_view(request, filename):
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
         log.debug('MARKDOWN')
-        with open(file.file.path, 'r') as f:
-            md_text = f.read()
+        if use_s3():
+            md_text = file.file.read()
+        else:
+            with open(file.file.path, 'r') as f:
+                md_text = f.read()
         ctx['markdown'] = markdown.markdown(md_text, extensions=['extra', 'toc'])
         file.view += 1
         file.save()
