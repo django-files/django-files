@@ -11,11 +11,13 @@ from django.conf import settings
 from django.core.cache import cache
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
+from django.db.models import QuerySet
 from django.utils import timezone
 from packaging import version
 from pytimeparse2 import parse
 
 from home.util.storage import use_s3
+from home.util.image import thumbnail_processor
 from home.models import Files, FileStats, ShortURLs
 from home.util.quota import regenerate_all_storage_values
 from oauth.models import CustomUser
@@ -52,6 +54,17 @@ def app_init():
     #     log.info('public_user created: public')
     # else:
     #     log.warning('public_user already created: public')
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 60, "default_retry_delay": 180})
+def generate_thumbs(files: QuerySet = None, only_missing: bool = True):
+    log.info("Generating Thumbnails - only_missing: %s - files: %s", only_missing, files)
+    if not files and only_missing:
+        files = Files.objects.filter(thumb=None)
+    elif not files:
+        files = Files.objects.all()
+    for file in files:
+        thumbnail_processor(file)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 5})
