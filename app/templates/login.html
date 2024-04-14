@@ -46,14 +46,14 @@
         <div class="d-grid gap-2 mt-3">
             <button id="login-button" class="btn btn-secondary opacity-75" type="submit">
                 <i class="fas fa-sign-in-alt"></i> Local Login</button>
-            {% comment %} {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %} {% endcomment %}
+            {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
                 <a href="{% url 'oauth:discord' %}?next={{ request.path }}" class="btn btn-primary opacity-75 d-flex align-items-center justify-content-center" role="button">
                     <i class="fa-brands fa-discord px-2"></i><text class="align-middle">Discord Login</text></a>
-            {% comment %} {% endif %} {% endcomment %}
-            {% comment %} {% if site_settings.github_client_id or 'GITHUB_CLIENT_ID'|get_config %} {% endcomment %}
+            {% endif %}
+            {% if site_settings.github_client_id or 'GITHUB_CLIENT_ID'|get_config %}
                 <a href="{% url 'oauth:github' %}?next={{ request.path }}" class="btn btn-dark opacity-75 d-flex align-items-center justify-content-center" role="button">
                     <i class="fa-brands fa-github px-2"></i>GitHub Login</a>
-            {% comment %} {% endif %} {% endcomment %}
+            {% endif %}
         </div>
 
         <div id="login-message" class="mt-2">
