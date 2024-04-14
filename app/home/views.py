@@ -437,7 +437,7 @@ def url_route_view(request, filename):
             if exposure_time := file.exif.get('ExposureTime'):
                 file.exif['ExposureTime'] = str(Fraction(exposure_time).limit_denominator(5000))
             if lens_model := file.exif.get('LensModel'):
-                # handle cases where lensmodel is relevant but some values redunant
+                # handle cases where lensmodel is relevant but some values are redundant
                 lm_f_stripped = lens_model.replace(f"f/{file.exif.get('FNumber', '')}", "")
                 lm_model_stripped = lm_f_stripped.replace(f"{file.exif.get('Model')}", "")
                 file.exif['LensModel'] = lm_model_stripped
@@ -445,7 +445,7 @@ def url_route_view(request, filename):
     elif file.mime == 'text/markdown':
         log.debug('MARKDOWN')
         if use_s3():
-            md_text = file.file.read()
+            md_text = file.file.read().decode("utf-8")
         else:
             with open(file.file.path, 'r') as f:
                 md_text = f.read()
