@@ -101,6 +101,7 @@ class Files(models.Model):
 
     def get_gallery_url(self) -> str:
         """Generates a static url for use on a gallery page."""
+        ctx_settings = site_settings_processor(None)['site_settings']
         use = self.thumb if self.thumb else self.file
         if use_s3():
             # only want cache for s3
@@ -115,7 +116,7 @@ class Files(models.Model):
                 cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
             return gallery_url
         url = use.url + "?view=gallery"
-        return url + self._sign_nginx_url(use.url).replace('?', '&')
+        return ctx_settings['site_url'] + url + self._sign_nginx_url(use.url).replace('?', '&')
 
     def _sign_nginx_url(self, uri: str) -> str:
         if use_s3():
