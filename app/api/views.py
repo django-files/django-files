@@ -224,7 +224,7 @@ def recent_view(request):
     for file in files:
         data = model_to_dict(file, exclude=['file', 'thumb'])
         data['url'] = site_settings['site_url'] + file.preview_url()
-        data['thumb'] = file.get_gallery_url()
+        data['thumb'] = site_settings['site_url'] + file.get_gallery_url()
         data['raw'] = site_settings['site_url'] + file.raw_path
         response.append(data)
     log.debug('response: %s', response)
