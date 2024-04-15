@@ -19,7 +19,7 @@
         <a role="button" class="dropdown-item" href="{% url 'home:url-raw-redirect' file.file.name %}">
             <i class="fa-solid fa-eye fa-fw me-2"></i> View Raw</a>
     </li>
-    {% if request.user.is_authenticated and request.user == file.user %}
+    {% if full_context %}
         <li><hr class="dropdown-divider"></li>
         <li>
             <a role="button" class="dropdown-item ctx-expire" title="Set Expiration">
