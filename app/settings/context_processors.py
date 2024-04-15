@@ -10,7 +10,7 @@ def site_settings_processor(request):
     site_settings = cache.get('site_settings')
     if not site_settings:
         site_settings = model_to_dict(SiteSettings.objects.settings())
-    if request.user and request.user.is_authenticated and request.user.timezone:
+    if request is not None and request.user and request.user.is_authenticated and request.user.timezone:
         timezone.activate(zoneinfo.ZoneInfo(request.user.timezone))
     else:
         timezone.activate(zoneinfo.ZoneInfo(site_settings['timezone']))
