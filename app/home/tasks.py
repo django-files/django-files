@@ -11,7 +11,6 @@ from django.conf import settings
 from django.core.cache import cache
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
-from django.db.models import QuerySet
 from django.utils import timezone
 from packaging import version
 from pytimeparse2 import parse
@@ -57,14 +56,22 @@ def app_init():
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 60, "default_retry_delay": 180})
-def generate_thumbs(files: QuerySet = None, only_missing: bool = True):
-    log.info("Generating Thumbnails - only_missing: %s - files: %s", only_missing, files)
-    if not files and only_missing:
-        files = Files.objects.filter(thumb=None)
-    elif not files:
-        files = Files.objects.all()
+def generate_thumbs(user_pk: int = None, only_missing: bool = True):
+    log.info("Generating Thumbnails - only_missing: %s - user_pk: %s", only_missing,  user_pk)
+    users = CustomUser.objects.filter(pk=user_pk) if user_pk else CustomUser.objects.all()
+    if only_missing:
+        files = Files.objects.filter(thumb__in=['', None], user__in=users, mime__startswith='image/')
+    else:
+        files = Files.objects.filters(user__in=users, mime__startswith='image')
+    log.info("Processing thumbnails for %d objects: %s", len(files), files)
     for file in files:
-        thumbnail_processor(file)
+        log.info("Generating thumbnail for: %s", file.name)
+        try:
+            thumbnail_processor(file)
+        except ValueError:
+            # if we hit a file that cannot be processed ignore and continue
+            log.error("Unable to process thumbnail for %s", file.name)
+            continue
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 5})
