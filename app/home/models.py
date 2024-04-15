@@ -126,10 +126,6 @@ class Files(models.Model):
             return f'?password={self.password}'
         return ''
 
-    def preview_url(self) -> str:
-        uri = reverse('home:url-route', kwargs={'filename': self.file.name})
-        return uri + self._get_password_query_string()
-
     def preview_uri(self) -> str:
         return reverse('home:url-route', kwargs={'filename': self.file.name}) + self._get_password_query_string()
 
