@@ -65,7 +65,7 @@ class Files(models.Model):
                 return download_url
                 # skip cache behavior for local file storage
             url = self.file.url + '?download=true'
-            return self.site_url + url + self._sign_nginx_url(self.file.url).replace('?', '&')
+            return self.site_url() + url + self._sign_nginx_url(self.file.url).replace('?', '&')
         # ######## Custom Expire Generic Static URL (cloud only) ########
         if expire is not None:
             # we cant cache this since it will be a custom value
@@ -80,7 +80,7 @@ class Files(models.Model):
                 url = self.file.url
                 cache.set(f"file.urlcache.raw.{self.pk}", url, (settings.STATIC_QUERYSTRING_EXPIRE - 60))
             return url
-        return self.site_url + self.file.url + self._sign_nginx_url(self.file.url)
+        return self.site_url() + self.file.url + self._sign_nginx_url(self.file.url)
 
     def get_meta_static_url(self) -> str:
         """
