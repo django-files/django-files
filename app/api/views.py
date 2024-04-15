@@ -221,9 +221,9 @@ def recent_view(request):
     response = []
     for file in files:
         data = model_to_dict(file, exclude=['file', 'thumb'])
-        data['url'] = file.preview_url
+        data['url'] = file.preview_url()
         data['thumb'] = file.get_gallery_url()
-        data['raw'] = file.raw_url
+        data['raw'] = file.raw_url()
         response.append(data)
     log.debug('response: %s', response)
     return JsonResponse(response, safe=False, status=200)
@@ -308,7 +308,7 @@ def remote_view(request):
     extra_args = parse_headers(request.headers, expr=parse_expire(request), **request.POST.dict())
     log.debug('extra_args: %s', extra_args)
     file = process_file(name, io.BytesIO(r.content), request.user.id, **extra_args)
-    response = {'url': f'{file.preview_url}'}
+    response = {'url': f'{file.preview_url()}'}
     log.debug('response: %s', response)
     return JsonResponse(response)
 
@@ -339,8 +339,8 @@ def process_file_upload(f: BinaryIO, user_id: int, **kwargs):
     name = kwargs.pop('name', f.name)
     file = process_file(name, f, user_id, **kwargs)
     data = {
-        'files': [file.preview_url],
-        'url': file.preview_url,
+        'files': [file.preview_url()],
+        'url': file.preview_url(),
         'raw': file.get_url(),
         'name': file.name,
         'size': file.size,
