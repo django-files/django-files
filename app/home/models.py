@@ -8,7 +8,6 @@ from home.managers import FilesManager, FileStatsManager, ShortURLsManager
 from home.util.storage import StoragesRouterFileField, use_s3
 from home.util.nginx import sign_nginx_urls
 from oauth.models import CustomUser
-from settings.context_processors import site_settings_processor
 
 
 class Files(models.Model):
@@ -43,7 +42,7 @@ class Files(models.Model):
         verbose_name = 'File'
         verbose_name_plural = 'Files'
 
-    def get_url(self, view: bool = False, download: bool = False, expire: int = None) -> str:
+    def get_url(self, view: bool = False, download: bool = False, expire: int = None, abs_url: str = '') -> str:
         """Gets a static url to a file object.
         view counts url retrieval as a view
         download makes the static url force download
@@ -65,7 +64,7 @@ class Files(models.Model):
                 return download_url
                 # skip cache behavior for local file storage
             url = self.file.url + '?download=true'
-            return self.site_url() + url + self._sign_nginx_url(self.file.url).replace('?', '&')
+            return abs_url + url + self._sign_nginx_url(self.file.url).replace('?', '&')
         # ######## Custom Expire Generic Static URL (cloud only) ########
         if expire is not None:
             # we cant cache this since it will be a custom value
@@ -80,7 +79,7 @@ class Files(models.Model):
                 url = self.file.url
                 cache.set(f"file.urlcache.raw.{self.pk}", url, (settings.STATIC_QUERYSTRING_EXPIRE - 60))
             return url
-        return self.site_url() + self.file.url + self._sign_nginx_url(self.file.url)
+        return abs_url + self.file.url + self._sign_nginx_url(self.file.url)
 
     def get_meta_static_url(self) -> str:
         """
@@ -98,7 +97,7 @@ class Files(models.Model):
             return meta_static_url
         return self.get_url(False)
 
-    def get_gallery_url(self) -> str:
+    def get_gallery_url(self, abs_url: str = '') -> str:
         """Generates a static url for use on a gallery page."""
         use = self.thumb if self.thumb else self.file
         if use_s3():
@@ -114,7 +113,7 @@ class Files(models.Model):
                 cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
             return gallery_url
         url = use.url + "?view=gallery"
-        return self.site_url() + url + self._sign_nginx_url(use.url).replace('?', '&')
+        return abs_url + url + self._sign_nginx_url(use.url).replace('?', '&')
 
     def _sign_nginx_url(self, uri: str) -> str:
         if use_s3():
@@ -129,7 +128,7 @@ class Files(models.Model):
 
     def preview_url(self) -> str:
         uri = reverse('home:url-route', kwargs={'filename': self.file.name})
-        return self.site_url() + uri + self._get_password_query_string()
+        return uri + self._get_password_query_string()
 
     def preview_uri(self) -> str:
         return reverse('home:url-route', kwargs={'filename': self.file.name}) + self._get_password_query_string()
@@ -146,12 +145,9 @@ class Files(models.Model):
             num /= 1000.0
         return f"{num:.1f} YB"
 
-    def site_url(self) -> str:
-        ctx_settings = site_settings_processor(None)['site_settings']
-        return ctx_settings['site_url']
-
-    def raw_url(self) -> str:
-        return self.site_url() + '/raw/' + self.name
+    @property
+    def raw_path(self) -> str:
+        return '/raw/' + self.name
 
 
 class FileStats(models.Model):
