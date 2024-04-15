@@ -26,6 +26,7 @@ from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
 from oauth.models import CustomUser, UserInvites
 from settings.models import SiteSettings
+from settings.context_processors import site_settings_processor
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -211,6 +212,7 @@ def recent_view(request):
     """
     View  /api/recent/
     """
+    site_settings = site_settings_processor(None)['site_settings']
     log.debug('request.user: %s', request.user)
     log.debug('%s - recent_view: is_secure: %s', request.method, request.is_secure())
     amount = int(request.GET.get('amount', 10))
@@ -220,8 +222,10 @@ def recent_view(request):
     log.debug(files)
     response = []
     for file in files:
-        data = model_to_dict(file, exclude=['file'])
-        data['url'] = file.preview_url()
+        data = model_to_dict(file, exclude=['file', 'thumb'])
+        data['url'] = site_settings['site_url'] + file.preview_uri()
+        data['thumb'] = site_settings['site_url'] + file.get_gallery_url()
+        data['raw'] = site_settings['site_url'] + file.raw_path
         response.append(data)
     log.debug('response: %s', response)
     return JsonResponse(response, safe=False, status=200)
@@ -282,6 +286,7 @@ def remote_view(request):
     """
     View  /api/remote/
     """
+    site_settings = site_settings_processor(None)['site_settings']
     log.debug('%s - remote_view: is_secure: %s', request.method, request.is_secure())
     log.debug('request.POST: %s', request.POST)
     data = get_json_body(request)
@@ -306,7 +311,7 @@ def remote_view(request):
     extra_args = parse_headers(request.headers, expr=parse_expire(request), **request.POST.dict())
     log.debug('extra_args: %s', extra_args)
     file = process_file(name, io.BytesIO(r.content), request.user.id, **extra_args)
-    response = {'url': f'{file.preview_url()}'}
+    response = {'url': f'{site_settings["site_url"] + file.preview_uri()}'}
     log.debug('response: %s', response)
     return JsonResponse(response)
 
@@ -334,11 +339,12 @@ def parse_headers(headers: dict, **kwargs) -> dict:
 def process_file_upload(f: BinaryIO, user_id: int, **kwargs):
     log.debug('user_id: %s', user_id)
     log.debug('kwargs: %s', kwargs)
+    site_settings = site_settings_processor(None)['site_settings']
     name = kwargs.pop('name', f.name)
     file = process_file(name, f, user_id, **kwargs)
     data = {
-        'files': [file.preview_url()],
-        'url': file.preview_url(),
+        'files': [site_settings['site_url'] + file.preview_uri()],
+        'url': site_settings['site_url'] + file.preview_uri(),
         'raw': file.get_url(),
         'name': file.name,
         'size': file.size,

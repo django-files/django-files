@@ -14,8 +14,10 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from packaging import version
 from pytimeparse2 import parse
+from PIL import UnidentifiedImageError
 
 from home.util.storage import use_s3
+from home.util.image import thumbnail_processor
 from home.models import Files, FileStats, ShortURLs
 from home.util.quota import regenerate_all_storage_values
 from oauth.models import CustomUser
@@ -52,6 +54,25 @@ def app_init():
     #     log.info('public_user created: public')
     # else:
     #     log.warning('public_user already created: public')
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 60, "default_retry_delay": 180})
+def generate_thumbs(user_pk: int = None, only_missing: bool = True):
+    log.info("Generating Thumbnails - only_missing: %s - user_pk: %s", only_missing,  user_pk)
+    users = CustomUser.objects.filter(pk=user_pk) if user_pk else CustomUser.objects.all()
+    if only_missing:
+        files = Files.objects.filter(thumb=None, user__in=users, mime__startswith='image/')
+    else:
+        files = Files.objects.filters(user__in=users, mime__startswith='image')
+    log.info("Processing thumbnails for %d objects: %s", len(files), files)
+    for file in files:
+        log.info("Generating thumbnail for: %s", file.name)
+        try:
+            thumbnail_processor(file)
+        except (ValueError, UnidentifiedImageError):
+            # if we hit a file that cannot be processed ignore and continue
+            log.error("Unable to process thumbnail for %s", file.name)
+            continue
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 5})

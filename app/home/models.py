@@ -8,7 +8,6 @@ from home.managers import FilesManager, FileStatsManager, ShortURLsManager
 from home.util.storage import StoragesRouterFileField, use_s3
 from home.util.nginx import sign_nginx_urls
 from oauth.models import CustomUser
-from settings.models import SiteSettings
 
 
 class Files(models.Model):
@@ -33,6 +32,7 @@ class Files(models.Model):
     private = models.BooleanField(default=False, verbose_name='Private File')
     objects = FilesManager()
     avatar = models.BooleanField(default=False, help_text="Determines file is a user avatar.")
+    thumb = StoragesRouterFileField(upload_to='./thumbs/', null=True)
 
     def __str__(self):
         return f'<File(id={self.id} size={self.size} name={self.name})>'
@@ -42,9 +42,9 @@ class Files(models.Model):
         verbose_name = 'File'
         verbose_name_plural = 'Files'
 
-    def get_url(self, view: bool = False, download: bool = False, expire: int = None) -> str:
+    def get_url(self, view: bool = False, download: bool = False, expire: int = None, abs_url: str = '') -> str:
         """Gets a static url to a file object.
-        view counts url retrival as a view
+        view counts url retrieval as a view
         download makes the static url force download
         expire overrides the signing expire time for cloud storage urls
         """
@@ -64,7 +64,7 @@ class Files(models.Model):
                 return download_url
                 # skip cache behavior for local file storage
             url = self.file.url + '?download=true'
-            return url + self._sign_nginx_url(self.file.url).replace('?', '&')
+            return abs_url + url + self._sign_nginx_url(self.file.url).replace('?', '&')
         # ######## Custom Expire Generic Static URL (cloud only) ########
         if expire is not None:
             # we cant cache this since it will be a custom value
@@ -79,7 +79,7 @@ class Files(models.Model):
                 url = self.file.url
                 cache.set(f"file.urlcache.raw.{self.pk}", url, (settings.STATIC_QUERYSTRING_EXPIRE - 60))
             return url
-        return self.file.url + self._sign_nginx_url(self.file.url)
+        return abs_url + self.file.url + self._sign_nginx_url(self.file.url)
 
     def get_meta_static_url(self) -> str:
         """
@@ -97,22 +97,23 @@ class Files(models.Model):
             return meta_static_url
         return self.get_url(False)
 
-    def get_gallery_url(self) -> str:
+    def get_gallery_url(self, abs_url: str = '') -> str:
         """Generates a static url for use on a gallery page."""
+        use = self.thumb if self.thumb else self.file
         if use_s3():
             # only want cache for s3
             # override signing expire on gallery urls to avoid cached gallery pages from failing to load
             # TODO: access protected member, look into how to better handle this
             if (gallery_url := cache.get(f"file.urlcache.gallery.{self.pk}")) is None:
                 gallery_url = self.file.file._storage.url(
-                    self.file.file.name,
+                    use.file.name,
                     expire=86400
                 )
                 # intentionally expire cache before gallery url signing expires
                 cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
             return gallery_url
-        url = self.file.url + "?view=gallery"
-        return url + self._sign_nginx_url(self.file.url).replace('?', '&')
+        url = use.url + "?view=gallery"
+        return abs_url + url + self._sign_nginx_url(use.url).replace('?', '&')
 
     def _sign_nginx_url(self, uri: str) -> str:
         if use_s3():
@@ -124,11 +125,6 @@ class Files(models.Model):
         if self.password:
             return f'?password={self.password}'
         return ''
-
-    def preview_url(self) -> str:
-        site_settings = SiteSettings.objects.settings()
-        uri = reverse('home:url-route', kwargs={'filename': self.file.name})
-        return site_settings.site_url + uri + self._get_password_query_string()
 
     def preview_uri(self) -> str:
         return reverse('home:url-route', kwargs={'filename': self.file.name}) + self._get_password_query_string()
@@ -144,6 +140,10 @@ class Files(models.Model):
                 return f"{num:3.1f} {unit}B"
             num /= 1000.0
         return f"{num:.1f} YB"
+
+    @property
+    def raw_path(self) -> str:
+        return '/raw/' + self.name
 
 
 class FileStats(models.Model):

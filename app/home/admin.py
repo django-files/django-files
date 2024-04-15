@@ -11,7 +11,7 @@ class FilesAdmin(admin.ModelAdmin):
     model = Files
     list_display = ('id', 'show_file', 'size', 'expr', 'mime', 'user', 'date',)
     list_filter = ('user', 'expr', 'mime',)
-    readonly_fields = ('id', 'show_file', 'size', 'user', 'date',)
+    readonly_fields = ('id', 'show_file', 'size', 'user', 'date', 'avatar')
     search_fields = ('id', 'show_file', 'size', 'expr', 'mime', 'date',)
     ordering = ('-date',)
 

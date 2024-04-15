@@ -283,6 +283,7 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 >
 > OAuth may be configured from the UI.  
 > AWS/Duo/Sentry **require** environment variables.
+> Switching between local storage and s3 is not supported and WILL cause problems.
 
 | Variable                  | Description        | Example                                              |
 | ------------------------- | ------------------ | ---------------------------------------------------- |
@@ -328,10 +329,6 @@ based on what is set in the `docker-compose.yaml` file.
 
 ## Dev Deploy
 
-> **Note**
->
-> These instructions may be out of date, but should get you up and running.
-
 Command included below to generate the required `SECRET`.  
 The `SITE_URL` should be set with a variable for development, in UI Settings.
 You may also want to configure an auth method from the variables above.
@@ -342,7 +339,7 @@ cd django-files
 cp settings.env.example settings.env
 
 cat /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 50
-# copy above output for SECRET variable
+# copy above output for SECRET variable, add to settings or as environment variable
 vim settings.env
 
 docker compose up --build --remove-orphans --force-recreate --detach
@@ -354,8 +351,7 @@ docker compose logs -f
 docker compose down --remove-orphans
 ```
 
-Auto restarting dev deployment using settings.env for config.
-
+Auto restarting dev deployment using settings.env for config. (ctrl+c to restart, double ctrl+c to exit)
 ```text
 _file="docker-compose-dev.yaml";while true;do docker compose -f "${_file}" down --remove-orphans;sep 10;docker compose -f "${_file}" up --build --remove-orphans -d --force-recreate;docker compose -f "${_file}" logs -f;echo sleep 1;sleep 1;done
 ```

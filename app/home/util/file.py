@@ -12,7 +12,7 @@ from typing import BinaryIO
 from django.core.exceptions import ObjectDoesNotExist
 
 from home.models import Files
-from home.util.image import ImageProcessor
+from home.util.image import ImageProcessor, thumbnail_processor
 from home.util.rand import rand_string
 from home.util.misc import anytobool
 from home.util.quota import increment_storage_usage
@@ -100,6 +100,8 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     log.debug('file.file.name: %s', file.file.name)
     file.name = file.file.name
     file.save()
+    if 'image' in file_mime:
+        thumbnail_processor(file, f.read())
     increment_storage_usage(file)
     new_file_websocket.apply_async(args=[file.pk], priority=0)
     send_discord_message.delay(file.pk)

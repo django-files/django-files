@@ -334,10 +334,8 @@ class FilesTestCase(TestCase):
         #     file = process_file(path.name, f, self.user.id)
         print(f'file.file.path: {file.file.path}')
         print(f'file.get_url(): {file.get_url()}')
-        print(f'file.preview_url(): {file.preview_url()}')
         print(f'file.preview_uri(): {file.preview_uri()}')
         self.assertRegex(file.get_url(), r'/r/gps\.jpg\?md5=.*&expires=.*')
-        self.assertEqual(file.preview_url(), 'https://example.com/u/gps.jpg')
         self.assertEqual(file.preview_uri(), '/u/gps.jpg')
         self.assertEqual(file.mime, 'image/jpeg')
         self.assertEqual(file.size, 3412)
@@ -347,7 +345,7 @@ class FilesTestCase(TestCase):
         response = self.client.get(reverse('home:url-route', kwargs={'filename': file.name}), follow=True)
         self.assertEqual(response.status_code, 200)
         files = Files.objects.filter(user=self.user)
-        self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
+        self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files) + 1)  # account for thumbnail added files
 
         print('--- Testing: API:REMOTE')
         url = 'https://raw.githubusercontent.com/django-files/django-files/master/.assets/gps.jpg'
@@ -356,7 +354,7 @@ class FilesTestCase(TestCase):
         print(response.json())
         self.assertEqual(response.status_code, 200)
         files = Files.objects.filter(user=self.user)
-        self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files))
+        self.assertEqual(len(os.listdir(settings.MEDIA_ROOT)), len(files) + 1)
 
         print('--- Testing: SHORTS')
         url = 'https://raw.githubusercontent.com/django-files/django-files/master/.assets/gps.jpg'

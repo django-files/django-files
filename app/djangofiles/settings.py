@@ -123,6 +123,11 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': datetime.timedelta(seconds=1),
         'one_off': True,
     },
+    'generate_thumbs': {
+        'task': 'home.tasks.generate_thumbs',
+        'schedule': datetime.timedelta(seconds=1),
+        'one_off': True,
+    },
     'app_cleanup': {
         'task': 'home.tasks.app_cleanup',
         'schedule': datetime.timedelta(hours=config('APP_CLEANUP_HOUR', 1, int)),

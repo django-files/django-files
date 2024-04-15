@@ -162,7 +162,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 return self._error('File owned by another user.', **kwargs)
             file[0].private = not file[0].private
             file[0].save()
-            response = model_to_dict(file[0], exclude=['file'])
+            response = model_to_dict(file[0], exclude=['file', 'thumb'])
             response.update({'event': 'toggle-private-file'})
             log.debug('response: %s', response)
             return response
@@ -188,7 +188,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             file[0].expr = expr or ""
             file[0].save()
             # return self._success('File Expire Updated.', **kwargs)
-            response = model_to_dict(file[0], exclude=['file'])
+            response = model_to_dict(file[0], exclude=['file', 'thumb'])
             response.update({'event': 'set-expr-file'})
             log.debug('response: %s', response)
             return response
@@ -210,7 +210,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             log.debug('password: %s', password)
             file[0].password = password or ""
             file[0].save()
-            response = model_to_dict(file[0], exclude=['file'])
+            response = model_to_dict(file[0], exclude=['file', 'thumb'])
             response.update({'event': 'set-password-file'})
             log.debug('response: %s', response)
             return response

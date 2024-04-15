@@ -38,7 +38,7 @@ def home_view(request):
     files = Files.objects.get_request(request)
     stats = FileStats.objects.get_request(request)
     shorts = ShortURLs.objects.get_request(request)
-    context = {'files': files, 'stats': stats, 'shorts': shorts}
+    context = {'files': files, 'stats': stats, 'shorts': shorts, 'full_context': True}
     return render(request, 'home.html', context)
 
 
@@ -86,10 +86,10 @@ def files_view(request):
                 files = Files.objects.filtered_request(request, user_id=int(user))
         else:
             files = Files.objects.get_request(request)
-        context.update({'files': files})
+        context.update({'files': files, 'full_context': True})
     else:
         files = Files.objects.get_request(request)
-        context = {'files': files}
+        context = {'files': files, 'full_context': True}
     return render(request, 'files.html', context)
 
 
@@ -426,7 +426,8 @@ def url_route_view(request, filename):
         'render': file.mime.split('/', 1)[0],
         "static_url": file.get_url(view=use_s3()),
         "static_meta_url": file.get_meta_static_url(),
-        "file_avatar_url": file.user.get_avatar_url()
+        "file_avatar_url": file.user.get_avatar_url(),
+        'full_context': request.user.is_authenticated and request.user == file.user
     }
     if lock := file_lock(request, ctx=ctx):
         return lock
@@ -437,15 +438,18 @@ def url_route_view(request, filename):
             if exposure_time := file.exif.get('ExposureTime'):
                 file.exif['ExposureTime'] = str(Fraction(exposure_time).limit_denominator(5000))
             if lens_model := file.exif.get('LensModel'):
-                # handle cases where lensmodel is relevant but some values redunant
+                # handle cases where lensmodel is relevant but some values are redundant
                 lm_f_stripped = lens_model.replace(f"f/{file.exif.get('FNumber', '')}", "")
                 lm_model_stripped = lm_f_stripped.replace(f"{file.exif.get('Model')}", "")
                 file.exif['LensModel'] = lm_model_stripped
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
         log.debug('MARKDOWN')
-        with open(file.file.path, 'r') as f:
-            md_text = f.read()
+        if use_s3():
+            md_text = file.file.read().decode("utf-8")
+        else:
+            with open(file.file.path, 'r') as f:
+                md_text = f.read()
         ctx['markdown'] = markdown.markdown(md_text, extensions=['extra', 'toc'])
         file.view += 1
         file.save()
