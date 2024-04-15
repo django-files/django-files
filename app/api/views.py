@@ -26,6 +26,7 @@ from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
 from oauth.models import CustomUser, UserInvites
 from settings.models import SiteSettings
+from settings.context_processors import site_settings_processor
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -211,6 +212,8 @@ def recent_view(request):
     """
     View  /api/recent/
     """
+    site_settings = site_settings_processor(request)['site_settings']
+    print(site_settings)
     log.debug('request.user: %s', request.user)
     log.debug('%s - recent_view: is_secure: %s', request.method, request.is_secure())
     amount = int(request.GET.get('amount', 10))
@@ -220,8 +223,10 @@ def recent_view(request):
     log.debug(files)
     response = []
     for file in files:
-        data = model_to_dict(file, exclude=['file'])
+        data = model_to_dict(file, exclude=['file', 'thumb'])
         data['url'] = file.preview_url()
+        data['thumb_url'] = file.get_gallery_url()
+        data['raw_url'] = site_settings['site_url'] + '/raw/' + file.name
         response.append(data)
     log.debug('response: %s', response)
     return JsonResponse(response, safe=False, status=200)
