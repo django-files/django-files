@@ -114,7 +114,7 @@ class Files(models.Model):
                 cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
             return gallery_url
         url = use.url + "?view=gallery"
-        return self.site_url + url + self._sign_nginx_url(use.url).replace('?', '&')
+        return self.site_url() + url + self._sign_nginx_url(use.url).replace('?', '&')
 
     def _sign_nginx_url(self, uri: str) -> str:
         if use_s3():
@@ -129,7 +129,7 @@ class Files(models.Model):
 
     def preview_url(self) -> str:
         uri = reverse('home:url-route', kwargs={'filename': self.file.name})
-        return self.site_url + uri + self._get_password_query_string()
+        return self.site_url() + uri + self._get_password_query_string()
 
     def preview_uri(self) -> str:
         return reverse('home:url-route', kwargs={'filename': self.file.name}) + self._get_password_query_string()
@@ -146,13 +146,12 @@ class Files(models.Model):
             num /= 1000.0
         return f"{num:.1f} YB"
 
-    @property
     def site_url(self) -> str:
         ctx_settings = site_settings_processor(None)['site_settings']
         return ctx_settings['site_url']
 
     def raw_url(self) -> str:
-        return self.site_url + '/raw/' + self.name
+        return self.site_url() + '/raw/' + self.name
 
 
 class FileStats(models.Model):
