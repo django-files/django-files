@@ -38,7 +38,7 @@ def home_view(request):
     files = Files.objects.get_request(request)
     stats = FileStats.objects.get_request(request)
     shorts = ShortURLs.objects.get_request(request)
-    context = {'files': files, 'stats': stats, 'shorts': shorts}
+    context = {'files': files, 'stats': stats, 'shorts': shorts, 'full_context': True}
     return render(request, 'home.html', context)
 
 
