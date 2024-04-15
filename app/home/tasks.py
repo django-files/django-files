@@ -14,6 +14,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from packaging import version
 from pytimeparse2 import parse
+from PIL import UnidentifiedImageError
 
 from home.util.storage import use_s3
 from home.util.image import thumbnail_processor
@@ -68,7 +69,7 @@ def generate_thumbs(user_pk: int = None, only_missing: bool = True):
         log.info("Generating thumbnail for: %s", file.name)
         try:
             thumbnail_processor(file)
-        except ValueError:
+        except (ValueError, UnidentifiedImageError):
             # if we hit a file that cannot be processed ignore and continue
             log.error("Unable to process thumbnail for %s", file.name)
             continue
