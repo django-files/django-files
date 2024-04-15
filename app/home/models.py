@@ -127,6 +127,7 @@ class Files(models.Model):
             return f'?password={self.password}'
         return ''
 
+    @property
     def preview_url(self) -> str:
         uri = reverse('home:url-route', kwargs={'filename': self.file.name})
         return self.site_url + uri + self._get_password_query_string()
@@ -151,7 +152,8 @@ class Files(models.Model):
         ctx_settings = site_settings_processor(None)['site_settings']
         return ctx_settings['site_url']
 
-    def get_raw_url(self) -> str:
+    @property
+    def raw_url(self) -> str:
         return self.site_url + '/raw/' + self.name
 
 
