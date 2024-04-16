@@ -14,17 +14,29 @@
 
     <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
 
-    {% if not files %}
-        <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
-    {% else %}
-        <div class="row justify-content-center">
-            {% for file in files %}
-                {% include 'include/gallery-div.html' with file=file %}
-            {% endfor %}
-        </div>
-    {% endif %}
+    <div class="d-none">
+{#        <p class="galtest mb-3">test</p>#}
+        <img src="{% static 'images/assets/loading.gif' %}" class="img-responsive" style="max-height: 512px; max-width: 512px">
+    </div>
+
+    <div id="gallery-container"></div>
+
+{#    {% if not files %}#}
+{#        <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>#}
+{#    {% else %}#}
+{#        <div class="row justify-content-center">#}
+{#            {% for file in files %}#}
+{#                {% include 'include/gallery-div.html' with file=file %}#}
+{#            {% endfor %}#}
+{#        </div>#}
+{#    {% endif %}#}
 
 </div>
 {% endblock %}
 
-{% block tail %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block tail %}
+    <script type="text/javascript" src="{% static 'js/gallery.js' %}"></script>
+{% endblock %}
+
