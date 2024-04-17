@@ -11,32 +11,35 @@
 
 {% block body %}
 
-<div class="d-none">
-    <i class="fa-solid fa-lock me-1"></i>
-    <i class="fa-solid fa-key me-1"></i>
-    <i class="fa-regular fa-hourglass me-1"></i>
-    <img src="{% static 'images/assets/loading.gif' %}" class="img-responsive gallery-image">
-</div>
+    <div class="container-fluid py-3 px-4">
 
-<div class="container-fluid py-3 px-4">
+        <h1><i class="fa-regular fa-images me-2"></i> Gallery</h1>
 
-    <h1><i class="fa-regular fa-images me-2"></i> Gallery</h1>
+        <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
 
-    <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
+        <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap"></div>
 
-    <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap"></div>
+    {#    {% if not files %}#}
+    {#        <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>#}
+    {#    {% else %}#}
+    {#        <div class="row justify-content-center">#}
+    {#            {% for file in files %}#}
+    {#                {% include 'include/gallery-div.html' with file=file %}#}
+    {#            {% endfor %}#}
+    {#        </div>#}
+    {#    {% endif %}#}
 
-{#    {% if not files %}#}
-{#        <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>#}
-{#    {% else %}#}
-{#        <div class="row justify-content-center">#}
-{#            {% for file in files %}#}
-{#                {% include 'include/gallery-div.html' with file=file %}#}
-{#            {% endfor %}#}
-{#        </div>#}
-{#    {% endif %}#}
+    </div>
 
-</div>
+    <div class="d-none">
+        <i class="fa-solid fa-lock me-1"></i>
+        <i class="fa-solid fa-key me-1"></i>
+        <i class="fa-regular fa-hourglass me-1"></i>
+        <i class="fa-regular fa-square-caret-down"></i>
+        <img src="{% static 'images/assets/loading.gif' %}" class="img-responsive gallery-image">
+        {% include 'files/ctx-menu.html' %}
+        {% include 'files/ctx-modals.html' %}
+    </div>
 {% endblock %}
 
 {% block footer %}{% endblock %}

@@ -7,16 +7,16 @@
             <i class="fa-solid fa-link fa-fw me-2 link-info"></i> Copy Share Link</a>
     </li>
     <li>
-        <a role="button" class="clip dropdown-item" data-clipboard-text="{{ site_settings.site_url }}{% url 'home:url-raw-redirect' file.file.name %}">
+        <a role="button" class="clip dropdown-item" data-clipboard-text="{% if file.file.name %}{{ site_settings.site_url }}{% url 'home:url-raw-redirect' file.file.name %}{% endif %}">
             <i class="fa-solid fa-link fa-fw me-2"></i> Copy Raw Link</a>
     </li>
     <li><hr class="dropdown-divider"></li>
     <li>
-        <a role="button" class="dropdown-item" href="{% url 'home:url-raw-redirect' file.file.name %}?download=true" download="{{ file.name }}">
+        <a role="button" class="dropdown-item" href="{% if file.file.name %}{% url 'home:url-raw-redirect' file.file.name %}?download=true{% endif %}" download="{{ file.name }}">
             <i class="fa-solid fa-download fa-fw me-2 link-info"></i> Download</a>
     </li>
     <li>
-        <a role="button" class="dropdown-item" href="{% url 'home:url-raw-redirect' file.file.name %}">
+        <a role="button" class="dropdown-item" href="{% if file.file.name %}{% url 'home:url-raw-redirect' file.file.name %}{% endif %}">
             <i class="fa-solid fa-eye fa-fw me-2"></i> View Raw</a>
     </li>
     {% if full_context %}

@@ -9,6 +9,7 @@ const imageNode = document.querySelector('div.d-none img')
 const faLock = document.querySelector('div.d-none .fa-lock')
 const faKey = document.querySelector('div.d-none .fa-key')
 const faHourglass = document.querySelector('div.d-none .fa-hourglass')
+const faCaret = document.querySelector('div.d-none .fa-square-caret-down')
 
 let nextPage = 1
 
@@ -45,7 +46,7 @@ async function galleryScroll(event, buffer = 600) {
  * @function addNodes
  */
 async function addNodes() {
-    console.debug('addNode')
+    console.debug('addNodes')
     if (!nextPage) {
         return console.warn('No Next Page:', nextPage)
     }
@@ -55,25 +56,25 @@ async function addNodes() {
     for (const file of data.files) {
         // console.debug('file:', file)
 
-        const div = document.createElement('div')
-        div.classList.add(
+        const outer = document.createElement('div')
+        outer.classList.add(
             'm-1',
             'rounded-1',
             'border',
             'border-3',
             'border-secondary'
         )
-        div.style.position = 'relative'
-        div.style.overflow = 'hidden'
+        outer.style.position = 'relative'
+        outer.style.overflow = 'hidden'
         const box1 = '#919191'
         const box2 = '#495057'
-        div.style.backgroundColor = '#495057'
-        div.style.backgroundImage = `linear-gradient(45deg, ${box2} 25%, transparent 25%), linear-gradient(-45deg, ${box2} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${box2} 75%), linear-gradient(-45deg, transparent 75%, ${box2} 75%)`
-        div.style.backgroundImage = `linear-gradient(45deg, ${box1} 25%, transparent 25%), linear-gradient(135deg, ${box1} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${box1} 75%), linear-gradient(135deg, transparent 75%, ${box1} 75%)`
-        div.style.backgroundSize = '25px 25px'
-        div.style.position = '0 0, 12.5px 0, 12.5px -12.5px, 0px 12.5px'
-        div.addEventListener('mouseover', mouseOver)
-        div.addEventListener('mouseout', mouseOut)
+        outer.style.backgroundColor = '#495057'
+        outer.style.backgroundImage = `linear-gradient(45deg, ${box2} 25%, transparent 25%), linear-gradient(-45deg, ${box2} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${box2} 75%), linear-gradient(-45deg, transparent 75%, ${box2} 75%)`
+        outer.style.backgroundImage = `linear-gradient(45deg, ${box1} 25%, transparent 25%), linear-gradient(135deg, ${box1} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${box1} 75%), linear-gradient(135deg, transparent 75%, ${box1} 75%)`
+        outer.style.backgroundSize = '25px 25px'
+        outer.style.position = '0 0, 12.5px 0, 12.5px -12.5px, 0px 12.5px'
+        outer.addEventListener('mouseover', mouseOver)
+        outer.addEventListener('mouseout', mouseOut)
 
         // const img = document.createElement('img')
         // img.style.maxWidth = '512px'
@@ -87,15 +88,17 @@ async function addNodes() {
 
         const topLeft = document.createElement('div')
         topLeft.classList.add(
-            'gallery-text',
+            'gallery-mouse',
+            'd-none',
+            'text-shadow',
             'text-nowrap',
             'small',
-            'd-none',
             'text-warning-emphasis'
         )
         topLeft.style.position = 'absolute'
         topLeft.style.top = '4px'
         topLeft.style.left = '6px'
+        topLeft.style.pointerEvents = 'none'
         if (file.private) {
             topLeft.appendChild(faLock.cloneNode(true))
         }
@@ -108,14 +111,16 @@ async function addNodes() {
 
         const bottomLeft = document.createElement('div')
         bottomLeft.classList.add(
-            'gallery-text',
+            'gallery-mouse',
+            'd-none',
+            'text-shadow',
             'text-nowrap',
-            'small',
-            'd-none'
+            'small'
         )
         bottomLeft.style.position = 'absolute'
         bottomLeft.style.bottom = '4px'
         bottomLeft.style.left = '6px'
+        bottomLeft.style.pointerEvents = 'none'
         if (file.size) {
             addSpan(bottomLeft, formatBytes(file.size))
         }
@@ -127,12 +132,46 @@ async function addNodes() {
             addSpan(bottomLeft, file.name)
         }
 
+        const ctxMenu = genCtx(file)
+
         link.appendChild(img)
-        div.appendChild(link)
-        div.appendChild(topLeft)
-        div.appendChild(bottomLeft)
-        galleryContainer.appendChild(div)
+        outer.appendChild(link)
+        outer.appendChild(topLeft)
+        outer.appendChild(bottomLeft)
+        outer.appendChild(ctxMenu)
+        galleryContainer.appendChild(outer)
     }
+}
+
+/**
+ * Generate Context Menu
+ * @function genCtx
+ * @param {Object} data
+ * @return {HTMLElement}
+ */
+function genCtx(data) {
+    // let ctx = document.getElementById('ctx-menu-').cloneNode(true)
+    console.debug('renderCtxMenu:', data)
+    const ctxMenu = document.createElement('div')
+    ctxMenu.classList.add(
+        'gallery-mouse',
+        'd-none',
+        'text-stroke',
+        'fs-4',
+        'ctx-menu'
+    )
+    ctxMenu.style.position = 'absolute'
+    ctxMenu.style.top = '-7px'
+    ctxMenu.style.right = '1px'
+    // const link = document.createElement('a')
+    // link.classList.add('link-body-emphasis', 'ctx-menu')
+    // link.href = 'about:blank'
+    // link.setAttribute('role', 'button')
+    // link.appendChild(faCaret.cloneNode(true))
+    // ctxMenu.appendChild(link)
+    ctxMenu.appendChild(faCaret.cloneNode(true))
+    console.debug('ctxMenu:', ctxMenu)
+    return ctxMenu
 }
 
 /**
@@ -155,8 +194,10 @@ function addSpan(parent, textContent) {
  * @param {MouseEvent} event
  */
 function mouseOver(event) {
+    // console.debug('mouseOver:', event)
+    // console.debug('mouse: Show')
     const closest = event.target.closest('div')
-    const divs = closest.querySelectorAll('.gallery-text')
+    const divs = closest.querySelectorAll('.gallery-mouse')
     divs.forEach((div) => div.classList.remove('d-none'))
 }
 
@@ -166,8 +207,19 @@ function mouseOver(event) {
  * @param {MouseEvent} event
  */
 function mouseOut(event) {
+    // console.debug('mouseOut:', event)
+
+    // TODO: Fix mouse out detection when mousing over ctx menu
+    const link = event.target.closest('a')
+    // console.debug('link:', link)
+    if (link?.classList.contains('ctx-menu')) {
+        // console.debug('return on ctx-menu')
+        return
+    }
+
+    // console.debug('mouse: Hide')
     const closest = event.target.closest('div')
-    const divs = closest.querySelectorAll('.gallery-text')
+    const divs = closest.querySelectorAll('.gallery-mouse')
     divs.forEach((div) => div.classList.add('d-none'))
 }
 
