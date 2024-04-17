@@ -10,15 +10,19 @@
 {% endblock %}
 
 {% block body %}
+
+<div class="d-none">
+    <i class="fa-solid fa-lock me-1"></i>
+    <i class="fa-solid fa-key me-1"></i>
+    <i class="fa-regular fa-hourglass me-1"></i>
+    <img src="{% static 'images/assets/loading.gif' %}" class="img-responsive gallery-image">
+</div>
+
 <div class="container-fluid py-3 px-4">
 
     <h1><i class="fa-regular fa-images me-2"></i> Gallery</h1>
 
     <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
-
-    <div class="d-none">
-        <img src="{% static 'images/assets/loading.gif' %}" class="img-responsive gallery-image">
-    </div>
 
     <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap"></div>
 
