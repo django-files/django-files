@@ -15,8 +15,9 @@
     <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
 
     <div class="d-none">
-{#        <p class="galtest mb-3">test</p>#}
-        <img src="{% static 'images/assets/loading.gif' %}" class="img-responsive" style="max-height: 512px; max-width: 512px">
+        <div id="gallery-source">
+            <img src="{% static 'images/assets/loading.gif' %}" class="img-responsive p-1" style="max-height: 512px; max-width: 512px">
+        </div>
     </div>
 
     <div id="gallery-container"></div>

@@ -25,6 +25,7 @@ from home.util.s3 import use_s3
 from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.models import SiteSettings
+from settings.context_processors import site_settings_processor
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -112,40 +113,35 @@ def gallery_view(request):
 
 @cache_control(no_cache=True)
 @login_required
+@cache_page(cache_seconds, key_prefix="files")
 def gallery_page_view(request, page):
     """
     View  /gallery/{page}/
     """
+    count = 12
     log.debug('%s - gallery_page_view: %s', request.method, page)
     q = Files.objects.get_request(request)
-    paginator = Paginator(q, 10)
-    log.debug('paginator.count: %s', paginator.count)
-    log.debug('paginator.num_pages: %s', paginator.num_pages)
-    log.debug('paginator.page: %s', paginator.page)
-    log.debug('paginator.per_page: %s', paginator.per_page)
-
+    paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
-    data = serializers.serialize('json', page_obj)
-    log.debug('-'*40)
-    log.debug(page_obj)
-    log.debug('-'*40)
-    log.debug(data)
-
+    # data = serializers.serialize('json', page_obj)
+    # return JsonResponse([x.serialize() for x in page_obj], safe=False)
+    # TODO: This block and extra bits were copied from API
+    #       This will most likely be moved to API and functionized
+    site_settings = site_settings_processor(None)['site_settings']
     files = []
     for file in page_obj.object_list:
         data = model_to_dict(file, exclude=['file', 'thumb'])
-        # data['url'] = site_settings['site_url'] + file.preview_uri()
-        # data['thumb'] = file.get_gallery_url() if use_s3() else site_settings['site_url'] + file.get_gallery_url()
-        # data['raw'] = site_settings['site_url'] + file.raw_path
+        data['url'] = site_settings['site_url'] + file.preview_uri()
+        data['thumb'] = file.get_gallery_url() if use_s3() else site_settings['site_url'] + file.get_gallery_url()
+        data['raw'] = site_settings['site_url'] + file.raw_path
         files.append(data)
     log.debug('files: %s', files)
-    # response = {
-    #     'next' =
-    # }
-    return JsonResponse(files, safe=False, status=200)
-
-    # return JsonResponse(d, safe=False)
-    # return render(request, "list.html", {"page_obj": page_obj})
+    _next = page_obj.next_page_number() if page_obj.has_next() else None
+    response = {
+        'files': files,
+        'next': _next,
+    }
+    return JsonResponse(response, safe=False, status=200)
 
 
 @cache_control(no_cache=True)
