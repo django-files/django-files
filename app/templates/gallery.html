@@ -5,7 +5,9 @@
 {% block gallery_active %}active{% endblock %}
 {% block title %}Gallery{% endblock %}
 
-{% block head %}{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/gallery.css' %}" />
+{% endblock %}
 
 {% block body %}
 <div class="container-fluid py-3 px-4">
@@ -15,12 +17,10 @@
     <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
 
     <div class="d-none">
-        <div id="gallery-source">
-            <img src="{% static 'images/assets/loading.gif' %}" class="img-responsive p-1" style="max-height: 512px; max-width: 512px">
-        </div>
+        <img src="{% static 'images/assets/loading.gif' %}" class="img-responsive gallery-image">
     </div>
 
-    <div id="gallery-container"></div>
+    <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap"></div>
 
 {#    {% if not files %}#}
 {#        <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>#}
