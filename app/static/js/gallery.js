@@ -65,6 +65,7 @@ async function addNodes() {
             'border-secondary'
         )
         outer.style.position = 'relative'
+        // TODO: hides text overflow but also the ctx menu
         outer.style.overflow = 'hidden'
         const box1 = '#919191'
         const box2 = '#495057'
@@ -146,32 +147,40 @@ async function addNodes() {
 /**
  * Generate Context Menu
  * @function genCtx
- * @param {Object} data
+ * @param {Object} file
  * @return {HTMLElement}
  */
-function genCtx(data) {
-    // let ctx = document.getElementById('ctx-menu-').cloneNode(true)
-    console.debug('renderCtxMenu:', data)
+function genCtx(file) {
+    console.debug('renderCtxMenu:', file)
     const ctxMenu = document.createElement('div')
-    ctxMenu.classList.add(
-        'gallery-mouse',
-        'd-none',
-        'text-stroke',
-        'fs-4',
-        'ctx-menu'
-    )
+    ctxMenu.classList.add('text-stroke', 'fs-4', 'ctx-menu')
     ctxMenu.style.position = 'absolute'
     ctxMenu.style.top = '-7px'
     ctxMenu.style.right = '1px'
-    // const link = document.createElement('a')
-    // link.classList.add('link-body-emphasis', 'ctx-menu')
+
+    const link = document.createElement('a')
+    link.classList.add('link-body-emphasis', 'ctx-menu')
     // link.href = 'about:blank'
-    // link.setAttribute('role', 'button')
-    // link.appendChild(faCaret.cloneNode(true))
-    // ctxMenu.appendChild(link)
-    ctxMenu.appendChild(faCaret.cloneNode(true))
+    link.setAttribute('role', 'button')
+    link.addEventListener('click', ctxClick)
+    link.dataset.bsToggle = 'dropdown'
+    link.setAttribute('aria-expanded', 'false')
+    link.appendChild(faCaret.cloneNode(true))
+    ctxMenu.appendChild(link)
+
+    const menu = document.getElementById('ctx-menu-').cloneNode(true)
+    menu.id = `ctx-menmu-${file.id}`
+    ctxMenu.appendChild(menu)
+
+    // ctxMenu.appendChild(faCaret.cloneNode(true))
     console.debug('ctxMenu:', ctxMenu)
     return ctxMenu
+}
+
+function ctxClick(event) {
+    console.debug('ctxClick', event)
+    event.preventDefault()
+    // let ctx = document.getElementById('ctx-menu-')
 }
 
 /**
