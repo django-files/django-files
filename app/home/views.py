@@ -12,7 +12,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
-from urllib.parse import urlencode
 
 from api.views import auth_from_token, process_file_upload, parse_expire
 from home.models import Files, FileStats, ShortURLs
@@ -391,18 +390,16 @@ def raw_redirect_view(request, filename):
     View /raw/<path:filename>
     """
     # TODO: Fully Outline/Document what this does
-    view = False
     log.debug('url_route_raw: %s', filename)
     file = get_object_or_404(Files, name=filename)
     ctx = {"file": file}
     if lock := file_lock(request, ctx):
         return lock
+    session_view = request.session.get(f'view_{file.name}', True)
+    url = file.get_url(session_view, request.GET.get('download', False))
+    if session_view:
+        request.session[f'view_{file.name}'] = False
     response = HttpResponse(status=302)
-    if use_s3():
-        view = True
-    url = file.get_url(view, request.GET.get('download', False))
-    if 'view' in request.GET:
-        url += '&' + urlencode({'view': 'gallery'})
     response['Location'] = url
     return response
 
@@ -455,8 +452,6 @@ def url_route_view(request, filename):
             with open(file.file.path, 'r') as f:
                 md_text = f.read()
         ctx['markdown'] = markdown.markdown(md_text, extensions=['extra', 'toc'])
-        file.view += 1
-        file.save()
         return render(request, 'embed/markdown.html', context=ctx)
     elif file.mime.startswith('text/') or file.mime in code_mimes or file.mime in ['application/javascript']:
         log.debug('CODE')
