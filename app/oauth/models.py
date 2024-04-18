@@ -67,8 +67,7 @@ class CustomUser(AbstractUser):
                 avatar_url = self.github.avatar
             elif self.user_avatar_choice == "DF":
                 # filter vs get just in case a user users admin to set more than 1 file as avatar
-                avatar = self.files_set.filter(avatar=True)[0]
-                avatar_url = avatar.get_meta_static_url()
+                avatar_url = self.files_set.filter(avatar=True)[0].get_meta_static_url()
         except (ObjectDoesNotExist, IndexError):
             pass
         if not avatar_url or avatar_url == "":
