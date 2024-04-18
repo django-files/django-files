@@ -2,6 +2,7 @@ import logging
 import os
 import httpx
 import json
+from time import sleep
 from asgiref.sync import async_to_sync
 from celery import shared_task
 from channels.layers import get_channel_layer
@@ -100,6 +101,7 @@ def app_startup():
             )
             log.info('Custom User Created: %s', user.username)
     regenerate_all_storage_values()
+    refresh_gallery_static_urls_cache()
     return 'app_startup - finished'
 
 
@@ -176,15 +178,15 @@ def clear_stats_cache():
 #     return cache.delete_pattern('*.settings.*')
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 2, 'countdown': 30})
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def refresh_gallery_static_urls_cache():
     # Refresh cached gallery files to handle case where url signing expired
     log.info('----- START gallery cache refresh -----')
     if use_s3:
         files = Files.objects.all()
         for file in files:
-            cache.delete(f'file.urlcache.gallery.{file.pk}')
             file.get_gallery_url()
+            sleep(1)
     log.info('----- COMPLETE gallery cache refresh -----')
 
 

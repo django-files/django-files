@@ -112,7 +112,7 @@ class Files(models.Model):
                 # intentionally expire cache before gallery url signing expires
                 cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
             return gallery_url
-        return abs_url + use.url + self._sign_nginx_url(use.url).replace('?', '&')
+        return abs_url + use.url + self._sign_nginx_url(use.url)
 
     def _sign_nginx_url(self, uri: str) -> str:
         if use_s3():
