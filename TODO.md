@@ -22,7 +22,6 @@
 -   [ ] Test API endpoint with token
 -   [ ] Test Settings Form with Playwright
 -   [ ] Test Flush Cache and Logout with Playwright
--   [ ] Test Vector Tasks
 -   [ ] Test Oauth Flow
 
 ## General/UI
