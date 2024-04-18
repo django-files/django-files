@@ -95,11 +95,10 @@ class Files(models.Model):
                 )
                 cache.set(f"file.urlcache.meta_static.{self.pk}", meta_static_url, 10800)
             return meta_static_url
-        return self.get_url(False)
+        return self.get_url(True)
 
     def get_gallery_url(self, abs_url: str = '') -> str:
         """Generates a static url for use on a gallery page."""
-        use = self.thumb if self.thumb else self.file
         if use_s3():
             # only want cache for s3
             # override signing expire on gallery urls to avoid cached gallery pages from failing to load
@@ -112,8 +111,8 @@ class Files(models.Model):
                 # intentionally expire cache before gallery url signing expires
                 cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
             return gallery_url
-        url = use.url + "?view=gallery"
-        return abs_url + url + self._sign_nginx_url(use.url).replace('?', '&')
+        use = self.thumb if self.thumb else self.file
+        return abs_url + use.url + self._sign_nginx_url(use.url).replace('?', '&')
 
     def _sign_nginx_url(self, uri: str) -> str:
         if use_s3():

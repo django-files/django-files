@@ -144,10 +144,6 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'home.tasks.process_stats',
         'schedule': datetime.timedelta(minutes=config('PROCESS_STATS_MIN', 15, int)),
     },
-    'process_vector_stats': {
-        'task': 'home.tasks.process_vector_stats',
-        'schedule': datetime.timedelta(minutes=config('PROCESS_VECTOR_STATS', 1, int)),
-    },
     'refresh_gallery_static_urls_cache': {
         'task': 'home.tasks.refresh_gallery_static_urls_cache',
         'schedule': crontab(minute='0', hour='9,21')
@@ -167,13 +163,6 @@ CACHES = {
     'default': {
         'BACKEND': config('CACHE_BACKEND', 'django_redis.cache.RedisCache'),
         'LOCATION': config('CACHE_LOCATION', 'redis://redis:6379/0'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
-    },
-    'vector': {
-        'BACKEND': config('CACHE_BACKEND', 'django_redis.cache.RedisCache'),
-        'LOCATION': config('VECTOR_LOCATION', 'redis://redis:6379/2'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },

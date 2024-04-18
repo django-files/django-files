@@ -2,11 +2,9 @@ import logging
 import os
 import httpx
 import json
-import urllib.parse
 from asgiref.sync import async_to_sync
 from celery import shared_task
 from channels.layers import get_channel_layer
-from django_redis import get_redis_connection
 from django.conf import settings
 from django.core.cache import cache
 from django.forms.models import model_to_dict
@@ -264,57 +262,6 @@ def process_stats():
         log.info('stats.pk: %s', stats.pk)
     log.info(data)
     log.info('----- END process_stats -----')
-
-
-@shared_task()
-def process_vector_stats():
-    # Process Vector Stats
-    # TODO: Add try, expect, finally for deleting keys
-    log.info('process_vector_stats')
-    client = get_redis_connection('vector')
-    _, keys = client.scan(0, '*', 1000)
-    i = 0
-    for key in keys:
-        log.info('Processing Key: %s', key)
-        raw = client.lrange(key, 0, -1)
-        if not raw:
-            log.warning('No Data for Key: %s', key)
-            client.delete(key)
-            continue
-        try:
-            data = json.loads(raw[0])
-        except Exception as error:
-            log.warning('Error Loading JSON for Key: %s: %s', key, error)
-            client.delete(key)
-            continue
-        log.info(data)
-        full_uri = data['request'].split()[1]
-        log.info('full_uri: %s', full_uri)
-        if '?' in full_uri:
-            uri, query = full_uri.split('?', 1)
-        else:
-            uri, query = full_uri, None
-        log.info('query: %s', query)
-        if query:
-            qs = urllib.parse.parse_qs(query) or {}
-            log.info('qs: %s', qs)
-            if qs.get('view'):
-                log.info('Not Processing due to QS: %s: %s', uri, qs)
-                client.delete(key)
-                continue
-        name = uri.replace('/r/', '')
-        file = Files.objects.filter(name=name)
-        if not file:
-            log.warning('404 File Not Found: %s', name)
-            client.delete(key)
-            continue
-        else:
-            file = file[0]
-        file.view += 1
-        file.save()
-        client.delete(key)
-        i += 1
-    return f'Processed {i}/{len(keys)} Files/Keys'
 
 
 @shared_task()
