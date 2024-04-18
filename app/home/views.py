@@ -421,7 +421,8 @@ def url_route_view(request, filename):
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
     log.debug('file.mime: %s', file.mime)
-    session_view = request.session.get(f'view_{file.name}', False)
+    session_view = request.session.get(f'view_{file.name}', True)
+    print(f"User has not viewed file: {session_view}")
     ctx = {
         'file': file,
         'render': file.mime.split('/', 1)[0],
@@ -430,8 +431,8 @@ def url_route_view(request, filename):
         "file_avatar_url": file.user.get_avatar_url(),
         'full_context': request.user.is_authenticated and request.user == file.user
     }
-    if not session_view:
-        request.session[f'view_{file.name}'] = True
+    if session_view:
+        request.session[f'view_{file.name}'] = False
     if lock := file_lock(request, ctx=ctx):
         return lock
     log.debug('ctx: %s', ctx)
