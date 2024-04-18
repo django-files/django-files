@@ -421,16 +421,17 @@ def url_route_view(request, filename):
     log.debug('url_route_view: %s', filename)
     file = get_object_or_404(Files, name=filename)
     log.debug('file.mime: %s', file.mime)
-    if not request.session.get(f'view_{file.name}', False):
-        request.session[f'view_{file.name}'] = True
+    session_view = request.session.get(f'view_{file.name}', False)
     ctx = {
         'file': file,
         'render': file.mime.split('/', 1)[0],
-        "static_url": file.get_url(view=(use_s3() and request.session.get(f'view_{file.name}'))),
+        "static_url": file.get_url(view=session_view),
         "static_meta_url": file.get_meta_static_url(),
         "file_avatar_url": file.user.get_avatar_url(),
         'full_context': request.user.is_authenticated and request.user == file.user
     }
+    if not session_view:
+        request.session[f'view_{file.name}'] = True
     if lock := file_lock(request, ctx=ctx):
         return lock
     log.debug('ctx: %s', ctx)
