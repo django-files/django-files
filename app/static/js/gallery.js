@@ -11,6 +11,8 @@ const faKey = document.querySelector('div.d-none .fa-key')
 const faHourglass = document.querySelector('div.d-none .fa-hourglass')
 const faCaret = document.querySelector('div.d-none .fa-square-caret-down')
 
+const siteUrl = document.getElementById('site_url')?.value
+
 let nextPage = 1
 
 async function initGallery() {
@@ -56,8 +58,10 @@ async function addNodes() {
     for (const file of data.files) {
         // console.debug('file:', file)
 
+        // OUTER DIV
         const outer = document.createElement('div')
         outer.classList.add(
+            'gallery-outer',
             'm-1',
             'rounded-1',
             'border',
@@ -66,7 +70,7 @@ async function addNodes() {
         )
         outer.style.position = 'relative'
         // TODO: hides text overflow but also the ctx menu
-        outer.style.overflow = 'hidden'
+        // outer.style.overflow = 'hidden'
         const box1 = '#919191'
         const box2 = '#495057'
         outer.style.backgroundColor = '#495057'
@@ -77,16 +81,26 @@ async function addNodes() {
         outer.addEventListener('mouseover', mouseOver)
         outer.addEventListener('mouseout', mouseOut)
 
+        // INNER DIV
+        const inner = document.createElement('div')
+        inner.classList.add('gallery-inner')
+        inner.style.position = 'relative'
+        inner.style.overflow = 'hidden'
+        outer.appendChild(inner)
+
+        // IMAGE AND LINK
+        const link = document.createElement('a')
+        link.href = file.url
+        link.title = file.name
         // const img = document.createElement('img')
         // img.style.maxWidth = '512px'
         // img.style.maxHeight = '512px'
         const img = imageNode.cloneNode(true)
         img.src = file.thumb || file.raw
+        link.appendChild(img)
+        inner.appendChild(link)
 
-        const link = document.createElement('a')
-        link.href = file.url
-        link.title = file.name
-
+        // ICONS
         const topLeft = document.createElement('div')
         topLeft.classList.add(
             'gallery-mouse',
@@ -109,7 +123,9 @@ async function addNodes() {
         if (file.expr) {
             topLeft.appendChild(faHourglass.cloneNode(true))
         }
+        inner.appendChild(topLeft)
 
+        // TEXT
         const bottomLeft = document.createElement('div')
         bottomLeft.classList.add(
             'gallery-mouse',
@@ -132,49 +148,58 @@ async function addNodes() {
         if (file.name) {
             addSpan(bottomLeft, file.name)
         }
+        inner.appendChild(bottomLeft)
 
-        const ctxMenu = genCtx(file)
-
-        link.appendChild(img)
-        outer.appendChild(link)
-        outer.appendChild(topLeft)
-        outer.appendChild(bottomLeft)
+        // CTX MENU
+        const ctxMenu = document.createElement('div')
+        ctxMenu.classList.add('text-stroke', 'fs-4', 'ctx-menu')
+        ctxMenu.style.position = 'absolute'
+        ctxMenu.style.top = '-7px'
+        ctxMenu.style.right = '1px'
+        const toggle = document.createElement('a')
+        toggle.classList.add('link-body-emphasis', 'ctx-menu')
+        toggle.setAttribute('role', 'button')
+        // toggle.addEventListener('click', ctxClick)
+        toggle.dataset.bsToggle = 'dropdown'
+        toggle.setAttribute('aria-expanded', 'false')
+        toggle.appendChild(faCaret.cloneNode(true))
+        ctxMenu.appendChild(toggle)
         outer.appendChild(ctxMenu)
+
+        const menu = getCtxMenu(file)
+        ctxMenu.appendChild(menu)
+
+        // inner.appendChild(link)
+        // inner.appendChild(ctxMenu)
         galleryContainer.appendChild(outer)
     }
 }
 
 /**
- * Generate Context Menu
- * @function genCtx
+ * Get Context Menu for File
+ * @function getCtxMenu
  * @param {Object} file
  * @return {HTMLElement}
  */
-function genCtx(file) {
-    console.debug('renderCtxMenu:', file)
-    const ctxMenu = document.createElement('div')
-    ctxMenu.classList.add('text-stroke', 'fs-4', 'ctx-menu')
-    ctxMenu.style.position = 'absolute'
-    ctxMenu.style.top = '-7px'
-    ctxMenu.style.right = '1px'
-
-    const link = document.createElement('a')
-    link.classList.add('link-body-emphasis', 'ctx-menu')
-    // link.href = 'about:blank'
-    link.setAttribute('role', 'button')
-    link.addEventListener('click', ctxClick)
-    link.dataset.bsToggle = 'dropdown'
-    link.setAttribute('aria-expanded', 'false')
-    link.appendChild(faCaret.cloneNode(true))
-    ctxMenu.appendChild(link)
+function getCtxMenu(file) {
+    console.debug('getCtxMenu:', file)
 
     const menu = document.getElementById('ctx-menu-').cloneNode(true)
     menu.id = `ctx-menmu-${file.id}`
-    ctxMenu.appendChild(menu)
 
-    // ctxMenu.appendChild(faCaret.cloneNode(true))
-    console.debug('ctxMenu:', ctxMenu)
-    return ctxMenu
+    const copyShare = menu.querySelector('.copy-share-link')
+    console.debug('copyShare:', copyShare)
+    copyShare.dataset.clipboardText = file.raw
+
+    const copyRaw = menu.querySelector('.copy-raw-link')
+    copyRaw.dataset.clipboardText = `${file.raw}`
+
+    const openRaw = menu.querySelector('.open-raw')
+    openRaw.href = file.raw
+
+    // const downloadFile = menu.querySelector('.download-file')
+
+    return menu
 }
 
 function ctxClick(event) {
