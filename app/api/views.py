@@ -1,3 +1,4 @@
+import django.db.models
 import httpx
 import io
 import json
@@ -5,6 +6,7 @@ import logging
 import os
 import validators
 from django.core import serializers
+from django.core.paginator import Paginator
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, reverse, get_object_or_404
@@ -213,7 +215,6 @@ def recent_view(request):
     """
     View  /api/recent/
     """
-    site_settings = site_settings_processor(None)['site_settings']
     log.debug('request.user: %s', request.user)
     log.debug('%s - recent_view: is_secure: %s', request.method, request.is_secure())
     amount = int(request.GET.get('amount', 10))
@@ -221,16 +222,48 @@ def recent_view(request):
     files = Files.objects.filter(user=request.user).order_by('-id')[:amount]
     log.debug('files: %s', files)
     log.debug(files)
-    response = []
-    for file in files:
+    response = extract_files(files)
+    log.debug('response: %s', response)
+    return JsonResponse(response, safe=False, status=200)
+
+
+@csrf_exempt
+@require_http_methods(['OPTIONS', 'GET'])
+@auth_from_token
+@cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix="files")
+@vary_on_headers('Authorization')
+@vary_on_cookie
+def pages_view(request, page):
+    """
+    View  /api/pages/{page}/
+    """
+    count = 12
+    log.debug('%s - gallery_page_view: %s', request.method, page)
+    q = Files.objects.get_request(request)
+    paginator = Paginator(q, count)
+    page_obj = paginator.get_page(page)
+    files = extract_files(page_obj)
+    log.debug('files: %s', files)
+    _next = page_obj.next_page_number() if page_obj.has_next() else None
+    response = {
+        'files': files,
+        'next': _next,
+    }
+    return JsonResponse(response, safe=False, status=200)
+
+
+def extract_files(q: Files.objects):
+    site_settings = site_settings_processor(None)['site_settings']
+    files = []
+    for file in q.object_list:
         data = model_to_dict(file, exclude=['file', 'thumb'])
         data['url'] = site_settings['site_url'] + file.preview_uri()
         data['thumb'] = file.get_gallery_url() if use_s3() else site_settings['site_url'] + file.get_gallery_url()
         data['raw'] = site_settings['site_url'] + file.raw_path
-        response.append(data)
-    log.debug('response: %s', response)
-    return JsonResponse(response, safe=False, status=200)
-
+        files.append(data)
+    # log.debug('files: %s', files)
+    return files
 
 @csrf_exempt
 @require_http_methods(['DELETE', 'GET', 'OPTIONS', 'POST'])

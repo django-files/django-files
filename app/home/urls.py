@@ -10,7 +10,6 @@ urlpatterns = [
     path('files/', views.files_view, name='files'),
     path('gallery/', views.gallery_view, name='gallery'),
     path('gallery-files/', views.gallery_files_view, name='gallery-files'),
-    path('gallery/<int:page>/', views.gallery_page_view, name='gallery-page'),
     path('uppy/', views.uppy_view, name='uppy'),
     path('paste/', views.paste_view, name='paste'),
     path('shorts/', views.shorts_view, name='shorts'),

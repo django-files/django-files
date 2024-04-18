@@ -58,6 +58,11 @@ async function addNodes() {
     for (const file of data.files) {
         // console.debug('file:', file)
 
+        if (!file.mime.toLowerCase().startsWith('image')) {
+            console.debug('Not Image', file)
+            continue
+        }
+
         // OUTER DIV
         const outer = document.createElement('div')
         outer.classList.add(
@@ -132,7 +137,8 @@ async function addNodes() {
             'd-none',
             'text-shadow',
             'text-nowrap',
-            'small'
+            'small',
+            'lh-sm'
         )
         bottomLeft.style.position = 'absolute'
         bottomLeft.style.bottom = '4px'
@@ -189,24 +195,26 @@ function getCtxMenu(file) {
 
     const copyShare = menu.querySelector('.copy-share-link')
     console.debug('copyShare:', copyShare)
-    copyShare.dataset.clipboardText = file.raw
+    copyShare.dataset.clipboardText = file.url
 
     const copyRaw = menu.querySelector('.copy-raw-link')
-    copyRaw.dataset.clipboardText = `${file.raw}`
+    copyRaw.dataset.clipboardText = file.raw
 
     const openRaw = menu.querySelector('.open-raw')
     openRaw.href = file.raw
+
+    menu.querySelector('a[download=""]').setAttribute('download', file.raw)
 
     // const downloadFile = menu.querySelector('.download-file')
 
     return menu
 }
 
-function ctxClick(event) {
-    console.debug('ctxClick', event)
-    event.preventDefault()
-    // let ctx = document.getElementById('ctx-menu-')
-}
+// function ctxClick(event) {
+//     console.debug('ctxClick', event)
+//     event.preventDefault()
+//     // let ctx = document.getElementById('ctx-menu-')
+// }
 
 /**
  * Add Text Span and BR to Parent Element
@@ -264,8 +272,7 @@ function mouseOut(event) {
  * @return {Object} JSON Response Object
  */
 async function fetchGallery(page) {
-    const loc = window.location.toString()
-    const url = `${loc.substring(0, loc.length - 1)}/${page}/`
+    const url = `${window.location.origin}/api/pages/${page}/`
     const response = await fetch(url)
     return await response.json()
 }
