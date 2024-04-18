@@ -419,7 +419,7 @@ def url_route_view(request, filename):
     file = get_object_or_404(Files, name=filename)
     log.debug('file.mime: %s', file.mime)
     session_view = request.session.get(f'view_{file.name}', True)
-    print(f"User has not viewed file: {session_view}")
+    log.debug(f"User {request.user} has not viewed file {request.file}: {session_view}")
     ctx = {
         'file': file,
         'render': file.mime.split('/', 1)[0],
