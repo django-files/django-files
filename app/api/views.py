@@ -1,4 +1,3 @@
-import django.db.models
 import httpx
 import io
 import json
@@ -264,6 +263,7 @@ def extract_files(q: Files.objects):
         files.append(data)
     # log.debug('files: %s', files)
     return files
+
 
 @csrf_exempt
 @require_http_methods(['DELETE', 'GET', 'OPTIONS', 'POST'])
