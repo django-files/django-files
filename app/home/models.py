@@ -95,7 +95,7 @@ class Files(models.Model):
                 )
                 cache.set(f"file.urlcache.meta_static.{self.pk}", meta_static_url, 10800)
             return meta_static_url
-        return self.get_url(True)
+        return self.get_url(False)
 
     def get_gallery_url(self, abs_url: str = '') -> str:
         """Generates a static url for use on a gallery page."""
