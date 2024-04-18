@@ -328,6 +328,8 @@ if DEBUG:
         if config('DISABLE_DEBUG_TOOLBAR', False, bool):
             return False
         return True if request.user.is_superuser else False
+
+
     DEBUG_TOOLBAR_CONFIG = {'SHOW_TOOLBAR_CALLBACK': show_toolbar}
     DEBUG_TOOLBAR_PANELS = [
         'debug_toolbar.panels.versions.VersionsPanel',

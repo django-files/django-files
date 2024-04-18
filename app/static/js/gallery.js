@@ -58,10 +58,15 @@ async function addNodes() {
     for (const file of data.files) {
         // console.debug('file:', file)
 
-        if (!file.mime.toLowerCase().startsWith('image')) {
-            console.debug('Not Image', file)
+        const imageExtensions = /\.(gif|ico|jpeg|jpg|png|svg|webp)$/i
+        if (!file.name.match(imageExtensions)) {
+            console.debug(`Not Image: ${file.name}`)
             continue
         }
+        // if (!file.mime.toLowerCase().startsWith('image')) {
+        //     console.debug('Not Image', file)
+        //     continue
+        // }
 
         // OUTER DIV
         const outer = document.createElement('div')
@@ -188,13 +193,12 @@ async function addNodes() {
  * @return {HTMLElement}
  */
 function getCtxMenu(file) {
-    console.debug('getCtxMenu:', file)
+    // console.debug('getCtxMenu:', file)
 
     const menu = document.getElementById('ctx-menu-').cloneNode(true)
     menu.id = `ctx-menmu-${file.id}`
 
     const copyShare = menu.querySelector('.copy-share-link')
-    console.debug('copyShare:', copyShare)
     copyShare.dataset.clipboardText = file.url
 
     const copyRaw = menu.querySelector('.copy-raw-link')
@@ -204,7 +208,6 @@ function getCtxMenu(file) {
     openRaw.href = file.raw
 
     menu.querySelector('a[download=""]').setAttribute('download', file.raw)
-
     // const downloadFile = menu.querySelector('.download-file')
 
     return menu

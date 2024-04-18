@@ -31,7 +31,7 @@ from settings.models import SiteSettings
 from settings.context_processors import site_settings_processor
 
 log = logging.getLogger('app')
-cache_seconds = 60*60*4
+cache_seconds = 60 * 60 * 4
 
 
 def auth_from_token(view=None, no_fail=False):
@@ -52,6 +52,7 @@ def auth_from_token(view=None, no_fail=False):
         if not no_fail:
             return JsonResponse({'error': 'Invalid Authorization'}, status=401)
         return view(request, *args, **kwargs)
+
     if view:
         return wrapper
     else:
@@ -242,7 +243,7 @@ def pages_view(request, page):
     q = Files.objects.get_request(request)
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
-    files = extract_files(page_obj)
+    files = extract_files(page_obj.object_list)
     log.debug('files: %s', files)
     _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {
@@ -255,7 +256,7 @@ def pages_view(request, page):
 def extract_files(q: Files.objects):
     site_settings = site_settings_processor(None)['site_settings']
     files = []
-    for file in q.object_list:
+    for file in q:
         data = model_to_dict(file, exclude=['file', 'thumb'])
         data['url'] = site_settings['site_url'] + file.preview_uri()
         data['thumb'] = file.get_gallery_url() if use_s3() else site_settings['site_url'] + file.get_gallery_url()

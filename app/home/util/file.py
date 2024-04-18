@@ -5,9 +5,7 @@ import mimetypes
 import os
 import uuid
 import tempfile
-# from django.conf import settings
 from django.core.files import File
-# from pathlib import Path
 from typing import BinaryIO
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -18,7 +16,6 @@ from home.util.misc import anytobool
 from home.util.quota import increment_storage_usage
 from home.tasks import send_discord_message, new_file_websocket
 from oauth.models import CustomUser
-
 
 log = logging.getLogger('app')
 
@@ -100,7 +97,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     log.debug('file.file.name: %s', file.file.name)
     file.name = file.file.name
     file.save()
-    if 'image' in file_mime:
+    if file_mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
         thumbnail_processor(file, f.read())
     increment_storage_usage(file)
     new_file_websocket.apply_async(args=[file.pk], priority=0)
