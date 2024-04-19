@@ -58,7 +58,7 @@ async function addNodes() {
     for (const file of data.files) {
         // console.debug('file:', file)
 
-        const imageExtensions = /\.(gif|ico|jpeg|jpg|png|svg|webp)$/i
+        const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp)$/i
         if (!file.name.match(imageExtensions)) {
             console.debug(`Not Image: ${file.name}`)
             continue
