@@ -1,10 +1,8 @@
-import json
 import logging
 import markdown
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.core import serializers
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render, reverse, get_object_or_404
 from django.template.loader import render_to_string
@@ -106,21 +104,6 @@ def gallery_view(request):
     log.debug('%s - gallery_view: is_secure: %s', request.method, request.is_secure())
     context = {'files': Files.objects.get_request(request)}
     return render(request, 'gallery.html', context)
-
-
-@cache_control(no_cache=True)
-@login_required
-@cache_page(cache_seconds, key_prefix="files")
-@vary_on_cookie
-def gallery_files_view(request):
-    """
-    View  /gallery-files/
-    TODO: This will most likely be removed, only for testing
-    """
-    log.debug('%s - gallery_files_view', request.method)
-    q = Files.objects.get_request(request)
-    data = serializers.serialize('json', q)
-    return JsonResponse(json.loads(data), safe=False)
 
 
 @cache_control(no_cache=True)

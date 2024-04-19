@@ -11,7 +11,7 @@ const faKey = document.querySelector('div.d-none .fa-key')
 const faHourglass = document.querySelector('div.d-none .fa-hourglass')
 const faCaret = document.querySelector('div.d-none .fa-square-caret-down')
 
-const siteUrl = document.getElementById('site_url')?.value
+// const siteUrl = document.getElementById('site_url')?.value
 
 let nextPage = 1
 

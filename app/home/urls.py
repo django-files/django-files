@@ -9,7 +9,6 @@ urlpatterns = [
     path('', views.home_view, name='index'),
     path('files/', views.files_view, name='files'),
     path('gallery/', views.gallery_view, name='gallery'),
-    path('gallery-files/', views.gallery_files_view, name='gallery-files'),
     path('uppy/', views.uppy_view, name='uppy'),
     path('paste/', views.paste_view, name='paste'),
     path('shorts/', views.shorts_view, name='shorts'),
