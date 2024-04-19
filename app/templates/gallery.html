@@ -6,6 +6,7 @@
 {% block title %}Gallery{% endblock %}
 
 {% block head %}
+    <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
     <link rel="stylesheet" href="{% static 'css/gallery.css' %}" />
 {% endblock %}
 
@@ -18,6 +19,30 @@
         <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
 
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap"></div>
+
+        <div id="table-container">
+            <table class="table table-hover table-responsive" id="files-table">
+                <caption class="visually-hidden">List of Files</caption>
+                <thead>
+                <tr>
+                    <th scope="col" class="d-none d-sm-table-cell text-center" title="Database ID">ID</th>
+                    <th scope="col" class="" title="File Name">File</th>
+                    <th scope="col" class="d-none d-sm-table-cell" title="File Size">Size</th>
+{#                    <th scope="col" class="d-none d-lg-table-cell" title="MIME Type">MIME</th>#}
+{#                    <th scope="col" class="d-none d-xl-table-cell date-format" title="UTC Date">Date</th>#}
+{#                    <th scope="col" class="d-none d-md-table-cell" title="File Expire">Expire</th>#}
+{#                    <th scope="col" class="d-none d-sm-table-cell" title="Password"><i class="fa-solid fa-key"></i></th>#}
+{#                    <th scope="col" class="d-none d-sm-table-cell" title="Private"><i class="fa-solid fa-lock"></i></th>#}
+{#                    <th scope="col" class="d-none d-sm-table-cell" title="Views"><i class="fa-solid fa-eye"></i></th>#}
+{#                    <th scope="col" class="text-center" title="Context Menu"><i class="fa-solid fa-ellipsis-vertical"></i></th>#}
+                </tr>
+                </thead>
+{#                {% for file in files %}#}
+{#                    {% include 'files/table-row.html' with file=file %}#}
+{#                {% endfor %}#}
+            </table>
+        </div>
+        <img id="loading-image" src="{% static 'images/assets/loading.gif' %}" class="img-responsive mx-auto d-block">
 
     {#    {% if not files %}#}
     {#        <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>#}
@@ -46,6 +71,12 @@
 {% block footer %}{% endblock %}
 
 {% block tail %}
+    <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/jquery.dataTables.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/file-size.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/gallery.js' %}"></script>
 {% endblock %}
 

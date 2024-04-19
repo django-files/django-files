@@ -5,6 +5,7 @@ document.addEventListener('scroll', debounce(galleryScroll, 50))
 window.addEventListener('resize', debounce(galleryScroll, 50))
 
 const galleryContainer = document.getElementById('gallery-container')
+const loadingImage = document.getElementById('loading-image')
 const imageNode = document.querySelector('div.d-none img')
 const faLock = document.querySelector('div.d-none .fa-lock')
 const faKey = document.querySelector('div.d-none .fa-key')
@@ -15,9 +16,66 @@ const faCaret = document.querySelector('div.d-none .fa-square-caret-down')
 
 let nextPage = 1
 
+let dataTables
+const dataTablesOptions = {
+    // data: data.files,
+    columns: [{ data: 'id' }, { data: 'name' }, { data: 'size' }],
+    // order: [0, 'desc'],
+    // processing: true,
+    // saveState: true,
+    pageLength: -1,
+    lengthChange: false,
+    paging: false,
+    searching: false,
+    ordering: false,
+    columnDefs: [
+        { targets: 0, className: 'text-center' },
+        {
+            targets: 1,
+            render: function (data, type, row, meta) {
+                return `<a href=${row.url}>${row.name}</a>`
+            },
+        },
+        {
+            targets: 2,
+            render: function (data, type, row, meta) {
+                return formatBytes(row.size)
+            },
+        },
+    ],
+    // lengthMenu: [
+    //     [10, 25, 50, 100, 250, -1],
+    //     [10, 25, 50, 100, 250, 'All'],
+    // ],
+    // columnDefs: [
+    //     { targets: 2, type: 'file-size' },
+    //     {
+    //         targets: 4,
+    //         render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
+    //     },
+    //     { targets: [6, 7, 9], orderable: false },
+    // ],
+}
+
 async function initGallery() {
     console.debug('Init Gallery')
-    await addNodes()
+    // await addNodes()
+
+    const data = await fetchGallery(nextPage, 30)
+    console.debug('data', data)
+    dataTablesOptions.data = data.files
+    dataTables = $('#files-table').DataTable(dataTablesOptions)
+}
+
+async function addRows() {
+    console.log('addRows')
+    const data = await fetchGallery(nextPage, 30)
+    console.debug('data', data)
+    for (const file of data.files) {
+        console.log('file:', file)
+        // dataTables.row.add(['one', 'two', 'three', 'four'])
+        dataTables.row.add(file).draw(false)
+    }
 }
 
 /**
@@ -27,7 +85,7 @@ async function initGallery() {
  * @param {Event} event
  * @param {Number} buffer
  */
-async function galleryScroll(event, buffer = 600) {
+async function galleryScroll(event, buffer = 300) {
     console.debug(
         `galleryScroll: ${window.scrollY} > ${window.scrollMaxY - buffer}`,
         window.scrollY > window.scrollMaxY - buffer
@@ -37,7 +95,8 @@ async function galleryScroll(event, buffer = 600) {
         (!window.scrollMaxY || window.scrollY > window.scrollMaxY - buffer)
     ) {
         console.debug('End of Scroll')
-        await addNodes()
+        await addRows()
+        // await addNodes()
     }
 }
 
@@ -54,7 +113,7 @@ async function addNodes() {
     }
     const data = await fetchGallery(nextPage)
     console.debug('data:', data)
-    nextPage = data.next
+    // nextPage = data.next
     for (const file of data.files) {
         // console.debug('file:', file)
 
@@ -272,12 +331,26 @@ function mouseOut(event) {
  * Fetch Page from Gallery
  * @function fetchGallery
  * @param {Number} page Page Number to Fetch
+ * @param {Number} amount Numer of Files to Fetch
  * @return {Object} JSON Response Object
  */
-async function fetchGallery(page) {
-    const url = `${window.location.origin}/api/pages/${page}/`
+async function fetchGallery(page, amount = 16) {
+    if (!page) {
+        return console.warn('no page', page)
+    }
+    const url = `${window.location.origin}/api/pages/${page}/${amount}/`
     const response = await fetch(url)
-    return await response.json()
+    const json = await response.json()
+    nextPage = json.next
+    if (!nextPage) {
+        noNextCallback()
+    }
+    return json
+}
+
+function noNextCallback() {
+    console.log('noNextCallback')
+    loadingImage.classList.add('d-none')
 }
 
 /**

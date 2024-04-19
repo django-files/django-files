@@ -234,14 +234,13 @@ def recent_view(request):
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers('Authorization')
 @vary_on_cookie
-def pages_view(request, page):
+def pages_view(request, page, amount=16):
     """
     View  /api/pages/{page}/
     """
-    count = 12
-    log.debug('%s - gallery_page_view: %s', request.method, page)
+    log.debug('%s - gallery_page_view: %s - %s', request.method, page, amount)
     q = Files.objects.get_request(request)
-    paginator = Paginator(q, count)
+    paginator = Paginator(q, amount)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
     log.debug('files: %s', files)
