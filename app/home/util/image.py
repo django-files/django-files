@@ -99,7 +99,7 @@ class ImageProcessor(object):
             new.save(local_path)
 
 
-def thumbnail_processor(file: Files, file_bytes: BytesIO = None):
+def thumbnail_processor(file: Files, file_bytes: bytes = None):
     # generate thumbnail via bytes object or file object
     # prefer bytes object if file is still local to avoid wasteful redownload of file
     tmp_file = f'/tmp/thumb_{file.name}'
