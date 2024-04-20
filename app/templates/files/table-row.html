@@ -13,9 +13,11 @@
             <a class="link-body-emphasis clip" role="button" data-clipboard-text="{{ site_settings.site_url }}{{ file.preview_uri }}">
                 <i class="fa-regular fa-clipboard"></i></a>&nbsp;
         </span>
-        <span class="d-inline-block d-md-inline text-truncate" style="max-width: 300px;">
-            <a class="link-body-emphasis" href="{{ file.preview_uri }}">
-                {{ file.name }}</a>
+        <span class="d-inline-block d-xxl-inline text-truncate" style="max-width: 500px;">
+            <span class="d-inline-block d-lg-inline text-truncate" style="max-width: 300px;">
+                <a class="link-body-emphasis" href="{{ file.preview_uri }}">
+                    {{ file.name }}</a>
+            </span>
         </span>
     </td>
 {#  <!-- 2: Size --> #}
