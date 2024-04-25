@@ -18,10 +18,15 @@
 
         <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
 
+        <p class="lead">
+            <a class="link-body-emphasis" role="button" title="Photos">Photos</a> |
+            <a class="link-body-emphasis" role="button" title="List">List</a>
+        </p>
+
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap"></div>
 
         <div id="table-container">
-            <table class="table table-hover table-responsive" id="files-table">
+            <table class="table table-hover table-responsive w-100" id="files-table">
                 <caption class="visually-hidden">List of Files</caption>
                 <thead>
                 <tr>

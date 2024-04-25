@@ -5,6 +5,7 @@ document.addEventListener('scroll', debounce(galleryScroll, 50))
 window.addEventListener('resize', debounce(galleryScroll, 50))
 
 const galleryContainer = document.getElementById('gallery-container')
+const tableContainer = document.getElementById('table-container')
 const loadingImage = document.getElementById('loading-image')
 const imageNode = document.querySelector('div.d-none img')
 const faLock = document.querySelector('div.d-none .fa-lock')
@@ -15,6 +16,7 @@ const faCaret = document.querySelector('div.d-none .fa-square-caret-down')
 // const siteUrl = document.getElementById('site_url')?.value
 
 let nextPage = 1
+let fileData = []
 
 let dataTables
 const dataTablesOptions = {
@@ -345,6 +347,8 @@ async function fetchGallery(page, amount = 16) {
     if (!nextPage) {
         noNextCallback()
     }
+    fileData.push(...json.files)
+    console.log('fileData:', fileData)
     return json
 }
 

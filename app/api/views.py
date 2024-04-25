@@ -291,17 +291,18 @@ def file_view(request, idname):
                 data['expr'] = ''
             Files.objects.filter(id=file.id).update(**data)
             file = Files.objects.get(id=file.id)
-            response = model_to_dict(file, exclude=['file'])
+            response = model_to_dict(file, exclude=['file', 'thumb'])
             # TODO: Determine why we have to manually flush file cache here
             #       The Website seems to flush, but not the api/recent/ endpoint
             clear_files_cache.delay()
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
         elif request.method == 'GET':
-            response = model_to_dict(file, exclude=['file'])
+            response = model_to_dict(file, exclude=['file', 'thumb'])
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
     except Exception as error:
+        log.debug(error)
         return JsonResponse({'error': f'{error}'}, status=400)
 
 
