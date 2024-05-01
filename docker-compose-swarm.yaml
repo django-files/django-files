@@ -35,6 +35,8 @@ services:
         build:
             context: ./app
             network: host
+            args:
+                - BUILD_SHA=${COMMIT_SHA}
         image: ${REGISTRY_HOST}/${REGISTRY_GROUP}/djangofiles-app:${VERSION}
         env_file: ${ENV_FILE}
         command: 'gunicorn djangofiles.asgi:application -b 0.0.0.0:9000 -w 2 -k uvicorn.workers.UvicornWorker'
