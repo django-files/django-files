@@ -36,7 +36,7 @@ RUN addgroup -g 1000 app  &&\
 #    apt-get -y update  &&  apt-get -y install gcc libmariadb-dev-compat pkg-config  &&\
 #    apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
-ENV BUILD_SHA=${BUILD_SHA}
+ARG BUILD_SHA=${BUILD_SHA}
 
 WORKDIR /app
 COPY --chown=app:app . .
