@@ -1,6 +1,15 @@
 // JS for Files
 
+console.debug('LOADING: files.js')
+
 const filesTable = $('#files-table')
+
+const fileUploadModal = $('#fileUploadModal')
+
+document.addEventListener('dragenter', (event) => {
+    event.preventDefault()
+    fileUploadModal.modal('show')
+})
 
 let filesDataTable
 if (typeof DataTable !== 'undefined' && filesTable.length) {

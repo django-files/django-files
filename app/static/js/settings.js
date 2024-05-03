@@ -1,12 +1,17 @@
 // JS for Site Settings
 
-// $(document).on('blur', saveOptions)
-
-$('#settingsForm').on('change', saveOptions)
+console.debug('LOADING: settings.js')
 
 const deleteDiscordHookModal = $('#deleteDiscordHookModal')
 const changeAvatarModal = $('#avatarUploadModal')
 const settingsForm = $('#settingsForm')
+
+settingsForm.on('change', saveOptions)
+
+document.addEventListener('dragenter', (event) => {
+    event.preventDefault()
+    changeAvatarModal.modal('show')
+})
 
 // TODO: Use a proper selector
 let hookID

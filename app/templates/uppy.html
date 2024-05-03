@@ -16,56 +16,8 @@
 {% endblock %}
 
 {% block tail %}
-    <script type="module">
-        import {
-            Uppy,
-            Dashboard,
-            Webcam,
-            Audio,
-            ScreenCapture,
-            XHRUpload,
-        } from "{% static 'uppy/uppy.min.js' %}";
-
-        function getResponseError(responseText, response) {
-            return new Error(JSON.parse(responseText).message);
-        }
-
-        const uppy = new Uppy({ debug: true, autoProceed: false })
-            .use(Dashboard, {
-                inline: true,
-                theme: 'auto',
-                target: '#uppy',
-                showProgressDetails: true,
-                showLinkToFileUploadResult: true,
-                autoOpenFileEditor: true,
-                proudlyDisplayPoweredByUppy: false,
-                note: 'Django Files Upload',
-                height: 380,
-                width: '100%',
-                metaFields: [
-                    {id: 'name', name: 'Name', placeholder: 'File Name'},
-                    {id: 'Expires-At', name: 'Expires At', placeholder: 'File Expiration Time.'},
-                    {id: 'info', name: 'Info', placeholder: 'Information about the file.'}
-                ],
-                browserBackButtonClose: false
-            })
-            .use(Webcam, { target: Dashboard })
-            .use(Audio, { target: Dashboard })
-            .use(ScreenCapture, { target: Dashboard })
-            .use(XHRUpload, {
-                endpoint: "{% if request.user.is_authenticated %}{% url 'api:upload' %}{% else %}{% url 'home:public-uppy' %}{% endif %}",
-                headers: {
-                    "X-CSRFToken": $("input[name=csrfmiddlewaretoken]").val(),
-                },
-                getResponseError: getResponseError
-            })
-
-        uppy.on("success", (fileCount) => {
-            console.log(`${fileCount} files uploaded`);
-        });
-
-        uppy.on('upload-error', (file, error, response) => {
-            console.log(`${response.body.message}`)
-        });
+    <script type="text/javascript">
+        const uploadUrl = "{% if request.user.is_authenticated %}{% url 'api:upload' %}{% else %}{% url 'home:public-uppy' %}{% endif %}"
     </script>
+    <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}

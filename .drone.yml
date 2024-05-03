@@ -1,6 +1,6 @@
 ---
 kind: pipeline
-name: "Deploy"
+name: 'Deploy'
 
 platform:
   arch: arm64
@@ -24,26 +24,26 @@ volumes:
       path: /var/run/docker.sock
 
 steps:
-  - name: "Flake8"
+  - name: 'Flake8'
     image: alpine/flake8
     commands:
       - flake8 .
 
-  - name: "Variables"
+  - name: 'Variables'
     image: alpine
     commands:
       - echo DRONE_DEPLOY_TO $${DRONE_DEPLOY_TO}
       - echo DRONE_SOURCE_BRANCH $${DRONE_SOURCE_BRANCH\/\\/\/\-}
       - if [ -n "$${DRONE_DEPLOY_TO}" ];then
-      -   export ENV_NAMES=$${DRONE_DEPLOY_TO}
+      - export ENV_NAMES=$${DRONE_DEPLOY_TO}
       - else
-      -   export ENV_NAMES='dev,dev3'
+      - export ENV_NAMES='dev,dev3'
       - fi
       - echo ENV_NAMES $${ENV_NAMES}
       - echo "ENV_NAMES='$${ENV_NAMES}'" >> ./.environment
       - cat ./.environment
 
-  - name: "Service Configs"
+  - name: 'Service Configs'
     image: alpine/git
     environment:
       SERVICE_CONFIGS_KEY:
@@ -60,35 +60,35 @@ steps:
       - git config core.sparseCheckout true
       - IFS=','
       - for ENV_NAME in $${ENV_NAMES}; do
-      -   echo "services/$${DRONE_REPO_OWNER}/$${DRONE_REPO_NAME}/$${ENV_NAME}/$${CONFIG_FILE}"
-      -   echo "services/$${DRONE_REPO_OWNER}/$${DRONE_REPO_NAME}/$${ENV_NAME}/$${CONFIG_FILE}" >> .git/info/sparse-checkout
+      - echo "services/$${DRONE_REPO_OWNER}/$${DRONE_REPO_NAME}/$${ENV_NAME}/$${CONFIG_FILE}"
+      - echo "services/$${DRONE_REPO_OWNER}/$${DRONE_REPO_NAME}/$${ENV_NAME}/$${CONFIG_FILE}" >> .git/info/sparse-checkout
       - done
       - git pull origin master
 
-  - name: "Update Compose"
+  - name: 'Update Compose'
     image: alpine
     commands:
       - set -a; . ./.environment
       - IFS=','
       - for ENV_NAME in $${ENV_NAMES}; do
-      -   export STACK_NAME="$${ENV_NAME}_$${DRONE_REPO_OWNER}_$${DRONE_REPO_NAME}"
-      -   echo STACK_NAME $${STACK_NAME}
-      -   echo COMPOSE_FILE $${COMPOSE_FILE}
-      -   export STACK_COMPOSE="docker-compose-deploy-$${ENV_NAME}.yaml"
-      -   echo STACK_COMPOSE $${STACK_COMPOSE}
-      -   stat "$COMPOSE_FILE"
-      -   cp "$COMPOSE_FILE" "$STACK_COMPOSE"
-      -   sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$STACK_COMPOSE"
-      -   cat "$STACK_COMPOSE"
+      - export STACK_NAME="$${ENV_NAME}_$${DRONE_REPO_OWNER}_$${DRONE_REPO_NAME}"
+      - echo STACK_NAME $${STACK_NAME}
+      - echo COMPOSE_FILE $${COMPOSE_FILE}
+      - export STACK_COMPOSE="docker-compose-deploy-$${ENV_NAME}.yaml"
+      - echo STACK_COMPOSE $${STACK_COMPOSE}
+      - stat "$COMPOSE_FILE"
+      - cp "$COMPOSE_FILE" "$STACK_COMPOSE"
+      - sed -i "s/STACK_NAME/$${STACK_NAME}/g" "$STACK_COMPOSE"
+      - cat "$STACK_COMPOSE"
       - done
 
-  - name: "Node Install"
+  - name: 'Node Install'
     image: node:18-alpine
     commands:
       - set -a; . ./.environment
       - npm install
 
-  - name: "Build and Deploy"
+  - name: 'Build and Deploy'
     image: docker:dind
     volumes:
       - name: docker
@@ -105,19 +105,19 @@ steps:
       - echo ENV_NAMES $${ENV_NAMES}
       - IFS=','
       - for ENV_NAME in $${ENV_NAMES}; do
-      -   echo ENV_NAME $${ENV_NAME}
-      -   export ENV_FILE="$${CONFIGS_DIR}/services/$${DRONE_REPO_OWNER}/$${DRONE_REPO_NAME}/$${ENV_NAME}/$${CONFIG_FILE}"
-      -   echo ENV_FILE $${ENV_FILE}
-      -   stat $${ENV_FILE}
-      -   set -a; . $${ENV_FILE}
-      -   echo TRAEFIK_HOST $${TRAEFIK_HOST}
-      -   export VERSION="$${ENV_NAME}"
-      -   echo VERSION $${VERSION}
-      -   export STACK_NAME="$${ENV_NAME}_$${DRONE_REPO_OWNER}_$${DRONE_REPO_NAME}"
-      -   echo STACK_NAME $${STACK_NAME}
-      -   export STACK_COMPOSE="docker-compose-deploy-$${ENV_NAME}.yaml"
-      -   echo STACK_COMPOSE $${STACK_COMPOSE}
-      -   docker compose -f $${STACK_COMPOSE} build --force-rm
-      -   docker compose -f $${STACK_COMPOSE} push
-      -   docker stack deploy -c $${STACK_COMPOSE} --with-registry-auth --resolve-image always $${STACK_NAME}
+      - echo ENV_NAME $${ENV_NAME}
+      - export ENV_FILE="$${CONFIGS_DIR}/services/$${DRONE_REPO_OWNER}/$${DRONE_REPO_NAME}/$${ENV_NAME}/$${CONFIG_FILE}"
+      - echo ENV_FILE $${ENV_FILE}
+      - stat $${ENV_FILE}
+      - set -a; . $${ENV_FILE}
+      - echo TRAEFIK_HOST $${TRAEFIK_HOST}
+      - export VERSION="$${ENV_NAME}"
+      - echo VERSION $${VERSION}
+      - export STACK_NAME="$${ENV_NAME}_$${DRONE_REPO_OWNER}_$${DRONE_REPO_NAME}"
+      - echo STACK_NAME $${STACK_NAME}
+      - export STACK_COMPOSE="docker-compose-deploy-$${ENV_NAME}.yaml"
+      - echo STACK_COMPOSE $${STACK_COMPOSE}
+      - docker compose -f $${STACK_COMPOSE} build --force-rm
+      - docker compose -f $${STACK_COMPOSE} push
+      - docker stack deploy -c $${STACK_COMPOSE} --with-registry-auth --resolve-image always $${STACK_NAME}
       - done

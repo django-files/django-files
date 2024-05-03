@@ -8,6 +8,7 @@
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
+    <link href="{% static 'uppy/uppy.min.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block body %}
@@ -48,4 +49,8 @@
     <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
+    <script type="text/javascript">
+        const uploadUrl = "{% if request.user.is_authenticated %}{% url 'api:upload' %}{% else %}{% url 'home:public-uppy' %}{% endif %}"
+    </script>
+    <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}

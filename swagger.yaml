@@ -20,7 +20,6 @@ servers:
   - url: https://intranet.cssnr.com/api
     description: Intranet
 
-
 paths:
   /upload/:
     post:
@@ -75,7 +74,6 @@ paths:
           schema:
             type: boolean
 
-
       requestBody:
         required: true
         content:
@@ -102,7 +100,6 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
-
 
   /remote/:
     post:
@@ -132,7 +129,6 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
-
 
   /recent/:
     get:
@@ -166,7 +162,6 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-
   /stats/:
     get:
       summary: Get Raw File Stats
@@ -197,7 +192,6 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
-
 
   /shorten/:
     post:
@@ -252,7 +246,6 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-
   /invites/:
     post:
       summary: Create an Invite
@@ -303,7 +296,6 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-
 components:
   securitySchemes:
     Authorization:
@@ -311,13 +303,11 @@ components:
       in: header
       name: Authorization
 
-
   responses:
     BadRequest:
       description: Missing required or malformed parameter
     UnauthorizedError:
       description: Access token is missing or invalid
-
 
   schemas:
     FileUploadResponse:
@@ -425,7 +415,6 @@ components:
         updated_at:
           type: string
           example: unknown
-
 
 security:
   - Authorization: []
