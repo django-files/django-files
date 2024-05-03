@@ -6,6 +6,9 @@ echo "$0 - Starting as: $(whoami)"
 
 if echo "${*}" | grep -q "gun\|runserver";then
     echo "Running App Startup Tasks"
+    if [ -f /build_sha ]; then
+        export BUILD_SHA=$(cat /build_sha)
+    fi
     if [ $PPID = 0 ] && [ -d "/docker-entrypoint.d/" ];then
         echo "Running Scripts in: /docker-entrypoint.d/"
         for file in $(/usr/bin/find "/docker-entrypoint.d/" -maxdepth 1 -type f -name "*.sh");do
