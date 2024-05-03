@@ -98,6 +98,7 @@ steps:
         from_secret: REGISTRY_USER
       REGISTRY_PASS:
         from_secret: REGISTRY_PASS
+      COMMIT_SHA: ${DRONE_COMMIT_SHA}
     commands:
       - set -a; . ./.environment
       - docker login --username "$${REGISTRY_USER}" --password "$${REGISTRY_PASS}" $${REGISTRY_HOST}

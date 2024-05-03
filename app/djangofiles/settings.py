@@ -14,7 +14,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEBUG = config('DEBUG', False, bool)
 print(f'DEBUG: {DEBUG}')
-APP_VERSION = config('APP_VERSION', 'DEV')
+
+BUILD_SHA = config('BUILD_SHA', '')
+APP_VERSION = config('APP_VERSION', f'DEV:{BUILD_SHA[:7]}')
 
 # determine which env file to use
 if 'test' in sys.argv or 'test_coverage' in sys.argv:
