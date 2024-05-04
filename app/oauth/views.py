@@ -113,7 +113,12 @@ def oauth_callback(request):
             messages.info(request, f'Webhook successfully added: {webhook.id}')
             return HttpResponseRedirect(get_login_redirect_url(request))
 
-        user = get_or_create_user(request, oauth.id, oauth.username, request.session['oauth_provider'], first_name=oauth.first_name)
+        user = get_or_create_user(
+            request,
+            oauth.id,
+            oauth.username,
+            request.session['oauth_provider'],
+            first_name=oauth.first_name)
         log.debug('user: %s', user)
         if not user:
             messages.error(request, 'User Not Found or Already Taken.')
