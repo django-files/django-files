@@ -55,8 +55,8 @@
                     <i class="fa-brands fa-github px-2"></i> GitHub Login</a>
             {% endif %}
             {% if site_settings.google_client_id or 'GOOGLE_CLIENT_ID'|get_config %}
-            <a href="{% url 'oauth:google' %}?next={{ request.path }}" class="btn btn-dark opacity-75 d-flex align-items-center justify-content-center" role="button">
-                <i class="fa-brands fa-google px-2"></i> Google Login</a>
+            <a href="{% url 'oauth:google' %}?next={{ request.path }}" class="btn btn-info opacity-75 d-flex align-items-center justify-content-center" role="button">
+                <i class="fa-brands fa-google px-2"></i>Google Login</a>
             {% endif %}
         </div>
 
