@@ -19,6 +19,8 @@ def health_check(request):
 @login_required()
 @require_http_methods(['POST'])
 def flush_cache_view(request):
+    if not request.user.is_superuser:
+        return HttpResponse(status=403)
     logger.debug('flush_cache_view')
     flush_template_cache.delay()
     messages.success(request, 'Cache flush success.')
