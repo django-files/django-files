@@ -86,7 +86,7 @@ class SiteSettings(models.Model):
 
     def get_default_user_storage_quota_human_read(self):
         return bytes_to_human_read(self.default_user_storage_quota)
-    
+
     def get_local_auth(self):
         # We want to fail safe, where if oauth is not configured we keep local auth enabled
         if self.google_client_id == self.discord_client_id == self.github_client_id == '':
