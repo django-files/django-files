@@ -6,10 +6,10 @@ const filesTable = $('#files-table')
 
 const fileUploadModal = $('#fileUploadModal')
 
-document.addEventListener('dragenter', (event) => {
-    event.preventDefault()
-    fileUploadModal.modal('show')
-})
+// document.addEventListener('dragenter', (event) => {
+//     event.preventDefault()
+//     fileUploadModal.modal('show')
+// })
 
 let filesDataTable
 if (typeof DataTable !== 'undefined' && filesTable.length) {
@@ -66,4 +66,57 @@ $('#user').on('change', function (event) {
         url.searchParams.set('user', user)
         location.href = url.toString()
     }
+})
+
+console.info('DROPZONE TESTING - KEEP CLEAR')
+
+const dropTarget = document.getElementById('main-container')
+
+// document.addEventListener('dragenter', (event) => {
+//     console.debug('dragenter', event)
+//     event.preventDefault()
+//     dropOverlay.classList.remove('d-none')
+// })
+// document.addEventListener('dragend', (event) => {
+//     console.debug('dragend', event)
+//     event.preventDefault()
+//     dropOverlay.classList.add('d-none')
+// })
+// document.addEventListener('dragleave', (event) => {
+//     console.debug('dragleave', event)
+//     event.preventDefault()
+//     dropOverlay.classList.add('d-none')
+// })
+//
+// let counter = 0
+// document.addEventListener('dragenter', (event) => {
+//     event.preventDefault()
+//     if (counter++ === 0) {
+//         console.log('entered the page')
+//         dropOverlay.classList.remove('d-none')
+//     }
+// })
+// document.addEventListener('dragleave', (event) => {
+//     event.preventDefault()
+//     if (--counter === 0) {
+//         console.log('left the page')
+//         dropOverlay.classList.add('d-none')
+//     }
+// })
+
+dropTarget.addEventListener('dragenter', (event) => {
+    console.debug('dragenter', event)
+    event.preventDefault()
+})
+dropTarget.addEventListener('dragover', (event) => {
+    console.debug('dragover', event)
+    event.preventDefault()
+})
+dropTarget.addEventListener('drop', (event) => {
+    console.debug('drop', event)
+    const dataTransfer = event.dataTransfer
+    event.preventDefault()
+    console.debug('dataTransfer', dataTransfer)
+    fileUploadModal.modal('show')
+    uppy.addFile(dataTransfer.files[0])
 })
