@@ -96,4 +96,6 @@ class SiteSettings(models.Model):
     def get_oauth_redirect_url(self):
         if self.oauth_redirect_url:
             return self.oauth_redirect_url
-        return self.site_url + '/oauth/callback/'
+        if self.site_url:
+            return self.site_url + '/oauth/callback/'
+        return
