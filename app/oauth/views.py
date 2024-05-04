@@ -59,24 +59,27 @@ def oauth_discord(request):
     """
     View  /oauth/discord/
     """
+    settings = SiteSettings.objects.settings()
     request.session['login_redirect_url'] = get_next_url(request)
-    return DiscordOauth.redirect_login(request)
+    return DiscordOauth.redirect_login(request, settings)
 
 
 def oauth_github(request):
     """
     View  /oauth/github/
     """
+    settings = SiteSettings.objects.settings()
     request.session['login_redirect_url'] = get_next_url(request)
-    return GithubOauth.redirect_login(request)
+    return GithubOauth.redirect_login(request, settings)
 
 
 def oauth_google(request):
     """
     View  /oauth/google/
     """
+    settings = SiteSettings.objects.settings()
     request.session['login_redirect_url'] = get_next_url(request)
-    return GoogleOauth.redirect_login(request)
+    return GoogleOauth.redirect_login(request, settings)
 
 
 def oauth_callback(request):
@@ -84,6 +87,7 @@ def oauth_callback(request):
     View  /oauth/callback/
     """
     try:
+        site_settings = SiteSettings.objects.settings()
         code = request.GET.get('code')
         log.debug('code: %s', code)
         if not code:
@@ -107,7 +111,7 @@ def oauth_callback(request):
         log.debug('oauth.id %s', oauth.id)
         log.debug('oauth.username %s', oauth.username)
         log.debug('oauth.first_name %s', oauth.first_name)
-        oauth.process_login()
+        oauth.process_login(site_settings)
         if request.session.get('webhook'):
             del request.session['webhook']
             webhook = oauth.add_webhook(request)

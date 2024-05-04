@@ -9,13 +9,15 @@ from oauth.models import Google
 from oauth.providers.helpers import is_super_id
 from oauth.providers.base import BaseOauth
 
+
 provider = 'google'
 log = logging.getLogger(f'app.{provider}')
 
 
 class GoogleOauth(BaseOauth):
-    def process_login(self) -> None:
-        self.data = self.get_token(self.code)
+
+    def process_login(self, site_settings) -> None:
+        self.data = self.get_token(site_settings, self.code)
         self.profile = self.get_profile(self.data)
         self.id: Optional[int] = self.profile['id']
         self.username: Optional[str] = self.profile['email']
@@ -38,13 +40,13 @@ class GoogleOauth(BaseOauth):
             user.save()
 
     @classmethod
-    def redirect_login(cls, request) -> HttpResponseRedirect:
+    def redirect_login(cls, request, settings) -> HttpResponseRedirect:
         request.session['oauth_provider'] = provider
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {
-            'client_id': cls.site_settings.google_client_id,
-            'redirect_uri': cls.redirect_url,
+            'client_id': settings.google_client_id,
+            'redirect_uri': settings.get_oauth_redirect_url(),
             'scope': config('OAUTH_SCOPE', 'openid email profile'),
             'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
         }
@@ -53,12 +55,12 @@ class GoogleOauth(BaseOauth):
         return HttpResponseRedirect(url)
 
     @classmethod
-    def get_token(cls, code: str) -> dict:
+    def get_token(cls, site_settings, code: str) -> dict:
         log.debug('get_token')
         data = {
-            'redirect_uri': cls.redirect_url,
-            'client_id': cls.site_settings.google_client_id,
-            'client_secret': cls.site_settings.google_client_secret,
+            'redirect_uri': site_settings.get_oauth_redirect_url(),
+            'client_id': site_settings.google_client_id,
+            'client_secret': site_settings.google_client_secret,
             'grant_type': config('OAUTH_GRANT_TYPE', 'authorization_code'),
             'code': code,
         }

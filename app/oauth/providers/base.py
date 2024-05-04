@@ -1,11 +1,7 @@
 from typing import Optional
 
-from settings.models import SiteSettings
-
 
 class BaseOauth(object):
-    site_settings = SiteSettings.objects.settings()
-    redirect_url = site_settings.get_oauth_redirect_url()
 
     __slots__ = [
         'code',

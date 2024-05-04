@@ -15,8 +15,8 @@ log = logging.getLogger(f'app.{provider}')
 
 class GithubOauth(BaseOauth):
 
-    def process_login(self) -> None:
-        self.data = self.get_token(self.code)
+    def process_login(self, site_settings) -> None:
+        self.data = self.get_token(site_settings, self.code)
         self.profile = self.get_profile(self.data)
         self.id: Optional[int] = self.profile['id']
         self.username: Optional[str] = self.profile['login']
@@ -39,13 +39,13 @@ class GithubOauth(BaseOauth):
             user.save()
 
     @classmethod
-    def redirect_login(cls, request) -> HttpResponseRedirect:
+    def redirect_login(cls, request, site_settings) -> HttpResponseRedirect:
         request.session['oauth_provider'] = provider
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {
-            'redirect_uri': cls.redirect_url,
-            'client_id': cls.site_settings.github_client_id,
+            'redirect_uri': site_settings.get_oauth_redirect_url(),
+            'client_id': site_settings.github_client_id,
             'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
             'scope': config('OAUTH_SCOPE', ''),
             'prompt': config('OAUTH_PROMPT', 'none'),
@@ -55,12 +55,12 @@ class GithubOauth(BaseOauth):
         return HttpResponseRedirect(url)
 
     @classmethod
-    def get_token(cls, code: str) -> dict:
+    def get_token(cls, site_settings, code: str) -> dict:
         log.debug('get_token')
         data = {
-            'redirect_uri': cls.redirect_url,
-            'client_id': cls.site_settings.github_client_id,
-            'client_secret': cls.site_settings.github_client_secret,
+            'redirect_uri': site_settings.get_oauth_redirect_url(),
+            'client_id': site_settings.github_client_id,
+            'client_secret': site_settings.github_client_secret,
             'grant_type': config('OAUTH_GRANT_TYPE', 'authorization_code'),
             'code': code,
         }
