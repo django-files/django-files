@@ -3,7 +3,6 @@
 console.debug('LOADING: files.js')
 
 const filesTable = $('#files-table')
-
 const fileUploadModal = $('#fileUploadModal')
 
 // document.addEventListener('dragenter', (event) => {
@@ -68,9 +67,9 @@ $('#user').on('change', function (event) {
     }
 })
 
-console.info('DROPZONE TESTING - KEEP CLEAR')
+// TODO: Cleanup Comments
 
-const dropTarget = document.getElementById('main-container')
+console.info('DROPZONE TESTING - KEEP CLEAR')
 
 // document.addEventListener('dragenter', (event) => {
 //     console.debug('dragenter', event)
@@ -104,15 +103,19 @@ const dropTarget = document.getElementById('main-container')
 //     }
 // })
 
-dropTarget.addEventListener('dragenter', (event) => {
-    console.debug('dragenter', event)
+// const dropTarget = document.querySelector('main')
+
+// dropTarget.addEventListener('dragenter', (event) => {
+//     console.debug('dragenter', event)
+//     event.preventDefault()
+// })
+
+document.body.addEventListener('dragover', (event) => {
+    // console.debug('dragover', event)
     event.preventDefault()
 })
-dropTarget.addEventListener('dragover', (event) => {
-    console.debug('dragover', event)
-    event.preventDefault()
-})
-dropTarget.addEventListener('drop', (event) => {
+
+document.body.addEventListener('drop', (event) => {
     console.debug('drop', event)
     const dataTransfer = event.dataTransfer
     event.preventDefault()
