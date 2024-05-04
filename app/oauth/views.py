@@ -126,7 +126,7 @@ def oauth_callback(request):
             return HttpResponseRedirect(get_login_redirect_url(request))
 
         oauth.update_profile(user)
-        if response := pre_login(request, user):
+        if response := pre_login(request, user, SiteSettings.objects.settings()):
             return response
         login(request, user)
         post_login(request, user)
