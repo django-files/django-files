@@ -27,6 +27,10 @@ LABEL org.opencontainers.image.description="Django Files"
 LABEL org.opencontainers.image.authors="smashedr,raluaces"
 LABEL org.opencontainers.image.licenses="GPL-3.0"
 
+ARG BUILD_SHA=''
+ENV BUILD_SHA=${BUILD_SHA}
+RUN touch build_sha && echo "${BUILD_SHA}" > build_sha
+
 ENV TZ=UTC
 ENV PYTHONUNBUFFERED 1
 

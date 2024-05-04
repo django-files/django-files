@@ -41,7 +41,7 @@ echo "Building: ${REGISTRY_HOST}/${REGISTRY_USER}/${REGISTRY_REPO}:${VERSION}"
 
 #docker login --username "${USERNAME}" --password "${PASSWORD}" "${REGISTRY_HOST}"
 
-docker build -t "${REGISTRY_HOST}/${REGISTRY_USER}/${REGISTRY_REPO}:${VERSION}" .
+docker build --build-arg="BUILD_SHA=${GITHUB_SHA}" -t "${REGISTRY_HOST}/${REGISTRY_USER}/${REGISTRY_REPO}:${VERSION}" .
 
 #docker push "${REGISTRY_HOST}/${REGISTRY_USER}/${REGISTRY_REPO}:${VERSION}"
 
