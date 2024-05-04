@@ -103,19 +103,19 @@ console.info('DROPZONE TESTING - KEEP CLEAR')
 //     }
 // })
 
-// const dropTarget = document.querySelector('main')
+const dropTarget = document.querySelector('main')
 
-// dropTarget.addEventListener('dragenter', (event) => {
-//     console.debug('dragenter', event)
-//     event.preventDefault()
-// })
+dropTarget.addEventListener('dragenter', (event) => {
+    // console.debug('dragenter', event)
+    event.preventDefault()
+})
 
-document.body.addEventListener('dragover', (event) => {
+dropTarget.addEventListener('dragover', (event) => {
     // console.debug('dragover', event)
     event.preventDefault()
 })
 
-document.body.addEventListener('drop', (event) => {
+dropTarget.addEventListener('drop', (event) => {
     console.debug('drop', event)
     const dataTransfer = event.dataTransfer
     event.preventDefault()
