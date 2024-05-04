@@ -24,32 +24,35 @@
 
     <form class="submit-once" method="POST" name="login-form" id="login-form" action="{% url 'oauth:login' %}">
         {% csrf_token %}
+        {% if local %}
+            <div class="form-floating mb-2 mt-4">
+                <input type="username" id="username" name="username" class="form-control" autocomplete="username" placeholder="Username" aria-describedby="Username" required autofocus>
+                <label for="floatingInput">Username</label>
+            </div>
+            <div class="form-floating">
+                <input type="password" class="form-control" id="password" name="password" autocomplete="password" placeholder="Password" aria-describedby="Password">
+                <label for="floatingPassword">Password</label>
+            </div>
+            <div id="passwordFeedback" class="invalid-feedback" aria-describedby="Username or Password feedback.">
+                Invalid Username or Password.
+            </div>
 
-        <div class="form-floating mb-2 mt-4">
-            <input type="username" id="username" name="username" class="form-control" autocomplete="username" placeholder="Username" aria-describedby="Username" required autofocus>
-            <label for="floatingInput">Username</label>
-          </div>
-        <div class="form-floating">
-            <input type="password" class="form-control" id="password" name="password" autocomplete="password" placeholder="Password" aria-describedby="Password">
-            <label for="floatingPassword">Password</label>
-        </div>
-        <div id="passwordFeedback" class="invalid-feedback" aria-describedby="Username or Password feedback.">
-            Invalid Username or Password.
-        </div>
-
-        {% if request.GET.next %}
-            <input type="hidden" name="next" value="{{ request.GET.next }}">
-        {% elif request.session.login_next_url %}
-            <input type="hidden" name="next" value="{{ request.session.login_next_url }}">
-        {% endif %}
-
-
-        <div class="d-grid gap-2 mt-3">
-            <button id="login-button" class="btn btn-secondary opacity-75" type="submit">
-                <i class="fas fa-sign-in-alt"></i> Local Login</button>
-            {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config or site_settings.github_client_id or 'GITHUB_CLIENT_ID'|get_config or site_settings.google_client_id or 'GOOGLE_CLIENT_ID'|get_config %}
-                <h6 class="text-center text-secondary mb-1">OR</h6>
+            {% if request.GET.next %}
+                <input type="hidden" name="next" value="{{ request.GET.next }}">
+            {% elif request.session.login_next_url %}
+                <input type="hidden" name="next" value="{{ request.session.login_next_url }}">
             {% endif %}
+
+        {% endif %}
+        <div class="d-grid gap-2 mt-3">
+            {% if local %}
+                <button id="login-button" class="btn btn-secondary opacity-75" type="submit">
+                    <i class="fas fa-sign-in-alt"></i> Local Login</button>
+                {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config or site_settings.github_client_id or 'GITHUB_CLIENT_ID'|get_config or site_settings.google_client_id or 'GOOGLE_CLIENT_ID'|get_config %}
+                        <h6 class="text-center text-secondary mb-1">OR</h6>
+                {% endif %}
+            {% endif %}
+
             {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
                 <a href="{% url 'oauth:discord' %}?next={{ request.path }}" class="btn btn-primary opacity-75 d-flex align-items-center justify-content-center" role="button">
                     <i class="fa-brands fa-discord px-2"></i> Login with Discord</a>

@@ -25,6 +25,7 @@ def oauth_show(request):
     """
     View  /oauth/
     """
+    site_settings = SiteSettings.objects.settings()
     if request.method == 'POST':
         request.session['login_redirect_url'] = get_next_url(request)
         form = LoginForm(request.POST)
@@ -34,10 +35,10 @@ def oauth_show(request):
         user = authenticate(request,
                             username=form.cleaned_data['username'],
                             password=form.cleaned_data['password'])
-        if not user:
+        if not user or not site_settings.get_local_auth():
             return HttpResponse(status=401)
 
-        if response := pre_login(request, user):
+        if response := pre_login(request, user, site_settings):
             return response
         login(request, user)
         post_login(request, user)
@@ -51,7 +52,7 @@ def oauth_show(request):
     if 'next' in request.GET:
         log.debug('setting login_next_url to: %s', request.GET.get('next'))
         request.session['login_next_url'] = request.GET.get('next')
-    return render(request, 'login.html')
+    return render(request, 'login.html', {"local": site_settings.get_local_auth()})
 
 
 def oauth_discord(request):
@@ -138,9 +139,9 @@ def oauth_callback(request):
         return HttpResponseRedirect(get_login_redirect_url(request))
 
 
-def pre_login(request, user):
+def pre_login(request, user, site_settings):
     log.debug('username: %s', user.username)
-    if SiteSettings.objects.settings().duo_auth:
+    if site_settings.duo_auth:
         request.session['username'] = user.username
         url = duo_redirect(request, user.username)
         log.debug('url: %s', url)
