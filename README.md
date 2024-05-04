@@ -271,8 +271,9 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 - User Default Storage Quota: The default storage quota for new users without a specified quota.
 - Timezone: global timezone for django files deployment. Default TZ anonymous users see.
 - Site Description: Site description shown on unfurled links for clients that show url unfurls.
-- Enable Public Uploads: /public : Anonymous users can upload.
-- Enable Oauth Registration: Allows ANY user to sign up via oauth login.
+- Public Uploads: /public : When enabled anonymous users can upload.
+- Oauth Registration: When enabled ANY user may sign up via oauth login.
+- Local Authentication: When disabled, only oauth authentication can be performed. (Falls back to enabled when oauth not configured)
 
 
 ## Variables
