@@ -380,4 +380,5 @@
         const uploadUrl = "{% if request.user.is_authenticated %}{% url 'api:upload' %}{% else %}{% url 'home:public-uppy' %}{% endif %}"
     </script>
     <script type="module" src="{% static 'js/avatar.js' %}"></script>
+    <script type="module" src="{% static 'js/dropzone.js' %}"></script>
 {% endblock %}

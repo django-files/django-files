@@ -49,9 +49,15 @@ const uppy = new Uppy({
 
 uppy.on('upload-success', (fileCount) => {
     console.debug('upload-success:', fileCount)
-    fileUploadModal?.modal('hide')
+    // fileUploadModal?.modal('hide')
+    window.location.reload(true)
 })
 
 uppy.on('upload-error', (file, error, response) => {
     console.debug('upload-error:', response.body.message)
+})
+
+fileUploadModal?.on('hidden.bs.modal', (event) => {
+    console.debug('hidden.bs.modal:', event)
+    uppy.cancelAll()
 })
