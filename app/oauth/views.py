@@ -103,9 +103,9 @@ def oauth_callback(request):
         else:
             messages.error(request, 'Unknown Provider: %s' % request.session['oauth_provider'])
             return HttpResponseRedirect(get_login_redirect_url(request))
-        log.info('oauth.id %s', oauth.id)
-        log.info('oauth.username %s', oauth.username)
-        log.info('oauth.name %s', oauth.first_name)
+        log.debug('oauth.id %s', oauth.id)
+        log.debug('oauth.username %s', oauth.username)
+        log.debug('oauth.first_name %s', oauth.first_name)
         oauth.process_login()
         if request.session.get('webhook'):
             del request.session['webhook']
@@ -113,7 +113,7 @@ def oauth_callback(request):
             messages.info(request, f'Webhook successfully added: {webhook.id}')
             return HttpResponseRedirect(get_login_redirect_url(request))
 
-        user = get_or_create_user(request, oauth.id, oauth.username)
+        user = get_or_create_user(request, oauth.id, oauth.username, request.session['oauth_provider'])
         log.debug('user: %s', user)
         if not user:
             messages.error(request, 'User Not Found or Already Taken.')

@@ -92,7 +92,7 @@ class GoogleOauth(object):
 
     @classmethod
     def get_profile(cls, data: dict) -> dict:
-        log.debug('get_discord_profile')
+        log.debug('get_google_profile')
         url = 'https://www.googleapis.com/oauth2/v2/userinfo'
         headers = {
             "Accept": "application/json",

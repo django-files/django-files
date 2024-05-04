@@ -9,12 +9,12 @@ from settings.models import SiteSettings
 log = logging.getLogger('app')
 
 
-def get_or_create_user(request, _id, username) -> Optional[CustomUser]:
+def get_or_create_user(request, _id, username, provider) -> Optional[CustomUser]:
     log.debug('_id: %s %s', _id, type(_id))
     log.debug('username %s', username)
 
     # get user by Oauth Provider ID
-    if isinstance(_id, str):
+    if provider == 'google':
         # google id is too long to be an in or big int field so we handle it separately
         # passing google ids to other filters throws a SQL error
         user = CustomUser.objects.filter(google__id=_id)
