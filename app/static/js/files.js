@@ -5,11 +5,6 @@ console.debug('LOADING: files.js')
 const filesTable = $('#files-table')
 const fileUploadModal = $('#fileUploadModal')
 
-// document.addEventListener('dragenter', (event) => {
-//     event.preventDefault()
-//     fileUploadModal.modal('show')
-// })
-
 let filesDataTable
 if (typeof DataTable !== 'undefined' && filesTable.length) {
     filesDataTable = filesTable.DataTable({
@@ -67,42 +62,6 @@ $('#user').on('change', function (event) {
     }
 })
 
-// TODO: Cleanup Comments
-
-console.info('DROPZONE TESTING - KEEP CLEAR')
-
-// document.addEventListener('dragenter', (event) => {
-//     console.debug('dragenter', event)
-//     event.preventDefault()
-//     dropOverlay.classList.remove('d-none')
-// })
-// document.addEventListener('dragend', (event) => {
-//     console.debug('dragend', event)
-//     event.preventDefault()
-//     dropOverlay.classList.add('d-none')
-// })
-// document.addEventListener('dragleave', (event) => {
-//     console.debug('dragleave', event)
-//     event.preventDefault()
-//     dropOverlay.classList.add('d-none')
-// })
-//
-// let counter = 0
-// document.addEventListener('dragenter', (event) => {
-//     event.preventDefault()
-//     if (counter++ === 0) {
-//         console.log('entered the page')
-//         dropOverlay.classList.remove('d-none')
-//     }
-// })
-// document.addEventListener('dragleave', (event) => {
-//     event.preventDefault()
-//     if (--counter === 0) {
-//         console.log('left the page')
-//         dropOverlay.classList.add('d-none')
-//     }
-// })
-
 const dropTarget = document.querySelector('main')
 
 dropTarget.addEventListener('dragenter', (event) => {
@@ -126,3 +85,19 @@ dropTarget.addEventListener('drop', (event) => {
     fileUploadModal.modal('show')
     uppy.addFile(dataTransfer.files[0])
 })
+
+// let counter = 0
+// document.addEventListener('dragenter', (event) => {
+//     event.preventDefault()
+//     if (counter++ === 0) {
+//         console.log('entered the page')
+//         dropOverlay.classList.remove('d-none')
+//     }
+// })
+// document.addEventListener('dragleave', (event) => {
+//     event.preventDefault()
+//     if (--counter === 0) {
+//         console.log('left the page')
+//         dropOverlay.classList.add('d-none')
+//     }
+// })
