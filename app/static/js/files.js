@@ -117,6 +117,9 @@ dropTarget.addEventListener('drop', (event) => {
     const dataTransfer = event.dataTransfer
     event.preventDefault()
     console.debug('dataTransfer', dataTransfer)
+    if (!dataTransfer.files?.length) {
+        return console.debug('no files found in dragged item')
+    }
     fileUploadModal.modal('show')
     uppy.addFile(dataTransfer.files[0])
 })
