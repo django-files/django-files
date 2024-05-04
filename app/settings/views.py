@@ -56,6 +56,7 @@ def site_view(request):
     site_settings.site_color = form.cleaned_data['site_color']
     site_settings.pub_load = form.cleaned_data['pub_load']
     site_settings.oauth_reg = form.cleaned_data['oauth_reg']
+    site_settings.local_auth = form.cleaned_data['local_auth']
     site_settings.duo_auth = form.cleaned_data['duo_auth']
     site_settings.global_storage_quota = form.cleaned_data['global_storage_quota']
     site_settings.default_user_storage_quota = form.cleaned_data['default_user_storage_quota']

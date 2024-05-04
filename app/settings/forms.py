@@ -15,6 +15,7 @@ class SiteSettingsForm(forms.Form):
     site_description = forms.CharField(max_length=155)
     site_color = forms.CharField(max_length=7)
     oauth_reg = forms.BooleanField(required=False)
+    local_auth = forms.BooleanField(required=False)
     pub_load = forms.BooleanField(required=False)
     two_factor = forms.BooleanField(required=False)
     duo_auth = forms.BooleanField(required=False)

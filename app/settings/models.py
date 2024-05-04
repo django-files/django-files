@@ -31,6 +31,9 @@ class SiteSettings(models.Model):
     discord_client_secret = models.CharField(max_length=128, blank=True, default='')
     github_client_id = models.CharField(max_length=32, blank=True, default='')
     github_client_secret = models.CharField(max_length=128, blank=True, default='')
+    google_client_id = models.CharField(max_length=75, blank=True, default='')
+    google_client_secret = models.CharField(max_length=128, blank=True, default='')
+    local_auth = models.BooleanField(default=True)
     s3_region = models.CharField(max_length=16, blank=True, default='')
     s3_secret_key = models.CharField(max_length=128, blank=True, default='')
     s3_secret_key_id = models.CharField(max_length=128, blank=True, default='')
@@ -83,3 +86,16 @@ class SiteSettings(models.Model):
 
     def get_default_user_storage_quota_human_read(self):
         return bytes_to_human_read(self.default_user_storage_quota)
+
+    def get_local_auth(self):
+        # We want to fail safe, where if oauth is not configured we keep local auth enabled
+        if self.google_client_id == self.discord_client_id == self.github_client_id == '':
+            return True
+        return self.local_auth
+
+    def get_oauth_redirect_url(self):
+        if self.oauth_redirect_url:
+            return self.oauth_redirect_url
+        if self.site_url:
+            return self.site_url + '/oauth/callback/'
+        return

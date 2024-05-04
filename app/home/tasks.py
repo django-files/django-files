@@ -6,6 +6,7 @@ from time import sleep
 from asgiref.sync import async_to_sync
 from celery import shared_task
 from channels.layers import get_channel_layer
+from decouple import config
 from django.conf import settings
 from django.core.cache import cache
 from django.forms.models import model_to_dict
@@ -38,10 +39,10 @@ def app_init():
     #     site_settings.site_url = settings.SITE_URL
     #     site_settings.save()
 
-    username = os.environ.get('USERNAME', 'admin')
-    password = os.environ.get('PASSWORD', '12345')
-    local = bool(os.environ.get('USERNAME') and os.environ.get('PASSWORD'))
-    oauth = bool(os.environ.get('OAUTH_REDIRECT_URL'))
+    username = config('USERNAME', 'admin')
+    password = config('PASSWORD', '12345')
+    local = bool(config('USERNAME') and config('PASSWORD'))
+    oauth = bool(config('OAUTH_REDIRECT_URL'))
     if not oauth or local:
         CustomUser.objects.create_superuser(username=username, password=password)
         log.info('Initial User Created')
@@ -88,16 +89,31 @@ def app_startup():
     # Warm site_settings cache
     cache.set('site_settings', model_to_dict(site_settings))
     log.info('Created Cache: site_settings')
-    # Ensure USERNAME and PASSWORD are set
-    if bool(os.environ.get('USERNAME') and os.environ.get('PASSWORD')):
+    # Ensure oauth values set in DB if in settings
+    if (oauth_redirect_url := config('OAUTH_REDIRECT_URL', '')):
+        site_settings.oauth_redirect_url = oauth_redirect_url
+    if (discord_client_id := config('DISCORD_CLIENT_ID', '')):
+        site_settings.discord_client_id = discord_client_id
+        site_settings.discord_client_secret = config('DISCORD_CLIENT_SECRET', '')
+    if (github_client_id := config('GITHUB_CLIENT_ID', '')):
+        site_settings.github_client_id = github_client_id
+        site_settings.github_client_secret = config('GITHUB_CLIENT_SECRET', '')
+    if (google_client_id := config('GOOGLE_CLIENT_ID', '')):
+        site_settings.google_client_id = google_client_id
+        site_settings.google_client_secret = config('GOOGLE_CLIENT_SECRET', '')
+    if (local_auth := config('LOCAL_AUTH', '')):
+        site_settings.local_auth = bool(local_auth)
+    site_settings.save()
+    # Ensure USERNAME and PASSWORD are set when local auth enabled and env vars set
+    if site_settings.get_local_auth() and bool(config('USERNAME', '') and config('PASSWORD', '')):
         users = CustomUser.objects.all()
-        if user := users.filter(username=os.environ.get('USERNAME')):
-            user[0].set_password(os.environ.get('PASSWORD'))
+        if user := users.filter(username=config('USERNAME')):
+            user[0].set_password(config('PASSWORD'))
             log.info('Password Ensured for user: %s', user[0].username)
         else:
             user = CustomUser.objects.create_superuser(
-                username=os.environ.get('USERNAME'),
-                password=os.environ.get('PASSWORD'),
+                username=config('USERNAME'),
+                password=config('PASSWORD'),
             )
             log.info('Custom User Created: %s', user.username)
     regenerate_all_storage_values()
@@ -108,7 +124,7 @@ def app_startup():
 @shared_task()
 def version_check():
     log.info('version_check')
-    app_version = os.environ.get('APP_VERSION')
+    app_version = config('APP_VERSION', '')
     if not app_version or app_version.lower() in ['dev', 'latest']:
         return 'Skipping Version Check due to APP_VERSION not set or invalid.'
     app_version = version.parse(app_version)
