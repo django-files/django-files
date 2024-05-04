@@ -7,7 +7,6 @@ from typing import Optional
 
 from oauth.models import Google
 from oauth.providers.helpers import is_super_id
-from settings.models import SiteSettings
 from oauth.providers.base import BaseOauth
 
 provider = 'google'
@@ -41,12 +40,11 @@ class GoogleOauth(BaseOauth):
     @classmethod
     def redirect_login(cls, request) -> HttpResponseRedirect:
         request.session['oauth_provider'] = provider
-        site_settings = SiteSettings.objects.settings()
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {
-            'client_id': site_settings.google_client_id or config('GOOGLE_CLIENT_ID'),
-            'redirect_uri': site_settings.oauth_redirect_url or config('OAUTH_REDIRECT_URL'),
+            'client_id': cls.site_settings.google_client_id,
+            'redirect_uri': cls.redirect_url,
             'scope': config('OAUTH_SCOPE', 'openid email profile'),
             'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
         }
@@ -57,11 +55,10 @@ class GoogleOauth(BaseOauth):
     @classmethod
     def get_token(cls, code: str) -> dict:
         log.debug('get_token')
-        site_settings = SiteSettings.objects.settings()
         data = {
-            'redirect_uri': site_settings.oauth_redirect_url or config('OAUTH_REDIRECT_URL'),
-            'client_id': site_settings.google_client_id or config('GOOGLE_CLIENT_ID'),
-            'client_secret': site_settings.google_client_secret or config('GOOGLE_CLIENT_SECRET'),
+            'redirect_uri': cls.redirect_url,
+            'client_id': cls.site_settings.google_client_id,
+            'client_secret': cls.site_settings.google_client_secret,
             'grant_type': config('OAUTH_GRANT_TYPE', 'authorization_code'),
             'code': code,
         }

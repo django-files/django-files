@@ -92,3 +92,8 @@ class SiteSettings(models.Model):
         if self.google_client_id == self.discord_client_id == self.github_client_id == '':
             return True
         return self.local_auth
+
+    def get_oauth_redirect_url(self):
+        if self.oauth_redirect_url:
+            return self.oauth_redirect_url
+        return self.site_url + '/oauth/callback/'

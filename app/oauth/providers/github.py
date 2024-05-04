@@ -8,7 +8,6 @@ from typing import Optional
 from oauth.models import Github
 from oauth.providers.base import BaseOauth
 from oauth.providers.helpers import is_super_id
-from settings.models import SiteSettings
 
 provider = 'github'
 log = logging.getLogger(f'app.{provider}')
@@ -42,12 +41,11 @@ class GithubOauth(BaseOauth):
     @classmethod
     def redirect_login(cls, request) -> HttpResponseRedirect:
         request.session['oauth_provider'] = provider
-        site_settings = SiteSettings.objects.settings()
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {
-            'redirect_uri': site_settings.oauth_redirect_url or config('OAUTH_REDIRECT_URL'),
-            'client_id': site_settings.github_client_id or config('GITHUB_CLIENT_ID'),
+            'redirect_uri': cls.redirect_url,
+            'client_id': cls.site_settings.github_client_id,
             'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
             'scope': config('OAUTH_SCOPE', ''),
             'prompt': config('OAUTH_PROMPT', 'none'),
@@ -59,11 +57,10 @@ class GithubOauth(BaseOauth):
     @classmethod
     def get_token(cls, code: str) -> dict:
         log.debug('get_token')
-        site_settings = SiteSettings.objects.settings()
         data = {
-            'redirect_uri': site_settings.oauth_redirect_url or config('OAUTH_REDIRECT_URL'),
-            'client_id': site_settings.github_client_id or config('GITHUB_CLIENT_ID'),
-            'client_secret': site_settings.github_client_secret or config('GITHUB_CLIENT_SECRET'),
+            'redirect_uri': cls.redirect_url,
+            'client_id': cls.site_settings.github_client_id,
+            'client_secret': cls.site_settings.github_client_secret,
             'grant_type': config('OAUTH_GRANT_TYPE', 'authorization_code'),
             'code': code,
         }
