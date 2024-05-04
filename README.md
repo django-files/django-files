@@ -294,10 +294,10 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 | SUPER_USERS               | oAuth Sup User IDs | `111150265075298304,111148006983614464`              |
 | DISCORD_CLIENT_ID         | Discord Client ID  | `1135676900124135484`                                |
 | DISCORD_CLIENT_SECRET     | Discord Secret     | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
-| GITHUB_CLIENT_ID          | GitHub Client ID   | `113567690-gvasdfasdf.apps.googleusercontent.com`    |
-| GITHUB_CLIENT_SECRET      | GitHub Secret      | `GCSDPC-Tskdfix-klsjdf_r32489fj09jfsd`               |
-| GOOGLE_CLIENT_ID          | Google Client ID   | `1135676900124135484`                                |
-| GOOGLE_CLIENT_SECRET      | Google Secret      | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
+| GITHUB_CLIENT_ID          | GitHub Client ID   | `1135676900124135484`                                |
+| GITHUB_CLIENT_SECRET      | GitHub Secret      | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
+| GOOGLE_CLIENT_ID          | Google Client ID   | `113567690-gvasdfasdf.apps.googleusercontent.com`    |
+| GOOGLE_CLIENT_SECRET      | Google Secret      | `GCSDPC-Tskdfix-klsjdf_r32489fj09jfsd`               |
 | OAUTH_REDIRECT_URL        | Discord Redirect   | `https://example.com/oauth/callback/`                |
 | AWS_REGION_NAME           | AWS Region Name    | `us-east-1`                                          |
 | AWS_ACCESS_KEY_ID         | AWS IAM User Key   | `AKIEAKADFGASDFASGSDAFSDF`                           |
