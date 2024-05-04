@@ -7,6 +7,7 @@ from django.shortcuts import HttpResponseRedirect
 from typing import Optional
 
 from oauth.models import Discord
+from oauth.providers.base import BaseOauth
 from oauth.providers.helpers import is_super_id
 from settings.models import SiteSettings
 from oauth.models import DiscordWebhooks
@@ -15,25 +16,8 @@ provider = 'discord'
 log = logging.getLogger(f'app.{provider}')
 
 
-class DiscordOauth(object):
+class DiscordOauth(BaseOauth):
     api_url = 'https://discord.com/api/v8/'
-
-    __slots__ = [
-        'code',
-        'id',
-        'username',
-        'first_name',
-        'data',
-        'profile',
-    ]
-
-    def __init__(self, code: str) -> None:
-        self.code = code
-        self.id: Optional[int] = None
-        self.username: Optional[str] = None
-        self.first_name: Optional[str] = None
-        self.data: Optional[dict] = None
-        self.profile: Optional[dict] = None
 
     def process_login(self) -> None:
         self.data = self.get_token(self.code)
