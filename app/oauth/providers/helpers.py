@@ -9,7 +9,7 @@ from settings.models import SiteSettings
 log = logging.getLogger('app')
 
 
-def get_or_create_user(request, _id, username, provider) -> Optional[CustomUser]:
+def get_or_create_user(request, _id, username, provider, first_name='') -> Optional[CustomUser]:
     log.debug('_id: %s %s', _id, type(_id))
     log.debug('username %s', username)
 
@@ -60,7 +60,7 @@ def get_or_create_user(request, _id, username, provider) -> Optional[CustomUser]
     # no matching accounts found, if registration is enabled, create user
     if SiteSettings.objects.settings().oauth_reg or is_super_id(_id):
         log.info('%s created by oauth_reg with id: %s', username, _id)
-        return CustomUser.objects.create(username=username)
+        return CustomUser.objects.create(username=username, first_name=first_name)
 
     log.debug('User does not exist locally and oauth_reg is off: %s', _id)
     return None
