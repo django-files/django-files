@@ -31,6 +31,8 @@ class SiteSettings(models.Model):
     discord_client_secret = models.CharField(max_length=128, blank=True, default='')
     github_client_id = models.CharField(max_length=32, blank=True, default='')
     github_client_secret = models.CharField(max_length=128, blank=True, default='')
+    google_client_id = models.CharField(max_length=32, blank=True, default='')
+    google_client_secret = models.CharField(max_length=128, blank=True, default='')
     s3_region = models.CharField(max_length=16, blank=True, default='')
     s3_secret_key = models.CharField(max_length=128, blank=True, default='')
     s3_secret_key_id = models.CharField(max_length=128, blank=True, default='')

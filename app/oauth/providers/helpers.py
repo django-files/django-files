@@ -10,11 +10,16 @@ log = logging.getLogger('app')
 
 
 def get_or_create_user(request, _id, username) -> Optional[CustomUser]:
-    log.debug('_id: %s', _id)
+    log.debug('_id: %s %s', _id, type(_id))
     log.debug('username %s', username)
 
     # get user by Oauth Provider ID
-    user = CustomUser.objects.filter(discord__id=_id) or CustomUser.objects.filter(github__id=_id)
+    if isinstance(_id, str):
+        # google id is too long to be an in or big int field so we handle it separately
+        # passing google ids to other filters throws a SQL error
+        user = CustomUser.objects.filter(google__id=_id)
+    else:
+        user = CustomUser.objects.filter(discord__id=_id) or CustomUser.objects.filter(github__id=_id)
     if user:
         # if oauth user already exists and is trying to be claimed
         if request.session.get('oauth_claim_username'):

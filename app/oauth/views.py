@@ -15,6 +15,7 @@ from oauth.models import CustomUser, DiscordWebhooks
 from oauth.providers.helpers import get_login_redirect_url, get_next_url, get_or_create_user
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
+from oauth.providers.google import GoogleOauth
 
 log = logging.getLogger('app')
 
@@ -69,6 +70,14 @@ def oauth_github(request):
     return GithubOauth.redirect_login(request)
 
 
+def oauth_google(request):
+    """
+    View  /oauth/google/
+    """
+    request.session['login_redirect_url'] = get_next_url(request)
+    return GoogleOauth.redirect_login(request)
+
+
 def oauth_callback(request):
     """
     View  /oauth/callback/
@@ -89,10 +98,14 @@ def oauth_callback(request):
             oauth = GithubOauth(code)
         elif request.session['oauth_provider'] == 'discord':
             oauth = DiscordOauth(code)
+        elif request.session['oauth_provider'] == 'google':
+            oauth = GoogleOauth(code)
         else:
             messages.error(request, 'Unknown Provider: %s' % request.session['oauth_provider'])
             return HttpResponseRedirect(get_login_redirect_url(request))
-
+        log.info('oauth.id %s', oauth.id)
+        log.info('oauth.username %s', oauth.username)
+        log.info('oauth.name %s', oauth.first_name)
         oauth.process_login()
         if request.session.get('webhook'):
             del request.session['webhook']
