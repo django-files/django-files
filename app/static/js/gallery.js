@@ -1,8 +1,8 @@
 // Gallery JS
 
 document.addEventListener('DOMContentLoaded', initGallery)
-document.addEventListener('scroll', throttle(galleryScroll, 50))
-window.addEventListener('resize', throttle(galleryScroll, 50))
+document.addEventListener('scroll', throttle(galleryScroll))
+window.addEventListener('resize', throttle(galleryScroll))
 
 const galleryContainer = document.getElementById('gallery-container')
 const imageNode = document.querySelector('div.d-none img')
@@ -17,7 +17,10 @@ let nextPage = 1
 
 async function initGallery() {
     console.debug('Init Gallery')
-    await addNodes()
+    // await addNodes()
+    while (!window.scrollMaxY) {
+        await addNodes()
+    }
 }
 
 /**
@@ -48,7 +51,7 @@ async function galleryScroll(event, buffer = 600) {
  * @function addNodes
  */
 async function addNodes() {
-    console.debug('addNodes')
+    console.debug('addNodes:', nextPage)
     if (!nextPage) {
         return console.warn('No Next Page:', nextPage)
     }
