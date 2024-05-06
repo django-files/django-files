@@ -1,6 +1,6 @@
 ---
 kind: pipeline
-name: 'Deploy'
+name: "Deploy"
 
 platform:
   arch: arm64
@@ -24,12 +24,12 @@ volumes:
       path: /var/run/docker.sock
 
 steps:
-  - name: 'Flake8'
+  - name: "Flake8"
     image: alpine/flake8
     commands:
       - flake8 .
 
-  - name: 'Variables'
+  - name: "Variables"
     image: alpine
     commands:
       - echo DRONE_DEPLOY_TO $${DRONE_DEPLOY_TO}
@@ -43,7 +43,7 @@ steps:
       - echo "ENV_NAMES='$${ENV_NAMES}'" >> ./.environment
       - cat ./.environment
 
-  - name: 'Service Configs'
+  - name: "Service Configs"
     image: alpine/git
     environment:
       SERVICE_CONFIGS_KEY:
@@ -65,7 +65,7 @@ steps:
       - done
       - git pull origin master
 
-  - name: 'Update Compose'
+  - name: "Update Compose"
     image: alpine
     commands:
       - set -a; . ./.environment
@@ -82,13 +82,13 @@ steps:
       - cat "$STACK_COMPOSE"
       - done
 
-  - name: 'Node Install'
+  - name: "Node Install"
     image: node:18-alpine
     commands:
       - set -a; . ./.environment
       - npm install
 
-  - name: 'Build and Deploy'
+  - name: "Build and Deploy"
     image: docker:dind
     volumes:
       - name: docker
