@@ -93,7 +93,7 @@
     <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/shorts.js' %}"></script>
     <script type="text/javascript">
-        const uploadUrl = "{% if request.user.is_authenticated %}{% url 'api:upload' %}{% else %}{% url 'home:public-uppy' %}{% endif %}"
+        const uploadUrl = "{% url 'api:upload' %}"
     </script>
     <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {#    <script type="module" src="{% static 'js/dropzone.js' %}"></script>#}

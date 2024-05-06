@@ -384,7 +384,7 @@
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/settings.js' %}"></script>
     <script type="text/javascript">
-        const uploadUrl = "{% if request.user.is_authenticated %}{% url 'api:upload' %}{% else %}{% url 'home:public-uppy' %}{% endif %}"
+        const uploadUrl = "{% url 'api:upload' %}"
     </script>
     <script type="module" src="{% static 'js/avatar.js' %}"></script>
 {% endblock %}
