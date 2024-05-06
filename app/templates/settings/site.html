@@ -111,21 +111,31 @@
                         <div class="form-check form-switch px-lg-5">
                             <input class="form-check-input" type="checkbox" id="pub_load" name="pub_load" {{ site_settings.pub_load|if_true:"checked" }}>
                             <label class="form-check-label" for="pub_load">
-                                Enable Public Uploads: <kbd>/public</kbd>
+                                Public Uploads: <kbd>/public</kbd>
                             </label>
                         </div>
                     </div>
                 </div>
-                {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
+                {% if site_settings.discord_client_id or site_settings.google_client_id or site_settings.github_client_id %}
                     <div class="row">
-                    <div class="col mx-sm-4 fs-5">
-                        <div class="form-check form-switch px-lg-5">
-                            <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
-                            <label class="form-check-label" for="oauth_reg">
-                                Enable Oauth Registration
-                            </label>
+                        <div class="col mx-sm-4 fs-5">
+                            <div class="form-check form-switch px-lg-5">
+                                <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
+                                <label class="form-check-label" for="oauth_reg">
+                                    Oauth Registration
+                                </label>
+                            </div>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col mx-sm-4 fs-5">
+                            <div class="form-check form-switch px-lg-5">
+                                <input class="form-check-input" type="checkbox" id="local_auth" name="local_auth" {{ site_settings.local_auth|if_true:"checked" }}>
+                                <label class="form-check-label" for="local_auth">
+                                    Local Authentication
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 {% endif %}
                 {% if 'DUO_CLIENT_ID'|get_config %}

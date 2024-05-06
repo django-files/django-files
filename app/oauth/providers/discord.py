@@ -7,36 +7,19 @@ from django.shortcuts import HttpResponseRedirect
 from typing import Optional
 
 from oauth.models import Discord
+from oauth.providers.base import BaseOauth
 from oauth.providers.helpers import is_super_id
-from settings.models import SiteSettings
 from oauth.models import DiscordWebhooks
 
 provider = 'discord'
 log = logging.getLogger(f'app.{provider}')
 
 
-class DiscordOauth(object):
+class DiscordOauth(BaseOauth):
     api_url = 'https://discord.com/api/v8/'
 
-    __slots__ = [
-        'code',
-        'id',
-        'username',
-        'first_name',
-        'data',
-        'profile',
-    ]
-
-    def __init__(self, code: str) -> None:
-        self.code = code
-        self.id: Optional[int] = None
-        self.username: Optional[str] = None
-        self.first_name: Optional[str] = None
-        self.data: Optional[dict] = None
-        self.profile: Optional[dict] = None
-
-    def process_login(self) -> None:
-        self.data = self.get_token(self.code)
+    def process_login(self, site_settings) -> None:
+        self.data = self.get_token(site_settings, self.code)
         self.profile = self.get_profile(self.data)
         self.id: Optional[int] = self.profile['id']
         self.username: Optional[str] = self.profile['username']
@@ -70,14 +53,13 @@ class DiscordOauth(object):
         )
 
     @classmethod
-    def redirect_login(cls, request) -> HttpResponseRedirect:
+    def redirect_login(cls, request, site_settings) -> HttpResponseRedirect:
         request.session['oauth_provider'] = provider
-        site_settings = SiteSettings.objects.settings()
         if request.user.is_authenticated:
             request.session['oauth_claim_username'] = request.user.username
         params = {
-            'redirect_uri': site_settings.oauth_redirect_url or config('OAUTH_REDIRECT_URL'),
-            'client_id': site_settings.discord_client_id or config('DISCORD_CLIENT_ID'),
+            'redirect_uri': site_settings.oauth_redirect_url,
+            'client_id': site_settings.discord_client_id,
             'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
             'scope': config('OAUTH_SCOPE', 'identify'),
             'prompt': config('OAUTH_PROMPT', 'none'),
@@ -87,13 +69,12 @@ class DiscordOauth(object):
         return HttpResponseRedirect(url)
 
     @classmethod
-    def redirect_webhook(cls, request) -> HttpResponseRedirect:
+    def redirect_webhook(cls, request, site_settings) -> HttpResponseRedirect:
         request.session['oauth_provider'] = provider
         request.session['webhook'] = 'discord'
-        site_settings = SiteSettings.objects.settings()
         params = {
-            'redirect_uri': site_settings.oauth_redirect_url or config('OAUTH_REDIRECT_URL'),
-            'client_id': site_settings.discord_client_id or config('DISCORD_CLIENT_ID'),
+            'redirect_uri': site_settings.get_oauth_redirect_url(),
+            'client_id': site_settings.discord_client_id,
             'response_type': config('OAUTH_RESPONSE_TYPE', 'code'),
             'scope': config('OAUTH_SCOPE', 'identify') + ' webhook.incoming',
         }
@@ -102,13 +83,12 @@ class DiscordOauth(object):
         return HttpResponseRedirect(url)
 
     @classmethod
-    def get_token(cls, code: str) -> dict:
+    def get_token(cls, site_settings, code: str) -> dict:
         log.debug('get_token')
-        site_settings = SiteSettings.objects.settings()
         data = {
-            'redirect_uri': site_settings.oauth_redirect_url or config('OAUTH_REDIRECT_URL'),
-            'client_id': site_settings.discord_client_id or config('DISCORD_CLIENT_ID'),
-            'client_secret': site_settings.discord_client_secret or config('DISCORD_CLIENT_SECRET'),
+            'redirect_uri': site_settings.get_oauth_redirect_url(),
+            'client_id': site_settings.discord_client_id,
+            'client_secret': site_settings.discord_client_secret,
             'grant_type': config('OAUTH_GRANT_TYPE', 'authorization_code'),
             'code': code,
         }

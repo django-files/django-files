@@ -65,6 +65,8 @@ class CustomUser(AbstractUser):
                         f'{self.discord.id}/{self.discord.avatar}.png'
             elif self.user_avatar_choice == "GH" and hasattr(self, 'github') and getattr(self.github, 'avatar'):
                 avatar_url = self.github.avatar
+            elif self.user_avatar_choice == "GO" and hasattr(self, 'google') and getattr(self.google, 'avatar'):
+                avatar_url = self.google.avatar
             elif self.user_avatar_choice == "DF":
                 # filter vs get just in case a user users admin to set more than 1 file as avatar
                 avatar_url = self.files_set.filter(avatar=True)[0].get_meta_static_url()
@@ -78,6 +80,7 @@ class CustomUser(AbstractUser):
     class UserAvatarChoices(models.TextChoices):
         DISCORD = "DC", _("Discord")
         GITHUB = "GH", _("Github")
+        GOOGLE = "GO", _("Google")
         STORAGE = "DF", _("Local/Cloud Storage")
 
     user_avatar_choice = models.CharField(max_length=2, choices=UserAvatarChoices.choices,
@@ -219,3 +222,15 @@ class Github(models.Model):
     class Meta:
         verbose_name = 'Github'
         verbose_name_plural = 'Githubs'
+
+
+class Google(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
+    id = models.CharField(max_length=32, unique=True)
+    profile = models.JSONField(null=True, blank=True)
+    avatar = models.CharField(null=True, blank=True, max_length=32)
+    access_token = models.CharField(null=True, blank=True, max_length=32)
+
+    class Meta:
+        verbose_name = 'Google'
+        verbose_name_plural = 'Googles'

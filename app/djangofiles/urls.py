@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth.decorators import login_required
 from django.conf.urls import include
 from django.contrib import admin
 from django.urls import path
@@ -10,6 +11,8 @@ handler400 = 'djangofiles.views.handler400_view'
 handler403 = 'djangofiles.views.handler403_view'
 handler404 = 'djangofiles.views.handler404_view'
 handler500 = 'djangofiles.views.handler500_view'
+
+admin.site.login = login_required(admin.site.login)
 
 urlpatterns = [
     path('', include('home.urls')),

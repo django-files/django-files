@@ -113,12 +113,12 @@
                                 <a class="dropdown-item text-warning" href="{% url 'admin:settings_sitesettings_change' 1 %}">
                                     <i class="fa-solid fa-plane-departure me-2"></i> Admin</a>
                             </li>
-                        {% endif %}
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item text-info" role="button" target="_blank" id="flush-cache">
                                 <i class="fa-solid fa-toilet me-2"></i> Flush Cache</a>
                         </li>
+                        {% endif %}
                         <div class="dropdown-divider"></div>
                         <li>
                             <a class="dropdown-item log-out text-danger" role="button">

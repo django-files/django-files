@@ -96,7 +96,8 @@ CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', True, bool)
 NGINX_ACCESS_LOGS = config('NGINX_ACCESS_LOGS', '/logs/nginx.access')
 
 # CACHE_MIDDLEWARE_SECONDS = 0
-# CSRF_TRUSTED_ORIGINS = config('CSRF_ORIGINS', '', Csv())
+if (csrf_origins := config('CSRF_TRUSTED_ORIGINS', '', Csv())):
+    CSRF_TRUSTED_ORIGINS = csrf_origins
 # SECURE_REFERRER_POLICY = config('SECURE_REFERRER_POLICY', 'no-referrer')
 
 MESSAGE_TAGS = {
