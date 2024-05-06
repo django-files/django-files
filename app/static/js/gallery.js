@@ -15,11 +15,20 @@ const faCaret = document.querySelector('div.d-none .fa-square-caret-down')
 
 let nextPage = 1
 
+let fillInterval
+
 async function initGallery() {
     console.debug('Init Gallery')
-    // await addNodes()
-    while (!window.scrollMaxY) {
+    await addNodes()
+    fillInterval = setInterval(fillPage, 250)
+}
+
+async function fillPage() {
+    console.debug('fillPage INTERVAL', window.scrollMaxY)
+    if (!window.scrollMaxY) {
         await addNodes()
+    } else {
+        clearInterval(fillInterval)
     }
 }
 
