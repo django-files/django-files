@@ -1,8 +1,8 @@
 // Gallery JS
 
 document.addEventListener('DOMContentLoaded', initGallery)
-document.addEventListener('scroll', debounce(galleryScroll, 50))
-window.addEventListener('resize', debounce(galleryScroll, 50))
+document.addEventListener('scroll', throttle(galleryScroll, 50))
+window.addEventListener('resize', throttle(galleryScroll, 50))
 
 const galleryContainer = document.getElementById('gallery-container')
 const imageNode = document.querySelector('div.d-none img')
