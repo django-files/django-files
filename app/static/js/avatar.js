@@ -1,6 +1,12 @@
 // JS for Avatar Upload
 
-import { Uppy, Dashboard, Webcam, XHRUpload } from '/static/uppy/uppy.min.js'
+import {
+    Uppy,
+    Dashboard,
+    DropTarget,
+    Webcam,
+    XHRUpload,
+} from '/static/uppy/uppy.min.js'
 
 console.debug('LOADING: avatar.js')
 console.debug('uploadUrl:', uploadUrl)
@@ -46,6 +52,14 @@ const uppy = new Uppy({
             avatar: 'True',
         },
     })
+    .use(DropTarget, {
+        target: document.body,
+    })
+
+uppy.on('file-added', (file) => {
+    console.debug('file-added:', file)
+    fileUploadModal.modal('show')
+})
 
 uppy.on('upload-success', (fileCount) => {
     console.debug('upload-success:', fileCount)

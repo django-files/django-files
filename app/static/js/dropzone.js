@@ -1,5 +1,7 @@
 // JS for Drag and Drop
 
+// TODO: NOT USED - TO BE REMOVED
+
 dropTarget?.addEventListener('dragenter', (event) => {
     // console.debug('dragenter', event)
     event.preventDefault()

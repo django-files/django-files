@@ -1,6 +1,7 @@
 import {
     Uppy,
     Dashboard,
+    DropTarget,
     Webcam,
     Audio,
     ScreenCapture,
@@ -51,6 +52,14 @@ const uppy = new Uppy({ debug: true, autoProceed: false })
         },
         getResponseError: getResponseError,
     })
+    .use(DropTarget, {
+        target: document.body,
+    })
+
+uppy.on('file-added', (file) => {
+    console.debug('file-added:', file)
+    fileUploadModal.modal('show')
+})
 
 uppy.on('upload-success', (fileCount) => {
     console.debug('upload-success:', fileCount)
