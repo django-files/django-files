@@ -154,8 +154,8 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 
 -   Multiple Users, Local, and Optional OAuth
 -   Connect existing accounts to configured OAuth Services
--   Configure OAuth Services from the UI (no restart required)
--   Oauth Currently Supports: Discord, GitHub, [Request Another](https://github.com/django-files/django-files/discussions/new?category=feature-requests)
+-   Configure OAuth Services from the Django Admin UI (no restart required)
+-   Oauth Currently Supports: Discord, GitHub, Google [Request Another](https://github.com/django-files/django-files/discussions/new?category=feature-requests)
 -   Optional Duo Two-Factor Authentication
 -   Generate Invite links and Invite users to your django-files instance.
 
@@ -271,8 +271,9 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 - User Default Storage Quota: The default storage quota for new users without a specified quota.
 - Timezone: global timezone for django files deployment. Default TZ anonymous users see.
 - Site Description: Site description shown on unfurled links for clients that show url unfurls.
-- Enable Public Uploads: /public : Anonymous users can upload.
-- Enable Oauth Registration: Allows ANY user to sign up via oauth login.
+- Public Uploads: /public : When enabled anonymous users can upload.
+- Oauth Registration: When enabled ANY user may sign up via oauth login.
+- Local Authentication: When disabled, only oauth authentication can be performed. (Falls back to enabled when oauth not configured)
 
 
 ## Variables
@@ -291,11 +292,13 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 | SITE_URL                  | Site URL           | `https://example.com`                                |
 | USERNAME                  | Local Username     | `admin`                                              |
 | PASSWORD                  | Local Password     | `PSZX7TgiSg6aB6sZ`                                   |
-| SUPER_USERS               | Discord User IDs   | `111150265075298304,111148006983614464`              |
+| SUPER_USERS               | oAuth Sup User IDs | `111150265075298304,111148006983614464`              |
 | DISCORD_CLIENT_ID         | Discord Client ID  | `1135676900124135484`                                |
 | DISCORD_CLIENT_SECRET     | Discord Secret     | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
 | GITHUB_CLIENT_ID          | GitHub Client ID   | `1135676900124135484`                                |
 | GITHUB_CLIENT_SECRET      | GitHub Secret      | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
+| GOOGLE_CLIENT_ID          | Google Client ID   | `113567690-gvasdfasdf.apps.googleusercontent.com`    |
+| GOOGLE_CLIENT_SECRET      | Google Secret      | `GCSDPC-Tskdfix-klsjdf_r32489fj09jfsd`               |
 | OAUTH_REDIRECT_URL        | Discord Redirect   | `https://example.com/oauth/callback/`                |
 | AWS_REGION_NAME           | AWS Region Name    | `us-east-1`                                          |
 | AWS_ACCESS_KEY_ID         | AWS IAM User Key   | `AKIEAKADFGASDFASGSDAFSDF`                           |

@@ -29,7 +29,10 @@ services:
             - '80:80'
 
     app:
-        build: ./app
+        build:
+            context: ./app
+            args:
+                - BUILD_SHA=${COMMIT_SHA}
         image: djangofiles-app:${VERSION:-latest}
         env_file: settings.env
         command: "sh -c 'python manage.py runserver 0.0.0.0:9000'"

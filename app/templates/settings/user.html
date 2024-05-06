@@ -31,6 +31,7 @@
                         {% for value, display in user_avatar_choices %}
                             {% if not site_settings.discord_client_id and display == "Discord" and not 'DISCORD_CLIENT_ID'|get_config or not user.discord and display == "Discord" %}
                             {% elif not site_settings.github_client_id and display == "Github" and not 'GITHUB_CLIENT_ID'|get_config or not user.github and display == "Github" %}
+                            {% elif not site_settings.google_client_id and display == "Google" and not 'GOOGLE_CLIENT_ID'|get_config or not user.google and display == "Google" %}
                             {% else %}
                             <option value="{{ value }}" {% if value == user.user_avatar_choice %}selected{% endif %}>{{ display }}</option>
                             {% endif %}
@@ -169,16 +170,22 @@
     {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
         {% if not user.discord %}
             <a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary me-2 mt-4" role="button">
-                <i class="fab fa-discord me-2"></i> Connect Account to a Discord</a>
+                <i class="fab fa-discord me-2"></i> Connect Account to Discord</a>
         {% endif %}
     {% endif %}
     {% if site_settings.github_client_id or 'GITHUB_CLIENT_ID'|get_config %}
         {% if not user.github %}
             <a href="{% url 'oauth:github' %}" class="btn btn-sm btn-outline-light me-2 mt-4" role="button">
-                <i class="fab fa-github me-2"></i> Connect Account to a GitHub</a>
+                <i class="fab fa-github me-2"></i> Connect Account to GitHub</a>
         {% endif %}
     {% endif %}
-
+    {% if site_settings.google_client_id or 'GOOGLE_CLIENT_ID'|get_config %}
+        {% if not user.google %}
+            <a href="{% url 'oauth:google' %}" class="btn btn-info btn-sm me-2 mt-4" role="button">
+                <i class="fab fa-google me-2"></i> Connect Account to Google</a>
+        {% endif %}
+    {% endif %}
+    
     <hr>
 
     <section id="webhooks">
