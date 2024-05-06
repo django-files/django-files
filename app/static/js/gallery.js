@@ -56,14 +56,14 @@ async function addNodes() {
         return console.warn('No Next Page:', nextPage)
     }
     const data = await fetchGallery(nextPage)
-    console.debug('data:', data)
+    // console.debug('data:', data)
     nextPage = data.next
     for (const file of data.files) {
         // console.debug('file:', file)
 
         const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp)$/i
         if (!file.name.match(imageExtensions)) {
-            console.debug(`Not Image: ${file.name}`)
+            console.debug(`Skipping non-image: ${file.name}`)
             continue
         }
         // if (!file.mime.toLowerCase().startsWith('image')) {
