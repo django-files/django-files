@@ -11,6 +11,11 @@ import {
 console.debug('LOADING: uppy.js')
 console.debug('uploadUrl:', uploadUrl)
 
+const fileUploadModal = $('#fileUploadModal')
+// if (typeof fileUploadModal === 'undefined') {
+//     fileUploadModal
+// }
+
 function getResponseError(responseText, response) {
     return new Error(JSON.parse(responseText).message)
 }
@@ -70,6 +75,10 @@ uppy.on('upload-success', (fileCount) => {
 
 uppy.on('upload-error', (file, error, response) => {
     console.debug('upload-error:', response.body.message)
+})
+
+uppy.on('error', (error) => {
+    console.debug('error:', error)
 })
 
 fileUploadModal?.on('hidden.bs.modal', (event) => {

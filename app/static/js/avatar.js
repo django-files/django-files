@@ -4,6 +4,7 @@ import {
     Uppy,
     Dashboard,
     DropTarget,
+    // ImageEditor,
     Webcam,
     XHRUpload,
 } from '/static/uppy/uppy.min.js'
@@ -55,6 +56,7 @@ const uppy = new Uppy({
     .use(DropTarget, {
         target: document.body,
     })
+// .use(ImageEditor, { target: Dashboard })
 
 uppy.on('file-added', (file) => {
     console.debug('file-added:', file)
@@ -74,4 +76,24 @@ uppy.on('upload-error', (file, error, response) => {
 fileUploadModal?.on('hidden.bs.modal', (event) => {
     console.debug('hidden.bs.modal:', event)
     uppy.cancelAll()
+    // uppy.close({ reason: 'user' })
+})
+
+uppy.on('error', (error) => {
+    console.warn('error:', error)
+})
+
+uppy.on('info-visible', function () {
+    fileUploadModal.modal('show')
+    // const state = uppy.getState()
+    // console.warn('state:', state)
+    // const { info } = uppy.getState()
+    // console.warn('info:', info)
+    // setTimeout(() => {
+    //     console.warn('info.type:', info.type)
+    //     console.log(`${info.message} ${info.details}`)
+    //     if (info.type === 'error') {
+    //         showToast(info.message, 'danger')
+    //     }
+    // }, 250)
 })

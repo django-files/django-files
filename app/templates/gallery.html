@@ -6,6 +6,7 @@
 {% block title %}Gallery{% endblock %}
 
 {% block head %}
+    <link rel="stylesheet" href="{% static 'uppy/uppy.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/gallery.css' %}" />
 {% endblock %}
 
@@ -41,11 +42,14 @@
         {% include 'files/ctx-menu.html' %}
         {% include 'files/ctx-modals.html' %}
     </div>
+
+    {% include 'files/file-upload-modal.html' %}
 {% endblock %}
 
 {% block footer %}{% endblock %}
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/gallery.js' %}"></script>
+    <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}
 

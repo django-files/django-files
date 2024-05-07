@@ -3,10 +3,8 @@
 console.debug('LOADING: settings.js')
 
 const deleteDiscordHookModal = $('#deleteDiscordHookModal')
-// const fileUploadModal = $('#avatarUploadModal')
 const fileUploadModal = $('#avatarUploadModal')
 const settingsForm = $('#settingsForm')
-const dropTarget = document.querySelector('main')
 
 settingsForm.on('change', saveOptions)
 

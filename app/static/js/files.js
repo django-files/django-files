@@ -3,8 +3,6 @@
 console.debug('LOADING: files.js')
 
 const filesTable = $('#files-table')
-const fileUploadModal = $('#fileUploadModal')
-const dropTarget = document.querySelector('main')
 
 let filesDataTable
 if (typeof DataTable !== 'undefined' && filesTable.length) {
