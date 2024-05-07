@@ -17,6 +17,7 @@ const uppy = new Uppy({
     autoProceed: false,
     restrictions: {
         allowedFileTypes: ['.jpeg', '.jpg', '.png', '.gif'],
+        maxNumberOfFiles: 1,
     },
 })
     .use(Dashboard, {
