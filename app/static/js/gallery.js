@@ -24,8 +24,11 @@ async function initGallery() {
 }
 
 async function fillPage() {
-    console.debug('fillPage INTERVAL', window.scrollMaxY)
-    if (!window.scrollMaxY) {
+    console.debug(
+        'fillPage INTERVAL',
+        document.body.clientHeight === document.body.scrollHeight
+    )
+    if (document.body.clientHeight === document.body.scrollHeight) {
         await addNodes()
     } else {
         clearInterval(fillInterval)
@@ -40,14 +43,12 @@ async function fillPage() {
  * @param {Number} buffer
  */
 async function galleryScroll(event, buffer = 600) {
+    const maxScrollY = document.body.scrollHeight - window.innerHeight
     console.debug(
-        `galleryScroll: ${window.scrollY} > ${window.scrollMaxY - buffer}`,
-        window.scrollY > window.scrollMaxY - buffer
+        `galleryScroll: ${window.scrollY} > ${maxScrollY - buffer}`,
+        window.scrollY > maxScrollY - buffer
     )
-    if (
-        nextPage &&
-        (!window.scrollMaxY || window.scrollY > window.scrollMaxY - buffer)
-    ) {
+    if (nextPage && (!maxScrollY || window.scrollY > maxScrollY - buffer)) {
         console.debug('End of Scroll')
         await addNodes()
     }
