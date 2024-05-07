@@ -115,6 +115,7 @@ async function addNodes() {
         const link = document.createElement('a')
         link.href = file.url
         link.title = file.name
+        link.target = '_blank'
         // const img = document.createElement('img')
         // img.style.maxWidth = '512px'
         // img.style.maxHeight = '512px'
@@ -238,7 +239,6 @@ function getCtxMenu(file) {
  * @param {HTMLElement} parent
  * @param {String} textContent
  */
-
 function addSpan(parent, textContent) {
     let span = document.createElement('span')
     span.textContent = textContent
