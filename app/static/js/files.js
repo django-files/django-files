@@ -1,5 +1,7 @@
 // JS for Files
 
+console.debug('LOADING: files.js')
+
 const filesTable = $('#files-table')
 
 let filesDataTable

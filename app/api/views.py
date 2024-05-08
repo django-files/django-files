@@ -238,7 +238,7 @@ def pages_view(request, page):
     """
     View  /api/pages/{page}/
     """
-    count = 12
+    count = 25
     log.debug('%s - gallery_page_view: %s', request.method, page)
     q = Files.objects.get_request(request)
     paginator = Paginator(q, count)

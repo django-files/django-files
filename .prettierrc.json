@@ -5,9 +5,15 @@
     "singleQuote": true,
     "overrides": [
         {
-            "files": ["**/*.html"],
+            "files": ["**/*.html", "**/*.yaml", "**/*.yml"],
             "options": {
                 "singleQuote": false
+            }
+        },
+        {
+            "files": ["**/*.yaml", "**/*.yml"],
+            "options": {
+                "tabWidth": 2
             }
         }
     ]

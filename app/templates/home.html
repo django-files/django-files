@@ -6,7 +6,9 @@
 {% block home_active %}active{% endblock %}
 {% block title %}Home{% endblock %}
 
-{% block head %}{% endblock %}
+{% block head %}
+    <link href="{% static 'uppy/uppy.min.css' %}" rel="stylesheet">
+{% endblock %}
 
 {% block body %}
 <div class="container-fluid py-3 px-4">
@@ -81,8 +83,11 @@
         {% endif %}
     {% endif %}
 
+    {% include 'files/file-upload-modal.html' %}
+
 </div>
 {% endblock %}
+
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'js/home.js' %}"></script>
@@ -90,4 +95,5 @@
     <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/shorts.js' %}"></script>
+    <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}

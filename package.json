@@ -25,6 +25,9 @@
         "moment": "^2.30.1",
         "swagger-ui": "^5.16.2"
     },
+    "devDependencies": {
+        "prettier": "^3.2.5"
+    },
     "scripts": {
         "copy-static": "npx gulp",
         "postinstall": "npm run copy-static",
