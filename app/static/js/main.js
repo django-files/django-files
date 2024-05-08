@@ -112,7 +112,6 @@ function saveOptions(event) {
     function success(data) {
         console.debug('success:', data, event)
         if (data.reload) {
-            alert('Settings changed require reload...')
             location.reload()
         } else {
             // let message = 'Settings Saved Successfully.'
