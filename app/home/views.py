@@ -100,8 +100,14 @@ def gallery_view(request):
     """
     View  /gallery/
     """
+    if request.user.is_superuser:
+        users = CustomUser.objects.all()
+        context = {'users': users}
+    else:
+        context = {}
     log.debug('%s - gallery_view: is_secure: %s', request.method, request.is_secure())
-    context = {'files': Files.objects.get_request(request)}
+    view = request.GET.get('view') if request.GET.get('view') else "list"
+    context.update({'view': view})
     return render(request, 'gallery.html', context)
 
 

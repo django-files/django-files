@@ -234,11 +234,15 @@ def recent_view(request):
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers('Authorization')
 @vary_on_cookie
-def pages_view(request, page):
+def pages_view(request, page, count=None):
     """
-    View  /api/pages/{page}/
+    View  /api/pages/{page}/{count}/
+    Limit 100 items per page.
     """
-    count = 25
+    if not count:
+        count = 25
+    if count > 100:
+        count = 100
     log.debug('%s - gallery_page_view: %s', request.method, page)
     q = Files.objects.get_request(request)
     paginator = Paginator(q, count)
@@ -249,6 +253,7 @@ def pages_view(request, page):
     response = {
         'files': files,
         'next': _next,
+        'count': count,
     }
     return JsonResponse(response, safe=False, status=200)
 
@@ -261,6 +266,7 @@ def extract_files(q: Files.objects):
         data['url'] = site_settings['site_url'] + file.preview_uri()
         data['thumb'] = file.get_gallery_url() if use_s3() else site_settings['site_url'] + file.get_gallery_url()
         data['raw'] = site_settings['site_url'] + file.raw_path
+        data['date'] = file.date
         files.append(data)
     # log.debug('files: %s', files)
     return files
