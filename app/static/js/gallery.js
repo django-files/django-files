@@ -44,10 +44,8 @@ let fillInterval
 
 async function initGallery() {
     console.log('Init Gallery')
-    if (filesView === "list") {
-        filesDataTable = filesTable.DataTable(
-            dataTablesOptions
-        )
+    if (filesView === 'list') {
+        filesDataTable = filesTable.DataTable(dataTablesOptions)
     }
     await addNodes()
     fillInterval = setInterval(fillPage, 250)
@@ -101,8 +99,7 @@ async function addNodes() {
     nextPage = data.next
     for (const file of data.files) {
         // console.debug('file:', file)
-        if (filesView === "gallery") {
-
+        if (filesView === 'gallery') {
             const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp)$/i
             if (!file.name.match(imageExtensions)) {
                 console.debug(`Skipping non-image: ${file.name}`)
@@ -230,7 +227,7 @@ async function addNodes() {
             // inner.appendChild(link)
             // inner.appendChild(ctxMenu)
             galleryContainer.appendChild(outer)
-        } else if (filesView === "list") {
+        } else if (filesView === 'list') {
             addFilesDTRow(file)
         }
     }
@@ -243,7 +240,36 @@ function addFilesDTRow(file) {
     } else {
         pw = false
     }
-    let new_row = [file.id, file.name, file.mime, file.date, file.expr, pw, file.private, file.view, '', '']
+
+    // CTX MENU
+    const ctxMenu = document.createElement('div')
+    const toggle = document.createElement('a')
+    toggle.classList.add('link-body-emphasis', 'ctx-menu')
+    toggle.setAttribute('role', 'button')
+    toggle.dataset.bsToggle = 'dropdown'
+    toggle.setAttribute('aria-expanded', 'false')
+    toggle.setAttribute(
+        'class',
+        'btn btn-secondary file-context-dropdown my-0 py-0'
+    )
+    toggle.innerHTML = '<i class="fa-regular fa-square-caret-down"></i>'
+    ctxMenu.appendChild(toggle)
+
+    const menu = getCtxMenu(file)
+    ctxMenu.appendChild(menu)
+
+    let new_row = [
+        file.id,
+        file.name,
+        file.size,
+        file.mime,
+        file.date,
+        file.expr,
+        pw,
+        file.private,
+        file.view,
+        ctxMenu.outerHTML,
+    ]
     console.log(new_row)
     filesDataTable.row.add(new_row).draw()
 }
