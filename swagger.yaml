@@ -20,7 +20,6 @@ servers:
   - url: https://intranet.cssnr.com/api
     description: Intranet
 
-
 paths:
   /upload/:
     post:
@@ -75,7 +74,6 @@ paths:
           schema:
             type: boolean
 
-
       requestBody:
         required: true
         content:
@@ -92,17 +90,16 @@ paths:
                   type: string
 
       responses:
-        '200':
+        "200":
           description: A JSON array of file details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileUploadResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
+                $ref: "#/components/schemas/FileUploadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 
   /remote/:
     post:
@@ -117,22 +114,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/URL'
+              $ref: "#/components/schemas/URL"
             example:
               url: http://example.com/images/john.png
 
       responses:
-        '200':
+        "200":
           description: A JSON array of file details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/URL'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
+                $ref: "#/components/schemas/URL"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 
   /recent/:
     get:
@@ -152,7 +148,7 @@ paths:
             type: integer
 
       responses:
-        '200':
+        "200":
           description: A JSON array of file Preview URLs
           content:
             application/json:
@@ -161,11 +157,10 @@ paths:
                 items:
                   type: string
                   example: http://example.com/u/john.jpg
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 
   /stats/:
     get:
@@ -185,19 +180,18 @@ paths:
             type: integer
 
       responses:
-        '200':
+        "200":
           description: A JSON array of File Stats
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FileStats'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
+                  $ref: "#/components/schemas/FileStats"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 
   /shorten/:
     post:
@@ -232,26 +226,25 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ShortURL'
+              $ref: "#/components/schemas/ShortURL"
             example:
               url: http://example.com/really-long-url.html
               vanity: ab12
               max-views: 1
 
       responses:
-        '200':
+        "200":
           description: A JSON array of the Short URL
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/URL'
+                $ref: "#/components/schemas/URL"
               example:
                 url: http://example.com/s/ab12
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 
   /invites/:
     post:
@@ -266,19 +259,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Invite'
+              $ref: "#/components/schemas/Invite"
 
       responses:
-        '200':
+        "200":
           description: A JSON object of the Invites
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserInvites'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
+                $ref: "#/components/schemas/UserInvites"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 
     get:
       summary: Get all Invites
@@ -289,20 +282,19 @@ paths:
         - Authorization: []
 
       responses:
-        '200':
+        "200":
           description: A JSON array of the Invites
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/UserInvites'
+                  $ref: "#/components/schemas/UserInvites"
 
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 
 components:
   securitySchemes:
@@ -311,13 +303,11 @@ components:
       in: header
       name: Authorization
 
-
   responses:
     BadRequest:
       description: Missing required or malformed parameter
     UnauthorizedError:
       description: Access token is missing or invalid
-
 
   schemas:
     FileUploadResponse:
@@ -425,7 +415,6 @@ components:
         updated_at:
           type: string
           example: unknown
-
 
 security:
   - Authorization: []

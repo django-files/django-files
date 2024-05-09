@@ -1,8 +1,8 @@
 // Gallery JS
 
 document.addEventListener('DOMContentLoaded', initGallery)
-document.addEventListener('scroll', debounce(galleryScroll, 50))
-window.addEventListener('resize', debounce(galleryScroll, 50))
+document.addEventListener('scroll', throttle(galleryScroll))
+window.addEventListener('resize', throttle(galleryScroll))
 
 const galleryContainer = document.getElementById('gallery-container')
 const tableContainer = document.getElementById('table-container')
@@ -59,24 +59,23 @@ const dataTablesOptions = {
     // ],
 }
 
+let fillInterval
+
 async function initGallery() {
     console.debug('Init Gallery')
-    // await addNodes()
-
-    const data = await fetchGallery(nextPage, 30)
-    console.debug('data', data)
-    dataTablesOptions.data = data.files
-    dataTables = $('#files-table').DataTable(dataTablesOptions)
+    await addNodes()
+    fillInterval = setInterval(fillPage, 250)
 }
 
-async function addRows() {
-    console.log('addRows')
-    const data = await fetchGallery(nextPage, 30)
-    console.debug('data', data)
-    for (const file of data.files) {
-        console.log('file:', file)
-        // dataTables.row.add(['one', 'two', 'three', 'four'])
-        dataTables.row.add(file).draw(false)
+async function fillPage() {
+    console.debug(
+        'fillPage INTERVAL',
+        document.body.clientHeight === document.body.scrollHeight
+    )
+    if (document.body.clientHeight === document.body.scrollHeight) {
+        await addNodes()
+    } else {
+        clearInterval(fillInterval)
     }
 }
 
@@ -87,15 +86,13 @@ async function addRows() {
  * @param {Event} event
  * @param {Number} buffer
  */
-async function galleryScroll(event, buffer = 300) {
+async function galleryScroll(event, buffer = 600) {
+    const maxScrollY = document.body.scrollHeight - window.innerHeight
     console.debug(
-        `galleryScroll: ${window.scrollY} > ${window.scrollMaxY - buffer}`,
-        window.scrollY > window.scrollMaxY - buffer
+        `galleryScroll: ${window.scrollY} > ${maxScrollY - buffer}`,
+        window.scrollY > maxScrollY - buffer
     )
-    if (
-        nextPage &&
-        (!window.scrollMaxY || window.scrollY > window.scrollMaxY - buffer)
-    ) {
+    if (nextPage && (!maxScrollY || window.scrollY > maxScrollY - buffer)) {
         console.debug('End of Scroll')
         await addRows()
         // await addNodes()
@@ -109,19 +106,19 @@ async function galleryScroll(event, buffer = 300) {
  * @function addNodes
  */
 async function addNodes() {
-    console.debug('addNodes')
+    console.debug('addNodes:', nextPage)
     if (!nextPage) {
         return console.warn('No Next Page:', nextPage)
     }
     const data = await fetchGallery(nextPage)
-    console.debug('data:', data)
-    // nextPage = data.next
+    // console.debug('data:', data)
+    nextPage = data.next
     for (const file of data.files) {
         // console.debug('file:', file)
 
         const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp)$/i
         if (!file.name.match(imageExtensions)) {
-            console.debug(`Not Image: ${file.name}`)
+            console.debug(`Skipping non-image: ${file.name}`)
             continue
         }
         // if (!file.mime.toLowerCase().startsWith('image')) {
@@ -163,6 +160,7 @@ async function addNodes() {
         const link = document.createElement('a')
         link.href = file.url
         link.title = file.name
+        link.target = '_blank'
         // const img = document.createElement('img')
         // img.style.maxWidth = '512px'
         // img.style.maxHeight = '512px'
@@ -286,7 +284,6 @@ function getCtxMenu(file) {
  * @param {HTMLElement} parent
  * @param {String} textContent
  */
-
 function addSpan(parent, textContent) {
     let span = document.createElement('span')
     span.textContent = textContent

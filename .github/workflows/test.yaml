@@ -73,11 +73,11 @@ jobs:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: app/coverage.xml
 
-#      - name: "Upload Artifact"
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: screenshots
-#          path: app/screenshots/
+      #      - name: "Upload Artifact"
+      #        uses: actions/upload-artifact@v3
+      #        with:
+      #          name: screenshots
+      #          path: app/screenshots/
 
       - name: "Push Artifacts"
         uses: cssnr/push-artifacts-action@master

@@ -112,7 +112,6 @@ function saveOptions(event) {
     function success(data) {
         console.debug('success:', data, event)
         if (data.reload) {
-            alert('Settings changed require reload...')
             location.reload()
         } else {
             // let message = 'Settings Saved Successfully.'
@@ -159,15 +158,32 @@ function formErrorHandler(form, jqXHR) {
 }
 
 /**
- * DeBounce Function
+ * Debounce Function
  * @function debounce
  * @param {Function} fn
  * @param {Number} timeout
  */
-function debounce(fn, timeout = 300) {
+function debounce(fn, timeout = 250) {
     let timeoutID
     return (...args) => {
         clearTimeout(timeoutID)
         timeoutID = setTimeout(() => fn(...args), timeout)
+    }
+}
+
+/**
+ * Throttle Function
+ * @function throttle
+ * @param {Function} fn
+ * @param {Number} limit
+ */
+function throttle(fn, limit = 250) {
+    let lastExecutedTime = 0
+    return function (...args) {
+        const currentTime = Date.now()
+        if (currentTime - lastExecutedTime >= limit) {
+            fn(...args)
+            lastExecutedTime = currentTime
+        }
     }
 }

@@ -1,12 +1,17 @@
 // JS for Site Settings
 
-// $(document).on('blur', saveOptions)
-
-$('#settingsForm').on('change', saveOptions)
+console.debug('LOADING: settings.js')
 
 const deleteDiscordHookModal = $('#deleteDiscordHookModal')
-const changeAvatarModal = $('#avatarUploadModal')
+const fileUploadModal = $('#avatarUploadModal')
 const settingsForm = $('#settingsForm')
+
+settingsForm.on('change', saveOptions)
+
+// document.addEventListener('dragenter', (event) => {
+//     event.preventDefault()
+//     fileUploadModal.modal('show')
+// })
 
 // TODO: Use a proper selector
 let hookID
@@ -21,7 +26,7 @@ $('.uploadAvatarHookBtn').on('click', function (event) {
     console.log('.uploadAvatarHookBtn click', event)
     hookID = $(this).data('hook-id')
     console.log(hookID)
-    changeAvatarModal.modal('show')
+    fileUploadModal.modal('show')
 })
 
 // Handle Confirm Delete Clicks
