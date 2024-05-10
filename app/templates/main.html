@@ -51,9 +51,6 @@
             <li class="nav-item">
                 <a class="nav-link {% block home_active %}{% endblock %}" href="{% url 'home:index' %}">Home</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link {% block gallery_active %}{% endblock %}" href="{% url 'home:gallery' %}">Gallery</a>
-            </li>
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">Upload</a>
                 <ul class="dropdown-menu">
@@ -177,7 +174,6 @@
                                 <p><kbd>D</kbd> Site Settings</p>
                             {% endif %}
                             <p><kbd>F</kbd> Files</p>
-                            <p><kbd>G</kbd> Gallery</p>
                             <p><kbd>H</kbd> Home</p>
                         </div>
                         <div class="col-xs-12 col-sm-6">

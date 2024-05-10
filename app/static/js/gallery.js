@@ -22,6 +22,7 @@ const filesTable = $('#files-table')
 
 let filesDataTable
 const dataTablesOptions = {
+    paging: false,
     order: [0, 'desc'],
     responsive: true,
     processing: true,
@@ -32,11 +33,11 @@ const dataTablesOptions = {
         [10, 25, 50, 100, 250, 'All'],
     ],
     columnDefs: [
-        { targets: 0, width: '5%' },
+        { targets: 0, width: '5%', responsivePriority: 5 },
         {
             target: 1,
-            responsivePriority: 1,
-            render: DataTable.render.ellipsis(50, true),
+            responsivePriority: 0,
+            render: DataTable.render.ellipsis(40, true),
         },
         {
             targets: 2,
@@ -50,11 +51,12 @@ const dataTablesOptions = {
         },
         { targets: 8, width: '5%' },
         {
-            targets: [6, 7, 9],
+            targets: [6, 7],
             orderable: false,
             width: '5%',
-            responsivePriority: 3,
+            responsivePriority: 4,
         },
+        { targets: 9, orderable: false, width: '5%', responsivePriority: 2 },
     ],
 }
 
@@ -305,7 +307,8 @@ function getCtxMenu(file) {
     // console.debug('getCtxMenu:', file)
 
     const menu = document.getElementById('ctx-menu-').cloneNode(true)
-    menu.id = `ctx-menmu-${file.id}`
+    menu.id = `ctx-menu-${file.id}`
+    menu.setAttribute('data-pk', file.id)
 
     const copyShare = menu.querySelector('.copy-share-link')
     copyShare.dataset.clipboardText = file.url
