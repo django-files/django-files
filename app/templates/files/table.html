@@ -2,19 +2,19 @@
 {% load static %}
 
 <p class="d-xl-none text-muted mb-0"><em>Some columns hidden due to narrow viewport.</em></p>
-<table class="table table-hover table-responsive" id="files-table" {% if view == "gallery" %}hidden{% endif %}>
+<table class="display responsive nowrap table table-hover table-responsive" id="files-table" style="width:100%" {% if view == "gallery" %}hidden{% endif %}>
     <caption class="visually-hidden">List of Files</caption>
     <thead>
     <tr>
-        <th scope="col" class="d-none d-sm-table-cell text-center" title="Database ID">ID</th>
+        <th scope="col" class="" title="Database ID">ID</th>
         <th scope="col" class="" title="File Name">File</th>
-        <th scope="col" class="d-none d-sm-table-cell" title="File Size">Size</th>
-        <th scope="col" class="d-none d-lg-table-cell" title="MIME Type">MIME</th>
-        <th scope="col" class="d-none d-xl-table-cell date-format" title="UTC Date">Date</th>
-        <th scope="col" class="d-none d-md-table-cell" title="File Expire">Expire</th>
-        <th scope="col" class="d-none d-sm-table-cell" title="Password"><i class="fa-solid fa-key"></i></th>
-        <th scope="col" class="d-none d-sm-table-cell" title="Private"><i class="fa-solid fa-lock"></i></th>
-        <th scope="col" class="d-none d-sm-table-cell" title="Views"><i class="fa-solid fa-eye"></i></th>
+        <th scope="col" class="" title="File Size">Size</th>
+        <th scope="col" class="" title="MIME Type">MIME</th>
+        <th scope="col" class="" title="UTC Date">Date</th>
+        <th scope="col" class="" title="File Expire">Expire</th>
+        <th scope="col" class="" title="Password"><i class="fa-solid fa-key"></i></th>
+        <th scope="col" class="" title="Private"><i class="fa-solid fa-lock"></i></th>
+        <th scope="col" class="" title="Views"><i class="fa-solid fa-eye"></i></th>
         <th scope="col" class="text-center" title="Context Menu"><i class="fa-solid fa-ellipsis-vertical"></i></th>
     </tr>
     </thead>

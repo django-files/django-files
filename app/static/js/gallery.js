@@ -20,9 +20,10 @@ let fileData = []
 
 const filesTable = $('#files-table')
 
-let dataTables
+let filesDataTable
 const dataTablesOptions = {
     order: [0, 'desc'],
+    responsive: true,
     processing: true,
     saveState: true,
     pageLength: -1,
@@ -32,12 +33,28 @@ const dataTablesOptions = {
     ],
     columnDefs: [
         { targets: 0, width: '5%' },
-        { targets: 2, type: 'file-size' },
+        {
+            target: 1,
+            responsivePriority: 1,
+            render: DataTable.render.ellipsis(50, true),
+        },
+        {
+            targets: 2,
+            render: function (data, type, row, meta) {
+                return humanFileSize(data)
+            },
+        },
         {
             targets: 4,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
         },
-        { targets: [6, 7, 9], orderable: false },
+        { targets: 8, width: '5%' },
+        {
+            targets: [6, 7, 9],
+            orderable: false,
+            width: '5%',
+            responsivePriority: 3,
+        },
     ],
 }
 
@@ -236,11 +253,6 @@ async function addNodes() {
 
 function addFilesDTRow(file) {
     console.log(`Adding File ${file.name} to DT`)
-    if (file.password) {
-        pw = true
-    } else {
-        pw = false
-    }
 
     // CTX MENU
     const ctxMenu = document.createElement('div')
@@ -263,6 +275,10 @@ function addFilesDTRow(file) {
     if (!file.private) {
         privateIcon.style.display = 'none'
     }
+    const pwIcon = faKey.cloneNode(true)
+    if (!file.password) {
+        pwIcon.style.display = 'none'
+    }
 
     let new_row = [
         file.id,
@@ -271,8 +287,8 @@ function addFilesDTRow(file) {
         file.mime,
         file.date,
         file.expr,
+        pwIcon.outerHTML,
         privateIcon.outerHTML,
-        pw,
         file.view,
         ctxMenu.outerHTML,
     ]
@@ -402,4 +418,38 @@ function formatBytes(bytes, decimals = 2) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+}
+
+/**
+ * Format bytes as human-readable text.
+ *
+ * @param bytes Number of bytes.
+ * @param si True to use metric (SI) units, aka powers of 1000. False to use
+ *           binary (IEC), aka powers of 1024.
+ * @param dp Number of decimal places to display.
+ *
+ * @return Formatted string.
+ */
+function humanFileSize(bytes, si = false, dp = 1) {
+    const thresh = si ? 1000 : 1024
+
+    if (Math.abs(bytes) < thresh) {
+        return bytes + ' B'
+    }
+
+    const units = si
+        ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+        : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+    let u = -1
+    const r = 10 ** dp
+
+    do {
+        bytes /= thresh
+        ++u
+    } while (
+        Math.round(Math.abs(bytes) * r) / r >= thresh &&
+        u < units.length - 1
+    )
+
+    return bytes.toFixed(dp) + ' ' + units[u]
 }
