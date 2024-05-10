@@ -1,4 +1,5 @@
 // JS for Files
+// TODO: ONLY USED ON home.html and files.html (which is not used)
 
 console.debug('LOADING: files.js')
 
@@ -57,6 +58,6 @@ $('#user').on('change', function (event) {
     if (user) {
         let url = new URL(location.href)
         url.searchParams.set('user', user)
-        location.href = url.toString()
+        location.href = url.href
     }
 })
