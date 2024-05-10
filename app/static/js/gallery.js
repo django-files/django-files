@@ -31,6 +31,7 @@ const dataTablesOptions = {
         [10, 25, 50, 100, 250, 'All'],
     ],
     columnDefs: [
+        { targets: 0, width: '5%' },
         { targets: 2, type: 'file-size' },
         {
             targets: 4,
@@ -266,12 +267,20 @@ function addFilesDTRow(file) {
         file.date,
         file.expr,
         pw,
-        file.private,
+        getPrivateFileHTML(file.private),
         file.view,
         ctxMenu.outerHTML,
     ]
     console.log(new_row)
     filesDataTable.row.add(new_row).draw()
+}
+
+function getPrivateFileHTML(status) {
+    if (status) {
+        return '<i class="fa-solid fa-lock text-warning-emphasis privateStatus"></i></td>'
+    } else {
+        return '<i class="fa-solid fa-lock text-warning-emphasis privateStatus" style="display: none"></i></td>'
+    }
 }
 
 /**
