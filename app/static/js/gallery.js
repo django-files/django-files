@@ -259,6 +259,11 @@ function addFilesDTRow(file) {
     const menu = getCtxMenu(file)
     ctxMenu.appendChild(menu)
 
+    const privateIcon = faLock.cloneNode(true)
+    if (!file.private) {
+        privateIcon.style.display = 'none'
+    }
+
     let new_row = [
         file.id,
         file.name,
@@ -266,21 +271,12 @@ function addFilesDTRow(file) {
         file.mime,
         file.date,
         file.expr,
+        privateIcon.outerHTML,
         pw,
-        getPrivateFileHTML(file.private),
         file.view,
         ctxMenu.outerHTML,
     ]
-    console.log(new_row)
     filesDataTable.row.add(new_row).draw()
-}
-
-function getPrivateFileHTML(status) {
-    if (status) {
-        return '<i class="fa-solid fa-lock text-warning-emphasis privateStatus"></i></td>'
-    } else {
-        return '<i class="fa-solid fa-lock text-warning-emphasis privateStatus" style="display: none"></i></td>'
-    }
 }
 
 /**
