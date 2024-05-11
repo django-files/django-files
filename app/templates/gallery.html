@@ -33,7 +33,7 @@
                 </select>
             </div>
         {% endif %}
-        <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
+        <p class="lead">Total Files: <strong id="total-files-count">{{ files|length }}</strong></p>
         {% if 'gallery' in request.path %}
             <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap"></div>
         {% else %}

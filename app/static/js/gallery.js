@@ -7,7 +7,8 @@ document.addEventListener('scroll', throttle(galleryScroll))
 window.addEventListener('resize', throttle(galleryScroll))
 
 const galleryContainer = document.getElementById('gallery-container')
-const loadingImage = document.getElementById('loading-image')
+// const loadingImage = document.getElementById('loading-image')
+const totalFilesCount = document.getElementById('total-files-count')
 const imageNode = document.querySelector('div.d-none > img')
 const faLock = document.querySelector('div.d-none > .fa-lock')
 const faKey = document.querySelector('div.d-none > .fa-key')
@@ -64,6 +65,7 @@ let fillInterval
 async function initGallery() {
     console.log('Init Gallery')
     filesDataTable = filesTable.DataTable(dataTablesOptions)
+    filesDataTable.on('draw.dt', debounce(dtDraw, 150))
     await addNodes()
     fillInterval = setInterval(fillPage, 250)
     window.dispatchEvent(new Event('resize'))
@@ -411,7 +413,7 @@ async function fetchGallery(page) {
 
 function noNextCallback() {
     console.log('noNextCallback')
-    loadingImage.classList.add('d-none')
+    // loadingImage.classList.add('d-none')
 }
 
 /**
@@ -465,3 +467,8 @@ function formatBytes(bytes) {
 //
 //     return data.toFixed(dp) + ' ' + units[u]
 // }
+
+function dtDraw(event) {
+    console.debug('dtDraw:', event)
+    totalFilesCount.textContent = filesDataTable.rows().count()
+}
