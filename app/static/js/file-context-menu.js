@@ -1,5 +1,7 @@
 // JS for Context Menu
 
+console.debug('LOADING: file-context-menu.js')
+
 const fileExpireModal = $('#fileExpireModal')
 const filePasswordModal = $('#filePasswordModal')
 const fileDeleteModal = $('#fileDeleteModal')
@@ -104,9 +106,9 @@ $('#confirm-delete').on('click', function (event) {
 
 // Event Listeners
 
-function cxtSetExpire() {
-    const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`cxtSetExpire pk: ${pk}`)
+function cxtSetExpire(event) {
+    const pk = getPrimaryKey(event)
+    console.log(`getPrimaryKey pk: ${pk}`, event)
     fileExpireModal.find('input[name=pk]').val(pk)
     const expire = $(`#file-${pk} .expire-value`).text().trim()
     console.log(`expire: ${expire}`)
@@ -116,15 +118,15 @@ function cxtSetExpire() {
     fileExpireModal.modal('show')
 }
 
-function ctxSetPrivate() {
-    const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`ctxSetPrivate pk: ${pk}`)
+function ctxSetPrivate(event) {
+    const pk = getPrimaryKey(event)
+    console.log(`ctxSetPrivate pk: ${pk}`, event)
     socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
 }
 
-function ctxSetPassword() {
-    const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`ctxSetPassword pk: ${pk}`)
+function ctxSetPassword(event) {
+    const pk = getPrimaryKey(event)
+    console.log(`ctxSetPassword pk: ${pk}`, event)
     filePasswordModal.find('input[name=pk]').val(pk)
     const input = $(`#ctx-menu-${pk} input[name=current-file-password]`)
     // console.log('input:', input)
@@ -135,11 +137,21 @@ function ctxSetPassword() {
     filePasswordModal.modal('show')
 }
 
-function ctxDeleteFile() {
-    const pk = $(this).parent().parent().parent().data('pk')
-    console.log(`ctxDeleteFile pk: ${pk}`)
+function ctxDeleteFile(event) {
+    const pk = getPrimaryKey(event)
+    console.log(`ctxDeleteFile pk: ${pk}`, event)
     $('#confirm-delete').data('pk', pk)
     fileDeleteModal.modal('show')
+}
+
+function getPrimaryKey(event) {
+    const menu = event.target.closest('div')
+    let pk = menu?.dataset?.id
+    if (!pk) {
+        console.warn('OLD PK QUERY USED')
+        pk = $(this).parent().parent().parent().data('pk')
+    }
+    return pk
 }
 
 // Socket Handlers

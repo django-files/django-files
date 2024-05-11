@@ -92,21 +92,16 @@ def stats_view(request):
 #     return render(request, 'files.html', context)
 
 
-@cache_control(no_cache=True)
 @login_required
-@cache_page(cache_seconds, key_prefix="files")
-@vary_on_cookie
 def files_view(request):
     """
-    View  /Files/
+    View  /files/ or /gallery/
     """
-    context = {}
+    context = {'full_context': True}
     if request.user.is_superuser:
         users = CustomUser.objects.all()
         context.update({'users': users})
     log.debug('%s - gallery_view: is_secure: %s', request.method, request.is_secure())
-    view = request.GET.get('view') if request.GET.get('view') else "list"
-    context.update({'view': view, 'full_context': True})
     return render(request, 'gallery.html', context)
 
 

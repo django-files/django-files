@@ -33,7 +33,7 @@
     {% if not files %}
         <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
     {% else %}
-        <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
+        <p class="lead">Total Files: <strong id="total-files-count">{{ files|length }}</strong></p>
         {% include 'files/table.html' with files=files  %}
     {% endif %}
 

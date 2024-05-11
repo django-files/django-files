@@ -19,26 +19,26 @@
 
         <p class="lead">
             <a class="link-body-emphasis" role="button" title="List" href="{% url 'home:files' %}">List</a> |
-            <a class="link-body-emphasis" role="button" title="Photo Gallery" href="{% url 'home:files' %}?view=gallery">Photo Gallery</a>
+            <a class="link-body-emphasis" role="button" title="Gallery" href="{% url 'home:gallery' %}">Gallery</a>
         </p>
 
         {% if request.user.is_superuser %}
-        <div class="float-end">
-            <select id="user" name="user" class="form-select" aria-label="Default select example">
-                <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
-                <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
-                {% for user in users %}
-                    <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
-                {% endfor %}
-            </select>
-        </div>
+            <div class="float-end">
+                <select id="user" name="user" class="form-select" aria-label="Default select example">
+                    <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
+                    <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
+                    {% for user in users %}
+                        <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
         {% endif %}
-        <p class="lead">Total Files: <strong>{{ files|length }}</strong></p>
-        <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap"></div>
+        <p class="lead">Total Files: <strong id="total-files-count">{{ files|length }}</strong></p>
+        {% if 'gallery' in request.path %}
+            <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap"></div>
+        {% else %}
             {% include 'files/table.html'%}
-        </div>
-        <img id="loading-image" src="{% static 'images/assets/loading.gif' %}" class="img-responsive mx-auto d-block" hidden>
-
+        {% endif %}
     </div>
 
     <div class="d-none">
@@ -58,9 +58,6 @@
 {% block footer %}{% endblock %}
 
 {% block tail %}
-    <script>
-        const filesView = "{{ view }}"
-    </script>
     <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
@@ -73,4 +70,3 @@
     <script type="text/javascript" src="{% static 'js/gallery.js' %}"></script>
     <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}
-
