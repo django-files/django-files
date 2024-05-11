@@ -42,9 +42,7 @@ const dataTablesOptions = {
         },
         {
             targets: 2,
-            render: function (data, type, row, meta) {
-                return humanFileSize(data)
-            },
+            render: formatBytes,
         },
         {
             targets: 4,
@@ -295,10 +293,10 @@ function addFilesTable(file) {
         file.mime,
         file.date,
         file.expr,
-        pwIcon.outerHTML,
-        privateIcon.outerHTML,
+        pwIcon,
+        privateIcon,
         file.view,
-        ctxMenu.outerHTML,
+        ctxMenu,
     ]
     filesDataTable.row.add(new_row).draw()
 }
@@ -420,11 +418,13 @@ function noNextCallback() {
  * Convert Bytes to Human Readable Bytes
  * @function formatBytes
  * @param {Number} bytes
- * @param {Number} decimals
  * @return {String}
  */
-function formatBytes(bytes, decimals = 2) {
-    if (bytes === 0) return '0 Bytes'
+function formatBytes(bytes) {
+    const decimals = 2
+    if (bytes === 0) {
+        return '0 Bytes'
+    }
     const k = 1024
     const dm = decimals < 0 ? 0 : decimals
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
@@ -432,36 +432,36 @@ function formatBytes(bytes, decimals = 2) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
-/**
- * Format bytes as human-readable text.
- *
- * @param bytes Number of bytes.
- * @param si True to use metric (SI) units, aka powers of 1000. False to use
- *           binary (IEC), aka powers of 1024.
- * @param dp Number of decimal places to display.
- *
- * @return Formatted string.
- */
-function humanFileSize(bytes, si = false, dp = 1) {
-    const thresh = si ? 1000 : 1024
-
-    if (Math.abs(bytes) < thresh) {
-        return bytes + ' B'
-    }
-
-    const units = si
-        ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-        : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
-    let u = -1
-    const r = 10 ** dp
-
-    do {
-        bytes /= thresh
-        ++u
-    } while (
-        Math.round(Math.abs(bytes) * r) / r >= thresh &&
-        u < units.length - 1
-    )
-
-    return bytes.toFixed(dp) + ' ' + units[u]
-}
+// /**
+//  * Format bytes as human-readable text.
+//  * TODO: Not sure why we have 2 of these, removing one of them...
+//  * @param data Number of bytes.
+//  * @param si True to use metric (SI) units, aka powers of 1000. False to use
+//  *           binary (IEC), aka powers of 1024.
+//  * @param dp Number of decimal places to display.
+//  *
+//  * @return Formatted string.
+//  */
+// function humanFileSize(data, type, row, meta, si = false, dp = 1) {
+//     const thresh = si ? 1000 : 1024
+//
+//     if (Math.abs(data) < thresh) {
+//         return data + ' B'
+//     }
+//
+//     const units = si
+//         ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+//         : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+//     let u = -1
+//     const r = 10 ** dp
+//
+//     do {
+//         data /= thresh
+//         ++u
+//     } while (
+//         Math.round(Math.abs(data) * r) / r >= thresh &&
+//         u < units.length - 1
+//     )
+//
+//     return data.toFixed(dp) + ' ' + units[u]
+// }
