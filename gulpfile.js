@@ -33,7 +33,6 @@ gulp.task('datatables', () => {
             'node_modules/datatables.net-plugins/dataRender/datetime.min.js',
             'node_modules/datatables.net-plugins/sorting/file-size.min.js',
             'node_modules/datatables.net-responsive/js/dataTables.responsive.min.js',
-            'node_modules/datatables.net-plugins/dataRender/ellipsis.min.js'
         ])
         .pipe(gulp.dest('app/static/dist/datatables'))
 })

@@ -19,7 +19,7 @@ import {
     faCaret,
     totalFilesCount,
     getCtxMenu,
-    formatBytes
+    formatBytes,
 } from './file-table.js'
 
 let nextPage = 1
@@ -313,7 +313,8 @@ async function fetchGallery(page) {
     }
     fileData.push(...json.files)
     console.log('fileData:', fileData)
-    totalFilesCount.textContent = Number(totalFilesCount.textContent) + Number(json.files.length)
+    totalFilesCount.textContent =
+        Number(totalFilesCount.textContent) + Number(json.files.length)
     return json
 }
 
