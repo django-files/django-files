@@ -14,6 +14,7 @@ const faLock = document.querySelector('div.d-none > .fa-lock')
 const faKey = document.querySelector('div.d-none > .fa-key')
 const faHourglass = document.querySelector('div.d-none > .fa-hourglass')
 const faCaret = document.querySelector('div.d-none > .fa-square-caret-down')
+const fileLink = document.querySelector('div.d-none > .dj-file-link')
 
 // const siteUrl = document.getElementById('site_url')?.value
 
@@ -34,29 +35,60 @@ const dataTablesOptions = {
         [10, 25, 50, 100, 250, -1],
         [10, 25, 50, 100, 250, 'All'],
     ],
+    columns: [
+        { data: 'id' },
+        { data: 'name' },
+        { data: 'size' },
+        { data: 'mime' },
+        { data: 'date' },
+        { data: 'expr' },
+        { data: 'password' },
+        { data: 'private' },
+        { data: 'view' }
+    ],
     columnDefs: [
-        { targets: 0, width: '5%', responsivePriority: 5 },
+        {
+            targets: 0,
+            width: '30px',
+            responsivePriority: 5,
+            defaultContent: '',
+        },
         {
             target: 1,
             responsivePriority: 0,
-            render: DataTable.render.ellipsis(40, true),
+            render: getFileLink,
+            defaultContent: '',
         },
         {
             targets: 2,
             render: formatBytes,
+            defaultContent: '',
         },
+        { targets: 3, defaultContent: '' },
         {
+            name: 'date',
             targets: 4,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
+            defaultContent: '',
         },
-        { targets: 8, width: '5%' },
+        { targets: 5, width: '30px', defaultContent: '', className: 'expire-value text-center' },
+        { targets: 6, width: '30px', render: getPwIcon, defaultContent: '' },
         {
-            targets: [6, 7],
-            orderable: false,
-            width: '5%',
+            targets: 7,
+            width: '30px',
             responsivePriority: 4,
+            render: getPrivateIcon,
+            defaultContent: '',
         },
-        { targets: 9, orderable: false, width: '5%', responsivePriority: 2 },
+        { targets: 8, width: '30px', defaultContent: '', className: "text-center" },
+        {
+            targets: 9,
+            orderable: false,
+            width: '30px',
+            responsivePriority: 2,
+            render: getContextMenu,
+            defaultContent: '',
+        },
     ],
 }
 
@@ -121,7 +153,8 @@ async function addNodes() {
         if (window.location.pathname.includes('gallery')) {
             addGalleryImage(file)
         } else if (window.location.pathname.includes('files')) {
-            addFilesTable(file)
+            file['DT_RowId'] = `file-${file.id}`
+            filesDataTable.row.add(file).draw()
         } else {
             console.error('Unknown View')
         }
@@ -259,10 +292,28 @@ function addGalleryImage(file) {
     galleryContainer.appendChild(outer)
 }
 
-function addFilesTable(file) {
-    // console.log('addFilesTable:', file)
 
-    // CTX MENU
+// ***************************
+// Custom DataTables Renderers
+
+function getFileLink(data, type, row, meta) {
+    const fileLinkElem = fileLink.cloneNode(true)
+    fileLinkElem.querySelector('.dj-file-link-clip').clipboardText = row.url
+    fileLinkElem.querySelector('.dj-file-link-ref').href = row.url
+    fileLinkElem.querySelector('.dj-file-link-ref').textContent = row.name
+    return fileLinkElem
+}
+
+function getPwIcon(data, type, row, meta) {
+    const pwIcon = faKey.cloneNode(true)
+    pwIcon.classList.add('passwordStatus')
+    if (!row.password) {
+        pwIcon.style.display = 'none'
+    }
+    return pwIcon
+}
+
+function getContextMenu(data, type, row, meta) {
     const ctxMenu = document.createElement('div')
     const toggle = document.createElement('a')
     toggle.classList.add('link-body-emphasis', 'ctx-menu')
@@ -276,32 +327,23 @@ function addFilesTable(file) {
     toggle.innerHTML = '<i class="fa-regular fa-square-caret-down"></i>'
     ctxMenu.appendChild(toggle)
 
-    const menu = getCtxMenu(file)
+    const menu = getCtxMenu(row)
     ctxMenu.appendChild(menu)
+    return ctxMenu
+}
 
+function getPrivateIcon(data, type, row, meta) {
     const privateIcon = faLock.cloneNode(true)
-    if (!file.private) {
+    privateIcon.classList.add('privateStatus')
+    if (!row.private) {
         privateIcon.style.display = 'none'
     }
-    const pwIcon = faKey.cloneNode(true)
-    if (!file.password) {
-        pwIcon.style.display = 'none'
-    }
-
-    let new_row = [
-        file.id,
-        file.name,
-        file.size,
-        file.mime,
-        file.date,
-        file.expr,
-        pwIcon,
-        privateIcon,
-        file.view,
-        ctxMenu,
-    ]
-    filesDataTable.row.add(new_row).draw()
+    return privateIcon
 }
+
+// END Custom DataTables Renderers
+// *******************************
+
 
 /**
  * Get Context Menu for File

@@ -20,6 +20,8 @@ socket?.addEventListener('message', function (event) {
         messagePrivate(data)
     } else if (data.event === 'set-password-file') {
         messagePassword(data)
+    } else if (data.event === 'file-delete') {
+        messageDelete(data)
     }
 })
 
@@ -204,6 +206,10 @@ function messagePassword(data) {
         show_toast(`Password unset for ${data.name}`, 'success')
     }
     filePasswordModal.modal('hide')
+}
+
+function messageDelete(data) {
+    $(`#file-${data.pk}`).remove()
 }
 
 /**
