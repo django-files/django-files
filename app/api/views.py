@@ -313,7 +313,7 @@ def file_view(request, idname):
             return JsonResponse(response, status=200)
         elif request.method == 'GET':
             response = model_to_dict(file, exclude=['file', 'thumb'])
-            response['date'] = file.date # not sure why this is not getting included
+            response['date'] = file.date  # not sure why this is not getting included
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
     except Exception as error:
