@@ -497,40 +497,6 @@ function formatBytes(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
-// /**
-//  * Format bytes as human-readable text.
-//  * TODO: Not sure why we have 2 of these, removing one of them...
-//  * @param data Number of bytes.
-//  * @param si True to use metric (SI) units, aka powers of 1000. False to use
-//  *           binary (IEC), aka powers of 1024.
-//  * @param dp Number of decimal places to display.
-//  *
-//  * @return Formatted string.
-//  */
-// function humanFileSize(data, type, row, meta, si = false, dp = 1) {
-//     const thresh = si ? 1000 : 1024
-//
-//     if (Math.abs(data) < thresh) {
-//         return data + ' B'
-//     }
-//
-//     const units = si
-//         ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-//         : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
-//     let u = -1
-//     const r = 10 ** dp
-//
-//     do {
-//         data /= thresh
-//         ++u
-//     } while (
-//         Math.round(Math.abs(data) * r) / r >= thresh &&
-//         u < units.length - 1
-//     )
-//
-//     return data.toFixed(dp) + ' ' + units[u]
-// }
-
 function dtDraw(event) {
     console.debug('dtDraw:', event)
     totalFilesCount.textContent = filesDataTable.rows().count()
