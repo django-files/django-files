@@ -163,12 +163,16 @@ async function addNodes() {
         if (window.location.pathname.includes('gallery')) {
             addGalleryImage(file)
         } else if (window.location.pathname.includes('files')) {
-            file['DT_RowId'] = `file-${file.id}`
-            filesDataTable.row.add(file).draw()
+            addDTRow(file)
         } else {
             console.error('Unknown View')
         }
     }
+}
+
+function addDTRow(file) {
+    file['DT_RowId'] = `file-${file.id}`
+    filesDataTable.row.add(file).draw()
 }
 
 function addGalleryImage(file) {
@@ -308,6 +312,7 @@ function addGalleryImage(file) {
 
 function getFileLink(data, type, row, meta) {
     const fileLinkElem = fileLink.cloneNode(true)
+    fileLinkElem.classList.add(`dj-file-link-${row.id}`)
     fileLinkElem.querySelector('.dj-file-link-clip').clipboardText = row.url
     fileLinkElem.querySelector('.dj-file-link-ref').href = row.url
     fileLinkElem.querySelector('.dj-file-link-ref').textContent = row.name
@@ -339,6 +344,7 @@ function getContextMenu(data, type, row, meta) {
 
     const menu = getCtxMenu(row)
     ctxMenu.appendChild(menu)
+    ctxMenu.classList.add(`ctx-menu-${row.id}`)
     return ctxMenu
 }
 

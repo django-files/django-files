@@ -156,7 +156,12 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 log.debug('NOT IMPLEMENTED!')
                 continue
             else:
-                page.locator('.nav-link').locator(f'text={view}').first.click()
+                if view == 'Gallery':
+                    page.locator('.nav-link').locator(f'text=Files').first.click()
+                    page.wait_for_timeout(timeout=350)
+                    page.locator('.link-body-emphasis').locator('text=Gallery').first.click()
+                else:
+                    page.locator('.nav-link').locator(f'text={view}').first.click()
 
             if view == 'Upload':
                 page.wait_for_timeout(timeout=750)
@@ -167,13 +172,13 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 self.screenshot(page, view)
 
             if view == 'Files':
-                page.locator('.file-context-dropdown').first.click()
+                page.locator('.ctx-menu-12').first.click()
                 self.screenshot(page, f'{view}-file-context-dropdown')
                 page.locator('.ctx-delete').first.click()
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-click')
 
-                page.locator('#confirm-delete').click()
+                page.locator('#confirm-delete').first.click()
                 # page.wait_for_timeout(timeout=500)
                 # self.screenshot(page, f'{view}-delete-deleted')
 
@@ -239,8 +244,8 @@ class PlaywrightTest(StaticLiveServerTestCase):
         self.screenshot(page, 'Public-enabled')
 
         control = 'gps2.jpg'
-        page.goto(f'{self.live_server_url}/files/')
-        page.locator(f'text={control}').first.click()
+        page.goto(f'{self.live_server_url}/u/{control}')
+        page.wait_for_timeout(timeout=350)
         page.locator('text=12/17/2022 12:14:26')
         page.locator('text=samsung SM-G973U')
         page.locator('text=King County, Washington, United States')
@@ -257,8 +262,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         self.screenshot(page, f'Raw-{control}')
 
         for file in self.previews:
-            page.goto(f'{self.live_server_url}/files/')
-            page.locator(f'text={file}').first.click()
+            page.goto(f'{self.live_server_url}/u/{file}')
             page.wait_for_timeout(timeout=500)
             self.screenshot(page, f'Preview-{file}')
 

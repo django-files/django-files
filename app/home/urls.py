@@ -1,5 +1,6 @@
 from django.urls import path, re_path
 
+from django.views.generic.base import RedirectView
 from api.views import shorten_view, upload_view
 from home import views
 

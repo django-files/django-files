@@ -243,14 +243,12 @@ def pages_view(request, page, count=None):
         count = 25
     if count > 100:
         count = 100
-    log.debug('%s - gallery_page_view: %s', request.method, page)
+    log.debug('%s - files_page_view: %s', request.method, page)
     user = request.GET.get('user')
-    log.info(user)
     if user:
         if user == "0":
             q = Files.objects.filtered_request(request)
         else:
-            log.info("grabbing sepecific user files")
             q = Files.objects.filtered_request(request, user_id=int(user))
     else:
         q = Files.objects.get_request(request)
@@ -315,6 +313,7 @@ def file_view(request, idname):
             return JsonResponse(response, status=200)
         elif request.method == 'GET':
             response = model_to_dict(file, exclude=['file', 'thumb'])
+            response['date'] = file.date # not sure why this is not getting included
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
     except Exception as error:
