@@ -244,7 +244,16 @@ def pages_view(request, page, count=None):
     if count > 100:
         count = 100
     log.debug('%s - gallery_page_view: %s', request.method, page)
-    q = Files.objects.get_request(request)
+    user = request.GET.get('user')
+    log.info(user)
+    if user:
+        if user == "0":
+            q = Files.objects.filtered_request(request)
+        else:
+            log.info("grabbing sepecific user files")
+            q = Files.objects.filtered_request(request, user_id=int(user))
+    else:
+        q = Files.objects.get_request(request)
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)

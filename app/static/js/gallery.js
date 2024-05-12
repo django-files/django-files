@@ -115,6 +115,16 @@ async function fillPage() {
     }
 }
 
+$('#user').on('change', function (event) {
+    let user = $(this).val()
+    console.log(`user: ${user}`)
+    if (user) {
+        let url = new URL(location.href)
+        url.searchParams.set('user', user)
+        location.href = url.href
+    }
+})
+
 /**
  * Gallery onScroll Callback
  * TODO: End of page detection may need to be tweaked/improved
@@ -438,10 +448,14 @@ function mouseOut(event) {
  * @return {Object} JSON Response Object
  */
 async function fetchGallery(page) {
+    let page_url = new URL(location.href)
     if (!page) {
         return console.warn('no page', page)
     }
-    const url = `${window.location.origin}/api/pages/${page}/`
+    let url = `${window.location.origin}/api/pages/${page}/`
+    if (user = page_url.searchParams.get('user')) {
+        url = url + `?user=${user}`
+    }
     const response = await fetch(url)
     const json = await response.json()
     nextPage = json.next
