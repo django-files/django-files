@@ -459,7 +459,8 @@ async function fetchGallery(page) {
         return console.warn('no page', page)
     }
     let url = `${window.location.origin}/api/pages/${page}/`
-    if (user = page_url.searchParams.get('user')) {
+    let user = page_url.searchParams.get('user')
+    if (user) {
         url = url + `?user=${user}`
     }
     const response = await fetch(url)
