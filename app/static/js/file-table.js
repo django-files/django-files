@@ -44,6 +44,7 @@ const dataTablesOptions = {
             responsivePriority: 0,
             render: getFileLink,
             defaultContent: '',
+            width: '80px',
         },
         {
             targets: 2,
@@ -91,6 +92,7 @@ const dataTablesOptions = {
 export function initFilesTable() {
     filesDataTable = filesTable.DataTable(dataTablesOptions)
     filesDataTable.on('draw.dt', debounce(dtDraw, 150))
+    console.log(filesDataTable.columns)
     return filesDataTable
 }
 
@@ -98,10 +100,21 @@ export function initFilesTable() {
 // Custom DataTables Renderers
 
 function getFileLink(data, type, row, meta) {
+    let max_name_length
+    if (screen.width < 500) {
+        max_name_length = 20
+    } else if (screen.width > 500 && screen.width < 1500) {
+        max_name_length = 40
+    } else {
+        max_name_length = 60
+    }
     const fileLinkElem = fileLink.cloneNode(true)
     fileLinkElem.classList.add(`dj-file-link-${row.id}`)
     fileLinkElem.querySelector('.dj-file-link-clip').clipboardText = row.url
     fileLinkElem.querySelector('.dj-file-link-ref').href = row.url
+    if (row.name.length > max_name_length) {
+        row.name = row.name.substring(0, max_name_length) + '...'
+    }
     fileLinkElem.querySelector('.dj-file-link-ref').textContent = row.name
     return fileLinkElem
 }
@@ -204,7 +217,6 @@ export function getCtxMenu(file) {
 }
 
 export function addDTRow(file) {
-    console.log(file)
     file['DT_RowId'] = `file-${file.id}`
     filesDataTable.row.add(file).draw()
 }
