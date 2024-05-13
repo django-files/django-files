@@ -283,36 +283,6 @@ function mouseOut(event) {
     divs.forEach((div) => div.classList.add('d-none'))
 }
 
-// /**
-//  * Fetch Page from Gallery
-//  * @function fetchGallery
-//  * @param {Number} page Page Number to Fetch
-//  * @param {Number} amount Numer of Files to Fetch
-//  * @return {Object} JSON Response Object
-//  */
-// async function fetchGallery(page) {
-//     let page_url = new URL(location.href)
-//     if (!page) {
-//         return console.warn('no page', page)
-//     }
-//     let url = `${window.location.origin}/api/pages/${page}/`
-//     let user = page_url.searchParams.get('user')
-//     if (user) {
-//         url = url + `?user=${user}`
-//     }
-//     const response = await fetch(url)
-//     const json = await response.json()
-//     nextPage = json.next
-//     if (!nextPage) {
-//         noNextCallback()
-//     }
-//     fileData.push(...json.files)
-//     console.log('fileData:', fileData)
-//     totalFilesCount.textContent =
-//         Number(totalFilesCount.textContent) + Number(json.files.length)
-//     return json
-// }
-
 function noNextCallback() {
     console.log('noNextCallback')
     // loadingImage.classList.add('d-none')
