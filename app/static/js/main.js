@@ -1,5 +1,7 @@
 // JS included everywhere
 
+let filesDataTable
+
 document.addEventListener('DOMContentLoaded', domContentLoaded)
 document
     .querySelectorAll('[data-bs-toggle="popover"]')

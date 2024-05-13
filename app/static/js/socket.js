@@ -143,8 +143,8 @@ function messageDelete(data) {
 
 function newFile(data) {
     $.get(`/api/file/${data.pk}`, function (response) {
-        console.log(response)
-        addDTRow(response)
+        response['DT_RowId'] = `file-${response.id}`
+        filesDataTable.row.add(response).draw()
         show_toast(`${response.name} added.`)
     })
 }

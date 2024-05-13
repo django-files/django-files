@@ -1,16 +1,4 @@
 // Gallery JS
-
-console.debug('LOADING: gallery.js')
-
-document.addEventListener('DOMContentLoaded', initGallery)
-document.addEventListener('scroll', throttle(galleryScroll))
-window.addEventListener('resize', throttle(galleryScroll))
-
-const galleryContainer = document.getElementById('gallery-container')
-// const loadingImage = document.getElementById('loading-image')
-
-const imageNode = document.querySelector('div.d-none > img')
-
 import {
     initFilesTable,
     faLock,
@@ -24,10 +12,20 @@ import {
 
 import { fetchFiles } from './api-fetch.js'
 
+console.debug('LOADING: gallery.js')
+
+document.addEventListener('DOMContentLoaded', initGallery)
+document.addEventListener('scroll', throttle(galleryScroll))
+window.addEventListener('resize', throttle(galleryScroll))
+
+const galleryContainer = document.getElementById('gallery-container')
+// const loadingImage = document.getElementById('loading-image')
+
+const imageNode = document.querySelector('div.d-none > img')
+
+
 let nextPage = 1
 let fileData = []
-
-let filesDataTable
 
 let fillInterval
 
