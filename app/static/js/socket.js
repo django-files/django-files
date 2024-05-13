@@ -102,7 +102,6 @@ function messageExpire(data) {
 }
 
 function messagePrivate(data) {
-    // TODO: Cleanup Selectors
     console.log('messagePrivate:', data)
     const privateStatus = $(`#file-${data.id} .privateStatus`)
     const previewIcon = $(`#previewIcon`)
