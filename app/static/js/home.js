@@ -1,5 +1,7 @@
 // JS for Home Page
 
+document.addEventListener('DOMContentLoaded', initHome)
+
 $('#quick-short-form').on('submit', function (event) {
     console.log('#quick-short-form submit', event)
     event.preventDefault()
@@ -23,3 +25,14 @@ $('#quick-short-form').on('submit', function (event) {
         processData: false,
     })
 })
+
+import { initFilesTable, addFileTableNodes } from './file-table.js'
+
+import { fetchFiles } from './api-fetch.js'
+
+let filesDataTable
+
+async function initHome() {
+    filesDataTable = initFilesTable()
+    addFileTableNodes(await fetchFiles(1, 10))
+}

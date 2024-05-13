@@ -39,32 +39,11 @@
         {% else %}
             {% include 'files/table.html'%}
         {% endif %}
-        {% include 'files/ctx-modals.html' %}
-    </div>
-
-    <div class="d-none">
-        <input type="hidden" value="{{ site_settings.site_url }}" id="site_url">
-        <i class="fa-solid fa-lock me-1"></i>
-        <i class="fa-solid fa-key me-1"></i>
-        <i class="fa-regular fa-hourglass me-1"></i>
-        <i class="fa-regular fa-square-caret-down"></i>
-        <img src="{% static 'images/assets/loading.gif' %}" class="img-responsive gallery-image">
-        {% include 'files/ctx-menu.html' %}
-        {% include 'files/ctx-modals.html' %}
-        <div class="dj-file-link">
-            <span class="d-none d-sm-inline">
-                <a class="link-body-emphasis clip dj-file-link-clip" role="button">
-                    <i class="fa-regular fa-clipboard"></i></a>
-            </span>
-            <span class="d-inline-block d-xxl-inline">
-                <span class="d-inline-block d-lg-inline">
-                    <a class="link-body-emphasis text-truncate ellipses dj-file-link-ref"></a>
-                </span>
-            </span>
-        </div>
     </div>
 
     {% include 'files/file-upload-modal.html' %}
+    {% include 'files/ctx-menu.html' %}
+    {% include 'files/ctx-modals.html' %}
 {% endblock %}
 
 {% block footer %}{% endblock %}
@@ -73,12 +52,10 @@
     <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/file-size.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
-    {% comment %} <script type="module" src="{% static 'js/file-table.js' %}"></script> {% endcomment %}
     <script type="module" src="{% static 'js/gallery.js' %}"></script>
     <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}

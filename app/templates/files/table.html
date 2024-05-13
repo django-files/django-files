@@ -22,3 +22,23 @@
         {% include 'files/table-row.html' with file=file %}
     {% endfor %}
 </table>
+
+<div class="d-none">
+    <input type="hidden" value="{{ site_settings.site_url }}" id="site_url">
+    <i class="fa-solid fa-lock me-1"></i>
+    <i class="fa-solid fa-key me-1"></i>
+    <i class="fa-regular fa-hourglass me-1"></i>
+    <i class="fa-regular fa-square-caret-down"></i>
+    <img src="{% static 'images/assets/loading.gif' %}" class="img-responsive gallery-image">
+    <div class="dj-file-link">
+        <span class="d-none d-sm-inline">
+            <a class="link-body-emphasis clip dj-file-link-clip" role="button">
+                <i class="fa-regular fa-clipboard"></i></a>
+        </span>
+        <span class="d-inline-block d-xxl-inline">
+            <span class="d-inline-block d-lg-inline">
+                <a class="link-body-emphasis text-truncate ellipses dj-file-link-ref"></a>
+            </span>
+        </span>
+    </div>
+</div>

@@ -167,7 +167,9 @@ export function formatBytes(bytes) {
 
 function dtDraw(event) {
     console.debug('dtDraw:', event)
-    totalFilesCount.textContent = filesDataTable.rows().count()
+    try {
+        totalFilesCount.textContent = filesDataTable.rows().count()
+    } catch (e) {}
 }
 
 /**
@@ -199,4 +201,17 @@ export function getCtxMenu(file) {
 
     // console.log('menu:', menu)
     return menu
+}
+
+export function addDTRow(file) {
+    console.log(file)
+    file['DT_RowId'] = `file-${file.id}`
+    filesDataTable.row.add(file).draw()
+}
+
+export function addFileTableNodes(data) {
+    for (const file of data.files) {
+        console.log(file)
+        addDTRow(file)
+    }
 }
