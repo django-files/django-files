@@ -10,7 +10,7 @@ import {
     formatBytes,
 } from './file-table.js'
 
-import fetchFiles from './api-fetch.js'
+import { fetchFiles } from './api-fetch.js'
 
 console.debug('LOADING: gallery.js')
 

@@ -2,7 +2,7 @@
 
 import { initFilesTable, addFileTableNodes } from './file-table.js'
 
-import fetchFiles from './api-fetch.js'
+import { fetchFiles } from './api-fetch.js'
 
 document.addEventListener('DOMContentLoaded', initHome)
 
