@@ -51,19 +51,12 @@
     </div>
     {% endif %}
 
-    <h2 id="files">Files</h2>
-    {% comment %} {% if not files %}
-        <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
-    {% else %} {% endcomment %}
-        <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
+    <h2 id="files">Recent Files</h2>
         {% include 'files/table.html' %}
-        {% comment %} {% if files|length > 10 %}
-            <p><em>This list is truncated to 10 files. <span class="d-inline-block">
-                <a href="{% url 'home:files' %}">View All Files</a></span></em></p>
-        {% endif %} {% endcomment %}
-    {% comment %} {% endif %} {% endcomment %}
+        <p class="mt-0 files-truncation-warning"><em>This list is truncated to 10 files. </em><span class="d-inline-block">
+            <a href="{% url 'home:files' %}">View All Files</a></span></em></p hidden>
 
-    <h2 id="shorts">Shorts</h2>
+    <h2 id="shorts mt-5 pt-5">Shorts</h2>
     <form id="quick-short-form" action="{% url 'home:shorten' %}">
         <div class="input-group my-2">
             <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."

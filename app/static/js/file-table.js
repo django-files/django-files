@@ -41,7 +41,8 @@ const dataTablesOptions = {
         },
         {
             target: 1,
-            responsivePriority: 0,
+            width: '50%',
+            responsivePriority: 1,
             render: getFileLink,
             defaultContent: '',
             width: '80px',
@@ -50,25 +51,28 @@ const dataTablesOptions = {
             targets: 2,
             render: formatBytes,
             defaultContent: '',
+            responsivePriority: 3,
         },
-        { targets: 3, defaultContent: '' },
+        { targets: 3, defaultContent: '', responsivePriority: 9 },
         {
             name: 'date',
             targets: 4,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
+            responsivePriority: 8,
         },
         {
             targets: 5,
             width: '30px',
             defaultContent: '',
             className: 'expire-value text-center',
+            responsivePriority: 7,
         },
-        { targets: 6, width: '30px', render: getPwIcon, defaultContent: '' },
+        { targets: 6, width: '30px', render: getPwIcon, defaultContent: '', responsivePriority:7 },
         {
             targets: 7,
             width: '30px',
-            responsivePriority: 4,
+            responsivePriority: 5,
             render: getPrivateIcon,
             defaultContent: '',
         },
@@ -76,6 +80,7 @@ const dataTablesOptions = {
             targets: 8,
             width: '30px',
             defaultContent: '',
+            responsivePriority: 4,
             className: 'text-center',
         },
         {
@@ -89,7 +94,10 @@ const dataTablesOptions = {
     ],
 }
 
-export function initFilesTable() {
+export function initFilesTable(search = true, ordering = true, info = true) {
+    dataTablesOptions.searching = search
+    dataTablesOptions.ordering = ordering
+    dataTablesOptions.info = info
     filesDataTable = filesTable.DataTable(dataTablesOptions)
     filesDataTable.on('draw.dt', debounce(dtDraw, 150))
     console.log(filesDataTable.columns)
