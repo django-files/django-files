@@ -19,7 +19,6 @@ urlpatterns = [
     re_path(r'^upload/?$', upload_view, name='upload'),
     re_path(r'^shorten/?$', shorten_view, name='shorten'),
     path('s/<str:short>', views.shorten_short_view, name='short'),
-    path('ajax/files/tdata/<int:pk>/', views.files_tdata_ajax, name='files-tdata'),
     path('ajax/update/stats/', views.update_stats_ajax, name='update-stats'),
     path('ajax/delete/short/<int:pk>/', views.delete_short_ajax, name='delete-short'),
     path('ajax/delete/file/<int:pk>/', views.delete_file_ajax, name='delete-file'),

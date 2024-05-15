@@ -196,14 +196,25 @@ def clear_stats_cache():
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def refresh_gallery_static_urls_cache():
+    lock_key = 'my_task'
+    acquire_lock = lambda: cache.add(lock_key, '1', 1000)
+    release_lock = lambda: cache.delete(lock_key)
     # Refresh cached gallery files to handle case where url signing expired
-    log.info('----- START gallery cache refresh -----')
-    if use_s3:
-        files = Files.objects.filter(mime__in=['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp'])
-        for file in files:
-            file.get_gallery_url()
-            sleep(1)
-    log.info('----- COMPLETE gallery cache refresh -----')
+    if acquire_lock():
+        try:
+            log.info('----- START gallery cache refresh -----')
+            if use_s3:
+                files = Files.objects.filter(mime__in=['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp'])
+                for file in files:
+                    file.get_gallery_url()
+                    sleep(1)
+            log.info('----- COMPLETE gallery cache refresh -----')
+        except Exception as err:
+            log.error(f"Error populating gallery cache: {err}")
+        finally:
+            release_lock()
+    else:
+        log.info("Gallery cache refresh task locked skipping run.")
 
 
 @shared_task()
