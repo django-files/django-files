@@ -189,7 +189,9 @@ function dtDraw(event) {
     console.debug('dtDraw:', event)
     try {
         totalFilesCount.textContent = filesDataTable.rows().count()
-    } catch (e) {}
+    } catch (e) {
+        console.log(e)
+    }
 }
 
 /**

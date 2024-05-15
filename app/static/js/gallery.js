@@ -10,7 +10,7 @@ import {
     formatBytes,
 } from './file-table.js'
 
-import { fetchFiles } from './api-fetch.js'
+import fetchFiles from './api-fetch.js'
 
 console.debug('LOADING: gallery.js')
 
@@ -90,7 +90,7 @@ async function addNodes() {
         return console.warn('No Next Page:', nextPage)
     }
     const data = await fetchFiles(nextPage)
-    // console.debug('data:', data)
+    console.debug('data:', data)
     nextPage = data.next
     for (const file of data.files) {
         // console.debug('file:', file)
