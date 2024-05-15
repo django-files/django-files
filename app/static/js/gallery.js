@@ -282,8 +282,3 @@ function mouseOut(event) {
     const divs = closest.querySelectorAll('.gallery-mouse')
     divs.forEach((div) => div.classList.add('d-none'))
 }
-
-function noNextCallback() {
-    console.log('noNextCallback')
-    // loadingImage.classList.add('d-none')
-}

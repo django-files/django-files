@@ -17,9 +17,5 @@ export async function fetchFiles(page, count = 25) {
     }
     const response = await fetch(url)
     const json = await response.json()
-    let nextPage = json.next
-    // if (!nextPage) {
-    //     noNextCallback()
-    // }
     return json
 }

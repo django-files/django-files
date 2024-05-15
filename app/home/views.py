@@ -5,7 +5,6 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render, reverse, get_object_or_404
-from django.template.loader import render_to_string
 from django.views.decorators.common import no_append_slash
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
@@ -207,7 +206,6 @@ def shorten_short_view(request, short):
         q.save()
     clear_shorts_cache.delay()
     return HttpResponseRedirect(url)
-
 
 
 @login_required

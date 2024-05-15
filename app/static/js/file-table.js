@@ -45,7 +45,6 @@ const dataTablesOptions = {
             responsivePriority: 1,
             render: getFileLink,
             defaultContent: '',
-            width: '80px',
         },
         {
             targets: 2,
