@@ -380,7 +380,7 @@ def send_discord(hook_pk, message):
 
 
 def acquire_lock(key, timeout=900):
-    cache.add(key, '1', 1000)
+    cache.add(key, '1', timeout)
 
 
 def release_lock(key):
