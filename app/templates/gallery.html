@@ -18,8 +18,8 @@
         <h1><i class="fa-regular fa-folder-open me-2"></i> Files</h1>
 
         <p class="lead">
-            <a class="link-body-emphasis" role="button" title="List" href="{% url 'home:files' %}">List</a> |
-            <a class="link-body-emphasis" role="button" title="Gallery" href="{% url 'home:gallery' %}">Gallery</a>
+            <a class="link-body-emphasis show-list" role="button" title="List">List</a> |
+            <a class="link-body-emphasis show-gallery" role="button" title="Gallery">Gallery</a>
         </p>
 
         {% if request.user.is_superuser %}
@@ -34,11 +34,8 @@
             </div>
         {% endif %}
         <p class="lead">Total Files Displayed: <strong id="total-files-count">{{ files|length }}</strong></p>
-        {% if 'gallery' in request.path %}
-            <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap"></div>
-        {% else %}
-            {% include 'files/table.html'%}
-        {% endif %}
+        <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap" {% if 'gallery' in request.path %}{% else %} hidden{% endif%}></div>
+        {% include 'files/table.html'%}
     </div>
 
     {% include 'files/file-upload-modal.html' %}

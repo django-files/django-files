@@ -23,9 +23,15 @@ const galleryContainer = document.getElementById('gallery-container')
 
 const imageNode = document.querySelector('div.d-none > img')
 
+let showGallery = document.querySelector('.show-gallery')
+showGallery.onclick = changeView;
+let showList = document.querySelector('.show-list')
+showList.onclick = changeView;
 
 let nextPage = 1
 let fileData = []
+
+let fetchLock = false
 
 let fillInterval
 
@@ -89,19 +95,27 @@ async function addNodes() {
     if (!nextPage) {
         return console.warn('No Next Page:', nextPage)
     }
-    const data = await fetchFiles(nextPage)
-    console.debug('data:', data)
-    nextPage = data.next
-    for (const file of data.files) {
-        // console.debug('file:', file)
-        if (window.location.pathname.includes('gallery')) {
-            addGalleryImage(file)
-        } else if (window.location.pathname.includes('files')) {
-            addDTRow(file)
-        } else {
-            console.error('Unknown View')
+    if (!fetchLock) {
+        fetchLock = true
+        const data = await fetchFiles(nextPage)
+        console.debug('data:', data)
+        nextPage = data.next
+        fileData.push(...data.files)
+        for (const file of data.files) {
+            // console.debug('file:', file)
+            if (window.location.pathname.includes('gallery')) {
+                addGalleryImage(file)
+            } else if (window.location.pathname.includes('files')) {
+                addDTRow(file)
+            } else {
+                console.error('Unknown View')
+            }
         }
+        fetchLock = false
+    } else {
+        console.debug("Another files fetch in progress waiting.")
     }
+
 }
 
 function addGalleryImage(file) {
@@ -281,4 +295,22 @@ function mouseOut(event) {
     const closest = event.target.closest('div')
     const divs = closest.querySelectorAll('.gallery-mouse')
     divs.forEach((div) => div.classList.add('d-none'))
+}
+
+function changeView(event) {
+    if (event.srcElement.innerHTML === 'List') {
+        while (galleryContainer.firstChild) {
+            galleryContainer.removeChild(galleryContainer.lastChild)
+        }
+        $('#files-table').show()
+        window.history.replaceState( {} , null, '/files/' );
+    } else {
+        $('#files-table').hide()
+        window.history.replaceState( {} , null, '/gallery/' );
+        console.log(fileData)
+        fileData.forEach(function (item, index) {
+            console.log(item)
+            addGalleryImage(item)
+        })
+    }
 }

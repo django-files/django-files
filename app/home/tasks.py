@@ -196,7 +196,7 @@ def clear_stats_cache():
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def refresh_gallery_static_urls_cache():
-    lock_key = 'my_task'
+    lock_key = 'gallery_refresh'
     # Refresh cached gallery files to handle case where url signing expired
     if acquire_lock(lock_key, 1000):
         try:
@@ -380,8 +380,14 @@ def send_discord(hook_pk, message):
 
 
 def acquire_lock(key, timeout=900):
-    cache.add(key, '1', timeout)
+    log.debug(f"Checking lock for {key}")
+    if cache.get(key):
+        log.debug("Found Lock")
+        return False
+    log.debug(f"setting lock for {key}")
+    return cache.debug(key, '1', timeout)
 
 
 def release_lock(key):
+    log.debug(f"Lock cleared on {key}")
     cache.delete(key)
