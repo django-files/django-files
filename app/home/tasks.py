@@ -382,7 +382,7 @@ def send_discord(hook_pk, message):
 def acquire_lock(key, timeout=900):
     log.debug(f"Checking lock for {key}")
     if cache.get(key):
-        log.debug(f"Found Lock")
+        log.debug("Found Lock")
         return False
     log.debug(f"setting lock for {key}")
     return cache.debug(key, '1', timeout)
