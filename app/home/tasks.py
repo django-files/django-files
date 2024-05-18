@@ -385,7 +385,7 @@ def acquire_lock(key, timeout=900):
         log.debug("Found Lock")
         return False
     log.debug(f"setting lock for {key}")
-    return cache.debug(key, '1', timeout)
+    return cache.add(key, '1', timeout)
 
 
 def release_lock(key):
