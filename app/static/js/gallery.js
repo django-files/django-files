@@ -43,6 +43,9 @@ async function initGallery() {
     dtContainer = document.querySelector('.dt-container')
     if (window.location.pathname.includes('gallery')) {
         dtContainer.hidden = true
+        showGallery.style.fontWeight = 'bold'
+    } else {
+        showList.style.fontWeight = 'bold'
     }
     await addNodes()
     fillInterval = setInterval(fillPage, 250)
@@ -313,6 +316,8 @@ function changeView(event) {
         }
         dtContainer.hidden = false
         window.history.replaceState( {} , null, '/files/' );
+        showList.style.fontWeight = 'bold'
+        showGallery.style.fontWeight = 'normal'
     } else {
         dtContainer.hidden = true
         window.history.replaceState( {} , null, '/gallery/' );
@@ -320,5 +325,7 @@ function changeView(event) {
         fileData.forEach(function (item, index) {
             addGalleryImage(item)
         })
+        showList.style.fontWeight = 'normal'
+        showGallery.style.fontWeight = 'bold'
     }
 }
