@@ -28,6 +28,8 @@ showGallery.onclick = changeView;
 let showList = document.querySelector('.show-list')
 showList.onclick = changeView;
 
+let dtContainer
+
 let nextPage = 1
 let fileData = []
 
@@ -38,6 +40,10 @@ let fillInterval
 async function initGallery() {
     console.log('Init Gallery')
     filesDataTable = initFilesTable()
+    dtContainer = document.querySelector('.dt-container')
+    if (window.location.pathname.includes('gallery')) {
+        dtContainer.hidden = true
+    }
     await addNodes()
     fillInterval = setInterval(fillPage, 250)
     window.dispatchEvent(new Event('resize'))
@@ -96,6 +102,7 @@ async function addNodes() {
         return console.warn('No Next Page:', nextPage)
     }
     if (!fetchLock) {
+        filesDataTable.processing(true)
         fetchLock = true
         const data = await fetchFiles(nextPage)
         console.debug('data:', data)
@@ -105,12 +112,14 @@ async function addNodes() {
             // console.debug('file:', file)
             if (window.location.pathname.includes('gallery')) {
                 addGalleryImage(file)
+                addDTRow(file)
             } else if (window.location.pathname.includes('files')) {
                 addDTRow(file)
             } else {
                 console.error('Unknown View')
             }
         }
+        filesDataTable.processing(false)
         fetchLock = false
     } else {
         console.debug("Another files fetch in progress waiting.")
@@ -302,14 +311,13 @@ function changeView(event) {
         while (galleryContainer.firstChild) {
             galleryContainer.removeChild(galleryContainer.lastChild)
         }
-        $('#files-table').show()
+        dtContainer.hidden = false
         window.history.replaceState( {} , null, '/files/' );
     } else {
-        $('#files-table').hide()
+        dtContainer.hidden = true
         window.history.replaceState( {} , null, '/gallery/' );
         console.log(fileData)
         fileData.forEach(function (item, index) {
-            console.log(item)
             addGalleryImage(item)
         })
     }
