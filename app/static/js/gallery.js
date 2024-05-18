@@ -31,6 +31,8 @@ showList.onclick = changeView;
 let nextPage = 1
 let fileData = []
 
+let fetchLock = false
+
 let fillInterval
 
 async function initGallery() {
@@ -93,20 +95,27 @@ async function addNodes() {
     if (!nextPage) {
         return console.warn('No Next Page:', nextPage)
     }
-    const data = await fetchFiles(nextPage)
-    console.debug('data:', data)
-    nextPage = data.next
-    fileData.push(...data.files)
-    for (const file of data.files) {
-        // console.debug('file:', file)
-        if (window.location.pathname.includes('gallery')) {
-            addGalleryImage(file)
-        } else if (window.location.pathname.includes('files')) {
-            addDTRow(file)
-        } else {
-            console.error('Unknown View')
+    if (!fetchLock) {
+        fetchLock = true
+        const data = await fetchFiles(nextPage)
+        console.debug('data:', data)
+        nextPage = data.next
+        fileData.push(...data.files)
+        for (const file of data.files) {
+            // console.debug('file:', file)
+            if (window.location.pathname.includes('gallery')) {
+                addGalleryImage(file)
+            } else if (window.location.pathname.includes('files')) {
+                addDTRow(file)
+            } else {
+                console.error('Unknown View')
+            }
         }
+        fetchLock = false
+    } else {
+        console.debug("Another files fetch in progress waiting.")
     }
+
 }
 
 function addGalleryImage(file) {
@@ -289,7 +298,6 @@ function mouseOut(event) {
 }
 
 function changeView(event) {
-    let file
     if (event.srcElement.innerHTML === 'List') {
         while (galleryContainer.firstChild) {
             galleryContainer.removeChild(galleryContainer.lastChild)
@@ -303,7 +311,6 @@ function changeView(event) {
         fileData.forEach(function (item, index) {
             console.log(item)
             addGalleryImage(item)
-
         })
     }
 }
