@@ -41,7 +41,7 @@ const dataTablesOptions = {
         },
         {
             target: 1,
-            width: '50%',
+            width: '40%',
             responsivePriority: 1,
             render: getFileLink,
             defaultContent: '',
@@ -59,6 +59,7 @@ const dataTablesOptions = {
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
             responsivePriority: 8,
+            width: '170px'
         },
         {
             targets: 5,
