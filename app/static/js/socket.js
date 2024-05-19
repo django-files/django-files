@@ -96,11 +96,11 @@ function messageExpire(data) {
     if (data.expr) {
         expireText.text(data.expr).data('clipboard-text', data.expr)
         expireIcon.attr('title', `File Expires in ${data.expr}`).show()
-        show_toast(`${data.name} - Expire set to: ${data.expr}`, 'success')
+        show_toast(`${truncateName(data.name)} - Expire set to: ${data.expr}`, 'success')
     } else {
         expireText.text('Never').data('clipboard-text', 'Never')
         expireIcon.attr('title', 'No Expiration').hide()
-        show_toast(`${data.name} - Cleared Expiration.`, 'success')
+        show_toast(`${truncateName(data.name)} - Cleared Expiration.`, 'success')
     }
 }
 
@@ -115,13 +115,13 @@ function messagePrivate(data) {
         previewIcon.show()
         ctxPrivateText.text('Make Public')
         ctxPrivateIcon.removeClass('fa-lock').addClass('fa-lock-open')
-        show_toast(`File ${data.name} set to private.`, 'success')
+        show_toast(`File ${truncateName(data.name)} set to private.`, 'success')
     } else {
         privateStatus.hide()
         previewIcon.hide()
         ctxPrivateText.text('Make Private')
         ctxPrivateIcon.removeClass('fa-lock-open').addClass('fa-lock')
-        show_toast(`File ${data.name} set to public.`, 'success')
+        show_toast(`File ${truncateName(data.name)} set to public.`, 'success')
     }
 }
 
@@ -130,20 +130,26 @@ function messagePassword(data) {
     const passwordStatus = $(`#file-${data.id} .passwordStatus`)
     if (data.password) {
         passwordStatus.show()
-        show_toast(`Password set for ${data.name}`, 'success')
+        show_toast(`Password set for ${truncateName(data.name)}`, 'success')
     } else {
         passwordStatus.hide()
-        show_toast(`Password unset for ${data.name}`, 'success')
+        show_toast(`Password unset for ${truncateName(data.name)}`, 'success')
     }
-    filePasswordModal.modal('hide')
 }
 
 function messageDelete(data) {
     $(`#file-${data.pk}`).remove()
-    show_toast(`${data.name} deleted by ${data.user}.`)
+    show_toast(`${truncateName(data.name)} deleted by ${data.user}.`)
 }
 
 function newFile(data) {
         addDTRow(data)
-        show_toast(`${data.name} added.`)
+        show_toast(`${truncateName(data.name)} added.`)
+}
+
+function truncateName(filename) {
+    if (filename.length > 42) {
+        return filename.substring(0,40) + '...'
+    }
+    return filename
 }
