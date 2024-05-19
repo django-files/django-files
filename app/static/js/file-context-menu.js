@@ -23,15 +23,13 @@ fileExpireModal.on('shown.bs.modal', function (event) {
 $('#modal-expire-form').on('submit', function (event) {
     console.log('#modal-expire-form submit:', event)
     event.preventDefault()
-    // const data = {
-    //     method: 'set-expr-file',
-    //     pk: $(this).find('input[name=pk]').val(),
-    //     expr: $(this).find('input[name=expr]').val().trim(),
-    // }
     const data = genData($(this), 'set-expr-file')
     console.log('data:', data)
     socket.send(JSON.stringify(data))
     fileExpireModal.modal('hide')
+    $(`#ctx-menu-${data.pk} input[name=current-file-expiration]`).val(
+        data.expr
+    )
 })
 
 // Password Form
@@ -45,11 +43,6 @@ filePasswordModal.on('shown.bs.modal', function (event) {
 $('#modal-password-form').on('submit', function (event) {
     console.log('#modal-password-form submit:', event)
     event.preventDefault()
-    // const data = {
-    //     method: 'set-password-file',
-    //     pk: $(this).find('input[name=pk]').val(),
-    //     password: $(this).find('input[name=password]').val().trim(),
-    // }
     const data = genData($(this), 'set-password-file')
     console.log('data:', data)
     socket.send(JSON.stringify(data))
@@ -88,7 +81,7 @@ $('#confirm-delete').on('click', function (event) {
     console.log(`#confirm-delete click pk: ${pk}`, event)
     socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
     if (window.location.pathname.startsWith('/u/')) {
-        window.location.replace('/#files')
+        window.location.replace('/files')
     } else {
         fileDeleteModal.modal('hide')
     }

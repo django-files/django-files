@@ -14,15 +14,6 @@ $('#closeSidebar').on('click', closeSidebarCallback)
 const sidebarMaxWidth = 768
 let sidebarOpen = false
 
-const DataTable = (event, context, callback) => {
-    const token = event.authorizationToken;
-    const policyDocument = {};
-    try {
-      callback(null, policyDocument);
-    } catch (e) {
-      callback('Unauthorized');
-    }
-  };
 
 function domLoaded() {
     if (window.innerWidth >= sidebarMaxWidth) {

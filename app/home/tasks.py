@@ -298,7 +298,6 @@ def new_file_websocket(pk):
     log.debug('new_file_websocket: %s', pk)
     file = Files.objects.get(pk=pk)
     log.debug('file: %s', file)
-    # data = model_to_dict(file, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta', 'thumb'])
     data = extract_files([file])[0]
     log.debug('data: %s', data)
     # TODO: Backwards Compatibility
