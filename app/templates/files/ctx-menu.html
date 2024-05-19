@@ -1,6 +1,6 @@
 {% load home_tags %}
 
-<div id="ctx-menu-{{ file.pk }}" data-pk="{{ file.pk }}" class="dropdown fileContextDropdown">
+<div id="ctx-menu-{{ file.pk }}" data-id="{{ file.pk }}" class="dropdown fileContextDropdown">
 <ul class="dropdown-menu file-context-dropdown-menu {{ extraclass }}" >
     <li>
         <a role="button" class="clip dropdown-item copy-share-link" data-clipboard-text="{{ site_settings.site_url }}{{ file.preview_uri }}">

@@ -196,14 +196,23 @@ def clear_stats_cache():
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def refresh_gallery_static_urls_cache():
+    lock_key = 'gallery_refresh'
     # Refresh cached gallery files to handle case where url signing expired
-    log.info('----- START gallery cache refresh -----')
-    if use_s3:
-        files = Files.objects.filter(mime__in=['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp'])
-        for file in files:
-            file.get_gallery_url()
-            sleep(1)
-    log.info('----- COMPLETE gallery cache refresh -----')
+    if acquire_lock(lock_key, 1000):
+        try:
+            log.info('----- START gallery cache refresh -----')
+            if use_s3:
+                files = Files.objects.filter(mime__in=['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp'])
+                for file in files:
+                    file.get_gallery_url()
+                    sleep(1)
+            log.info('----- COMPLETE gallery cache refresh -----')
+        except Exception as err:
+            log.error(f"Error populating gallery cache: {err}")
+        finally:
+            release_lock(lock_key)
+    else:
+        log.info("Gallery cache refresh task locked skipping run.")
 
 
 @shared_task()
@@ -368,3 +377,17 @@ def send_discord(hook_pk, message):
     except Exception as error:
         log.exception(error)
         raise
+
+
+def acquire_lock(key, timeout=900):
+    log.debug(f"Checking lock for {key}")
+    if cache.get(key):
+        log.debug("Found Lock")
+        return False
+    log.debug(f"setting lock for {key}")
+    return cache.add(key, '1', timeout)
+
+
+def release_lock(key):
+    log.debug(f"Lock cleared on {key}")
+    cache.delete(key)

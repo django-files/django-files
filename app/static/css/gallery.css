@@ -34,3 +34,8 @@
 /*        12.5px -12.5px,*/
 /*        0px 12.5px;*/
 /*}*/
+
+.dt-processing {
+    position: relative !important;
+    top: 100% !important;
+}

@@ -5,7 +5,6 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render, reverse, get_object_or_404
-from django.template.loader import render_to_string
 from django.views.decorators.common import no_append_slash
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
@@ -20,6 +19,7 @@ from home.util.s3 import use_s3
 from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.models import SiteSettings
+from settings.context_processors import site_settings_processor
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -34,10 +34,9 @@ def home_view(request):
     View  /
     """
     log.debug('%s - home_view: is_secure: %s', request.method, request.is_secure())
-    files = Files.objects.get_request(request)
     stats = FileStats.objects.get_request(request)
     shorts = ShortURLs.objects.get_request(request)
-    context = {'files': files, 'stats': stats, 'shorts': shorts, 'full_context': True}
+    context = {'stats': stats, 'shorts': shorts, 'full_context': True}
     return render(request, 'home.html', context)
 
 
@@ -63,45 +62,16 @@ def stats_view(request):
     return render(request, 'stats.html', context=context)
 
 
-@cache_control(no_cache=True)
 @login_required
-@cache_page(cache_seconds, key_prefix="files")
-@vary_on_cookie
 def files_view(request):
     """
-    View  /files/
+    View  /files/ or /gallery/
     """
-    log.debug('%s - files_view: is_secure: %s', request.method, request.is_secure())
+    context = {'full_context': True}
     if request.user.is_superuser:
         users = CustomUser.objects.all()
-        context = {'users': users}
-        user = request.GET.get('user')
-        log.debug('user: %s', user)
-        log.debug('user.type: %s', type(user))
-        if user:
-            if user == "0":
-                files = Files.objects.filtered_request(request)
-            else:
-                files = Files.objects.filtered_request(request, user_id=int(user))
-        else:
-            files = Files.objects.get_request(request)
-        context.update({'files': files, 'full_context': True})
-    else:
-        files = Files.objects.get_request(request)
-        context = {'files': files, 'full_context': True}
-    return render(request, 'files.html', context)
-
-
-@cache_control(no_cache=True)
-@login_required
-@cache_page(cache_seconds, key_prefix="files")
-@vary_on_cookie
-def gallery_view(request):
-    """
-    View  /gallery/
-    """
+        context.update({'users': users})
     log.debug('%s - gallery_view: is_secure: %s', request.method, request.is_secure())
-    context = {'files': Files.objects.get_request(request)}
     return render(request, 'gallery.html', context)
 
 
@@ -237,19 +207,6 @@ def shorten_short_view(request, short):
         q.save()
     clear_shorts_cache.delay()
     return HttpResponseRedirect(url)
-
-
-@login_required
-@csrf_exempt
-@require_http_methods(['GET'])
-def files_tdata_ajax(request, pk):
-    """
-    View  /ajax/files/tdata/<int:pk>/
-    """
-    log.debug('files_tdata_ajax: %s', pk)
-    q = get_object_or_404(Files, pk=pk)
-    response = render_to_string('files/table-row.html', {'file': q}, request)
-    return HttpResponse(response)
 
 
 @login_required
@@ -393,13 +350,21 @@ def raw_redirect_view(request, filename):
     log.debug('url_route_raw: %s', filename)
     file = get_object_or_404(Files, name=filename)
     ctx = {"file": file}
+    response = HttpResponse(status=302)
     if lock := file_lock(request, ctx):
         return lock
+    if request.GET.get('thumb', False):
+        # use site settings context processor for caching
+        site_settings = site_settings_processor(None)['site_settings']
+        if use_s3():
+            response['Location'] = file.get_gallery_url()
+        else:
+            response['Location'] = site_settings['site_url'] + file.get_gallery_url()
+        return response
     session_view = request.session.get(f'view_{file.name}', True)
     url = file.get_url(session_view, request.GET.get('download', False))
     if session_view:
         request.session[f'view_{file.name}'] = False
-    response = HttpResponse(status=302)
     response['Location'] = url
     return response
 

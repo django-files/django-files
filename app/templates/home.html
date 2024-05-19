@@ -51,19 +51,12 @@
     </div>
     {% endif %}
 
-    <h2 id="files">Files</h2>
-    {% if not files %}
-        <p class="lead">No files found. Perhaps you forgot to <a href="{% url 'home:uppy' %}">upload some files</a>...</p>
-    {% else %}
-        <p><em><a href="{% url 'home:uppy' %}">Upload Files</a></em></p>
-        {% include 'files/table.html' with files=files|slice:":10"  %}
-        {% if files|length > 10 %}
-            <p><em>This list is truncated to 10 files. <span class="d-inline-block">
-                <a href="{% url 'home:files' %}">View All Files</a></span></em></p>
-        {% endif %}
-    {% endif %}
+    <h2 id="files">Recent Files</h2>
+        {% include 'files/table.html' %}
+        <p class="mt-0 files-truncation-warning"><em>This list is truncated to 10 files. </em><span class="d-inline-block">
+            <a href="{% url 'home:files' %}">View All Files</a></span></em></p hidden>
 
-    <h2 id="shorts">Shorts</h2>
+    <h2 id="shorts mt-5 pt-5">Shorts</h2>
     <form id="quick-short-form" action="{% url 'home:shorten' %}">
         <div class="input-group my-2">
             <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
@@ -84,16 +77,23 @@
     {% endif %}
 
     {% include 'files/file-upload-modal.html' %}
+    {% include 'files/ctx-menu.html' %}
+    {% include 'files/ctx-modals.html' %}
 
 </div>
 {% endblock %}
 
 
 {% block tail %}
-    <script type="text/javascript" src="{% static 'js/home.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
+    <script type="module" src="{% static 'js/home.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/stats.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/file-context-menu.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/files.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/shorts.js' %}"></script>
     <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}

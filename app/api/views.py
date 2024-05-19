@@ -25,7 +25,6 @@ from home.util.file import process_file
 from home.util.rand import rand_string
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
-from home.util.storage import use_s3
 from oauth.models import CustomUser, UserInvites
 from settings.models import SiteSettings
 from settings.context_processors import site_settings_processor
@@ -234,13 +233,24 @@ def recent_view(request):
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers('Authorization')
 @vary_on_cookie
-def pages_view(request, page):
+def pages_view(request, page, count=None):
     """
-    View  /api/pages/{page}/
+    View  /api/pages/{page}/{count}/
+    Limit 100 items per page.
     """
-    count = 25
-    log.debug('%s - gallery_page_view: %s', request.method, page)
-    q = Files.objects.get_request(request)
+    if not count:
+        count = 25
+    if count > 100:
+        count = 100
+    log.debug('%s - files_page_view: %s', request.method, page)
+    user = request.GET.get('user')
+    if user:
+        if user == "0":
+            q = Files.objects.filtered_request(request)
+        else:
+            q = Files.objects.filtered_request(request, user_id=int(user))
+    else:
+        q = Files.objects.get_request(request)
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
@@ -249,6 +259,7 @@ def pages_view(request, page):
     response = {
         'files': files,
         'next': _next,
+        'count': count,
     }
     return JsonResponse(response, safe=False, status=200)
 
@@ -259,8 +270,9 @@ def extract_files(q: Files.objects):
     for file in q:
         data = model_to_dict(file, exclude=['file', 'thumb'])
         data['url'] = site_settings['site_url'] + file.preview_uri()
-        data['thumb'] = file.get_gallery_url() if use_s3() else site_settings['site_url'] + file.get_gallery_url()
+        data['thumb'] = site_settings['site_url'] + file.thumb_path
         data['raw'] = site_settings['site_url'] + file.raw_path
+        data['date'] = file.date
         files.append(data)
     # log.debug('files: %s', files)
     return files
@@ -300,6 +312,7 @@ def file_view(request, idname):
             return JsonResponse(response, status=200)
         elif request.method == 'GET':
             response = model_to_dict(file, exclude=['file', 'thumb'])
+            response['date'] = file.date  # not sure why this is not getting included
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
     except Exception as error:

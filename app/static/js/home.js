@@ -1,5 +1,11 @@
 // JS for Home Page
 
+import { initFilesTable, addFileTableNodes } from './file-table.js'
+
+import { fetchFiles } from './api-fetch.js'
+
+document.addEventListener('DOMContentLoaded', initHome)
+
 $('#quick-short-form').on('submit', function (event) {
     console.log('#quick-short-form submit', event)
     event.preventDefault()
@@ -23,3 +29,13 @@ $('#quick-short-form').on('submit', function (event) {
         processData: false,
     })
 })
+
+async function initHome() {
+    filesDataTable = initFilesTable(false, false, false)
+    let files = await fetchFiles(1, 10)
+    console.log(files.files.length)
+    if (files.files.length >= 10) {
+        $('.files-truncation-warning').show()
+    }
+    addFileTableNodes(await fetchFiles(1, 10))
+}
