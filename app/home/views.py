@@ -356,7 +356,10 @@ def raw_redirect_view(request, filename):
     if request.GET.get('thumb', False):
         # use site settings context processor for caching
         site_settings = site_settings_processor(None)['site_settings']
-        response['Location'] = file.get_gallery_url() if use_s3() else site_settings['site_url'] + file.get_gallery_url()
+        if use_s3():
+            response['Location'] = file.get_gallery_url()
+        else:
+            response['Location'] = site_settings['site_url'] + file.get_gallery_url()
         return response
     session_view = request.session.get(f'view_{file.name}', True)
     url = file.get_url(session_view, request.GET.get('download', False))
