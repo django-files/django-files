@@ -303,7 +303,6 @@ def new_file_websocket(pk):
     # TODO: Backwards Compatibility
     data['pk'] = pk
     data['event'] = 'file-new'
-    data['test'] = "balbabahasdf"
     # handle datetime obj to str
     data['date'] = str(data['date'])
     channel_layer = get_channel_layer()

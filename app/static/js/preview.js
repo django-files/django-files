@@ -14,7 +14,6 @@ $('#closeSidebar').on('click', closeSidebarCallback)
 const sidebarMaxWidth = 768
 let sidebarOpen = false
 
-
 function domLoaded() {
     if (window.innerWidth >= sidebarMaxWidth) {
         if (!Cookies.get('previewSidebar')) {
