@@ -25,7 +25,6 @@ from home.util.file import process_file
 from home.util.rand import rand_string
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
-from home.util.storage import use_s3
 from oauth.models import CustomUser, UserInvites
 from settings.models import SiteSettings
 from settings.context_processors import site_settings_processor
@@ -271,7 +270,7 @@ def extract_files(q: Files.objects):
     for file in q:
         data = model_to_dict(file, exclude=['file', 'thumb'])
         data['url'] = site_settings['site_url'] + file.preview_uri()
-        data['thumb'] = file.get_gallery_url() if use_s3() else site_settings['site_url'] + file.get_gallery_url()
+        data['thumb'] = site_settings['site_url'] + file.thumb_path
         data['raw'] = site_settings['site_url'] + file.raw_path
         data['date'] = file.date
         files.append(data)

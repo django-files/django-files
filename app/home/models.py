@@ -144,6 +144,10 @@ class Files(models.Model):
     def raw_path(self) -> str:
         return '/raw/' + self.name
 
+    @property
+    def thumb_path(self) -> str:
+        return '/raw/' + self.name + '?thumb=true'
+
 
 class FileStats(models.Model):
     id = models.AutoField(primary_key=True)
