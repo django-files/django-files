@@ -20,6 +20,7 @@ from home.util.s3 import use_s3
 from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.models import SiteSettings
+from settings.context_processors import site_settings_processor
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -393,13 +394,18 @@ def raw_redirect_view(request, filename):
     log.debug('url_route_raw: %s', filename)
     file = get_object_or_404(Files, name=filename)
     ctx = {"file": file}
+    response = HttpResponse(status=302)
     if lock := file_lock(request, ctx):
         return lock
+    if request.GET.get('thumb', False):
+        # use site settings context processor for caching
+        site_settings = site_settings_processor(None)['site_settings']
+        response['Location'] = file.get_gallery_url() if use_s3() else site_settings['site_url'] + file.get_gallery_url()
+        return response
     session_view = request.session.get(f'view_{file.name}', True)
     url = file.get_url(session_view, request.GET.get('download', False))
     if session_view:
         request.session[f'view_{file.name}'] = False
-    response = HttpResponse(status=302)
     response['Location'] = url
     return response
 
