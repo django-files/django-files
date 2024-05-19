@@ -24,6 +24,7 @@ from oauth.models import CustomUser
 from settings.models import SiteSettings
 from oauth.models import DiscordWebhooks
 from django_celery_beat import models
+from api.utils import extract_files
 
 log = logging.getLogger('app')
 
@@ -297,12 +298,17 @@ def new_file_websocket(pk):
     log.debug('new_file_websocket: %s', pk)
     file = Files.objects.get(pk=pk)
     log.debug('file: %s', file)
-    data = model_to_dict(file, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta', 'thumb'])
+    # data = model_to_dict(file, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta', 'thumb'])
+    data = extract_files([file])[0]
     log.debug('data: %s', data)
     # TODO: Backwards Compatibility
     data['pk'] = pk
     data['event'] = 'file-new'
+    data['test'] = "balbabahasdf"
+    # handle datetime obj to str
+    data['date'] = str(data['date'])
     channel_layer = get_channel_layer()
+    log.info('data: %s', data)
     event = {
         'type': 'websocket.send',
         'text': json.dumps(data),

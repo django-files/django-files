@@ -1,8 +1,11 @@
 // JS for Web Sockets
 // TODO: Look Into Moving Everything Here for Auto Reconnect
 
+
+import { addDTRow } from "./file-table.js"
+
 let disconnected = false
-let socket
+export let socket
 let ws
 
 console.log('Connecting to WebSocket...')
@@ -141,9 +144,6 @@ function messageDelete(data) {
 }
 
 function newFile(data) {
-    $.get(`/api/file/${data.pk}`, function (response) {
-        response['DT_RowId'] = `file-${response.id}`
-        filesDataTable.row.add(response).draw()
-        show_toast(`${response.name} added.`)
-    })
+        addDTRow(data)
+        show_toast(`${data.name} added.`)
 }

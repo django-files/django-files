@@ -19,7 +19,6 @@ document.addEventListener('scroll', throttle(galleryScroll))
 window.addEventListener('resize', throttle(galleryScroll))
 
 const galleryContainer = document.getElementById('gallery-container')
-// const loadingImage = document.getElementById('loading-image')
 
 const imageNode = document.querySelector('div.d-none > img')
 

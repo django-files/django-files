@@ -1,3 +1,5 @@
+import { ctxSetExpire, ctxSetPrivate, ctxSetPassword, ctxDeleteFile } from './file-context-menu.js'
+
 const filesTable = $('#files-table')
 
 export const faLock = document.querySelector('div.d-none > .fa-lock')
@@ -10,91 +12,93 @@ export const fileLink = document.querySelector('div.d-none > .dj-file-link')
 export const totalFilesCount = document.getElementById('total-files-count')
 
 let filesDataTable
-const dataTablesOptions = {
-    paging: false,
-    order: [0, 'desc'],
-    responsive: true,
-    processing: true,
-    saveState: true,
-    pageLength: -1,
-    lengthMenu: [
-        [10, 25, 50, 100, 250, -1],
-        [10, 25, 50, 100, 250, 'All'],
-    ],
-    columns: [
-        { data: 'id' },
-        { data: 'name' },
-        { data: 'size' },
-        { data: 'mime' },
-        { data: 'date' },
-        { data: 'expr' },
-        { data: 'password' },
-        { data: 'private' },
-        { data: 'view' },
-    ],
-    columnDefs: [
-        {
-            targets: 0,
-            width: '30px',
-            responsivePriority: 5,
-            defaultContent: '',
-        },
-        {
-            target: 1,
-            width: '40%',
-            responsivePriority: 1,
-            render: getFileLink,
-            defaultContent: '',
-        },
-        {
-            targets: 2,
-            render: formatBytes,
-            defaultContent: '',
-            responsivePriority: 3,
-        },
-        { targets: 3, defaultContent: '', responsivePriority: 9 },
-        {
-            name: 'date',
-            targets: 4,
-            render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
-            defaultContent: '',
-            responsivePriority: 8,
-            width: '170px'
-        },
-        {
-            targets: 5,
-            width: '30px',
-            defaultContent: '',
-            className: 'expire-value text-center',
-            responsivePriority: 7,
-        },
-        { targets: 6, width: '30px', render: getPwIcon, defaultContent: '', responsivePriority:7 },
-        {
-            targets: 7,
-            width: '30px',
-            responsivePriority: 5,
-            render: getPrivateIcon,
-            defaultContent: '',
-        },
-        {
-            targets: 8,
-            width: '30px',
-            defaultContent: '',
-            responsivePriority: 4,
-            className: 'text-center',
-        },
-        {
-            targets: 9,
-            orderable: false,
-            width: '30px',
-            responsivePriority: 2,
-            render: getContextMenu,
-            defaultContent: '',
-        },
-    ],
-}
 
 export function initFilesTable(search = true, ordering = true, info = true) {
+    const dataTablesOptions = {
+        paging: false,
+        order: [0, 'desc'],
+        responsive: true,
+        processing: true,
+        saveState: true,
+        pageLength: -1,
+        lengthMenu: [
+            [10, 25, 50, 100, 250, -1],
+            [10, 25, 50, 100, 250, 'All'],
+        ],
+        columns: [
+            { data: 'id' },
+            { data: 'name' },
+            { data: 'size' },
+            { data: 'mime' },
+            { data: 'date' },
+            { data: 'expr' },
+            { data: 'password' },
+            { data: 'private' },
+            { data: 'view' },
+        ],
+        columnDefs: [
+            {
+                targets: 0,
+                width: '30px',
+                responsivePriority: 5,
+                defaultContent: '',
+            },
+            {
+                target: 1,
+                width: '40%',
+                responsivePriority: 1,
+                render: getFileLink,
+                defaultContent: '',
+                type: 'html',
+            },
+            {
+                targets: 2,
+                render: formatBytes,
+                defaultContent: '',
+                responsivePriority: 3,
+            },
+            { targets: 3, defaultContent: '', responsivePriority: 9 },
+            {
+                name: 'date',
+                targets: 4,
+                render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
+                defaultContent: '',
+                responsivePriority: 8,
+                width: '170px'
+            },
+            {
+                targets: 5,
+                width: '30px',
+                defaultContent: '',
+                className: 'expire-value text-center',
+                responsivePriority: 7,
+            },
+            { targets: 6, width: '30px', render: getPwIcon, defaultContent: '', responsivePriority:7 },
+            {
+                targets: 7,
+                width: '30px',
+                responsivePriority: 5,
+                render: getPrivateIcon,
+                defaultContent: '',
+            },
+            {
+                targets: 8,
+                width: '30px',
+                defaultContent: '',
+                responsivePriority: 4,
+                className: 'text-center',
+            },
+            {
+                targets: 9,
+                orderable: false,
+                width: '30px',
+                responsivePriority: 2,
+                render: getContextMenu,
+                defaultContent: '',
+            },
+        ],
+    }
+
     dataTablesOptions.searching = search
     dataTablesOptions.ordering = ordering
     dataTablesOptions.info = info
@@ -152,7 +156,10 @@ function getContextMenu(data, type, row, meta) {
 
     const menu = getCtxMenu(row)
     ctxMenu.appendChild(menu)
+
     ctxMenu.classList.add(`ctx-menu-${row.id}`)
+    ctxMenu.querySelector("[name='current-file-password']").value = row.password
+    ctxMenu.querySelector("[name='current-file-expiration']").value = row.expr
     return ctxMenu
 }
 
@@ -214,7 +221,7 @@ export function getCtxMenu(file) {
     menu.querySelector('.open-raw').href = file.raw
     menu.querySelector('a[download=""]').setAttribute('download', file.raw)
 
-    menu.querySelector('.ctx-expire').addEventListener('click', cxtSetExpire)
+    menu.querySelector('.ctx-expire').addEventListener('click', ctxSetExpire)
     menu.querySelector('.ctx-private').addEventListener('click', ctxSetPrivate)
     menu.querySelector('.ctx-password').addEventListener(
         'click',
