@@ -5,12 +5,14 @@ import {
     faKey,
     faHourglass,
     faCaret,
-    addDTRow,
+    addFileTableRow,
     getCtxMenu,
     formatBytes,
 } from './file-table.js'
 
 import { fetchFiles } from './api-fetch.js'
+
+import { socket } from './socket.js'
 
 console.debug('LOADING: gallery.js')
 
@@ -19,14 +21,13 @@ document.addEventListener('scroll', throttle(galleryScroll))
 window.addEventListener('resize', throttle(galleryScroll))
 
 const galleryContainer = document.getElementById('gallery-container')
-// const loadingImage = document.getElementById('loading-image')
 
 const imageNode = document.querySelector('div.d-none > img')
 
 let showGallery = document.querySelector('.show-gallery')
-showGallery.onclick = changeView;
+showGallery.onclick = changeView
 let showList = document.querySelector('.show-list')
-showList.onclick = changeView;
+showList.onclick = changeView
 
 let dtContainer
 
@@ -115,9 +116,9 @@ async function addNodes() {
             // console.debug('file:', file)
             if (window.location.pathname.includes('gallery')) {
                 addGalleryImage(file)
-                addDTRow(file)
+                addFileTableRow(file)
             } else if (window.location.pathname.includes('files')) {
-                addDTRow(file)
+                addFileTableRow(file)
             } else {
                 console.error('Unknown View')
             }
@@ -125,12 +126,11 @@ async function addNodes() {
         filesDataTable.processing(false)
         fetchLock = false
     } else {
-        console.debug("Another files fetch in progress waiting.")
+        console.debug('Another files fetch in progress waiting.')
     }
-
 }
 
-function addGalleryImage(file) {
+function addGalleryImage(file, top = true) {
     // console.log('addGalleryImage:', file)
     const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp)$/i
     if (!file.name.match(imageExtensions)) {
@@ -152,6 +152,7 @@ function addGalleryImage(file) {
         'border-3',
         'border-secondary'
     )
+    outer.id = `gallery-image-${file.id}`
     outer.style.position = 'relative'
     // TODO: hides text overflow but also the ctx menu
     // outer.style.overflow = 'hidden'
@@ -258,7 +259,11 @@ function addGalleryImage(file) {
 
     // inner.appendChild(link)
     // inner.appendChild(ctxMenu)
-    galleryContainer.appendChild(outer)
+    if (top) {
+        galleryContainer.insertBefore(outer, galleryContainer.firstChild)
+    } else {
+        galleryContainer.appendChild(outer)
+    }
 }
 
 /**
@@ -315,12 +320,13 @@ function changeView(event) {
             galleryContainer.removeChild(galleryContainer.lastChild)
         }
         dtContainer.hidden = false
-        window.history.replaceState( {} , null, '/files/' );
+        window.history.replaceState({}, null, '/files/')
         showList.style.fontWeight = 'bold'
         showGallery.style.fontWeight = 'normal'
+        filesDataTable.responsive.recalc()
     } else {
         dtContainer.hidden = true
-        window.history.replaceState( {} , null, '/gallery/' );
+        window.history.replaceState({}, null, '/gallery/')
         console.log(fileData)
         fileData.forEach(function (item, index) {
             addGalleryImage(item)
@@ -328,4 +334,22 @@ function changeView(event) {
         showList.style.fontWeight = 'normal'
         showGallery.style.fontWeight = 'bold'
     }
+}
+
+socket?.addEventListener('message', function (event) {
+    let data = JSON.parse(event.data)
+    if (data.event === 'file-delete') {
+        fileDeleteGallery(data.id)
+    } else if (data.event === 'file-new') {
+        // file-table handles added file already so we just need to add to gallery if its the view
+        if (window.location.pathname.includes('gallery')) {
+            addGalleryImage(data)
+        }
+    }
+})
+
+function fileDeleteGallery(pk) {
+    $(`#gallery-image-${pk}`).remove()
+    fileData.splice(fileData.findIndex((file) => file.id === pk))
+    console.log(fileData)
 }

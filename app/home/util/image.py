@@ -12,7 +12,11 @@ log = logging.getLogger('app')
 
 class ImageProcessor(object):
 
-    def __init__(self, local_path: str, default_remove_exif: bool, default_exif_geo: bool, ctx):
+    def __init__(self,
+                 local_path: str,
+                 default_remove_exif: bool,
+                 default_exif_geo: bool, ctx,
+                 detected_extension: str = None):
         self.local_path = local_path
         if ctx.get('strip_exif') is not None:
             self.remove_exif = ctx.get('strip_exif')
@@ -25,6 +29,7 @@ class ImageProcessor(object):
         self.exif = {}
         self.meta = {}
         self.tmp_thumb = os.path.splitext(self.local_path)[0] + "_thumb" + os.path.splitext(self.local_path)[1]
+        self.detected_extension = detected_extension
 
     def process_file(self) -> None:
         # TODO: Concatenate Logic to This Function
@@ -36,7 +41,7 @@ class ImageProcessor(object):
             log.info('Parsing and storing EXIF: %s', self.local_path)
             image, exif_clean, exif = self._handle_exif(image)
             # write exif in case exif modified
-            image.save(self.local_path, exif=exif)
+            image.save(self.local_path, format=self.detected_extension, exif=exif)
             # determine photo area from gps and store in metadata
             if area := city_state_from_exif(exif_clean.get('GPSInfo')):
                 self.meta['GPSArea'] = area
@@ -99,7 +104,7 @@ class ImageProcessor(object):
             new.save(local_path)
 
 
-def thumbnail_processor(file: Files, file_bytes: bytes = None):
+def thumbnail_processor(file: Files, file_bytes: bytes = None, extension: str = None):
     # generate thumbnail via bytes object or file object
     # prefer bytes object if file is still local to avoid wasteful redownload of file
     tmp_file = f'/tmp/thumb_{file.name}'
@@ -108,7 +113,7 @@ def thumbnail_processor(file: Files, file_bytes: bytes = None):
         image = ImageOps.exif_transpose(image)
         # TODO: check resolution is not already small, if it is don't bother generating a thumbnail
         image.thumbnail((512, 512))
-        image.save(tmp_file)
+        image.save(tmp_file, format=extension)
     with open(tmp_file, 'rb') as thumb:
         # we cannot call update, we must explicitly save, here since the hooks that upload the file will not happen
         file.thumb = File(thumb, name=file.name)

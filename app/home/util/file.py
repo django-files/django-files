@@ -3,6 +3,7 @@ import logging
 import magic
 import mimetypes
 import os
+import pathlib
 import uuid
 import tempfile
 from django.core.files import File
@@ -76,7 +77,10 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
         file_mime = file_mime or 'application/octet-stream'
         log.debug('file_mime: %s', file_mime)
         if file_mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
-            processor = ImageProcessor(fp.name, user.remove_exif, user.remove_exif_geo, ctx)
+            # when handling images, if we detect an extension we need to
+            # tell PIL to use that extension now and in thumbnail processor
+            detected_extension = file_mime.split('/')[1]
+            processor = ImageProcessor(fp.name, user.remove_exif, user.remove_exif_geo, ctx, detected_extension)
             processor.process_file()
             file.meta = processor.meta
             file.exif = processor.exif
@@ -98,7 +102,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     file.name = file.file.name
     file.save()
     if file_mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
-        thumbnail_processor(file, f.read())
+        thumbnail_processor(file, f.read(), detected_extension)
     increment_storage_usage(file)
     new_file_websocket.apply_async(args=[file.pk], priority=0)
     send_discord_message.delay(file.pk)
@@ -106,7 +110,6 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
 
 
 def get_formatted_name(name: str, _format: str = '') -> str:
-    # TODO: Handle names without a . by using mime-type
     log.debug('name: %s', name)
     ext = os.path.splitext(name)[1]
     log.debug('ext: %s', ext)
@@ -120,4 +123,16 @@ def get_formatted_name(name: str, _format: str = '') -> str:
             case 'date':
                 # TODO: Look into removing the : from filenames
                 return datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S") + ext
+    # check file name is not too long, if so fix it, leave room for rand
+    name = truncate_long_names(name)
+    return name
+
+
+def truncate_long_names(name: str) -> str:
+    if (trunc := (240 - len(name))) < 0:
+        log.info("Truncating filename since filename is too long.")
+        exts = '.'.join(pathlib.Path(name).suffixes)
+        log.info(f"extensions {exts}")
+        name = name[:trunc + len(exts)] + (('.' + exts) if len(exts) > 0 else '')
+        log.info(f"New name {name}")
     return name
