@@ -93,11 +93,17 @@ function messageExpire(data) {
     if (data.expr) {
         expireText.text(data.expr).data('clipboard-text', data.expr)
         expireIcon.attr('title', `File Expires in ${data.expr}`).show()
-        show_toast(`${truncateName(data.name)} - Expire set to: ${data.expr}`, 'success')
+        show_toast(
+            `${truncateName(data.name)} - Expire set to: ${data.expr}`,
+            'success'
+        )
     } else {
         expireText.text('Never').data('clipboard-text', 'Never')
         expireIcon.attr('title', 'No Expiration').hide()
-        show_toast(`${truncateName(data.name)} - Cleared Expiration.`, 'success')
+        show_toast(
+            `${truncateName(data.name)} - Cleared Expiration.`,
+            'success'
+        )
     }
 }
 
@@ -144,7 +150,7 @@ function messageNewFile(data) {
 
 function truncateName(filename) {
     if (filename.length > 42) {
-        return filename.substring(0,40) + '...'
+        return filename.substring(0, 40) + '...'
     }
     return filename
 }

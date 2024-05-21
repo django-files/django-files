@@ -1,4 +1,4 @@
-import { socket } from "./socket.js"
+import { socket } from './socket.js'
 
 // JS for Context Menu
 
@@ -27,9 +27,7 @@ $('#modal-expire-form').on('submit', function (event) {
     console.log('data:', data)
     socket.send(JSON.stringify(data))
     fileExpireModal.modal('hide')
-    $(`#ctx-menu-${data.pk} input[name=current-file-expiration]`).val(
-        data.expr
-    )
+    $(`#ctx-menu-${data.pk} input[name=current-file-expiration]`).val(data.expr)
 })
 
 // Password Form

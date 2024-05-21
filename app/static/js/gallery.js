@@ -25,9 +25,9 @@ const galleryContainer = document.getElementById('gallery-container')
 const imageNode = document.querySelector('div.d-none > img')
 
 let showGallery = document.querySelector('.show-gallery')
-showGallery.onclick = changeView;
+showGallery.onclick = changeView
 let showList = document.querySelector('.show-list')
-showList.onclick = changeView;
+showList.onclick = changeView
 
 let dtContainer
 
@@ -126,9 +126,8 @@ async function addNodes() {
         filesDataTable.processing(false)
         fetchLock = false
     } else {
-        console.debug("Another files fetch in progress waiting.")
+        console.debug('Another files fetch in progress waiting.')
     }
-
 }
 
 function addGalleryImage(file, top = true) {
@@ -321,13 +320,13 @@ function changeView(event) {
             galleryContainer.removeChild(galleryContainer.lastChild)
         }
         dtContainer.hidden = false
-        window.history.replaceState( {} , null, '/files/' );
+        window.history.replaceState({}, null, '/files/')
         showList.style.fontWeight = 'bold'
         showGallery.style.fontWeight = 'normal'
         filesDataTable.responsive.recalc()
     } else {
         dtContainer.hidden = true
-        window.history.replaceState( {} , null, '/gallery/' );
+        window.history.replaceState({}, null, '/gallery/')
         console.log(fileData)
         fileData.forEach(function (item, index) {
             addGalleryImage(item)
@@ -339,8 +338,7 @@ function changeView(event) {
 
 socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)
-    console.log(data)
-    if (data.event === 'file-delete'){
+    if (data.event === 'file-delete') {
         fileDeleteGallery(data.id)
     } else if (data.event === 'file-new') {
         // file-table handles added file already so we just need to add to gallery if its the view
@@ -352,6 +350,6 @@ socket?.addEventListener('message', function (event) {
 
 function fileDeleteGallery(pk) {
     $(`#gallery-image-${pk}`).remove()
-    fileData.splice(fileData.findIndex(file => file.id === pk))
+    fileData.splice(fileData.findIndex((file) => file.id === pk))
     console.log(fileData)
 }

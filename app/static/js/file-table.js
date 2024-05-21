@@ -1,4 +1,9 @@
-import { ctxSetExpire, ctxSetPrivate, ctxSetPassword, ctxDeleteFile } from './file-context-menu.js'
+import {
+    ctxSetExpire,
+    ctxSetPrivate,
+    ctxSetPassword,
+    ctxDeleteFile,
+} from './file-context-menu.js'
 
 import { socket } from './socket.js'
 
@@ -65,7 +70,7 @@ const dataTablesOptions = {
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
             responsivePriority: 8,
-            width: '170px'
+            width: '170px',
         },
         {
             targets: 5,
@@ -74,7 +79,13 @@ const dataTablesOptions = {
             className: 'expire-value text-center',
             responsivePriority: 7,
         },
-        { targets: 6, width: '30px', render: getPwIcon, defaultContent: '', responsivePriority:7 },
+        {
+            targets: 6,
+            width: '30px',
+            render: getPwIcon,
+            defaultContent: '',
+            responsivePriority: 7,
+        },
         {
             targets: 7,
             width: '30px',
@@ -251,14 +262,12 @@ export function addFileTableRows(data) {
 }
 
 export function removeFileTableRow(pk) {
-    console.log(filesDataTable.row(`#file-${pk}`))
     filesDataTable.row(`#file-${pk}`).remove().draw()
 }
 
 socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)
-    console.log(data)
-    if (data.event === 'file-delete'){
+    if (data.event === 'file-delete') {
         removeFileTableRow(data.id)
     } else if (data.event === 'file-new') {
         addFileTableRow(data)
