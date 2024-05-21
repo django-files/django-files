@@ -1,9 +1,6 @@
 // JS for Web Sockets
 // TODO: Look Into Moving Everything Here for Auto Reconnect
 
-
-import { addDTRow } from "./file-table.js"
-
 let disconnected = false
 export let socket
 let ws
@@ -69,7 +66,7 @@ async function initListener() {
         let data = JSON.parse(event.data)
         console.log(event)
         if (data.event === 'file-new') {
-            newFile(data)
+            messageNewFile(data)
         } else if (data.event === 'set-expr-file') {
             messageExpire(data)
         } else if (data.event === 'toggle-private-file') {
@@ -138,13 +135,11 @@ function messagePassword(data) {
 }
 
 function messageDelete(data) {
-    $(`#file-${data.pk}`).remove()
     show_toast(`${truncateName(data.name)} deleted by ${data.user}.`)
 }
 
-function newFile(data) {
-        addDTRow(data)
-        show_toast(`${truncateName(data.name)} added.`)
+function messageNewFile(data) {
+    show_toast(`${truncateName(data.name)} added.`)
 }
 
 function truncateName(filename) {

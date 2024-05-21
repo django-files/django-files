@@ -1,5 +1,7 @@
 import { ctxSetExpire, ctxSetPrivate, ctxSetPassword, ctxDeleteFile } from './file-context-menu.js'
 
+import { socket } from './socket.js'
+
 const filesTable = $('#files-table')
 
 export const faLock = document.querySelector('div.d-none > .fa-lock')
@@ -13,92 +15,92 @@ export const totalFilesCount = document.getElementById('total-files-count')
 
 let filesDataTable
 
-export function initFilesTable(search = true, ordering = true, info = true) {
-    const dataTablesOptions = {
-        paging: false,
-        order: [0, 'desc'],
-        responsive: true,
-        processing: true,
-        saveState: true,
-        pageLength: -1,
-        lengthMenu: [
-            [10, 25, 50, 100, 250, -1],
-            [10, 25, 50, 100, 250, 'All'],
-        ],
-        columns: [
-            { data: 'id' },
-            { data: 'name' },
-            { data: 'size' },
-            { data: 'mime' },
-            { data: 'date' },
-            { data: 'expr' },
-            { data: 'password' },
-            { data: 'private' },
-            { data: 'view' },
-        ],
-        columnDefs: [
-            {
-                targets: 0,
-                width: '30px',
-                responsivePriority: 5,
-                defaultContent: '',
-            },
-            {
-                target: 1,
-                width: '40%',
-                responsivePriority: 1,
-                render: getFileLink,
-                defaultContent: '',
-                type: 'html',
-            },
-            {
-                targets: 2,
-                render: formatBytes,
-                defaultContent: '',
-                responsivePriority: 3,
-            },
-            { targets: 3, defaultContent: '', responsivePriority: 9 },
-            {
-                name: 'date',
-                targets: 4,
-                render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
-                defaultContent: '',
-                responsivePriority: 8,
-                width: '170px'
-            },
-            {
-                targets: 5,
-                width: '30px',
-                defaultContent: '',
-                className: 'expire-value text-center',
-                responsivePriority: 7,
-            },
-            { targets: 6, width: '30px', render: getPwIcon, defaultContent: '', responsivePriority:7 },
-            {
-                targets: 7,
-                width: '30px',
-                responsivePriority: 5,
-                render: getPrivateIcon,
-                defaultContent: '',
-            },
-            {
-                targets: 8,
-                width: '30px',
-                defaultContent: '',
-                responsivePriority: 4,
-                className: 'text-center',
-            },
-            {
-                targets: 9,
-                orderable: false,
-                width: '30px',
-                responsivePriority: 2,
-                render: getContextMenu,
-                defaultContent: '',
-            },
-        ],
-    }
+const dataTablesOptions = {
+    paging: false,
+    order: [0, 'desc'],
+    responsive: true,
+    processing: true,
+    saveState: true,
+    pageLength: -1,
+    lengthMenu: [
+        [10, 25, 50, 100, 250, -1],
+        [10, 25, 50, 100, 250, 'All'],
+    ],
+    columns: [
+        { data: 'id' },
+        { data: 'name' },
+        { data: 'size' },
+        { data: 'mime' },
+        { data: 'date' },
+        { data: 'expr' },
+        { data: 'password' },
+        { data: 'private' },
+        { data: 'view' },
+    ],
+    columnDefs: [
+        {
+            targets: 0,
+            width: '30px',
+            responsivePriority: 5,
+            defaultContent: '',
+        },
+        {
+            target: 1,
+            width: '40%',
+            responsivePriority: 1,
+            render: getFileLink,
+            defaultContent: '',
+            type: 'html',
+        },
+        {
+            targets: 2,
+            render: formatBytes,
+            defaultContent: '',
+            responsivePriority: 3,
+        },
+        { targets: 3, defaultContent: '', responsivePriority: 9 },
+        {
+            name: 'date',
+            targets: 4,
+            render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
+            defaultContent: '',
+            responsivePriority: 8,
+            width: '170px'
+        },
+        {
+            targets: 5,
+            width: '30px',
+            defaultContent: '',
+            className: 'expire-value text-center',
+            responsivePriority: 7,
+        },
+        { targets: 6, width: '30px', render: getPwIcon, defaultContent: '', responsivePriority:7 },
+        {
+            targets: 7,
+            width: '30px',
+            responsivePriority: 5,
+            render: getPrivateIcon,
+            defaultContent: '',
+        },
+        {
+            targets: 8,
+            width: '30px',
+            defaultContent: '',
+            responsivePriority: 4,
+            className: 'text-center',
+        },
+        {
+            targets: 9,
+            orderable: false,
+            width: '30px',
+            responsivePriority: 2,
+            render: getContextMenu,
+            defaultContent: '',
+        },
+    ],
+}
 
+export function initFilesTable(search = true, ordering = true, info = true) {
     dataTablesOptions.searching = search
     dataTablesOptions.ordering = ordering
     dataTablesOptions.info = info
@@ -233,14 +235,32 @@ export function getCtxMenu(file) {
     return menu
 }
 
-export function addDTRow(file) {
-    file['DT_RowId'] = `file-${file.id}`
-    filesDataTable.row.add(file).draw()
-}
-
-export function addFileTableNodes(data) {
-    for (const file of data.files) {
-        console.log(file)
-        addDTRow(file)
+export function addFileTableRow(file) {
+    // adds a single file table entry with proper ID
+    if (filesDataTable) {
+        file['DT_RowId'] = `file-${file.id}`
+        filesDataTable.row.add(file).draw()
     }
 }
+
+export function addFileTableRows(data) {
+    // adds multiple file table entries
+    for (const file of data.files) {
+        addFileTableRow(file)
+    }
+}
+
+export function removeFileTableRow(pk) {
+    console.log(filesDataTable.row(`#file-${pk}`))
+    filesDataTable.row(`#file-${pk}`).remove().draw()
+}
+
+socket?.addEventListener('message', function (event) {
+    let data = JSON.parse(event.data)
+    console.log(data)
+    if (data.event === 'file-delete'){
+        removeFileTableRow(data.id)
+    } else if (data.event === 'file-new') {
+        addFileTableRow(data)
+    }
+})

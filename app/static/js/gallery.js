@@ -5,12 +5,14 @@ import {
     faKey,
     faHourglass,
     faCaret,
-    addDTRow,
+    addFileTableRow,
     getCtxMenu,
     formatBytes,
 } from './file-table.js'
 
 import { fetchFiles } from './api-fetch.js'
+
+import { socket } from './socket.js'
 
 console.debug('LOADING: gallery.js')
 
@@ -114,9 +116,9 @@ async function addNodes() {
             // console.debug('file:', file)
             if (window.location.pathname.includes('gallery')) {
                 addGalleryImage(file)
-                addDTRow(file)
+                addFileTableRow(file)
             } else if (window.location.pathname.includes('files')) {
-                addDTRow(file)
+                addFileTableRow(file)
             } else {
                 console.error('Unknown View')
             }
@@ -129,7 +131,7 @@ async function addNodes() {
 
 }
 
-function addGalleryImage(file) {
+function addGalleryImage(file, top = true) {
     // console.log('addGalleryImage:', file)
     const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp)$/i
     if (!file.name.match(imageExtensions)) {
@@ -151,6 +153,7 @@ function addGalleryImage(file) {
         'border-3',
         'border-secondary'
     )
+    outer.id = `gallery-image-${file.id}`
     outer.style.position = 'relative'
     // TODO: hides text overflow but also the ctx menu
     // outer.style.overflow = 'hidden'
@@ -257,7 +260,11 @@ function addGalleryImage(file) {
 
     // inner.appendChild(link)
     // inner.appendChild(ctxMenu)
-    galleryContainer.appendChild(outer)
+    if (top) {
+        galleryContainer.insertBefore(outer, galleryContainer.firstChild)
+    } else {
+        galleryContainer.appendChild(outer)
+    }
 }
 
 /**
@@ -317,6 +324,7 @@ function changeView(event) {
         window.history.replaceState( {} , null, '/files/' );
         showList.style.fontWeight = 'bold'
         showGallery.style.fontWeight = 'normal'
+        filesDataTable.responsive.recalc()
     } else {
         dtContainer.hidden = true
         window.history.replaceState( {} , null, '/gallery/' );
@@ -327,4 +335,20 @@ function changeView(event) {
         showList.style.fontWeight = 'normal'
         showGallery.style.fontWeight = 'bold'
     }
+}
+
+socket?.addEventListener('message', function (event) {
+    let data = JSON.parse(event.data)
+    console.log(data)
+    if (data.event === 'file-delete'){
+        fileDeleteGallery(data.id)
+    } else if (data.event === 'file-new') {
+        addGalleryImage(data)
+    }
+})
+
+function fileDeleteGallery(pk) {
+    $(`#gallery-image-${pk}`).remove()
+    fileData.splice(fileData.findIndex(file => file.id === pk))
+    console.log(fileData)
 }
