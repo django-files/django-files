@@ -81,7 +81,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         os.environ['DJANGO_ALLOW_ASYNC_UNSAFE'] = 'true'
         cls.playwright = sync_playwright().start()
         cls.browser = cls.playwright.chromium.launch()
-        cls.context = cls.browser.new_context(color_scheme='dark', bypass_csp=True)
+        cls.context = cls.browser.new_context(color_scheme='dark')
         # storage = cls.context.storage_state(path='state.json')
         # cls.context = cls.context.new_context(storage_state='state.json')
         log.info('settings.MEDIA_ROOT: %s', settings.MEDIA_ROOT)
