@@ -81,7 +81,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         os.environ['DJANGO_ALLOW_ASYNC_UNSAFE'] = 'true'
         cls.playwright = sync_playwright().start()
         cls.browser = cls.playwright.chromium.launch()
-        cls.context = cls.browser.new_context(color_scheme='dark')
+        cls.context = cls.browser.new_context(color_scheme='dark', bypass_csp=True)
         # storage = cls.context.storage_state(path='state.json')
         # cls.context = cls.context.new_context(storage_state='state.json')
         log.info('settings.MEDIA_ROOT: %s', settings.MEDIA_ROOT)
@@ -100,6 +100,9 @@ class PlaywrightTest(StaticLiveServerTestCase):
         cls.playwright.stop()
 
     def test_browser_views(self):
+        settings = SiteSettings.objects.settings()
+        settings.site_url = self.live_server_url
+        settings.save()
         print(f'--- {self.live_server_url} ---')
         print('--- prep files for browser shots ---')
         print('-'*40)
@@ -160,6 +163,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                     page.locator('.nav-link').locator('text=Files').first.click()
                     page.wait_for_timeout(timeout=350)
                     page.locator('.link-body-emphasis').locator('text=Gallery').first.click()
+                    page.wait_for_timeout(timeout=500)
                 else:
                     page.locator('.nav-link').locator(f'text={view}').first.click()
 
@@ -167,6 +171,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
                 page.wait_for_timeout(timeout=750)
                 self.screenshot(page, view)
             else:
+                page.wait_for_timeout(timeout=500)
                 # page.locator(f'text={view}')
                 page.get_by_role("heading", name=view)
                 self.screenshot(page, view)
@@ -263,7 +268,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
 
         for file in self.previews:
             page.goto(f'{self.live_server_url}/u/{file}')
-            page.wait_for_timeout(timeout=500)
+            page.wait_for_timeout(timeout=1000)
             self.screenshot(page, f'Preview-{file}')
 
         page.goto(f'{self.live_server_url}/404')
@@ -272,6 +277,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         print('--- test_quotas ---')
         page.goto(f'{self.live_server_url}/settings/site/')
         page.get_by_label('Global Storage Quota').fill('750KB')
+        page.get_by_label('Site Description').click()
         page.wait_for_timeout(timeout=500)
         page.reload()
         self.screenshot(page, 'Site Settings with Global Quota Near Full')
@@ -302,6 +308,7 @@ class PlaywrightTest(StaticLiveServerTestCase):
         private_file.save()
         page.goto(f'{self.live_server_url}/u/{private_file.name}')
         page.locator('text=Unlock')
+        page.wait_for_timeout(timeout=600)
         self.screenshot(page, 'File-password')
 
         page.fill('[name=password]', 'test123')
