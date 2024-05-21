@@ -343,7 +343,10 @@ socket?.addEventListener('message', function (event) {
     if (data.event === 'file-delete'){
         fileDeleteGallery(data.id)
     } else if (data.event === 'file-new') {
-        addGalleryImage(data)
+        // file-table handles added file already so we just need to add to gallery if its the view
+        if (window.location.pathname.includes('gallery')) {
+            addGalleryImage(data)
+        }
     }
 })
 
