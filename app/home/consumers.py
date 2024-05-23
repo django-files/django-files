@@ -239,7 +239,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 file.name = name
                 file.file
                 file.file.name = name  # this will rename on OS and cloud
-                file.thumb.name = name  # renames thumbnail
+                file.thumb.name = 'thumbs/' + name  # renames thumbnail
                 file.save()
                 response = model_to_dict(file, exclude=['file', 'thumb'])
                 response.update({'event': 'set-file-name', 'uri': file.preview_uri(), 'old_name': old_name})
