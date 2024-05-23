@@ -4,7 +4,7 @@ import shutil
 from django.test import TestCase
 from pathlib import Path
 from django.conf import settings
-from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from channels.testing import ChannelsLiveServerTestCase
 from django.core.management import call_command
 # from django.core.files import File
 from django.urls import reverse
@@ -54,7 +54,7 @@ class TestAuthViews(TestCase):
             self.assertEqual(response.status_code, status)
 
 
-class PlaywrightTest(StaticLiveServerTestCase):
+class PlaywrightTest(ChannelsLiveServerTestCase):
     """Test Playwright"""
     screenshots = 'screenshots'
     # TODO: Add Upload view back

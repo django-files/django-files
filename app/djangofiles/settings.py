@@ -1,6 +1,7 @@
 import datetime
 import sentry_sdk
 import sys
+import os
 from celery.schedules import crontab
 from decouple import config, Csv
 from dotenv import find_dotenv, load_dotenv
@@ -182,6 +183,9 @@ if database_type == 'sqlite3':
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': db_location,
+            "TEST": {
+                "NAME": os.path.join(BASE_DIR, "db_test.sqlite3"),
+            },
         }
     }
 elif database_type == 'mysql':
