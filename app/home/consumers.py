@@ -237,7 +237,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
             if file_rename(file.file.name, name, True if file.thumb else False):
                 old_name = file.name
                 file.name = name
-                file.file
                 file.file.name = name  # this will rename on OS and cloud
                 file.thumb.name = 'thumbs/' + name  # renames thumbnail
                 file.save()

@@ -1,10 +1,4 @@
-import {
-    ctxSetExpire,
-    ctxSetPrivate,
-    ctxSetPassword,
-    ctxDeleteFile,
-    ctxRenameFile,
-} from './file-context-menu.js'
+import { getContextMenu } from './file-context-menu.js'
 
 import { socket } from './socket.js'
 
@@ -155,31 +149,6 @@ function getPwIcon(data, type, row, meta) {
     return pwIcon
 }
 
-function getContextMenu(data, type, row, meta) {
-    const ctxMenu = document.createElement('div')
-    const toggle = document.createElement('a')
-    toggle.classList.add('link-body-emphasis', 'ctx-menu')
-    toggle.setAttribute('role', 'button')
-    toggle.dataset.bsToggle = 'dropdown'
-    toggle.setAttribute('aria-expanded', 'false')
-    toggle.setAttribute(
-        'class',
-        'btn btn-secondary file-context-dropdown my-0 py-0'
-    )
-    toggle.innerHTML = '<i class="fa-regular fa-square-caret-down"></i>'
-    ctxMenu.appendChild(toggle)
-
-    const menu = getCtxMenu(row)
-    ctxMenu.appendChild(menu)
-
-    ctxMenu.classList.add(`ctx-menu-${row.id}`)
-    ctxMenu.querySelector("[name='current-file-password']").value = row.password
-    ctxMenu.querySelector("[name='current-file-expiration']").value = row.expr
-    ctxMenu.querySelector("[name='current-file-name']").value = row.name
-
-    return ctxMenu
-}
-
 function getPrivateIcon(data, type, row, meta) {
     const privateIcon = faLock.cloneNode(true)
     privateIcon.classList.add('privateStatus')
@@ -219,38 +188,6 @@ function dtDraw(event) {
     }
 }
 
-/**
- * Get Context Menu for File
- * @function getCtxMenu
- * @param {Object} file
- * @return {HTMLElement}
- */
-export function getCtxMenu(file) {
-    // console.debug('getCtxMenu:', file)
-
-    const menu = document.getElementById('ctx-menu-').cloneNode(true)
-    menu.id = `ctx-menu-${file.id}`
-    menu.dataset.dataPk = file.id
-    menu.dataset.id = file.id
-
-    menu.querySelector('.copy-share-link').dataset.clipboardText = file.url
-    menu.querySelector('.copy-raw-link').dataset.clipboardText = file.raw
-    menu.querySelector('.open-raw').href = file.raw
-    menu.querySelector('a[download=""]').setAttribute('download', file.raw)
-
-    menu.querySelector('.ctx-expire').addEventListener('click', ctxSetExpire)
-    menu.querySelector('.ctx-private').addEventListener('click', ctxSetPrivate)
-    menu.querySelector('.ctx-password').addEventListener(
-        'click',
-        ctxSetPassword
-    )
-    menu.querySelector('.ctx-delete').addEventListener('click', ctxDeleteFile)
-    menu.querySelector('.ctx-rename').addEventListener('click', ctxRenameFile)
-
-    // console.log('menu:', menu)
-    return menu
-}
-
 export function addFileTableRow(file) {
     // adds a single file table entry with proper ID
     if (filesDataTable) {
@@ -271,12 +208,13 @@ export function removeFileTableRow(pk) {
 }
 
 export function renameFileRow(data) {
-    let fileName = document.getElementsByClassName(`dj-file-link-${data.id}`)[0].getElementsByClassName('dj-file-link-ref')[0]
+    let fileName = document
+        .getElementsByClassName(`dj-file-link-${data.id}`)[0]
+        .getElementsByClassName('dj-file-link-ref')[0]
     let link = new URL(fileName.href)
     link.pathname = data.uri
     fileName.href = link.href
-    fileName
-    .innerHTML = data.name
+    fileName.innerHTML = data.name
 }
 
 socket?.addEventListener('message', function (event) {

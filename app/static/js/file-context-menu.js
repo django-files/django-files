@@ -17,6 +17,8 @@ $('.ctx-password').on('click', ctxSetPassword)
 $('.ctx-delete').on('click', ctxDeleteFile)
 $('.ctx-rename').on('click', ctxRenameFile)
 
+export const faLockOpen = document.querySelector('div.d-none > .fa-lock-open')
+
 // Expire Form
 
 fileExpireModal.on('shown.bs.modal', function (event) {
@@ -97,7 +99,9 @@ fileRenameModal.on('shown.bs.modal', function (event) {
     let name = fileRenameModal.find('input[name=name]').val()
     let ext = name.split('.').pop()
     console.log(0, name.length - (ext.length + 1))
-    fileRenameModal.find('input[name=name]')[0].setSelectionRange(0, name.length - (ext.length + 1))
+    fileRenameModal
+        .find('input[name=name]')[0]
+        .setSelectionRange(0, name.length - (ext.length + 1))
 })
 
 $('#modal-rename-form').on('submit', function (event) {
@@ -135,10 +139,8 @@ export function ctxSetPassword(event) {
     console.log(`ctxSetPassword pk: ${pk}`, event)
     filePasswordModal.find('input[name=pk]').val(pk)
     const input = $(`#ctx-menu-${pk} input[name=current-file-password]`)
-    // console.log('input:', input)
     const password = input.val().toString().trim()
     console.log(`password: ${password}`)
-    // $('#password').val(input.val())
     filePasswordModal.find('input[name=password]').val(password)
     filePasswordModal.modal('show')
 }
@@ -168,6 +170,78 @@ function getPrimaryKey(event) {
         pk = $(this).parent().parent().parent().data('pk')
     }
     return pk
+}
+
+/**
+ * Get Context Menu for File
+ * @function getCtxMenuContainer
+ * @param {Object} file
+ * @return {HTMLElement}
+ */
+export function getCtxMenuContainer(file) {
+    // console.debug('getCtxMenu:', file)
+
+    const menu = document.getElementById('ctx-menu-').cloneNode(true)
+    menu.id = `ctx-menu-${file.id}`
+    menu.dataset.dataPk = file.id
+    menu.dataset.id = file.id
+
+    menu.querySelector('.copy-share-link').dataset.clipboardText = file.url
+    menu.querySelector('.copy-raw-link').dataset.clipboardText = file.raw
+    menu.querySelector('.open-raw').href = file.raw
+    menu.querySelector('a[download=""]').setAttribute('download', file.raw)
+
+    menu.querySelector('.ctx-expire').addEventListener('click', ctxSetExpire)
+    menu.querySelector('.ctx-private').addEventListener('click', ctxSetPrivate)
+    menu.querySelector('.ctx-password').addEventListener(
+        'click',
+        ctxSetPassword
+    )
+    menu.querySelector('.ctx-delete').addEventListener('click', ctxDeleteFile)
+    menu.querySelector('.ctx-rename').addEventListener('click', ctxRenameFile)
+    menu.querySelector("[name='current-file-password']").value = file.password
+    menu.querySelector("[name='current-file-expiration']").value = file.expr
+    menu.querySelector("[name='current-file-name']").value = file.name
+
+    let ctxPrivateText = $(`#ctx-menu-${file.id} .privateText`)
+    let ctxPrivateIcon = $(`#ctx-menu-${file.id} .privateIcon`)
+    // set private button
+    if (file.private) {
+        ctxPrivateText.text('Make Public')
+        ctxPrivateIcon.removeClass('fa-lock').addClass('fa-lock-open')
+    }
+
+    return menu
+}
+
+export function getContextMenu(data, type, row, meta) {
+    // This is only called by Datatables to render the context menu, it uses getCtxMenuContainer
+    const ctxMenu = document.createElement('div')
+    const toggle = document.createElement('a')
+    toggle.classList.add('link-body-emphasis', 'ctx-menu')
+    toggle.setAttribute('role', 'button')
+    toggle.dataset.bsToggle = 'dropdown'
+    toggle.setAttribute('aria-expanded', 'false')
+    toggle.setAttribute(
+        'class',
+        'btn btn-secondary file-context-dropdown my-0 py-0'
+    )
+    toggle.innerHTML = '<i class="fa-regular fa-square-caret-down"></i>'
+    ctxMenu.appendChild(toggle)
+
+    const menu = getCtxMenuContainer(row)
+    ctxMenu.appendChild(menu)
+
+    ctxMenu.classList.add(`ctx-menu-${row.id}`)
+
+    // set private button
+    if (row.private) {
+        menu.getElementsByClassName('privateIcon')[0].outerHTML =
+            faLockOpen.outerHTML
+        menu.getElementsByClassName('privateText')[0].innerHTML = ' Make Public'
+    }
+
+    return ctxMenu
 }
 
 /**
@@ -209,7 +283,6 @@ function messageFileRename(data) {
     console.log($(`#ctx-menu-${data.id} input[name=current-file-name]`))
     $(`#ctx-menu-${data.id} input[name=current-file-name]`).val(data.name)
 }
-
 
 socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)

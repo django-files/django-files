@@ -4,15 +4,15 @@ import {
     faLock,
     faKey,
     faHourglass,
-    faCaret,
     addFileTableRow,
-    getCtxMenu,
     formatBytes,
+    faCaret,
 } from './file-table.js'
 
 import { fetchFiles } from './api-fetch.js'
 
 import { socket } from './socket.js'
+import { getCtxMenuContainer } from './file-context-menu.js'
 
 console.debug('LOADING: gallery.js')
 
@@ -178,9 +178,6 @@ function addGalleryImage(file, top = false) {
     link.href = file.url
     link.title = file.name
     link.target = '_blank'
-    // const img = document.createElement('img')
-    // img.style.maxWidth = '512px'
-    // img.style.maxHeight = '512px'
     const img = imageNode.cloneNode(true)
     img.style.minHeight = '64px'
     img.src = file.thumb || file.raw
@@ -201,12 +198,18 @@ function addGalleryImage(file, top = false) {
     topLeft.style.top = '4px'
     topLeft.style.left = '6px'
     topLeft.style.pointerEvents = 'none'
-    if (file.private) {
-        topLeft.appendChild(faLock.cloneNode(true))
+    let privateStatus = faLock.cloneNode(true)
+    privateStatus.classList.add('privateStatus')
+    if (!file.private) {
+        privateStatus.style.visibility = 'hidden'
     }
-    if (file.password) {
-        topLeft.appendChild(faKey.cloneNode(true))
+    topLeft.appendChild(privateStatus)
+    let passwordIcon = faKey.cloneNode(true)
+    passwordIcon.classList.add('passwordStatus')
+    if (!file.password) {
+        passwordIcon.style.visibility = 'hidden'
     }
+    topLeft.appendChild(passwordIcon)
     if (file.expr) {
         topLeft.appendChild(faHourglass.cloneNode(true))
     }
@@ -242,8 +245,10 @@ function addGalleryImage(file, top = false) {
     const ctxMenu = document.createElement('div')
     ctxMenu.classList.add('text-stroke', 'fs-4', 'ctx-menu')
     ctxMenu.style.position = 'absolute'
-    ctxMenu.style.top = '-7px'
-    ctxMenu.style.right = '1px'
+    ctxMenu.style.top = '0px'
+    ctxMenu.style.right = '8px'
+    // ctxMenu.style.opacity = '.9'
+    // ctxMenu.style.zIndex = '100'
     const toggle = document.createElement('a')
     toggle.classList.add('link-body-emphasis', 'ctx-menu')
     toggle.setAttribute('role', 'button')
@@ -253,8 +258,10 @@ function addGalleryImage(file, top = false) {
     toggle.appendChild(faCaret.cloneNode(true))
     ctxMenu.appendChild(toggle)
     outer.appendChild(ctxMenu)
-
-    const menu = getCtxMenu(file)
+    // console.log(file)
+    let menu = getCtxMenuContainer(file)
+    menu.style.opacity = '.9'
+    menu.style.zIndex = '1'
     ctxMenu.appendChild(menu)
 
     // inner.appendChild(link)
@@ -337,13 +344,19 @@ function changeView(event) {
 }
 
 socket?.addEventListener('message', function (event) {
-    let data = JSON.parse(event.data)
-    if (data.event === 'file-delete') {
-        fileDeleteGallery(data.id)
-    } else if (data.event === 'file-new') {
-        // file-table handles added file already so we just need to add to gallery if its the view
-        if (window.location.pathname.includes('gallery')) {
-            addGalleryImage(data, true)
+    if (window.location.pathname.includes('gallery')) {
+        let data = JSON.parse(event.data)
+        if (data.event === 'file-delete') {
+            fileDeleteGallery(data.id)
+        } else if (data.event === 'file-new') {
+            // file-table handles added file already so we just need to add to gallery if its the view
+            if (window.location.pathname.includes('gallery')) {
+                addGalleryImage(data, true)
+            }
+        } else if (data.event === 'set-password-file') {
+            passwordStatusChange(data)
+        } else if (data.event === 'toggle-private-file') {
+            privateStatusChange(data)
         }
     }
 })
@@ -352,4 +365,20 @@ function fileDeleteGallery(pk) {
     $(`#gallery-image-${pk}`).remove()
     fileData.splice(fileData.findIndex((file) => file.id === pk))
     console.log(fileData)
+}
+
+function passwordStatusChange(data) {
+    const passwordStatus = document
+        .getElementById(`gallery-image-${data.id}`)
+        .getElementsByClassName('passwordStatus')[0]
+    console.log(passwordStatus)
+    passwordStatus.style.visibility = data.password ? 'visible' : 'hidden'
+}
+
+function privateStatusChange(data) {
+    const privateStatus = document
+        .getElementById(`gallery-image-${data.id}`)
+        .getElementsByClassName('privateStatus')[0]
+    console.log(privateStatus)
+    privateStatus.style.visibility = data.private ? 'visible' : 'hidden'
 }

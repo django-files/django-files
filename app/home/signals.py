@@ -21,7 +21,7 @@ def files_delete_signal(sender, instance, **kwargs):
     data = model_to_dict(instance, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta', 'thumb'])
     try:
         decrement_storage_usage(instance.file.size, instance.user.pk)
-    except ClientError:
+    except (ClientError, FileNotFoundError):
         # catch a case where file was removed from s3 but not our database
         # we should probably trigger a storage recalculation in this instance
         pass
