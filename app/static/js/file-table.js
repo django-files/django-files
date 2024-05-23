@@ -3,6 +3,7 @@ import {
     ctxSetPrivate,
     ctxSetPassword,
     ctxDeleteFile,
+    ctxRenameFile,
 } from './file-context-menu.js'
 
 import { socket } from './socket.js'
@@ -137,10 +138,11 @@ function getFileLink(data, type, row, meta) {
     fileLinkElem.classList.add(`dj-file-link-${row.id}`)
     fileLinkElem.querySelector('.dj-file-link-clip').clipboardText = row.url
     fileLinkElem.querySelector('.dj-file-link-ref').href = row.url
+    let newName = row.name
     if (row.name.length > max_name_length) {
-        row.name = row.name.substring(0, max_name_length) + '...'
+        newName = row.name.substring(0, max_name_length) + '...'
     }
-    fileLinkElem.querySelector('.dj-file-link-ref').textContent = row.name
+    fileLinkElem.querySelector('.dj-file-link-ref').textContent = newName
     return fileLinkElem
 }
 
@@ -173,6 +175,8 @@ function getContextMenu(data, type, row, meta) {
     ctxMenu.classList.add(`ctx-menu-${row.id}`)
     ctxMenu.querySelector("[name='current-file-password']").value = row.password
     ctxMenu.querySelector("[name='current-file-expiration']").value = row.expr
+    ctxMenu.querySelector("[name='current-file-name']").value = row.name
+
     return ctxMenu
 }
 
@@ -241,6 +245,7 @@ export function getCtxMenu(file) {
         ctxSetPassword
     )
     menu.querySelector('.ctx-delete').addEventListener('click', ctxDeleteFile)
+    menu.querySelector('.ctx-rename').addEventListener('click', ctxRenameFile)
 
     // console.log('menu:', menu)
     return menu
@@ -265,11 +270,22 @@ export function removeFileTableRow(pk) {
     filesDataTable.row(`#file-${pk}`).remove().draw()
 }
 
+export function renameFileRow(data) {
+    let fileName = document.getElementsByClassName(`dj-file-link-${data.id}`)[0].getElementsByClassName('dj-file-link-ref')[0]
+    let link = new URL(fileName.href)
+    link.pathname = data.uri
+    fileName.href = link.href
+    fileName
+    .innerHTML = data.name
+}
+
 socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)
     if (data.event === 'file-delete') {
         removeFileTableRow(data.id)
     } else if (data.event === 'file-new') {
         addFileTableRow(data)
+    } else if (data.event === 'set-file-name') {
+        renameFileRow(data)
     }
 })

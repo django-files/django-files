@@ -130,7 +130,7 @@ async function addNodes() {
     }
 }
 
-function addGalleryImage(file, top = true) {
+function addGalleryImage(file, top = false) {
     // console.log('addGalleryImage:', file)
     const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp)$/i
     if (!file.name.match(imageExtensions)) {
@@ -343,7 +343,7 @@ socket?.addEventListener('message', function (event) {
     } else if (data.event === 'file-new') {
         // file-table handles added file already so we just need to add to gallery if its the view
         if (window.location.pathname.includes('gallery')) {
-            addGalleryImage(data)
+            addGalleryImage(data, true)
         }
     }
 })

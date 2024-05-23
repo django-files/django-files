@@ -7,11 +7,15 @@ console.debug('LOADING: file-context-menu.js')
 const fileExpireModal = $('#fileExpireModal')
 const filePasswordModal = $('#filePasswordModal')
 const fileDeleteModal = $('#fileDeleteModal')
+const fileRenameModal = $('#fileRenameModal')
 
+// these listeners are only used on preview page
+// see file-table for file table ctx menu listeners
 $('.ctx-expire').on('click', ctxSetExpire)
 $('.ctx-private').on('click', ctxSetPrivate)
 $('.ctx-password').on('click', ctxSetPassword)
 $('.ctx-delete').on('click', ctxDeleteFile)
+$('.ctx-rename').on('click', ctxRenameFile)
 
 // Expire Form
 
@@ -85,6 +89,27 @@ $('#confirm-delete').on('click', function (event) {
     }
 })
 
+// Rename Form
+
+fileRenameModal.on('shown.bs.modal', function (event) {
+    console.log('fileRenameModal shown.bs.modal:', event)
+    $(this).find('input').trigger('focus').trigger('select')
+    let name = fileRenameModal.find('input[name=name]').val()
+    let ext = name.split('.').pop()
+    console.log(0, name.length - (ext.length + 1))
+    fileRenameModal.find('input[name=name]')[0].setSelectionRange(0, name.length - (ext.length + 1))
+})
+
+$('#modal-rename-form').on('submit', function (event) {
+    console.log('#modal-rename-form submit:', event)
+    event.preventDefault()
+    const data = genData($(this), 'set-file-name')
+    console.log('data:', data)
+    socket.send(JSON.stringify(data))
+    fileRenameModal.modal('hide')
+    $(`#ctx-menu-${data.pk} input[name=current-file-expiration]`).val(data.name)
+})
+
 // Event Listeners
 
 export function ctxSetExpire(event) {
@@ -123,6 +148,16 @@ export function ctxDeleteFile(event) {
     console.log(`ctxDeleteFile pk: ${pk}`, event)
     $('#confirm-delete').data('pk', pk)
     fileDeleteModal.modal('show')
+}
+
+export function ctxRenameFile(event) {
+    const pk = getPrimaryKey(event)
+    console.log(`ctxRenameFile pk: ${pk}`, event)
+    fileRenameModal.find('input[name=pk]').val(pk)
+    const input = $(`#ctx-menu-${pk} input[name=current-file-name]`)
+    const name = input.val().toString().trim()
+    fileRenameModal.find('input[name=name]').val(name)
+    fileRenameModal.modal('show')
 }
 
 function getPrimaryKey(event) {
@@ -166,3 +201,20 @@ function genData(form, method) {
     }
     return data
 }
+
+//////// Socket Event Handlers ////////////
+// this is where event handlers SPECIFIC to the context menu go
+
+function messageFileRename(data) {
+    console.log($(`#ctx-menu-${data.id} input[name=current-file-name]`))
+    $(`#ctx-menu-${data.id} input[name=current-file-name]`).val(data.name)
+}
+
+
+socket?.addEventListener('message', function (event) {
+    let data = JSON.parse(event.data)
+    console.log(event)
+    if (data.event === 'set-file-name') {
+        messageFileRename(data)
+    }
+})

@@ -2,6 +2,7 @@ from celery.signals import worker_ready
 from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
 from django.forms.models import model_to_dict
+from botocore.exceptions import ClientError
 
 from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache
 from home.tasks import app_startup, delete_file_websocket, send_success_message
@@ -18,7 +19,12 @@ def run_startup_task(sender, **kwargs):
 @receiver(pre_delete, sender=Files)
 def files_delete_signal(sender, instance, **kwargs):
     data = model_to_dict(instance, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta', 'thumb'])
-    decrement_storage_usage(instance.file.size, instance.user.pk)
+    try:
+        decrement_storage_usage(instance.file.size, instance.user.pk)
+    except ClientError:
+        # catch a case where file was removed from s3 but not our database
+        # we should probably trigger a storage recalculation in this instance
+        pass
     instance.thumb.delete(True)
     instance.file.delete(True)
     delete_file_websocket.apply_async(args=[data, instance.user.id], priority=0)

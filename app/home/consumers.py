@@ -12,6 +12,7 @@ from typing import Optional
 from home.models import Files
 from home.tasks import version_check
 from home.util.file import process_file
+from home.util.storage import file_rename
 from oauth.models import CustomUser
 from settings.models import SiteSettings
 
@@ -214,6 +215,35 @@ class HomeConsumer(AsyncWebsocketConsumer):
             response.update({'event': 'set-password-file'})
             log.debug('response: %s', response)
             return response
+        return self._error('File not found.', **kwargs)
+    
+    def set_file_name(self, *, user_id: int = None, pk: int = None, name: str = None, **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: Integer - File ID
+        :param name: String - File Name String
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.info('set_file_name')
+        log.info('user_id: %s', user_id)
+        log.info('pk: %s', pk)
+        if not name:
+            return self._error('No filename provided.', **kwargs)
+        if len(Files.objects.filter(name=name)) != 0:
+            return self._error('Filename already taken!', **kwargs)
+        if file := Files.objects.get(pk=pk):
+            if user_id and file.user.id != user_id:
+                return self._error('File owned by another user.', **kwargs)
+            if file_rename(file.file.name, name, True if file.thumb else False):
+                old_name = file.name
+                file.name = name
+                file.file
+                file.file.name = name  # this will rename on OS and cloud
+                file.thumb.name = name  # renames thumbnail
+                file.save()
+                response = model_to_dict(file, exclude=['file', 'thumb'])
+                response.update({'event': 'set-file-name', 'uri': file.preview_uri(), 'old_name': old_name})
+                return response
         return self._error('File not found.', **kwargs)
 
     async def check_for_update(self, *args, **kwargs) -> dict:
