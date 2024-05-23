@@ -8,6 +8,8 @@ from django.forms.models import model_to_dict
 from io import BytesIO
 from pytimeparse2 import parse
 from typing import Optional
+from django.core.cache import cache
+
 
 from home.models import Files
 from home.tasks import version_check
@@ -231,7 +233,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error('No filename provided.', **kwargs)
         if len(Files.objects.filter(name=name)) != 0:
             return self._error('Filename already taken!', **kwargs)
-        if file := Files.objects.get(pk=pk):
+        if file := Files.objects.filter(pk=pk):
+            file = file[0]
             if user_id and file.user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
             if file_rename(file.file.name, name, True if file.thumb else False):
@@ -242,6 +245,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 file.save()
                 response = model_to_dict(file, exclude=['file', 'thumb'])
                 response.update({'event': 'set-file-name', 'uri': file.preview_uri(), 'old_name': old_name})
+                cache.delete(f'file.urlcache.gallery.{file.pk}')
                 return response
         return self._error('File not found.', **kwargs)
 

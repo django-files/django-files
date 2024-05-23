@@ -130,13 +130,6 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s{% endif %}</p>
                 {% endif %}
                 <div class="row g-2 text-center mt-auto">
-                    {% if code or text_preview %}
-                        <div class="col-12 ">
-                            <a class="clip btn btn-success btn-lg d-block" role="button"
-                               data-clipboard-text="{% if code %}{{ code }}{% else %}{{ text_preview }}{% endif %}">
-                                <i class="fa-regular fa-file-lines me-2"></i> Copy Text</a>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         </div>

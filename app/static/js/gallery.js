@@ -217,28 +217,7 @@ function addGalleryImage(file, top = false) {
 
     // TEXT
     const bottomLeft = document.createElement('div')
-    bottomLeft.classList.add(
-        'gallery-mouse',
-        'd-none',
-        'text-shadow',
-        'text-nowrap',
-        'small',
-        'lh-sm'
-    )
-    bottomLeft.style.position = 'absolute'
-    bottomLeft.style.bottom = '4px'
-    bottomLeft.style.left = '6px'
-    bottomLeft.style.pointerEvents = 'none'
-    if (file.size) {
-        addSpan(bottomLeft, formatBytes(file.size))
-    }
-    if (file.meta.PILImageWidth && file.meta.PILImageHeight) {
-        const text = `${file.meta.PILImageWidth}x${file.meta.PILImageWidth}`
-        addSpan(bottomLeft, text)
-    }
-    if (file.name) {
-        addSpan(bottomLeft, file.name)
-    }
+    buildImageLabels(file, bottomLeft)
     inner.appendChild(bottomLeft)
 
     // CTX MENU
@@ -357,7 +336,9 @@ socket?.addEventListener('message', function (event) {
             passwordStatusChange(data)
         } else if (data.event === 'toggle-private-file') {
             privateStatusChange(data)
-        }
+        } else if (data.event === 'set-file-name') {
+            fileRename(data)
+        } 
     }
 })
 
@@ -381,4 +362,37 @@ function privateStatusChange(data) {
         .getElementsByClassName('privateStatus')[0]
     console.log(privateStatus)
     privateStatus.style.visibility = data.private ? 'visible' : 'hidden'
+}
+
+function fileRename(data) {
+    let fileLabels = document.querySelector(`#gallery-image-${data.id} .image-labels`)
+    fileLabels.innerHTML = ''
+    buildImageLabels(data, fileLabels)
+
+}
+
+function buildImageLabels(file, bottomLeft) {
+    bottomLeft.classList.add(
+        'gallery-mouse',
+        'image-labels',
+        'd-none',
+        'text-shadow',
+        'text-nowrap',
+        'small',
+        'lh-sm'
+    )
+    bottomLeft.style.position = 'absolute'
+    bottomLeft.style.bottom = '4px'
+    bottomLeft.style.left = '6px'
+    bottomLeft.style.pointerEvents = 'none'
+    if (file.size) {
+        addSpan(bottomLeft, formatBytes(file.size))
+    }
+    if (file.meta.PILImageWidth && file.meta.PILImageHeight) {
+        const text = `${file.meta.PILImageWidth}x${file.meta.PILImageWidth}`
+        addSpan(bottomLeft, text)
+    }
+    if (file.name) {
+        addSpan(bottomLeft, file.name)
+    }
 }
