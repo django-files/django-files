@@ -216,7 +216,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             log.debug('response: %s', response)
             return response
         return self._error('File not found.', **kwargs)
-    
+
     def set_file_name(self, *, user_id: int = None, pk: int = None, name: str = None, **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
