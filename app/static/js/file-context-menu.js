@@ -189,7 +189,9 @@ export function getCtxMenuContainer(file) {
     menu.querySelector('.copy-share-link').dataset.clipboardText = file.url
     menu.querySelector('.copy-raw-link').dataset.clipboardText = file.raw
     menu.querySelector('.open-raw').href = file.raw
-    menu.querySelector('a[download=""]').setAttribute('download', file.raw)
+    let downloadLink = menu.querySelector('a[download=""]')
+    downloadLink.setAttribute('download', file.name)
+    downloadLink.href = file.raw + '?download=true'
 
     menu.querySelector('.ctx-expire').addEventListener('click', ctxSetExpire)
     menu.querySelector('.ctx-private').addEventListener('click', ctxSetPrivate)
@@ -280,8 +282,36 @@ function genData(form, method) {
 // this is where event handlers SPECIFIC to the context menu go
 
 function messageFileRename(data) {
-    console.log($(`#ctx-menu-${data.id} input[name=current-file-name]`))
+    // update hidden name value
     $(`#ctx-menu-${data.id} input[name=current-file-name]`).val(data.name)
+    // handle fixing clipboard copy link text
+    let shareLink = document.querySelector(
+        `#ctx-menu-${data.id} .copy-share-link`
+    )
+    let shareLinkURL = new URL(shareLink.getAttribute('data-clipboard-text'))
+    shareLinkURL.pathname = data.uri
+    shareLink.setAttribute('data-clipboard-text', shareLinkURL)
+    // handle fixing clipboard copy raw link text
+    let copyRawLink = document.querySelector(
+        `#ctx-menu-${data.id} .copy-raw-link`
+    )
+    let rawLinkURL = new URL(copyRawLink.getAttribute('data-clipboard-text'))
+    rawLinkURL.pathname = data.raw_uri
+    copyRawLink.setAttribute('data-clipboard-text', rawLinkURL)
+    // handle download link
+    let downloadLink = document.querySelector(
+        `#ctx-menu-${data.id} .download-file`
+    )
+    console.log(downloadLink.href)
+    let downloadFileURL = new URL(downloadLink.href)
+    downloadFileURL.pathname = data.raw_uri
+    downloadLink.href = downloadFileURL
+    downloadLink.setAttribute('download', data.name)
+    //handle view Raw
+    let rawLink = document.querySelector(`#ctx-menu-${data.id} .open-raw`)
+    let rawURL = new URL(rawLink.href)
+    rawURL.pathname = data.raw_uri
+    rawLink.href = rawURL
 }
 
 socket?.addEventListener('message', function (event) {

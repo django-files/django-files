@@ -175,6 +175,7 @@ function addGalleryImage(file, top = false) {
 
     // IMAGE AND LINK
     const link = document.createElement('a')
+    link.classList.add('image-link')
     link.href = file.url
     link.title = file.name
     link.target = '_blank'
@@ -210,9 +211,13 @@ function addGalleryImage(file, top = false) {
         passwordIcon.style.visibility = 'hidden'
     }
     topLeft.appendChild(passwordIcon)
-    if (file.expr) {
-        topLeft.appendChild(faHourglass.cloneNode(true))
+    let expireIcon = faHourglass.cloneNode(true)
+    if (!file.expr) {
+        expireIcon.style.visibility = 'hidden'
+    } else {
+        expireIcon.title = file.expr
     }
+    topLeft.appendChild(expireIcon)
     inner.appendChild(topLeft)
 
     // TEXT
@@ -338,9 +343,19 @@ socket?.addEventListener('message', function (event) {
             privateStatusChange(data)
         } else if (data.event === 'set-file-name') {
             fileRename(data)
-        } 
+        } else if (data.event === 'set-expr-file') {
+            fileExpireChange(data)
+        }
     }
 })
+
+function fileExpireChange(data) {
+    const expireStatus = document
+        .getElementById(`gallery-image-${data.id}`)
+        .getElementsByClassName('expireStatus')[0]
+    expireStatus.style.visibility = data.expr ? 'visible' : 'hidden'
+    expireStatus.title = data.expr
+}
 
 function fileDeleteGallery(pk) {
     $(`#gallery-image-${pk}`).remove()
@@ -352,7 +367,6 @@ function passwordStatusChange(data) {
     const passwordStatus = document
         .getElementById(`gallery-image-${data.id}`)
         .getElementsByClassName('passwordStatus')[0]
-    console.log(passwordStatus)
     passwordStatus.style.visibility = data.password ? 'visible' : 'hidden'
 }
 
@@ -360,15 +374,17 @@ function privateStatusChange(data) {
     const privateStatus = document
         .getElementById(`gallery-image-${data.id}`)
         .getElementsByClassName('privateStatus')[0]
-    console.log(privateStatus)
     privateStatus.style.visibility = data.private ? 'visible' : 'hidden'
 }
 
 function fileRename(data) {
-    let fileLabels = document.querySelector(`#gallery-image-${data.id} .image-labels`)
+    let fileLabels = document.querySelector(
+        `#gallery-image-${data.id} .image-labels`
+    )
     fileLabels.innerHTML = ''
     buildImageLabels(data, fileLabels)
-
+    let imageLink = document.querySelector(`#gallery-image-${data.id} .image-link`)
+    imageLink.href = data.uri
 }
 
 function buildImageLabels(file, bottomLeft) {

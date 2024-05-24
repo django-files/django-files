@@ -244,7 +244,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 file.thumb.name = 'thumbs/' + name  # renames thumbnail
                 file.save()
                 response = model_to_dict(file, exclude=['file', 'thumb'])
-                response.update({'event': 'set-file-name', 'uri': file.preview_uri(), 'old_name': old_name})
+                response.update({'event': 'set-file-name',
+                                 'uri': file.preview_uri(),
+                                 'raw_uri': file.raw_path,
+                                 'old_name': old_name})
                 cache.delete(f'file.urlcache.gallery.{file.pk}')
                 return response
         return self._error('File not found.', **kwargs)
