@@ -16,6 +16,7 @@ from api.views import auth_from_token, process_file_upload, parse_expire
 from home.models import Files, FileStats, ShortURLs
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
+from home.util.storage import fetch_file
 from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.models import SiteSettings
@@ -425,6 +426,24 @@ def url_route_view(request, filename):
     else:
         log.debug('UNKNOWN')
         return render(request, 'embed/preview.html', context=ctx)
+
+
+@require_http_methods(['GET'])
+def proxy_route_view(request, filename):
+    """
+    View  /p/<path:filename>
+    """
+    file = get_object_or_404(Files, name=filename)
+    session_view = request.session.get(f'view_{file.name}', True)
+    log.debug(f"User {request.user} has not viewed file {file.name}: {session_view}")
+    ctx = {
+        'file': file
+    }
+    if session_view:
+        request.session[f'view_{file.name}'] = False
+    if lock := file_lock(request, ctx=ctx):
+        return lock
+    return HttpResponse(fetch_file(file), content_type=file.mime)
 
 
 def file_lock(request, ctx):
