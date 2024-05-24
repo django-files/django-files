@@ -70,5 +70,5 @@ def fetch_file(file):
         response = s3.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=file.name)
         file_content = response['Body'].read()
         return file_content
-    with open(f'{settings.MEDIA_ROOT}/{file.name}', 'r') as f:
+    with open(f'{settings.MEDIA_ROOT}/{file.name}', 'rb') as f:
         return f.read()
