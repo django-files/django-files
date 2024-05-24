@@ -71,4 +71,4 @@ def fetch_file(file):
         file_content = response['Body'].read()
         return file_content
     with open(f'{settings.MEDIA_ROOT}/{file.name}', 'r') as f:
-        return f
+        return f.read()
