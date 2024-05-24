@@ -75,6 +75,8 @@ async function initListener() {
             messagePassword(data)
         } else if (data.event === 'file-delete') {
             messageDelete(data)
+        } else if (data.event === 'set-file-name') {
+            messageFileRename(data)
         } else if (data.event === 'message') {
             console.log(`data.message: ${data.message}`)
             const bsClass = data.bsClass || 'info'
@@ -85,6 +87,13 @@ async function initListener() {
 }
 
 // Socket Handlers
+// these handlers are dual purpose and used across a variety of pages
+
+function messageFileRename(data) {
+    show_toast(
+        `${truncateName(data.old_name)} renamed to ${truncateName(data.name)}`
+    )
+}
 
 function messageExpire(data) {
     console.log('messageExpire:', data)

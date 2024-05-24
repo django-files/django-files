@@ -89,10 +89,13 @@ class Files(models.Model):
         if use_s3():
             if (meta_static_url := cache.get(f"file.urlcache.meta_static.{self.pk}")) is None:
                 # TODO: access protected member, look into how to better handle this
-                meta_static_url = self.file.file._storage.url(
-                    self.file.file.name,
-                    expire=86400
-                )
+                try:
+                    meta_static_url = self.file.file._storage.url(
+                        self.file.file.name,
+                        expire=86400
+                    )
+                except FileNotFoundError:
+                    return ''
                 cache.set(f"file.urlcache.meta_static.{self.pk}", meta_static_url, 10800)
             return meta_static_url
         return self.get_url(False)
@@ -105,10 +108,14 @@ class Files(models.Model):
             # override signing expire on gallery urls to avoid cached gallery pages from failing to load
             # TODO: access protected member, look into how to better handle this
             if (gallery_url := cache.get(f"file.urlcache.gallery.{self.pk}")) is None:
-                gallery_url = self.file.file._storage.url(
-                    use.file.name,
-                    expire=86400
-                )
+                try:
+                    print("Gallery url cache is empty")
+                    gallery_url = self.file.file._storage.url(
+                        use.file.name,
+                        expire=86400
+                    )
+                except FileNotFoundError:
+                    return ''
                 # intentionally expire cache before gallery url signing expires
                 cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
             return gallery_url

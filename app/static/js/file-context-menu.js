@@ -7,11 +7,17 @@ console.debug('LOADING: file-context-menu.js')
 const fileExpireModal = $('#fileExpireModal')
 const filePasswordModal = $('#filePasswordModal')
 const fileDeleteModal = $('#fileDeleteModal')
+const fileRenameModal = $('#fileRenameModal')
 
+// these listeners are only used on preview page
+// see file-table for file table ctx menu listeners
 $('.ctx-expire').on('click', ctxSetExpire)
 $('.ctx-private').on('click', ctxSetPrivate)
 $('.ctx-password').on('click', ctxSetPassword)
 $('.ctx-delete').on('click', ctxDeleteFile)
+$('.ctx-rename').on('click', ctxRenameFile)
+
+export const faLockOpen = document.querySelector('div.d-none > .fa-lock-open')
 
 // Expire Form
 
@@ -85,6 +91,29 @@ $('#confirm-delete').on('click', function (event) {
     }
 })
 
+// Rename Form
+
+fileRenameModal.on('shown.bs.modal', function (event) {
+    console.log('fileRenameModal shown.bs.modal:', event)
+    $(this).find('input').trigger('focus').trigger('select')
+    let name = fileRenameModal.find('input[name=name]').val()
+    let ext = name.split('.').pop()
+    console.log(0, name.length - (ext.length + 1))
+    fileRenameModal
+        .find('input[name=name]')[0]
+        .setSelectionRange(0, name.length - (ext.length + 1))
+})
+
+$('#modal-rename-form').on('submit', function (event) {
+    console.log('#modal-rename-form submit:', event)
+    event.preventDefault()
+    const data = genData($(this), 'set-file-name')
+    console.log('data:', data)
+    socket.send(JSON.stringify(data))
+    fileRenameModal.modal('hide')
+    $(`#ctx-menu-${data.pk} input[name=current-file-expiration]`).val(data.name)
+})
+
 // Event Listeners
 
 export function ctxSetExpire(event) {
@@ -110,10 +139,8 @@ export function ctxSetPassword(event) {
     console.log(`ctxSetPassword pk: ${pk}`, event)
     filePasswordModal.find('input[name=pk]').val(pk)
     const input = $(`#ctx-menu-${pk} input[name=current-file-password]`)
-    // console.log('input:', input)
     const password = input.val().toString().trim()
     console.log(`password: ${password}`)
-    // $('#password').val(input.val())
     filePasswordModal.find('input[name=password]').val(password)
     filePasswordModal.modal('show')
 }
@@ -125,6 +152,16 @@ export function ctxDeleteFile(event) {
     fileDeleteModal.modal('show')
 }
 
+export function ctxRenameFile(event) {
+    const pk = getPrimaryKey(event)
+    console.log(`ctxRenameFile pk: ${pk}`, event)
+    fileRenameModal.find('input[name=pk]').val(pk)
+    const input = $(`#ctx-menu-${pk} input[name=current-file-name]`)
+    const name = input.val().toString().trim()
+    fileRenameModal.find('input[name=name]').val(name)
+    fileRenameModal.modal('show')
+}
+
 function getPrimaryKey(event) {
     const menu = event.target.closest('div')
     let pk = menu?.dataset?.id
@@ -133,6 +170,80 @@ function getPrimaryKey(event) {
         pk = $(this).parent().parent().parent().data('pk')
     }
     return pk
+}
+
+/**
+ * Get Context Menu for File
+ * @function getCtxMenuContainer
+ * @param {Object} file
+ * @return {HTMLElement}
+ */
+export function getCtxMenuContainer(file) {
+    // console.debug('getCtxMenu:', file)
+
+    const menu = document.getElementById('ctx-menu-').cloneNode(true)
+    menu.id = `ctx-menu-${file.id}`
+    menu.dataset.dataPk = file.id
+    menu.dataset.id = file.id
+
+    menu.querySelector('.copy-share-link').dataset.clipboardText = file.url
+    menu.querySelector('.copy-raw-link').dataset.clipboardText = file.raw
+    menu.querySelector('.open-raw').href = file.raw
+    let downloadLink = menu.querySelector('a[download=""]')
+    downloadLink.setAttribute('download', file.name)
+    downloadLink.href = file.raw + '?download=true'
+
+    menu.querySelector('.ctx-expire').addEventListener('click', ctxSetExpire)
+    menu.querySelector('.ctx-private').addEventListener('click', ctxSetPrivate)
+    menu.querySelector('.ctx-password').addEventListener(
+        'click',
+        ctxSetPassword
+    )
+    menu.querySelector('.ctx-delete').addEventListener('click', ctxDeleteFile)
+    menu.querySelector('.ctx-rename').addEventListener('click', ctxRenameFile)
+    menu.querySelector("[name='current-file-password']").value = file.password
+    menu.querySelector("[name='current-file-expiration']").value = file.expr
+    menu.querySelector("[name='current-file-name']").value = file.name
+
+    let ctxPrivateText = $(`#ctx-menu-${file.id} .privateText`)
+    let ctxPrivateIcon = $(`#ctx-menu-${file.id} .privateIcon`)
+    // set private button
+    if (file.private) {
+        ctxPrivateText.text('Make Public')
+        ctxPrivateIcon.removeClass('fa-lock').addClass('fa-lock-open')
+    }
+
+    return menu
+}
+
+export function getContextMenu(data, type, row, meta) {
+    // This is only called by Datatables to render the context menu, it uses getCtxMenuContainer
+    const ctxMenu = document.createElement('div')
+    const toggle = document.createElement('a')
+    toggle.classList.add('link-body-emphasis', 'ctx-menu')
+    toggle.setAttribute('role', 'button')
+    toggle.dataset.bsToggle = 'dropdown'
+    toggle.setAttribute('aria-expanded', 'false')
+    toggle.setAttribute(
+        'class',
+        'btn btn-secondary file-context-dropdown my-0 py-0'
+    )
+    toggle.innerHTML = '<i class="fa-regular fa-square-caret-down"></i>'
+    ctxMenu.appendChild(toggle)
+
+    const menu = getCtxMenuContainer(row)
+    ctxMenu.appendChild(menu)
+
+    ctxMenu.classList.add(`ctx-menu-${row.id}`)
+
+    // set private button
+    if (row.private) {
+        menu.getElementsByClassName('privateIcon')[0].outerHTML =
+            faLockOpen.outerHTML
+        menu.getElementsByClassName('privateText')[0].innerHTML = ' Make Public'
+    }
+
+    return ctxMenu
 }
 
 /**
@@ -166,3 +277,47 @@ function genData(form, method) {
     }
     return data
 }
+
+//////// Socket Event Handlers ////////////
+// this is where event handlers SPECIFIC to the context menu go
+
+function messageFileRename(data) {
+    // update hidden name value
+    $(`#ctx-menu-${data.id} input[name=current-file-name]`).val(data.name)
+    // handle fixing clipboard copy link text
+    let shareLink = document.querySelector(
+        `#ctx-menu-${data.id} .copy-share-link`
+    )
+    let shareLinkURL = new URL(shareLink.getAttribute('data-clipboard-text'))
+    shareLinkURL.pathname = data.uri
+    shareLink.setAttribute('data-clipboard-text', shareLinkURL)
+    // handle fixing clipboard copy raw link text
+    let copyRawLink = document.querySelector(
+        `#ctx-menu-${data.id} .copy-raw-link`
+    )
+    let rawLinkURL = new URL(copyRawLink.getAttribute('data-clipboard-text'))
+    rawLinkURL.pathname = data.raw_uri
+    copyRawLink.setAttribute('data-clipboard-text', rawLinkURL)
+    // handle download link
+    let downloadLink = document.querySelector(
+        `#ctx-menu-${data.id} .download-file`
+    )
+    console.log(downloadLink.href)
+    let downloadFileURL = new URL(downloadLink.href)
+    downloadFileURL.pathname = data.raw_uri
+    downloadLink.href = downloadFileURL
+    downloadLink.setAttribute('download', data.name)
+    //handle view Raw
+    let rawLink = document.querySelector(`#ctx-menu-${data.id} .open-raw`)
+    let rawURL = new URL(rawLink.href)
+    rawURL.pathname = data.raw_uri
+    rawLink.href = rawURL
+}
+
+socket?.addEventListener('message', function (event) {
+    let data = JSON.parse(event.data)
+    console.log(event)
+    if (data.event === 'set-file-name') {
+        messageFileRename(data)
+    }
+})

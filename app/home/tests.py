@@ -4,7 +4,7 @@ import shutil
 from django.test import TestCase
 from pathlib import Path
 from django.conf import settings
-from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from channels.testing import ChannelsLiveServerTestCase
 from django.core.management import call_command
 # from django.core.files import File
 from django.urls import reverse
@@ -54,7 +54,7 @@ class TestAuthViews(TestCase):
             self.assertEqual(response.status_code, status)
 
 
-class PlaywrightTest(StaticLiveServerTestCase):
+class PlaywrightTest(ChannelsLiveServerTestCase):
     """Test Playwright"""
     screenshots = 'screenshots'
     # TODO: Add Upload view back
@@ -179,6 +179,14 @@ class PlaywrightTest(StaticLiveServerTestCase):
             if view == 'Files':
                 page.locator('.ctx-menu-12').first.click()
                 self.screenshot(page, f'{view}-file-context-dropdown')
+                page.locator('.ctx-rename').first.click()
+                page.wait_for_timeout(timeout=500)
+                page.locator('#name').fill('iamrenamed.jpg')
+                self.screenshot(page, f'{view}-rename-click')
+                page.locator('#file-rename-submit').first.click()
+                page.wait_for_timeout(timeout=500)
+                self.screenshot(page, f'{view}-file-is-renamed')
+                page.locator('.ctx-menu-12').first.click()
                 page.locator('.ctx-delete').first.click()
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-click')

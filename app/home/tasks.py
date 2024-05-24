@@ -2,9 +2,9 @@ import logging
 import os
 import httpx
 import json
-from time import sleep
 from asgiref.sync import async_to_sync
 from celery import shared_task
+from celery.signals import worker_shutdown
 from channels.layers import get_channel_layer
 from decouple import config
 from django.conf import settings
@@ -164,7 +164,7 @@ def app_cleanup():
 def flush_template_cache():
     # Flush all template cache on request
     log.info('flush_template_cache')
-    return cache.delete_pattern('*.decorators.cache.*') + cache.delete_pattern('*.urlcache.*')
+    return cache.delete_pattern('*.decorators.cache.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
@@ -199,6 +199,7 @@ def clear_stats_cache():
 def refresh_gallery_static_urls_cache():
     lock_key = 'gallery_refresh'
     # Refresh cached gallery files to handle case where url signing expired
+    file_count = 0
     if acquire_lock(lock_key, 1000):
         try:
             log.info('----- START gallery cache refresh -----')
@@ -206,7 +207,7 @@ def refresh_gallery_static_urls_cache():
                 files = Files.objects.filter(mime__in=['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp'])
                 for file in files:
                     file.get_gallery_url()
-                    sleep(1)
+                    file_count += 1
             log.info('----- COMPLETE gallery cache refresh -----')
         except Exception as err:
             log.error(f"Error populating gallery cache: {err}")
@@ -214,6 +215,7 @@ def refresh_gallery_static_urls_cache():
             release_lock(lock_key)
     else:
         log.info("Gallery cache refresh task locked skipping run.")
+    return f'Refreshed {file_count} gallery urls in cache.'
 
 
 @shared_task()
@@ -395,3 +397,10 @@ def acquire_lock(key, timeout=900):
 def release_lock(key):
     log.debug(f"Lock cleared on {key}")
     cache.delete(key)
+
+
+@worker_shutdown.connect
+def on_worker_shutdown(**kwargs):
+    # Perform custom shutdown actions, such as resource cleanup or notifications
+    # ensure gallery refresh lock is cleaned up on graceful termination
+    release_lock('gallery_refresh')

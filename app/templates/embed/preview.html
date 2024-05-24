@@ -130,13 +130,6 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s{% endif %}</p>
                 {% endif %}
                 <div class="row g-2 text-center mt-auto">
-                    {% if code or text_preview %}
-                        <div class="col-12 ">
-                            <a class="clip btn btn-success btn-lg d-block" role="button"
-                               data-clipboard-text="{% if code %}{{ code }}{% else %}{{ text_preview }}{% endif %}">
-                                <i class="fa-regular fa-file-lines me-2"></i> Copy Text</a>
-                        </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -176,5 +169,5 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         <script type="module" src="{% static 'js/file-context-menu.js' %}"></script>
     {% endif %}
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/preview.js' %}"></script>
+    <script type="module" src="{% static 'js/preview.js' %}"></script>
 {% endblock %}

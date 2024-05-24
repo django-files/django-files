@@ -36,6 +36,12 @@
         </li>
         <input type="hidden" name="current-file-password" value="{{ file.password|default:'' }}">
         <input type="hidden" name="current-file-expiration" value="{{ file.expr|default:'' }}">
+        <input type="hidden" name="current-file-name" value="{{ file.name|default:'' }}">
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a role="button" class="dropdown-item ctx-rename" title="Rename File">
+                <i class="fa-solid fa-i-cursor fa-fw me-2"></i> Rename File</a>
+        </li>
         <li><hr class="dropdown-divider"></li>
         <li>
             <a role="button" class="dropdown-item ctx-delete" title="Delete">

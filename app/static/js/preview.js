@@ -1,5 +1,7 @@
 // JS for embed/preview.html
 
+import { socket } from './socket.js'
+
 document.addEventListener('DOMContentLoaded', domLoaded)
 window.addEventListener('resize', checkSize)
 
@@ -67,3 +69,17 @@ function closeSidebar() {
     openSidebarButton.show()
     sidebarCard.fadeOut(200)
 }
+
+function renameFile(data) {
+    let fileName = document.getElementsByClassName('card-title')[0]
+    fileName.innerHTML = data.name
+    window.history.pushState({},"", data.uri)
+}
+
+socket?.addEventListener('message', function (event) {
+    let data = JSON.parse(event.data)
+    if (data.event === 'set-file-name') {
+        renameFile(data)
+    }
+})
+
