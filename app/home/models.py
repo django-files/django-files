@@ -10,9 +10,23 @@ from home.util.nginx import sign_nginx_urls
 from oauth.models import CustomUser
 
 
+class Albums(models.Model):
+
+    class Meta:
+        verbose_name = 'Album'
+        verbose_name_plural = 'Albums'
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, null=True, blank=True, verbose_name='Name', help_text='Album Name.')
+    password = models.CharField(max_length=255, null=True, blank=True, verbose_name='Album Password')
+    private = models.BooleanField(default=False, verbose_name='Private Album')
+    info = models.CharField(max_length=255, null=True, blank=True, verbose_name='Info', help_text='Album Information.')
+
+
 class Files(models.Model):
     upload_to = '.'
     id = models.AutoField(primary_key=True)
+    albums = models.ManyToManyField(Albums)
     file = StoragesRouterFileField(upload_to=upload_to)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     size = models.IntegerField(default=0, verbose_name='Size', help_text='File Size in Bytes.')
@@ -32,7 +46,7 @@ class Files(models.Model):
     private = models.BooleanField(default=False, verbose_name='Private File')
     objects = FilesManager()
     avatar = models.BooleanField(default=False, help_text="Determines file is a user avatar.")
-    thumb = StoragesRouterFileField(upload_to='./thumbs/', null=True)
+    thumb = StoragesRouterFileField(upload_to='./thumbs/', null=True, blank=True)
 
     def __str__(self):
         return f'<File(id={self.id} size={self.size} name={self.name})>'

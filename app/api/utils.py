@@ -8,7 +8,7 @@ def extract_files(q: Files.objects):
     site_settings = site_settings_processor(None)['site_settings']
     files = []
     for file in q:
-        data = model_to_dict(file, exclude=['file', 'thumb'])
+        data = model_to_dict(file, exclude=['file', 'thumb', 'albums'])
         data['url'] = site_settings['site_url'] + file.preview_uri()
         data['thumb'] = site_settings['site_url'] + file.thumb_path
         data['raw'] = site_settings['site_url'] + file.raw_path

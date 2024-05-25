@@ -108,7 +108,8 @@ async function addNodes() {
     if (!fetchLock) {
         filesDataTable.processing(true)
         fetchLock = true
-        const data = await fetchFiles(nextPage)
+        let params = new URL(document.location.toString()).searchParams;
+        const data = await fetchFiles(nextPage, 25, params.get("album"))
         console.debug('data:', data)
         nextPage = data.next
         fileData.push(...data.files)

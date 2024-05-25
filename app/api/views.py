@@ -234,9 +234,9 @@ def recent_view(request):
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers('Authorization')
 @vary_on_cookie
-def pages_view(request, page, count=None):
+def files_view(request, page, count=None):
     """
-    View  /api/pages/{page}/{count}/
+    View  /api/files/{page}/{count}/
     Limit 100 items per page.
     """
     if not count:
@@ -245,13 +245,16 @@ def pages_view(request, page, count=None):
         count = 100
     log.debug('%s - files_page_view: %s', request.method, page)
     user = request.GET.get('user')
-    if user:
-        if user == "0":
-            q = Files.objects.filtered_request(request)
-        else:
-            q = Files.objects.filtered_request(request, user_id=int(user))
+    if album := request.GET.get('album'):
+        q = Files.objects.filtered_request(request, albums__id=album)
     else:
-        q = Files.objects.get_request(request)
+        if user:
+            if user == "0":
+                q = Files.objects.filtered_request(request)
+            else:
+                q = Files.objects.filtered_request(request, user_id=int(user))
+        else:
+            q = Files.objects.get_request(request)
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
@@ -291,14 +294,14 @@ def file_view(request, idname):
                 data['expr'] = ''
             Files.objects.filter(id=file.id).update(**data)
             file = Files.objects.get(id=file.id)
-            response = model_to_dict(file, exclude=['file', 'thumb'])
+            response = model_to_dict(file, exclude=['file', 'thumb', 'albums'])
             # TODO: Determine why we have to manually flush file cache here
             #       The Website seems to flush, but not the api/recent/ endpoint
             clear_files_cache.delay()
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
         elif request.method == 'GET':
-            response = model_to_dict(file, exclude=['file', 'thumb'])
+            response = model_to_dict(file, exclude=['file', 'thumb', 'albums'])
             response['date'] = file.date  # not sure why this is not getting included
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
