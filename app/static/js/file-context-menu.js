@@ -1,5 +1,7 @@
 import { socket } from './socket.js'
 
+import { fetchAlbums, fetchFile } from './api-fetch.js'
+
 // JS for Context Menu
 
 console.debug('LOADING: file-context-menu.js')
@@ -8,14 +10,16 @@ const fileExpireModal = $('#fileExpireModal')
 const filePasswordModal = $('#filePasswordModal')
 const fileDeleteModal = $('#fileDeleteModal')
 const fileRenameModal = $('#fileRenameModal')
+const fileAlbumModal = $('#fileAlbumModal')
 
 // these listeners are only used on preview page
-// see file-table for file table ctx menu listeners
+// see context menu functions for files-table specific listeners
 $('.ctx-expire').on('click', ctxSetExpire)
 $('.ctx-private').on('click', ctxSetPrivate)
 $('.ctx-password').on('click', ctxSetPassword)
 $('.ctx-delete').on('click', ctxDeleteFile)
 $('.ctx-rename').on('click', ctxRenameFile)
+$('.ctx-album').on('click', ctxAlbumFile)
 
 export const faLockOpen = document.querySelector('div.d-none > .fa-lock-open')
 
@@ -111,7 +115,24 @@ $('#modal-rename-form').on('submit', function (event) {
     console.log('data:', data)
     socket.send(JSON.stringify(data))
     fileRenameModal.modal('hide')
-    $(`#ctx-menu-${data.pk} input[name=current-file-expiration]`).val(data.name)
+    $(`#ctx-menu-${data.pk} input[name=current-file-name]`).val(data.name)
+})
+
+// albums Form
+
+fileAlbumModal.on('shown.bs.modal', function (event) {
+    console.log('fileAlbumModal shown.bs.modal:', event)
+    $(this).find('input').trigger('focus').trigger('select')
+    let name = fileAlbumModal.find('input[name=name]').val()
+})
+
+$('#modal-album-form').on('submit', function (event) {
+    console.log('#modal-album-form submit:', event)
+    event.preventDefault()
+    const data = genData($(this), 'set-file-albums')
+    console.log('data:', data)
+    socket.send(JSON.stringify(data))
+    fileRenameModal.modal('hide')
 })
 
 // Event Listeners
@@ -162,6 +183,35 @@ export function ctxRenameFile(event) {
     fileRenameModal.modal('show')
 }
 
+export async function ctxAlbumFile(event) {
+    const albumOptions = document.getElementsByClassName('album-options')[0]
+    albumOptions.innerHTML = ''
+    const pk = getPrimaryKey(event)
+    fileAlbumModal.find('input[name=pk]').val(pk)
+    // FETCH ALBUMS AND SET HERE
+    let next = true
+    let page = 1
+    let albums = []
+    // fetch file details for up to date albums
+    let file = await fetchFile(pk)
+    while (next) {
+        let resp = await fetchAlbums(page)
+        console.log(resp)
+        next = resp.next
+        albums = albums.concat(resp.albums)
+    }
+    for (let album in albums){
+        console.log(albums[album].id)
+        let option = createOption(albums[album].id, albums[album].name)
+        option.value = albums[album].id
+        if (file.albums.includes(albums[album].id)) {
+            option.selected = true;
+        }
+        albumOptions.options.add(option)
+    }
+    fileAlbumModal.modal('show')
+}
+
 function getPrimaryKey(event) {
     const menu = event.target.closest('div')
     let pk = menu?.dataset?.id
@@ -201,6 +251,7 @@ export function getCtxMenuContainer(file) {
     )
     menu.querySelector('.ctx-delete').addEventListener('click', ctxDeleteFile)
     menu.querySelector('.ctx-rename').addEventListener('click', ctxRenameFile)
+    menu.querySelector('.ctx-album').addEventListener('click', ctxAlbumFile)
     menu.querySelector("[name='current-file-password']").value = file.password
     menu.querySelector("[name='current-file-expiration']").value = file.expr
     menu.querySelector("[name='current-file-name']").value = file.name
@@ -273,7 +324,18 @@ function genRand(length) {
 function genData(form, method) {
     const data = { method: method }
     for (const element of form.serializeArray()) {
-        data[element['name']] = element['value']
+        const name = element['name'];
+        const value = element['value'];
+        console.log(element)
+        if (data[name]) {
+            if (Array.isArray(data[name])) {
+                data[name].push(value);
+            } else {
+                data[name] = [data[name], value];
+            }
+        } else {
+            data[name] = value;
+        }
     }
     return data
 }
@@ -321,3 +383,10 @@ socket?.addEventListener('message', function (event) {
         messageFileRename(data)
     }
 })
+
+function createOption(option, label) {
+      var option = document.createElement("option");
+      option.setAttribute("value", option);
+      option.innerHTML = label;
+      return option;
+}

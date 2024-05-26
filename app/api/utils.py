@@ -1,6 +1,6 @@
 from django.forms.models import model_to_dict
 
-from home.models import Files
+from home.models import Files, Albums
 from settings.context_processors import site_settings_processor
 
 
@@ -13,6 +13,7 @@ def extract_files(q: Files.objects):
         data['thumb'] = site_settings['site_url'] + file.thumb_path
         data['raw'] = site_settings['site_url'] + file.raw_path
         data['date'] = file.date
+        data['albums'] = [album.id for album in Albums.objects.filter(files__id=file.id)]
         files.append(data)
     # log.debug('files: %s', files)
     return files

@@ -20,3 +20,14 @@ class FileStatsManager(models.Manager):
 class ShortURLsManager(models.Manager):
     def get_request(self, request, **kwargs):
         return self.filter(user=request.user, **kwargs)
+
+
+class AlbumsManager(models.Manager):
+    def get_request(self, request, **kwargs):
+        return self.filter(user=request.user, **kwargs)
+
+    def get_all_request(self, **kwargs):
+        return self.all(**kwargs)
+
+    def filtered_request(self, request, **kwargs):
+        return self.filter(**kwargs)

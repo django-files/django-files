@@ -2,8 +2,8 @@
 {% load static %}
 {% load home_tags %}
 {% load cache %}
-{% block gallery_active %}active{% endblock %}
-{% block title %}Gallery{% endblock %}
+{% block files_active %}active{% endblock %}
+{% block title %}{% if album %}{{ album_name }}{% else %}Files{% endif %}{% endblock %}
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
@@ -15,14 +15,13 @@
 
     <div class="container-fluid py-3 px-4">
 
-        <h1><i class="fa-regular fa-folder-open me-2"></i> Files</h1>
+        <h1><i class="fa-regular fa-folder-open me-2"></i> {% if album %}{{ album_name }}{% else %}Files{% endif %}</h1>
 
         <p class="lead">
             <a class="link-body-emphasis show-list" role="button" title="List">List</a> |
             <a class="link-body-emphasis show-gallery" role="button" title="Gallery">Gallery</a>
         </p>
-
-        {% if request.user.is_superuser %}
+        {% if request.user.is_superuser and not album %}
             <div class="float-end">
                 <select id="user" name="user" class="form-select" aria-label="Default select example">
                     <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
@@ -33,6 +32,7 @@
                 </select>
             </div>
         {% endif %}
+        {% if album and album_info %}<p class="lead">{{ album_info }}</p>{% endif %}
         <p class="lead">Total Files Displayed: <strong id="total-files-count">{{ files|length }}</strong></p>
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap" {% if 'gallery' in request.path %}{% else %} hidden{% endif%}></div>
         {% include 'files/table.html'%}

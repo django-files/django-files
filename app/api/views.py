@@ -20,7 +20,7 @@ from typing import Optional, BinaryIO
 from urllib.parse import urlparse
 
 from home.tasks import clear_files_cache
-from home.models import Files, FileStats, ShortURLs
+from home.models import Files, FileStats, ShortURLs, Albums
 from home.util.file import process_file
 from home.util.rand import rand_string
 from home.util.misc import anytobool, human_read_to_byte
@@ -229,7 +229,7 @@ def recent_view(request):
 
 @csrf_exempt
 @require_http_methods(['OPTIONS', 'GET'])
-@auth_from_token
+@auth_from_token(no_fail=True)
 @cache_control(no_cache=True)
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers('Authorization')
@@ -303,11 +303,51 @@ def file_view(request, idname):
         elif request.method == 'GET':
             response = model_to_dict(file, exclude=['file', 'thumb', 'albums'])
             response['date'] = file.date  # not sure why this is not getting included
+            response['albums'] = [album.id for album in Albums.objects.filter(files__id=file.id)]
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
     except Exception as error:
         log.debug(error)
         return JsonResponse({'error': f'{error}'}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(['OPTIONS', 'GET'])
+@auth_from_token
+@cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix="files")
+@vary_on_headers('Authorization')
+@vary_on_cookie
+def albums_view(request, page, count=None):
+    """
+    View  /api/albums/{page}/{count}/
+    Limit 100 items per page.
+    """
+    if not count:
+        count = 100
+    if count > 250:
+        count = 250
+    log.debug('%s - files_page_view: %s', request.method, page)
+    user = request.GET.get('user')
+    if user:
+        if user == "0":
+            q = Albums.objects.filtered_request(request)
+        else:
+            q = Albums.objects.filtered_request(request, user_id=int(user))
+    else:
+        q = Albums.objects.get_request(request, user_id=request.user.id)
+    paginator = Paginator(q, count)
+    page_obj = paginator.get_page(page)
+    albums = [model_to_dict(album) for album in page_obj.object_list]
+    log.info(albums)
+    log.debug('files: %s', albums)
+    _next = page_obj.next_page_number() if page_obj.has_next() else None
+    response = {
+        'albums': albums,
+        'next': _next,
+        'count': count,
+    }
+    return JsonResponse(response, safe=False, status=200)
 
 
 def get_json_body(request):

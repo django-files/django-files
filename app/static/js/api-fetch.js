@@ -21,3 +21,25 @@ export async function fetchFiles(page, count = 25, album = null) {
     const json = await response.json()
     return json
 }
+
+export async function fetchAlbums(page, count = 100) {
+    let page_url = new URL(location.href)
+    if (!page) {
+        return console.warn('no page', page)
+    }
+    let url = `${window.location.origin}/api/albums/${page}/${count}/`
+    let user = page_url.searchParams.get('user')
+    if (user) {
+        url = url + `?user=${user}`
+    }
+    const response = await fetch(url)
+    const json = await response.json()
+    return json
+}
+
+export async function fetchFile(file_id) {
+    let url = `${window.location.origin}/api/file/${file_id}`
+    const response = await fetch(url)
+    const json = await response.json()
+    return json
+}

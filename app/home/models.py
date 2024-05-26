@@ -4,7 +4,7 @@ from django.shortcuts import reverse
 from django.conf import settings
 from django.core.cache import cache
 
-from home.managers import FilesManager, FileStatsManager, ShortURLsManager
+from home.managers import FilesManager, FileStatsManager, ShortURLsManager, AlbumsManager
 from home.util.storage import StoragesRouterFileField, use_s3
 from home.util.nginx import sign_nginx_urls
 from oauth.models import CustomUser
@@ -17,10 +17,12 @@ class Albums(models.Model):
         verbose_name_plural = 'Albums'
 
     id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     name = models.CharField(max_length=255, null=True, blank=True, verbose_name='Name', help_text='Album Name.')
     password = models.CharField(max_length=255, null=True, blank=True, verbose_name='Album Password')
     private = models.BooleanField(default=False, verbose_name='Private Album')
     info = models.CharField(max_length=255, null=True, blank=True, verbose_name='Info', help_text='Album Information.')
+    objects = AlbumsManager()
 
 
 class Files(models.Model):

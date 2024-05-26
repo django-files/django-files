@@ -13,7 +13,7 @@ from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
 
 from api.views import auth_from_token, process_file_upload, parse_expire
-from home.models import Files, FileStats, ShortURLs
+from home.models import Files, FileStats, ShortURLs, Albums
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
 from oauth.forms import UserForm
@@ -62,13 +62,19 @@ def stats_view(request):
     return render(request, 'stats.html', context=context)
 
 
-@login_required
 def files_view(request):
     """
     View  /files/ or /gallery/
     """
     context = {'full_context': True}
-    if request.user.is_superuser:
+    album = request.GET.get("album")
+    if album:
+        album = get_object_or_404(Albums, id=album)
+    if not request.user.is_authenticated and (not album or album.private):
+        return HttpResponseRedirect(reverse('oauth:login'))
+    if album:
+        context.update({'album_info': album.info, 'album_name': album.name, 'album': True})
+    elif request.user.is_superuser:
         users = CustomUser.objects.all()
         context.update({'users': users})
     log.debug('%s - gallery_view: is_secure: %s', request.method, request.is_secure())
