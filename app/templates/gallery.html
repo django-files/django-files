@@ -6,18 +6,18 @@
 {% block title %}{% if album %}{{ album.name }}{% else %}Files{% endif %}{% endblock %}
 
 {% if album %}
-{% block meta %}
-    <meta name="theme-color" content="{{ album.user.default_color }}">
-    <meta name="author" content="{{ album.user.get_name }}"/>
-    <meta name="title" content="Album: {{ album.name }}"/>
-    <meta name="description" content="{{ album.info|default:"" }}"/>
-    <meta property="og:author" content="{{ album.user.get_name }}">
-    <meta property="og:title" content="Album: {{ album.name }}">
-    <meta property="og:description" content="{{ album.info|default:"" }}"/>
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
-    <meta property="twitter:title" content="Album: {{ album.name }}">
-{% endblock%}
+    {% block meta %}
+        <meta name="theme-color" content="{{ album.user.default_color }}">
+        <meta name="author" content="{{ album.user.get_name }}"/>
+        <meta name="title" content="Album: {{ album.name }}"/>
+        <meta name="description" content="{{ album.info|default:"" }} created by {{ album.user.get_name }}"/>
+        <meta property="og:author" content="{{ album.user.get_name }}">
+        <meta property="og:title" content="Album: {{ album.name }}">
+        <meta property="og:description" content="{{ album.info|default:"" }} created by {{ album.user.get_name }}"/>
+        <meta property="og:url" content="{{ request.build_absolute_uri }}">
+        <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+        <meta property="twitter:title" content="Album: {{ album.name }}">
+    {% endblock%}
 {% endif %}
 
 {% block head %}
