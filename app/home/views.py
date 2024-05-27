@@ -3,6 +3,7 @@ import markdown
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.db.models import F
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, render, reverse, get_object_or_404
 from django.views.decorators.common import no_append_slash
@@ -70,10 +71,20 @@ def files_view(request):
     album = request.GET.get("album")
     if album:
         album = get_object_or_404(Albums, id=album)
+        ctx = {'album': album}
+        if lock := handle_lock(request, ctx):
+            return lock
+        session_view = request.session.get(f'view_album_{album.id}', True)
+        log.debug(f"User {request.user} has not viewed album {album.name}: {session_view}")
+        if session_view:
+            if album.maxv and album.maxv <= album.view and album.user != request.user:
+                return render(request, 'error/403.html', status=403)
+            request.session[f'view_album_{album.id}'] = False
+            Albums.objects.filter(pk=album.id).update(view=F('view')+1)
     if not request.user.is_authenticated and (not album or album.private):
         return HttpResponseRedirect(reverse('oauth:login'))
     if album:
-        context.update({'album_info': album.info, 'album_name': album.name, 'album': True})
+        context.update({'album_info': album.info, 'album_name': album.name, 'album_views': album.view, 'album': True})
     elif request.user.is_superuser:
         users = CustomUser.objects.all()
         context.update({'users': users})
@@ -371,7 +382,7 @@ def raw_redirect_view(request, filename):
     file = get_object_or_404(Files, name=filename)
     ctx = {"file": file}
     response = HttpResponse(status=302)
-    if lock := file_lock(request, ctx):
+    if lock := handle_lock(request, ctx):
         return lock
     if request.GET.get('thumb', False):
         # use site settings context processor for caching
@@ -415,7 +426,7 @@ def url_route_view(request, filename):
     }
     if session_view:
         request.session[f'view_{file.name}'] = False
-    if lock := file_lock(request, ctx=ctx):
+    if lock := handle_lock(request, ctx=ctx):
         return lock
     log.debug('ctx: %s', ctx)
     if file.mime.startswith('image'):
@@ -447,13 +458,14 @@ def url_route_view(request, filename):
         return render(request, 'embed/preview.html', context=ctx)
 
 
-def file_lock(request, ctx):
+def handle_lock(request, ctx):
     """Returns a not allowed if private or file pw page if password set."""
-    if (ctx["file"].private and (request.user != ctx["file"].user) and
-            (ctx["file"].password is None or ctx["file"].password == '')):
+    obj = ctx.get("file") or ctx.get("album")
+    if (obj.private and (request.user != obj.user) and
+            (obj.password is None or obj.password == '')):
         return render(request, 'error/403.html', context=ctx, status=403)
-    if ctx["file"].password and (request.user != ctx["file"].user):
-        if (supplied_password := (request.GET.get('password'))) != ctx["file"].password:
+    if obj.password and (request.user != obj.user):
+        if (supplied_password := (request.GET.get('password'))) != obj.password:
             if supplied_password is not None:
                 messages.warning(request, 'Invalid Password!')
             return render(request, 'embed/password.html', context=ctx, status=403)

@@ -13,14 +13,29 @@
 {% block body %}
 <div class="container-fluid py-3 px-4">
 
-    <h1><i class="fa-solid fa-link me-2"></i> Albums</h1>
+    <h1><i class="fa-solid fa-images me-2"></i> Albums</h1>
 
     
     <form id="albumsForm" class="pt-2 pb-2" method="post" action="{% url 'api:album' %}">
         <div class="row g-3">
-            <div class="col-sm-7">
+            <div class="col-sm-12">
                 <input type="text" class="form-control" placeholder="Album Name" aria-label="Vanity"
                        id="name" name="name" required>
+            </div>
+
+            <div class="col-12">
+                <input type="text" class="form-control" placeholder="Album Description" aria-label="Album Description"
+                       id="description" name="description">
+            </div>
+            <div class="form-check form-switch col-sm-1 justify-content-center">
+                <input class="form-check-input justify-content-center" type="checkbox" id="private" name="private">
+                <label class="form-check-label" for="pub_load">
+                    Private
+                </label>
+            </div>
+            <div class="col-sm-3">
+                <input type="password" class="form-control" placeholder="Password" aria-label="Password"
+                       id="password" name="password">
             </div>
             <div class="col-sm-3">
                 <input type="text" class="form-control" placeholder="Max Views" aria-label="Max-Views"
@@ -30,17 +45,11 @@
                 <input type="text" class="form-control" placeholder="Expire" aria-label="Expire"
                        id="expire" name="expire">
             </div>
-            <div class="col-9">
-                <input type="text" class="form-control" placeholder="Album Description" aria-label="Album Description"
-                       id="description" name="description">
-            </div>
             <div class="col-sm-3 d-grid">
                 <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-images me-2"></i> Create</button>
             </div>
         </div>
     </form>
-
-    <p class="lead mt-2">Total Albums Displayed: <strong>0</strong></p>
     {% include 'include/albums-table.html'  %}
 
 </div>

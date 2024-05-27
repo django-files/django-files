@@ -32,7 +32,12 @@
                 </select>
             </div>
         {% endif %}
-        {% if album and album_info %}<p class="lead">{{ album_info }}</p>{% endif %}
+        {% if album %}
+        <div class=row>
+        <p class="lead col-md-10">{% if album_info %}{{ album_info }}{% endif %}</p>
+        <p class="col-md-2 text-end">Views: <strong id="total-files-count">{{ album_views }}</strong></p>
+        </div>
+        {% endif %}
         <p class="lead">Total Files Displayed: <strong id="total-files-count">{{ files|length }}</strong></p>
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap" {% if 'gallery' in request.path %}{% else %} hidden{% endif%}></div>
         {% include 'files/table.html'%}
@@ -43,7 +48,6 @@
     {% include 'files/ctx-modals.html' %}
 {% endblock %}
 
-{% block footer %}{% endblock %}
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>

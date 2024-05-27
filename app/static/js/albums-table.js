@@ -4,6 +4,8 @@ import { socket } from './socket.js'
 const albumsTable = $('#albums-table')
 const deleteAlbumModal = $('#delete-album-modal')
 const deleteAlbumButton = document.querySelector('.delete-album-btn')
+const albumLink = document.querySelector('div.d-none > .dj-album-link')
+
 
 
 let albumsDataTable
@@ -35,6 +37,7 @@ const dataTablesOptions = {
     ],
     columnDefs: [
         { targets: 0, width: '30px' },
+        { targets: 1, render: renderAlbumLink, defaultContent: ''},
         {
             name: 'date',
             targets: 2,
@@ -69,6 +72,26 @@ function renderDeleteBtn(data, type, row, meta){
     return deleteBtn
 }
 
+function renderAlbumLink(data, type, row, meta) {
+    let max_name_length
+    if (screen.width < 500) {
+        max_name_length = 20
+    } else if (screen.width > 500 && screen.width < 1500) {
+        max_name_length = 40
+    } else {
+        max_name_length = 60
+    }
+    const albumLinkElem = albumLink.cloneNode(true)
+    albumLinkElem.classList.add(`dj-album-link-${row.id}`)
+    albumLinkElem.querySelector('.dj-album-link-clip').clipboardText = row.url
+    albumLinkElem.querySelector('.dj-album-link-ref').href = row.url
+    let newName = row.name
+    if (row.name.length > max_name_length) {
+        newName = row.name.substring(0, max_name_length) + '...'
+    }
+    albumLinkElem.querySelector('.dj-album-link-ref').textContent = newName
+    return albumLinkElem
+}
 
 initAlbumsTable()
 

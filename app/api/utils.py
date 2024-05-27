@@ -20,9 +20,11 @@ def extract_files(q: Files.objects):
 
 
 def extract_albums(q: Albums.objects):
+    site_settings = site_settings_processor(None)['site_settings']
     albums = []
     for album in q:
         data = model_to_dict(album)
         data['date'] = album.date
+        data['url'] = site_settings['site_url'] + '/gallery?album=' + str(album.id)
         albums.append(data)
     return albums
