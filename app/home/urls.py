@@ -28,6 +28,7 @@ urlpatterns = [
     path('ajax/toggle_private/file/<int:pk>/', views.toggle_private_file_ajax, name='toggle-private-file'),
     path('ajax/delete/hook/<int:pk>/', views.delete_hook_ajax, name='delete-hook'),
     path('ajax/check_password/file/<int:pk>/', views.check_password_file_ajax, name='check-password-file'),
+    path('ajax/check_password/album/<int:pk>/', views.check_password_album_ajax, name='check-password-album'),
     path('u/<path:filename>', views.url_route_view, name='url-route'),
     path('raw/<path:filename>', views.raw_redirect_view, name='url-raw-redirect'),
     path('r/<path:filename>', views.url_route_view, name='url-raw'),

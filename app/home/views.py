@@ -83,8 +83,6 @@ def files_view(request):
             Albums.objects.filter(pk=album.id).update(view=F('view')+1)
     if not request.user.is_authenticated and (not album or album.private):
         return HttpResponseRedirect(reverse('oauth:login'))
-    if album:
-        ctx.update({'album_info': album.info, 'album_name': album.name, 'album_views': album.view})
     elif request.user.is_superuser:
         users = CustomUser.objects.all()
         ctx.update({'users': users})
@@ -357,7 +355,6 @@ def delete_hook_ajax(request, pk):
     return HttpResponse(status=204)
 
 
-@csrf_exempt
 @require_http_methods(['POST'])
 def check_password_file_ajax(request, pk):
     """
@@ -365,6 +362,18 @@ def check_password_file_ajax(request, pk):
     """
     log.debug('check_password_file_ajax: %s', pk)
     file = get_object_or_404(Files, pk=pk)
+    if file.password != request.POST.get('password'):
+        return HttpResponse(status=401)
+    return HttpResponse(status=200)
+
+
+@require_http_methods(['POST'])
+def check_password_album_ajax(request, pk):
+    """
+    View  /ajax/check_password/album/<int:pk>/
+    """
+    log.info('check_password_album_ajax: %s', pk)
+    file = get_object_or_404(Albums, pk=pk)
     if file.password != request.POST.get('password'):
         return HttpResponse(status=401)
     return HttpResponse(status=200)

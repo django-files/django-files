@@ -3,6 +3,7 @@
 // $('#password-form').on('submit', function (event) {
 //     window.location.replace($('#password-form').attr('action'))
 // })
+const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value
 
 $('#password-form').on('submit', function (event) {
     console.log('#password-form submit', event)
@@ -14,6 +15,7 @@ $('#password-form').on('submit', function (event) {
     const password = $('#password').val()
     $.ajax({
         type: 'POST',
+        headers: { 'X-CSRFToken': csrftoken },
         url: $('#password-form').attr('action'),
         data: new FormData(this),
         beforeSend: function () {
@@ -22,7 +24,7 @@ $('#password-form').on('submit', function (event) {
         success: function (data) {
             console.log('data:', data)
             const url = new URL(
-                window.location.origin + window.location.pathname
+                window.location.origin + window.location.pathname + window.location.search
             )
             url.searchParams.append('password', password)
             window.location.replace(url.href)

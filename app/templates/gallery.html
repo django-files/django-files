@@ -3,7 +3,7 @@
 {% load home_tags %}
 {% load cache %}
 {% block files_active %}active{% endblock %}
-{% block title %}{% if album %}{{ album_name }}{% else %}Files{% endif %}{% endblock %}
+{% block title %}{% if album %}{{ album.name }}{% else %}Files{% endif %}{% endblock %}
 
 {% if album %}
 {% block meta %}
@@ -12,11 +12,11 @@
     <meta name="title" content="Album: {{ album.name }}"/>
     <meta name="description" content="{{ album.info|default:"" }}"/>
     <meta property="og:author" content="{{ album.user.get_name }}">
-    <meta property="og:title" content="{{ album.name }}">
+    <meta property="og:title" content="Album: {{ album.name }}">
     <meta property="og:description" content="{{ album.info|default:"" }}"/>
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
-    <meta property="twitter:title" content="{{ album.name }}">
+    <meta property="twitter:title" content="Album: {{ album.name }}">
 {% endblock%}
 {% endif %}
 
@@ -30,7 +30,7 @@
 
     <div class="container-fluid py-3 px-4">
 
-        <h1><i class="fa-regular fa-folder-open me-2"></i> {% if album %}{{ album_name }}{% else %}Files{% endif %}</h1>
+        <h1><i class="fa-regular fa-folder-open me-2"></i> {% if album %}{{ album.name }}{% else %}Files{% endif %}</h1>
 
         <p class="lead">
             <a class="link-body-emphasis show-list" role="button" title="List">List</a> |
@@ -49,8 +49,8 @@
         {% endif %}
         {% if album %}
         <div class=row>
-        <p class="lead col-md-10">{% if album_info %}{{ album_info }}{% endif %}</p>
-        <p class="col-md-2 text-end">Views: <strong id="total-files-count">{{ album_views }}</strong></p>
+        <p class="lead col-md-10">{% if album.info %}{{ album.info }}{% endif %}</p>
+        <p class="col-md-2 text-end">Views: <strong id="total-files-count">{{ album.view }}</strong></p>
         </div>
         {% endif %}
         <p class="lead">Total Files Displayed: <strong id="total-files-count">{{ files|length }}</strong></p>
