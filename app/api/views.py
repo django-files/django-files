@@ -378,7 +378,7 @@ def albums_view(request, page, count=None):
     page_obj = paginator.get_page(page)
     albums = extract_albums(page_obj.object_list)
     log.info(albums)
-    log.debug('files: %s', albums)
+    log.debug('albums: %s', albums)
     _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {
         'albums': albums,

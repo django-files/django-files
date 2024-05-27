@@ -8,7 +8,6 @@ const deleteAlbumButton = document.querySelector('.delete-album-btn')
 
 let albumsDataTable
 let nextPage = 1
-let albumData = []
 let fetchLock = false
 
 let fillInterval
@@ -89,7 +88,6 @@ async function fillPage() {
 
 /**
  * Album onScroll Callback
- * TODO: End of page detection may need to be tweaked/improved
  * @function galleryScroll
  * @param {Event} event
  * @param {Number} buffer
@@ -111,9 +109,8 @@ async function addAlbumRows() {
         albumsDataTable.processing(true)
         fetchLock = true
         const data = await fetchAlbums(nextPage)
-        console.debug(data)
+        // console.debug(data)
         nextPage = data.next
-        albumData.push(...data.albums)
         for (const album of data.albums) {
             addAlbumRow(album)
         }
@@ -129,10 +126,10 @@ function addAlbumRow(row) {
 
 // Handle Album FORM Submit
 $('#albumsForm').on('submit', function (event) {
-    console.log('#albumsForm submit', event)
+    // console.log('#albumsForm submit', event)
     event.preventDefault()
     const form = $(this)
-    console.log('form:', form)
+    // console.log('form:', form)
     const data = new FormData(this)
     data.forEach((value, key) => (data[key] = value))
     $.ajax({
@@ -141,7 +138,7 @@ $('#albumsForm').on('submit', function (event) {
         data: JSON.stringify(data),
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
-            console.log('data:', data)
+            // console.log('data:', data)
             form.trigger('reset')
             show_toast(`Album Created: ${data.url}`)
         },
@@ -155,14 +152,12 @@ $('#albumsForm').on('submit', function (event) {
 
 function handleDeleteClick(event) {
     const pk = $(this).data('hook-id')
-    console.log('delete album', pk)
     $('#album-delete-confirm').data('pk', pk)
     deleteAlbumModal.modal('show')
 }
 
 $('#album-delete-confirm').on('click', function (event) {
     const pk = $(this).data('pk')
-    console.log(`#confirm-delete click pk: ${pk}`, event)
     socket.send(JSON.stringify({ method: 'delete-album', pk: pk }))
     deleteAlbumModal.modal('hide')
 })
@@ -170,9 +165,7 @@ $('#album-delete-confirm').on('click', function (event) {
 
 socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)
-    console.log(data)
     if (data.event === 'album-delete') {
-        console.log(albumsDataTable.row(`#album-${data.id}`))
         $(`#album-${data.id}`).remove()
     } else if (data.event === 'album-new') {
         addAlbumRow(data)

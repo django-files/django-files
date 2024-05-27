@@ -121,16 +121,14 @@ $('#modal-rename-form').on('submit', function (event) {
 // albums Form
 
 fileAlbumModal.on('shown.bs.modal', function (event) {
-    console.log('fileAlbumModal shown.bs.modal:', event)
+    // console.log('fileAlbumModal shown.bs.modal:', event)
     $(this).find('input').trigger('focus').trigger('select')
-    let name = fileAlbumModal.find('input[name=name]').val()
 })
 
 $('#modal-album-form').on('submit', function (event) {
-    console.log('#modal-album-form submit:', event)
     event.preventDefault()
     const data = genData($(this), 'set-file-albums')
-    console.log('data:', data)
+    // console.log('data:', data)
     socket.send(JSON.stringify(data))
     fileAlbumModal.modal('hide')
 })
@@ -201,7 +199,6 @@ export async function ctxAlbumFile(event) {
         albums = albums.concat(resp.albums)
     }
     for (let album in albums){
-        console.log(albums[album].id)
         let option = createOption(albums[album].id, albums[album].name)
         option.value = albums[album].id
         if (file.albums.includes(albums[album].id)) {
@@ -326,7 +323,7 @@ function genData(form, method) {
     for (const element of form.serializeArray()) {
         const name = element['name'];
         const value = element['value'];
-        console.log(element)
+        // console.log(element)
         if (data[name]) {
             if (Array.isArray(data[name])) {
                 data[name].push(value);
@@ -378,15 +375,15 @@ function messageFileRename(data) {
 
 socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)
-    console.log(event)
+    // console.log(event)
     if (data.event === 'set-file-name') {
         messageFileRename(data)
     }
 })
 
 function createOption(option, label) {
-      var option = document.createElement("option");
-      option.setAttribute("value", option);
-      option.innerHTML = label;
-      return option;
+      const thisOption = document.createElement("option");
+      thisOption.setAttribute("value", option);
+      thisOption.innerHTML = label;
+      return thisOption;
 }
