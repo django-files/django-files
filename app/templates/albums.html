@@ -1,0 +1,57 @@
+{% extends "main.html" %}
+{% load static %}
+{% load tz %}
+{% load home_tags %}
+{% load cache %}
+{% block albums_active %}active{% endblock %}
+{% block title %}Albums{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-3 px-4">
+
+    <h1><i class="fa-solid fa-link me-2"></i> Albums</h1>
+
+    
+    <form id="albumsForm" class="pt-2 pb-2" method="post" action="{% url 'api:album' %}">
+        <div class="row g-3">
+            <div class="col-sm-7">
+                <input type="text" class="form-control" placeholder="Album Name" aria-label="Vanity"
+                       id="name" name="name" required>
+            </div>
+            <div class="col-sm-3">
+                <input type="text" class="form-control" placeholder="Max Views" aria-label="Max-Views"
+                       id="max-views" name="max-views">
+            </div>
+            <div class="col-sm-2">
+                <input type="text" class="form-control" placeholder="Expire" aria-label="Expire"
+                       id="expire" name="expire">
+            </div>
+            <div class="col-9">
+                <input type="text" class="form-control" placeholder="Album Description" aria-label="Album Description"
+                       id="description" name="description">
+            </div>
+            <div class="col-sm-3 d-grid">
+                <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-images me-2"></i> Create</button>
+            </div>
+        </div>
+    </form>
+
+    <p class="lead mt-2">Total Albums Displayed: <strong>0</strong></p>
+    {% include 'include/albums-table.html'  %}
+
+</div>
+{% endblock %}
+
+{% block tail %}
+    <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
+    <script type="module" src="{% static 'js/albums-table.js' %}"></script>
+{% endblock %}

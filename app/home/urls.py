@@ -12,6 +12,7 @@ urlpatterns = [
     path('uppy/', views.uppy_view, name='uppy'),
     path('paste/', views.paste_view, name='paste'),
     path('shorts/', views.shorts_view, name='shorts'),
+    path('albums/', views.albums_view, name='albums'),
     path('stats/', views.stats_view, name='stats'),
     path('public/', views.pub_uppy_view, name='public-uppy'),
     path('i/', views.invite_view, name='invite-base'),

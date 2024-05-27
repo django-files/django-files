@@ -95,6 +95,20 @@ def shorts_view(request):
     return render(request, 'shorts.html', context)
 
 
+@cache_control(no_cache=True)
+@login_required
+@cache_page(cache_seconds, key_prefix="albums")
+@vary_on_cookie
+def albums_view(request):
+    """
+    View  /albums/
+    """
+    log.debug('%s - albums_view: is_secure: %s', request.method, request.is_secure())
+    albums = Albums.objects.get_request(request)
+    context = {'albums': albums}
+    return render(request, 'albums.html', context)
+
+
 @csrf_exempt
 @cache_control(no_cache=True)
 @login_required

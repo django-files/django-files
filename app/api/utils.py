@@ -17,3 +17,12 @@ def extract_files(q: Files.objects):
         files.append(data)
     # log.debug('files: %s', files)
     return files
+
+
+def extract_albums(q: Albums.objects):
+    albums = []
+    for album in q:
+        data = model_to_dict(album)
+        data['date'] = album.date
+        albums.append(data)
+    return albums

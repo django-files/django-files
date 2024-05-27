@@ -152,6 +152,22 @@ class HomeConsumer(AsyncWebsocketConsumer):
         else:
             return self._error('File not found.', **kwargs)
 
+    def delete_album(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: Integer - File ID
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug('delete_file')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
+        if album := Albums.objects.filter(pk=pk):
+            if album[0].user.id != user_id:
+                return self._error('File owned by another user.', **kwargs)
+            album[0].delete()
+        else:
+            return self._error('Album not found.', **kwargs)
+
     def toggle_private_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID

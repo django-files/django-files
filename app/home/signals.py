@@ -1,14 +1,17 @@
+import logging
 from celery.signals import worker_ready
 from django.db.models.signals import post_save, post_delete, pre_delete
 from django.dispatch import receiver
 from django.forms.models import model_to_dict
 from botocore.exceptions import ClientError
 
-from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache
-from home.tasks import app_startup, delete_file_websocket, send_success_message
-from home.models import Files, FileStats, ShortURLs
+from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache, clear_albums_cache
+from home.tasks import app_startup, delete_file_websocket, send_success_message, delete_album_websocket
+from home.models import Files, FileStats, ShortURLs, Albums
 from oauth.models import DiscordWebhooks
 from home.util.quota import decrement_storage_usage
+
+log = logging.getLogger('signals')
 
 
 @worker_ready.connect
@@ -24,10 +27,22 @@ def files_delete_signal(sender, instance, **kwargs):
     except (ClientError, FileNotFoundError):
         # catch a case where file was removed from s3 but not our database
         # we should probably trigger a storage recalculation in this instance
-        pass
+        log.error(f"Failed decrementing storage usage on delete of {instance.file.name}.")
     instance.thumb.delete(True)
     instance.file.delete(True)
     delete_file_websocket.apply_async(args=[data, instance.user.id], priority=0)
+
+
+@receiver(post_save, sender=Albums)
+@receiver(post_delete, sender=Albums)
+def clear_albums_cache_signal(sender, instance, **kwargs):
+    clear_albums_cache.delay()
+
+
+@receiver(pre_delete, sender=Albums)
+def albums_delete_signal(sender, instance, **kwargs):
+    data = model_to_dict(instance)
+    delete_album_websocket.apply_async(args=[data, instance.user.id], priority=0)
 
 
 @receiver(post_save, sender=Files)

@@ -19,7 +19,7 @@ from pytimeparse2 import parse
 from typing import Optional, BinaryIO
 from urllib.parse import urlparse
 
-from home.tasks import clear_files_cache
+from home.tasks import clear_files_cache, clear_albums_cache, new_album_websocket
 from home.models import Files, FileStats, ShortURLs, Albums
 from home.util.file import process_file
 from home.util.rand import rand_string
@@ -28,7 +28,7 @@ from home.util.quota import process_storage_quotas
 from oauth.models import CustomUser, UserInvites
 from settings.models import SiteSettings
 from settings.context_processors import site_settings_processor
-from api.utils import extract_files
+from api.utils import extract_files, extract_albums
 
 log = logging.getLogger('app')
 cache_seconds = 60 * 60 * 4
@@ -151,6 +151,44 @@ def shorten_view(request):
     except Exception as error:
         log.exception(error)
         return JsonResponse({'error': str(error)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(['OPTIONS', 'POST', 'GET'])
+@auth_from_token
+def album_view(request):
+    """
+    View  /api/album
+    """
+    if request.method == 'POST':
+        data = get_json_body(request)
+        log.info(data)
+        name = data.get('name') or request.headers.get('name')
+        max_views = data.get('max-views') or request.headers.get('max-views', 0)
+        expr = data.get('expire') or request.headers.get('expire')
+        desc = data.get('description') or request.headers.get('description')
+        password = data.get('password') or request.headers.get('password')
+        private = data.get('private') or request.headers.get('private')
+        if not name:
+            return JsonResponse({'error': 'Missing Required Value: name'}, status=400)
+        log.debug('name: %s', name)
+        album = Albums.objects.create(
+            user=request.user,
+            name=name,
+            maxv=max_views,
+            info=desc,
+            password=password,
+            private=False if not private else True,
+            expr=expr if expr else '',
+        )
+        site_settings = SiteSettings.objects.settings()
+        full_url = site_settings.site_url + reverse('home:files') + f'?album={album.id}'
+        clear_albums_cache.delay()
+        new_album_websocket.apply_async(args=[extract_albums([album])[0]])
+        return JsonResponse({'url': full_url}, safe=False)
+    else:
+        album = Albums.objects.get(id=request.GET.get('id'))
+        return JsonResponse(album)
 
 
 @csrf_exempt
@@ -315,7 +353,7 @@ def file_view(request, idname):
 @require_http_methods(['OPTIONS', 'GET'])
 @auth_from_token
 @cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix="files")
+@cache_page(cache_seconds, key_prefix="albums")
 @vary_on_headers('Authorization')
 @vary_on_cookie
 def albums_view(request, page, count=None):
@@ -327,7 +365,7 @@ def albums_view(request, page, count=None):
         count = 100
     if count > 250:
         count = 250
-    log.debug('%s - files_page_view: %s', request.method, page)
+    log.info('%s - albums_page_view: %s', request.method, page)
     user = request.GET.get('user')
     if user:
         if user == "0":
@@ -338,7 +376,7 @@ def albums_view(request, page, count=None):
         q = Albums.objects.get_request(request, user_id=request.user.id)
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
-    albums = [model_to_dict(album) for album in page_obj.object_list]
+    albums = extract_albums(page_obj.object_list)
     log.info(albums)
     log.debug('files: %s', albums)
     _next = page_obj.next_page_number() if page_obj.has_next() else None

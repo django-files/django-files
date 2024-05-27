@@ -77,6 +77,10 @@ async function initListener() {
             messageDelete(data)
         } else if (data.event === 'set-file-name') {
             messageFileRename(data)
+        } else if (data.event === 'album-delete') {
+            messageAlbumDelete(data)
+        } else if (data.event === 'album-new') {
+            messageAlbumNew(data)
         } else if (data.event === 'message') {
             console.log(`data.message: ${data.message}`)
             const bsClass = data.bsClass || 'info'
@@ -153,12 +157,20 @@ function messageDelete(data) {
     show_toast(`${truncateName(data.name)} deleted by ${data.user}.`)
 }
 
+function messageAlbumDelete(data) {
+    show_toast(`"${truncateName(data.name)}" Album deleted by ${data.user}.`)
+}
+
+function messageAlbumNew(data) {
+    show_toast(`"${truncateName(data.name)}" Album created by ${data.user}.`)
+}
+
 function messageNewFile(data) {
     show_toast(`${truncateName(data.name)} added.`)
 }
 
 function truncateName(filename) {
-    if (filename.length > 42) {
+    if (filename.length && filename.length > 42) {
         return filename.substring(0, 40) + '...'
     }
     return filename

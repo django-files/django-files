@@ -12,6 +12,7 @@ urlpatterns = [
     path('recent/', views.recent_view, name='recent'),
     path('files/<int:page>/', views.files_view, name='files'),
     path('files/<int:page>/<int:count>/', views.files_view, name='files-amount'),
+    path('album/', views.album_view, name='album'),
     path('albums/<int:page>/', views.albums_view, name='albums'),
     path('albums/<int:page>/<int:count>/', views.albums_view, name='albums-amount'),
     path('remote/', views.remote_view, name='remote'),
