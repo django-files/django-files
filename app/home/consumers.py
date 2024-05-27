@@ -243,9 +243,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param name: String - File Name String
         :return: Dictionary - With Key: 'success': bool
         """
-        log.info('set_file_name')
-        log.info('user_id: %s', user_id)
-        log.info('pk: %s', pk)
+        log.debug('set_file_name')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
         if not name:
             return self._error('No filename provided.', **kwargs)
         if len(Files.objects.filter(name=name)) != 0:
@@ -269,42 +269,43 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 return response
         return self._error('File not found.', **kwargs)
 
-    def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = None, **kwargs) -> dict:
+    def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = [], **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
         :param name: String - File Name String
         :return: Dictionary - With Key: 'success': bool
         """
-        log.info('set_file_name')
-        log.info('user_id: %s', user_id)
-        log.info('pk: %s', pk)
+        log.debug('set_file_name')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
         added = []
         if file := Files.objects.filter(pk=pk):
+            if len(file) == 0:
+                return self._error('File not found.', **kwargs)
             if user_id and file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
-            if albums:
-                file_albums = list(Albums.objects.filter(files__id=pk).values_list('id', flat=True))
-                albums = [int(album) for album in albums]
-                log.debug(f'Sent albums: {albums}')
-                log.debug(f'Current Albums: {file_albums}')
-                for album in albums:
-                    if album not in file_albums:
-                        # if the file is not linked to an album in the list, link it
-                        file[0].albums.add(Albums.objects.get(id=album))
-                        added.append(album)
-                        log.info(f'Adding {pk} to: {album}')
-                    else:
-                        # if the album is linked and still in the new album list, remove it from our list
-                        file_albums.remove(album)
-                        log.info(f'Keeping {pk} in {album}')
-                for album in file_albums:
-                    # if a file was linked to an album that we removed unlink it
-                    log.debug(f'removing {pk} from {album}')
-                    file[0].albums.remove(Albums.objects.get(id=album))
-                return {'file_id': pk, 'added_to': added, 'removed_from': file_albums}
-            return self._error('No albums specified', **kwargs)
-        return self._error('File not found.', **kwargs)
+            file_albums = list(Albums.objects.filter(files__id=pk).values_list('id', flat=True))
+        if type(albums) is not list:
+            albums = [albums]
+        albums = [int(album) for album in albums]
+        log.debug(f'Sent albums: {albums}')
+        log.debug(f'Current Albums: {file_albums}')
+        for album in albums:
+            if album not in file_albums:
+                # if the file is not linked to an album in the list, link it
+                file[0].albums.add(Albums.objects.filter(id=album)[0])
+                added.append(album)
+                log.debug(f'Adding file {pk} to album {album}')
+            else:
+                # if the album is linked and still in the new album list, remove it from our list
+                file_albums.remove(album)
+                log.debug(f'Keeping file {pk} in album {album}')
+        for album in file_albums:
+            # if a file was linked to an album that we removed unlink it
+            log.debug(f'removing {pk} from {album}')
+            file[0].albums.remove(Albums.objects.get(id=album))
+        return {'file_id': pk, 'added_to': added, 'removed_from': file_albums}
 
     async def check_for_update(self, *args, **kwargs) -> dict:
         log.debug('async - check_for_update')

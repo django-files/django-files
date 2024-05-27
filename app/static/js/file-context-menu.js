@@ -132,7 +132,7 @@ $('#modal-album-form').on('submit', function (event) {
     const data = genData($(this), 'set-file-albums')
     console.log('data:', data)
     socket.send(JSON.stringify(data))
-    fileRenameModal.modal('hide')
+    fileAlbumModal.modal('hide')
 })
 
 // Event Listeners
