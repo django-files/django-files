@@ -67,11 +67,11 @@ def files_view(request):
     """
     View  /files/ or /gallery/
     """
-    context = {'full_context': True}
+    ctx = {'full_context': True}
     album = request.GET.get("album")
     if album:
         album = get_object_or_404(Albums, id=album)
-        ctx = {'album': album}
+        ctx.update({'album': album})
         if lock := handle_lock(request, ctx):
             return lock
         session_view = request.session.get(f'view_album_{album.id}', True)
@@ -84,12 +84,12 @@ def files_view(request):
     if not request.user.is_authenticated and (not album or album.private):
         return HttpResponseRedirect(reverse('oauth:login'))
     if album:
-        context.update({'album_info': album.info, 'album_name': album.name, 'album_views': album.view, 'album': True})
+        ctx.update({'album_info': album.info, 'album_name': album.name, 'album_views': album.view})
     elif request.user.is_superuser:
         users = CustomUser.objects.all()
-        context.update({'users': users})
+        ctx.update({'users': users})
     log.debug('%s - gallery_view: is_secure: %s', request.method, request.is_secure())
-    return render(request, 'gallery.html', context)
+    return render(request, 'gallery.html', ctx)
 
 
 @cache_control(no_cache=True)
