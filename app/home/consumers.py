@@ -286,7 +286,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             if user_id and file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
             file_albums = list(Albums.objects.filter(files__id=pk).values_list('id', flat=True))
-        if type(albums) is not list:
+        if not isinstance(albums, list):
             albums = [albums]
         albums = [int(album) for album in albums]
         log.debug(f'Sent albums: {albums}')

@@ -83,7 +83,7 @@ function renderAlbumLink(data, type, row, meta) {
     }
     const albumLinkElem = albumLink.cloneNode(true)
     albumLinkElem.classList.add(`dj-album-link-${row.id}`)
-    albumLinkElem.querySelector('.dj-album-link-clip').clipboardText = row.url
+    albumLinkElem.querySelector('.dj-album-link-clip').setAttribute('data-clipboard-text', row.url)
     albumLinkElem.querySelector('.dj-album-link-ref').href = row.url
     let newName = row.name
     if (row.name.length > max_name_length) {

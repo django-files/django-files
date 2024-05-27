@@ -19,6 +19,7 @@ from pytimeparse2 import parse
 from typing import Optional, BinaryIO
 from urllib.parse import urlparse
 
+
 from home.tasks import clear_files_cache, clear_albums_cache, new_album_websocket
 from home.models import Files, FileStats, ShortURLs, Albums
 from home.util.file import process_file
@@ -175,11 +176,11 @@ def album_view(request):
         album = Albums.objects.create(
             user=request.user,
             name=name,
-            maxv=max_views,
+            maxv=int(max_views),
             info=desc,
             password=password,
             private=False if not private else True,
-            expr=expr if expr else '',
+            expr=parse(expr) if expr else '',
         )
         site_settings = SiteSettings.objects.settings()
         full_url = site_settings.site_url + reverse('home:files') + f'?album={album.id}'

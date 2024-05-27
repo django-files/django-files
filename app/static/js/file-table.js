@@ -130,7 +130,7 @@ function getFileLink(data, type, row, meta) {
     }
     const fileLinkElem = fileLink.cloneNode(true)
     fileLinkElem.classList.add(`dj-file-link-${row.id}`)
-    fileLinkElem.querySelector('.dj-file-link-clip').clipboardText = row.url
+    fileLinkElem.querySelector('.dj-file-link-clip').setAttribute('data-clipboard-text', row.url)
     fileLinkElem.querySelector('.dj-file-link-ref').href = row.url
     let newName = row.name
     if (row.name.length > max_name_length) {
