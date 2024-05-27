@@ -6,7 +6,6 @@ from pathlib import Path
 from django.conf import settings
 from channels.testing import ChannelsLiveServerTestCase
 from django.core.management import call_command
-# from django.core.files import File
 from django.urls import reverse
 from playwright.sync_api import sync_playwright
 
@@ -28,6 +27,7 @@ class TestAuthViews(TestCase):
         'home:gallery': 200,
         'home:uppy': 200,
         'home:files': 200,
+        'home:albums': 200,
         'home:shorts': 200,
         'home:stats': 200,
         'settings:site': 200,
@@ -58,7 +58,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
     """Test Playwright"""
     screenshots = 'screenshots'
     # TODO: Add Upload view back
-    views = ['Gallery', 'Upload/Files', 'Upload/Text', 'Files', 'Shorts', 'Stats']
+    views = ['Gallery', 'Upload/Files', 'Upload/Text', 'Files', 'Albums', 'Shorts', 'Stats']
     previews = ['README.md', 'requirements.txt', 'main.html', 'home_tags.py', 'an225.jpg']
     context = None
     browser = None
@@ -207,12 +207,31 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 self.screenshot(page, f'{view}-create')
 
                 page.locator('.delete-short-btn').first.click()
-                page.wait_for_timeout(timeout=500)
+                page.wait_for_timeout(timeout=300)
                 self.screenshot(page, f'{view}-delete-click')
 
                 page.locator('#short-delete-confirm').click()
-                page.wait_for_timeout(timeout=500)
+                # page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-deleted')
+
+            if view == 'Albums':
+                page.locator('#name').fill('My Cool Pictures')
+                page.get_by_role('button', name='Create').click()
+                flush_template_cache()
+                page.wait_for_timeout(timeout=250)
+                self.screenshot(page, f'{view}-create')
+                page.locator('.nav-link').get_by_text('Files').click()
+                page.wait_for_timeout(timeout=250)
+                page.locator('.ctx-menu-11').first.click()
+                page.locator('.ctx-album').first.click()
+                page.wait_for_timeout(timeout=500)
+                self.screenshot(page, f'{view}-add-file')
+                page.get_by_text("My Cool Pictures").click()
+                page.locator('#file-album-submit').click()
+                page.locator('.nav-link').get_by_text('Albums').click()
+                page.get_by_text('My Cool Pictures').click()
+                page.get_by_title('Fujifilm_FinePix_E500.jpg').is_visible()
+                self.screenshot(page, 'Album-view')
 
         page.locator('#navbarDropdown').click()
         page.locator('text=User Settings').first.click()
