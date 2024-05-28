@@ -471,11 +471,13 @@ def url_route_view(request, filename):
 @require_http_methods(['GET'])
 def proxy_route_view(request, filename):
     """
-    View  /p|r/<path:filename>
+    View  /r/<path:filename>
+    This is presently only used in test to serve static files without nginx.
     """
     log.info(f"proxying file {filename}")
     raw_fetch = None
     if 'thumbs' in filename:
+        # thumbs does not have a file object so we use raw fetch to grab
         raw_fetch = filename
         filename = filename.replace('thumbs/', '')
     file = get_object_or_404(Files, name=filename)

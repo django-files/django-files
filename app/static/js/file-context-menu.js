@@ -121,14 +121,12 @@ $('#modal-rename-form').on('submit', function (event) {
 // albums Form
 
 fileAlbumModal.on('shown.bs.modal', function (event) {
-    // console.log('fileAlbumModal shown.bs.modal:', event)
     $(this).find('input').trigger('focus').trigger('select')
 })
 
 $('#modal-album-form').on('submit', function (event) {
     event.preventDefault()
     const data = genData($(this), 'set-file-albums')
-    // console.log('data:', data)
     socket.send(JSON.stringify(data))
     fileAlbumModal.modal('hide')
 })
@@ -187,26 +185,23 @@ export async function ctxAlbumFile(event) {
     const pk = getPrimaryKey(event)
     fileAlbumModal.find('input[name=pk]').val(pk)
     // FETCH ALBUMS AND SET HERE
-    let next = true
-    let page = 1
-    let albums = []
+    let nextPage = 1
     // fetch file details for up to date albums
     let file = await fetchFile(pk)
-    while (next) {
-        let resp = await fetchAlbums(page)
-        console.log(resp)
-        next = resp.next
-        albums = albums.concat(resp.albums)
-    }
-    for (let album in albums){
-        let option = createOption(albums[album].id, albums[album].name)
-        option.value = albums[album].id
-        if (file.albums.includes(albums[album].id)) {
-            option.selected = true;
-        }
-        albumOptions.options.add(option)
-    }
     fileAlbumModal.modal('show')
+    while (nextPage) {
+        let resp = await fetchAlbums(nextPage)
+        console.log(resp)
+        nextPage = resp.next
+        for (let album in resp.albums){
+            let option = createOption(resp.albums[album].id, resp.albums[album].name)
+            option.value = resp.albums[album].id
+            if (file.albums.includes(resp.albums[album].id)) {
+                option.selected = true;
+            }
+            albumOptions.options.add(option)
+        }
+    }
 }
 
 function getPrimaryKey(event) {

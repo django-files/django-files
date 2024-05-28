@@ -13,6 +13,7 @@ from oauth.models import CustomUser
 class Albums(models.Model):
 
     class Meta:
+        ordering = ['-date']
         verbose_name = 'Album'
         verbose_name_plural = 'Albums'
 

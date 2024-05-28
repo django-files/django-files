@@ -64,7 +64,7 @@ def file_rename(current_file_name: str, new_file_name: str, thumb: False) -> boo
 
 
 def fetch_file(file):
-    # fetches the byte contents for the file
+    # fetches the byte contents for the file, this is only currently used in test
     if use_s3():
         s3 = boto3.client('s3')
         response = s3.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=file.name)
@@ -75,6 +75,6 @@ def fetch_file(file):
 
 
 def fetch_raw_file(filename):
-    # no s3 use
+    # no s3 use, this is only currently used in test
     with open(f'{settings.MEDIA_ROOT}/{filename}', 'rb') as f:
         return f.read()

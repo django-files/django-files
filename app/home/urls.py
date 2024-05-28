@@ -1,7 +1,7 @@
+import sys
 from django.urls import path, re_path
 
 from api.views import shorten_view, upload_view
-# from decouple import config
 from home import views
 
 app_name = 'home'
@@ -32,5 +32,7 @@ urlpatterns = [
     path('ajax/check_password/album/<int:pk>/', views.check_password_album_ajax, name='check-password-album'),
     path('u/<path:filename>', views.url_route_view, name='url-route'),
     path('raw/<path:filename>', views.raw_redirect_view, name='url-raw-redirect'),
-    path('r/<path:filename>', views.proxy_route_view, name='url-raw'),
 ]
+
+if 'test' in sys.argv:
+    urlpatterns = urlpatterns + [path('r/<path:filename>', views.proxy_route_view, name='url-raw'),]

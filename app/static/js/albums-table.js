@@ -6,7 +6,8 @@ const deleteAlbumModal = $('#delete-album-modal')
 const deleteAlbumButton = document.querySelector('.delete-album-btn')
 const albumLink = document.querySelector('div.d-none > .dj-album-link')
 
-
+document.addEventListener('scroll', throttle(albumScroll))
+window.addEventListener('resize', throttle(albumScroll))
 
 let albumsDataTable
 let nextPage = 1
