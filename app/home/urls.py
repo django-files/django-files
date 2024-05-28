@@ -32,5 +32,5 @@ urlpatterns = [
     path('ajax/check_password/album/<int:pk>/', views.check_password_album_ajax, name='check-password-album'),
     path('u/<path:filename>', views.url_route_view, name='url-route'),
     path('raw/<path:filename>', views.raw_redirect_view, name='url-raw-redirect'),
-    path("r/<path:filename>", views.proxy_route_view, name='url-raw'),
+    path('r/<path:filename>', views.proxy_route_view, name='url-raw'),
 ]
