@@ -72,3 +72,9 @@ def fetch_file(file):
         return file_content
     with open(f'{settings.MEDIA_ROOT}/{file.name}', 'rb') as f:
         return f.read()
+
+
+def fetch_raw_file(filename):
+    # no s3 use
+    with open(f'{settings.MEDIA_ROOT}/{filename}', 'rb') as f:
+        return f.read()

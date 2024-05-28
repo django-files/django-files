@@ -161,6 +161,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 continue
             else:
                 if view == 'Gallery':
+                    page.on("console", lambda msg: print(msg.text))
                     page.locator('.nav-link').locator('text=Files').first.click()
                     page.wait_for_timeout(timeout=350)
                     page.locator('.link-body-emphasis').locator('text=Gallery').first.click()

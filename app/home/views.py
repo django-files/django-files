@@ -21,7 +21,7 @@ from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.models import SiteSettings
 from settings.context_processors import site_settings_processor
-from home.util.storage import fetch_file
+from home.util.storage import fetch_file, fetch_raw_file
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -474,6 +474,10 @@ def proxy_route_view(request, filename):
     View  /p|r/<path:filename>
     """
     log.info(f"proxying file {filename}")
+    raw_fetch = None
+    if 'thumbs' in filename:
+        raw_fetch = filename
+        filename = filename.replace('thumbs/', '')
     file = get_object_or_404(Files, name=filename)
     session_view = request.session.get(f'view_{file.name}', True)
     log.debug(f"User {request.user} has not viewed file {file.name}: {session_view}")
@@ -484,6 +488,8 @@ def proxy_route_view(request, filename):
         request.session[f'view_{file.name}'] = False
     if lock := handle_lock(request, ctx=ctx):
         return lock
+    if raw_fetch:
+        return HttpResponse(fetch_raw_file(raw_fetch), content_type=file.mime)
     return HttpResponse(fetch_file(file), content_type=file.mime)
 
 
