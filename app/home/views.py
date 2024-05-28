@@ -78,7 +78,7 @@ def files_view(request):
         if isinstance(album, int):
             album = get_object_or_404(Albums, id=album)
         elif isinstance(album, str):
-            album = get_object_or_404(Albums, name=album, password = request.GET.get('password'))
+            album = get_object_or_404(Albums, name=album, password=request.GET.get('password'))
             return HttpResponseRedirect(f'{request.path}?album={album.id}')
         else:
             return HttpResponseNotFound()
