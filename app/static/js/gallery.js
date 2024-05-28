@@ -139,10 +139,6 @@ function addGalleryImage(file, top = false) {
         console.debug(`Skipping non-image: ${file.name}`)
         return
     }
-    // if (!file.mime.toLowerCase().startsWith('image')) {
-    //     console.debug('Not Image', file)
-    //     continue
-    // }
 
     // OUTER DIV
     const outer = document.createElement('div')

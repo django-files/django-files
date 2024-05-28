@@ -61,3 +61,14 @@ def file_rename(current_file_name: str, new_file_name: str, thumb: False) -> boo
             except FileNotFoundError:
                 pass
     return True
+
+
+def fetch_file(file):
+    # fetches the byte contents for the file
+    if use_s3():
+        s3 = boto3.client('s3')
+        response = s3.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=file.name)
+        file_content = response['Body'].read()
+        return file_content
+    with open(f'{settings.MEDIA_ROOT}/{file.name}', 'rb') as f:
+        return f.read()
