@@ -55,7 +55,7 @@ class Files(models.Model):
     private = models.BooleanField(default=False, verbose_name='Private File')
     objects = FilesManager()
     avatar = models.BooleanField(default=False, help_text="Determines file is a user avatar.")
-    thumb = StoragesRouterFileField(upload_to=upload_to+'/thumbs/', null=True, blank=True)
+    thumb = StoragesRouterFileField(upload_to=f'{upload_to}/thumbs/', null=True, blank=True)
 
     def __str__(self):
         return f'<File(id={self.id} size={self.size} name={self.name})>'
