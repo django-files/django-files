@@ -235,22 +235,26 @@ export function getCtxMenuContainer(file) {
     let downloadLink = menu.querySelector('a[download=""]')
     downloadLink.setAttribute('download', file.name)
     downloadLink.href = file.raw + '?download=true'
+    if (menu.querySelector('.ctx-expire')) {
+        // gate adding listeners in case user does not have full context
+        menu.querySelector('.ctx-expire').addEventListener('click', ctxSetExpire)
+        menu.querySelector('.ctx-private').addEventListener('click', ctxSetPrivate)
+        menu.querySelector('.ctx-password').addEventListener(
+            'click',
+            ctxSetPassword
+        )
+        menu.querySelector('.ctx-delete').addEventListener('click', ctxDeleteFile)
+        menu.querySelector('.ctx-rename').addEventListener('click', ctxRenameFile)
+        menu.querySelector('.ctx-album').addEventListener('click', ctxAlbumFile)
+        menu.querySelector("[name='current-file-password']").value = file.password
+        menu.querySelector("[name='current-file-expiration']").value = file.expr
+        menu.querySelector("[name='current-file-name']").value = file.name
+    
+        let ctxPrivateText = $(`#ctx-menu-${file.id} .privateText`)
+        let ctxPrivateIcon = $(`#ctx-menu-${file.id} .privateIcon`)
 
-    menu.querySelector('.ctx-expire').addEventListener('click', ctxSetExpire)
-    menu.querySelector('.ctx-private').addEventListener('click', ctxSetPrivate)
-    menu.querySelector('.ctx-password').addEventListener(
-        'click',
-        ctxSetPassword
-    )
-    menu.querySelector('.ctx-delete').addEventListener('click', ctxDeleteFile)
-    menu.querySelector('.ctx-rename').addEventListener('click', ctxRenameFile)
-    menu.querySelector('.ctx-album').addEventListener('click', ctxAlbumFile)
-    menu.querySelector("[name='current-file-password']").value = file.password
-    menu.querySelector("[name='current-file-expiration']").value = file.expr
-    menu.querySelector("[name='current-file-name']").value = file.name
+    }
 
-    let ctxPrivateText = $(`#ctx-menu-${file.id} .privateText`)
-    let ctxPrivateIcon = $(`#ctx-menu-${file.id} .privateIcon`)
     // set private button
     if (file.private) {
         ctxPrivateText.text('Make Public')

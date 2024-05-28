@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.db.models import F
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse, HttpResponseNotFound
 from django.shortcuts import redirect, render, reverse, get_object_or_404
 from django.views.decorators.common import no_append_slash
 from django.views.decorators.cache import cache_page, cache_control
@@ -68,10 +68,21 @@ def files_view(request):
     """
     View  /files/ or /gallery/
     """
-    ctx = {'full_context': True}
+    # ctx = {'full_context': True if request.user.is_authenticated else False}
+    ctx = {}
     album = request.GET.get("album")
     if album:
-        album = get_object_or_404(Albums, id=album)
+        try:
+            album = int(album)
+        except ValueError:
+            pass
+        if isinstance(album, int):
+            album = get_object_or_404(Albums, id=album)
+        elif isinstance(album, str):
+            album = get_object_or_404(Albums, name=album, password = request.GET.get('password'))
+            return HttpResponseRedirect(f'{request.path}?album={album.id}')
+        else:
+            return HttpResponseNotFound()
         ctx.update({'album': album})
         if lock := handle_lock(request, ctx):
             return lock
