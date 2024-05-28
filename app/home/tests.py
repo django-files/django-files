@@ -177,7 +177,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 self.screenshot(page, view)
 
             if view == 'Files':
-                page.locator('.ctx-menu-12').first.click()
+                page.locator('.ctx-menu').first.click()
                 self.screenshot(page, f'{view}-file-context-dropdown')
                 page.locator('.ctx-rename').first.click()
                 page.wait_for_timeout(timeout=500)
@@ -186,7 +186,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 page.locator('#file-rename-submit').first.click()
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-file-is-renamed')
-                page.locator('.ctx-menu-12').first.click()
+                page.locator('.ctx-menu').first.click()
                 page.locator('.ctx-delete').first.click()
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-delete-click')
@@ -222,8 +222,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 self.screenshot(page, f'{view}-create')
                 page.locator('.nav-link').get_by_text('Files').click()
                 page.wait_for_timeout(timeout=350)
-                page.locator('.ctx-menu-11').first.click()
-                page.wait_for_timeout(timeout=100)
+                page.locator('.ctx-menu').first.click()
                 page.locator('.ctx-album').first.click()
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, f'{view}-add-file')

@@ -163,7 +163,7 @@ $('#albumsForm').on('submit', function (event) {
         success: function (data) {
             // console.log('data:', data)
             form.trigger('reset')
-            show_toast(`Album Created: ${data.url}`)
+            // show_toast(`Album Created: ${data.url}`)
         },
         error: messageErrorHandler,
         cache: false,

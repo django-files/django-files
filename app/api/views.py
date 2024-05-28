@@ -154,7 +154,6 @@ def shorten_view(request):
         return JsonResponse({'error': str(error)}, status=500)
 
 
-@csrf_exempt
 @require_http_methods(['OPTIONS', 'POST', 'GET'])
 @auth_from_token
 def album_view(request):

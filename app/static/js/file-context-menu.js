@@ -230,6 +230,7 @@ export function getCtxMenuContainer(file) {
 
     const menu = document.getElementById('ctx-menu-').cloneNode(true)
     menu.id = `ctx-menu-${file.id}`
+
     menu.dataset.dataPk = file.id
     menu.dataset.id = file.id
 
@@ -268,7 +269,8 @@ export function getContextMenu(data, type, row, meta) {
     // This is only called by Datatables to render the context menu, it uses getCtxMenuContainer
     const ctxMenu = document.createElement('div')
     const toggle = document.createElement('a')
-    toggle.classList.add('link-body-emphasis', 'ctx-menu')
+    ctxMenu.classList.add('ctx-menu')
+    toggle.classList.add('link-body-emphasis')
     toggle.setAttribute('role', 'button')
     toggle.dataset.bsToggle = 'dropdown'
     toggle.setAttribute('aria-expanded', 'false')
