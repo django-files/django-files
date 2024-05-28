@@ -253,13 +253,15 @@ export function getCtxMenuContainer(file) {
         let ctxPrivateText = $(`#ctx-menu-${file.id} .privateText`)
         let ctxPrivateIcon = $(`#ctx-menu-${file.id} .privateIcon`)
 
+        // set private button
+        if (file.private) {
+            ctxPrivateText.text('Make Public')
+            ctxPrivateIcon.removeClass('fa-lock').addClass('fa-lock-open')
+        }
+
     }
 
-    // set private button
-    if (file.private) {
-        ctxPrivateText.text('Make Public')
-        ctxPrivateIcon.removeClass('fa-lock').addClass('fa-lock-open')
-    }
+
 
     return menu
 }

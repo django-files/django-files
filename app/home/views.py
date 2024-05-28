@@ -68,8 +68,7 @@ def files_view(request):
     """
     View  /files/ or /gallery/
     """
-    # ctx = {'full_context': True if request.user.is_authenticated else False}
-    ctx = {}
+    ctx = {'full_context': True if request.user.is_authenticated else False}
     album = request.GET.get("album")
     if album:
         try:
