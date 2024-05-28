@@ -159,11 +159,12 @@ CELERY_BEAT_SCHEDULE = {
     }
 }
 
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('redis', 6379)],
+            'hosts': [(config('CHANNELS_REDIS_HOST', 'redis'), config('CHANNELS_REDIS_PORT', 6379, int))],
         },
     },
 }
