@@ -32,11 +32,8 @@
             </div>
         </div>
         <div class="row my-1 g-1">
-            <div class="col-sm-3 form-check form-switch d-flex h-100 fs-5 justify-content-center">
-                <input class="form-check-input align-middle" type="checkbox" id="private" name="private">
-                <label class="form-check-label align-middle mx-2" for="pub_load">
-                    Private
-                </label>
+            <div class="col-sm-3 d-grid">
+                <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-images me-2"></i> Create</button>
             </div>
             <div class="col-sm-3">
                 <input type="password" class="form-control" placeholder="Password" aria-label="Password"
@@ -50,8 +47,10 @@
                 <input type="text" class="form-control" placeholder="Expire" aria-label="Expire"
                        id="expire" name="expire">
             </div>
-            <div class="col-sm-3 d-grid">
-                <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-images me-2"></i> Create</button>
+
+            <div class="col-sm-3 form-switch d-flex h-100 fs-5 justify-content-left">
+                <input class="form-check-input mx-1 align-middle mt-2" type="checkbox" id="private" name="private">
+                <label class="form-check-label mx-2" for="privatve">Private</label>
             </div>
         </div>
     </form>
