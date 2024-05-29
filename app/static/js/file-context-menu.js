@@ -1,5 +1,7 @@
 import { socket } from './socket.js'
 
+import { fetchAlbums, fetchFile } from './api-fetch.js'
+
 // JS for Context Menu
 
 console.debug('LOADING: file-context-menu.js')
@@ -8,14 +10,16 @@ const fileExpireModal = $('#fileExpireModal')
 const filePasswordModal = $('#filePasswordModal')
 const fileDeleteModal = $('#fileDeleteModal')
 const fileRenameModal = $('#fileRenameModal')
+const fileAlbumModal = $('#fileAlbumModal')
 
 // these listeners are only used on preview page
-// see file-table for file table ctx menu listeners
+// see context menu functions for files-table specific listeners
 $('.ctx-expire').on('click', ctxSetExpire)
 $('.ctx-private').on('click', ctxSetPrivate)
 $('.ctx-password').on('click', ctxSetPassword)
 $('.ctx-delete').on('click', ctxDeleteFile)
 $('.ctx-rename').on('click', ctxRenameFile)
+$('.ctx-album').on('click', ctxAlbumFile)
 
 export const faLockOpen = document.querySelector('div.d-none > .fa-lock-open')
 
@@ -111,7 +115,20 @@ $('#modal-rename-form').on('submit', function (event) {
     console.log('data:', data)
     socket.send(JSON.stringify(data))
     fileRenameModal.modal('hide')
-    $(`#ctx-menu-${data.pk} input[name=current-file-expiration]`).val(data.name)
+    $(`#ctx-menu-${data.pk} input[name=current-file-name]`).val(data.name)
+})
+
+// albums Form
+
+fileAlbumModal.on('shown.bs.modal', function (event) {
+    $(this).find('input').trigger('focus').trigger('select')
+})
+
+$('#modal-album-form').on('submit', function (event) {
+    event.preventDefault()
+    const data = genData($(this), 'set-file-albums')
+    socket.send(JSON.stringify(data))
+    fileAlbumModal.modal('hide')
 })
 
 // Event Listeners
@@ -162,6 +179,31 @@ export function ctxRenameFile(event) {
     fileRenameModal.modal('show')
 }
 
+export async function ctxAlbumFile(event) {
+    const albumOptions = document.getElementsByClassName('album-options')[0]
+    albumOptions.innerHTML = ''
+    const pk = getPrimaryKey(event)
+    fileAlbumModal.find('input[name=pk]').val(pk)
+    // FETCH ALBUMS AND SET HERE
+    let nextPage = 1
+    // fetch file details for up to date albums
+    let file = await fetchFile(pk)
+    fileAlbumModal.modal('show')
+    while (nextPage) {
+        let resp = await fetchAlbums(nextPage)
+        console.log(resp)
+        nextPage = resp.next
+        for (let album in resp.albums){
+            let option = createOption(resp.albums[album].id, resp.albums[album].name)
+            option.value = resp.albums[album].id
+            if (file.albums.includes(resp.albums[album].id)) {
+                option.selected = true;
+            }
+            albumOptions.options.add(option)
+        }
+    }
+}
+
 function getPrimaryKey(event) {
     const menu = event.target.closest('div')
     let pk = menu?.dataset?.id
@@ -183,6 +225,7 @@ export function getCtxMenuContainer(file) {
 
     const menu = document.getElementById('ctx-menu-').cloneNode(true)
     menu.id = `ctx-menu-${file.id}`
+
     menu.dataset.dataPk = file.id
     menu.dataset.id = file.id
 
@@ -192,26 +235,33 @@ export function getCtxMenuContainer(file) {
     let downloadLink = menu.querySelector('a[download=""]')
     downloadLink.setAttribute('download', file.name)
     downloadLink.href = file.raw + '?download=true'
+    if (menu.querySelector('.ctx-expire')) {
+        // gate adding listeners in case user does not have full context
+        menu.querySelector('.ctx-expire').addEventListener('click', ctxSetExpire)
+        menu.querySelector('.ctx-private').addEventListener('click', ctxSetPrivate)
+        menu.querySelector('.ctx-password').addEventListener(
+            'click',
+            ctxSetPassword
+        )
+        menu.querySelector('.ctx-delete').addEventListener('click', ctxDeleteFile)
+        menu.querySelector('.ctx-rename').addEventListener('click', ctxRenameFile)
+        menu.querySelector('.ctx-album').addEventListener('click', ctxAlbumFile)
+        menu.querySelector("[name='current-file-password']").value = file.password
+        menu.querySelector("[name='current-file-expiration']").value = file.expr
+        menu.querySelector("[name='current-file-name']").value = file.name
+    
+        let ctxPrivateText = $(`#ctx-menu-${file.id} .privateText`)
+        let ctxPrivateIcon = $(`#ctx-menu-${file.id} .privateIcon`)
 
-    menu.querySelector('.ctx-expire').addEventListener('click', ctxSetExpire)
-    menu.querySelector('.ctx-private').addEventListener('click', ctxSetPrivate)
-    menu.querySelector('.ctx-password').addEventListener(
-        'click',
-        ctxSetPassword
-    )
-    menu.querySelector('.ctx-delete').addEventListener('click', ctxDeleteFile)
-    menu.querySelector('.ctx-rename').addEventListener('click', ctxRenameFile)
-    menu.querySelector("[name='current-file-password']").value = file.password
-    menu.querySelector("[name='current-file-expiration']").value = file.expr
-    menu.querySelector("[name='current-file-name']").value = file.name
+        // set private button
+        if (file.private) {
+            ctxPrivateText.text('Make Public')
+            ctxPrivateIcon.removeClass('fa-lock').addClass('fa-lock-open')
+        }
 
-    let ctxPrivateText = $(`#ctx-menu-${file.id} .privateText`)
-    let ctxPrivateIcon = $(`#ctx-menu-${file.id} .privateIcon`)
-    // set private button
-    if (file.private) {
-        ctxPrivateText.text('Make Public')
-        ctxPrivateIcon.removeClass('fa-lock').addClass('fa-lock-open')
     }
+
+
 
     return menu
 }
@@ -220,7 +270,8 @@ export function getContextMenu(data, type, row, meta) {
     // This is only called by Datatables to render the context menu, it uses getCtxMenuContainer
     const ctxMenu = document.createElement('div')
     const toggle = document.createElement('a')
-    toggle.classList.add('link-body-emphasis', 'ctx-menu')
+    ctxMenu.classList.add('ctx-menu')
+    toggle.classList.add('link-body-emphasis')
     toggle.setAttribute('role', 'button')
     toggle.dataset.bsToggle = 'dropdown'
     toggle.setAttribute('aria-expanded', 'false')
@@ -273,7 +324,18 @@ function genRand(length) {
 function genData(form, method) {
     const data = { method: method }
     for (const element of form.serializeArray()) {
-        data[element['name']] = element['value']
+        const name = element['name'];
+        const value = element['value'];
+        // console.log(element)
+        if (data[name]) {
+            if (Array.isArray(data[name])) {
+                data[name].push(value);
+            } else {
+                data[name] = [data[name], value];
+            }
+        } else {
+            data[name] = value;
+        }
     }
     return data
 }
@@ -316,8 +378,15 @@ function messageFileRename(data) {
 
 socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)
-    console.log(event)
+    // console.log(event)
     if (data.event === 'set-file-name') {
         messageFileRename(data)
     }
 })
+
+function createOption(option, label) {
+      const thisOption = document.createElement("option");
+      thisOption.setAttribute("value", option);
+      thisOption.innerHTML = label;
+      return thisOption;
+}

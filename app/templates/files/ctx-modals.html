@@ -79,30 +79,56 @@
 </div> <!-- modal-dialog -->
 </div> <!-- modal -->
 
-<div class="modal fade" id="fileRenameModal" tabindex="-1" aria-labelledby="fileRenameModalModalLabel" aria-hidden="true">
+<div class="modal fade" id="fileRenameModal" tabindex="-1" aria-labelledby="fileRenameModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h1 class="modal-title fs-5" id="fileRenameModalModalLabel">Rename File</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-            <p>
-                Renaming a file will change shared links to the file.
-            </p>
-            <form id="modal-rename-form" name="modal-rename-form">
-                <input type="hidden" name="pk" value="">
-                <label for="name" class="form-label">Name</label>
-                <div class="input-group w-100">
-                    <input type="text" class="form-control" id="name" name="name" autocomplete="off">
-                </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button type="submit" class="btn btn-success" form="modal-rename-form" id="file-rename-submit">
-                Rename File</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-    </div> <!-- modal-content -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="fileRenameModalLabel">Rename File</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    Renaming a file will change shared links to the file.
+                </p>
+                <form id="modal-rename-form" name="modal-rename-form">
+                    <input type="hidden" name="pk" value="">
+                    <label for="name" class="form-label">Name</label>
+                    <div class="input-group w-100">
+                        <input type="text" class="form-control" id="name" name="name" autocomplete="off">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-success" form="modal-rename-form" id="file-rename-submit">
+                    Rename File</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div> <!-- modal-content -->
     </div> <!-- modal-dialog -->
-    </div> <!-- modal -->
+</div> <!-- modal -->
+
+<div class="modal fade" id="fileAlbumModal" tabindex="-1" aria-labelledby="fileAlbumModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="height: 50%;">
+        <div class="modal-content" style="height: 50%;">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="fileAlbumModalLabel">Manage Albums</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pb-5">
+                <form id="modal-album-form" name="modal-album-form" class="h-100 w-100 d-inline-block">
+                    <input type="hidden" name="pk" value="">
+                    <label for="name" class="form-label">Albums</label>
+                    <div class="input-group w-100 h-100 d-inline-block">
+                        <select class="form-select album-options w-100 h-100 d-inline-block" aria-label="Albums" name="albums" multiple>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-success" form="modal-album-form" id="file-album-submit">
+                    Save Album Selection</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div> <!-- modal-content -->
+    </div> <!-- modal-dialog -->
+</div> <!-- modal -->

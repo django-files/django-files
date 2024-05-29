@@ -1,0 +1,52 @@
+{% load home_tags %}
+
+<table class="display responsive nowrap table table-hover table-responsive mb-0" id="albums-table" style="width:100%">
+    <caption class="visually-hidden">List of Albums</caption>
+    <thead>
+    <tr>
+        <th scope="col" class="d-none d-sm-table-cell">ID</th>
+        <th scope="col">Album Name</th>
+        <th scope="col">Date</th>
+        <th scope="col">Expire</th>
+        <th scope="col" class="d-none d-md-table-cell"><i class="fa-solid fa-eye"></i></th>
+        <th scope="col" class="d-none d-md-table-cell"><i class="fa-solid fa-bomb"></i></th>
+        <th scope="col" class="text-center"><i class="fa-solid fa-gears"></i></th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+<div class="modal fade" id="delete-album-modal" tabindex="-1" aria-labelledby="delete-album-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="delete-album-label">Delete Al;bum URL</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">Are you sure you want to delete this album?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="album-delete-confirm">Delete
+                    <i class="fa-regular fa-trash-can ms-1"></i></button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-none">
+    <a role="button" class="delete-album-btn" title="Delete">
+        <i class="fa-regular fa-trash-can link-danger"></i></a>
+    <div class="dj-album-link">
+        <span class="d-none d-sm-inline">
+            <a class="link-body-emphasis clip dj-album-link-clip" role="button">
+                <i class="fa-regular fa-clipboard"></i></a>
+        </span>
+        <span class="d-inline-block d-xxl-inline">
+            <span class="d-inline-block d-lg-inline">
+                <a class="link-body-emphasis dj-album-link-ref"></a>
+            </span>
+        </span>
+    </div>
+</div>
+

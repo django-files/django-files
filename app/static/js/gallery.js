@@ -29,6 +29,8 @@ showGallery.onclick = changeView
 let showList = document.querySelector('.show-list')
 showList.onclick = changeView
 
+let params = new URL(document.location.toString()).searchParams;
+
 let dtContainer
 
 let nextPage = 1
@@ -108,7 +110,7 @@ async function addNodes() {
     if (!fetchLock) {
         filesDataTable.processing(true)
         fetchLock = true
-        const data = await fetchFiles(nextPage)
+        const data = await fetchFiles(nextPage, 25, params.get("album"))
         console.debug('data:', data)
         nextPage = data.next
         fileData.push(...data.files)
@@ -137,10 +139,6 @@ function addGalleryImage(file, top = false) {
         console.debug(`Skipping non-image: ${file.name}`)
         return
     }
-    // if (!file.mime.toLowerCase().startsWith('image')) {
-    //     console.debug('Not Image', file)
-    //     continue
-    // }
 
     // OUTER DIV
     const outer = document.createElement('div')
@@ -311,13 +309,13 @@ function changeView(event) {
             galleryContainer.removeChild(galleryContainer.lastChild)
         }
         dtContainer.hidden = false
-        window.history.replaceState({}, null, '/files/')
+        window.history.replaceState({}, null, '/files/' + '?' + params)
         showList.style.fontWeight = 'bold'
         showGallery.style.fontWeight = 'normal'
         filesDataTable.responsive.recalc()
     } else {
         dtContainer.hidden = true
-        window.history.replaceState({}, null, '/gallery/')
+        window.history.replaceState({}, null, '/gallery/' + '?' + params)
         console.log(fileData)
         fileData.forEach(function (item, index) {
             addGalleryImage(item)

@@ -2,8 +2,23 @@
 {% load static %}
 {% load home_tags %}
 {% load cache %}
-{% block gallery_active %}active{% endblock %}
-{% block title %}Gallery{% endblock %}
+{% block files_active %}active{% endblock %}
+{% block title %}{% if album %}{{ album.name }}{% else %}Files{% endif %}{% endblock %}
+
+{% if album %}
+    {% block meta %}
+        <meta name="theme-color" content="{{ album.user.default_color }}">
+        <meta name="author" content="{{ album.user.get_name }}"/>
+        <meta name="title" content="Album: {{ album.name }}"/>
+        <meta name="description" content="{{ album.info|default:"" }} created by {{ album.user.get_name }}"/>
+        <meta property="og:author" content="{{ album.user.get_name }}">
+        <meta property="og:title" content="Album: {{ album.name }}">
+        <meta property="og:description" content="{{ album.info|default:"" }} created by {{ album.user.get_name }}"/>
+        <meta property="og:url" content="{{ request.build_absolute_uri }}">
+        <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+        <meta property="twitter:title" content="Album: {{ album.name }}">
+    {% endblock%}
+{% endif %}
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
@@ -15,14 +30,13 @@
 
     <div class="container-fluid py-3 px-4">
 
-        <h1><i class="fa-regular fa-folder-open me-2"></i> Files</h1>
+        <h1><i class="fa-regular fa-folder-open me-2"></i> {% if album %}{{ album.name }}{% else %}Files{% endif %}</h1>
 
         <p class="lead">
             <a class="link-body-emphasis show-list" role="button" title="List">List</a> |
             <a class="link-body-emphasis show-gallery" role="button" title="Gallery">Gallery</a>
         </p>
-
-        {% if request.user.is_superuser %}
+        {% if request.user.is_superuser and not album %}
             <div class="float-end">
                 <select id="user" name="user" class="form-select" aria-label="Default select example">
                     <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
@@ -32,6 +46,12 @@
                     {% endfor %}
                 </select>
             </div>
+        {% endif %}
+        {% if album %}
+        <div class=row>
+        <p class="lead col-md-10">{% if album.info %}{{ album.info }}{% endif %}</p>
+        <p class="col-md-2 text-end">Views: <strong id="total-files-count">{{ album.view }}</strong></p>
+        </div>
         {% endif %}
         <p class="lead">Total Files Displayed: <strong id="total-files-count">{{ files|length }}</strong></p>
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap" {% if 'gallery' in request.path %}{% else %} hidden{% endif%}></div>
@@ -43,7 +63,6 @@
     {% include 'files/ctx-modals.html' %}
 {% endblock %}
 
-{% block footer %}{% endblock %}
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>

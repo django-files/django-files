@@ -9,9 +9,10 @@ from io import BytesIO
 from pytimeparse2 import parse
 from typing import Optional
 from django.core.cache import cache
+from typing import List
 
 
-from home.models import Files
+from home.models import Files, Albums
 from home.tasks import version_check
 from home.util.file import process_file
 from home.util.storage import file_rename
@@ -151,6 +152,22 @@ class HomeConsumer(AsyncWebsocketConsumer):
         else:
             return self._error('File not found.', **kwargs)
 
+    def delete_album(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: Integer - File ID
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug('delete_file')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
+        if album := Albums.objects.filter(pk=pk):
+            if album[0].user.id != user_id:
+                return self._error('File owned by another user.', **kwargs)
+            album[0].delete()
+        else:
+            return self._error('Album not found.', **kwargs)
+
     def toggle_private_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
@@ -165,7 +182,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 return self._error('File owned by another user.', **kwargs)
             file[0].private = not file[0].private
             file[0].save()
-            response = model_to_dict(file[0], exclude=['file', 'thumb'])
+            response = model_to_dict(file[0], exclude=['file', 'thumb', 'albums'])
             response.update({'event': 'toggle-private-file'})
             log.debug('response: %s', response)
             return response
@@ -191,7 +208,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             file[0].expr = expr or ""
             file[0].save()
             # return self._success('File Expire Updated.', **kwargs)
-            response = model_to_dict(file[0], exclude=['file', 'thumb'])
+            response = model_to_dict(file[0], exclude=['file', 'thumb', 'albums'])
             response.update({'event': 'set-expr-file'})
             log.debug('response: %s', response)
             return response
@@ -213,7 +230,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             log.debug('password: %s', password)
             file[0].password = password or ""
             file[0].save()
-            response = model_to_dict(file[0], exclude=['file', 'thumb'])
+            response = model_to_dict(file[0], exclude=['file', 'thumb', 'albums'])
             response.update({'event': 'set-password-file'})
             log.debug('response: %s', response)
             return response
@@ -226,9 +243,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param name: String - File Name String
         :return: Dictionary - With Key: 'success': bool
         """
-        log.info('set_file_name')
-        log.info('user_id: %s', user_id)
-        log.info('pk: %s', pk)
+        log.debug('set_file_name')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
         if not name:
             return self._error('No filename provided.', **kwargs)
         if len(Files.objects.filter(name=name)) != 0:
@@ -244,7 +261,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 if file.thumb:
                     file.thumb.name = 'thumbs/' + name  # renames thumbnail
                 file.save()
-                response = model_to_dict(file, exclude=['file', 'thumb'])
+                response = model_to_dict(file, exclude=['file', 'thumb', 'albums'])
                 response.update({'event': 'set-file-name',
                                  'uri': file.preview_uri(),
                                  'raw_uri': file.raw_path,
@@ -252,6 +269,44 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 cache.delete(f'file.urlcache.gallery.{file.pk}')
                 return response
         return self._error('File not found.', **kwargs)
+
+    def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = [], **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: Integer - File ID
+        :param name: String - File Name String
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug('set_file_name')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
+        added = []
+        if file := Files.objects.filter(pk=pk):
+            if len(file) == 0:
+                return self._error('File not found.', **kwargs)
+            if user_id and file[0].user.id != user_id:
+                return self._error('File owned by another user.', **kwargs)
+            file_albums = list(Albums.objects.filter(files__id=pk).values_list('id', flat=True))
+        if not isinstance(albums, list):
+            albums = [albums]
+        albums = [int(album) for album in albums]
+        log.debug(f'Sent albums: {albums}')
+        log.debug(f'Current Albums: {file_albums}')
+        for album in albums:
+            if album not in file_albums:
+                # if the file is not linked to an album in the list, link it
+                file[0].albums.add(Albums.objects.filter(id=album)[0])
+                added.append(album)
+                log.debug(f'Adding file {pk} to album {album}')
+            else:
+                # if the album is linked and still in the new album list, remove it from our list
+                file_albums.remove(album)
+                log.debug(f'Keeping file {pk} in album {album}')
+        for album in file_albums:
+            # if a file was linked to an album that we removed unlink it
+            log.debug(f'removing {pk} from {album}')
+            file[0].albums.remove(Albums.objects.get(id=album))
+        return {'file_id': pk, 'added_to': added, 'removed_from': file_albums}
 
     async def check_for_update(self, *args, **kwargs) -> dict:
         log.debug('async - check_for_update')

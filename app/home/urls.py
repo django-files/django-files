@@ -1,3 +1,4 @@
+import sys
 from django.urls import path, re_path
 
 from api.views import shorten_view, upload_view
@@ -12,6 +13,7 @@ urlpatterns = [
     path('uppy/', views.uppy_view, name='uppy'),
     path('paste/', views.paste_view, name='paste'),
     path('shorts/', views.shorts_view, name='shorts'),
+    path('albums/', views.albums_view, name='albums'),
     path('stats/', views.stats_view, name='stats'),
     path('public/', views.pub_uppy_view, name='public-uppy'),
     path('i/', views.invite_view, name='invite-base'),
@@ -27,7 +29,10 @@ urlpatterns = [
     path('ajax/toggle_private/file/<int:pk>/', views.toggle_private_file_ajax, name='toggle-private-file'),
     path('ajax/delete/hook/<int:pk>/', views.delete_hook_ajax, name='delete-hook'),
     path('ajax/check_password/file/<int:pk>/', views.check_password_file_ajax, name='check-password-file'),
+    path('ajax/check_password/album/<int:pk>/', views.check_password_album_ajax, name='check-password-album'),
     path('u/<path:filename>', views.url_route_view, name='url-route'),
     path('raw/<path:filename>', views.raw_redirect_view, name='url-raw-redirect'),
-    path('r/<path:filename>', views.url_route_view, name='url-raw'),
 ]
+
+if 'test' in sys.argv:
+    urlpatterns = urlpatterns + [path('r/<path:filename>', views.proxy_route_view, name='url-raw'),]

@@ -1,9 +1,15 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from home.models import Files, FileStats, ShortURLs
+from home.models import Files, FileStats, ShortURLs, Albums
 
 admin.site.site_header = 'Django Files Administration'
+
+
+@admin.register(Albums)
+class AlbumAdmin(admin.ModelAdmin):
+    model = Albums
+    list_display = ('id', 'name')
 
 
 @admin.register(Files)

@@ -175,6 +175,13 @@ def clear_files_cache():
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
+def clear_albums_cache():
+    # Clear Files cache
+    log.info('clear_albums_cache')
+    return cache.delete_pattern('*.albums.*')
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def clear_shorts_cache():
     # Clear Shorts cache
     log.info('clear_shorts_cache')
@@ -323,6 +330,38 @@ def delete_file_websocket(data: dict, user_id):
     log.debug('data: %s', data)
     log.debug('delete_file_websocket pk: %s user_id: %s', data['id'], user_id)
     data['event'] = 'file-delete'
+    data['pk'] = data['id']
+    channel_layer = get_channel_layer()
+    event = {
+        'type': 'websocket.send',
+        'text': json.dumps(data),
+    }
+    async_to_sync(channel_layer.group_send)(f'user-{user_id}', event)
+
+
+@shared_task()
+def new_album_websocket(album):
+    log.debug('new_album_websocket: %s', album)
+    log.debug('album: %s', album)
+    album['event'] = 'album-new'
+    # handle datetime obj to str
+    album['date'] = str(album['date'])
+    channel_layer = get_channel_layer()
+    log.info('data: %s', album)
+    event = {
+        'type': 'websocket.send',
+        'text': json.dumps(album),
+    }
+    log.debug('event: %s', event)
+    async_to_sync(channel_layer.group_send)(f"user-{album['user']}", event)
+
+
+@shared_task()
+def delete_album_websocket(data: dict, user_id):
+    log.debug('delete_album_websocket')
+    log.debug('data: %s', data)
+    log.debug('delete_album_websocket pk: %s user_id: %s', data['id'], user_id)
+    data['event'] = 'album-delete'
     data['pk'] = data['id']
     channel_layer = get_channel_layer()
     event = {

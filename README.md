@@ -165,6 +165,7 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 -   Home Page; with Overview and Stats
 -   Stats Page; with Stats and Graphs (WIP)
 -   Gallery; to Preview Image Files
+-   Albums; create custom albums for sharing multiple images/files
 -   Upload; with Drag and Drop
 -   Files; View and Delete
 -   Short URLs; View, Create, and Delete Shorts

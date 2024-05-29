@@ -19,8 +19,9 @@ from pytimeparse2 import parse
 from typing import Optional, BinaryIO
 from urllib.parse import urlparse
 
-from home.tasks import clear_files_cache
-from home.models import Files, FileStats, ShortURLs
+
+from home.tasks import clear_files_cache, clear_albums_cache, new_album_websocket
+from home.models import Files, FileStats, ShortURLs, Albums
 from home.util.file import process_file
 from home.util.rand import rand_string
 from home.util.misc import anytobool, human_read_to_byte
@@ -28,7 +29,7 @@ from home.util.quota import process_storage_quotas
 from oauth.models import CustomUser, UserInvites
 from settings.models import SiteSettings
 from settings.context_processors import site_settings_processor
-from api.utils import extract_files
+from api.utils import extract_files, extract_albums
 
 log = logging.getLogger('app')
 cache_seconds = 60 * 60 * 4
@@ -153,6 +154,43 @@ def shorten_view(request):
         return JsonResponse({'error': str(error)}, status=500)
 
 
+@require_http_methods(['OPTIONS', 'POST', 'GET'])
+@auth_from_token
+def album_view(request):
+    """
+    View  /api/album
+    """
+    if request.method == 'POST':
+        data = get_json_body(request)
+        log.info(data)
+        name = data.get('name') or request.headers.get('name')
+        max_views = data.get('max-views') or request.headers.get('max-views', 0)
+        expr = data.get('expire') or request.headers.get('expire')
+        desc = data.get('description') or request.headers.get('description')
+        password = data.get('password') or request.headers.get('password')
+        private = data.get('private') or request.headers.get('private')
+        if not name:
+            return JsonResponse({'error': 'Missing Required Value: name'}, status=400)
+        log.debug('name: %s', name)
+        album = Albums.objects.create(
+            user=request.user,
+            name=name,
+            maxv=int(max_views),
+            info=desc,
+            password=password,
+            private=False if not private else True,
+            expr=parse(expr) if expr else '',
+        )
+        site_settings = SiteSettings.objects.settings()
+        full_url = site_settings.site_url + reverse('home:files') + f'?album={album.id}'
+        clear_albums_cache.delay()
+        new_album_websocket.apply_async(args=[extract_albums([album])[0]])
+        return JsonResponse({'url': full_url}, safe=False)
+    else:
+        album = Albums.objects.get(id=request.GET.get('id'))
+        return JsonResponse(album)
+
+
 @csrf_exempt
 @require_http_methods(['OPTIONS', 'GET', 'POST'])
 @auth_from_token
@@ -229,14 +267,14 @@ def recent_view(request):
 
 @csrf_exempt
 @require_http_methods(['OPTIONS', 'GET'])
-@auth_from_token
+@auth_from_token(no_fail=True)
 @cache_control(no_cache=True)
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers('Authorization')
 @vary_on_cookie
-def pages_view(request, page, count=None):
+def files_view(request, page, count=None):
     """
-    View  /api/pages/{page}/{count}/
+    View  /api/files/{page}/{count}/
     Limit 100 items per page.
     """
     if not count:
@@ -245,13 +283,16 @@ def pages_view(request, page, count=None):
         count = 100
     log.debug('%s - files_page_view: %s', request.method, page)
     user = request.GET.get('user')
-    if user:
-        if user == "0":
-            q = Files.objects.filtered_request(request)
-        else:
-            q = Files.objects.filtered_request(request, user_id=int(user))
+    if album := request.GET.get('album'):
+        q = Files.objects.filtered_request(request, albums__id=album)
     else:
-        q = Files.objects.get_request(request)
+        if user:
+            if user == "0":
+                q = Files.objects.filtered_request(request)
+            else:
+                q = Files.objects.filtered_request(request, user_id=int(user))
+        else:
+            q = Files.objects.get_request(request)
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
@@ -291,20 +332,60 @@ def file_view(request, idname):
                 data['expr'] = ''
             Files.objects.filter(id=file.id).update(**data)
             file = Files.objects.get(id=file.id)
-            response = model_to_dict(file, exclude=['file', 'thumb'])
+            response = model_to_dict(file, exclude=['file', 'thumb', 'albums'])
             # TODO: Determine why we have to manually flush file cache here
             #       The Website seems to flush, but not the api/recent/ endpoint
             clear_files_cache.delay()
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
         elif request.method == 'GET':
-            response = model_to_dict(file, exclude=['file', 'thumb'])
+            response = model_to_dict(file, exclude=['file', 'thumb', 'albums'])
             response['date'] = file.date  # not sure why this is not getting included
+            response['albums'] = [album.id for album in Albums.objects.filter(files__id=file.id)]
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
     except Exception as error:
         log.debug(error)
         return JsonResponse({'error': f'{error}'}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(['OPTIONS', 'GET'])
+@auth_from_token
+@cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix="albums")
+@vary_on_headers('Authorization')
+@vary_on_cookie
+def albums_view(request, page, count=None):
+    """
+    View  /api/albums/{page}/{count}/
+    Limit 100 items per page.
+    """
+    if not count:
+        count = 100
+    if count > 250:
+        count = 250
+    log.info('%s - albums_page_view: %s', request.method, page)
+    user = request.GET.get('user')
+    if user:
+        if user == "0":
+            q = Albums.objects.filtered_request(request)
+        else:
+            q = Albums.objects.filtered_request(request, user_id=int(user))
+    else:
+        q = Albums.objects.get_request(request, user_id=request.user.id)
+    paginator = Paginator(q, count)
+    page_obj = paginator.get_page(page)
+    albums = extract_albums(page_obj.object_list)
+    log.info(albums)
+    log.debug('albums: %s', albums)
+    _next = page_obj.next_page_number() if page_obj.has_next() else None
+    response = {
+        'albums': albums,
+        'next': _next,
+        'count': count,
+    }
+    return JsonResponse(response, safe=False, status=200)
 
 
 def get_json_body(request):

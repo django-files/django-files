@@ -3,7 +3,8 @@ import markdown
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.db.models import F
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse, HttpResponseNotFound
 from django.shortcuts import redirect, render, reverse, get_object_or_404
 from django.views.decorators.common import no_append_slash
 from django.views.decorators.cache import cache_page, cache_control
@@ -13,13 +14,14 @@ from django.views.decorators.vary import vary_on_cookie
 from fractions import Fraction
 
 from api.views import auth_from_token, process_file_upload, parse_expire
-from home.models import Files, FileStats, ShortURLs
+from home.models import Files, FileStats, ShortURLs, Albums
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
 from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.models import SiteSettings
 from settings.context_processors import site_settings_processor
+from home.util.storage import fetch_file, fetch_raw_file
 
 log = logging.getLogger('app')
 cache_seconds = 60*60*4
@@ -62,17 +64,41 @@ def stats_view(request):
     return render(request, 'stats.html', context=context)
 
 
-@login_required
 def files_view(request):
     """
     View  /files/ or /gallery/
     """
-    context = {'full_context': True}
-    if request.user.is_superuser:
+    ctx = {'full_context': True if request.user.is_authenticated else False}
+    album = request.GET.get("album")
+    if album:
+        try:
+            album = int(album)
+        except ValueError:
+            pass
+        if isinstance(album, int):
+            album = get_object_or_404(Albums, id=album)
+        elif isinstance(album, str):
+            album = get_object_or_404(Albums, name=album, password=request.GET.get('password'))
+            return HttpResponseRedirect(f'{request.path}?album={album.id}')
+        else:
+            return HttpResponseNotFound()
+        ctx.update({'album': album})
+        if lock := handle_lock(request, ctx):
+            return lock
+        session_view = request.session.get(f'view_album_{album.id}', True)
+        log.debug(f"User {request.user} has not viewed album {album.name}: {session_view}")
+        if session_view:
+            if album.maxv and album.maxv <= album.view and album.user != request.user:
+                return render(request, 'error/403.html', status=403)
+            request.session[f'view_album_{album.id}'] = False
+            Albums.objects.filter(pk=album.id).update(view=F('view')+1)
+    if not request.user.is_authenticated and (not album or album.private):
+        return HttpResponseRedirect(reverse('oauth:login'))
+    elif request.user.is_superuser:
         users = CustomUser.objects.all()
-        context.update({'users': users})
+        ctx.update({'users': users})
     log.debug('%s - gallery_view: is_secure: %s', request.method, request.is_secure())
-    return render(request, 'gallery.html', context)
+    return render(request, 'gallery.html', ctx)
 
 
 @cache_control(no_cache=True)
@@ -87,6 +113,20 @@ def shorts_view(request):
     shorts = ShortURLs.objects.get_request(request)
     context = {'shorts': shorts}
     return render(request, 'shorts.html', context)
+
+
+@cache_control(no_cache=True)
+@login_required
+@cache_page(cache_seconds, key_prefix="albums")
+@vary_on_cookie
+def albums_view(request):
+    """
+    View  /albums/
+    """
+    log.debug('%s - albums_view: is_secure: %s', request.method, request.is_secure())
+    albums = Albums.objects.get_request(request)
+    context = {'albums': albums}
+    return render(request, 'albums.html', context)
 
 
 @csrf_exempt
@@ -326,7 +366,6 @@ def delete_hook_ajax(request, pk):
     return HttpResponse(status=204)
 
 
-@csrf_exempt
 @require_http_methods(['POST'])
 def check_password_file_ajax(request, pk):
     """
@@ -334,6 +373,18 @@ def check_password_file_ajax(request, pk):
     """
     log.debug('check_password_file_ajax: %s', pk)
     file = get_object_or_404(Files, pk=pk)
+    if file.password != request.POST.get('password'):
+        return HttpResponse(status=401)
+    return HttpResponse(status=200)
+
+
+@require_http_methods(['POST'])
+def check_password_album_ajax(request, pk):
+    """
+    View  /ajax/check_password/album/<int:pk>/
+    """
+    log.info('check_password_album_ajax: %s', pk)
+    file = get_object_or_404(Albums, pk=pk)
     if file.password != request.POST.get('password'):
         return HttpResponse(status=401)
     return HttpResponse(status=200)
@@ -351,7 +402,7 @@ def raw_redirect_view(request, filename):
     file = get_object_or_404(Files, name=filename)
     ctx = {"file": file}
     response = HttpResponse(status=302)
-    if lock := file_lock(request, ctx):
+    if lock := handle_lock(request, ctx):
         return lock
     if request.GET.get('thumb', False):
         # use site settings context processor for caching
@@ -395,7 +446,7 @@ def url_route_view(request, filename):
     }
     if session_view:
         request.session[f'view_{file.name}'] = False
-    if lock := file_lock(request, ctx=ctx):
+    if lock := handle_lock(request, ctx=ctx):
         return lock
     log.debug('ctx: %s', ctx)
     if file.mime.startswith('image'):
@@ -427,13 +478,41 @@ def url_route_view(request, filename):
         return render(request, 'embed/preview.html', context=ctx)
 
 
-def file_lock(request, ctx):
+@require_http_methods(['GET'])
+def proxy_route_view(request, filename):
+    """
+    View  /r/<path:filename>
+    This is presently only used in test to serve static files without nginx.
+    """
+    log.info(f"proxying file {filename}")
+    raw_fetch = None
+    if 'thumbs' in filename:
+        # thumbs does not have a file object so we use raw fetch to grab
+        raw_fetch = filename
+        filename = filename.replace('thumbs/', '')
+    file = get_object_or_404(Files, name=filename)
+    session_view = request.session.get(f'view_{file.name}', True)
+    log.debug(f"User {request.user} has not viewed file {file.name}: {session_view}")
+    ctx = {
+        'file': file
+    }
+    if session_view:
+        request.session[f'view_{file.name}'] = False
+    if lock := handle_lock(request, ctx=ctx):
+        return lock
+    if raw_fetch:
+        return HttpResponse(fetch_raw_file(raw_fetch), content_type=file.mime)
+    return HttpResponse(fetch_file(file), content_type=file.mime)
+
+
+def handle_lock(request, ctx):
     """Returns a not allowed if private or file pw page if password set."""
-    if (ctx["file"].private and (request.user != ctx["file"].user) and
-            (ctx["file"].password is None or ctx["file"].password == '')):
+    obj = ctx.get("file") or ctx.get("album")
+    if (obj.private and (request.user != obj.user) and
+            (obj.password is None or obj.password == '')):
         return render(request, 'error/403.html', context=ctx, status=403)
-    if ctx["file"].password and (request.user != ctx["file"].user):
-        if (supplied_password := (request.GET.get('password'))) != ctx["file"].password:
+    if obj.password and (request.user != obj.user):
+        if (supplied_password := (request.GET.get('password'))) != obj.password:
             if supplied_password is not None:
                 messages.warning(request, 'Invalid Password!')
             return render(request, 'embed/password.html', context=ctx, status=403)
