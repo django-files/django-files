@@ -196,24 +196,3 @@ socket?.addEventListener('message', function (event) {
         addAlbumRow(data)
     } 
 })
-
-$('#password-unmask').on('click', function (event) {
-    console.log('#password-unmask click:', event)
-    const input = $('#password')
-    const type = input.attr('type') === 'password' ? 'text' : 'password'
-    input.prop('type', type)
-})
-
-$('#password-copy').on('click', async function (event) {
-    console.log('#password-copy click:', event)
-    await navigator.clipboard.writeText($('#password').val())
-    show_toast('Password copied!', 'info')
-})
-
-$('#password-generate').on('click', async function (event) {
-    console.log('#password-generate click:', event)
-    const password = genRand(12)
-    $('#password').val(password)
-    await navigator.clipboard.writeText(password)
-    show_toast('Password generated and copied!', 'info')
-})
