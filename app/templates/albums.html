@@ -36,8 +36,12 @@
                 <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-images me-2"></i> Create</button>
             </div>
             <div class="col-md-3">
-                <input type="password" class="form-control" placeholder="Password" aria-label="Password"
-                       id="password" name="password">
+                <div class="input-group w-100">
+                    <input type="password" class="form-control fake-password" placeholder="Password" aria-label="Password" id="password" name="password" autocomplete="off" readonly>
+                    <button type="button" title="Umask password." id="password-unmask" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye me-1"></i></button>
+                    <button type="button" title="Copy Password" id="password-copy" class="btn btn-warning btn-sm"><i class="fa-regular fa-copy"></i></button>
+                    <button type="button" title="Generate new password." id="password-generate" class="btn btn-info btn-sm"><i class="fa-solid fa-key"></i></button>
+                </div>
             </div>
             <div class="col-md-2">
                 <input type="text" class="form-control" placeholder="Max Views" aria-label="Max-Views"

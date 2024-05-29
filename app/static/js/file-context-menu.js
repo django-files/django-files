@@ -1,5 +1,4 @@
 import { socket } from './socket.js'
-
 import { fetchAlbums, fetchFile } from './api-fetch.js'
 
 // JS for Context Menu
@@ -297,23 +296,6 @@ export function getContextMenu(data, type, row, meta) {
     return ctxMenu
 }
 
-/**
- * Generate Random String at length
- * @param {Number} length
- * @return {String}
- */
-function genRand(length) {
-    const chars =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    let result = ''
-    let counter = 0
-    while (counter < length) {
-        const rand = Math.floor(Math.random() * chars.length)
-        result += chars.charAt(rand)
-        counter += 1
-    }
-    return result
-}
 
 /**
  * Convert Form Object to Object

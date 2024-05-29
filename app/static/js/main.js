@@ -9,6 +9,13 @@ document
 document
     .querySelectorAll('[data-bs-toggle="tooltip"]')
     .forEach((el) => new bootstrap.Tooltip(el))
+document
+    .querySelectorAll('.fake-password')
+    .forEach((el) =>
+        el.addEventListener('focus', (e) =>
+            e.target.removeAttribute('readonly')
+        )
+    )
 
 const backToTop = document.getElementById('back-to-top')
 if (backToTop) {
@@ -188,4 +195,22 @@ function throttle(fn, limit = 250) {
             lastExecutedTime = currentTime
         }
     }
+}
+
+/**
+ * Generate Random String at length
+ * @param {Number} length
+ * @return {String}
+ */
+function genRand(length) {
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    let result = ''
+    let counter = 0
+    while (counter < length) {
+        const rand = Math.floor(Math.random() * chars.length)
+        result += chars.charAt(rand)
+        counter += 1
+    }
+    return result
 }
