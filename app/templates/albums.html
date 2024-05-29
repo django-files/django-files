@@ -18,19 +18,23 @@
 
     
     <form id="albumsForm" class="pt-2 pb-2" method="post" action="{% url 'api:album' %}">
-        <div class="row g-3">
+        <div class="row g-1">
             <div class="col-sm-12">
                 <input type="text" class="form-control" placeholder="Album Name" aria-label="Vanity"
                        id="name" name="name" required>
             </div>
+        </div>
+        <div class="row g-1 my-1">
 
             <div class="col-12">
                 <input type="text" class="form-control" placeholder="Album Description" aria-label="Album Description"
                        id="description" name="description">
             </div>
-            <div class="form-check form-switch col-sm-1 justify-content-center">
-                <input class="form-check-input justify-content-center" type="checkbox" id="private" name="private">
-                <label class="form-check-label" for="pub_load">
+        </div>
+        <div class="row my-1 g-1">
+            <div class="col-sm-3 form-check form-switch">
+                <input class="form-control form-check-input my-2" type="checkbox" id="private" name="private">
+                <label class="form-check-label my-1" for="pub_load">
                     Private
                 </label>
             </div>
@@ -38,11 +42,11 @@
                 <input type="password" class="form-control" placeholder="Password" aria-label="Password"
                        id="password" name="password">
             </div>
-            <div class="col-sm-3">
+            <div class="col-sm-2">
                 <input type="text" class="form-control" placeholder="Max Views" aria-label="Max-Views"
                        id="max-views" name="max-views">
             </div>
-            <div class="col-sm-2">
+            <div class="col-sm-1">
                 <input type="text" class="form-control" placeholder="Expire" aria-label="Expire"
                        id="expire" name="expire">
             </div>

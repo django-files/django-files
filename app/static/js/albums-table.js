@@ -37,14 +37,14 @@ const dataTablesOptions = {
         { data: 'delete' },
     ],
     columnDefs: [
-        { targets: 0, width: '30px' },
-        { targets: 1, render: renderAlbumLink, defaultContent: ''},
+        { targets: 0, width: '30px', responsivePriority: 5},
+        { targets: 1, render: renderAlbumLink, defaultContent: '', responsivePriority: 1},
         {
             name: 'date',
             targets: 2,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
-            responsivePriority: 8,
+            responsivePriority: 2,
             width: '200px',
         },
         {
@@ -54,8 +54,8 @@ const dataTablesOptions = {
             className: 'expire-value text-center',
             responsivePriority: 7,
         },
-        { targets: [4, 5], className: 'text-center', width: '30px'},
-        { targets: 6, orderable: false, render: renderDeleteBtn, defaultContent: '', className: 'text-center' },
+        { targets: [4, 5], className: 'text-center', width: '30px', responsivePriority: 4},
+        { targets: 6, orderable: false, render: renderDeleteBtn, defaultContent: '', className: 'text-center', responsivePriority: 3 },
     ],
 }
 
