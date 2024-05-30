@@ -15,18 +15,19 @@
         "bootstrap": "^5.3.3",
         "clipboard": "^2.0.11",
         "datatables.net": "^2.0.7",
-        "datatables.net-bs5": "^2.0.7",
+        "datatables.net-bs5": "^2.0.8",
         "datatables.net-datetime": "^1.5.2",
-        "datatables.net-plugins": "^2.0.7",
+        "datatables.net-plugins": "^2.0.8",
         "datatables.net-responsive": "^3.0.2",
         "gulp": "^4.0.2",
         "highlight.js": "^11.9.0",
         "jquery": "^3.7.1",
         "js-cookie": "^3.0.5",
         "moment": "^2.30.1",
-        "swagger-ui": "^5.17.7"
+        "swagger-ui": "^5.17.14"
     },
     "devDependencies": {
+        "eslint": "^8.57.0",
         "prettier": "^3.2.5"
     },
     "scripts": {
