@@ -4,7 +4,7 @@ info:
   title: Django Files
   description: |
     Django Files: [https://github.com/django-files/django-files](https://github.com/django-files/django-files)
-  version: 0.7.4
+  version: 0.14.6
 
 servers:
   - url: /api
@@ -241,6 +241,38 @@ paths:
                 $ref: "#/components/schemas/URL"
               example:
                 url: http://example.com/s/ab12
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /files/{page}/:
+    get:
+      summary: Get paginated files list.
+      description: Get a paginated list of files.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+
+      parameters:
+        - name: page
+          in: path
+          description: Which page to return
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        "200":
+          description: A JSON array of file Preview URLs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  example: http://example.com/u/john.jpg
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
