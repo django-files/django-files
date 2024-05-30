@@ -15,7 +15,7 @@
     <source src="{% static 'video/loop.mp4' %}" type="video/mp4" id="bgvidsrc">
 </video>
 
-<div class="d-flex flex-column align-items-center h-100">
+<div class="d-flex flex-column align-items-center h-100" data-bs-theme="dark">
 <div id="login-outer" class="animate__animated animate__fadeIn ">
     <div class="text-center">
         <img class="img-responsive" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
@@ -27,11 +27,11 @@
         {% if local %}
             <div class="form-floating mb-2 mt-4">
                 <input type="text" id="username" name="username" class="form-control" autocomplete="username" placeholder="Username" aria-describedby="Username" required autofocus>
-                <label for="username">Username</label>
+                <label class="text-white" for="username">Username</label>
             </div>
             <div class="form-floating">
                 <input type="password" class="form-control" id="password" name="password" autocomplete="current-password" placeholder="Password" aria-describedby="Password">
-                <label for="password">Password</label>
+                <label class="text-white" for="password">Password</label>
             </div>
             <div id="passwordFeedback" class="invalid-feedback" aria-describedby="Username or Password feedback.">
                 Invalid Username or Password.
