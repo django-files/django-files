@@ -9,13 +9,6 @@ document
 document
     .querySelectorAll('[data-bs-toggle="tooltip"]')
     .forEach((el) => new bootstrap.Tooltip(el))
-document
-    .querySelectorAll('.fake-password')
-    .forEach((el) =>
-        el.addEventListener('focus', (e) =>
-            e.target.removeAttribute('readonly')
-        )
-    )
 
 const backToTop = document.getElementById('back-to-top')
 if (backToTop) {
@@ -224,8 +217,13 @@ $('#password-unmask').on('click', function (event) {
 
 $('#password-copy').on('click', async function (event) {
     console.log('#password-copy click:', event)
-    await navigator.clipboard.writeText($('#password').val())
-    show_toast('Password copied!', 'info')
+    const text = $('#password').val()
+    if (text) {
+        await navigator.clipboard.writeText(text)
+        show_toast('Password copied.', 'info')
+    } else {
+        show_toast('Empty Password!', 'warning')
+    }
 })
 
 $('#password-generate').on('click', async function (event) {
