@@ -14,10 +14,12 @@
 
 
 [data-bs-theme="dark"] {
+
     .dropdown-menu {
         background-color: rgba(0 0 0 / 70%);
         backdrop-filter: blur(6px);
     }
+
     .file-context-dropdown-menu {
         background-color: rgba(0 0 0 / 70%);
         backdrop-filter: blur(6px);
@@ -25,10 +27,12 @@
   }
 
 [data-bs-theme="light"]  {
+    
     .dropdown-menu {
         background-color: rgba(200 200 200 / 70%);
         backdrop-filter: blur(6px);
     }
+
     .file-context-dropdown-menu {
         background-color: rgba(200 200 200 / 70%);
         backdrop-filter: blur(6px);
