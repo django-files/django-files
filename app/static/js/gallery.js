@@ -229,8 +229,6 @@ function addGalleryImage(file, top = false) {
     ctxMenu.style.position = 'absolute'
     ctxMenu.style.top = '0px'
     ctxMenu.style.right = '8px'
-    // ctxMenu.style.opacity = '.9'
-    // ctxMenu.style.zIndex = '100'
     const toggle = document.createElement('a')
     toggle.classList.add('link-body-emphasis', 'ctx-menu')
     toggle.setAttribute('role', 'button')
@@ -242,7 +240,6 @@ function addGalleryImage(file, top = false) {
     outer.appendChild(ctxMenu)
     // console.log(file)
     let menu = getCtxMenuContainer(file)
-    menu.style.opacity = '.9'
     menu.style.zIndex = '1'
     ctxMenu.appendChild(menu)
 

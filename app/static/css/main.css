@@ -11,3 +11,13 @@
 .dropdown-menu {
     z-index: 1005;
 }
+
+.file-context-dropdown-menu {
+    background-color: rgba(0 0 0 / 70%);
+    backdrop-filter: blur(6px);
+}
+
+.dropdown-menu {
+    background-color: rgba(0 0 0 / 70%);
+    backdrop-filter: blur(6px);
+}
