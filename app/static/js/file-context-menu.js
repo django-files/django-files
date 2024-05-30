@@ -1,5 +1,4 @@
 import { socket } from './socket.js'
-
 import { fetchAlbums, fetchFile } from './api-fetch.js'
 
 // JS for Context Menu
@@ -60,27 +59,6 @@ $('#modal-password-form').on('submit', function (event) {
     filePasswordModal.modal('hide')
 })
 
-$('#password-unmask').on('click', function (event) {
-    console.log('#password-unmask click:', event)
-    const input = $('#password')
-    const type = input.attr('type') === 'password' ? 'text' : 'password'
-    input.prop('type', type)
-})
-
-$('#password-copy').on('click', async function (event) {
-    console.log('#password-copy click:', event)
-    await navigator.clipboard.writeText($('#password').val())
-    show_toast('Password copied!', 'info')
-})
-
-$('#password-generate').on('click', async function (event) {
-    console.log('#password-generate click:', event)
-    const password = genRand(12)
-    $('#password').val(password)
-    await navigator.clipboard.writeText(password)
-    show_toast('Password generated and copied!', 'info')
-})
-
 // Delete File Form
 
 $('#confirm-delete').on('click', function (event) {
@@ -138,8 +116,7 @@ export function ctxSetExpire(event) {
     console.log(`getPrimaryKey pk: ${pk}`, event)
     fileExpireModal.find('input[name=pk]').val(pk)
     const expire = $(`#ctx-menu-${pk} input[name=current-file-expiration]`)
-    console.log(`expire: ${expire}`)
-    const expireValue = expire === 'Never' ? '' : expire.val().toString().trim()
+    const expireValue = expire.val().toString().trim()
     console.log(`expireInput: ${expireValue}`)
     $('#expr').val(expireValue)
     fileExpireModal.modal('show')
@@ -297,23 +274,6 @@ export function getContextMenu(data, type, row, meta) {
     return ctxMenu
 }
 
-/**
- * Generate Random String at length
- * @param {Number} length
- * @return {String}
- */
-function genRand(length) {
-    const chars =
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    let result = ''
-    let counter = 0
-    while (counter < length) {
-        const rand = Math.floor(Math.random() * chars.length)
-        result += chars.charAt(rand)
-        counter += 1
-    }
-    return result
-}
 
 /**
  * Convert Form Object to Object

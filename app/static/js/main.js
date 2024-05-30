@@ -189,3 +189,47 @@ function throttle(fn, limit = 250) {
         }
     }
 }
+
+/**
+ * Generate Random String at length
+ * @param {Number} length
+ * @return {String}
+ */
+function genRand(length) {
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    let result = ''
+    let counter = 0
+    while (counter < length) {
+        const rand = Math.floor(Math.random() * chars.length)
+        result += chars.charAt(rand)
+        counter += 1
+    }
+    return result
+}
+
+$('#password-unmask').on('click', function (event) {
+    console.log('#password-unmask click:', event)
+    const input = $('#password')
+    const type = input.attr('type') === 'password' ? 'text' : 'password'
+    input.prop('type', type)
+})
+
+$('#password-copy').on('click', async function (event) {
+    console.log('#password-copy click:', event)
+    const text = $('#password').val()
+    if (text) {
+        await navigator.clipboard.writeText(text)
+        show_toast('Password copied.', 'info')
+    } else {
+        show_toast('Empty Password!', 'warning')
+    }
+})
+
+$('#password-generate').on('click', async function (event) {
+    console.log('#password-generate click:', event)
+    const password = genRand(12)
+    $('#password').val(password)
+    await navigator.clipboard.writeText(password)
+    show_toast('Password generated and copied!', 'info')
+})

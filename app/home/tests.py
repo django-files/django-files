@@ -85,7 +85,6 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         # storage = cls.context.storage_state(path='state.json')
         # cls.context = cls.context.new_context(storage_state='state.json')
         log.info('settings.MEDIA_ROOT: %s', settings.MEDIA_ROOT)
-        log.info('settings.MEDIA_URL: %s', settings.MEDIA_URL)
         if os.path.isdir(settings.MEDIA_ROOT):
             log.info('Removing: %s', settings.MEDIA_ROOT)
             shutil.rmtree(settings.MEDIA_ROOT)
@@ -360,7 +359,6 @@ class FilesTestCase(TestCase):
         site_settings = SiteSettings.objects.settings()
         log.info('site_settings: %s', site_settings)
         log.info('settings.MEDIA_ROOT: %s', settings.MEDIA_ROOT)
-        log.info('settings.MEDIA_URL: %s', settings.MEDIA_URL)
         if os.path.isdir(settings.MEDIA_ROOT):
             log.info('Removing: %s', settings.MEDIA_ROOT)
             shutil.rmtree(settings.MEDIA_ROOT)

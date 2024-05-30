@@ -36,6 +36,8 @@
                     <i class="fa-regular fa-file-lines me-1"></i> Paste</a></li>
                 <li class="list-inline-item"><a href="{% url 'home:files' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
                     <i class="fa-regular fa-folder-open me-1"></i> Files</a></li>
+                <li class="list-inline-item"><a href="{% url 'home:albums' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                    <i class="fa-regular fa-folder-open me-1"></i> Albums</a></li>
                 <li class="list-inline-item"><a href="{% url 'home:shorts' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
                     <i class="fa-solid fa-link me-1"></i> Shorts</a></li>
                 <li class="list-inline-item"><a href="{% url 'home:stats' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
@@ -52,19 +54,21 @@
         <div class="col-12 d-xs-block d-md-none d-lg-none d-xl-none">
             <ul class="list-unstyled list-inline">
                 <li class="list-inline-item"><a href="{% url 'home:index' %}" title="Home" class="link-body-emphasis ">
-                    <i class="fa-solid fa-house-laptop "></i></a></li>
+                    <i class="fa-solid fa-house-laptop"></i></a></li>
                 <li class="list-inline-item"><a href="{% url 'home:uppy' %}" title="Upload" class="link-body-emphasis ">
-                    <i class="fa-solid fa-upload "></i></a></li>
+                    <i class="fa-solid fa-upload"></i></a></li>
                 <li class="list-inline-item"><a href="{% url 'home:paste' %}" title="Paste" class="link-body-emphasis ">
-                    <i class="fa-regular fa-file-lines "></i></a></li>
+                    <i class="fa-regular fa-file-lines"></i></a></li>
                 <li class="list-inline-item"><a href="{% url 'home:files' %}" title="Files" class="link-body-emphasis ">
-                    <i class="fa-regular fa-folder-open "></i></a></li>
+                    <i class="fa-regular fa-folder-open"></i></a></li>
+                <li class="list-inline-item"><a href="{% url 'home:albums' %}" title="Albums" class="link-body-emphasis ">
+                    <i class="fa-regular fa-images"></i></a></li>
                 <li class="list-inline-item"><a href="{% url 'home:shorts' %}" title="Shorts" class="link-body-emphasis ">
-                    <i class="fa-solid fa-link "></i></a></li>
+                    <i class="fa-solid fa-link"></i></a></li>
                 <li class="list-inline-item"><a href="{% url 'home:stats' %}" title="Stats" class="link-body-emphasis ">
-                    <i class="fa-solid fa-chart-line "></i></a></li>
+                    <i class="fa-solid fa-chart-line"></i></a></li>
                 <li class="list-inline-item"><a href="{% url 'settings:user' %}" title="User Settings" class="link-body-emphasis ">
-                    <i class="fas fa-user-circle "></i></a></li>
+                    <i class="fas fa-user-circle"></i></a></li>
                 {% if request.user.is_superuser %}
                 <li class="list-inline-item"><a href="{% url 'settings:site' %}" title="Site Settings" class="link-body-emphasis ">
                     <i class="fa-solid fa-gears "></i></a></li>

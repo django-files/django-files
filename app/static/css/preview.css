@@ -33,15 +33,11 @@
     margin-left: 50px;
 }
 
-.file-context-dropdown-menu {
-    background-color: rgba(0 0 0 / 60%);
-    backdrop-filter: blur(6px);
-}
 
 .openbtn {
     font-size: 20px;
     cursor: pointer;
-    background-color: rgba(0 0 0 / 60%);
+    background-color: rgba(0 0 0 / 70%);
     backdrop-filter: blur(6px);
     color: white;
     padding: 10px 15px;
@@ -55,7 +51,7 @@
 .context-placement {
     font-size: 20px;
     cursor: pointer;
-    background-color: rgba(0 0 0 / 60%);
+    background-color: rgba(0 0 0 / 70%);
     backdrop-filter: blur(6px);
     color: white;
     padding: 10px 15px;
