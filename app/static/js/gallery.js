@@ -85,6 +85,7 @@ $('#user').on('change', function (event) {
  * @param {Number} buffer
  */
 async function galleryScroll(event, buffer = 600) {
+    await sleep(200)
     const maxScrollY = document.body.scrollHeight - window.innerHeight
     console.debug(
         `galleryScroll: ${window.scrollY} > ${maxScrollY - buffer}`,
@@ -94,6 +95,10 @@ async function galleryScroll(event, buffer = 600) {
         console.debug('End of Scroll')
         await addNodes()
     }
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
