@@ -3,6 +3,8 @@
 {% load home_tags %}
 {% block title %}{{ file.name }}{% endblock %}
 
+{% block body_overrides %}data-bs-theme="dark"{% endblock %}
+
 {% block meta %}
     <meta name="theme-color" content="{{ file.user.default_color }}">
 
