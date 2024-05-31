@@ -3,7 +3,6 @@
     position: absolute;
     top: 0;
     right: 0;
-    background-color: rgba(0 0 0 / 60%);
     backdrop-filter: blur(6px);
     overflow: hidden;
     transition: 0.5s;
@@ -37,7 +36,6 @@
 .openbtn {
     font-size: 20px;
     cursor: pointer;
-    background-color: rgba(0 0 0 / 70%);
     backdrop-filter: blur(6px);
     color: white;
     padding: 10px 15px;
@@ -51,7 +49,6 @@
 .context-placement {
     font-size: 20px;
     cursor: pointer;
-    background-color: rgba(0 0 0 / 70%);
     backdrop-filter: blur(6px);
     color: white;
     padding: 10px 15px;
@@ -62,13 +59,56 @@
     transition: 0.3s;
 }
 
-.context-placement:hover {
-    background-color: #444;
+
+
+
+[data-bs-theme="dark"] {
+
+    .context-placement {
+        background-color: rgba(0 0 0 / 70%);
+    }
+
+    .openbtn {
+        background-color: rgba(0 0 0 / 70%);
+    }
+
+    .context-placement:hover {
+        background-color: #444;
+    }
+    
+    .openbtn:hover {
+        background-color: #444;
+    }
+
+    .sidebar {
+        background-color: rgba(0 0 0 / 60%);
+    }
 }
 
-.openbtn:hover {
-    background-color: #444;
+[data-bs-theme="light"]  {
+
+    .context-placement {
+        background-color: rgba(200 200 200 / 70%);
+    }
+
+    .openbtn {
+        background-color: rgba(200 200 200 / 70%);
+    }
+
+    .context-placement:hover {
+        background-color: #e7e6e6;
+    }
+
+    .openbtn:hover {
+        background-color: #e7e6e6;
+    }
+
+    .sidebar {
+        background-color: rgba(200 200 200 / 70%);
+    }
 }
+
+
 
 /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
 @media screen and (max-height <= 450px) {

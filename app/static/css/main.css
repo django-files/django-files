@@ -24,7 +24,8 @@
         background-color: rgba(0 0 0 / 70%);
         backdrop-filter: blur(6px);
     }
-  }
+
+}
 
 [data-bs-theme="light"]  {
     
