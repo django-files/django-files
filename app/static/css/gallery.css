@@ -24,11 +24,6 @@
 
 .gallery-outer {
     position: relative;
-    /* position:
-        0 0
-        12.5px 0
-        12.5px -12.5px
-        0 12.5px; */
     background-color: #495057;
     background-size: 25px 25px;
     background-image: linear-gradient(
