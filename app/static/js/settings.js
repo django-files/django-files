@@ -8,9 +8,10 @@ const settingsForm = $('#settingsForm')
 
 const themeToggle = document.getElementById('theme-toggle')
 const newThemeValue = document.getElementById('new-theme-value')
-
-document.addEventListener('DOMContentLoaded', domContentLoaded)
-themeToggle.addEventListener('click', toggleThemeSwitch)
+if (window.location.pathname.includes('user')) {
+    document.addEventListener('DOMContentLoaded', domContentLoaded)
+    themeToggle.addEventListener('click', toggleThemeSwitch)
+}
 settingsForm.on('change', saveOptions)
 
 /**
