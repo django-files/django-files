@@ -69,4 +69,6 @@
 .gallery-ctx-toggle {
     background-color: transparent;
     border: none;
+    width: 20px;
+    text-align: center;
 }

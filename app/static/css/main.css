@@ -11,10 +11,12 @@
 .dropdown-menu {
     z-index: 1005;
     backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
 .file-context-dropdown-menu {
     backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
 [data-bs-theme="dark"] .dropdown-menu {

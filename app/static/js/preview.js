@@ -9,7 +9,6 @@ const previewSidebar = $('#previewSidebar')
 const contextPlacement = $('#contextPlacement')
 const sidebarCard = $('.sidebarCard')
 const openSidebarButton = $('#openSidebar')
-
 openSidebarButton.on('click', openSidebarCallback)
 $('#closeSidebar').on('click', closeSidebarCallback)
 
@@ -31,10 +30,8 @@ function checkSize() {
                 openSidebar()
             }
         }
-    } else {
-        if (sidebarOpen) {
-            closeSidebar()
-        }
+    } else if (sidebarOpen) {
+        closeSidebar()
     }
 }
 
@@ -73,7 +70,7 @@ function closeSidebar() {
 function renameFile(data) {
     let fileName = document.getElementsByClassName('card-title')[0]
     fileName.innerHTML = data.name
-    window.history.pushState({},"", data.uri)
+    window.history.pushState({}, '', data.uri)
 }
 
 socket?.addEventListener('message', function (event) {
@@ -82,4 +79,3 @@ socket?.addEventListener('message', function (event) {
         renameFile(data)
     }
 })
-
