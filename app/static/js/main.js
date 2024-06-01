@@ -174,19 +174,22 @@ function debounce(fn, timeout = 250) {
 }
 
 /**
- * Throttle Function
- * @function throttle
- * @param {Function} fn
- * @param {Number} limit
+ * Paginated onScroll Callback
+ * @function pageScroll
+ * @param {Event} event
+ * @param {Number} buffer
+ * @param {Function} callable (async)
  */
-function throttle(fn, limit = 250) {
-    let lastExecutedTime = 0
-    return function (...args) {
-        const currentTime = Date.now()
-        if (currentTime - lastExecutedTime >= limit) {
-            fn(...args)
-            lastExecutedTime = currentTime
-        }
+async function pageScroll(event, nextPage, callable, buffer = 500,) {
+    // await sleep(200)
+    const maxScrollY = document.body.scrollHeight - window.innerHeight
+    console.debug(
+        `pageScroll: ${window.scrollY} > ${maxScrollY - buffer}`,
+        window.scrollY > maxScrollY - buffer
+    )
+    if (nextPage && (!maxScrollY || window.scrollY > maxScrollY - buffer)) {
+        console.debug('End of Scroll')
+        await callable()
     }
 }
 

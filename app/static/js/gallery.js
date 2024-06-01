@@ -16,10 +16,6 @@ import { getCtxMenuContainer } from './file-context-menu.js'
 
 console.debug('LOADING: gallery.js')
 
-document.addEventListener('DOMContentLoaded', initGallery)
-document.addEventListener('scroll', throttle(galleryScroll))
-window.addEventListener('resize', throttle(galleryScroll))
-
 const galleryContainer = document.getElementById('gallery-container')
 
 const imageNode = document.querySelector('div.d-none > img')
@@ -32,13 +28,18 @@ showList.onclick = changeView
 let params = new URL(document.location.toString()).searchParams;
 
 let dtContainer
-
 let nextPage = 1
 let fileData = []
-
 let fetchLock = false
+let filesDataTable
 
-let fillInterval
+document.addEventListener('DOMContentLoaded', initGallery)
+document.addEventListener('scroll', debounce(scrollHandle))
+window.addEventListener('resize', debounce(scrollHandle))
+
+async function scrollHandle(event) {
+    pageScroll(event, nextPage, addNodes)
+}
 
 async function initGallery() {
     console.log('Init Gallery')
@@ -51,21 +52,10 @@ async function initGallery() {
         showList.style.fontWeight = 'bold'
     }
     await addNodes()
-    fillInterval = setInterval(fillPage, 250)
+    // fillInterval = setInterval(fillPage, 250)
     window.dispatchEvent(new Event('resize'))
 }
 
-async function fillPage() {
-    console.debug(
-        'fillPage INTERVAL',
-        document.body.clientHeight === document.body.scrollHeight
-    )
-    if (document.body.clientHeight === document.body.scrollHeight) {
-        await addNodes()
-    } else {
-        clearInterval(fillInterval)
-    }
-}
 
 $('#user').on('change', function (event) {
     let user = $(this).val()
@@ -76,30 +66,6 @@ $('#user').on('change', function (event) {
         location.href = url.href
     }
 })
-
-/**
- * Gallery onScroll Callback
- * TODO: End of page detection may need to be tweaked/improved
- * @function galleryScroll
- * @param {Event} event
- * @param {Number} buffer
- */
-async function galleryScroll(event, buffer = 600) {
-    await sleep(200)
-    const maxScrollY = document.body.scrollHeight - window.innerHeight
-    console.debug(
-        `galleryScroll: ${window.scrollY} > ${maxScrollY - buffer}`,
-        window.scrollY > maxScrollY - buffer
-    )
-    if (nextPage && (!maxScrollY || window.scrollY > maxScrollY - buffer)) {
-        console.debug('End of Scroll')
-        await addNodes()
-    }
-}
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 /**
  * Add Next Page Nodes to Container
