@@ -7,8 +7,8 @@
     overflow: hidden;
     transition: 0.5s;
     padding-top: 60px;
-    border-top-right-radius:9px;
-    border-bottom-right-radius:9px;
+    border-top-right-radius: 9px;
+    border-bottom-right-radius: 9px;
     border-top: 1px ridge rgba(66 69 73 / 100%);
     border-right: 1px ridge rgba(66 69 73 / 100%);
     border-bottom: 1px ridge rgba(66 69 73 / 100%);
@@ -31,7 +31,6 @@
     font-size: 36px;
     margin-left: 50px;
 }
-
 
 .openbtn {
     font-size: 20px;
@@ -59,11 +58,7 @@
     transition: 0.3s;
 }
 
-
-
-
-[data-bs-theme="dark"] {
-
+[data-bs-theme='dark'] {
     .context-placement {
         background-color: rgba(0 0 0 / 70%);
     }
@@ -75,7 +70,7 @@
     .context-placement:hover {
         background-color: #444;
     }
-    
+
     .openbtn:hover {
         background-color: #444;
     }
@@ -85,8 +80,7 @@
     }
 }
 
-[data-bs-theme="light"]  {
-
+[data-bs-theme='light'] {
     .context-placement {
         background-color: rgba(200 200 200 / 70%);
     }
@@ -107,8 +101,6 @@
         background-color: rgba(200 200 200 / 70%);
     }
 }
-
-
 
 /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
 @media screen and (max-height <= 450px) {

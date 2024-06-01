@@ -12,9 +12,7 @@
     z-index: 1005;
 }
 
-
-[data-bs-theme="dark"] {
-
+[data-bs-theme='dark'] {
     .dropdown-menu {
         background-color: rgba(0 0 0 / 70%);
         backdrop-filter: blur(6px);
@@ -24,11 +22,9 @@
         background-color: rgba(0 0 0 / 70%);
         backdrop-filter: blur(6px);
     }
-
 }
 
-[data-bs-theme="light"]  {
-    
+[data-bs-theme='light'] {
     .dropdown-menu {
         background-color: rgba(200 200 200 / 70%);
         backdrop-filter: blur(6px);
@@ -38,6 +34,4 @@
         background-color: rgba(200 200 200 / 70%);
         backdrop-filter: blur(6px);
     }
-
 }
-
