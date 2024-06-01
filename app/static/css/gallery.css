@@ -24,21 +24,21 @@
 
 .gallery-outer {
     position: relative;
-    position:
-        0 0,
-        12.5px 0,
-        12.5px -12.5px,
-        0px 12.5px;
+    /* position:
+        0 0
+        12.5px 0
+        12.5px -12.5px
+        0 12.5px; */
     background-color: #495057;
-    background-size: '25px 25px';
+    background-size: 25px 25px;
     background-image: linear-gradient(
             45deg,
-            rgb(145, 145, 145) 25%,
+            rgb(145 145 145) 25%,
             transparent 25%
         ),
-        linear-gradient(135deg, rgb(145, 145, 145) 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, rgb(145, 145, 145) 75%),
-        linear-gradient(135deg, transparent 75%, rgb(145, 145, 145) 75%);
+        linear-gradient(135deg, rgb(145 145 145) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgb(145 145 145) 75%),
+        linear-gradient(135deg, transparent 75%, rgb(145 145 145) 75%);
 }
 
 .image-labels {
@@ -62,16 +62,11 @@
 
 .gallery-ctx {
     position: absolute;
-    top: 0px;
+    top: 0;
     right: 8px;
 }
 
 .gallery-ctx-toggle {
-    background: transparent;
+    background-color: transparent;
     border: none;
-    color: transparent;
-}
-
-.gallery-ctx-toggle:hover {
-    color: white;
 }
