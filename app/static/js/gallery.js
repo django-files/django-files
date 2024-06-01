@@ -164,6 +164,7 @@ function addGalleryImage(file, top = false) {
         'small',
         'text-warning-emphasis'
     )
+    topLeft.setAttribute("data-bs-theme", "dark")
     topLeft.style.position = 'absolute'
     topLeft.style.top = '4px'
     topLeft.style.left = '6px'
@@ -272,6 +273,7 @@ function mouseOut(event) {
 }
 
 function changeView(event) {
+    event.preventDefault();
     if (event.srcElement.innerHTML === 'List') {
         while (galleryContainer.firstChild) {
             galleryContainer.removeChild(galleryContainer.lastChild)
@@ -360,6 +362,7 @@ function buildImageLabels(file, bottomLeft) {
         'd-none',
         'text-shadow',
         'text-nowrap',
+        'text-white',
         'small',
         'lh-sm'
     )
