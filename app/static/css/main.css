@@ -17,7 +17,7 @@
     backdrop-filter: blur(6px);
 }
 
-@media (prefers-color-scheme: dark) {
+[data-bs-theme=dark] {
     .dropdown-menu {
         background-color: rgba(0 0 0 / 70%);
     }
@@ -27,7 +27,7 @@
     }
 }
 
-@media (prefers-color-scheme: light) {
+[data-bs-theme=light] {
     .dropdown-menu {
         background-color: rgba(200 200 200 / 70%);
     }
