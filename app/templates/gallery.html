@@ -59,6 +59,14 @@
     {% include 'files/file-upload-modal.html' %}
     {% include 'files/ctx-menu.html' %}
     {% include 'files/ctx-modals.html' %}
+    <div class="d-none">
+        <div class="gallery-outer m-1 rounded-1 border border-3 border-secondary"></div>
+        <div class="gallery-mouse image-icons d-none text-shadow text-nowrap small text-warning-emphasis" data-bs-theme="dark"></div>
+        <div class="gallery-inner"></div>
+        <div class="gallery-mouse image-labels d-none text-shadow text-nowrap text-white small text lh-sm" data-bs-theme="dark"></div>
+        <div class="gallery-ctx text-stroke fs-2 ctx-menu"></div>
+        <button class="gallery-ctx-toggle link-body-emphasis ctx-menu" aria-expanded="false" data-bs-toggle="dropdown"></button>
+    </div>
 {% endblock %}
 
 
