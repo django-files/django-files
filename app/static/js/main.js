@@ -92,6 +92,10 @@ function show_toast(message, bsClass = 'success', delay = '6000') {
  * @param {InputEvent} event
  */
 function saveOptions(event) {
+    const excludes = ['data-bs-theme-value']
+    if (excludes.includes(event.target.id)) {
+        return console.debug('ignored setting:', event.target.id)
+    }
     console.debug(`saveOptions: ${event.type}`, event)
     const form = $(settingsForm)
     // console.debug('form', form)
@@ -180,7 +184,7 @@ function debounce(fn, timeout = 250) {
  * @param {Number} buffer
  * @param {Function} callable (async)
  */
-async function pageScroll(event, nextPage, callable, buffer = 500,) {
+async function pageScroll(event, nextPage, callable, buffer = 500) {
     // await sleep(200)
     const maxScrollY = document.body.scrollHeight - window.innerHeight
     console.debug(
