@@ -6,12 +6,50 @@ const deleteDiscordHookModal = $('#deleteDiscordHookModal')
 const fileUploadModal = $('#avatarUploadModal')
 const settingsForm = $('#settingsForm')
 
+const themeToggle = document.getElementById('theme-toggle')
+const newThemeValue = document.getElementById('new-theme-value')
+
+document.addEventListener('DOMContentLoaded', domContentLoaded)
+themeToggle.addEventListener('click', toggleThemeSwitch)
 settingsForm.on('change', saveOptions)
 
-// document.addEventListener('dragenter', (event) => {
-//     event.preventDefault()
-//     fileUploadModal.modal('show')
-// })
+/**
+ * DOMContentLoaded Callback
+ * @function domContentLoaded
+ */
+async function domContentLoaded() {
+    console.debug('DOMContentLoaded')
+    const storedTheme = localStorage.getItem('theme')
+    if (storedTheme) {
+        themeToggle.checked = true
+    }
+    const prefers = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'Light'
+        : 'Dark'
+    console.log('prefers:', prefers)
+    newThemeValue.textContent = prefers
+}
+
+function toggleThemeSwitch() {
+    const query = window.matchMedia('prefers-color-scheme: dark')
+    console.info('data-bs-theme-value', query)
+
+    const storedTheme = localStorage.getItem('theme')
+    console.info('storedTheme:', storedTheme)
+    let prefers
+    if (storedTheme) {
+        prefers = storedTheme === 'light' ? 'dark' : 'light'
+        console.debug('reverting to auto theme')
+        localStorage.removeItem('theme')
+    } else {
+        prefers = window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'light'
+            : 'dark'
+        console.log('forcing opposite theme:', prefers)
+        localStorage.setItem('theme', prefers)
+    }
+    document.documentElement.setAttribute('data-bs-theme', prefers)
+}
 
 // TODO: Use a proper selector
 let hookID
@@ -91,47 +129,4 @@ $('#check-for-update').on('click', function (event) {
     const data = JSON.stringify({ method: 'check-for-update' })
     console.log('data:', data)
     socket.send(data)
-})
-
-document.addEventListener('DOMContentLoaded', domContentLoaded)
-
-const themeToggle = document.getElementById('theme-toggle')
-const newThemeValue = document.getElementById('new-theme-value')
-
-/**
- * DOMContentLoaded Callback
- * @function domContentLoaded
- */
-async function domContentLoaded() {
-    console.debug('DOMContentLoaded')
-    const storedTheme = localStorage.getItem('theme')
-    if (storedTheme) {
-        themeToggle.checked = true
-    }
-    const prefers = window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'Light'
-        : 'Dark'
-    console.log('prefers:', prefers)
-    newThemeValue.textContent = prefers
-}
-
-themeToggle.addEventListener('click', () => {
-    const query = window.matchMedia('prefers-color-scheme: dark')
-    console.info('data-bs-theme-value', query)
-
-    const storedTheme = localStorage.getItem('theme')
-    console.info('storedTheme:', storedTheme)
-    let prefers
-    if (storedTheme) {
-        prefers = storedTheme === 'light' ? 'dark' : 'light'
-        console.debug('reverting to auto theme')
-        localStorage.removeItem('theme')
-    } else {
-        prefers = window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'light'
-            : 'dark'
-        console.log('forcing opposite theme:', prefers)
-        localStorage.setItem('theme', prefers)
-    }
-    document.documentElement.setAttribute('data-bs-theme', prefers)
 })
