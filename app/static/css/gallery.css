@@ -17,24 +17,6 @@
     stroke-width: 20px;
 }
 
-/*.gallery-div {*/
-/*    background-color: #495057;*/
-/*    background-image: linear-gradient(45deg, #495057 25%, transparent 25%),*/
-/*        linear-gradient(-45deg, #495057 25%, transparent 25%),*/
-/*        linear-gradient(45deg, transparent 75%, #495057 75%),*/
-/*        linear-gradient(-45deg, transparent 75%, #495057 75%),*/
-/*        linear-gradient(45deg, #919191 25%, transparent 25%),*/
-/*        linear-gradient(135deg, #919191 25%, transparent 25%),*/
-/*        linear-gradient(45deg, transparent 75%, #919191 75%),*/
-/*        linear-gradient(135deg, transparent 75%, #919191 75%);*/
-/*    background-size: 25px 25px;*/
-/*    background-position:*/
-/*        0 0,*/
-/*        12.5px 0,*/
-/*        12.5px -12.5px,*/
-/*        0px 12.5px;*/
-/*}*/
-
 .dt-processing {
     position: relative !important;
     top: 100% !important;
