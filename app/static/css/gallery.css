@@ -17,25 +17,53 @@
     stroke-width: 20px;
 }
 
-/*.gallery-div {*/
-/*    background-color: #495057;*/
-/*    background-image: linear-gradient(45deg, #495057 25%, transparent 25%),*/
-/*        linear-gradient(-45deg, #495057 25%, transparent 25%),*/
-/*        linear-gradient(45deg, transparent 75%, #495057 75%),*/
-/*        linear-gradient(-45deg, transparent 75%, #495057 75%),*/
-/*        linear-gradient(45deg, #919191 25%, transparent 25%),*/
-/*        linear-gradient(135deg, #919191 25%, transparent 25%),*/
-/*        linear-gradient(45deg, transparent 75%, #919191 75%),*/
-/*        linear-gradient(135deg, transparent 75%, #919191 75%);*/
-/*    background-size: 25px 25px;*/
-/*    background-position:*/
-/*        0 0,*/
-/*        12.5px 0,*/
-/*        12.5px -12.5px,*/
-/*        0px 12.5px;*/
-/*}*/
-
 .dt-processing {
     position: relative !important;
     top: 100% !important;
+}
+
+.gallery-outer {
+    position: relative;
+    background-color: #495057;
+    background-size: 25px 25px;
+    background-image: linear-gradient(
+            45deg,
+            rgb(145 145 145) 25%,
+            transparent 25%
+        ),
+        linear-gradient(135deg, rgb(145 145 145) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgb(145 145 145) 75%),
+        linear-gradient(135deg, transparent 75%, rgb(145 145 145) 75%);
+}
+
+.image-labels {
+    position: absolute;
+    bottom: 4px;
+    left: 6px;
+    pointer-events: none;
+}
+
+.image-icons {
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    pointer-events: none;
+}
+
+.gallery-inner {
+    position: relative;
+    overflow: hidden;
+}
+
+.gallery-ctx {
+    position: absolute;
+    top: 0;
+    right: 8px;
+}
+
+.gallery-ctx-toggle {
+    background-color: transparent;
+    border: none;
+    width: 20px;
+    text-align: center;
 }

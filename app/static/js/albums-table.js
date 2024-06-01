@@ -6,14 +6,17 @@ const deleteAlbumModal = $('#delete-album-modal')
 const deleteAlbumButton = document.querySelector('.delete-album-btn')
 const albumLink = document.querySelector('div.d-none > .dj-album-link')
 
-document.addEventListener('scroll', throttle(albumScroll))
-window.addEventListener('resize', throttle(albumScroll))
-
 let albumsDataTable
 let nextPage = 1
 let fetchLock = false
 
-let fillInterval
+document.addEventListener('DOMContentLoaded', initAlbumsTable)
+document.addEventListener('scroll', debounce(scrollHandle))
+window.addEventListener('resize', debounce(scrollHandle))
+
+async function scrollHandle(event) {
+    pageScroll(event, nextPage, addAlbumRows)
+}
 
 const dataTablesOptions = {
     paging: false,
@@ -62,7 +65,6 @@ const dataTablesOptions = {
 async function initAlbumsTable() {
     albumsDataTable = albumsTable.DataTable(dataTablesOptions)
     await addAlbumRows()
-    fillInterval = setInterval(fillPage, 250)
     window.dispatchEvent(new Event('resize'))
 }
 
@@ -93,40 +95,6 @@ function renderAlbumLink(data, type, row, meta) {
     }
     albumLinkElem.querySelector('.dj-album-link-ref').textContent = newName
     return albumLinkElem
-}
-
-initAlbumsTable()
-
-async function fillPage() {
-    if (nextPage) {
-        console.debug(
-            'fillPage INTERVAL',
-            document.body.clientHeight === document.body.scrollHeight
-        )
-        if (document.body.clientHeight === document.body.scrollHeight) {
-            await addAlbumRows()
-        } else {
-            clearInterval(fillInterval)
-        }
-    }
-}
-
-/**
- * Album onScroll Callback
- * @function galleryScroll
- * @param {Event} event
- * @param {Number} buffer
- */
-async function albumScroll(event, buffer = 600) {
-    const maxScrollY = document.body.scrollHeight - window.innerHeight
-    console.debug(
-        `albumScroll: ${window.scrollY} > ${maxScrollY - buffer}`,
-        window.scrollY > maxScrollY - buffer
-    )
-    if (nextPage && (!maxScrollY || window.scrollY > maxScrollY - buffer)) {
-        console.debug('End of Scroll')
-        await addAlbumRows()
-    }
 }
 
 async function addAlbumRows() {

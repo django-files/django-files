@@ -29,12 +29,10 @@
 {% block body %}
 
     <div class="container-fluid py-3 px-4">
-
         <h1><i class="fa-regular fa-folder-open me-2"></i> {% if album %}{{ album.name }}{% else %}Files{% endif %}</h1>
-
         <p class="lead">
-            <a class="link-body-emphasis show-list" role="button" title="List">List</a> |
-            <a class="link-body-emphasis show-gallery" role="button" title="Gallery">Gallery</a>
+            <a class="link-body-emphasis show-list" role="button" title="List" href="{% url 'home:files' %}">List</a> |
+            <a class="link-body-emphasis show-gallery" role="button" title="Gallery" href={% url 'home:gallery' %}>Gallery</a>
         </p>
         {% if request.user.is_superuser and not album %}
             <div class="float-end">
@@ -50,7 +48,7 @@
         {% if album %}
         <div class=row>
         <p class="lead col-md-10">{% if album.info %}{{ album.info }}{% endif %}</p>
-        <p class="col-md-2 text-end">Views: <strong id="total-files-count">{{ album.view }}</strong></p>
+        <p class="col-md-2 text-end">Views: <strong id="views-count">{{ album.view }}</strong></p>
         </div>
         {% endif %}
         <p class="lead">Total Files Displayed: <strong id="total-files-count">{{ files|length }}</strong></p>
@@ -61,6 +59,14 @@
     {% include 'files/file-upload-modal.html' %}
     {% include 'files/ctx-menu.html' %}
     {% include 'files/ctx-modals.html' %}
+    <div class="d-none">
+        <div class="gallery-outer m-1 rounded-1 border border-3 border-secondary"></div>
+        <div class="gallery-mouse image-icons d-none text-shadow text-nowrap small text-warning-emphasis" data-bs-theme="dark"></div>
+        <div class="gallery-inner"></div>
+        <div class="gallery-mouse image-labels d-none text-shadow text-nowrap text-white small text lh-sm" data-bs-theme="dark"></div>
+        <div class="gallery-ctx text-stroke fs-2 ctx-menu"></div>
+        <button class="gallery-ctx-toggle link-body-emphasis ctx-menu" aria-expanded="false" data-bs-toggle="dropdown"></button>
+    </div>
 {% endblock %}
 
 

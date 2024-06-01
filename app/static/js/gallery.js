@@ -16,10 +16,6 @@ import { getCtxMenuContainer } from './file-context-menu.js'
 
 console.debug('LOADING: gallery.js')
 
-document.addEventListener('DOMContentLoaded', initGallery)
-document.addEventListener('scroll', throttle(galleryScroll))
-window.addEventListener('resize', throttle(galleryScroll))
-
 const galleryContainer = document.getElementById('gallery-container')
 
 const imageNode = document.querySelector('div.d-none > img')
@@ -29,16 +25,21 @@ showGallery.onclick = changeView
 let showList = document.querySelector('.show-list')
 showList.onclick = changeView
 
-let params = new URL(document.location.toString()).searchParams;
+let params = new URL(document.location.toString()).searchParams
 
 let dtContainer
-
 let nextPage = 1
 let fileData = []
-
 let fetchLock = false
+let filesDataTable
 
-let fillInterval
+document.addEventListener('DOMContentLoaded', initGallery)
+document.addEventListener('scroll', debounce(scrollHandle))
+window.addEventListener('resize', debounce(scrollHandle))
+
+async function scrollHandle(event) {
+    pageScroll(event, nextPage, addNodes)
+}
 
 async function initGallery() {
     console.log('Init Gallery')
@@ -51,20 +52,8 @@ async function initGallery() {
         showList.style.fontWeight = 'bold'
     }
     await addNodes()
-    fillInterval = setInterval(fillPage, 250)
+    // fillInterval = setInterval(fillPage, 250)
     window.dispatchEvent(new Event('resize'))
-}
-
-async function fillPage() {
-    console.debug(
-        'fillPage INTERVAL',
-        document.body.clientHeight === document.body.scrollHeight
-    )
-    if (document.body.clientHeight === document.body.scrollHeight) {
-        await addNodes()
-    } else {
-        clearInterval(fillInterval)
-    }
 }
 
 $('#user').on('change', function (event) {
@@ -76,25 +65,6 @@ $('#user').on('change', function (event) {
         location.href = url.href
     }
 })
-
-/**
- * Gallery onScroll Callback
- * TODO: End of page detection may need to be tweaked/improved
- * @function galleryScroll
- * @param {Event} event
- * @param {Number} buffer
- */
-async function galleryScroll(event, buffer = 600) {
-    const maxScrollY = document.body.scrollHeight - window.innerHeight
-    console.debug(
-        `galleryScroll: ${window.scrollY} > ${maxScrollY - buffer}`,
-        window.scrollY > maxScrollY - buffer
-    )
-    if (nextPage && (!maxScrollY || window.scrollY > maxScrollY - buffer)) {
-        console.debug('End of Scroll')
-        await addNodes()
-    }
-}
 
 /**
  * Add Next Page Nodes to Container
@@ -110,7 +80,7 @@ async function addNodes() {
     if (!fetchLock) {
         filesDataTable.processing(true)
         fetchLock = true
-        const data = await fetchFiles(nextPage, 25, params.get("album"))
+        const data = await fetchFiles(nextPage, 25, params.get('album'))
         console.debug('data:', data)
         nextPage = data.next
         fileData.push(...data.files)
@@ -141,34 +111,17 @@ function addGalleryImage(file, top = false) {
     }
 
     // OUTER DIV
-    const outer = document.createElement('div')
-    outer.classList.add(
-        'gallery-outer',
-        'm-1',
-        'rounded-1',
-        'border',
-        'border-3',
-        'border-secondary'
-    )
+    const outer = document
+        .querySelector('.d-none .gallery-outer')
+        .cloneNode(true)
     outer.id = `gallery-image-${file.id}`
-    outer.style.position = 'relative'
-    // TODO: hides text overflow but also the ctx menu
-    // outer.style.overflow = 'hidden'
-    const box1 = '#919191'
-    const box2 = '#495057'
-    outer.style.backgroundColor = '#495057'
-    outer.style.backgroundImage = `linear-gradient(45deg, ${box2} 25%, transparent 25%), linear-gradient(-45deg, ${box2} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${box2} 75%), linear-gradient(-45deg, transparent 75%, ${box2} 75%)`
-    outer.style.backgroundImage = `linear-gradient(45deg, ${box1} 25%, transparent 25%), linear-gradient(135deg, ${box1} 25%, transparent 25%), linear-gradient(45deg, transparent 75%, ${box1} 75%), linear-gradient(135deg, transparent 75%, ${box1} 75%)`
-    outer.style.backgroundSize = '25px 25px'
-    outer.style.position = '0 0, 12.5px 0, 12.5px -12.5px, 0px 12.5px'
     outer.addEventListener('mouseover', mouseOver)
     outer.addEventListener('mouseout', mouseOut)
 
     // INNER DIV
-    const inner = document.createElement('div')
-    inner.classList.add('gallery-inner')
-    inner.style.position = 'relative'
-    inner.style.overflow = 'hidden'
+    const inner = document
+        .querySelector('.d-none .gallery-inner')
+        .cloneNode(true)
     outer.appendChild(inner)
 
     // IMAGE AND LINK
@@ -184,19 +137,9 @@ function addGalleryImage(file, top = false) {
     inner.appendChild(link)
 
     // ICONS
-    const topLeft = document.createElement('div')
-    topLeft.classList.add(
-        'gallery-mouse',
-        'd-none',
-        'text-shadow',
-        'text-nowrap',
-        'small',
-        'text-warning-emphasis'
-    )
-    topLeft.style.position = 'absolute'
-    topLeft.style.top = '4px'
-    topLeft.style.left = '6px'
-    topLeft.style.pointerEvents = 'none'
+    const topLeft = document
+        .querySelector('.d-none .image-icons')
+        .cloneNode(true)
     let privateStatus = faLock.cloneNode(true)
     privateStatus.classList.add('privateStatus')
     if (!file.private) {
@@ -219,32 +162,26 @@ function addGalleryImage(file, top = false) {
     inner.appendChild(topLeft)
 
     // TEXT
-    const bottomLeft = document.createElement('div')
+    const bottomLeft = document
+        .querySelector('.d-none .image-labels')
+        .cloneNode(true)
     buildImageLabels(file, bottomLeft)
     inner.appendChild(bottomLeft)
 
     // CTX MENU
-    const ctxMenu = document.createElement('div')
-    ctxMenu.classList.add('text-stroke', 'fs-4', 'ctx-menu')
-    ctxMenu.style.position = 'absolute'
-    ctxMenu.style.top = '0px'
-    ctxMenu.style.right = '8px'
-    const toggle = document.createElement('a')
-    toggle.classList.add('link-body-emphasis', 'ctx-menu')
-    toggle.setAttribute('role', 'button')
-    // toggle.addEventListener('click', ctxClick)
-    toggle.dataset.bsToggle = 'dropdown'
-    toggle.setAttribute('aria-expanded', 'false')
+    const ctxMenu = document
+        .querySelector('.d-none .gallery-ctx')
+        .cloneNode(true)
+    const toggle = document
+        .querySelector('.d-none .gallery-ctx-toggle')
+        .cloneNode(true)
     toggle.appendChild(faCaret.cloneNode(true))
     ctxMenu.appendChild(toggle)
     outer.appendChild(ctxMenu)
-    // console.log(file)
     let menu = getCtxMenuContainer(file)
     menu.style.zIndex = '1'
     ctxMenu.appendChild(menu)
 
-    // inner.appendChild(link)
-    // inner.appendChild(ctxMenu)
     if (top) {
         galleryContainer.insertBefore(outer, galleryContainer.firstChild)
     } else {
@@ -285,7 +222,6 @@ function mouseOver(event) {
  */
 function mouseOut(event) {
     // console.debug('mouseOut:', event)
-
     // TODO: Fix mouse out detection when mousing over ctx menu
     const link = event.target.closest('a')
     // console.debug('link:', link)
@@ -301,6 +237,7 @@ function mouseOut(event) {
 }
 
 function changeView(event) {
+    event.preventDefault()
     if (event.srcElement.innerHTML === 'List') {
         while (galleryContainer.firstChild) {
             galleryContainer.removeChild(galleryContainer.lastChild)
@@ -378,24 +315,14 @@ function fileRename(data) {
     )
     fileLabels.innerHTML = ''
     buildImageLabels(data, fileLabels)
-    let imageLink = document.querySelector(`#gallery-image-${data.id} .image-link`)
+    let imageLink = document.querySelector(
+        `#gallery-image-${data.id} .image-link`
+    )
     imageLink.href = data.uri
 }
 
 function buildImageLabels(file, bottomLeft) {
-    bottomLeft.classList.add(
-        'gallery-mouse',
-        'image-labels',
-        'd-none',
-        'text-shadow',
-        'text-nowrap',
-        'small',
-        'lh-sm'
-    )
-    bottomLeft.style.position = 'absolute'
-    bottomLeft.style.bottom = '4px'
-    bottomLeft.style.left = '6px'
-    bottomLeft.style.pointerEvents = 'none'
+    bottomLeft.classList.add('lh-sm')
     if (file.size) {
         addSpan(bottomLeft, formatBytes(file.size))
     }
