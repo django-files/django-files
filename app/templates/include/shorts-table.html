@@ -14,13 +14,13 @@
     <tbody>
     {% for short in shorts %}
     <tr id="short-{{ short.id }}">
-        <th scope="row" class="d-none d-sm-table-cell">
+        <th scope="row" class="d-none d-sm-table-cell"> <!-- Short -->
             <a href="{{ site_settings.site_url }}{% url 'home:short' short=short.short %}"
                class="link-body-emphasis" target="_blank">{{ short.short }}</a></th>
-        <td><a href="{{ short.url }}" target="_blank" class="link-body-emphasis">{{ short.url }}</a></td>
-        <td class="d-none d-md-table-cell">{{ short.views }}</td>
-        <td class="d-none d-md-table-cell">{{ short.max|default:"-" }}</td>
-        <td class="text-center">
+        <td><a href="{{ short.url }}" target="_blank" class="link-body-emphasis">{{ short.url }}</a></td>  <!-- URL -->
+        <td class="d-none d-md-table-cell">{{ short.views }}</td> <!-- Views -->
+        <td class="d-none d-md-table-cell">{{ short.max|default:"-" }}</td>  <!-- Bomb -->
+        <td class="text-center"> <!-- Copy/Delete -->
             <a class="clip text-white mx-1" role="button" data-clipboard-text="{{ site_settings.site_url }}{% url 'home:short' short=short.short %}">
             <i class="fa-regular fa-clipboard"></i></a>
             <a role="button" class="delete-short-btn" data-hook-id="{{ short.id }}" title="Delete">

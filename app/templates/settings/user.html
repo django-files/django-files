@@ -19,13 +19,13 @@
             <div class="row mt-1">
                 <div class="col-md-2 d-flex justify-content-center">
                     <img src="{{ user.get_avatar_url }}" role="button" class="rounded-circle mx-5 uploadAvatarHookBtn"
-                    {% if user.user_avatar_choice == "DF" %}
-                    data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Upload new avatar"
-                    {% endif%}
-                    height="128" width="128" alt="Avatar" ></a>
+                         {% if user.user_avatar_choice == "DF" %}
+                            data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Upload new avatar"
+                         {% endif%}
+                         height="128" width="128" alt="Avatar" >
                 </div>
-                <div class="col-md-2 mt-2">
-                    <label for="user_avatar_choice mt-5" class="form-label">Avatar Source</label>
+                <div class="col-md-10 mt-2">
+                    <label for="user_avatar_choice" class="form-label">Avatar Source</label>
                     <select class="form-select" id="user_avatar_choice" name="user_avatar_choice"
                         aria-describedby="user_avatar_choice-help user_avatar_choice-invalid">
                         {% for value, display in user_avatar_choices %}
@@ -57,7 +57,7 @@
 
                 <div class="col-md-6">
                     <label for="timezone" class="form-label">Timezone</label>
-                    <input class="form-control" list="timezoneOptions" id="timezone" name="timezone" autocomplete="timezone"
+                    <input class="form-control" list="timezoneOptions" id="timezone" name="timezone"
                         value="{{ user.timezone }}" placeholder="Type to Search...">
                     <datalist id="timezoneOptions">
                         {% for timezone in timezones %}
@@ -72,7 +72,7 @@
             <div class="row mt-1">
                 <div class="col-md-6">
                     <label for="default_expire" class="form-label">Default Expire</label>
-                    <input type="text" class="form-control" id="default_expire" name="default_expire" autocomplete="expiration"
+                    <input type="text" class="form-control" id="default_expire" name="default_expire"
                         value="{{ user.default_expire }}" aria-describedby="default_expire-help default_expire-invalid">
                     <div id="default_expire-invalid" class="invalid-feedback"></div>
                     <div id="default_expire-help" class="form-text">
@@ -269,9 +269,9 @@
                 Flameshot Script</a>
         </div>
         <div class="col-sm-6">
-            <a href="https://www.icloud.com/shortcuts/9fde67b3aa9c401b86987061e5c359a8" class="btn btn-lg btn-outline-primary d-block" target="_blank" rel="noopener">
-                <i class="fa-brands fa-apple fa-xl" alt="iOS/Mac OS Shortcut"></i>&nbsp;
-                iOS/MacOS Shortcut</a>
+            <a href="https://www.icloud.com/shortcuts/9fde67b3aa9c401b86987061e5c359a8" class="btn btn-lg btn-outline-primary d-block" title="iOS/macOS Shortcut" target="_blank" rel="noopener">
+                <i class="fa-brands fa-apple fa-xl"></i>&nbsp;
+                iOS/macOS Shortcut</a>
         </div>
     </div>
     </section>

@@ -2,6 +2,8 @@
 
 console.debug('LOADING: settings.js')
 
+import { socket } from './socket.js'
+
 const deleteDiscordHookModal = $('#deleteDiscordHookModal')
 const fileUploadModal = $('#avatarUploadModal')
 const settingsForm = $('#settingsForm')
