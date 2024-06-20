@@ -116,6 +116,20 @@
     }
 }
 
-.preview-image {
-    object-fit: contain;
+main {
+    overflow: hidden;
+}
+
+.card {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: flex-start;
+    /*overflow: hidden; */
+    padding: 0 10px;
+}
+
+.preview {
+    max-height: 100%; /* Adjusted height for the image */
+    max-width: 100%;
+    object-fit: contain; /* Adjusted to 'contain' */
 }
