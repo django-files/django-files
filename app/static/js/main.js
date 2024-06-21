@@ -97,10 +97,8 @@ function saveOptions(event) {
         return console.debug('ignored setting:', event.target.id)
     }
     console.debug(`saveOptions: ${event.type}`, event)
-    const form = $(settingsForm)
-    // console.debug('form', form)
-    const data = new FormData(settingsForm[0])
-    // console.debug('data', data)
+    const form = $(this)
+    const data = new FormData(this)
     $.ajax({
         type: 'post',
         url: window.location.pathname,
