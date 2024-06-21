@@ -9,6 +9,8 @@ import {
     XHRUpload,
 } from '/static/uppy/uppy.min.js'
 
+const fileUploadModal = $('#avatarUploadModal')
+
 console.debug('LOADING: avatar.js')
 console.debug('uploadUrl:', uploadUrl)
 
@@ -74,7 +76,7 @@ uppy.on('upload-error', (file, error, response) => {
     console.debug('upload-error:', response.body.message)
 })
 
-fileUploadModal?.on('hidden.bs.modal', (event) => {
+fileUploadModal.on('hidden.bs.modal', (event) => {
     console.debug('hidden.bs.modal:', event)
     uppy.cancelAll()
     // uppy.close({ reason: 'user' })
