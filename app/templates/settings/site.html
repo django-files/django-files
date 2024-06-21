@@ -156,7 +156,7 @@
     <h3>Invites</h3>
 
     <form id="invitesForm" method="post" action="{% url 'api:invites' %}">
-        <div class="row g-3">
+        <div class="row g-1">
             <div class="col-sm-3">
                 <input type="text" class="form-control" placeholder="Max Uses" aria-label="Max Uses"
                        id="max_uses" name="max_uses" value="1">
@@ -169,12 +169,12 @@
                 <input type="text" class="form-control" placeholder="Storage Quota" aria-label="Storage Quota"
                        id="storage_quota" name="storage_quota">
             </div>
-            <div class="col-sm-5 fs-5 d-flex">
-                <div class="form-check form-switch d-flex align-items-center">
-                    <input class="form-check-input" type="checkbox" id="super_user" name="super_user">
-                    <label class="form-check-label ms-3" for="super_user">Admin</label>
+            <div class="col-sm-5 fs-5 d-flex align-items-center">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="super_user" name="super_user" style="float: none;">
+                    <label class="form-check-label" for="super_user">Admin</label>
                 </div>
-                <button class="btn btn-outline-success ms-3 w-100" type="submit">
+                <button class="btn btn-outline-success ms-2 w-100" type="submit">
                     <i class="fa-solid fa-user-plus me-2"></i> <span class="d-sm-none d-md-inline">Create</span></button>
             </div>
         </div>
