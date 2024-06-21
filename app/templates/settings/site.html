@@ -12,15 +12,16 @@
 {% endblock %}
 
 {% block main %}
-    <div>
-        Version: <a role="link" class="clip link-body-emphasis link-underline-opacity-25 link-underline-opacity-50-hover" data-clipboard-text="{{ 'APP_VERSION'|get_config }}">{{ 'APP_VERSION'|get_config }}</a>
+    <div class="d-flex align-items-center">
+        Version: <a role="link" class="clip link-body-emphasis link-underline-opacity-25 link-underline-opacity-50-hover ms-2" data-clipboard-text="{{ 'APP_VERSION'|get_config }}">{{ 'APP_VERSION'|get_config }}</a>
         {% if site_settings.latest_version %}
             <a href="https://github.com/django-files/django-files/releases/latest" title="{{ 'APP_VERSION'|get_config }}" target="_blank" rel="noopener">
                 <span class="badge rounded-pill text-bg-warning ms-2">{{ site_settings.latest_version }}</span></a>
         {% else %}
             <a href="https://github.com/django-files/django-files/releases/latest" title="{{ 'APP_VERSION'|get_config }}" target="_blank" rel="noopener">
                 <span class="badge rounded-pill text-bg-success ms-2">Latest</span></a>
-            <a id="check-for-update" role="button" title="Check for Update" class="link-body-emphasis ms-2"><i class="fa-solid fa-rotate"></i></a>
+            <button id="check-for-update" type="button" title="Check for Update" class="btn btn-link link-body-emphasis">
+                <i class="fa-solid fa-rotate"></i></button>
         {% endif %}
     </div>
 
