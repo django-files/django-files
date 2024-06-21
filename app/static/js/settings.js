@@ -23,7 +23,8 @@ settingsForm.on('change', saveOptions)
 async function domContentLoaded() {
     console.debug('DOMContentLoaded')
     const storedTheme = localStorage.getItem('theme')
-    if (storedTheme) {
+    console.debug('storedTheme:', storedTheme)
+    if (storedTheme && storedTheme !== 'auto') {
         themeToggle.checked = true
     }
     const prefers = window.matchMedia('(prefers-color-scheme: dark)').matches
