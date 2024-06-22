@@ -140,12 +140,44 @@
                 </div>
                 {% endif %}
             </div>
-            <div class="row mt-3">
+            <div class="row mt-3 d-flex ">
                 <div class="col-auto">
                     <label for="site_color" class="form-label">Theme</label>
                     <input type="color" class="form-control form-control-color" id="site_color" name="site_color"
                            value="{{ site_settings.site_color }}" title="Default Color" aria-describedby="site_color-invalid">
                     <div id="site_color-invalid" class="invalid-feedback"></div>
+                </div>
+                <div class="col-auto">
+
+                    <p class="mb-3">
+                        Login Page Background
+                        <span class="small" data-bs-toggle="tooltip" data-bs-title="Disabled, Random Picture or Video Loop.">
+                            <i class="fa-solid fa-circle-info ms-1"></i>
+                        </span>
+                    </p>
+
+                    <div id="login_background" class="">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="login_background" id="bgNone" value="none"  {% if site_settings.login_background == 'none' %}checked{% endif %}>
+                            <label class="form-check-label" for="bgNone">
+                                <i class="fa-regular fa-square"></i> None
+                            </label>
+                        </div>
+
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="login_background" id="bgPicture" value="picture"  {% if site_settings.login_background == 'picture' %}checked{% endif %}>
+                            <label class="form-check-label" for="bgPicture">
+                                <i class="fa-regular fa-image"></i> Picture
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="login_background" id="bgVideo" value="video" {% if site_settings.login_background == 'video' %}checked{% endif %}>
+                            <label class="form-check-label" for="bgVideo">
+                                <i class="fa-solid fa-video"></i> Video
+                            </label>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </form>

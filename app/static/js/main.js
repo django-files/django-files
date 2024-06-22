@@ -99,6 +99,7 @@ function saveOptions(event) {
     console.debug(`saveOptions: ${event.type}`, event)
     const form = $(this)
     const data = new FormData(this)
+    // console.debug('data:', data)
     $.ajax({
         type: 'post',
         url: window.location.pathname,

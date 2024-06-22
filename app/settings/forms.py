@@ -22,6 +22,7 @@ class SiteSettingsForm(forms.Form):
     s3_bucket_name = forms.CharField(max_length=128, required=False)
     global_storage_quota = forms.CharField(max_length=128, required=False)
     default_user_storage_quota = forms.CharField(max_length=128, required=False)
+    login_background = forms.CharField(max_length=16, required=False)
 
     def clean_global_storage_quota(self):
         data = self.cleaned_data['global_storage_quota']

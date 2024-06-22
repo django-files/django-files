@@ -11,7 +11,7 @@
 {% block navbar %}{% endblock %}
 
 {% block body %}
-<video poster="{% static 'video/loop.jpg' %}" id="bgvid" playsinline autoplay muted loop>
+<video poster="{% static 'video/loop.jpg' %}" id="bgvid" class="d-none" playsinline autoplay muted loop>
     <source src="{% static 'video/loop.mp4' %}" type="video/mp4" id="bgvidsrc">
 </video>
 
@@ -84,6 +84,7 @@
 {% block footer %}{% endblock %}
 
 {% block tail %}
+    {{ site_settings.login_background|json_script:"login_background" }}
     <script type="text/javascript" src="{% static 'js/login.js' %}"></script>
 {% endblock %}
 
