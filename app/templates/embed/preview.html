@@ -95,7 +95,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
                 {% endif %}
                 {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
-                <p class="card-text mb-2"><img src="{{ file_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P"></a> {{ file.user.get_name }}</p>
+                <p class="card-text mb-2"><img src="{{ file_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P">{{ file.user.get_name }}</p>
                 <p class="card-text mt-0 mb-0">
                     {% if 'image' in file.mime %}
                         <i class="fa-solid fa-eye me-1"></i> {{ file.view }}

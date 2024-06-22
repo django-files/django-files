@@ -51,15 +51,13 @@
                 <input type="text" class="form-control" placeholder="Expire" aria-label="Expire"
                        id="expire" name="expire">
             </div>
-            <div class="col-md-2 form-check form-switch d-flex h-100 fs-5">
-                <div class="ms-1 w-100">
-                    <input class="form-check-input" type="checkbox" id="private" name="private">
-                    <label class="form-check-label my-auto w-100" for="private">Private</label>
-                </div>
+            <div class="col-md-2 form-check form-switch d-flex h-100 fs-5 align-items-center">
+                <input class="form-check-input" type="checkbox" id="private" name="private">
+                <label class="form-check-label w-100 ms-2" for="private">Private</label>
             </div>
         </div>
     </form>
-    {% include 'include/albums-table.html'  %}
+    {% include 'include/albums-table.html' %}
 
 </div>
 {% endblock %}

@@ -8,159 +8,148 @@
 {% block fa_class %}fa-solid fa-gears{% endblock %}
 
 {% block head %}
-    <style>
-        .fa-rotate:hover {
-            color: #ffc107;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/site.css' %}">
 {% endblock %}
 
 {% block main %}
-{#    <div class="float-end"></div>#}
-    <div>
-        Version: <a role="link" class="clip link-body-emphasis link-underline-opacity-25 link-underline-opacity-50-hover" data-clipboard-text="{{ 'APP_VERSION'|get_config }}">{{ 'APP_VERSION'|get_config }}</a>
+    <div class="d-flex align-items-center">
+        Version: <a role="link" class="clip link-body-emphasis link-underline-opacity-25 link-underline-opacity-50-hover ms-2" data-clipboard-text="{{ 'APP_VERSION'|get_config }}">{{ 'APP_VERSION'|get_config }}</a>
         {% if site_settings.latest_version %}
             <a href="https://github.com/django-files/django-files/releases/latest" title="{{ 'APP_VERSION'|get_config }}" target="_blank" rel="noopener">
                 <span class="badge rounded-pill text-bg-warning ms-2">{{ site_settings.latest_version }}</span></a>
         {% else %}
             <a href="https://github.com/django-files/django-files/releases/latest" title="{{ 'APP_VERSION'|get_config }}" target="_blank" rel="noopener">
-                <span class="badge rounded-pill text-bg-success">Latest</span></a>
-            <a id="check-for-update" role="link" title="Check for Update"><i class="fa-solid fa-rotate"></i></a>
+                <span class="badge rounded-pill text-bg-success ms-2">Latest</span></a>
+            <button id="check-for-update" type="button" title="Check for Update" class="btn btn-link link-body-emphasis">
+                <i class="fa-solid fa-rotate"></i></button>
         {% endif %}
     </div>
 
-    <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
-        {% if user.is_superuser %}
-            <div class="border border-warning-subtle rounded-2 p-3 my-2">
-                {% if site_settings.global_storage_quota %}
+    <div class="border border-warning-subtle rounded-2 p-3 my-2">
+        <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
+            {% if site_settings.global_storage_quota %}
                 <div class="row mt-1">
                     <div class="col-md-6">
                         <label for="storage_quota" class="form-label">Global Storage Quota Usage</label>
-                        <div class="progress" id="storage_quota" name="storage_quota" aria-label="Global Storage Quota"
-                        aria-valuenow="{{ site_settings.get_global_storage_quota_usage_pct }}" aria-valuemin="0" aria-valuemax="100" style="height: 35px; font-size: large">
+                        <div class="progress" id="storage_quota" aria-label="Global Storage Quota"
+                             aria-valuenow="{{ site_settings.get_global_storage_quota_usage_pct }}" aria-valuemin="0" aria-valuemax="100" style="height: 35px; font-size: large">
                             <div class="progress-bar overflow-visible {% if site_settings.get_global_storage_quota_usage_pct > 95 %}bg-danger{% elif site_settings.get_global_storage_quota_usage_pct > 85 %}bg-warning{% endif %}" style="width: {{ site_settings.get_global_storage_quota_usage_pct }}%">
                                 <b>({{ site_settings.get_global_storage_usage_human_read }}/{{ site_settings.get_global_storage_quota_human_read }}) {{ site_settings.get_global_storage_quota_usage_pct }}%</b>
                             </div>
                         </div>
                     </div>
                 </div>
-                {% endif %}
-                <div class="row mt-2">
-                    <div class="col-md-6">
-                        <label for="site_url" class="form-label">Site URL</label>
-                        <input type="text" class="form-control" id="site_url" name="site_url" placeholder=""
-                            value="{{ site_settings.site_url }}" aria-describedby="site_url-help site_url-invalid">
-                        <div id="site_url-invalid" class="invalid-feedback"></div>
-                        <div id="site_url-help" class="form-text">
-                            Used for Generating URLs.
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="site_title" class="form-label">Site Title</label>
-                        <input type="text" class="form-control" id="site_title" name="site_title" placeholder=""
-                               value="{{ site_settings.site_title }}" aria-describedby="site_title-help site_title-invalid">
-                        <div id="site_title-invalid" class="invalid-feedback"></div>
-                        <div id="site_title-help" class="form-text">
-                            Site Title for UI and Meta.
-                        </div>
+            {% endif %}
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <label for="site_url" class="form-label">Site URL</label>
+                    <input type="text" class="form-control" id="site_url" name="site_url" placeholder=""
+                        value="{{ site_settings.site_url }}" aria-describedby="site_url-help site_url-invalid">
+                    <div id="site_url-invalid" class="invalid-feedback"></div>
+                    <div id="site_url-help" class="form-text">
+                        Used for Generating URLs.
                     </div>
                 </div>
-                <div class="row mt-2">
-                    <div class="col-md-6">
-                        <label for="global_storage_quota" class="form-label">Global Storage Quota</label>
-                        <input type="text" class="form-control" id="global_storage_quota" name="global_storage_quota"
-                               value="{{ site_settings.get_global_storage_quota_human_read }}"
-                               aria-describedby="global_storage_quota-help global_storage_quota-invalid">
-                        <div id="global_storage_quota-invalid" class="invalid-feedback"></div>
-                        <div id="global_storage_quota-help" class="form-text">Total storage quota for this deployment. 0 is unlimited.</div>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="default_user_storage_quota " class="form-label">User Default Storage Quota</label>
-                        <input class="form-control" id="default_user_storage_quota" name="default_user_storage_quota"
-                               value="{{ site_settings.get_default_user_storage_quota_human_read }}">
-                        <div id="default_user_storage_quota-invalid" class="invalid-feedback"></div>
-                        <div id="default_user_storage_quota-help" class="form-text">Default per user storage quota. 0 is unlimited.</div>
+                <div class="col-md-6">
+                    <label for="site_title" class="form-label">Site Title</label>
+                    <input type="text" class="form-control" id="site_title" name="site_title" placeholder=""
+                           value="{{ site_settings.site_title }}" aria-describedby="site_title-help site_title-invalid">
+                    <div id="site_title-invalid" class="invalid-feedback"></div>
+                    <div id="site_title-help" class="form-text">
+                        Site Title for UI and Meta.
                     </div>
                 </div>
-                <div class="row mt-2">
-                    <div class="col-md-6">
-                        <label for="timezone" class="form-label">Global Timezone</label>
-                        <input class="form-control" list="timezoneOptions" id="timezone" name="timezone" autocomplete="off"
-                               value="{{ site_settings.timezone }}" placeholder="Type to Search...">
-                        <datalist id="timezoneOptions">
-                            {% for timezone in timezones %}
-                                <option value="{{ timezone }}"></option>
-                            {% endfor %}
-                        </datalist>
-                        <div id="timezone-invalid" class="invalid-feedback"></div>
-                        <div id="timezone-help" class="form-text">Timezone for Anonymous Users.</div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <label for="global_storage_quota" class="form-label">Global Storage Quota</label>
+                    <input type="text" class="form-control" id="global_storage_quota" name="global_storage_quota"
+                           value="{{ site_settings.get_global_storage_quota_human_read }}"
+                           aria-describedby="global_storage_quota-help global_storage_quota-invalid">
+                    <div id="global_storage_quota-invalid" class="invalid-feedback"></div>
+                    <div id="global_storage_quota-help" class="form-text">Total storage quota for this deployment. 0 is unlimited.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="default_user_storage_quota" class="form-label">User Default Storage Quota</label>
+                    <input class="form-control" id="default_user_storage_quota" name="default_user_storage_quota"
+                           value="{{ site_settings.get_default_user_storage_quota_human_read }}">
+                    <div id="default_user_storage_quota-invalid" class="invalid-feedback"></div>
+                    <div id="default_user_storage_quota-help" class="form-text">Default per user storage quota. 0 is unlimited.</div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <label for="timezone" class="form-label">Global Timezone</label>
+                    <input class="form-control" list="timezoneOptions" id="timezone" name="timezone" autocomplete="off"
+                           value="{{ site_settings.timezone }}" placeholder="Type to Search...">
+                    <datalist id="timezoneOptions">
+                        {% for timezone in timezones %}
+                            <option value="{{ timezone }}"></option>
+                        {% endfor %}
+                    </datalist>
+                    <div id="timezone-invalid" class="invalid-feedback"></div>
+                    <div id="timezone-help" class="form-text">Timezone for Anonymous Users.</div>
+                </div>
+            </div>
+            <div class='row mt-2'>
+                <div class="mb-3">
+                    <label for="site_description" class="form-label">Site Description</label>
+                    <textarea class="form-control" id="site_description" name="site_description" rows="2" >{{ site_settings.site_description }}</textarea>
+                    <div id="site_description-invalid" class="invalid-feedback"></div>
+                    <div id="site_title-help" class="form-text">
+                        Site Description for Meta.
                     </div>
                 </div>
-                <div class='row mt-2'>
-                    <div class="mb-3">
-                        <label for="site_description" class="form-label">Site Description</label>
-                        <textarea class="form-control" id="site_description" name="site_description" rows="2" >{{ site_settings.site_description }}</textarea>
-                        <div id="site_description-invalid" class="invalid-feedback"></div>
-                        <div id="site_title-help" class="form-text">
-                            Site Description for Meta.
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col mx-sm-4 fs-5">
-                        <div class="form-check form-switch px-lg-5">
-                            <input class="form-check-input" type="checkbox" id="pub_load" name="pub_load" {{ site_settings.pub_load|if_true:"checked" }}>
-                            <label class="form-check-label" for="pub_load">
-                                Public Uploads: <kbd>/public</kbd>
-                            </label>
-                        </div>
+            </div>
+
+            <div class="row mx-sm-4 fs-5">
+                <div class="col-12">
+                    <div class="form-check form-switch px-lg-5">
+                        <input class="form-check-input" type="checkbox" id="pub_load" name="pub_load" {{ site_settings.pub_load|if_true:"checked" }}>
+                        <label class="form-check-label" for="pub_load">
+                            Public Uploads: <kbd>/public</kbd>
+                        </label>
                     </div>
                 </div>
                 {% if site_settings.discord_client_id or site_settings.google_client_id or site_settings.github_client_id %}
-                    <div class="row">
-                        <div class="col mx-sm-4 fs-5">
-                            <div class="form-check form-switch px-lg-5">
-                                <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
-                                <label class="form-check-label" for="oauth_reg">
-                                    Oauth Registration
-                                </label>
-                            </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch px-lg-5">
+                            <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
+                            <label class="form-check-label" for="oauth_reg">
+                                Oauth Registration
+                            </label>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col mx-sm-4 fs-5">
-                            <div class="form-check form-switch px-lg-5">
-                                <input class="form-check-input" type="checkbox" id="local_auth" name="local_auth" {{ site_settings.local_auth|if_true:"checked" }}>
-                                <label class="form-check-label" for="local_auth">
-                                    Local Authentication
-                                </label>
-                            </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch px-lg-5">
+                            <input class="form-check-input" type="checkbox" id="local_auth" name="local_auth" {{ site_settings.local_auth|if_true:"checked" }}>
+                            <label class="form-check-label" for="local_auth">
+                                Local Authentication
+                            </label>
                         </div>
                     </div>
                 {% endif %}
                 {% if 'DUO_CLIENT_ID'|get_config %}
-                    <div class="row">
-                    <div class="col mx-sm-4 fs-5">
-                        <div class="form-check form-switch px-lg-5">
-                            <input class="form-check-input" type="checkbox" id="duo_auth" name="duo_auth" {{ site_settings.duo_auth|if_true:"checked" }}>
-                            <label class="form-check-label" for="duo_auth">
-                                Enable Duo Authentication
-                            </label>
-                        </div>
-                    </div>
-                    </div>
-                {% endif %}
-                <div class="row mt-3">
-                    <div class="col-auto">
-                        <label for="site_color" class="form-label">Theme</label>
-                        <input type="color" class="form-control form-control-color" id="site_color" name="site_color"
-                               value="{{ site_settings.site_color }}" title="Default Color" aria-describedby="site_color-invalid">
-                        <div id="site_color-invalid" class="invalid-feedback"></div>
+                <div class="col-12">
+                    <div class="form-check form-switch px-lg-5">
+                        <input class="form-check-input" type="checkbox" id="duo_auth" name="duo_auth" {{ site_settings.duo_auth|if_true:"checked" }}>
+                        <label class="form-check-label" for="duo_auth">
+                            Enable Duo Authentication
+                        </label>
                     </div>
                 </div>
+                {% endif %}
             </div>
-        {% endif %}
-    </form>
+            <div class="row mt-3">
+                <div class="col-auto">
+                    <label for="site_color" class="form-label">Theme</label>
+                    <input type="color" class="form-control form-control-color" id="site_color" name="site_color"
+                           value="{{ site_settings.site_color }}" title="Default Color" aria-describedby="site_color-invalid">
+                    <div id="site_color-invalid" class="invalid-feedback"></div>
+                </div>
+            </div>
+        </form>
+    </div>
 
     <hr>
 
@@ -168,7 +157,7 @@
     <h3>Invites</h3>
 
     <form id="invitesForm" method="post" action="{% url 'api:invites' %}">
-        <div class="row g-3">
+        <div class="row g-1">
             <div class="col-sm-3">
                 <input type="text" class="form-control" placeholder="Max Uses" aria-label="Max Uses"
                        id="max_uses" name="max_uses" value="1">
@@ -181,15 +170,13 @@
                 <input type="text" class="form-control" placeholder="Storage Quota" aria-label="Storage Quota"
                        id="storage_quota" name="storage_quota">
             </div>
-            <div class="col-sm-3 fs-5 d-flex">
-                <div class="form-check form-switch flex-grow-1 ">
-                    <input class="form-check-input" type="checkbox" id="super_user" name="super_user">
+            <div class="col-sm-5 fs-5 d-flex align-items-center">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="super_user" name="super_user" style="float: none;">
                     <label class="form-check-label" for="super_user">Admin</label>
                 </div>
-            </div>
-            <div class="col-sm-2 d-grid d-flex">
-                <button class="btn btn-outline-success" type="submit">
-                    <i class="fa-solid fa-user-plus me-2"></i> Create</button>
+                <button class="btn btn-outline-success ms-2 w-100" type="submit">
+                    <i class="fa-solid fa-user-plus me-2"></i> <span class="d-sm-none d-md-inline">Create</span></button>
             </div>
         </div>
     </form>
@@ -198,7 +185,7 @@
         <p class="lead mt-2">No Invites Found.</p>
     {% else %}
         <table class="table table-responsive mt-2" id="invitesTable">
-        <caption class="visually-hidden">User Invites</caption>
+            <caption class="visually-hidden">User Invites</caption>
             <thead>
             <tr>
                 <th scope="col" class="d-none d-sm-table-cell">ID</th>
@@ -206,7 +193,7 @@
                 <th scope="col" class="d-none d-sm-table-cell">Owner</th>
                 <th scope="col" class="d-none d-lg-table-cell">Created</th>
                 <th scope="col" class="d-none d-md-table-cell text-center">Expire</th>
-                <th scope="col" class="d-none d-sm-table-cell text-center">Quota</th>
+                <th scope="col" class="d-none d-md-table-cell text-center">Quota</th>
                 <th scope="col" class="d-none d-sm-table-cell text-center">Admin</th>
                 <th scope="col" class="text-center">Uses</th>
 {#                <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>#}
@@ -214,36 +201,38 @@
             </thead>
             <tbody>
             {% for data in invites %}
-                <tr id="invite-{{ data.id }}" class="">
-                    <th scope="row" class="d-none d-sm-table-cell ">
-                        {{ data.id }}</th>
-                    <td><a role="button" class="clip link-offset-2 link-underline-opacity-25 link-{{ data.is_valid|if_true:"success"|default:"danger" }}"
-                           data-clipboard-text="{{ data.build_url }}">{{ data.invite }}</a></td>
-                    <td class="d-none d-sm-table-cell">
-                        <a role="button" class="clip text-decoration-none link-body-emphasis"
-                           data-clipboard-text="{{ data.owner.get_name }}">{{ data.owner.get_name }}</a></td>
-                    <td class="d-none d-lg-table-cell">
-                        <a role="button" class="clip text-decoration-none link-body-emphasis"
-                           data-clipboard-text="{{ data.created_at }}">{{ data.created_at }}</a></td>
-                    <td class="d-none d-md-table-cell text-center text-l">
-                        {{ data.expire_date|default:'Never' }}</td>
-                    <td class="d-none d-md-table-cell text-center text-l">
-                        {{ data.get_storage_quota_human_read }}</td>
-                    <td class="d-none d-sm-table-cell text-center ">
-                        {% if data.super_user %}<i class="fa-solid fa-plane-circle-check text-warning-emphasis"></i>{% else %}-{% endif %}</td>
-                    <td class="text-center ">
-                        {{ data.uses }}/{{ data.max_uses }}</td>
-{#                    <td class="text-center"><a role="button" class="deleteInviteBtn" data-hook-id="{{ data.id }}" title="Delete">#}
+            <tr id="invite-{{ data.id }}" class="">
+                <td class="d-none d-sm-table-cell"> <!-- ID -->
+                    {{ data.id }}</td>
+                <td class=""> <!-- Invite -->
+                    <a role="button" class="clip link-offset-2 link-underline-opacity-25 link-{{ data.is_valid|if_true:"success"|default:"danger" }}"
+                       data-clipboard-text="{{ data.build_url }}">{{ data.invite }}</a></td>
+                <td class="d-none d-sm-table-cell"><!-- Owner -->
+                    <a role="button" class="clip text-decoration-none link-body-emphasis"
+                       data-clipboard-text="{{ data.owner.get_name }}">{{ data.owner.get_name }}</a></td>
+                <td class="d-none d-lg-table-cell"> <!-- Created -->
+                    <a role="button" class="clip text-decoration-none link-body-emphasis"
+                       data-clipboard-text="{{ data.created_at }}">{{ data.created_at }}</a></td>
+                <td class="d-none d-md-table-cell text-center text-l"> <!-- Expire -->
+                    {{ data.expire_date|default:'Never' }}</td>
+                <td class="d-none d-md-table-cell text-center text-l"> <!-- Quota -->
+                    {{ data.get_storage_quota_human_read }}</td>
+                <td class="d-none d-sm-table-cell text-center "> <!-- Admin -->
+                    {% if data.super_user %}<i class="fa-solid fa-plane-circle-check text-warning-emphasis"></i>{% else %}-{% endif %}</td>
+                <td class="text-center "> <!-- Uses -->
+                    {{ data.uses }}/{{ data.max_uses }}</td>
+{#                <td class="text-center">#}
+{#                    <a role="button" class="deleteInviteBtn" data-hook-id="{{ data.id }}" title="Delete">#}
 {#                        <i class="fa-regular fa-trash-can link-danger"></i></a></td>#}
-                </tr>
+            </tr>
             {% endfor %}
             </tbody>
         </table>
     {% endif %}
     </section>
-
 {% endblock %}
 
 {% block tail %}
-    <script type="text/javascript" src="{% static 'js/settings.js' %}"></script>
+{#    <script type="text/javascript" src="{% static 'js/user.js' %}"></script>#}
+    <script type="module" src="{% static 'js/settings.js' %}"></script>
 {% endblock %}

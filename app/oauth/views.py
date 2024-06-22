@@ -242,7 +242,8 @@ def oauth_webhook(request):
     """
     View  /oauth/webhook/
     """
-    return DiscordOauth.redirect_webhook(request)
+    site_settings = SiteSettings.objects.settings()
+    return DiscordOauth.redirect_webhook(request, site_settings)
 
 
 def add_webhook(request, profile):
