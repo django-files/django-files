@@ -121,8 +121,14 @@ function saveOptions(event) {
         } else {
             // let message = 'Settings Saved Successfully.'
             // show_toast(message, 'success')
-            event.target.classList.add('is-valid')
-            setTimeout(() => event.target.classList.remove('is-valid'), 3000)
+            // TODO: Improve handling for other types and add to this if
+            if (event.target.type === 'text') {
+                event.target.classList.add('is-valid')
+                setTimeout(
+                    () => event.target.classList.remove('is-valid'),
+                    3000
+                )
+            }
         }
     }
 }

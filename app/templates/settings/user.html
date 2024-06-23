@@ -18,7 +18,7 @@
         <div class="border border-success-subtle rounded-2 p-3 my-2">
             <div class="row mt-1">
                 <div class="col-md-2 d-flex justify-content-center">
-                    <img src="{{ user.get_avatar_url }}" role="button" class="rounded-circle mx-5 uploadAvatarHookBtn"
+                    <img id="uploadAvatarHookBtn" class="rounded-circle mx-5" role="button" src="{{ user.get_avatar_url }}"
                          {% if user.user_avatar_choice == "DF" %}
                             data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Upload new avatar"
                          {% endif%}
@@ -381,9 +381,8 @@
     </section>
 {% endblock %}
 
-
-
 {% block tail %}
     <script type="module" src="{% static 'js/settings.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/settings-user.js' %}"></script>
     <script type="module" src="{% static 'js/avatar.js' %}"></script>
 {% endblock %}
