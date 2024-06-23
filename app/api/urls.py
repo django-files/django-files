@@ -15,6 +15,7 @@ urlpatterns = [
     path('album/', views.album_view, name='album'),
     path('albums/<int:page>/', views.albums_view, name='albums'),
     path('albums/<int:page>/<int:count>/', views.albums_view, name='albums-amount'),
+    path('random/album/<path:idname>/', views.random_album, name='random-album'),
     path('remote/', views.remote_view, name='remote'),
     path('stats/', views.stats_view, name='stats'),
     path('file/<path:idname>', views.file_view, name='file'),

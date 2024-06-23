@@ -3,12 +3,13 @@ import io
 import json
 import logging
 import os
+import random
 import validators
 from django.core import serializers
 from django.core.paginator import Paginator
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, reverse, get_object_or_404
+from django.shortcuts import render, reverse, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
@@ -18,7 +19,6 @@ from functools import wraps
 from pytimeparse2 import parse
 from typing import Optional, BinaryIO
 from urllib.parse import urlparse
-
 
 from home.tasks import clear_files_cache, clear_albums_cache, new_album_websocket
 from home.models import Files, FileStats, ShortURLs, Albums
@@ -189,6 +189,31 @@ def album_view(request):
     else:
         album = Albums.objects.get(id=request.GET.get('id'))
         return JsonResponse(album)
+
+
+@csrf_exempt
+@require_http_methods(['DELETE', 'GET', 'OPTIONS', 'POST'])
+def random_album(request, idname):
+    """
+    View  /api/random/albums/{id or name}/
+    """
+    if idname.isnumeric():
+        kwargs = {'id': int(idname)}
+    else:
+        kwargs = {'name': idname}
+    try:
+        album = get_object_or_404(Albums, **kwargs)
+        log.debug('albums_view: %s: %s: %s', request.method, album.name, album.private)
+        if not request.user.is_authenticated and album.private:
+            return HttpResponse(status=404)
+        files = Files.objects.filter(albums__id=album.id)
+        file = random.choice(files)
+        url = reverse('home:url-raw-redirect', kwargs={'filename': file.name})
+        log.debug('url: %s', url)
+        return redirect(url)
+    except Exception as error:
+        log.debug(error)
+        return JsonResponse({'error': f'{error}'}, status=400)
 
 
 @csrf_exempt
