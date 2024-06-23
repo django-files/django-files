@@ -89,6 +89,8 @@ def upload_view(request):
                 message = 'Upload Failed: Global storage quota exceeded.'
             elif pq[0]:
                 message = 'Upload Failed: User storage quota exceeded.'
+            else:
+                message = 'Unknown error checking quotas.'
             log.error(message)
             return JsonResponse({'error': True, 'message': message}, status=400)
         if not f and post.get('text'):
@@ -381,7 +383,7 @@ def file_view(request, idname):
 @cache_page(cache_seconds, key_prefix="albums")
 @vary_on_headers('Authorization')
 @vary_on_cookie
-def albums_view(request, page, count=None):
+def albums_view(request, page=None, count=None):
     """
     View  /api/albums/{page}/{count}/
     Limit 100 items per page.
@@ -390,7 +392,7 @@ def albums_view(request, page, count=None):
         count = 100
     if count > 250:
         count = 250
-    log.info('%s - albums_page_view: %s', request.method, page)
+    log.info('%s - albums_page_view: %s - %s', request.method, page, count)
     user = request.GET.get('user')
     if user:
         if user == "0":
