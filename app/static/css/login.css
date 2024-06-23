@@ -37,6 +37,8 @@ video {
     margin: auto;
     padding: 25px;
     filter: drop-shadow(15px -15px 12px #000000);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
 .form-control {
