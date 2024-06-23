@@ -42,11 +42,14 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('login_background').textContent
     )
     console.debug('loginBackground:', loginBackground)
+    const backgroundPicture = JSON.parse(
+        document.getElementById('background_picture').textContent
+    )
+    console.debug('backgroundPicture:', backgroundPicture)
     let options = {}
     if (loginBackground === 'picture') {
         console.debug('setBackground:', options)
-        document.body.style.background =
-            "url('https://picsum.photos/1920/1080') no-repeat center fixed"
+        document.body.style.background = `url('${backgroundPicture}') no-repeat center fixed`
         document.body.style.webkitBackgroundSize = 'cover'
         document.body.style.mozBackgroundSize = 'cover'
         document.body.style.oBackgroundSize = 'cover'

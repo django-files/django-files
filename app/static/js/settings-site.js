@@ -1,7 +1,7 @@
 // JS for settings/site.html
 
-const backgroundPicture = document.getElementById('background_picture')
-const backgroundVideo = document.getElementById('background_video')
+const backgroundPicture = document.getElementById('background_picture_group')
+const backgroundVideo = document.getElementById('background_video_group')
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)
 document

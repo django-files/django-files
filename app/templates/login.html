@@ -11,8 +11,8 @@
 {% block navbar %}{% endblock %}
 
 {% block body %}
-<video poster="{% static 'video/loop.jpg' %}" id="bgvid" class="d-none" playsinline autoplay muted loop>
-    <source src="{% static 'video/loop.mp4' %}" type="video/mp4" id="bgvidsrc">
+<video  id="bgvid" class="d-none" playsinline autoplay muted loop>
+    <source src="{{ site_settings.background_video }}" type="video/mp4" id="bgvidsrc">
 </video>
 
 <div class="d-flex flex-column align-items-center h-100" data-bs-theme="dark">
@@ -85,6 +85,7 @@
 
 {% block tail %}
     {{ site_settings.login_background|json_script:"login_background" }}
+    {{ site_settings.background_picture|json_script:"background_picture" }}
     <script type="text/javascript" src="{% static 'js/login.js' %}"></script>
 {% endblock %}
 

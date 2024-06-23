@@ -185,10 +185,22 @@
 
                 </div>
                 <div class="flex-fill mt-auto ms-2 ms-md-0">
-                    <input type="text" class="form-control mt-2 d-none" placeholder="Background Picture URL" aria-label="Background Picture URL"
-                           id="background_picture" name="background_picture" value="{{ site_settings.background_picture }}">
-                    <input type="text" class="form-control mt-2 d-none" placeholder="Background Video URL" aria-label="Background Video URL"
-                           id="background_video" name="background_video" value="{{ site_settings.background_video }}">
+                    <div id="background_picture_group" class="input-group mt-auto d-none">
+                        <span class="input-group-text" id="picture-addon" data-bs-toggle="tooltip" data-bs-title="URL or Path to a Web Image.">
+                            <i class="fa-solid fa-circle-info"></i></span>
+                        <input type="text" class="form-control" placeholder="Background Picture URL" aria-label="Background Picture URL"
+                               id="background_picture" name="background_picture" value="{{ site_settings.background_picture }}" aria-describedby="picture-addon">
+                    </div>
+                    <div id="background_video_group" class="input-group mt-auto d-none">
+                        <span class="input-group-text" id="video-addon" data-bs-toggle="tooltip" data-bs-title="WIP: URL or Path to a .mp4 Video.">
+                            <i class="fa-solid fa-circle-exclamation"></i></span>
+                        <input type="text" class="form-control" placeholder="Background Video URL" aria-label="Background Video URL"
+                               id="background_video" name="background_video" value="{{ site_settings.background_video }}" aria-describedby="video-addon">
+                    </div>
+{#                    <input type="text" class="form-control mt-2 d-none" placeholder="Background Picture URL" aria-label="Background Picture URL"#}
+{#                           id="background_picture" name="background_picture" value="{{ site_settings.background_picture }}">#}
+{#                    <input type="text" class="form-control mt-2 d-none" placeholder="Background Video URL" aria-label="Background Video URL"#}
+{#                           id="background_video" name="background_video" value="{{ site_settings.background_video }}">#}
                 </div>
             </div>
 
