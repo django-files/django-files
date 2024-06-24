@@ -10,7 +10,7 @@ from django.core.files import File
 from typing import BinaryIO
 from django.core.exceptions import ObjectDoesNotExist
 
-from home.models import Files
+from home.models import Files, Albums
 from home.util.image import ImageProcessor, thumbnail_processor
 from home.util.rand import rand_string
 from home.util.misc import anytobool
@@ -64,6 +64,11 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
             file.delete()
         except ObjectDoesNotExist:
             pass
+
+    albums = None
+    if 'albums' in kwargs:
+        albums = kwargs.pop('albums')
+
     file = Files(user=user, **kwargs)
     with tempfile.NamedTemporaryFile(suffix=os.path.basename(name)) as fp:
         fp.write(f.read())
@@ -101,6 +106,15 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     log.debug('file.file.name: %s', file.file.name)
     file.name = file.file.name
     file.save()
+
+    if albums:
+        album = Albums.objects.filter(name=albums)
+        log.debug('album: %s', album)
+        if album:
+            # file[0].albums.add(Albums.objects.filter(id=album)[0])
+            file.albums.add(album[0])
+            file.save()
+
     if file_mime in ['image/jpe', 'image/jpg', 'image/jpeg', 'image/webp']:
         thumbnail_processor(file, f.read(), detected_extension)
     increment_storage_usage(file)

@@ -119,7 +119,7 @@ CORS_ALLOW_HEADERS = (
     'format',
     'expr',
     'info',
-    'album',
+    'albums',
 )
 
 CELERY_BEAT_SCHEDULE = {
