@@ -14,11 +14,11 @@
                target="_blank" rel="noopener">this README.md</a>.
         </p>
         <form id="modal-expire-form" name="modal-expire-form">
-            <input type="hidden" name="pk" value="">
             <label for="expr" class="form-label">Expiration</label>
             <div class="input-group w-100">
                 <input type="text" class="form-control" id="expr" name="expr" autocomplete="off" value="{{ file.expr|default:'' }}">
             </div>
+            <input type="hidden" name="pk" value="">
         </form>
     </div>
     <div class="modal-footer">
@@ -43,7 +43,6 @@
             If the file is private, this will allow others to access the file with the password.
         </p>
         <form id="modal-password-form" name="modal-password-form">
-            <input type="hidden" name="pk" value="">
             <label for="password" class="form-label">Password</label>
             <div class="input-group w-100">
                 <input type="text" class="form-control" id="password" name="password" autocomplete="off">
@@ -51,6 +50,7 @@
                 <button type="button" title="Copy Password" id="password-copy" class="btn btn-warning btn-sm"><i class="fa-regular fa-copy"></i></button>
                 <button type="button" title="Generate new password." id="password-generate" class="btn btn-info btn-sm"><i class="fa-solid fa-key"></i></button>
             </div>
+            <input type="hidden" name="pk" value="">
         </form>
     </div>
     <div class="modal-footer">
@@ -91,11 +91,11 @@
                     Renaming a file will change shared links to the file.
                 </p>
                 <form id="modal-rename-form" name="modal-rename-form">
-                    <input type="hidden" name="pk" value="">
                     <label for="name" class="form-label">Name</label>
                     <div class="input-group w-100">
                         <input type="text" class="form-control" id="name" name="name" autocomplete="off">
                     </div>
+                    <input type="hidden" name="pk" value="">
                 </form>
             </div>
             <div class="modal-footer">
@@ -116,12 +116,12 @@
             </div>
             <div class="modal-body pb-5">
                 <form id="modal-album-form" name="modal-album-form" class="h-100 w-100 d-inline-block">
-                    <input type="hidden" name="pk" value="">
                     <label for="name" class="form-label">Albums</label>
                     <div class="input-group w-100 h-100 d-inline-block">
-                        <select class="form-select album-options w-100 h-100 d-inline-block" aria-label="Albums" name="albums" multiple>
+                        <select id="album-options" class="form-select w-100 h-100 d-inline-block" aria-label="Albums" name="albums" multiple>
                         </select>
                     </div>
+                    <input type="hidden" name="pk" value="">
                 </form>
             </div>
             <div class="modal-footer">
