@@ -110,7 +110,11 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     file.save()
 
     if albums:
-        album = Albums.objects.filter(Q(name=albums) | Q(id=albums))
+        if albums.isnumeric():
+            kwargs = {'id': int(albums)}
+        else:
+            kwargs = {'name': albums}
+        album = Albums.objects.filter(**kwargs)
         log.debug('album: %s', album)
         if album:
             # file[0].albums.add(Albums.objects.filter(id=album)[0])
