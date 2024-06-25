@@ -20,6 +20,18 @@ function getResponseError(responseText, response) {
     return new Error(JSON.parse(responseText).message)
 }
 
+const headers = {
+    'X-CSRFToken': $('input[name=csrfmiddlewaretoken]').val(),
+}
+
+const searchParams = new URLSearchParams(window.location.search)
+const album = searchParams.get('album')
+// console.debug('album:', album)
+if (album) {
+    headers.albums = album
+}
+// console.debug('headers:', headers)
+
 const uppy = new Uppy({ debug: true, autoProceed: false })
     .use(Dashboard, {
         inline: true,
@@ -52,9 +64,7 @@ const uppy = new Uppy({ debug: true, autoProceed: false })
     .use(ScreenCapture, { target: Dashboard })
     .use(XHRUpload, {
         endpoint: uploadUrl,
-        headers: {
-            'X-CSRFToken': $('input[name=csrfmiddlewaretoken]').val(),
-        },
+        headers,
         getResponseError: getResponseError,
     })
     .use(DropTarget, {

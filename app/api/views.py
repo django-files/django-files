@@ -45,6 +45,7 @@ def auth_from_token(view=None, no_fail=False):
                 request.headers.get('Token') or
                 request.GET.get('token')
         )
+        # log.debug('authorization: %s', authorization)
         if authorization:
             user = CustomUser.objects.filter(authorization=authorization)
             if user:

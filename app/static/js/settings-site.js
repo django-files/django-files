@@ -22,7 +22,7 @@ async function domContentLoaded() {
 }
 
 /**
- * DOMContentLoaded Callback
+ * Login Background Change Callback
  * @function loginBackgroundChange
  * @param {Event} event
  */
@@ -32,7 +32,7 @@ function loginBackgroundChange(event) {
 }
 
 /**
- * DOMContentLoaded Callback
+ * Update Login Background
  * @function loginBackgroundChange
  * @param {String} value
  */

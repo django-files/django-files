@@ -9,6 +9,7 @@ import tempfile
 from django.core.files import File
 from typing import BinaryIO
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 
 from home.models import Files, Albums
 from home.util.image import ImageProcessor, thumbnail_processor
@@ -68,6 +69,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     albums = None
     if 'albums' in kwargs:
         albums = kwargs.pop('albums')
+    log.debug('albums: %s', albums)
 
     file = Files(user=user, **kwargs)
     with tempfile.NamedTemporaryFile(suffix=os.path.basename(name)) as fp:
@@ -108,7 +110,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     file.save()
 
     if albums:
-        album = Albums.objects.filter(name=albums)
+        album = Albums.objects.filter(Q(name=albums) | Q(id=albums))
         log.debug('album: %s', album)
         if album:
             # file[0].albums.add(Albums.objects.filter(id=album)[0])
