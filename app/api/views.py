@@ -310,17 +310,18 @@ def files_view(request, page, count=None):
     if count > 100:
         count = 100
     log.debug('%s - files_page_view: %s', request.method, page)
-    user = request.GET.get('user')
+    if request.user.is_superuser:
+        user = request.GET.get('user') or request.user.id
+    else:
+        user = request.user.id
+    log.debug('user: %s', user)
     if album := request.GET.get('album'):
         q = Files.objects.filtered_request(request, albums__id=album)
     else:
-        if user:
-            if user == "0":
-                q = Files.objects.filtered_request(request)
-            else:
-                q = Files.objects.filtered_request(request, user_id=int(user))
+        if user == "0":
+            q = Files.objects.filtered_request(request)
         else:
-            q = Files.objects.get_request(request)
+            q = Files.objects.filtered_request(request, user_id=int(user))
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
@@ -394,14 +395,14 @@ def albums_view(request, page=None, count=None):
     if count > 250:
         count = 250
     log.info('%s - albums_page_view: %s - %s', request.method, page, count)
-    user = request.GET.get('user')
-    if user:
-        if user == "0":
-            q = Albums.objects.filtered_request(request)
-        else:
-            q = Albums.objects.filtered_request(request, user_id=int(user))
+    if request.user.is_superuser:
+        user = request.GET.get('user') or request.user.id
     else:
-        q = Albums.objects.get_request(request, user_id=request.user.id)
+        user = request.user.id
+    if user == "0":
+        q = Albums.objects.filtered_request(request)
+    else:
+        q = Albums.objects.filtered_request(request, user_id=int(user))
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     albums = extract_albums(page_obj.object_list)
