@@ -76,8 +76,8 @@ uppy.on('file-added', (file) => {
     fileUploadModal.modal('show')
 })
 
-uppy.on('upload-success', (fileCount) => {
-    console.debug('upload-success:', fileCount)
+uppy.on('complete', (fileCount) => {
+    console.debug('complete:', fileCount)
     if (typeof fileUploadModal !== 'undefined') {
         fileUploadModal?.modal('hide')
     }
