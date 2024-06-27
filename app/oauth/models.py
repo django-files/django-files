@@ -179,7 +179,7 @@ class UserInvites(models.Model):
 
 class Discord(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
-    id = models.IntegerField()
+    id = models.CharField(max_length=128, unique=True)
     profile = models.JSONField(null=True, blank=True)
     avatar = models.CharField(null=True, blank=True, max_length=32)
     access_token = models.CharField(null=True, blank=True, max_length=32)
@@ -214,7 +214,7 @@ class DiscordWebhooks(models.Model):
 
 class Github(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
-    id = models.IntegerField()
+    id = models.CharField(max_length=128, unique=True)
     profile = models.JSONField(null=True, blank=True)
     avatar = models.CharField(null=True, blank=True, max_length=32)
     access_token = models.CharField(null=True, blank=True, max_length=32)
@@ -226,10 +226,10 @@ class Github(models.Model):
 
 class Google(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
-    id = models.CharField(max_length=32, unique=True)
+    id = models.CharField(max_length=128, unique=True)
     profile = models.JSONField(null=True, blank=True)
-    avatar = models.CharField(null=True, blank=True, max_length=32)
-    access_token = models.CharField(null=True, blank=True, max_length=32)
+    avatar = models.CharField(null=True, blank=True, max_length=255)
+    access_token = models.CharField(null=True, blank=True, max_length=255)
 
     class Meta:
         verbose_name = 'Google'
