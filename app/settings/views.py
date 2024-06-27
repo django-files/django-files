@@ -60,6 +60,9 @@ def site_view(request):
     site_settings.duo_auth = form.cleaned_data['duo_auth']
     site_settings.global_storage_quota = form.cleaned_data['global_storage_quota']
     site_settings.default_user_storage_quota = form.cleaned_data['default_user_storage_quota']
+    site_settings.login_background = form.cleaned_data['login_background']
+    site_settings.background_video = form.cleaned_data['background_video']
+    site_settings.background_picture = form.cleaned_data['background_picture']
     site_settings.save()
 
     if data['reload']:

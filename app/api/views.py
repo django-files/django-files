@@ -3,12 +3,13 @@ import io
 import json
 import logging
 import os
+import random
 import validators
 from django.core import serializers
 from django.core.paginator import Paginator
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render, reverse, get_object_or_404
+from django.shortcuts import render, reverse, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
@@ -18,7 +19,6 @@ from functools import wraps
 from pytimeparse2 import parse
 from typing import Optional, BinaryIO
 from urllib.parse import urlparse
-
 
 from home.tasks import clear_files_cache, clear_albums_cache, new_album_websocket
 from home.models import Files, FileStats, ShortURLs, Albums
@@ -45,6 +45,7 @@ def auth_from_token(view=None, no_fail=False):
                 request.headers.get('Token') or
                 request.GET.get('token')
         )
+        # log.debug('authorization: %s', authorization)
         if authorization:
             user = CustomUser.objects.filter(authorization=authorization)
             if user:
@@ -89,6 +90,8 @@ def upload_view(request):
                 message = 'Upload Failed: Global storage quota exceeded.'
             elif pq[0]:
                 message = 'Upload Failed: User storage quota exceeded.'
+            else:
+                message = 'Unknown error checking quotas.'
             log.error(message)
             return JsonResponse({'error': True, 'message': message}, status=400)
         if not f and post.get('text'):
@@ -192,6 +195,31 @@ def album_view(request):
 
 
 @csrf_exempt
+@require_http_methods(['DELETE', 'GET', 'OPTIONS', 'POST'])
+def random_album(request, idname):
+    """
+    View  /api/random/albums/{id or name}/
+    """
+    if idname.isnumeric():
+        kwargs = {'id': int(idname)}
+    else:
+        kwargs = {'name': idname}
+    try:
+        album = get_object_or_404(Albums, **kwargs)
+        log.debug('albums_view: %s: %s: %s', request.method, album.name, album.private)
+        if not request.user.is_authenticated and album.private:
+            return HttpResponse(status=404)
+        files = Files.objects.filter(albums__id=album.id)
+        file = random.choice(files)
+        url = reverse('home:url-raw-redirect', kwargs={'filename': file.name})
+        log.debug('url: %s', url)
+        return redirect(url)
+    except Exception as error:
+        log.debug(error)
+        return JsonResponse({'error': f'{error}'}, status=400)
+
+
+@csrf_exempt
 @require_http_methods(['OPTIONS', 'GET', 'POST'])
 @auth_from_token
 @cache_control(no_cache=True)
@@ -282,17 +310,18 @@ def files_view(request, page, count=None):
     if count > 100:
         count = 100
     log.debug('%s - files_page_view: %s', request.method, page)
-    user = request.GET.get('user')
+    if request.user.is_superuser:
+        user = request.GET.get('user') or request.user.id
+    else:
+        user = request.user.id
+    log.debug('user: %s', user)
     if album := request.GET.get('album'):
         q = Files.objects.filtered_request(request, albums__id=album)
     else:
-        if user:
-            if user == "0":
-                q = Files.objects.filtered_request(request)
-            else:
-                q = Files.objects.filtered_request(request, user_id=int(user))
+        if user == "0":
+            q = Files.objects.filtered_request(request)
         else:
-            q = Files.objects.get_request(request)
+            q = Files.objects.filtered_request(request, user_id=int(user))
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
@@ -356,7 +385,7 @@ def file_view(request, idname):
 @cache_page(cache_seconds, key_prefix="albums")
 @vary_on_headers('Authorization')
 @vary_on_cookie
-def albums_view(request, page, count=None):
+def albums_view(request, page=None, count=None):
     """
     View  /api/albums/{page}/{count}/
     Limit 100 items per page.
@@ -365,15 +394,15 @@ def albums_view(request, page, count=None):
         count = 100
     if count > 250:
         count = 250
-    log.info('%s - albums_page_view: %s', request.method, page)
-    user = request.GET.get('user')
-    if user:
-        if user == "0":
-            q = Albums.objects.filtered_request(request)
-        else:
-            q = Albums.objects.filtered_request(request, user_id=int(user))
+    log.info('%s - albums_page_view: %s - %s', request.method, page, count)
+    if request.user.is_superuser:
+        user = request.GET.get('user') or request.user.id
     else:
-        q = Albums.objects.get_request(request, user_id=request.user.id)
+        user = request.user.id
+    if user == "0":
+        q = Albums.objects.filtered_request(request)
+    else:
+        q = Albums.objects.filtered_request(request, user_id=int(user))
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     albums = extract_albums(page_obj.object_list)
@@ -435,7 +464,8 @@ def remote_view(request):
 
 def parse_headers(headers: dict, **kwargs) -> dict:
     # TODO: Review This Function
-    allowed = ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password', 'expr', 'avatar']
+    allowed = ['format', 'embed', 'password', 'private', 'strip-gps', 'strip-exif', 'auto-password', 'expr', 'avatar',
+               'albums']
     data = {}
     # TODO: IMPORTANT: Determine why these values are not 1:1 - meta_preview:embed
     difference_mapping = {'embed': 'meta_preview'}

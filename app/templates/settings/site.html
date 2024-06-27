@@ -27,6 +27,7 @@
 
     <div class="border border-warning-subtle rounded-2 p-3 my-2">
         <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
+
             {% if site_settings.global_storage_quota %}
                 <div class="row mt-1">
                     <div class="col-md-6">
@@ -40,6 +41,7 @@
                     </div>
                 </div>
             {% endif %}
+
             <div class="row mt-2">
                 <div class="col-md-6">
                     <label for="site_url" class="form-label">Site URL</label>
@@ -60,6 +62,7 @@
                     </div>
                 </div>
             </div>
+
             <div class="row mt-2">
                 <div class="col-md-6">
                     <label for="global_storage_quota" class="form-label">Global Storage Quota</label>
@@ -77,6 +80,7 @@
                     <div id="default_user_storage_quota-help" class="form-text">Default per user storage quota. 0 is unlimited.</div>
                 </div>
             </div>
+
             <div class="row mt-2">
                 <div class="col-md-6">
                     <label for="timezone" class="form-label">Global Timezone</label>
@@ -91,6 +95,7 @@
                     <div id="timezone-help" class="form-text">Timezone for Anonymous Users.</div>
                 </div>
             </div>
+
             <div class='row mt-2'>
                 <div class="mb-3">
                     <label for="site_description" class="form-label">Site Description</label>
@@ -140,16 +145,67 @@
                 </div>
                 {% endif %}
             </div>
-            <div class="row mt-3">
-                <div class="col-auto">
+
+            <div class="d-flex flex-column flex-md-row mt-2">
+                <div class="flex-grow-0 me-4">
                     <label for="site_color" class="form-label">Theme</label>
-                    <input type="color" class="form-control form-control-color" id="site_color" name="site_color"
+                    <input type="color" class="form-control form-control-color ms-2 ms-md-0" id="site_color" name="site_color"
                            value="{{ site_settings.site_color }}" title="Default Color" aria-describedby="site_color-invalid">
                     <div id="site_color-invalid" class="invalid-feedback"></div>
                 </div>
+                <div class="flex-grow-0 mt-3 mt-md-0">
+                    <p class="mb-3">
+                        Login Page Background
+                        <span class="small" data-bs-toggle="tooltip" data-bs-title="Disabled, Random Picture or Video Loop.">
+                            <i class="fa-solid fa-circle-info ms-1"></i>
+                        </span>
+                    </p>
+                    <div id="login_background" class="ms-2 ms-md-0">
+                        <div class="d-grid d-sm-flex">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="login_background" id="bgNone" value="none" {% if site_settings.login_background == 'none' %}checked{% endif %}>
+                                <label class="form-check-label" for="bgNone">
+                                    <i class="fa-regular fa-square"></i> None
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="login_background" id="bgPicture" value="picture" {% if site_settings.login_background == 'picture' %}checked{% endif %}>
+                                <label class="form-check-label" for="bgPicture">
+                                    <i class="fa-regular fa-image"></i> Picture
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="login_background" id="bgVideo" value="video" {% if site_settings.login_background == 'video' %}checked{% endif %}>
+                                <label class="form-check-label" for="bgVideo">
+                                    <i class="fa-solid fa-video"></i> Video
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="flex-fill mt-auto ms-2 ms-md-0">
+                    <div id="background_picture_group" class="input-group mt-auto d-none">
+                        <span class="input-group-text" id="picture-addon" data-bs-toggle="tooltip" data-bs-title="URL or Path to a Web Image.">
+                            <i class="fa-solid fa-circle-info"></i></span>
+                        <input type="text" class="form-control" placeholder="Background Picture URL" aria-label="Background Picture URL"
+                               id="background_picture" name="background_picture" value="{{ site_settings.background_picture }}" aria-describedby="picture-addon">
+                    </div>
+                    <div id="background_video_group" class="input-group mt-auto d-none">
+                        <span class="input-group-text" id="video-addon" data-bs-toggle="tooltip" data-bs-title="WIP: URL or Path to a .mp4 Video.">
+                            <i class="fa-solid fa-circle-exclamation"></i></span>
+                        <input type="text" class="form-control" placeholder="Background Video URL" aria-label="Background Video URL"
+                               id="background_video" name="background_video" value="{{ site_settings.background_video }}" aria-describedby="video-addon">
+                    </div>
+{#                    <input type="text" class="form-control mt-2 d-none" placeholder="Background Picture URL" aria-label="Background Picture URL"#}
+{#                           id="background_picture" name="background_picture" value="{{ site_settings.background_picture }}">#}
+{#                    <input type="text" class="form-control mt-2 d-none" placeholder="Background Video URL" aria-label="Background Video URL"#}
+{#                           id="background_video" name="background_video" value="{{ site_settings.background_video }}">#}
+                </div>
             </div>
-        </form>
-    </div>
+
+        </form> <!-- form -->
+    </div> <!-- border -->
 
     <hr>
 
@@ -233,6 +289,6 @@
 {% endblock %}
 
 {% block tail %}
-{#    <script type="text/javascript" src="{% static 'js/user.js' %}"></script>#}
     <script type="module" src="{% static 'js/settings.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/settings-site.js' %}"></script>
 {% endblock %}

@@ -131,5 +131,6 @@ main {
 .preview {
     max-height: 100%; /* Adjusted height for the image */
     max-width: 100%;
+    padding-top: 0.5em;
     object-fit: contain; /* Adjusted to 'contain' */
 }

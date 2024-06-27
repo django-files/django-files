@@ -10,6 +10,7 @@ const filePasswordModal = $('#filePasswordModal')
 const fileDeleteModal = $('#fileDeleteModal')
 const fileRenameModal = $('#fileRenameModal')
 const fileAlbumModal = $('#fileAlbumModal')
+const confirmDelete = $('#confirm-delete')
 
 // these listeners are only used on preview page
 // see context menu functions for files-table specific listeners
@@ -25,15 +26,15 @@ export const faLockOpen = document.querySelector('div.d-none > .fa-lock-open')
 // Expire Form
 
 fileExpireModal.on('shown.bs.modal', function (event) {
-    console.log('fileExpireModal shown.bs.modal:', event)
+    console.debug('fileExpireModal shown.bs.modal:', event)
     $(this).find('input').trigger('focus').trigger('select')
 })
 
 $('#modal-expire-form').on('submit', function (event) {
-    console.log('#modal-expire-form submit:', event)
+    console.debug('#modal-expire-form: submit:', event)
     event.preventDefault()
     const data = genData($(this), 'set-expr-file')
-    console.log('data:', data)
+    console.debug('data:', data)
     socket.send(JSON.stringify(data))
     fileExpireModal.modal('hide')
     $(`#ctx-menu-${data.pk} input[name=current-file-expiration]`).val(data.expr)
@@ -43,15 +44,15 @@ $('#modal-expire-form').on('submit', function (event) {
 // TODO: Cleanup Password Forms
 
 filePasswordModal.on('shown.bs.modal', function (event) {
-    console.log('filePasswordModal shown.bs.modal:', event)
+    console.debug('filePasswordModal: shown.bs.modal:', event)
     $(this).find('input').trigger('focus').trigger('select')
 })
 
 $('#modal-password-form').on('submit', function (event) {
-    console.log('#modal-password-form submit:', event)
+    console.debug('#modal-password-form: submit:', event)
     event.preventDefault()
     const data = genData($(this), 'set-password-file')
-    console.log('data:', data)
+    console.debug('data:', data)
     socket.send(JSON.stringify(data))
     $(`#ctx-menu-${data.pk} input[name=current-file-password]`).val(
         data.password
@@ -61,10 +62,10 @@ $('#modal-password-form').on('submit', function (event) {
 
 // Delete File Form
 
-$('#confirm-delete').on('click', function (event) {
+confirmDelete?.on('click', function (event) {
     // TODO: Handle IF/ELSE Better
     const pk = $(this).data('pk')
-    console.log(`#confirm-delete click pk: ${pk}`, event)
+    console.debug(`#confirm-delete.click: pk: ${pk}`, event)
     socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
     if (window.location.pathname.startsWith('/u/')) {
         window.location.replace('/files')
@@ -76,21 +77,18 @@ $('#confirm-delete').on('click', function (event) {
 // Rename Form
 
 fileRenameModal.on('shown.bs.modal', function (event) {
-    console.log('fileRenameModal shown.bs.modal:', event)
-    $(this).find('input').trigger('focus').trigger('select')
-    let name = fileRenameModal.find('input[name=name]').val()
-    let ext = name.split('.').pop()
-    console.log(0, name.length - (ext.length + 1))
-    fileRenameModal
-        .find('input[name=name]')[0]
-        .setSelectionRange(0, name.length - (ext.length + 1))
+    console.debug('fileRenameModal: shown.bs.modal:', event)
+    const input = $(this).find('input').get(0)
+    input?.focus()
+    const end = input?.value.split('.')[0]?.length || 0
+    input?.setSelectionRange(0, end)
 })
 
 $('#modal-rename-form').on('submit', function (event) {
-    console.log('#modal-rename-form submit:', event)
+    console.debug('#modal-rename-form: submit:', event)
     event.preventDefault()
     const data = genData($(this), 'set-file-name')
-    console.log('data:', data)
+    console.debug('data:', data)
     socket.send(JSON.stringify(data))
     fileRenameModal.modal('hide')
     $(`#ctx-menu-${data.pk} input[name=current-file-name]`).val(data.name)
@@ -98,7 +96,7 @@ $('#modal-rename-form').on('submit', function (event) {
 
 // albums Form
 
-fileAlbumModal.on('shown.bs.modal', function (event) {
+fileAlbumModal.on('shown.bs.modal', function () {
     $(this).find('input').trigger('focus').trigger('select')
 })
 
@@ -113,42 +111,42 @@ $('#modal-album-form').on('submit', function (event) {
 
 export function ctxSetExpire(event) {
     const pk = getPrimaryKey(event)
-    console.log(`getPrimaryKey pk: ${pk}`, event)
+    console.debug(`ctxSetExpire: pk: ${pk}`, event)
     fileExpireModal.find('input[name=pk]').val(pk)
     const expire = $(`#ctx-menu-${pk} input[name=current-file-expiration]`)
     const expireValue = expire.val().toString().trim()
-    console.log(`expireInput: ${expireValue}`)
+    console.debug(`expireInput: ${expireValue}`)
     $('#expr').val(expireValue)
     fileExpireModal.modal('show')
 }
 
 export function ctxSetPrivate(event) {
     const pk = getPrimaryKey(event)
-    console.log(`ctxSetPrivate pk: ${pk}`, event)
+    console.debug(`ctxSetPrivate: pk: ${pk}`, event)
     socket.send(JSON.stringify({ method: 'toggle-private-file', pk: pk }))
 }
 
 export function ctxSetPassword(event) {
     const pk = getPrimaryKey(event)
-    console.log(`ctxSetPassword pk: ${pk}`, event)
+    console.debug(`ctxSetPassword: pk: ${pk}`, event)
     filePasswordModal.find('input[name=pk]').val(pk)
     const input = $(`#ctx-menu-${pk} input[name=current-file-password]`)
     const password = input.val().toString().trim()
-    console.log(`password: ${password}`)
+    console.debug(`password: ${password}`)
     filePasswordModal.find('input[name=password]').val(password)
     filePasswordModal.modal('show')
 }
 
 export function ctxDeleteFile(event) {
     const pk = getPrimaryKey(event)
-    console.log(`ctxDeleteFile pk: ${pk}`, event)
-    $('#confirm-delete').data('pk', pk)
+    console.debug(`ctxDeleteFile: pk: ${pk}`, event)
+    confirmDelete?.data('pk', pk)
     fileDeleteModal.modal('show')
 }
 
 export function ctxRenameFile(event) {
     const pk = getPrimaryKey(event)
-    console.log(`ctxRenameFile pk: ${pk}`, event)
+    console.debug(`ctxRenameFile: pk: ${pk}`, event)
     fileRenameModal.find('input[name=pk]').val(pk)
     const input = $(`#ctx-menu-${pk} input[name=current-file-name]`)
     const name = input.val().toString().trim()
@@ -157,24 +155,29 @@ export function ctxRenameFile(event) {
 }
 
 export async function ctxAlbumFile(event) {
-    const albumOptions = document.getElementsByClassName('album-options')[0]
-    albumOptions.innerHTML = ''
+    const albumOptions = document.getElementById('album-options')
+    albumOptions.length = 0
     const pk = getPrimaryKey(event)
     fileAlbumModal.find('input[name=pk]').val(pk)
     // FETCH ALBUMS AND SET HERE
     let nextPage = 1
-    // fetch file details for up to date albums
-    let file = await fetchFile(pk)
+    // fetch file details for up-to-date albums
+    const file = await fetchFile(pk)
+    console.debug('file:', file)
     fileAlbumModal.modal('show')
     while (nextPage) {
-        let resp = await fetchAlbums(nextPage)
-        console.log(resp)
+        const resp = await fetchAlbums(nextPage)
+        console.debug('resp:', resp)
         nextPage = resp.next
-        for (let album in resp.albums){
-            let option = createOption(resp.albums[album].id, resp.albums[album].name)
-            option.value = resp.albums[album].id
-            if (file.albums.includes(resp.albums[album].id)) {
-                option.selected = true;
+        /**
+         * @type {Object}
+         * @property {Array[Object]} albums
+         */
+        for (const album of resp.albums) {
+            console.debug('album:', album)
+            let option = createOption(album.id, album.name)
+            if (file.albums.includes(album.id)) {
+                option.selected = true
             }
             albumOptions.options.add(option)
         }
@@ -194,7 +197,15 @@ function getPrimaryKey(event) {
 /**
  * Get Context Menu for File
  * @function getCtxMenuContainer
- * @param {Object} file
+ * @param {Object} file - File Data
+ * @param {String} file.id
+ * @param {string} file.name
+ * @param {string} file.url
+ * @param {string} file.raw
+ * @param {string} file.raw_uri
+ * @param {string} file.expr
+ * @param {string} file.password
+ * @param {Boolean} file.private
  * @return {HTMLElement}
  */
 export function getCtxMenuContainer(file) {
@@ -214,19 +225,32 @@ export function getCtxMenuContainer(file) {
     downloadLink.href = file.raw + '?download=true'
     if (menu.querySelector('.ctx-expire')) {
         // gate adding listeners in case user does not have full context
-        menu.querySelector('.ctx-expire').addEventListener('click', ctxSetExpire)
-        menu.querySelector('.ctx-private').addEventListener('click', ctxSetPrivate)
+        menu.querySelector('.ctx-expire').addEventListener(
+            'click',
+            ctxSetExpire
+        )
+        menu.querySelector('.ctx-private').addEventListener(
+            'click',
+            ctxSetPrivate
+        )
         menu.querySelector('.ctx-password').addEventListener(
             'click',
             ctxSetPassword
         )
-        menu.querySelector('.ctx-delete').addEventListener('click', ctxDeleteFile)
-        menu.querySelector('.ctx-rename').addEventListener('click', ctxRenameFile)
+        menu.querySelector('.ctx-delete').addEventListener(
+            'click',
+            ctxDeleteFile
+        )
+        menu.querySelector('.ctx-rename').addEventListener(
+            'click',
+            ctxRenameFile
+        )
         menu.querySelector('.ctx-album').addEventListener('click', ctxAlbumFile)
-        menu.querySelector("[name='current-file-password']").value = file.password
+        menu.querySelector("[name='current-file-password']").value =
+            file.password
         menu.querySelector("[name='current-file-expiration']").value = file.expr
         menu.querySelector("[name='current-file-name']").value = file.name
-    
+
         let ctxPrivateText = $(`#ctx-menu-${file.id} .privateText`)
         let ctxPrivateIcon = $(`#ctx-menu-${file.id} .privateIcon`)
 
@@ -235,15 +259,11 @@ export function getCtxMenuContainer(file) {
             ctxPrivateText.text('Make Public')
             ctxPrivateIcon.removeClass('fa-lock').addClass('fa-lock-open')
         }
-
     }
-
-
-
     return menu
 }
 
-export function getContextMenu(data, type, row, meta) {
+export function getContextMenu(data, type, row) {
     // This is only called by Datatables to render the context menu, it uses getCtxMenuContainer
     const ctxMenu = document.createElement('div')
     const toggle = document.createElement('a')
@@ -274,7 +294,6 @@ export function getContextMenu(data, type, row, meta) {
     return ctxMenu
 }
 
-
 /**
  * Convert Form Object to Object
  * @param {jQuery} form $(this) from on submit event
@@ -284,17 +303,17 @@ export function getContextMenu(data, type, row, meta) {
 function genData(form, method) {
     const data = { method: method }
     for (const element of form.serializeArray()) {
-        const name = element['name'];
-        const value = element['value'];
-        // console.log(element)
+        const name = element['name']
+        const value = element['value']
+        // console.debug(element)
         if (data[name]) {
             if (Array.isArray(data[name])) {
-                data[name].push(value);
+                data[name].push(value)
             } else {
-                data[name] = [data[name], value];
+                data[name] = [data[name], value]
             }
         } else {
-            data[name] = value;
+            data[name] = value
         }
     }
     return data
@@ -303,6 +322,14 @@ function genData(form, method) {
 //////// Socket Event Handlers ////////////
 // this is where event handlers SPECIFIC to the context menu go
 
+/**
+ * Assign the project to an employee.
+ * @param {Object} data - File Data
+ * @param {string} data.id
+ * @param {string} data.uri
+ * @param {string} data.name
+ * @param {string} data.raw_uri
+ */
 function messageFileRename(data) {
     // update hidden name value
     $(`#ctx-menu-${data.id} input[name=current-file-name]`).val(data.name)
@@ -312,19 +339,19 @@ function messageFileRename(data) {
     )
     let shareLinkURL = new URL(shareLink.getAttribute('data-clipboard-text'))
     shareLinkURL.pathname = data.uri
-    shareLink.setAttribute('data-clipboard-text', shareLinkURL)
+    shareLink.dataset.clipboardText = shareLinkURL.href
     // handle fixing clipboard copy raw link text
     let copyRawLink = document.querySelector(
         `#ctx-menu-${data.id} .copy-raw-link`
     )
     let rawLinkURL = new URL(copyRawLink.getAttribute('data-clipboard-text'))
     rawLinkURL.pathname = data.raw_uri
-    copyRawLink.setAttribute('data-clipboard-text', rawLinkURL)
+    shareLink.dataset.clipboardText = rawLinkURL.href
     // handle download link
     let downloadLink = document.querySelector(
         `#ctx-menu-${data.id} .download-file`
     )
-    console.log(downloadLink.href)
+    console.debug('downloadLink.href:', downloadLink.href)
     let downloadFileURL = new URL(downloadLink.href)
     downloadFileURL.pathname = data.raw_uri
     downloadLink.href = downloadFileURL
@@ -338,15 +365,22 @@ function messageFileRename(data) {
 
 socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)
-    // console.log(event)
+    // console.debug(event)
     if (data.event === 'set-file-name') {
         messageFileRename(data)
     }
 })
 
-function createOption(option, label) {
-      const thisOption = document.createElement("option");
-      thisOption.setAttribute("value", option);
-      thisOption.innerHTML = label;
-      return thisOption;
+/**
+ * Create Option
+ * @function postURL
+ * @param {String} id
+ * @param {String} name
+ * @return {HTMLOptionElement}
+ */
+function createOption(id, name) {
+    const option = document.createElement('option')
+    option.textContent = name
+    option.value = id
+    return option
 }

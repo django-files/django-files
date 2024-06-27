@@ -52,6 +52,9 @@ class SiteSettings(models.Model):
         )
     global_storage_usage = models.PositiveBigIntegerField(default=0,
                                                           help_text="Current global storage usage in bytes.")
+    login_background = models.CharField(max_length=16, default='video')
+    background_video = models.CharField(max_length=255, default='/static/video/loop.mp4')
+    background_picture = models.CharField(max_length=255, default='https://picsum.photos/1920/1080')
     show_setup = models.BooleanField(default=True)
     objects = SiteSettingsManager()
 
@@ -98,4 +101,3 @@ class SiteSettings(models.Model):
             return self.oauth_redirect_url
         if self.site_url:
             return self.site_url + '/oauth/callback/'
-        return

@@ -36,3 +36,30 @@ $('#login-form').on('submit', function (event) {
         processData: false,
     })
 })
+
+document.addEventListener('DOMContentLoaded', function () {
+    const loginBackground = JSON.parse(
+        document.getElementById('login_background').textContent
+    )
+    console.debug('loginBackground:', loginBackground)
+    const backgroundPicture = JSON.parse(
+        document.getElementById('background_picture').textContent
+    )
+    console.debug('backgroundPicture:', backgroundPicture)
+    let options = {}
+    if (loginBackground === 'picture') {
+        console.debug('setBackground:', options)
+        document.body.style.background = `url('${backgroundPicture}') no-repeat center fixed`
+        document.body.style.webkitBackgroundSize = 'cover'
+        document.body.style.mozBackgroundSize = 'cover'
+        document.body.style.oBackgroundSize = 'cover'
+        document.body.style.backgroundSize = 'cover'
+        document.querySelector('video').classList.add('d-none')
+    } else if (loginBackground === 'video') {
+        document.querySelector('video').classList.remove('d-none')
+        document.body.style.cssText = ''
+    } else {
+        document.body.style.cssText = ''
+        document.querySelector('video').classList.add('d-none')
+    }
+})
