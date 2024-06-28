@@ -18,16 +18,13 @@ class Albums(models.Model):
 
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255, null=True, blank=True, unique=True, verbose_name='Name',
-                            help_text='Album Name.')
-    password = models.CharField(max_length=255, null=True, blank=True, verbose_name='Album Password')
+    name = models.CharField(max_length=255, blank=False, unique=True, verbose_name='Name', help_text='Album Name.')
+    password = models.CharField(default='', max_length=255, blank=True, verbose_name='Album Password')
     private = models.BooleanField(default=False, verbose_name='Private Album')
-    info = models.CharField(max_length=255, null=True, blank=True, verbose_name='Info',
-                            help_text='Album Information.')
+    info = models.CharField(default='', max_length=255, blank=True, verbose_name='Info', help_text='Album Information.')
     view = models.IntegerField(default=0, verbose_name='Views', help_text='Album Views.')
     maxv = models.IntegerField(default=0, verbose_name='Max', help_text='Max Views.')
-    expr = models.CharField(default='', max_length=32, blank=True, verbose_name='Expiration',
-                            help_text='Album Expire.')
+    expr = models.CharField(default='', max_length=32, blank=True, verbose_name='Expiration', help_text='Album Expire.')
     date = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Album Created Date.')
 
     objects = AlbumsManager()
@@ -36,13 +33,13 @@ class Albums(models.Model):
 class Files(models.Model):
     upload_to = '.'
     id = models.AutoField(primary_key=True)
-    albums = models.ManyToManyField(Albums)
+    albums = models.ManyToManyField(Albums, blank=True)
     file = StoragesRouterFileField(upload_to=upload_to)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     size = models.IntegerField(default=0, verbose_name='Size', help_text='File Size in Bytes.')
-    mime = models.CharField(max_length=255, null=True, blank=True, verbose_name='MIME', help_text='File MIME Type.')
-    name = models.CharField(max_length=255, null=True, blank=True, verbose_name='Name', help_text='File Name.')
-    info = models.CharField(max_length=255, null=True, blank=True, verbose_name='Info', help_text='File Information.')
+    mime = models.CharField(default='', max_length=255, blank=True, verbose_name='MIME', help_text='File MIME Type.')
+    name = models.CharField(default='', max_length=255, blank=True, verbose_name='Name', help_text='File Name.')
+    info = models.CharField(default='', max_length=255, blank=True, verbose_name='Info', help_text='File Information.')
     expr = models.CharField(default='', max_length=32, blank=True, verbose_name='Expiration', help_text='File Expire.')
     view = models.IntegerField(default=0, verbose_name='Views', help_text='File Views.')
     maxv = models.IntegerField(default=0, verbose_name='Max', help_text='Max Views.')
@@ -52,11 +49,14 @@ class Files(models.Model):
     edit = models.DateTimeField(auto_now=True, verbose_name='Edited', help_text='File Edited Date.')
     meta = models.JSONField(default=dict, blank=True, verbose_name="Metadata", help_text="JSON formatted metadata.")
     meta_preview = models.BooleanField(default=True, help_text="Show metadata on previews.")
-    password = models.CharField(max_length=255, null=True, blank=True, verbose_name='File Password')
+    password = models.CharField(default='', max_length=255, blank=True, verbose_name='File Password')
     private = models.BooleanField(default=False, verbose_name='Private File')
     objects = FilesManager()
     avatar = models.BooleanField(default=False, help_text="Determines file is a user avatar.")
     thumb = StoragesRouterFileField(upload_to=f'{upload_to}/thumbs/', null=True, blank=True)
+
+    # def save(self, *args, **kwargs):
+    #     return super(Files, self).save(*args, **kwargs)
 
     def __str__(self):
         return f'<File(id={self.id} size={self.size} name={self.name})>'

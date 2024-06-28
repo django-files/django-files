@@ -355,16 +355,21 @@ def file_view(request, idname):
         elif request.method == 'POST':
             log.debug(request.POST)
             data = get_json_body(request)
+            log.debug('data: %s', data)
             if not data:
                 return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
             if 'expr' in data and not parse(data['expr']):
                 data['expr'] = ''
+            # TODO: We should probably not use .update here and convert to a function, see below TODO
             Files.objects.filter(id=file.id).update(**data)
             file = Files.objects.get(id=file.id)
             response = model_to_dict(file, exclude=['file', 'thumb', 'albums'])
             # TODO: Determine why we have to manually flush file cache here
             #       The Website seems to flush, but not the api/recent/ endpoint
-            clear_files_cache.delay()
+            #       ANSWER: This is not called on .update(), you must call .save()
+            # clear_files_cache.delay()
+            # TODO: Calling .save after .update is redundant but fires a .save() method!
+            file.save(update_fields=list(data.keys()))
             log.debug('response: %s' % response)
             return JsonResponse(response, status=200)
         elif request.method == 'GET':

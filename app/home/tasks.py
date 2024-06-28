@@ -15,6 +15,7 @@ from django.utils import timezone
 from packaging import version
 from pytimeparse2 import parse
 from PIL import UnidentifiedImageError
+from typing import Optional
 
 from home.util.storage import use_s3
 from home.util.image import thumbnail_processor
@@ -60,7 +61,7 @@ def app_init():
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 60, "default_retry_delay": 180})
 def generate_thumbs(user_pk: int = None, only_missing: bool = True):
-    log.info("Generating Thumbnails - only_missing: %s - user_pk: %s", only_missing,  user_pk)
+    log.info("Generating Thumbnails - only_missing: %s - user_pk: %s", only_missing, user_pk)
     users = CustomUser.objects.filter(pk=user_pk) if user_pk else CustomUser.objects.all()
     if only_missing:
         files = Files.objects.filter(thumb=None, user__in=users, mime__startswith='image/')
@@ -337,6 +338,25 @@ def delete_file_websocket(data: dict, user_id):
         'text': json.dumps(data),
     }
     async_to_sync(channel_layer.group_send)(f'user-{user_id}', event)
+
+
+@shared_task()
+def update_file_websocket(data: dict, user_id: int, update_fields: Optional[list] = None):
+    try:
+        log.debug('update_file_websocket user_id: %s data: %s', user_id, data)
+        log.debug('update_fields: %s', update_fields)
+        data['event'] = 'file-update'
+        # if update_fields:
+        data['update_fields'] = update_fields
+        channel_layer = get_channel_layer()
+        event = {
+            'type': 'websocket.send',
+            'text': json.dumps(data),
+        }
+        async_to_sync(channel_layer.group_send)(f'user-{user_id}', event)
+
+    except Exception as error:
+        log.warning('tasks websocket error: %s', error)
 
 
 @shared_task()

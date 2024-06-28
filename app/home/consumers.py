@@ -181,7 +181,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             if user_id and file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
             file[0].private = not file[0].private
-            file[0].save()
+            file[0].save(update_fields=['private'])
             response = model_to_dict(file[0], exclude=['file', 'thumb', 'albums'])
             response.update({'event': 'toggle-private-file'})
             log.debug('response: %s', response)
@@ -206,7 +206,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             if expr and not parse(expr):
                 return self._error(f'Invalid Expire: {expr}', **kwargs)
             file[0].expr = expr or ""
-            file[0].save()
+            file[0].save(update_fields=['expr'])
             # return self._success('File Expire Updated.', **kwargs)
             response = model_to_dict(file[0], exclude=['file', 'thumb', 'albums'])
             response.update({'event': 'set-expr-file'})
@@ -229,7 +229,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 return self._error('File owned by another user.', **kwargs)
             log.debug('password: %s', password)
             file[0].password = password or ""
-            file[0].save()
+            file[0].save(update_fields=['password'])
             response = model_to_dict(file[0], exclude=['file', 'thumb', 'albums'])
             response.update({'event': 'set-password-file'})
             log.debug('response: %s', response)
@@ -260,7 +260,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 file.file.name = name  # this will rename on OS and cloud
                 if file.thumb:
                     file.thumb.name = 'thumbs/' + name  # renames thumbnail
-                file.save()
+                file[0].save(update_fields=['name'])
                 response = model_to_dict(file, exclude=['file', 'thumb', 'albums'])
                 response.update({'event': 'set-file-name',
                                  'uri': file.preview_uri(),
@@ -270,23 +270,26 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 return response
         return self._error('File not found.', **kwargs)
 
-    def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = [], **kwargs) -> dict:
+    def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = None, **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
-        :param name: String - File Name String
+        :param albums: List - List of Album IDs
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug('set_file_name')
+        log.debug('set_file_albums')
         log.debug('user_id: %s', user_id)
         log.debug('pk: %s', pk)
         added = []
+        file_albums = []
         if file := Files.objects.filter(pk=pk):
             if len(file) == 0:
                 return self._error('File not found.', **kwargs)
             if user_id and file[0].user.id != user_id:
                 return self._error('File owned by another user.', **kwargs)
             file_albums = list(Albums.objects.filter(files__id=pk).values_list('id', flat=True))
+        if not albums:
+            albums = []
         if not isinstance(albums, list):
             albums = [albums]
         albums = [int(album) for album in albums]
