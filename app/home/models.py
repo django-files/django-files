@@ -15,10 +15,11 @@ class Albums(models.Model):
         ordering = ['-date']
         verbose_name = 'Album'
         verbose_name_plural = 'Albums'
+        unique_together = ['user', 'name']
 
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255, blank=False, unique=True, verbose_name='Name', help_text='Album Name.')
+    name = models.CharField(max_length=255, blank=False, verbose_name='Name', help_text='Album Name.')
     password = models.CharField(default='', max_length=255, blank=True, verbose_name='Album Password')
     private = models.BooleanField(default=False, verbose_name='Private Album')
     info = models.CharField(default='', max_length=255, blank=True, verbose_name='Info', help_text='Album Information.')

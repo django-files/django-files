@@ -17,10 +17,10 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from functools import wraps
 from pytimeparse2 import parse
-from typing import Optional, BinaryIO
+from typing import Any, BinaryIO, Optional, Union, Type
 from urllib.parse import urlparse
 
-from home.tasks import clear_files_cache, clear_albums_cache, new_album_websocket
+from home.tasks import new_album_websocket
 from home.models import Files, FileStats, ShortURLs, Albums
 from home.util.file import process_file
 from home.util.rand import rand_string
@@ -163,50 +163,49 @@ def album_view(request):
     """
     View  /api/album
     """
-    if request.method == 'POST':
-        data = get_json_body(request)
-        log.info(data)
-        name = data.get('name') or request.headers.get('name')
-        max_views = data.get('max-views') or request.headers.get('max-views', 0)
-        expr = data.get('expire') or request.headers.get('expire')
-        desc = data.get('description') or request.headers.get('description')
-        password = data.get('password') or request.headers.get('password')
-        private = data.get('private') or request.headers.get('private')
-        if not name:
-            return JsonResponse({'error': 'Missing Required Value: name'}, status=400)
-        log.debug('name: %s', name)
-        album = Albums.objects.create(
-            user=request.user,
-            name=name,
-            maxv=int(max_views),
-            info=desc,
-            password=password,
-            private=False if not private else True,
-            expr=parse(expr) if expr else '',
-        )
-        site_settings = SiteSettings.objects.settings()
-        full_url = site_settings.site_url + reverse('home:files') + f'?album={album.id}'
-        clear_albums_cache.delay()
-        new_album_websocket.apply_async(args=[extract_albums([album])[0]])
-        return JsonResponse({'url': full_url}, safe=False)
-    else:
-        album = Albums.objects.get(id=request.GET.get('id'))
-        return JsonResponse(album)
+    try:
+        if request.method == 'POST':
+            data = get_json_body(request)
+            log.info('data: %s', data)
+            album = Albums.objects.create(
+                user=request.user,
+                name=data_or_header(request, data, 'name'),
+                maxv=data_or_header(request, data, 'password', 0, cast=int),
+                info=data_or_header(request, data, 'description'),
+                password=data_or_header(request, data, 'password'),
+                private=data_or_header(request, data, 'password', False, cast=bool),
+                expr=data_or_header(request, data, 'expr'),
+            )
+            site_settings = SiteSettings.objects.settings()
+            full_url = site_settings.site_url + reverse('home:files') + f'?album={album.id}'
+            # clear_albums_cache.delay()  # this is redundant and handled by a signal
+            new_album_websocket.apply_async(args=[extract_albums([album])[0]])  # no time to de-tangle this line
+            return JsonResponse({'url': full_url}, safe=False)
+        else:
+            album = get_object_or_404(Albums, id=request.GET.get('id'))
+            return JsonResponse(album)
+    except Exception as error:
+        log.error(error)
+        return JsonResponse({'error': f'{error}'}, status=400)
 
 
 @csrf_exempt
-@require_http_methods(['DELETE', 'GET', 'OPTIONS', 'POST'])
-def random_album(request, idname):
+@require_http_methods(['GET'])
+@auth_from_token(no_fail=True)
+def random_album(request, user_album: int, idname: str = None):
     """
-    View  /api/random/albums/{id or name}/
+    View  /api/random/albums/{album id or user id}/{album id or album name}?
     """
-    if idname.isnumeric():
-        kwargs = {'id': int(idname)}
+    if not idname:
+        kwargs = {'id': user_album}
     else:
-        kwargs = {'name': idname}
+        kwargs = {'user': user_album}
+        kwargs.update(id_or_name(idname))
+    log.debug('kwargs: %s', kwargs)
+
     try:
         album = get_object_or_404(Albums, **kwargs)
-        log.debug('albums_view: %s: %s: %s', request.method, album.name, album.private)
+        log.debug('random_album: %s: %s: %s', request.method, album.name, album.private)
         if not request.user.is_authenticated and album.private:
             return HttpResponse(status=404)
         files = Files.objects.filter(albums__id=album.id)
@@ -390,15 +389,10 @@ def file_view(request, idname):
 @cache_page(cache_seconds, key_prefix="albums")
 @vary_on_headers('Authorization')
 @vary_on_cookie
-def albums_view(request, page=None, count=None):
+def albums_view(request, page=None, count=100):
     """
     View  /api/albums/{page}/{count}/
-    Limit 100 items per page.
     """
-    if not count:
-        count = 100
-    if count > 250:
-        count = 250
     log.info('%s - albums_page_view: %s - %s', request.method, page, count)
     if request.user.is_superuser:
         user = request.GET.get('user') or request.user.id
@@ -534,3 +528,17 @@ def parse_expire(request) -> str:
     if request.user.is_authenticated:
         return request.user.default_expire or ''
     return ''
+
+
+def data_or_header(request, data: dict, value: str, default: Any = '', cast: Type = str):
+    if data:
+        if result := data.get(value):
+            return cast(result)
+    return cast(request.headers.get(value, default))
+
+
+def id_or_name(id_name: Union[str, int], _name="name") -> dict:
+    if id_name.isnumeric():
+        return {'id': int(id_name)}
+    else:
+        return {_name: id_name}
