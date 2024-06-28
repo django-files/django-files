@@ -22,10 +22,12 @@ class Albums(models.Model):
     name = models.CharField(max_length=255, blank=False, verbose_name='Name', help_text='Album Name.')
     password = models.CharField(default='', max_length=255, blank=True, verbose_name='Album Password')
     private = models.BooleanField(default=False, verbose_name='Private Album')
-    info = models.CharField(default='', max_length=255, blank=True, verbose_name='Info', help_text='Album Information.')
+    info = models.CharField(default='', max_length=255, blank=True, verbose_name='Info',
+                            help_text='Album Information.')
     view = models.IntegerField(default=0, verbose_name='Views', help_text='Album Views.')
     maxv = models.IntegerField(default=0, verbose_name='Max', help_text='Max Views.')
-    expr = models.CharField(default='', max_length=32, blank=True, verbose_name='Expiration', help_text='Album Expire.')
+    expr = models.CharField(default='', max_length=32, blank=True, verbose_name='Expiration',
+                            help_text='Album Expire.')
     date = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='Album Created Date.')
 
     objects = AlbumsManager()
