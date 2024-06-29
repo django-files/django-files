@@ -17,7 +17,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from functools import wraps
 from pytimeparse2 import parse
-from typing import Any, BinaryIO, Optional, Union, Type
+from typing import Any, BinaryIO, Optional, Union, Callable
 from urllib.parse import urlparse
 
 from home.tasks import new_album_websocket
@@ -121,18 +121,14 @@ def shorten_view(request):
     View  /shorten/ and /api/shorten
     """
     try:
-        url = request.headers.get('url')
-        vanity = request.headers.get('vanity')
-        max_views = request.headers.get('max-views')
-        if not url:
-            data = get_json_body(request)
-            log.debug('data: %s', data)
-            url = data.get('url', url)
-            vanity = data.get('vanity', vanity)
-            max_views = data.get('max-views', max_views)
+        log.debug('request.headers: %s', request.headers)
+        data = get_json_body(request)
+        log.debug('data: %s', data)
+        url = data_or_header(request, data, 'url')
+        vanity = data_or_header(request, data, 'vanity')
+        max_views = data_or_header(request, data, 'max-views')
         if not url:
             return JsonResponse({'error': 'Missing Required Value: url'}, status=400)
-
         log.debug('url: %s', url)
         if not validators.url(url):
             return JsonResponse({'error': 'Unable to Validate URL'}, status=400)
@@ -140,16 +136,18 @@ def shorten_view(request):
             return JsonResponse({'error': 'max-views Must be an Integer'}, status=400)
         if vanity and not validators.slug(vanity):
             return JsonResponse({'error': 'vanity Must be a Slug'}, status=400)
-        short = gen_short(vanity)
-        log.debug('short: %s', short)
-        url = ShortURLs.objects.create(
+
+        name = gen_short(vanity)
+        log.debug('name: %s', name)
+        short = ShortURLs.objects.create(
             url=url,
-            short=short,
+            short=name,
             max=max_views or 0,
             user=request.user,
         )
+        log.debug('short: %s', short)
         site_settings = SiteSettings.objects.settings()
-        full_url = site_settings.site_url + reverse('home:short', kwargs={'short': url.short})
+        full_url = site_settings.site_url + reverse('home:short', kwargs={'short': short.short})
         return JsonResponse({'url': full_url}, safe=False)
 
     except Exception as error:
@@ -165,16 +163,17 @@ def album_view(request):
     """
     try:
         if request.method == 'POST':
+            log.debug('request.headers: %s', request.headers)
             data = get_json_body(request)
-            log.info('data: %s', data)
+            log.debug('data: %s', data)
             album = Albums.objects.create(
                 user=request.user,
                 name=data_or_header(request, data, 'name'),
-                maxv=data_or_header(request, data, 'password', 0, cast=int),
+                maxv=data_or_header(request, data, 'max-views', 0, cast=int),
                 info=data_or_header(request, data, 'description'),
                 password=data_or_header(request, data, 'password'),
-                private=data_or_header(request, data, 'password', False, cast=bool),
-                expr=data_or_header(request, data, 'expr'),
+                private=data_or_header(request, data, 'private', False, cast=bool),
+                expr=data_or_header(request, data, 'expire'),
             )
             site_settings = SiteSettings.objects.settings()
             full_url = site_settings.site_url + reverse('home:files') + f'?album={album.id}'
@@ -192,13 +191,20 @@ def album_view(request):
 @csrf_exempt
 @require_http_methods(['GET'])
 @auth_from_token(no_fail=True)
-def random_album(request, user_album: int, idname: str = None):
+def random_album(request, user_album: str, idname: str = None):
     """
-    View  /api/random/albums/{album id or user id}/{album id or album name}?
+    View /api/random/albums/...
+    /album_id/
+    /user_id_username/album_id_name
     """
     if not idname:
-        kwargs = {'id': user_album}
+        if not user_album.isnumeric():
+            error = 'Must provide Album ID, or user/album'
+            return JsonResponse({'error': error}, status=400)
+        kwargs = {'id': int(user_album)}
     else:
+        if not user_album.isnumeric():
+            user_album = get_object_or_404(CustomUser, username=user_album)
         kwargs = {'user': user_album}
         kwargs.update(id_or_name(idname))
     log.debug('kwargs: %s', kwargs)
@@ -231,18 +237,19 @@ def invites_view(request):
     """
     log.debug('%s - invites_view: is_secure: %s', request.method, request.is_secure())
     if request.method == 'POST':
+        log.debug('request.headers: %s', request.headers)
         data = get_json_body(request)
         log.debug('data: %s', data)
-        if not data:
-            return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
+        # if not data:
+        #     return JsonResponse({'error': 'Error Parsing JSON Body'}, status=400)
         invite = UserInvites.objects.create(
             owner=request.user,
-            expire=parse(data.get('expire', 0)) or 0,
-            max_uses=data.get('max_uses', 1),
-            super_user=anytobool(data.get('super_user', False)),
-            storage_quota=human_read_to_byte(data.get('storage_quota', None))
+            expire=data_or_header(request, data, 'expire', 0, int),
+            max_uses=data_or_header(request, data, 'max_uses', 1, int),
+            super_user=data_or_header(request, data, 'super_user', False, anytobool),
+            storage_quota=data_or_header(request, data, 'storage_quota', None, human_read_to_byte),
         )
-        log.debug(invite)
+        log.debug('invite: %s', invite)
         log.debug(model_to_dict(invite))
         return JsonResponse(model_to_dict(invite))
 
@@ -296,18 +303,13 @@ def recent_view(request):
 @require_http_methods(['OPTIONS', 'GET'])
 @auth_from_token(no_fail=True)
 @cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix="files")
+@cache_page(cache_seconds, key_prefix='files')
 @vary_on_headers('Authorization')
 @vary_on_cookie
-def files_view(request, page, count=None):
+def files_view(request, page, count=25):
     """
     View  /api/files/{page}/{count}/
-    Limit 100 items per page.
     """
-    if not count:
-        count = 25
-    if count > 100:
-        count = 100
     log.debug('%s - files_page_view: %s', request.method, page)
     if request.user.is_superuser:
         user = request.GET.get('user') or request.user.id
@@ -317,7 +319,7 @@ def files_view(request, page, count=None):
     if album := request.GET.get('album'):
         q = Files.objects.filtered_request(request, albums__id=album)
     else:
-        if user == "0":
+        if user == '0':
             q = Files.objects.filtered_request(request)
         else:
             q = Files.objects.filtered_request(request, user_id=int(user))
@@ -384,7 +386,7 @@ def file_view(request, idname):
 @require_http_methods(['OPTIONS', 'GET'])
 @auth_from_token
 @cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix="albums")
+@cache_page(cache_seconds, key_prefix='albums')
 @vary_on_headers('Authorization')
 @vary_on_cookie
 def albums_view(request, page=None, count=100):
@@ -396,7 +398,7 @@ def albums_view(request, page=None, count=100):
         user = request.GET.get('user') or request.user.id
     else:
         user = request.user.id
-    if user == "0":
+    if user == '0':
         q = Albums.objects.filtered_request(request)
     else:
         q = Albums.objects.filtered_request(request, user_id=int(user))
@@ -528,14 +530,14 @@ def parse_expire(request) -> str:
     return ''
 
 
-def data_or_header(request, data: dict, value: str, default: Any = '', cast: Type = str):
+def data_or_header(request, data: dict, value: str, default: Any = '', cast: Callable = str):
     if data:
         if result := data.get(value):
             return cast(result)
     return cast(request.headers.get(value, default))
 
 
-def id_or_name(id_name: Union[str, int], name="name") -> dict:
+def id_or_name(id_name: Union[str, int], name='name') -> dict:
     if id_name.isnumeric():
         return {'id': int(id_name)}
     else:
