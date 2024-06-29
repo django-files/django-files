@@ -341,10 +341,8 @@ def file_view(request, idname):
     """
     View  /api/file/{id or name}
     """
-    if idname.isnumeric():
-        kwargs = {'id': int(idname)}
-    else:
-        kwargs = {'name': idname}
+    kwargs = id_or_name(idname)
+    log.debug('kwargs: %s', kwargs)
     file = get_object_or_404(Files, user=request.user, **kwargs)
     log.debug('file_view: ' + request.method + ': ' + file.name)
     try:
@@ -537,8 +535,8 @@ def data_or_header(request, data: dict, value: str, default: Any = '', cast: Typ
     return cast(request.headers.get(value, default))
 
 
-def id_or_name(id_name: Union[str, int], _name="name") -> dict:
+def id_or_name(id_name: Union[str, int], name="name") -> dict:
     if id_name.isnumeric():
         return {'id': int(id_name)}
     else:
-        return {_name: id_name}
+        return {name: id_name}

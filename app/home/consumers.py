@@ -115,7 +115,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error('Invalid Authorization.')
         self.scope['user'] = user[0]
         async_to_sync(self.channel_layer.group_add)(f"user-{self.scope['user'].id}", self.channel_name)
-        return {'authorization': user[0].username}
+        return {'username': user[0].username, 'first_name': user[0].first_name}
 
     def paste_text(self, *, user_id: int = None, text_data: str = None, **kwargs):
         log.debug('paste_text')
