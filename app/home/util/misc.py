@@ -4,13 +4,12 @@ from math import log10, floor
 log = logging.getLogger('app')
 
 
-def anytobool(value):
-    log.debug('true_false: %s', value)
+def anytobool(value) -> bool:
+    log.debug('anytobool: %s', value)
     if not isinstance(value, str):
         return bool(value)
     if value.lower() in ['true', 'yes', 'on', '1']:
         return True
-    log.debug('FAIL')
     return False
 
 
@@ -36,6 +35,6 @@ def human_read_to_byte(size):
 def bytes_to_human_read(size) -> str:
     if size:
         factors = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
-        factor = floor(log10(size)/3)
+        factor = floor(log10(size) / 3)
         return f'{size * pow(10, -factor * 3):.2f} {factors[factor]}'
     return '0'

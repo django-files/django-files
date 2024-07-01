@@ -5,13 +5,13 @@ from django.dispatch import receiver
 from django.forms.models import model_to_dict
 from botocore.exceptions import ClientError
 
-from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache, clear_albums_cache
-from home.tasks import app_startup, delete_file_websocket, send_success_message, delete_album_websocket
+from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache, clear_albums_cache, app_startup, \
+    delete_file_websocket, send_success_message, delete_album_websocket, update_file_websocket
 from home.models import Files, FileStats, ShortURLs, Albums
 from oauth.models import DiscordWebhooks
 from home.util.quota import decrement_storage_usage
 
-log = logging.getLogger('signals')
+log = logging.getLogger('app')
 
 
 @worker_ready.connect
@@ -33,6 +33,26 @@ def files_delete_signal(sender, instance, **kwargs):
     delete_file_websocket.apply_async(args=[data, instance.user.id], priority=0)
 
 
+@receiver(post_save, sender=Files)
+def files_post_save_signal(sender, instance, **kwargs):
+    try:
+        log.info('files_post_save_signal, %s, %s, %s', sender, instance, kwargs)
+        # clear_files_cache.delay()
+        data = model_to_dict(instance, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta', 'thumb', 'albums'])
+        update_fields = list(kwargs['update_fields'])
+        log.debug('update_fields: %s', update_fields)
+        update_file_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
+    except Exception as error:
+        log.warning('ERROR: %s', error)
+
+
+@receiver(post_save, sender=Files)
+@receiver(post_delete, sender=Files)
+def clear_files_cache_signal(sender, instance, **kwargs):
+    log.debug('clear_files_cache_signal')
+    clear_files_cache.delay()
+
+
 @receiver(post_save, sender=Albums)
 @receiver(post_delete, sender=Albums)
 def clear_albums_cache_signal(sender, instance, **kwargs):
@@ -43,12 +63,6 @@ def clear_albums_cache_signal(sender, instance, **kwargs):
 def albums_delete_signal(sender, instance, **kwargs):
     data = model_to_dict(instance)
     delete_album_websocket.apply_async(args=[data, instance.user.id], priority=0)
-
-
-@receiver(post_save, sender=Files)
-@receiver(post_delete, sender=Files)
-def clear_files_cache_signal(sender, instance, **kwargs):
-    clear_files_cache.delay()
 
 
 @receiver(post_save, sender=ShortURLs)
