@@ -7,7 +7,7 @@ import {
     // ImageEditor,
     Webcam,
     XHRUpload,
-} from '/static/uppy/uppy.min.js'
+} from '../dist/uppy/uppy.min.mjs'
 
 const fileUploadModal = $('#avatarUploadModal')
 

@@ -50,9 +50,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (loginBackground === 'picture') {
         console.debug('setBackground:', options)
         document.body.style.background = `url('${backgroundPicture}') no-repeat center fixed`
-        document.body.style.webkitBackgroundSize = 'cover'
-        document.body.style.mozBackgroundSize = 'cover'
-        document.body.style.oBackgroundSize = 'cover'
         document.body.style.backgroundSize = 'cover'
         document.querySelector('video').classList.add('d-none')
     } else if (loginBackground === 'video') {
