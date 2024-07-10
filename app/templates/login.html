@@ -19,7 +19,7 @@
 </video>
 
 <div class="d-flex flex-column align-items-center h-100 py-2" data-bs-theme="dark">
-<div id="login-outer" class="rounded rounded-4 m-auto p-3 animate__animated animate__backInDown animate__fast">
+<div id="login-outer" class="rounded rounded-4 m-auto p-4 animate__animated animate__backInDown animate__fast">
     <div class="text-center mb-3">
         <img height="128" width="128" class="animate__animated animate__rotateIn animate__slower"
              src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
@@ -50,7 +50,7 @@
             {% endif %}
         {% endif %}
 
-        <div id="login-buttons" class="d-grid gap-2">
+        <div id="login-buttons" class="d-grid gap-2 mt-3">
             {% if local %}
                 <button class="btn btn-lg btn-secondary opacity-75 d-flex align-items-center position-relative" id="login-button" type="submit">
                     <i class="fas fa-sign-in-alt position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
@@ -58,24 +58,28 @@
                 </button>
             {% endif %}
             {% if local and site_settings.discord_client_id or site_settings.github_client_id or site_settings.google_client_id %}
-                <hr class="my-0 mx-auto" style="width: 90%">
+                <div class="d-flex align-items-center justify-content-center small">
+                <hr class="my-0 ms-2 w-100">
+                    <span class="mx-2">OR</span>
+                <hr class=" my-0 me-2 w-100" >
+                </div>
             {% endif %}
             {% if site_settings.discord_client_id %}
                 <a class="btn btn-lg btn-primary opacity-75 d-flex align-items-center position-relative" href="{% url 'oauth:discord' %}?next={{ request.path }}">
                     <i class="fa-brands fa-discord  position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
-                    <span class="flex-grow-1 text-center">Discord</span>
+                    <span class="flex-grow-1 text-center">Discord Login</span>
                 </a>
             {% endif %}
             {% if site_settings.github_client_id %}
                 <a class="btn btn-lg btn-dark opacity-75 d-flex align-items-center position-relative" href="{% url 'oauth:github' %}?next={{ request.path }}">
                     <i class="fa-brands fa-github  position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
-                    <span class="flex-grow-1 text-center">GitHub</span>
+                    <span class="flex-grow-1 text-center">GitHub Login</span>
                 </a>
             {% endif %}
             {% if site_settings.google_client_id %}
             <a class="btn btn-lg btn-info opacity-75 d-flex align-items-center position-relative" href="{% url 'oauth:google' %}?next={{ request.path }}">
                 <i class="fa-brands fa-google  position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
-                <span class="flex-grow-1 text-center">Google</span>
+                <span class="flex-grow-1 text-center">Google Login</span>
             </a>
             {% endif %}
         </div>
