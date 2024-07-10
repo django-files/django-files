@@ -59,4 +59,13 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.style.cssText = ''
         document.querySelector('video').classList.add('d-none')
     }
+
+    tsParticles
+        .load({
+            id: 'tsparticles',
+            url: '/static/config/tsparticles.json',
+        })
+        .then((container) => {
+            console.log('tsparticles loaded:', container)
+        })
 })

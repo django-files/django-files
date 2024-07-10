@@ -1,10 +1,10 @@
-body {
-    margin: 0;
-    background: #212529;
+:root {
+    --animate-delay: 0.5s;
 }
 
-main {
-    height: 100% !important;
+body {
+    margin: 0;
+    background-color: #212529;
 }
 
 video {
@@ -15,30 +15,12 @@ video {
     height: 100%;
     object-fit: cover;
     z-index: -1;
-    /*position: fixed;*/
-    /*top: 50%;*/
-    /*left: 50%;*/
-    /*min-width: 100%;*/
-    /*min-height: 100%;*/
-    /*width: auto;*/
-    /*height: auto;*/
-    /*z-index: -100;*/
-    /*transform: translateX(-50%) translateY(-50%);*/
-    /*filter: blur(150px);*/
-    /*background: url('/static/video/loop.jpg') no-repeat;*/
-    /*background-size: cover;*/
-    /*transition: 1s opacity;*/
 }
 
 #login-outer {
-    border-radius: 25px;
     width: 300px;
-    background: rgba(0 0 0 / 30%);
-    margin: auto;
-    padding: 25px;
-    filter: drop-shadow(15px -15px 12px #000000);
+    background: rgba(0 0 0 / 40%);
     backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
 }
 
 .form-control {
@@ -53,8 +35,4 @@ video {
 .btn-primary:hover {
     background: #383f98;
     border: #24295e;
-}
-
-.btn {
-    height: 50px;
 }

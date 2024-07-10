@@ -11,29 +11,35 @@
 {% block navbar %}{% endblock %}
 
 {% block body %}
+
+<div id="tsparticles"></div>
+
 <video  id="bgvid" class="d-none" playsinline autoplay muted loop>
     <source src="{{ site_settings.background_video }}" type="video/mp4" id="bgvidsrc">
 </video>
 
-<div class="d-flex flex-column align-items-center h-100" data-bs-theme="dark">
-<div id="login-outer" class="animate__animated animate__fadeIn ">
-    <div class="text-center">
-        <img class="img-responsive" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
-        <h3 class="text-center text-white mt-2">{{ site_settings.site_title }}</h3>
+<div class="d-flex flex-column align-items-center h-100 py-2" data-bs-theme="dark">
+<div id="login-outer" class="rounded rounded-4 m-auto p-3 animate__animated animate__fadeIn ">
+    <div class="text-center mb-3">
+        <img height="128" width="128" class="animate__animated animate__rotateIn animate__slow"
+             src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
+        <h3 class="text-center text-white mt-2 animate__animated animate__swing ">{{ site_settings.site_title }}</h3>
     </div>
 
     <form class="submit-once" method="POST" name="login-form" id="login-form" action="{% url 'oauth:login' %}">
         {% csrf_token %}
         {% if local %}
-            <div class="form-floating mb-2 mt-4">
-                <input type="text" id="username" name="username" class="form-control" autocomplete="username" placeholder="Username" aria-describedby="Username" required autofocus>
-                <label class="text-white" for="username">Username</label>
+            <div class="form-floating mb-2">
+                <input type="text" id="username" class="form-control" name="username" autocomplete="username" placeholder="Username" aria-describedby="username-label" required autofocus>
+                <label class="text-white" for="username" id="username-label">Username</label>
             </div>
-            <div class="form-floating">
-                <input type="password" class="form-control" id="password" name="password" autocomplete="current-password" placeholder="Password" aria-describedby="Password">
-                <label class="text-white" for="password">Password</label>
+
+            <div class="form-floating mb-2">
+                <input type="password" id="password" class="form-control" name="password" autocomplete="current-password" placeholder="Password" aria-describedby="password-label" required>
+                <label class="text-white" for="password" id="password-label">Password</label>
             </div>
-            <div id="passwordFeedback" class="invalid-feedback" aria-describedby="Username or Password feedback.">
+
+            <div id="passwordFeedback" class="invalid-feedback text-center mb-2" aria-describedby="Username or Password feedback.">
                 Invalid Username or Password.
             </div>
 
@@ -42,38 +48,35 @@
             {% elif request.session.login_next_url %}
                 <input type="hidden" name="next" value="{{ request.session.login_next_url }}">
             {% endif %}
-
         {% endif %}
-        <div class="d-grid gap-2 mt-3">
-            {% if local %}
-                <button id="login-button" class="btn btn-secondary opacity-75" type="submit">
-                    <i class="fas fa-sign-in-alt"></i> Local Login</button>
-                {% if site_settings.discord_client_id or site_settings.github_client_id or site_settings.google_client_id %}
-                        <h6 class="text-center text-secondary mb-1">OR</h6>
-                {% endif %}
-            {% endif %}
 
+        <div class="d-grid gap-2">
+            {% if local %}
+                <button class="btn btn-lg btn-secondary opacity-75 animate__animated animate__rubberBand animate__fast d-flex align-items-center position-relative" id="login-button" type="submit">
+                    <i class="fas fa-sign-in-alt position-absolute start-1 ms-2"></i>
+                    <span class="w-100 text-center">Local Login</span>
+                </button>
+            {% endif %}
+            {% if site_settings.discord_client_id or site_settings.github_client_id or site_settings.google_client_id %}
+                <hr class="my-0 mx-auto" style="width: 90%">
+            {% endif %}
             {% if site_settings.discord_client_id %}
-                <a href="{% url 'oauth:discord' %}?next={{ request.path }}" class="btn btn-primary opacity-75 d-flex align-items-center justify-content-center">
-                    <i class="fa-brands fa-discord px-2"></i> Login with Discord</a>
+                <a class="btn btn-lg btn-primary opacity-75 animate__animated animate__rubberBand animate__fast animate__delay-1s d-flex align-items-center position-relative" href="{% url 'oauth:discord' %}?next={{ request.path }}">
+                    <i class="fa-brands fa-discord  position-absolute start-1 ms-2"></i>
+                    <span class="flex-grow-1 text-center">Discord</span>
+                </a>
             {% endif %}
             {% if site_settings.github_client_id %}
-                <a href="{% url 'oauth:github' %}?next={{ request.path }}" class="btn btn-dark opacity-75 d-flex align-items-center justify-content-center">
-                    <i class="fa-brands fa-github px-2"></i> Login with GitHub</a>
+                <a class="btn btn-lg btn-dark opacity-75 animate__animated animate__rubberBand animate__fast animate__delay-2s d-flex align-items-center position-relative" href="{% url 'oauth:github' %}?next={{ request.path }}">
+                    <i class="fa-brands fa-github  position-absolute start-1 ms-2"></i>
+                    <span class="flex-grow-1 text-center">GitHub</span>
+                </a>
             {% endif %}
             {% if site_settings.google_client_id %}
-            <a href="{% url 'oauth:google' %}?next={{ request.path }}" class="btn btn-info opacity-75 d-flex align-items-center justify-content-center">
-                <i class="fa-brands fa-google px-2"></i> Login with Google</a>
-            {% endif %}
-        </div>
-
-        <div id="login-message" class="mt-2">
-            {% if messages %}
-                <ul class="list-group text-center">
-                    {% for message in messages %}
-                        <li class="list-group-item list-group-item-{{ message.tags }}">{{ message }}</li>
-                    {% endfor %}
-                </ul>
+            <a class="btn btn-lg btn-info opacity-75 animate__animated animate__rubberBand animate__fast animate__delay-3s d-flex align-items-center position-relative" href="{% url 'oauth:google' %}?next={{ request.path }}">
+                <i class="fa-brands fa-google  position-absolute start-1 ms-2"></i>
+                <span class="flex-grow-1 text-center">Google</span>
+            </a>
             {% endif %}
         </div>
     </form>
@@ -81,12 +84,12 @@
 </div> <!-- d-flex -->
 {% endblock %}
 
+{% block backtotop %}{% endblock %}
 {% block footer %}{% endblock %}
 
 {% block tail %}
     {{ site_settings.login_background|json_script:"login_background" }}
     {{ site_settings.background_picture|json_script:"background_picture" }}
+    <script type="text/javascript" src="{% static 'dist/tsparticles/tsparticles.bundle.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/login.js' %}"></script>
 {% endblock %}
-
-{% block backtotop %}{% endblock %}
