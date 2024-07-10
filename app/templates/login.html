@@ -19,22 +19,22 @@
 </video>
 
 <div class="d-flex flex-column align-items-center h-100 py-2" data-bs-theme="dark">
-<div id="login-outer" class="rounded rounded-4 m-auto p-3 animate__animated animate__fadeIn ">
+<div id="login-outer" class="rounded rounded-4 m-auto p-3 animate__animated animate__backInDown animate__fast">
     <div class="text-center mb-3">
-        <img height="128" width="128" class="animate__animated animate__rotateIn animate__slow"
+        <img height="128" width="128" class="animate__animated animate__rotateIn animate__slower"
              src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
-        <h3 class="text-center text-white mt-2 animate__animated animate__swing ">{{ site_settings.site_title }}</h3>
+        <h3 class="text-center text-white mt-2 animate__animated animate__pulse animate__delay-1s">{{ site_settings.site_title }}</h3>
     </div>
 
     <form class="submit-once" method="POST" name="login-form" id="login-form" action="{% url 'oauth:login' %}">
         {% csrf_token %}
         {% if local %}
-            <div class="form-floating mb-2">
+            <div class="form-floating mb-2 ">
                 <input type="text" id="username" class="form-control" name="username" autocomplete="username" placeholder="Username" aria-describedby="username-label" required autofocus>
                 <label class="text-white" for="username" id="username-label">Username</label>
             </div>
 
-            <div class="form-floating mb-2">
+            <div class="form-floating mb-2 ">
                 <input type="password" id="password" class="form-control" name="password" autocomplete="current-password" placeholder="Password" aria-describedby="password-label" required>
                 <label class="text-white" for="password" id="password-label">Password</label>
             </div>
@@ -50,31 +50,31 @@
             {% endif %}
         {% endif %}
 
-        <div class="d-grid gap-2">
+        <div id="login-buttons" class="d-grid gap-2">
             {% if local %}
-                <button class="btn btn-lg btn-secondary opacity-75 animate__animated animate__rubberBand animate__fast d-flex align-items-center position-relative" id="login-button" type="submit">
-                    <i class="fas fa-sign-in-alt position-absolute start-1 ms-2"></i>
+                <button class="btn btn-lg btn-secondary opacity-75 d-flex align-items-center position-relative" id="login-button" type="submit">
+                    <i class="fas fa-sign-in-alt position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
                     <span class="w-100 text-center">Local Login</span>
                 </button>
             {% endif %}
-            {% if site_settings.discord_client_id or site_settings.github_client_id or site_settings.google_client_id %}
+            {% if local and site_settings.discord_client_id or site_settings.github_client_id or site_settings.google_client_id %}
                 <hr class="my-0 mx-auto" style="width: 90%">
             {% endif %}
             {% if site_settings.discord_client_id %}
-                <a class="btn btn-lg btn-primary opacity-75 animate__animated animate__rubberBand animate__fast animate__delay-1s d-flex align-items-center position-relative" href="{% url 'oauth:discord' %}?next={{ request.path }}">
-                    <i class="fa-brands fa-discord  position-absolute start-1 ms-2"></i>
+                <a class="btn btn-lg btn-primary opacity-75 d-flex align-items-center position-relative" href="{% url 'oauth:discord' %}?next={{ request.path }}">
+                    <i class="fa-brands fa-discord  position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
                     <span class="flex-grow-1 text-center">Discord</span>
                 </a>
             {% endif %}
             {% if site_settings.github_client_id %}
-                <a class="btn btn-lg btn-dark opacity-75 animate__animated animate__rubberBand animate__fast animate__delay-2s d-flex align-items-center position-relative" href="{% url 'oauth:github' %}?next={{ request.path }}">
-                    <i class="fa-brands fa-github  position-absolute start-1 ms-2"></i>
+                <a class="btn btn-lg btn-dark opacity-75 d-flex align-items-center position-relative" href="{% url 'oauth:github' %}?next={{ request.path }}">
+                    <i class="fa-brands fa-github  position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
                     <span class="flex-grow-1 text-center">GitHub</span>
                 </a>
             {% endif %}
             {% if site_settings.google_client_id %}
-            <a class="btn btn-lg btn-info opacity-75 animate__animated animate__rubberBand animate__fast animate__delay-3s d-flex align-items-center position-relative" href="{% url 'oauth:google' %}?next={{ request.path }}">
-                <i class="fa-brands fa-google  position-absolute start-1 ms-2"></i>
+            <a class="btn btn-lg btn-info opacity-75 d-flex align-items-center position-relative" href="{% url 'oauth:google' %}?next={{ request.path }}">
+                <i class="fa-brands fa-google  position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
                 <span class="flex-grow-1 text-center">Google</span>
             </a>
             {% endif %}
