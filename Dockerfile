@@ -50,7 +50,7 @@ RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl &&\
 
 COPY nginx/60-sign-secret.sh /docker-entrypoint.d/60-sign-secret.sh
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/mime.types /etc/nginx/raw-mime.types
+COPY nginx/raw-mime.types /etc/nginx/raw-mime.types
 COPY docker/redis.conf /etc/redis/redis.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/docker-entrypoint.sh /docker-entrypoint.sh

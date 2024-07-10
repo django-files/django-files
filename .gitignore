@@ -9,12 +9,11 @@
 **/screenshots/
 *.log
 *.sqlite3
-settings.env
-app/.env
-app/test.env
 .ash_history
+.python_history
+settings.env
+app/*.env
 node_modules/
 app/static/admin/
 app/static/debug_toolbar/
 app/static/django_extensions/
-.python_history

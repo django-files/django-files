@@ -6,7 +6,7 @@ import {
     Audio,
     ScreenCapture,
     XHRUpload,
-} from '/static/uppy/uppy.min.js'
+} from '../dist/uppy/uppy.min.mjs'
 
 console.debug('LOADING: uppy.js')
 console.debug('uploadUrl:', uploadUrl)

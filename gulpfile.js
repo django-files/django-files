@@ -1,4 +1,5 @@
 const gulp = require('gulp')
+const download = require('gulp-download2')
 // const copy = require('gulp-copy')
 // const concat = require('gulp-concat')
 
@@ -78,6 +79,13 @@ gulp.task('swagger-ui', () => {
         .pipe(gulp.dest('app/static/dist/swagger-ui'))
 })
 
+gulp.task('uppy', () => {
+    return download([
+        'https://releases.transloadit.com/uppy/v3.27.0/uppy.min.mjs',
+        'https://releases.transloadit.com/uppy/v3.27.0/uppy.min.css',
+    ]).pipe(gulp.dest('app/static/dist/uppy'))
+})
+
 gulp.task('swagger-yaml', () => {
     return gulp.src(['swagger.yaml']).pipe(gulp.dest('app/static/dist/'))
 })
@@ -94,6 +102,7 @@ gulp.task(
         'jquery',
         'moment',
         'swagger-ui',
-        'swagger-yaml'
+        'swagger-yaml',
+        'uppy'
     )
 )
