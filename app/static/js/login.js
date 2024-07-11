@@ -3,6 +3,20 @@
 const loginButton = $('#login-button')
 const loginOuter = $('#login-outer')
 
+// loginOuter.on('animationend', () => {
+//     console.debug('animationend')
+//     loginOuter.removeClass(['animate__animated', 'animate__backInDown'])
+// })
+
+$('#login-buttons > a').on('click', () => {
+    loginOuter.removeClass(['animate__animated', 'animate__backInDown'])
+    loginOuter.addClass([
+        'animate__animated',
+        'animate__backOutUp',
+        'animate__slow',
+    ])
+})
+
 $('#login-form').on('submit', function (event) {
     console.log('#login-form submit', event)
     event.preventDefault()
@@ -19,7 +33,11 @@ $('#login-form').on('submit', function (event) {
         success: function (data) {
             console.log('data:', data)
             loginOuter.removeClass(['animate__animated', 'animate__backInDown'])
-            loginOuter.addClass(['animate__animated', 'animate__backOutDown'])
+            loginOuter.addClass([
+                'animate__animated',
+                'animate__backOutUp',
+                'animate__slow',
+            ])
             if (data.redirect) {
                 console.log(`data.redirect: ${data.redirect}`)
                 // window.location.href = response.redirect
@@ -31,6 +49,7 @@ $('#login-form').on('submit', function (event) {
         error: function (jqXHR) {
             console.log('jqXHR:', jqXHR)
             $('#login-form input').addClass('is-invalid')
+            animateCSS('#local-inputs', 'shakeX')
         },
         complete: function () {
             loginButton.removeClass('disabled')
@@ -83,3 +102,24 @@ document.addEventListener('DOMContentLoaded', function () {
             })
     }
 })
+
+const animateCSS = (element, animation, prefix = 'animate__') => {
+    // We create a Promise and return it
+    new Promise((resolve, reject) => {
+        const animationName = `${prefix}${animation}`
+        const node = document.querySelector(element)
+
+        node.classList.add(`${prefix}animated`, animationName)
+
+        // When the animation ends, we clean the classes and resolve the Promise
+        function handleAnimationEnd(event) {
+            event.stopPropagation()
+            node.classList.remove(`${prefix}animated`, animationName)
+            resolve('Animation ended')
+        }
+
+        node.addEventListener('animationend', handleAnimationEnd, {
+            once: true,
+        })
+    })
+}
