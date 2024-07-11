@@ -34,3 +34,18 @@
 [data-bs-theme='light'] .file-context-dropdown-menu {
     background-color: rgba(200 200 200 / 70%);
 }
+
+.hvr-grow {
+    display: inline-block;
+    vertical-align: middle;
+    transform: translateZ(0);
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0);
+    backface-visibility: hidden;
+    -moz-osx-font-smoothing: grayscale;
+    transition-duration: 0.3s;
+    transition-property: transform;
+}
+
+.hvr-grow:hover {
+    transform: scale(1.1);
+}
