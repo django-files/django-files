@@ -3,13 +3,12 @@
 const loginButton = $('#login-button')
 const loginOuter = $('#login-outer')
 
-// loginOuter.on('animationend', () => {
-//     console.debug('animationend')
-//     loginOuter.removeClass(['animate__animated', 'animate__backInDown'])
-// })
+loginOuter.one('animationend', () => {
+    console.debug('loginOuter: animationend')
+    loginOuter.removeClass(['animate__animated', 'animate__backInDown'])
+})
 
 $('#login-buttons > a').on('click', () => {
-    loginOuter.removeClass(['animate__animated', 'animate__backInDown'])
     loginOuter.addClass([
         'animate__animated',
         'animate__backOutUp',
@@ -32,7 +31,6 @@ $('#login-form').on('submit', function (event) {
         },
         success: function (data) {
             console.log('data:', data)
-            loginOuter.removeClass(['animate__animated', 'animate__backInDown'])
             loginOuter.addClass([
                 'animate__animated',
                 'animate__backOutUp',
@@ -103,23 +101,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 })
 
-const animateCSS = (element, animation, prefix = 'animate__') => {
-    // We create a Promise and return it
-    new Promise((resolve, reject) => {
-        const animationName = `${prefix}${animation}`
-        const node = document.querySelector(element)
-
-        node.classList.add(`${prefix}animated`, animationName)
-
-        // When the animation ends, we clean the classes and resolve the Promise
-        function handleAnimationEnd(event) {
-            event.stopPropagation()
-            node.classList.remove(`${prefix}animated`, animationName)
-            resolve('Animation ended')
-        }
-
-        node.addEventListener('animationend', handleAnimationEnd, {
-            once: true,
-        })
+const animateCSS = (selector, animation, prefix = 'animate__') => {
+    const name = `${prefix}${animation}`
+    const node = document.querySelector(selector)
+    node.classList.add(`${prefix}animated`, name)
+    function handleAnimationEnd(event) {
+        event.stopPropagation()
+        node.classList.remove(`${prefix}animated`, name)
+    }
+    node.addEventListener('animationend', handleAnimationEnd, {
+        once: true,
     })
 }
