@@ -52,9 +52,12 @@ class SiteSettings(models.Model):
         )
     global_storage_usage = models.PositiveBigIntegerField(default=0,
                                                           help_text="Current global storage usage in bytes.")
+    site_animations = models.BooleanField(default=True)
     login_background = models.CharField(max_length=16, default='video')
     background_video = models.CharField(max_length=255, default='/static/video/loop.mp4')
     background_picture = models.CharField(max_length=255, default='https://picsum.photos/1920/1080')
+    tsparticles_enabled = models.BooleanField(default=True)
+    tsparticles_config = models.CharField(max_length=255, default='/static/config/tsparticles.json')
     show_setup = models.BooleanField(default=True)
     objects = SiteSettingsManager()
 

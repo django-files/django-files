@@ -13,7 +13,9 @@
 {% block body %}
 <div class="container-fluid py-3 px-4">
 
-    <h1><i class="fa-solid fa-house-laptop me-2"></i> {{ site_settings.site_title }}</h1>
+    <h1 class="">
+        <i class="fa-solid fa-house-laptop me-2"></i> {{ site_settings.site_title }}
+    </h1>
 
     {% if not stats %}
         <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>

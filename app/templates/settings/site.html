@@ -144,6 +144,14 @@
                     </div>
                 </div>
                 {% endif %}
+                <div class="col-12">
+                    <div class="form-check form-switch px-lg-5">
+                        <input class="form-check-input" type="checkbox" id="site_animations" name="site_animations" {{ site_settings.site_animations|if_true:"checked" }}>
+                        <label class="form-check-label" for="site_animations">
+                            Enable Site Animations
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <div class="d-flex flex-column flex-md-row mt-2">
@@ -182,9 +190,8 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
-                <div class="flex-fill mt-auto ms-2 ms-md-0">
+                <div class="flex-fill mt-2 mt-md-auto ms-2 ms-md-0 ">
                     <div id="background_picture_group" class="input-group mt-auto d-none">
                         <span class="input-group-text" id="picture-addon" data-bs-toggle="tooltip" data-bs-title="URL or Path to a Web Image.">
                             <i class="fa-solid fa-circle-info"></i></span>
@@ -197,10 +204,21 @@
                         <input type="text" class="form-control" placeholder="Background Video URL" aria-label="Background Video URL"
                                id="background_video" name="background_video" value="{{ site_settings.background_video }}" aria-describedby="video-addon">
                     </div>
-{#                    <input type="text" class="form-control mt-2 d-none" placeholder="Background Picture URL" aria-label="Background Picture URL"#}
-{#                           id="background_picture" name="background_picture" value="{{ site_settings.background_picture }}">#}
-{#                    <input type="text" class="form-control mt-2 d-none" placeholder="Background Video URL" aria-label="Background Video URL"#}
-{#                           id="background_video" name="background_video" value="{{ site_settings.background_video }}">#}
+                </div>
+            </div>
+
+            <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center mt-2">
+                <div class="form-check form-switch fs-5 me-3 ms-2 ms-md-0">
+                    <input class="form-check-input" type="checkbox" id="tsparticles_enabled" name="tsparticles_enabled" {{ site_settings.tsparticles_enabled|if_true:"checked" }}>
+                    <label class="form-check-label text-nowrap" for="tsparticles_enabled">
+                        tsParticles
+                    </label>
+                </div>
+                <div id="background_video_group" class="input-group mt-2 mt-sm-auto ms-2 ms-md-0">
+                    <span class="input-group-text" id="tsconfig-addon" data-bs-toggle="tooltip" data-bs-title="tsParticles Config File.">
+                        <i class="fa-solid fa-circle-exclamation"></i></span>
+                    <input type="text" class="form-control" placeholder="tsParticles Config File URL" aria-label="tsParticles Config"
+                           id="tsparticles_config" name="tsparticles_config" value="{{ site_settings.tsparticles_config }}" aria-describedby="tsconfig-addon">
                 </div>
             </div>
 

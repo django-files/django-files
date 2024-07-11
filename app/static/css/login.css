@@ -16,7 +16,7 @@ video {
 #login-outer {
     width: 300px;
     background: rgba(0 0 0 / 40%);
-    filter: drop-shadow(15px 15px 12px #000000);
+    filter: drop-shadow(15px 15px 12px #000);
     backdrop-filter: blur(6px);
 }
 

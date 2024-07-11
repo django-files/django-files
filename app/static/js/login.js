@@ -1,9 +1,11 @@
 // JS for Login
 
+const loginButton = $('#login-button')
+const loginOuter = $('#login-outer')
+
 $('#login-form').on('submit', function (event) {
     console.log('#login-form submit', event)
     event.preventDefault()
-    const loginButton = $('#login-button')
     if (loginButton.hasClass('disabled')) {
         return console.warn('Double Click Prevented!')
     }
@@ -16,6 +18,8 @@ $('#login-form').on('submit', function (event) {
         },
         success: function (data) {
             console.log('data:', data)
+            loginOuter.removeClass(['animate__animated', 'animate__backInDown'])
+            loginOuter.addClass(['animate__animated', 'animate__backOutDown'])
             if (data.redirect) {
                 console.log(`data.redirect: ${data.redirect}`)
                 // window.location.href = response.redirect
@@ -60,12 +64,22 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelector('video').classList.add('d-none')
     }
 
-    tsParticles
-        .load({
-            id: 'tsparticles',
-            url: '/static/config/tsparticles.json',
-        })
-        .then((container) => {
-            console.log('tsparticles loaded:', container)
-        })
+    const tsparticlesEnabled = JSON.parse(
+        document.getElementById('tsparticles_enabled').textContent
+    )
+    console.debug('tsparticlesEnabled:', tsparticlesEnabled)
+    const tsparticlesConfig =
+        JSON.parse(document.getElementById('tsparticles_config').textContent) ||
+        '/static/config/tsparticles.json'
+    console.debug('tsparticlesConfig:', tsparticlesConfig)
+    if (tsparticlesEnabled) {
+        tsParticles
+            .load({
+                id: 'tsparticles',
+                url: tsparticlesConfig,
+            })
+            .then((container) => {
+                console.log('tsparticles loaded:', container)
+            })
+    }
 })
