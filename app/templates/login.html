@@ -58,13 +58,13 @@
                     <i class="fas fa-sign-in-alt position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
                     <span class="w-100 text-center">Local Login</span>
                 </button>
-            {% endif %}
-            {% if local and site_settings.discord_client_id or site_settings.github_client_id or site_settings.google_client_id %}
-                <div class="d-flex align-items-center justify-content-center small">
-                <hr class="my-0 ms-2 w-100">
-                    <span class="mx-2">OR</span>
-                <hr class=" my-0 me-2 w-100" >
-                </div>
+                {% if site_settings.discord_client_id or site_settings.github_client_id or site_settings.google_client_id %}
+                    <div class="d-flex align-items-center justify-content-center small">
+                        <hr class="my-0 ms-2 w-100">
+                        <span class="mx-2">OR</span>
+                        <hr class=" my-0 me-2 w-100" >
+                    </div>
+                {% endif %}
             {% endif %}
             {% if site_settings.discord_client_id %}
                 <a class="btn btn-lg btn-primary opacity-75 d-flex align-items-center hvr-grow" href="{% url 'oauth:discord' %}?next={{ request.path }}">
