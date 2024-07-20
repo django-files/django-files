@@ -79,6 +79,12 @@ gulp.task('swagger-ui', () => {
         .pipe(gulp.dest('app/static/dist/swagger-ui'))
 })
 
+gulp.task('tsparticles', () => {
+    return gulp
+        .src(['node_modules/tsparticles/tsparticles.bundle.min.js'])
+        .pipe(gulp.dest('app/static/dist/tsparticles'))
+})
+
 gulp.task('uppy', () => {
     return download([
         'https://releases.transloadit.com/uppy/v3.27.0/uppy.min.mjs',
@@ -103,6 +109,7 @@ gulp.task(
         'moment',
         'swagger-ui',
         'swagger-yaml',
+        'tsparticles',
         'uppy'
     )
 )

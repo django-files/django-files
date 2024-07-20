@@ -1,9 +1,24 @@
 // JS for Login
 
+const loginButton = $('#login-button')
+const loginOuter = $('#login-outer')
+
+loginOuter.one('animationend', () => {
+    console.debug('loginOuter: animationend')
+    loginOuter.removeClass(['animate__animated', 'animate__backInDown'])
+})
+
+$('#login-buttons > a').on('click', () => {
+    loginOuter.addClass([
+        'animate__animated',
+        'animate__backOutUp',
+        'animate__slow',
+    ])
+})
+
 $('#login-form').on('submit', function (event) {
     console.log('#login-form submit', event)
     event.preventDefault()
-    const loginButton = $('#login-button')
     if (loginButton.hasClass('disabled')) {
         return console.warn('Double Click Prevented!')
     }
@@ -16,6 +31,11 @@ $('#login-form').on('submit', function (event) {
         },
         success: function (data) {
             console.log('data:', data)
+            loginOuter.addClass([
+                'animate__animated',
+                'animate__backOutUp',
+                'animate__slow',
+            ])
             if (data.redirect) {
                 console.log(`data.redirect: ${data.redirect}`)
                 // window.location.href = response.redirect
@@ -27,6 +47,7 @@ $('#login-form').on('submit', function (event) {
         error: function (jqXHR) {
             console.log('jqXHR:', jqXHR)
             $('#login-form input').addClass('is-invalid')
+            animateCSS('#local-inputs', 'shakeX')
         },
         complete: function () {
             loginButton.removeClass('disabled')
@@ -59,4 +80,36 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.style.cssText = ''
         document.querySelector('video').classList.add('d-none')
     }
+
+    const tsparticlesEnabled = JSON.parse(
+        document.getElementById('tsparticles_enabled').textContent
+    )
+    console.debug('tsparticlesEnabled:', tsparticlesEnabled)
+    const tsparticlesConfig =
+        JSON.parse(document.getElementById('tsparticles_config').textContent) ||
+        '/static/config/tsparticles.json'
+    console.debug('tsparticlesConfig:', tsparticlesConfig)
+    if (tsparticlesEnabled) {
+        tsParticles
+            .load({
+                id: 'tsparticles',
+                url: tsparticlesConfig,
+            })
+            .then((container) => {
+                console.log('tsparticles loaded:', container)
+            })
+    }
 })
+
+const animateCSS = (selector, animation, prefix = 'animate__') => {
+    const name = `${prefix}${animation}`
+    const node = document.querySelector(selector)
+    node.classList.add(`${prefix}animated`, name)
+    function handleAnimationEnd(event) {
+        event.stopPropagation()
+        node.classList.remove(`${prefix}animated`, name)
+    }
+    node.addEventListener('animationend', handleAnimationEnd, {
+        once: true,
+    })
+}
