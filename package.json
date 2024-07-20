@@ -24,6 +24,8 @@
     "datatables.net-datetime": "^1.5.2",
     "datatables.net-plugins": "^2.0.8",
     "datatables.net-responsive": "^3.0.2",
+    "gulp": "^4.0.2",
+    "gulp-download2": "^1.1.0",
     "highlight.js": "^11.10.0",
     "jquery": "^3.7.1",
     "js-cookie": "^3.0.5",
@@ -33,8 +35,6 @@
   },
   "devDependencies": {
     "eslint": "^8.57.0",
-    "gulp": "^4.0.2",
-    "gulp-download2": "^1.1.0",
     "prettier": "^3.3.2"
   }
 }
