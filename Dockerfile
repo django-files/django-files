@@ -10,7 +10,7 @@ RUN npm install
 FROM python:3.11-slim AS python
 
 ENV TZ=UTC
-ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 RUN apt-get -y update  &&  apt-get -y install --no-install-recommends  \
     build-essential gcc libmariadb-dev-compat pkg-config
@@ -32,7 +32,7 @@ ENV BUILD_SHA=${BUILD_SHA}
 RUN touch build_sha && echo "${BUILD_SHA}" > build_sha
 
 ENV TZ=UTC
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 COPY --from=node /work/app/static/dist/ /app/static/dist/
 COPY --from=python /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/

@@ -43,8 +43,8 @@ def app_init():
 
     username = config('USERNAME', 'admin')
     password = config('PASSWORD', '12345')
-    local = bool(config('USERNAME', None) and config('PASSWORD', None))
-    oauth = bool(config('OAUTH_REDIRECT_URL'))
+    local = bool(username and password)
+    oauth = bool(config('OAUTH_REDIRECT_URL', None))
     if not oauth or local:
         CustomUser.objects.create_superuser(username=username, password=password)
         log.info('Initial User Created')
