@@ -43,7 +43,7 @@ def app_init():
 
     username = config('USERNAME', 'admin')
     password = config('PASSWORD', '12345')
-    local = bool(config('USERNAME') and config('PASSWORD'))
+    local = bool(config('USERNAME', None) and config('PASSWORD', None))
     oauth = bool(config('OAUTH_REDIRECT_URL'))
     if not oauth or local:
         CustomUser.objects.create_superuser(username=username, password=password)
@@ -420,7 +420,9 @@ def send_success_message(hook_pk):
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 6, 'countdown': 30})
 def cleanup_vector_tasks():
-    models.PeriodicTask.objects.get(name="process_vector_stats").delete()
+    q = models.PeriodicTask.objects.filter(name="process_vector_stats")
+    if q:
+        q[0].delete()
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 5, 'countdown': 60}, rate_limit='10/m')
