@@ -3,7 +3,7 @@
 {% load cache %}
 
 <!doctype html>
-<html lang="en" class="h-100">
+<html lang="en" class="h-100" {% block htmltag %}{% endblock %}>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -27,7 +27,9 @@
     <link rel="stylesheet" href="{% static 'dist/bootstrap/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'dist/fontawesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
-    <script type="text/javascript" src="{% static 'bootstrap/theme.js' %}"></script>
+    {% block themejs %}
+        <script type="text/javascript" src="{% static 'bootstrap/theme.js' %}"></script>
+    {% endblock %}
     {% if site_settings.site_animations %}
         <link rel="stylesheet" href="{% static 'dist/animate/animate.min.css' %}">
     {% endif %}
