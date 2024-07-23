@@ -85,7 +85,7 @@ jobs:
       #          path: app/screenshots/
 
       - name: "Push Artifacts"
-        uses: cssnr/push-artifacts-action@fix
+        uses: cssnr/push-artifacts-action@master
         with:
           source: "app/screenshots/"
           dest: "/static"
