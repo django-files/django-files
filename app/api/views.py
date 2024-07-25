@@ -491,7 +491,8 @@ def process_file_upload(f: BinaryIO, user_id: int, **kwargs):
     data = {
         'files': [site_settings['site_url'] + file.preview_uri()],
         'url': site_settings['site_url'] + file.preview_uri(),
-        'raw': file.get_url(),
+        'raw': site_settings['site_url'] + file.raw_path,
+        'r': file.get_url(),
         'name': file.name,
         'size': file.size,
     }
