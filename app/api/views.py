@@ -247,7 +247,7 @@ def invites_view(request):
             expire=data_or_header(request, data, 'expire', 0, int),
             max_uses=data_or_header(request, data, 'max_uses', 1, int),
             super_user=data_or_header(request, data, 'super_user', False, anytobool),
-            storage_quota=data_or_header(request, data, 'storage_quota', None, human_read_to_byte),
+            storage_quota=data_or_header(request, data, 'storage_quota', 0, human_read_to_byte),
         )
         log.debug('invite: %s', invite)
         log.debug(model_to_dict(invite))
