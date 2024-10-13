@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block body %}
-    <div class="container-fluid py-3 px-4 w-100">
+    <div class="container-fluid py-3 px-4 h-100">
         {% include 'include/upload-menu.html' with heading='Upload Files' fa_class='fa-solid fa-upload' %}
         <form id="upload_inputs" class="row justify-content-center">
                 <div class="col col-md-12 py-3 align-self-center">
@@ -24,9 +24,10 @@
                     </div>
                 </div>
         </form>
+        <div id="uppy"></div>
 
     </div>
-    <div id="uppy"></div>
+
 {% endblock %}
 
 {% block tail %}
