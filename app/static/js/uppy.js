@@ -98,7 +98,7 @@ fileUploadModal?.on('hidden.bs.modal', (event) => {
 
 
 export async function getAlbums(album) {
-    const albumOptions = document.getElementById('upload_album')
+    const albumOptions = document.getElementById('upload_albums')
     // albumOptions.length = 0
     console.log(albumOptions)
 
@@ -148,10 +148,11 @@ document.addEventListener('DOMContentLoaded', function () {
 document.getElementById("upload_inputs").addEventListener("change", function() {
     console.log(this)
     Array.from(this.elements).forEach((input) => {
-        console.log(input)
-        console.log(input.id.replace('upload_'))
+        let header_name = input.id.replace('upload_', '')
         if (input.value !=0) {
-            headers.albums = input.value
+            headers[header_name] = input.value
+        } else {
+            headers[header_name] = ""
         }
         console.log("Selected value:", input.value);
     })
