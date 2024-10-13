@@ -8,13 +8,13 @@ import {
     XHRUpload,
 } from '../dist/uppy/uppy.min.mjs'
 
+import { fetchAlbums } from './api-fetch.js'
+
 console.debug('LOADING: uppy.js')
 console.debug('uploadUrl:', uploadUrl)
 
 const fileUploadModal = $('#fileUploadModal')
-// if (typeof fileUploadModal === 'undefined') {
-//     fileUploadModal
-// }
+
 
 function getResponseError(responseText, response) {
     return new Error(JSON.parse(responseText).message)
@@ -26,17 +26,17 @@ const headers = {
 
 const searchParams = new URLSearchParams(window.location.search)
 const album = searchParams.get('album')
-// console.debug('album:', album)
+
 if (album) {
     headers.albums = album
 }
-// console.debug('headers:', headers)
 
-const uppy = new Uppy({ debug: true, autoProceed: false })
+const uppy = new Uppy({ debug: false, autoProceed: false })
     .use(Dashboard, {
         inline: true,
         theme: 'auto',
         target: '#uppy',
+
         showProgressDetails: true,
         showLinkToFileUploadResult: true,
         autoOpenFileEditor: true,
@@ -95,3 +95,64 @@ fileUploadModal?.on('hidden.bs.modal', (event) => {
     console.debug('hidden.bs.modal:', event)
     uppy.cancelAll()
 })
+
+
+export async function getAlbums(album) {
+    const albumOptions = document.getElementById('upload_album')
+    // albumOptions.length = 0
+    console.log(albumOptions)
+
+    // FETCH ALBUMS AND SET HERE
+    let nextPage = 1
+    // fetch file details for up-to-date albums
+    while (nextPage) {
+        const resp = await fetchAlbums(nextPage)
+        console.debug('resp:', resp)
+        nextPage = resp.next
+        /**
+         * @type {Object}
+         * @property {Array[Object]} albums
+         */
+        for (const album of resp.albums) {
+            console.debug('album:', album)
+            let option = createOption(album.id, album.name)
+            albumOptions.options.add(option)
+        }
+    }
+}
+
+/**
+ * Create Option
+ * @function postURL
+ * @param {String} id
+ * @param {String} name
+ * @return {HTMLOptionElement}
+ */
+function createOption(id, name) {
+    const option = document.createElement('option')
+    option.textContent = name
+    option.value = id
+    return option
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    if (album) {
+        const selector = this.getElementById('dest_album')
+        selector.hidden = true
+
+    } else {
+        getAlbums()
+    }
+})
+
+document.getElementById("upload_inputs").addEventListener("change", function() {
+    console.log(this)
+    Array.from(this.elements).forEach((input) => {
+        console.log(input)
+        console.log(input.id.replace('upload_'))
+        if (input.value !=0) {
+            headers.albums = input.value
+        }
+        console.log("Selected value:", input.value);
+    })
+});

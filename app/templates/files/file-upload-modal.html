@@ -6,11 +6,22 @@
                 <h1 class="modal-title fs-5" id="fileUploadModalLabel">Upload New File</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            {% comment %} <div class="modal-body">Are you sure you want to delete this file?</div> {% endcomment %}
+
             <div class="modal-footer">
-                {% comment %} <button type="button" class="btn btn-danger" id="confirm-delete">
-    Delete <i class="fa-regular fa-trash-can ms-1"></i></button> {% endcomment %}
-                <div class="container-fluid py-4 h-100">
+                <div class="container-fluid h-100">
+                    <form id="upload_inputs" class="row justify-content-center">
+                        <div class="col col-md-12 pb-3 align-self-center" id="dest_album">
+                            <label for="upload_album" class="form-label">Destination Album</label>
+                            <select class="form-select form-select-lg" id="upload_album" name="upload_album"
+                                aria-describedby="upload_album-help upload_album-invalid">
+                                <option value="0">None</option>
+                            </select>
+                            <div id="upload_album_name_format-invalid" class="invalid-feedback"></div>
+                            <div id="upload_album-help" class="form-text">
+                                Select an album to add uploads to.
+                            </div>
+                        </div>
+                    </form>
                     <div id="uppy"></div>
                 </div>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
