@@ -149,7 +149,7 @@ document.getElementById("upload_inputs").addEventListener("change", function() {
     console.log(this)
     Array.from(this.elements).forEach((input) => {
         let header_name = input.id.replace('upload_', '')
-        if (input.value !=0) {
+        if (input.value !== 0) {
             headers[header_name] = input.value
         } else {
             headers[header_name] = ""
