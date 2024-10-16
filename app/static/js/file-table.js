@@ -17,16 +17,19 @@ let filesDataTable
 
 const dataTablesOptions = {
     paging: false,
-    order: [0, 'desc'],
+    order: [1, 'desc'],
     responsive: true,
     processing: true,
     saveState: true,
     pageLength: -1,
     lengthMenu: [
-        [10, 25, 50, 100, 250, -1],
-        [10, 25, 50, 100, 250, 'All'],
+        [1, 10, 25, 45, 100, 250, -1],
+        [1, 10, 25, 45, 100, 250, 'All'],
     ],
     columns: [
+        {
+            data: null,
+        },
         { data: 'id' },
         { data: 'name' },
         { data: 'size' },
@@ -39,13 +42,20 @@ const dataTablesOptions = {
     ],
     columnDefs: [
         {
+            orderable: true,
+            render: DataTable.render.select(),
+            width: '10px',
             targets: 0,
+            responsivePriority: 3
+        },
+        {
+            targets: 1,
             width: '30px',
             responsivePriority: 5,
             defaultContent: '',
         },
         {
-            target: 1,
+            target: 2,
             width: '40%',
             responsivePriority: 1,
             render: getFileLink,
@@ -53,50 +63,50 @@ const dataTablesOptions = {
             type: 'html',
         },
         {
-            targets: 2,
+            targets: 3,
             render: formatBytes,
             defaultContent: '',
-            responsivePriority: 3,
+            responsivePriority: 4,
         },
-        { targets: 3, defaultContent: '', responsivePriority: 9 },
+        { targets: 4, defaultContent: '', responsivePriority: 9 },
         {
             name: 'date',
-            targets: 4,
+            targets: 5,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
             responsivePriority: 8,
             width: '170px',
         },
         {
-            targets: 5,
+            targets: 6,
             width: '30px',
             defaultContent: '',
             className: 'expire-value text-center',
             responsivePriority: 7,
         },
         {
-            targets: 6,
+            targets: 7,
             width: '30px',
             render: getPwIcon,
             defaultContent: '',
             responsivePriority: 7,
         },
         {
-            targets: 7,
+            targets: 8,
             width: '30px',
             responsivePriority: 5,
             render: getPrivateIcon,
             defaultContent: '',
         },
         {
-            targets: 8,
+            targets: 9,
             width: '30px',
             defaultContent: '',
             responsivePriority: 4,
             className: 'text-center',
         },
         {
-            targets: 9,
+            targets: 10,
             orderable: false,
             width: '30px',
             responsivePriority: 2,
@@ -104,15 +114,25 @@ const dataTablesOptions = {
             defaultContent: '',
         },
     ],
+    select: {
+        style: 'multi',
+        selector: 'td:first-child',
+    },
 }
 
-export function initFilesTable(search = true, ordering = true, info = true) {
+export function initFilesTable(search = true, ordering = true, info = true, select = true) {
     dataTablesOptions.searching = search
     dataTablesOptions.ordering = ordering
     dataTablesOptions.info = info
+    if (!select) {
+        delete dataTablesOptions.select
+        dataTablesOptions.columnDefs.splice(0, 1)
+        dataTablesOptions.columns.splice(0,1)
+        document.getElementById("files-table").rows[0].deleteCell(0)
+    }
+    console.log(dataTablesOptions)
     filesDataTable = filesTable.DataTable(dataTablesOptions)
     filesDataTable.on('draw.dt', debounce(dtDraw, 150))
-    console.log(filesDataTable.columns)
     return filesDataTable
 }
 

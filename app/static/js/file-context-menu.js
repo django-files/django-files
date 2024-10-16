@@ -64,9 +64,9 @@ $('#modal-password-form').on('submit', function (event) {
 
 confirmDelete?.on('click', function (event) {
     // TODO: Handle IF/ELSE Better
-    const pk = $(this).data('pk')
-    console.debug(`#confirm-delete.click: pk: ${pk}`, event)
-    socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
+    const pks = [$(this).data('pks')]
+    console.debug(`#confirm-delete.click: pks[]: ${pks}`, event)
+    socket.send(JSON.stringify({ method: 'delete-file', pks: pks }))
     if (window.location.pathname.startsWith('/u/')) {
         window.location.replace('/files')
     } else {

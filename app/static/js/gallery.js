@@ -14,6 +14,9 @@ import { fetchFiles } from './api-fetch.js'
 import { socket } from './socket.js'
 import { getCtxMenuContainer } from './file-context-menu.js'
 
+const confirmDelete = $('#confirm-delete')
+const fileDeleteModal = $('#fileDeleteModal')
+
 console.debug('LOADING: gallery.js')
 
 const galleryContainer = document.getElementById('gallery-container')
@@ -54,6 +57,14 @@ async function initGallery() {
     await addNodes()
     // fillInterval = setInterval(fillPage, 250)
     window.dispatchEvent(new Event('resize'))
+    filesDataTable.on('select', function (e, dt, type, indexes) {
+        document.getElementById('bulk-actions').disabled = false
+    })
+    filesDataTable.on('deselect', function (e, dt, type, indexes) {
+        if (filesDataTable.rows({ selected: true }).count() == 0) {
+            document.getElementById('bulk-actions').disabled = true
+        }
+    })
 }
 
 $('#user').on('change', function (event) {
@@ -333,4 +344,19 @@ function buildImageLabels(file, bottomLeft) {
     if (file.name) {
         addSpan(bottomLeft, file.name)
     }
+}
+
+// Start bulk delete actions
+// Todo: find a better place for these
+
+$('.bulk-delete').on('click', bulkDelete)
+
+export function bulkDelete(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every( function() {
+        pks.push(this.data().id)
+    })
+    console.debug(`bulkDeleteFile: pks: ${pks}`, event)
+    confirmDelete?.data('pks', pks)
+    fileDeleteModal.modal('show')
 }
