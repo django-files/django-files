@@ -15,6 +15,7 @@ console.debug('uploadUrl:', uploadUrl)
 
 const fileUploadModal = $('#fileUploadModal')
 
+const albumOptions = document.getElementById('upload_albums')
 
 function getResponseError(responseText, response) {
     return new Error(JSON.parse(responseText).message)
@@ -25,8 +26,8 @@ const headers = {
 }
 
 const searchParams = new URLSearchParams(window.location.search)
-const album = searchParams.get('album')
-
+const album = Number(searchParams.get('album'))
+// Make sure we set album header since we only update header on album choice change
 if (album) {
     headers.albums = album
 }
@@ -98,42 +99,28 @@ fileUploadModal?.on('hidden.bs.modal', (event) => {
 
 
 export async function getAlbums(selected_album) {
-    const albumOptions = document.getElementById('upload_albums')
-    // albumOptions.length = 0
-    console.log(albumOptions)
-
-    // FETCH ALBUMS AND SET HERE
     let nextPage = 1
-    // fetch file details for up-to-date albums
     while (nextPage) {
         const resp = await fetchAlbums(nextPage)
         console.debug('resp:', resp)
         nextPage = resp.next
-        /**
-         * @type {Object}
-         * @property {Array[Object]} albums
-         */
-        for (const album of resp.albums) {
-            console.debug('album:', album)
-            let option = createOption(album.id, album.name)
-            if (selected_album == album.id) option.selected = true
-            albumOptions.options.add(option)
-        }
+        resp.albums.forEach(createOption)
     }
 }
 
 /**
- * Create Option
+ * Create Album Option
  * @function postURL
- * @param {String} id
- * @param {String} name
- * @return {HTMLOptionElement}
+ * @param {Object} albumEntry
  */
-function createOption(id, name) {
+function createOption(albumEntry) {
     const option = document.createElement('option')
-    option.textContent = name
-    option.value = id
-    return option
+    option.textContent = albumEntry.name
+    option.value = albumEntry.id
+    if (album == albumEntry.id) {
+        option.selected = true
+    }
+    albumOptions.options.add(option)
 }
 
 document.addEventListener('DOMContentLoaded', function () {
