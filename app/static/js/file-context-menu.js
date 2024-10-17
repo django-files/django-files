@@ -141,6 +141,8 @@ export function ctxDeleteFile(event) {
     const pks = [getPrimaryKey(event)]
     console.debug(`ctxDeleteFile: pks: ${pks}`, event)
     confirmDelete?.data('pks', pks)
+    $('#fileDeleteModal #fileDeleteModalLabel').text(`Delete File`)
+    $('#fileDeleteModal #fileDeleteModalBody').text(`Are you sure you want to delete this file?`)
     fileDeleteModal.modal('show')
 }
 

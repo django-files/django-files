@@ -14,9 +14,6 @@ import { fetchFiles } from './api-fetch.js'
 import { socket } from './socket.js'
 import { getCtxMenuContainer } from './file-context-menu.js'
 
-const confirmDelete = $('#confirm-delete')
-const fileDeleteModal = $('#fileDeleteModal')
-
 console.debug('LOADING: gallery.js')
 
 const galleryContainer = document.getElementById('gallery-container')
@@ -344,19 +341,4 @@ function buildImageLabels(file, bottomLeft) {
     if (file.name) {
         addSpan(bottomLeft, file.name)
     }
-}
-
-// Start bulk delete actions
-// Todo: find a better place for these
-
-$('.bulk-delete').on('click', bulkDelete)
-
-export function bulkDelete(event) {
-    let pks = []
-    filesDataTable.rows('.selected').every( function() {
-        pks.push(this.data().id)
-    })
-    console.debug(`bulkDeleteFile: pks: ${pks}`, event)
-    confirmDelete?.data('pks', pks)
-    fileDeleteModal.modal('show')
 }

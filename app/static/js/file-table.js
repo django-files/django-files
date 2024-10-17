@@ -13,6 +13,9 @@ export const faCaret = document.querySelector(
 export const fileLink = document.querySelector('div.d-none > .dj-file-link')
 export const totalFilesCount = document.getElementById('total-files-count')
 
+const confirmDelete = $('#confirm-delete')
+const fileDeleteModal = $('#fileDeleteModal')
+
 let filesDataTable
 
 const dataTablesOptions = {
@@ -249,3 +252,25 @@ socket?.addEventListener('message', function (event) {
         renameFileRow(data)
     }
 })
+
+////////////////
+// Bulk Actions
+////////////////
+// Todo: find a better place for these
+
+// Start bulk delete actions
+$('.bulk-delete').on('click', bulkDelete)
+
+export function bulkDelete(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every( function() {
+        pks.push(this.data().id)
+    })
+    console.debug(`bulkDeleteFile: pks: ${pks}`, event)
+    confirmDelete?.data('pks', pks)
+    let s = ''
+    if (pks.length > 1) s = 's' 
+    $('#fileDeleteModal #fileDeleteModalLabel').text(`Delete ${pks.length} File${s}`)
+    $('#fileDeleteModal #fileDeleteModalBody').text(`Are you sure you want to delete ${pks.length} file${s}?`)
+    fileDeleteModal.modal('show')
+}
