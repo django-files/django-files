@@ -136,19 +136,20 @@ class HomeConsumer(AsyncWebsocketConsumer):
         # return self._error('Not Implemented.', **kwargs)
         # return self._success(f'File Created: {file.pk}')
 
-    def delete_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
+    def delete_files(self, *, user_id: int = None, pks: list = [], **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
-        :param pk: Integer - File ID
+        :param pk: List of Integers - File IDs
         :return: Dictionary - With Key: 'success': bool
         """
         log.debug('delete_file')
         log.debug('user_id: %s', user_id)
-        log.debug('pk: %s', pk)
-        if file := Files.objects.filter(pk=pk):
-            if file[0].user.id != user_id:
-                return self._error('File owned by another user.', **kwargs)
-            file[0].delete()
+        log.debug('pks: %s', pks)
+        files = Files.objects.filter(
+            user=CustomUser.objects.get(pk=user_id),
+            pk__in=pks[0])
+        if len(files) > 0:
+            files.delete()
         else:
             return self._error('File not found.', **kwargs)
 

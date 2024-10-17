@@ -13,20 +13,26 @@ export const faCaret = document.querySelector(
 export const fileLink = document.querySelector('div.d-none > .dj-file-link')
 export const totalFilesCount = document.getElementById('total-files-count')
 
+const confirmDelete = $('#confirm-delete')
+const fileDeleteModal = $('#fileDeleteModal')
+
 let filesDataTable
 
 const dataTablesOptions = {
     paging: false,
-    order: [0, 'desc'],
+    order: [1, 'desc'],
     responsive: true,
     processing: true,
     saveState: true,
     pageLength: -1,
     lengthMenu: [
-        [10, 25, 50, 100, 250, -1],
-        [10, 25, 50, 100, 250, 'All'],
+        [1, 10, 25, 45, 100, 250, -1],
+        [1, 10, 25, 45, 100, 250, 'All'],
     ],
     columns: [
+        {
+            data: null,
+        },
         { data: 'id' },
         { data: 'name' },
         { data: 'size' },
@@ -39,64 +45,76 @@ const dataTablesOptions = {
     ],
     columnDefs: [
         {
+            orderable: true,
+            render: DataTable.render.select(),
+            width: '10px',
             targets: 0,
-            width: '30px',
+            responsivePriority: 3,
+        },
+        {
+            targets: 1,
+            width: '20px',
             responsivePriority: 5,
             defaultContent: '',
         },
         {
-            target: 1,
-            width: '40%',
+            target: 2,
+
             responsivePriority: 1,
             render: getFileLink,
             defaultContent: '',
             type: 'html',
         },
         {
-            targets: 2,
+            targets: 3,
             render: formatBytes,
             defaultContent: '',
-            responsivePriority: 3,
+            responsivePriority: 4,
+            width: '150px',
         },
-        { targets: 3, defaultContent: '', responsivePriority: 9 },
+        {
+            targets: 4,
+            defaultContent: '',
+            responsivePriority: 9,
+        },
         {
             name: 'date',
-            targets: 4,
+            targets: 5,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
             responsivePriority: 8,
-            width: '170px',
+            width: '500px',
         },
         {
-            targets: 5,
-            width: '30px',
+            targets: 6,
+            width: '15px',
             defaultContent: '',
             className: 'expire-value text-center',
             responsivePriority: 7,
         },
         {
-            targets: 6,
-            width: '30px',
+            targets: 7,
+            width: '15px',
             render: getPwIcon,
             defaultContent: '',
             responsivePriority: 7,
         },
         {
-            targets: 7,
-            width: '30px',
+            targets: 8,
+            width: '15px',
             responsivePriority: 5,
             render: getPrivateIcon,
             defaultContent: '',
         },
         {
-            targets: 8,
-            width: '30px',
+            targets: 9,
+            width: '15px',
             defaultContent: '',
             responsivePriority: 4,
             className: 'text-center',
         },
         {
-            targets: 9,
+            targets: 10,
             orderable: false,
             width: '30px',
             responsivePriority: 2,
@@ -104,15 +122,30 @@ const dataTablesOptions = {
             defaultContent: '',
         },
     ],
+    select: {
+        style: 'multi',
+        selector: 'td:first-child',
+    },
 }
 
-export function initFilesTable(search = true, ordering = true, info = true) {
+export function initFilesTable(
+    search = true,
+    ordering = true,
+    info = true,
+    select = true
+) {
     dataTablesOptions.searching = search
     dataTablesOptions.ordering = ordering
     dataTablesOptions.info = info
+    if (!select) {
+        delete dataTablesOptions.select
+        dataTablesOptions.columnDefs.splice(0, 1)
+        dataTablesOptions.columns.splice(0, 1)
+        document.getElementById('files-table').rows[0].deleteCell(0)
+    }
+    console.log(dataTablesOptions)
     filesDataTable = filesTable.DataTable(dataTablesOptions)
     filesDataTable.on('draw.dt', debounce(dtDraw, 150))
-    console.log(filesDataTable.columns)
     return filesDataTable
 }
 
@@ -229,3 +262,29 @@ socket?.addEventListener('message', function (event) {
         renameFileRow(data)
     }
 })
+
+////////////////
+// Bulk Actions
+////////////////
+// Todo: find a better place for these
+
+// Start bulk delete actions
+$('.bulk-delete').on('click', bulkDelete)
+
+export function bulkDelete(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    console.debug(`bulkDeleteFile: pks: ${pks}`, event)
+    confirmDelete?.data('pks', pks)
+    let s = ''
+    if (pks.length > 1) s = 's'
+    $('#fileDeleteModal #fileDeleteModalLabel').text(
+        `Delete ${pks.length} File${s}`
+    )
+    $('#fileDeleteModal #fileDeleteModalBody').text(
+        `Are you sure you want to delete ${pks.length} file${s}?`
+    )
+    fileDeleteModal.modal('show')
+}
