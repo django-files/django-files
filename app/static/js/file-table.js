@@ -49,17 +49,17 @@ const dataTablesOptions = {
             render: DataTable.render.select(),
             width: '10px',
             targets: 0,
-            responsivePriority: 3
+            responsivePriority: 3,
         },
         {
             targets: 1,
-            width: '30px',
+            width: '20px',
             responsivePriority: 5,
             defaultContent: '',
         },
         {
             target: 2,
-            width: '40%',
+
             responsivePriority: 1,
             render: getFileLink,
             defaultContent: '',
@@ -70,40 +70,45 @@ const dataTablesOptions = {
             render: formatBytes,
             defaultContent: '',
             responsivePriority: 4,
+            width: '150px',
         },
-        { targets: 4, defaultContent: '', responsivePriority: 9 },
+        {
+            targets: 4,
+            defaultContent: '',
+            responsivePriority: 9,
+        },
         {
             name: 'date',
             targets: 5,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
             responsivePriority: 8,
-            width: '170px',
+            width: '500px',
         },
         {
             targets: 6,
-            width: '30px',
+            width: '15px',
             defaultContent: '',
             className: 'expire-value text-center',
             responsivePriority: 7,
         },
         {
             targets: 7,
-            width: '30px',
+            width: '15px',
             render: getPwIcon,
             defaultContent: '',
             responsivePriority: 7,
         },
         {
             targets: 8,
-            width: '30px',
+            width: '15px',
             responsivePriority: 5,
             render: getPrivateIcon,
             defaultContent: '',
         },
         {
             targets: 9,
-            width: '30px',
+            width: '15px',
             defaultContent: '',
             responsivePriority: 4,
             className: 'text-center',
@@ -123,15 +128,20 @@ const dataTablesOptions = {
     },
 }
 
-export function initFilesTable(search = true, ordering = true, info = true, select = true) {
+export function initFilesTable(
+    search = true,
+    ordering = true,
+    info = true,
+    select = true
+) {
     dataTablesOptions.searching = search
     dataTablesOptions.ordering = ordering
     dataTablesOptions.info = info
     if (!select) {
         delete dataTablesOptions.select
         dataTablesOptions.columnDefs.splice(0, 1)
-        dataTablesOptions.columns.splice(0,1)
-        document.getElementById("files-table").rows[0].deleteCell(0)
+        dataTablesOptions.columns.splice(0, 1)
+        document.getElementById('files-table').rows[0].deleteCell(0)
     }
     console.log(dataTablesOptions)
     filesDataTable = filesTable.DataTable(dataTablesOptions)
@@ -263,14 +273,18 @@ $('.bulk-delete').on('click', bulkDelete)
 
 export function bulkDelete(event) {
     let pks = []
-    filesDataTable.rows('.selected').every( function() {
+    filesDataTable.rows('.selected').every(function () {
         pks.push(this.data().id)
     })
     console.debug(`bulkDeleteFile: pks: ${pks}`, event)
     confirmDelete?.data('pks', pks)
     let s = ''
-    if (pks.length > 1) s = 's' 
-    $('#fileDeleteModal #fileDeleteModalLabel').text(`Delete ${pks.length} File${s}`)
-    $('#fileDeleteModal #fileDeleteModalBody').text(`Are you sure you want to delete ${pks.length} file${s}?`)
+    if (pks.length > 1) s = 's'
+    $('#fileDeleteModal #fileDeleteModalLabel').text(
+        `Delete ${pks.length} File${s}`
+    )
+    $('#fileDeleteModal #fileDeleteModalBody').text(
+        `Are you sure you want to delete ${pks.length} file${s}?`
+    )
     fileDeleteModal.modal('show')
 }
