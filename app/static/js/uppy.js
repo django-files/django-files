@@ -26,10 +26,10 @@ const headers = {
 }
 
 const searchParams = new URLSearchParams(window.location.search)
-const album = Number(searchParams.get('album'))
+const selectedAlbum = Number(searchParams.get('album'))
 // Make sure we set album header since we only update header on album choice change
-if (album) {
-    headers.albums = album
+if (selectedAlbum) {
+    headers.albums = selectedAlbum
 }
 
 const uppy = new Uppy({ debug: false, autoProceed: false })
@@ -98,7 +98,7 @@ fileUploadModal?.on('hidden.bs.modal', (event) => {
 })
 
 
-export async function getAlbums(selected_album) {
+export async function getAlbums() {
     let nextPage = 1
     while (nextPage) {
         const resp = await fetchAlbums(nextPage)
@@ -113,18 +113,18 @@ export async function getAlbums(selected_album) {
  * @function postURL
  * @param {Object} albumEntry
  */
-function createOption(albumEntry) {
+function createOption(album) {
     const option = document.createElement('option')
-    option.textContent = albumEntry.name
-    option.value = albumEntry.id
-    if (album == albumEntry.id) {
+    option.textContent = album.name
+    option.value = album.id
+    if (selectedAlbum == album.id) {
         option.selected = true
     }
     albumOptions.options.add(option)
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    getAlbums(album)
+    getAlbums()
 })
 
 document.getElementById("upload_inputs").addEventListener("change", function() {
