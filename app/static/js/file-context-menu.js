@@ -66,7 +66,7 @@ confirmDelete?.on('click', function (event) {
     // TODO: Handle IF/ELSE Better
     const pks = [$(this).data('pks')]
     console.debug(`#confirm-delete.click: pks[]: ${pks}`, event)
-    socket.send(JSON.stringify({ method: 'delete-file', pks: pks }))
+    socket.send(JSON.stringify({ method: 'delete-files', pks: pks }))
     if (window.location.pathname.startsWith('/u/')) {
         window.location.replace('/files')
     } else {
@@ -138,9 +138,9 @@ export function ctxSetPassword(event) {
 }
 
 export function ctxDeleteFile(event) {
-    const pk = getPrimaryKey(event)
-    console.debug(`ctxDeleteFile: pk: ${pk}`, event)
-    confirmDelete?.data('pk', pk)
+    const pks = [getPrimaryKey(event)]
+    console.debug(`ctxDeleteFile: pks: ${pks}`, event)
+    confirmDelete?.data('pks', pks)
     fileDeleteModal.modal('show')
 }
 

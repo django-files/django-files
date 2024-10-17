@@ -61,7 +61,7 @@ async function initGallery() {
         document.getElementById('bulk-actions').disabled = false
     })
     filesDataTable.on('deselect', function (e, dt, type, indexes) {
-        if (filesDataTable.rows({ selected: true }).count() == 0) {
+        if (filesDataTable.rows({ selected: true }).count() === 0) {
             document.getElementById('bulk-actions').disabled = true
         }
     })
