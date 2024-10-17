@@ -123,9 +123,7 @@ function createOption(album) {
     albumOptions.options.add(option)
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    getAlbums()
-})
+document.addEventListener('DOMContentLoaded', getAlbums)
 
 document.getElementById("upload_inputs").addEventListener("change", function() {
     console.log(this)
