@@ -97,7 +97,7 @@ fileUploadModal?.on('hidden.bs.modal', (event) => {
 })
 
 
-export async function getAlbums(album) {
+export async function getAlbums(selected_album) {
     const albumOptions = document.getElementById('upload_albums')
     // albumOptions.length = 0
     console.log(albumOptions)
@@ -116,6 +116,7 @@ export async function getAlbums(album) {
         for (const album of resp.albums) {
             console.debug('album:', album)
             let option = createOption(album.id, album.name)
+            if (selected_album == album.id) option.selected = true
             albumOptions.options.add(option)
         }
     }
@@ -136,13 +137,7 @@ function createOption(id, name) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    if (album) {
-        const selector = this.getElementById('dest_album')
-        selector.hidden = true
-
-    } else {
-        getAlbums()
-    }
+    getAlbums(album)
 })
 
 document.getElementById("upload_inputs").addEventListener("change", function() {
