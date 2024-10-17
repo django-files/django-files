@@ -126,7 +126,6 @@ function createOption(album) {
 document.addEventListener('DOMContentLoaded', getAlbums)
 
 document.getElementById("upload_inputs").addEventListener("change", function() {
-    console.log(this)
     Array.from(this.elements).forEach((input) => {
         let header_name = input.id.replace('upload_', '')
         if (input.value !== 0) {
@@ -134,6 +133,5 @@ document.getElementById("upload_inputs").addEventListener("change", function() {
         } else {
             headers[header_name] = ""
         }
-        console.log("Selected value:", input.value);
     })
 });
