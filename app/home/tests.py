@@ -226,7 +226,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 page.locator('.ctx-menu').first.click()
                 page.locator('.ctx-album').first.click()
                 page.wait_for_timeout(timeout=500)
-                page.get_by_text("My Cool Pictures").click()
+                page.get_by_label("Manage Albums").get_by_text("My Cool Pictures").click()
                 self.screenshot(page, f'{view}-add-file')
                 page.locator('#file-album-submit').click()
                 page.wait_for_timeout(timeout=300)

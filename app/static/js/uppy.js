@@ -8,13 +8,14 @@ import {
     XHRUpload,
 } from '../dist/uppy/uppy.min.mjs'
 
+import { fetchAlbums } from './api-fetch.js'
+
 console.debug('LOADING: uppy.js')
 console.debug('uploadUrl:', uploadUrl)
 
 const fileUploadModal = $('#fileUploadModal')
-// if (typeof fileUploadModal === 'undefined') {
-//     fileUploadModal
-// }
+
+const albumOptions = document.getElementById('upload_albums')
 
 function getResponseError(responseText, response) {
     return new Error(JSON.parse(responseText).message)
@@ -25,18 +26,18 @@ const headers = {
 }
 
 const searchParams = new URLSearchParams(window.location.search)
-const album = searchParams.get('album')
-// console.debug('album:', album)
-if (album) {
-    headers.albums = album
+const selectedAlbum = Number(searchParams.get('album'))
+// Make sure we set album header since we only update header on album choice change
+if (selectedAlbum) {
+    headers.albums = selectedAlbum
 }
-// console.debug('headers:', headers)
 
-const uppy = new Uppy({ debug: true, autoProceed: false })
+const uppy = new Uppy({ debug: false, autoProceed: false })
     .use(Dashboard, {
         inline: true,
         theme: 'auto',
         target: '#uppy',
+
         showProgressDetails: true,
         showLinkToFileUploadResult: true,
         autoOpenFileEditor: true,
@@ -95,3 +96,42 @@ fileUploadModal?.on('hidden.bs.modal', (event) => {
     console.debug('hidden.bs.modal:', event)
     uppy.cancelAll()
 })
+
+
+export async function getAlbums() {
+    let nextPage = 1
+    while (nextPage) {
+        const resp = await fetchAlbums(nextPage)
+        console.debug('resp:', resp)
+        nextPage = resp.next
+        resp.albums.forEach(createOption)
+    }
+}
+
+/**
+ * Create Album Option
+ * @function postURL
+ * @param {Object} albumEntry
+ */
+function createOption(album) {
+    const option = document.createElement('option')
+    option.textContent = album.name
+    option.value = album.id
+    if (selectedAlbum == album.id) {
+        option.selected = true
+    }
+    albumOptions.options.add(option)
+}
+
+document.addEventListener('DOMContentLoaded', getAlbums)
+
+document.getElementById("upload_inputs").addEventListener("change", function() {
+    Array.from(this.elements).forEach((input) => {
+        let header_name = input.id.replace('upload_', '')
+        if (input.value !== 0) {
+            headers[header_name] = input.value
+        } else {
+            headers[header_name] = ""
+        }
+    })
+});
