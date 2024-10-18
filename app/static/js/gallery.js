@@ -228,6 +228,7 @@ function buildGalleryCheckbox(file) {
     checkbox.addEventListener("click",  function() {
         if (this.checked) {
             filesDataTable.rows(`#file-${file.id}`).select()
+            this.classList.remove('gallery-mouse')
         } else {
             filesDataTable.rows(`#file-${file.id}`).deselect()
             this.classList.add('gallery-mouse')
