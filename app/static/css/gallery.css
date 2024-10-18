@@ -45,8 +45,8 @@
 
 .image-icons {
     position: absolute;
-    top: 4px;
-    left: 6px;
+    bottom: 20px;
+    right: 4px;
     pointer-events: none;
 }
 
@@ -58,7 +58,7 @@
 .gallery-ctx {
     position: absolute;
     top: 0;
-    right: 8px;
+    right: 25px;
 }
 
 .gallery-ctx-toggle {
@@ -66,4 +66,31 @@
     border: none;
     width: 20px;
     text-align: center;
+}
+
+.gallery-checkbox {
+    position: absolute;
+    top: 4px;
+    left: 8px;
+    zoom: 1.5;
+}
+
+/* I hate that we have to do this, but datatables has no option to not 
+highlight a row and it fucks up our other stylings */
+.dt-select-no-highlight {
+    background-color: transparent !important;
+    color: inherit !important;
+    
+    --dt-row-selected: initial;
+    --dt-row-selected-text: initial;
+    --dt-row-selected-link: initial;
+    --dt-row-stripe: initial;
+    --dt-row-hover: initial;
+    --dt-column-ordering: initial;
+    --dt-html-background: initial;
+}
+
+div.dataTables_wrapper span.select-info,
+div.dataTables_wrapper span.select-item {
+  margin-left: 0.25em
 }
