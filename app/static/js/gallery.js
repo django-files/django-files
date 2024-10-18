@@ -57,6 +57,12 @@ async function initGallery() {
     window.dispatchEvent(new Event('resize'))
     filesDataTable.on('select', function (e, dt, type, indexes) {
         document.getElementById('bulk-actions').disabled = false
+        console.log(`file-${dt.data().id}`)
+        let checkbox = document.getElementById(`file-${dt.data().id}`)
+        // checkbox.classList.remove('gallery-mouse').remove('d-none')
+        if (checkbox) {
+            checkbox.classList.remove('d-none')
+        }
     })
     filesDataTable.on('deselect', function (e, dt, type, indexes) {
         if (filesDataTable.rows({ selected: true }).count() === 0) {
@@ -214,13 +220,14 @@ function buildGalleryCheckbox(file) {
     if (selectedFileIds.includes(file.id)) {
         checkbox.checked = true
         checkbox.classList.remove('gallery-mouse')
+        checkbox.classList.remove('gallery-mouse')
+        checkbox.classList.remove('d-none')
     } else {
         checkbox.checked = false
     }
     checkbox.addEventListener("click",  function() {
         if (this.checked) {
             filesDataTable.rows(`#file-${file.id}`).select()
-            this.classList.remove('gallery-mouse')
         } else {
             filesDataTable.rows(`#file-${file.id}`).deselect()
             this.classList.add('gallery-mouse')
