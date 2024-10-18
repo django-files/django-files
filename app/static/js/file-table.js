@@ -21,7 +21,9 @@ let filesDataTable
 const dataTablesOptions = {
     paging: false,
     order: [1, 'desc'],
-    responsive: true,
+    responsive: {
+        details: false
+    },
     processing: true,
     saveState: true,
     pageLength: -1,
@@ -33,7 +35,7 @@ const dataTablesOptions = {
         {
             data: null,
         },
-        { data: 'id' },
+        { data: 'id', name:'id' },
         { data: 'name' },
         { data: 'size' },
         { data: 'mime' },
@@ -125,6 +127,9 @@ const dataTablesOptions = {
     select: {
         style: 'multi',
         selector: 'td:first-child',
+    },
+    language: {
+        info: '',
     },
 }
 
