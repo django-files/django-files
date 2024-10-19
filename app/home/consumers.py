@@ -6,10 +6,8 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.forms.models import model_to_dict
 from io import BytesIO
-from pytimeparse2 import parse
 from typing import Optional, List
 from django.core.cache import cache
-from typing import List
 
 
 from home.models import Files, Albums
@@ -202,7 +200,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
         files = Files.objects.filter(
             user=CustomUser.objects.get(pk=user_id),
             pk__in=pks)
-        
         for file in files:
             file.expr = expr or ""
         Files.objects.bulk_update(files, ['expr'])
