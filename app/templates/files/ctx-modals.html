@@ -8,7 +8,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
     <div class="modal-body">
-        <p>
+        <p id="fileExpireModalBodyText">
             Set the file's expiration. For examples, see
             <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
                target="_blank" rel="noopener">this README.md</a>.
@@ -18,7 +18,7 @@
             <div class="input-group w-100">
                 <input type="text" class="form-control" id="expr" name="expr" autocomplete="off" value="{{ file.expr|default:'' }}">
             </div>
-            <input type="hidden" name="pk" value="">
+            <input type="hidden" name="pks" value="">
         </form>
     </div>
     <div class="modal-footer">

@@ -33,11 +33,14 @@ fileExpireModal.on('shown.bs.modal', function (event) {
 $('#modal-expire-form').on('submit', function (event) {
     console.debug('#modal-expire-form: submit:', event)
     event.preventDefault()
-    const data = genData($(this), 'set-expr-file')
+    const data = genData($(this), 'set-expr-files')
+    data.pks = data.pks.split(',')
     console.debug('data:', data)
     socket.send(JSON.stringify(data))
     fileExpireModal.modal('hide')
-    $(`#ctx-menu-${data.pk} input[name=current-file-expiration]`).val(data.expr)
+    data.pks.forEach(pk => {
+        $(`#ctx-menu-${pk} input[name=current-file-expiration]`).val(data.expr) 
+    });
 })
 
 // Password Form
@@ -111,8 +114,9 @@ $('#modal-album-form').on('submit', function (event) {
 
 export function ctxSetExpire(event) {
     const pk = getPrimaryKey(event)
-    console.debug(`ctxSetExpire: pk: ${pk}`, event)
-    fileExpireModal.find('input[name=pk]').val(pk)
+    const pks = [pk]
+    console.debug(`ctxSetExpire: pks: ${pks}`, event)
+    fileExpireModal.find('input[name=pks]').val(pks)
     const expire = $(`#ctx-menu-${pk} input[name=current-file-expiration]`)
     const expireValue = expire.val().toString().trim()
     console.debug(`expireInput: ${expireValue}`)

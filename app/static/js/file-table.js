@@ -13,6 +13,7 @@ export const faCaret = document.querySelector(
 export const fileLink = document.querySelector('div.d-none > .dj-file-link')
 export const totalFilesCount = document.getElementById('total-files-count')
 
+const fileExpireModal = $('#fileExpireModal')
 const confirmDelete = $('#confirm-delete')
 const fileDeleteModal = $('#fileDeleteModal')
 
@@ -22,7 +23,7 @@ const dataTablesOptions = {
     paging: false,
     order: [1, 'desc'],
     responsive: {
-        details: false
+        details: false,
     },
     processing: true,
     saveState: true,
@@ -35,7 +36,7 @@ const dataTablesOptions = {
         {
             data: null,
         },
-        { data: 'id', name:'id' },
+        { data: 'id', name: 'id' },
         { data: 'name' },
         { data: 'size' },
         { data: 'mime' },
@@ -292,4 +293,26 @@ export function bulkDelete(event) {
         `Are you sure you want to delete ${pks.length} file${s}?`
     )
     fileDeleteModal.modal('show')
+}
+
+// Start bulk expire actions
+$('.bulk-expire').on('click', bulkExpire)
+
+export function bulkExpire(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    console.debug(`bulkExpireFile: pks: ${pks}`, event)
+    fileExpireModal.find('input[name=pks]').val(pks)
+    let s = ''
+    if (pks.length > 1) s = "s"
+    $('#fileExpireModal #fileExpireModalLabel').text(
+        `Set ${pks.length} File Expirations`
+    )
+    $('#fileExpireModal #fileExpireModalBodyText').html(
+        `Set ${pks.length} file expiration${s}. For examples, see
+        <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser" target="_blank" rel="noopener">this README.md</a>.`
+    )
+    fileExpireModal.modal('show')
 }

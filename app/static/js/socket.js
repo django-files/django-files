@@ -68,7 +68,11 @@ async function initListener() {
         if (data.event === 'file-new') {
             messageNewFile(data)
         } else if (data.event === 'set-expr-file') {
-            messageExpire(data)
+            if (data.objects) {
+                data.objects.forEach(element => {
+                    messageExpire({...data, ...element})
+                });
+            }
         } else if (data.event === 'toggle-private-file') {
             messagePrivate(data)
         } else if (data.event === 'set-password-file') {
