@@ -6,6 +6,7 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.forms.models import model_to_dict
 from io import BytesIO
+from pytimeparse2 import parse
 from typing import Optional, List
 from django.core.cache import cache
 
@@ -197,6 +198,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('pks: %s', pks)
         log.debug('expr: %s', expr)
         log.debug('kwargs: %s', kwargs)
+        if expr and not parse(expr):
+            return self._error(f'Invalid Expire: {expr}', **kwargs)
         files = Files.objects.filter(
             user=CustomUser.objects.get(pk=user_id),
             pk__in=pks)
