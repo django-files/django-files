@@ -7,9 +7,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.forms.models import model_to_dict
 from io import BytesIO
 from pytimeparse2 import parse
-from typing import Optional
+from typing import Optional, List
 from django.core.cache import cache
-from typing import List
 
 
 from home.models import Files, Albums
@@ -133,22 +132,21 @@ class HomeConsumer(AsyncWebsocketConsumer):
         f = BytesIO(bytes(text_data, 'utf-8'))
         file = process_file(name, f, user_id, **kwargs)
         log.debug('file.name: %s', file.name)
-        # return self._error('Not Implemented.', **kwargs)
-        # return self._success(f'File Created: {file.pk}')
 
-    def delete_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
+    def delete_files(self, *, user_id: int = None, pks: List[int] = [], **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
-        :param pk: Integer - File ID
+        :param pk: List of Integers - File IDs
         :return: Dictionary - With Key: 'success': bool
         """
         log.debug('delete_file')
         log.debug('user_id: %s', user_id)
-        log.debug('pk: %s', pk)
-        if file := Files.objects.filter(pk=pk):
-            if file[0].user.id != user_id:
-                return self._error('File owned by another user.', **kwargs)
-            file[0].delete()
+        log.debug('pks: %s', pks)
+        files = Files.objects.filter(
+            user=CustomUser.objects.get(pk=user_id),
+            pk__in=pks[0])
+        if len(files) > 0:
+            files.delete()
         else:
             return self._error('File not found.', **kwargs)
 
@@ -188,31 +186,35 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return response
         return self._error('File not found.', **kwargs)
 
-    def set_expr_file(self, *, user_id: int = None, pk: int = None, expr: str = None, **kwargs) -> dict:
+    def set_expr_files(self, *, user_id: int = None, pks: List[int] = [], expr: str = None, **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
-        :param pk: Integer - File ID
+        :param pks: List of Integer - File ID
         :param expr: String - File Expire String
         :return: Dictionary - With Key: 'success': bool
         """
         log.debug('set_expr_file')
         log.debug('user_id: %s', user_id)
-        log.debug('pk: %s', pk)
+        log.debug('pks: %s', pks)
         log.debug('expr: %s', expr)
         log.debug('kwargs: %s', kwargs)
-        if file := Files.objects.filter(pk=pk):
-            if user_id and file[0].user.id != user_id:
-                return self._error('File owned by another user.', **kwargs)
-            if expr and not parse(expr):
-                return self._error(f'Invalid Expire: {expr}', **kwargs)
-            file[0].expr = expr or ""
-            file[0].save(update_fields=['expr'])
-            # return self._success('File Expire Updated.', **kwargs)
-            response = model_to_dict(file[0], exclude=['file', 'thumb', 'albums'])
+        if expr and not parse(expr):
+            return self._error(f'Invalid Expire: {expr}', **kwargs)
+        files = Files.objects.filter(
+            user=CustomUser.objects.get(pk=user_id),
+            pk__in=pks)
+        for file in files:
+            file.expr = expr or ""
+        Files.objects.bulk_update(files, ['expr'])
+        if len(files) > 0:
+            response = {}
+            response['objects'] = []
+            for file in files:
+                response['objects'].append(model_to_dict(file, exclude=['file', 'thumb', 'albums']))
             response.update({'event': 'set-expr-file'})
             log.debug('response: %s', response)
             return response
-        return self._error('File not found.', **kwargs)
+        return self._error('File(s) not found.', **kwargs)
 
     def set_password_file(self, *, user_id: int = None, pk: int = None, password: str = None, **kwargs) -> dict:
         """

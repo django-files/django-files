@@ -4,21 +4,23 @@
 <div class="modal-dialog modal-dialog-centered">
 <div class="modal-content">
     <div class="modal-header">
-        <h1 class="modal-title fs-5" id="fileExpireModalLabel">Set File Expiration</h1>
+        <h1 class="modal-title fs-5" id="fileExpireModalLabel"></h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
     <div class="modal-body">
         <p>
-            Set the file's expiration. For examples, see
-            <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
-               target="_blank" rel="noopener">this README.md</a>.
+            <span id="fileExpireModalBodyText">
+            Set the file's expiration.
+            </span>
+            For examples see <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
+            target="_blank" rel="noopener">this README.md</a>.
         </p>
         <form id="modal-expire-form" name="modal-expire-form">
             <label for="expr" class="form-label">Expiration</label>
             <div class="input-group w-100">
                 <input type="text" class="form-control" id="expr" name="expr" autocomplete="off" value="{{ file.expr|default:'' }}">
             </div>
-            <input type="hidden" name="pk" value="">
+            <input type="hidden" name="pks" value="">
         </form>
     </div>
     <div class="modal-footer">
@@ -66,10 +68,10 @@
 <div class="modal-dialog modal-dialog-centered">
 <div class="modal-content">
     <div class="modal-header">
-        <h1 class="modal-title fs-5" id="fileDeleteModalLabel">Delete File</h1>
+        <h1 class="modal-title fs-5" id="fileDeleteModalLabel"></h1>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
-    <div class="modal-body">Are you sure you want to delete this file?</div>
+    <div id="fileDeleteModalBody" class="modal-body"></div>
     <div class="modal-footer">
         <button type="button" class="btn btn-danger" id="confirm-delete">
             Delete <i class="fa-regular fa-trash-can ms-1"></i></button>

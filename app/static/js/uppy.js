@@ -97,7 +97,6 @@ fileUploadModal?.on('hidden.bs.modal', (event) => {
     uppy.cancelAll()
 })
 
-
 export async function getAlbums() {
     let nextPage = 1
     while (nextPage) {
@@ -125,13 +124,15 @@ function createOption(album) {
 
 document.addEventListener('DOMContentLoaded', getAlbums)
 
-document.getElementById("upload_inputs").addEventListener("change", function() {
-    Array.from(this.elements).forEach((input) => {
-        let header_name = input.id.replace('upload_', '')
-        if (input.value !== 0) {
-            headers[header_name] = input.value
-        } else {
-            headers[header_name] = ""
-        }
+document
+    .getElementById('upload_inputs')
+    .addEventListener('change', function () {
+        Array.from(this.elements).forEach((input) => {
+            let header_name = input.id.replace('upload_', '')
+            if (input.value !== 0) {
+                headers[header_name] = input.value
+            } else {
+                headers[header_name] = ''
+            }
+        })
     })
-});
