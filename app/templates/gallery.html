@@ -82,5 +82,5 @@
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.buttons.min.js' %}"></script>
     <script type="module" src="{% static 'js/file-context-menu.js' %}"></script>
     <script type="module" src="{% static 'js/gallery.js' %}"></script>
-    <script type="module" src="{% static 'js/uppy.js' %}"></script>
+    {% if full_context %}<script type="module" src="{% static 'js/uppy.js' %}"></script>{% endif %}
 {% endblock %}
