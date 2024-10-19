@@ -194,7 +194,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         """
         log.debug('set_expr_file')
         log.debug('user_id: %s', user_id)
-        log.info('pks: %s', pks)
+        log.debug('pks: %s', pks)
         log.debug('expr: %s', expr)
         log.debug('kwargs: %s', kwargs)
         files = Files.objects.filter(

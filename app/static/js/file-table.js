@@ -307,12 +307,12 @@ export function bulkExpire(event) {
     fileExpireModal.find('input[name=pks]').val(pks)
     let s = ''
     if (pks.length > 1) s = "s"
+    $('#expr').val('')
     $('#fileExpireModal #fileExpireModalLabel').text(
         `Set ${pks.length} File Expirations`
     )
     $('#fileExpireModal #fileExpireModalBodyText').html(
-        `Set ${pks.length} file expiration${s}. For examples, see
-        <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser" target="_blank" rel="noopener">this README.md</a>.`
+        `This will set the expiration for ${pks.length} file${s}.`
     )
     fileExpireModal.modal('show')
 }

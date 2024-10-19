@@ -68,11 +68,7 @@ async function initListener() {
         if (data.event === 'file-new') {
             messageNewFile(data)
         } else if (data.event === 'set-expr-file') {
-            if (data.objects) {
-                data.objects.forEach(element => {
-                    messageExpire({...data, ...element})
-                });
-            }
+            messageExpire(data)
         } else if (data.event === 'toggle-private-file') {
             messagePrivate(data)
         } else if (data.event === 'set-password-file') {
@@ -104,24 +100,26 @@ function messageFileRename(data) {
 }
 
 function messageExpire(data) {
-    console.log('messageExpire:', data)
-    const expireText = $(`#file-${data.id} .expire-value`)
-    const expireIcon = $(`#file-${data.id} .expire-icon`)
-    if (data.expr) {
-        expireText.text(data.expr).data('clipboard-text', data.expr)
-        expireIcon.attr('title', `File Expires in ${data.expr}`).show()
-        show_toast(
-            `${truncateName(data.name)} - Expire set to: ${data.expr}`,
-            'success'
-        )
-    } else {
-        expireText.text('Never').data('clipboard-text', 'Never')
-        expireIcon.attr('title', 'No Expiration').hide()
-        show_toast(
-            `${truncateName(data.name)} - Cleared Expiration.`,
-            'success'
-        )
-    }
+    data.objects.forEach((element) => {
+        console.debug('messageExpire:', element)
+        const expireText = $(`#file-${element.id} .expire-value`)
+        const expireIcon = $(`#file-${element.id} .expire-icon`)
+        if (element.expr) {
+            expireText.text(element.expr).data('clipboard-text', element.expr)
+            expireIcon.attr('title', `File Expires in ${element.expr}`).show()
+            show_toast(
+                `${truncateName(element.name)} - Expire set to: ${element.expr}`,
+                'success'
+            )
+        } else {
+            expireText.text('Never').data('clipboard-text', 'Never')
+            expireIcon.attr('title', 'No Expiration').hide()
+            show_toast(
+                `${truncateName(element.name)} - Cleared Expiration.`,
+                'success'
+            )
+        }
+    })
 }
 
 function messagePrivate(data) {

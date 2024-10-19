@@ -121,6 +121,12 @@ export function ctxSetExpire(event) {
     const expireValue = expire.val().toString().trim()
     console.debug(`expireInput: ${expireValue}`)
     $('#expr').val(expireValue)
+    $('#fileExpireModal #fileExpireModalLabel').text(
+        `Set File Expiration`
+    )
+    $('#fileExpireModal #fileExpireModalBodyText').html(
+        `Set the file's expiration.`
+    )
     fileExpireModal.modal('show')
 }
 
