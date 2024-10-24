@@ -59,7 +59,6 @@ async function initGallery() {
         document.getElementById('bulk-actions').disabled = false
         console.log(`file-${dt.data().id}`)
         let checkbox = document.getElementById(`file-${dt.data().id}`)
-        // checkbox.classList.remove('gallery-mouse').remove('d-none')
         if (checkbox) {
             checkbox.classList.remove('d-none')
         }
@@ -216,6 +215,9 @@ function buildGalleryCheckbox(file) {
     const checkbox = document
         .querySelector('.d-none .gallery-checkbox')
         .cloneNode(true)
+    if (isTouchDevice()) {
+        checkbox.classList.remove('d-none')
+    }
     checkbox.id = `checkbox-${file.id}`
     if (selectedFileIds.includes(file.id)) {
         checkbox.checked = true
@@ -260,7 +262,10 @@ function mouseOver(event) {
     // console.debug('mouse: Show')
     const closest = event.target.closest('div')
     const divs = closest.querySelectorAll('.gallery-mouse')
-    divs.forEach((div) => div.classList.remove('d-none'))
+    if (!isTouchDevice()) {
+        divs.forEach((div) => div.classList.remove('d-none'))
+    }
+
 }
 
 /**
@@ -386,3 +391,10 @@ function buildImageLabels(file, bottomLeft) {
         addSpan(bottomLeft, file.name)
     }
 }
+
+function isTouchDevice() {
+    return (('ontouchstart' in window) ||
+       (navigator.maxTouchPoints > 0) ||
+       (navigator.msMaxTouchPoints > 0));
+  }
+  
