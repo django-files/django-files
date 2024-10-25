@@ -137,19 +137,18 @@ const dataTablesOptions = {
 export function initFilesTable(
     search = true,
     ordering = true,
-    info = true,
-    select = true
+    info = true
 ) {
     dataTablesOptions.searching = search
     dataTablesOptions.ordering = ordering
     dataTablesOptions.info = info
-    if (!select) {
-        delete dataTablesOptions.select
-        dataTablesOptions.columnDefs.splice(0, 1)
-        dataTablesOptions.columns.splice(0, 1)
-        document.getElementById('files-table').rows[0].deleteCell(0)
-    }
-    console.log(dataTablesOptions)
+    // TODO: Disabling select boxes causes a bunch issues, we should address for cases we dont want select
+    // if (!select) {
+    //     delete dataTablesOptions.select
+    //     dataTablesOptions.columnDefs.splice(0, 1)
+    //     dataTablesOptions.columns.splice(0, 1)
+    //     document.getElementById('files-table').rows[0].deleteCell(0)
+    // }
     filesDataTable = filesTable.DataTable(dataTablesOptions)
     filesDataTable.on('draw.dt', debounce(dtDraw, 150))
     return filesDataTable

@@ -33,7 +33,7 @@ $('#quick-short-form').on('submit', function (event) {
 })
 
 async function initHome() {
-    filesDataTable = initFilesTable(false, false, false, true)
+    filesDataTable = initFilesTable(false, false, false)
     let files = await fetchFiles(1, 10)
     if (files.files.length >= 10) {
         $('.files-truncation-warning').show()
