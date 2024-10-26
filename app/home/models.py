@@ -1,3 +1,5 @@
+import json
+
 from django.db import models
 from django.db.models import F
 from django.shortcuts import reverse
@@ -47,7 +49,7 @@ class Files(models.Model):
     view = models.IntegerField(default=0, verbose_name='Views', help_text='File Views.')
     maxv = models.IntegerField(default=0, verbose_name='Max', help_text='Max Views.')
     exif = models.JSONField(default=dict, blank=True, verbose_name="EXIF Metadata",
-                            help_text="JSON formatted exif metadata.")
+                            help_text="JSON formatted exif metadata.", encoder=json.JSONEncoder)
     date = models.DateTimeField(auto_now_add=True, verbose_name='Created', help_text='File Created Date.')
     edit = models.DateTimeField(auto_now=True, verbose_name='Edited', help_text='File Edited Date.')
     meta = models.JSONField(default=dict, blank=True, verbose_name="Metadata", help_text="JSON formatted metadata.")
@@ -136,7 +138,6 @@ class Files(models.Model):
             # TODO: access protected member, look into how to better handle this
             if (gallery_url := cache.get(f"file.urlcache.gallery.{self.pk}")) is None:
                 try:
-                    print("Gallery url cache is empty")
                     gallery_url = self.file.file._storage.url(
                         use.file.name,
                         expire=86400

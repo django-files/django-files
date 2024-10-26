@@ -273,7 +273,7 @@ socket?.addEventListener('message', function (event) {
 ////////////////
 // Todo: find a better place for these
 
-// Start bulk delete actions
+// bulk delete actions
 $('.bulk-delete').on('click', bulkDelete)
 
 export function bulkDelete(event) {
@@ -294,7 +294,7 @@ export function bulkDelete(event) {
     fileDeleteModal.modal('show')
 }
 
-// Start bulk expire actions
+// bulk expire actions
 $('.bulk-expire').on('click', bulkExpire)
 
 export function bulkExpire(event) {
@@ -315,3 +315,28 @@ export function bulkExpire(event) {
     )
     fileExpireModal.modal('show')
 }
+
+
+// Start private expire actions
+$('.bulk-private').on('click', bulkPrivate)
+
+export function bulkPrivate(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    console.debug(`bulkPrivateFile: pks: ${pks}`, event)
+    fileExpireModal.find('input[name=pks]').val(pks)
+    let s = ''
+    if (pks.length > 1) s = "s"
+    // check status here
+    $('#expr').val('')
+    $('#fileExpireModal #filePrivateModalLabel').text(
+        `Make ${pks.length} File${s} Private`
+    )
+    $('#fileExpireModal #filePrivateModalBodyText').html(
+        `This will set ${pks.length} file${s} to private status.`
+    )
+    fileExpireModal.modal('show')
+}
+

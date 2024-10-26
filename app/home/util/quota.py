@@ -15,8 +15,6 @@ def process_storage_quotas(user: CustomUser, size: int) -> List[bool]:
         user_quota = True
     if (global_quota_bytes := settings.get_remaining_global_storage_quota_bytes()) != 0 and global_quota_bytes < size:
         global_quota = True
-    print(global_quota_bytes, user_quota_bytes)
-    print(size)
     return [user_quota, global_quota]
 
 

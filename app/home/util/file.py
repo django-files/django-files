@@ -6,6 +6,7 @@ import os
 import pathlib
 import uuid
 import tempfile
+import json
 from django.core.files import File
 from typing import BinaryIO
 from django.core.exceptions import ObjectDoesNotExist
@@ -89,7 +90,9 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
             processor = ImageProcessor(fp.name, user.remove_exif, user.remove_exif_geo, ctx, detected_extension)
             processor.process_file()
             file.meta = processor.meta
-            file.exif = processor.exif
+            file.exif = processor.exif # json dumps is needed to avoid an issue with postgres
+            log.info(str(type(processor.exif)) + ' - '+ str(processor.exif))
+            log.info(file.exif)
         file.file = File(fp, name=name)
         file.mime = file_mime
         log.debug('file.mime: %s', file.mime)
