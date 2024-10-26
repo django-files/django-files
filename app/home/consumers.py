@@ -185,7 +185,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             log.debug('response: %s', response)
             return response
         return self._error('File not found.', **kwargs)
-    
+
     def private_files(self, *, user_id: int = None, pks: List[int] = [], private: bool, **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
@@ -205,7 +205,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
             response.update({'event': 'toggle-private-file'})
             return response
         return self._error('File(s) not found.', **kwargs)
-
 
     def set_expr_files(self, *, user_id: int = None, pks: List[int] = [], expr: str = None, **kwargs) -> dict:
         """
