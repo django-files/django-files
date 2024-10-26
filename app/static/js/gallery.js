@@ -32,6 +32,7 @@ let nextPage = 1
 let fileData = []
 let fetchLock = false
 let filesDataTable
+let selectedFileIds = []
 
 document.addEventListener('DOMContentLoaded', initGallery)
 document.addEventListener('scroll', debounce(scrollHandle))
@@ -54,6 +55,19 @@ async function initGallery() {
     await addNodes()
     // fillInterval = setInterval(fillPage, 250)
     window.dispatchEvent(new Event('resize'))
+    filesDataTable.on('select', function (e, dt, type, indexes) {
+        document.getElementById('bulk-actions').disabled = false
+        console.log(`file-${dt.data().id}`)
+        let checkbox = document.getElementById(`file-${dt.data().id}`)
+        if (checkbox) {
+            checkbox.classList.remove('d-none')
+        }
+    })
+    filesDataTable.on('deselect', function (e, dt, type, indexes) {
+        if (filesDataTable.rows({ selected: true }).count() === 0) {
+            document.getElementById('bulk-actions').disabled = true
+        }
+    })
 }
 
 $('#user').on('change', function (event) {
@@ -182,11 +196,47 @@ function addGalleryImage(file, top = false) {
     menu.style.zIndex = '1'
     ctxMenu.appendChild(menu)
 
+    // Checkbox
+    inner.appendChild(buildGalleryCheckbox(file))
+
     if (top) {
         galleryContainer.insertBefore(outer, galleryContainer.firstChild)
     } else {
         galleryContainer.appendChild(outer)
     }
+}
+
+/**
+ * Generate Gallery Checkbox HTML Object
+ * @function buildGalleryCheckbox
+ * @returns checkbox
+ */
+function buildGalleryCheckbox(file) {
+    const checkbox = document
+        .querySelector('.d-none .gallery-checkbox')
+        .cloneNode(true)
+    if (isTouchDevice()) {
+        checkbox.classList.remove('d-none')
+    }
+    checkbox.id = `checkbox-${file.id}`
+    if (selectedFileIds.includes(file.id)) {
+        checkbox.checked = true
+        checkbox.classList.remove('gallery-mouse')
+        checkbox.classList.remove('gallery-mouse')
+        checkbox.classList.remove('d-none')
+    } else {
+        checkbox.checked = false
+    }
+    checkbox.addEventListener("click",  function() {
+        if (this.checked) {
+            filesDataTable.rows(`#file-${file.id}`).select()
+            this.classList.remove('gallery-mouse')
+        } else {
+            filesDataTable.rows(`#file-${file.id}`).deselect()
+            this.classList.add('gallery-mouse')
+        }
+    })
+    return checkbox
 }
 
 /**
@@ -212,7 +262,10 @@ function mouseOver(event) {
     // console.debug('mouse: Show')
     const closest = event.target.closest('div')
     const divs = closest.querySelectorAll('.gallery-mouse')
-    divs.forEach((div) => div.classList.remove('d-none'))
+    if (!isTouchDevice()) {
+        divs.forEach((div) => div.classList.remove('d-none'))
+    }
+
 }
 
 /**
@@ -248,9 +301,13 @@ function changeView(event) {
         showGallery.style.fontWeight = 'normal'
         filesDataTable.responsive.recalc()
     } else {
+        // any time we are about to iterate grab what files are selected to transfer to next view
+        selectedFileIds = []
+        filesDataTable.rows('.selected').every(function () {
+            selectedFileIds.push(this.data().id)
+        })
         dtContainer.hidden = true
         window.history.replaceState({}, null, '/gallery/' + '?' + params)
-        console.log(fileData)
         fileData.forEach(function (item, index) {
             addGalleryImage(item)
         })
@@ -334,3 +391,10 @@ function buildImageLabels(file, bottomLeft) {
         addSpan(bottomLeft, file.name)
     }
 }
+
+function isTouchDevice() {
+    return (('ontouchstart' in window) ||
+       (navigator.maxTouchPoints > 0) ||
+       (navigator.msMaxTouchPoints > 0));
+  }
+  

@@ -33,11 +33,14 @@ fileExpireModal.on('shown.bs.modal', function (event) {
 $('#modal-expire-form').on('submit', function (event) {
     console.debug('#modal-expire-form: submit:', event)
     event.preventDefault()
-    const data = genData($(this), 'set-expr-file')
+    const data = genData($(this), 'set-expr-files')
+    data.pks = data.pks.split(',')
     console.debug('data:', data)
     socket.send(JSON.stringify(data))
     fileExpireModal.modal('hide')
-    $(`#ctx-menu-${data.pk} input[name=current-file-expiration]`).val(data.expr)
+    data.pks.forEach(pk => {
+        $(`#ctx-menu-${pk} input[name=current-file-expiration]`).val(data.expr) 
+    });
 })
 
 // Password Form
@@ -64,9 +67,9 @@ $('#modal-password-form').on('submit', function (event) {
 
 confirmDelete?.on('click', function (event) {
     // TODO: Handle IF/ELSE Better
-    const pk = $(this).data('pk')
-    console.debug(`#confirm-delete.click: pk: ${pk}`, event)
-    socket.send(JSON.stringify({ method: 'delete-file', pk: pk }))
+    const pks = [$(this).data('pks')]
+    console.debug(`#confirm-delete.click: pks[]: ${pks}`, event)
+    socket.send(JSON.stringify({ method: 'delete-files', pks: pks }))
     if (window.location.pathname.startsWith('/u/')) {
         window.location.replace('/files')
     } else {
@@ -111,12 +114,19 @@ $('#modal-album-form').on('submit', function (event) {
 
 export function ctxSetExpire(event) {
     const pk = getPrimaryKey(event)
-    console.debug(`ctxSetExpire: pk: ${pk}`, event)
-    fileExpireModal.find('input[name=pk]').val(pk)
+    const pks = [pk]
+    console.debug(`ctxSetExpire: pks: ${pks}`, event)
+    fileExpireModal.find('input[name=pks]').val(pks)
     const expire = $(`#ctx-menu-${pk} input[name=current-file-expiration]`)
     const expireValue = expire.val().toString().trim()
     console.debug(`expireInput: ${expireValue}`)
     $('#expr').val(expireValue)
+    $('#fileExpireModal #fileExpireModalLabel').text(
+        `Set File Expiration`
+    )
+    $('#fileExpireModal #fileExpireModalBodyText').html(
+        `Set the file's expiration.`
+    )
     fileExpireModal.modal('show')
 }
 
@@ -138,9 +148,11 @@ export function ctxSetPassword(event) {
 }
 
 export function ctxDeleteFile(event) {
-    const pk = getPrimaryKey(event)
-    console.debug(`ctxDeleteFile: pk: ${pk}`, event)
-    confirmDelete?.data('pk', pk)
+    const pks = [getPrimaryKey(event)]
+    console.debug(`ctxDeleteFile: pks: ${pks}`, event)
+    confirmDelete?.data('pks', pks)
+    $('#fileDeleteModal #fileDeleteModalLabel').text(`Delete File`)
+    $('#fileDeleteModal #fileDeleteModalBody').text(`Are you sure you want to delete this file?`)
     fileDeleteModal.modal('show')
 }
 

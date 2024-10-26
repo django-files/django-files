@@ -54,6 +54,7 @@
     {% endif %}
 
     <h2 id="files">Recent Files</h2>
+        {% include 'files/bulk-menu.html' %}
         {% include 'files/table.html' %}
         <p class="mt-0 files-truncation-warning">
             <em>This list is truncated to 10 files.</em>
@@ -97,6 +98,7 @@
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.select.min.js' %}"></script>
     <script type="module" src="{% static 'js/home.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/stats.js' %}"></script>
     <script type="module" src="{% static 'js/file-context-menu.js' %}"></script>
