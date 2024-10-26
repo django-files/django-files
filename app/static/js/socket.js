@@ -70,7 +70,6 @@ async function initListener() {
         } else if (data.event === 'set-expr-file') {
             messageExpire(data)
         } else if (data.event === 'toggle-private-file') {
-            console.log(data)
             if ('objects' in data){
                 data.objects.forEach((obj) => {
                     messagePrivate(obj)
