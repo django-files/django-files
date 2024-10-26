@@ -325,18 +325,16 @@ export function bulkPrivate(event) {
     filesDataTable.rows('.selected').every(function () {
         pks.push(this.data().id)
     })
-    console.debug(`bulkPrivateFile: pks: ${pks}`, event)
-    fileExpireModal.find('input[name=pks]').val(pks)
-    let s = ''
-    if (pks.length > 1) s = "s"
-    // check status here
-    $('#expr').val('')
-    $('#fileExpireModal #filePrivateModalLabel').text(
-        `Make ${pks.length} File${s} Private`
-    )
-    $('#fileExpireModal #filePrivateModalBodyText').html(
-        `This will set ${pks.length} file${s} to private status.`
-    )
-    fileExpireModal.modal('show')
+    socket.send(JSON.stringify({ method: 'private_files', pks: pks, private: true }))
 }
 
+// Start public expire actions
+$('.bulk-public').on('click', bulkPublic)
+
+export function bulkPublic(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    socket.send(JSON.stringify({ method: 'private_files', pks: pks, private: false }))
+}
