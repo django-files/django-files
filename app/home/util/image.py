@@ -83,6 +83,7 @@ class ImageProcessor(object):
                 v[kk] = cls.cast(vv)
             return v
         elif isinstance(v, str):
+            # this is needed because with postgres the null unicode characters are not filtered when writing the object
             return v.replace('\u0000', '')
         else:
             return v
