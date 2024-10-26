@@ -34,7 +34,6 @@
 -   [ ] Add File Viewing Endpoints for Stats and Embeds
 -   [ ] Max Views Feature
 -   [ ] Overhaul /shorten and /upload URL Endpoints
--   [ ] Bulk delete on files list.
 
 ## Preview Page
 
