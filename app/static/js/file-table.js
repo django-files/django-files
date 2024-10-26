@@ -273,7 +273,7 @@ socket?.addEventListener('message', function (event) {
 ////////////////
 // Todo: find a better place for these
 
-// Start bulk delete actions
+// bulk delete actions
 $('.bulk-delete').on('click', bulkDelete)
 
 export function bulkDelete(event) {
@@ -294,7 +294,7 @@ export function bulkDelete(event) {
     fileDeleteModal.modal('show')
 }
 
-// Start bulk expire actions
+// bulk expire actions
 $('.bulk-expire').on('click', bulkExpire)
 
 export function bulkExpire(event) {
@@ -314,4 +314,27 @@ export function bulkExpire(event) {
         `This will set the expiration for ${pks.length} file${s}.`
     )
     fileExpireModal.modal('show')
+}
+
+
+// Start private expire actions
+$('.bulk-private').on('click', bulkPrivate)
+
+export function bulkPrivate(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    socket.send(JSON.stringify({ method: 'private_files', pks: pks, private: true }))
+}
+
+// Start public expire actions
+$('.bulk-public').on('click', bulkPublic)
+
+export function bulkPublic(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    socket.send(JSON.stringify({ method: 'private_files', pks: pks, private: false }))
 }

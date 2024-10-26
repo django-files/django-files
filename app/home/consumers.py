@@ -139,7 +139,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param pk: List of Integers - File IDs
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug('delete_file')
+        log.debug('delete_files')
         log.debug('user_id: %s', user_id)
         log.debug('pks: %s', pks)
         files = Files.objects.filter(
@@ -156,7 +156,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param pk: Integer - File ID
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug('delete_file')
+        log.debug('delete_albums')
         log.debug('user_id: %s', user_id)
         log.debug('pk: %s', pk)
         if album := Albums.objects.filter(pk=pk):
@@ -185,6 +185,26 @@ class HomeConsumer(AsyncWebsocketConsumer):
             log.debug('response: %s', response)
             return response
         return self._error('File not found.', **kwargs)
+
+    def private_files(self, *, user_id: int = None, pks: List[int] = [], private: bool, **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: List of Integers - File IDs
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug('private_files')
+        log.debug('user_id: %s', user_id)
+        log.info('pks: %s', pks)
+        files = Files.objects.filter(user=CustomUser.objects.get(pk=user_id), pk__in=pks)
+        files.update(private=private)
+        if len(files) > 0:
+            response = {}
+            response['objects'] = []
+            for file in files:
+                response['objects'].append(model_to_dict(file, exclude=['file', 'thumb', 'albums']))
+            response.update({'event': 'toggle-private-file'})
+            return response
+        return self._error('File(s) not found.', **kwargs)
 
     def set_expr_files(self, *, user_id: int = None, pks: List[int] = [], expr: str = None, **kwargs) -> dict:
         """

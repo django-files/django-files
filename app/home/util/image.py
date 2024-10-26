@@ -77,11 +77,14 @@ class ImageProcessor(object):
         elif isinstance(v, tuple):
             return tuple(cls.cast(t) for t in v)
         elif isinstance(v, bytes):
-            return v.decode(errors='replace')
+            return v.decode(errors='replace').replace('\u0000', '')
         elif isinstance(v, dict):
             for kk, vv in v.items():
                 v[kk] = cls.cast(vv)
             return v
+        elif isinstance(v, str):
+            # this is needed because with postgres the null unicode characters are not filtered when writing the object
+            return v.replace('\u0000', '')
         else:
             return v
 

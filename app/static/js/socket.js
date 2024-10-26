@@ -70,7 +70,13 @@ async function initListener() {
         } else if (data.event === 'set-expr-file') {
             messageExpire(data)
         } else if (data.event === 'toggle-private-file') {
-            messagePrivate(data)
+            if ('objects' in data){
+                data.objects.forEach((obj) => {
+                    messagePrivate(obj)
+                })
+            } else {
+                messagePrivate(data)
+            }
         } else if (data.event === 'set-password-file') {
             messagePassword(data)
         } else if (data.event === 'file-delete') {

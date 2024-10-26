@@ -1,3 +1,4 @@
+
 from django.db import models
 from django.db.models import F
 from django.shortcuts import reverse
@@ -136,7 +137,6 @@ class Files(models.Model):
             # TODO: access protected member, look into how to better handle this
             if (gallery_url := cache.get(f"file.urlcache.gallery.{self.pk}")) is None:
                 try:
-                    print("Gallery url cache is empty")
                     gallery_url = self.file.file._storage.url(
                         use.file.name,
                         expire=86400

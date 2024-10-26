@@ -88,31 +88,35 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         {% include 'files/ctx-menu.html' with file=file extraclass='dropdown-menu-end' %}
         <div id="previewSidebar" class="sidebar h-100">
             <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
-            <div id="file-{{ file.id }}" class="card-body sidebarCard px-3">
-                <h3 class="card-title text-break">{{ file.name }}</h3>
-                <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
-                {% if file.meta.PILImageWidth %}
-                    <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
-                {% endif %}
-                {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
-                <p class="card-text mb-2"><img src="{{ file_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P">{{ file.user.get_name }}</p>
-                <p class="card-text mt-0 mb-0">
-                    {% if 'image' in file.mime %}
-                        <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
-                    {% else %}
-                        <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
-                    {% endif %}
-                    <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
-                    <i title="Private File" class="fa-solid fa-lock ms-2" id="previewIcon" {% if not file.private %}style="display: none"{% endif %}></i>
-                    <i title="Password Protected File" class="fa-solid fa-key ms-2 passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i>
-                    <span title="File Expires in {{ file.expr }}" class="ms-2 expire-icon" {% if not file.expr %}style="display: none"{% endif %}>
-                        <i class="fa-solid fa-hourglass"></i>
-                    </span>
-                </p>
-                <p class="card-text">Uploaded {{ file.date }}</p>
+            <div id="file-{{ file.id }}" class="card-body sidebarCard">
+                <h3 class="card-title mb-0 text-break">{{ file.name }}</h3>
+                <row>
+                    <strong class="d-inline-block mb-1 text-primary-emphasis col-md-6 text-start">{{ file.mime }}</strong>
+                    <strong class="d-inline-block text-secondary-emphasis col-md-5 text-end">{% if file.meta.PILImageWidth %}{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}</strong>
+                </row>
+                <row>
+                    {% if file.info %}<p class="card-text mt-0">{{ file.info }}</p>{% endif %}
+                    <div class="d-inline-block col-md-5 text-start">
+                        <img src="{{ file_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P"><span class="fw-semibold  ps-1">{{ file.user.get_name }}</span>
+                    </div>
+                    <div class="d-inline-block col-md-6 text-end">
+                        {% if 'image' in file.mime %}
+                            <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
+                        {% else %}
+                            <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
+                        {% endif %}
+                        <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
+                        <i title="Private File" class="fa-solid fa-lock ms-2" id="previewIcon" {% if not file.private %}style="display: none"{% endif %}></i>
+                        <i title="Password Protected File" class="fa-solid fa-key ms-2 passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i>
+                        <span title="File Expires in {{ file.expr }}" class="ms-2 expire-icon" {% if not file.expr %}style="display: none"{% endif %}>
+                            <i class="fa-solid fa-hourglass"></i>
+                        </span>
+                    </div>
+                </row>
+                <p class="card-text py-2">Uploaded {{ file.date }}</p>
                 {% if file.meta_preview and file.exif %}
                     <p class="card-text text-body-secondary">
-                        {% if file.exif.DateTime %}<b>Taken On:</b> {{ file.exif.DateTimeOriginal|convert_str_date }}<br>{% endif %}
+                        {% if file.exif.DateTime %}<b>Captured On:</b> {{ file.exif.DateTimeOriginal|convert_str_date }}<br>{% endif %}
                         {% if file.exif.Model %}<b>Camera:</b> {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}<br>{% endif %}
                         {% if file.meta.GPSArea %}<b>Location:</b> {{ file.meta.GPSArea }}<br>{% endif %}
                         {% if file.exif.GPSInfo.6 %}<b>Elevation:</b> {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
