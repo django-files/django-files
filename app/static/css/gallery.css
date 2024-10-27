@@ -75,12 +75,16 @@
     zoom: 1.5;
 }
 
+input[type=checkbox] {
+    transform: scale(1.6);
+  }
+
 /* I hate that we have to do this, but datatables has no option to not 
 highlight a row and it fucks up our other stylings */
 .dt-select-no-highlight {
     background-color: transparent !important;
     color: inherit !important;
-    
+
     --dt-row-selected: initial;
     --dt-row-selected-text: initial;
     --dt-row-selected-link: initial;
@@ -92,5 +96,5 @@ highlight a row and it fucks up our other stylings */
 
 div.dataTables_wrapper span.select-info,
 div.dataTables_wrapper span.select-item {
-  margin-left: 0.25em
+    margin-left: 0.25em;
 }
