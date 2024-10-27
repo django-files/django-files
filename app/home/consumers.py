@@ -190,12 +190,13 @@ class HomeConsumer(AsyncWebsocketConsumer):
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: List of Integers - File IDs
+        :param private: Bool, False Make Public, True Make Private
         :return: Dictionary - With Key: 'success': bool
         """
         log.debug('private_files')
         log.debug('user_id: %s', user_id)
         log.info('pks: %s', pks)
-        files = Files.objects.filter(user=CustomUser.objects.get(pk=user_id), pk__in=pks)
+        files = Files.objects.filter(**filter_kwargs(pks, user_id))
         files.update(private=private)
         if len(files) > 0:
             response = {}
@@ -220,9 +221,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('kwargs: %s', kwargs)
         if expr and not parse(expr):
             return self._error(f'Invalid Expire: {expr}', **kwargs)
-        files = Files.objects.filter(
-            user=CustomUser.objects.get(pk=user_id),
-            pk__in=pks)
+        files = Files.objects.filter(**filter_kwargs(pks, user_id))
         for file in files:
             file.expr = expr or ""
         Files.objects.bulk_update(files, ['expr'])
@@ -347,3 +346,13 @@ class HomeConsumer(AsyncWebsocketConsumer):
             message = f'{site_settings.site_title} is Up-to-Date.'
             bsclass, delay = 'success', '6000'
         return {'event': 'message', 'bsclass': bsclass, 'delay': delay, 'message': message}
+
+
+def filter_kwargs(pks: List[int], user_id: int) -> dict:
+    # generates kwargs for filter object, filters to user for non admin api requests
+    # accepts list of pks, user id int
+    # returns kwargs for django model filter()
+    kwargs = {'pk__in': pks} 
+    if not ((user := CustomUser.objects.get(pk=user_id)).is_superuser):
+        kwargs['user'] = user
+    return kwargs
