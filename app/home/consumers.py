@@ -142,7 +142,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('delete_files')
         log.debug('user_id: %s', user_id)
         log.debug('pks: %s', pks)
-        pks = pks[0] # probably should not need to do this
+        pks = pks[0]
         files = Files.objects.filter(**filter_kwargs(pks, user_id))
         if len(files) > 0:
             files.delete()
