@@ -41,7 +41,7 @@ class ImageProcessor(object):
             log.info('Parsing and storing EXIF: %s', self.local_path)
             image, exif_clean, exif = self._handle_exif(image)
             # write exif in case exif modified
-            image.save(self.local_path, format=self.detected_extension, exif=exif)
+            image.save(self.local_path, format=self.detected_extension, exif=exif, quality='keep')
             # determine photo area from gps and store in metadata
             if area := city_state_from_exif(exif_clean.get('GPSInfo')):
                 self.meta['GPSArea'] = area
