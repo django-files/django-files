@@ -70,12 +70,11 @@
 
 .gallery-checkbox {
     position: absolute;
-    top: 4px;
-    left: 8px;
-    zoom: 1.5;
+    top: 8px;
+    left: 12px;
 }
 
-input[type=checkbox] {
+input[type="checkbox"] {
     transform: scale(1.6);
   }
 
