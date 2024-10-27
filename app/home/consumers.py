@@ -352,7 +352,7 @@ def filter_kwargs(pks: List[int], user_id: int) -> dict:
     # generates kwargs for filter object, filters to user for non admin api requests
     # accepts list of pks, user id int
     # returns kwargs for django model filter()
-    kwargs = {'pk__in': pks} 
+    kwargs = {'pk__in': pks}
     if not ((user := CustomUser.objects.get(pk=user_id)).is_superuser):
         kwargs['user'] = user
     return kwargs
