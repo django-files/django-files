@@ -188,6 +188,7 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 -   Private Files
 -   Password-Protected Files
 -   Syntax highligting for code/text files.
+-   Bulk file actions (delete, public/private)
 
 ### FileStats
 
@@ -369,7 +370,7 @@ _file="docker-compose-dev.yaml";while true;do docker compose -f "${_file}" down 
 -   Bootstrap (5.3) http://getbootstrap.com/
 -   Uppy (3.x) https://uppy.io/
 -   Highlight.js (11.x) https://highlightjs.org/
--   Datatables (1.13.x ) https://datatables.net/
+-   Datatables (2.0.x ) https://datatables.net/
 -   Swagger (5.x) https://swagger.io/
 
 [Feature Requests](https://github.com/django-files/django-files/discussions/new?category=feature-requests) |

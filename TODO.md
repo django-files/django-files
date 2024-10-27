@@ -3,8 +3,7 @@
 ## TopDos
 
 -   [ ] Review ALL the `get_url` methods in the Files Model
--   [ ] Look into `utils.s3` and `utils.storage` files
--   [ ] Add tests for `/raw/` and other S3 functions
+-   [ ] Add tests for S3 functions
 
 ## TopBugs
 
@@ -14,7 +13,6 @@
 ## TopShues
 
 -   [ ] Users: Fix Local User to allow Discord Webhook
--   [ ] Overhaul Image Processing Tasks in `util`
 -   [ ] Look into duplicate setup.cfg files
 
 ## Testing
@@ -44,8 +42,7 @@
 -   [ ] Add OAuth Variables to SiteSettings
 -   [ ] Add S3 Variables to SiteSettings
 -   [ ] Full Settings Interface Overhaul
--   [ ] Custom Favicon Feature
--   [ ] Custom Login Screen Feature
+-   [ ] Custom Favicon + Logo Feature
 
 ## Stats
 
@@ -54,19 +51,8 @@
 -   [ ] Move Stats Generation to Template Tag for Caching
 -   [ ] Update Stats Graphs and Generate More
 
-## API
-
--   [ ] Files - GET files
--   [ ] Stats - GET stats
--   [ ] Users - GET PUT DELETE users
-
-## Passwords and Private Files
-
--   [ ] Better access denied error page.
-
 ## Miscellaneous
 
 -   [ ] Finish optimizing build image first =D
--   [ ] Add Demo Mode and launch Demo
--   [ ] Auto configure CORS on s3 bucket on init.
+-   [ ] Auto configure CORS on s3 bucket on init?
 -   [ ] Example IAM settings for s3 user, plus guide on setup.

@@ -18,6 +18,7 @@ const confirmDelete = $('#confirm-delete')
 const fileDeleteModal = $('#fileDeleteModal')
 
 let filesDataTable
+let fileNameLength = getNameSize(window.innerWidth)
 
 const dataTablesOptions = {
     paging: false,
@@ -52,18 +53,18 @@ const dataTablesOptions = {
             render: DataTable.render.select(),
             width: '10px',
             targets: 0,
-            responsivePriority: 3,
+            responsivePriority: 4,
         },
         {
             targets: 1,
-            width: '20px',
+            width: '15px',
             responsivePriority: 5,
             defaultContent: '',
         },
         {
             target: 2,
 
-            responsivePriority: 1,
+            responsivePriority: 0,
             render: getFileLink,
             defaultContent: '',
             type: 'html',
@@ -120,7 +121,7 @@ const dataTablesOptions = {
             targets: 10,
             orderable: false,
             width: '30px',
-            responsivePriority: 2,
+            responsivePriority: 3,
             render: getContextMenu,
             defaultContent: '',
         },
@@ -134,11 +135,7 @@ const dataTablesOptions = {
     },
 }
 
-export function initFilesTable(
-    search = true,
-    ordering = true,
-    info = true
-) {
+export function initFilesTable(search = true, ordering = true, info = true) {
     dataTablesOptions.searching = search
     dataTablesOptions.ordering = ordering
     dataTablesOptions.info = info
@@ -158,14 +155,6 @@ export function initFilesTable(
 // Custom DataTables Renderers
 
 function getFileLink(data, type, row, meta) {
-    let max_name_length
-    if (screen.width < 500) {
-        max_name_length = 20
-    } else if (screen.width > 500 && screen.width < 1500) {
-        max_name_length = 40
-    } else {
-        max_name_length = 60
-    }
     const fileLinkElem = fileLink.cloneNode(true)
     fileLinkElem.classList.add(`dj-file-link-${row.id}`)
     fileLinkElem
@@ -175,11 +164,23 @@ function getFileLink(data, type, row, meta) {
     fileLinkElem.querySelector('.dj-file-link-ref').ariaLabel = row.name
 
     let newName = row.name
-    if (row.name.length > max_name_length) {
-        newName = row.name.substring(0, max_name_length) + '...'
+    if (row.name.length > fileNameLength) {
+        newName = row.name.substring(0, fileNameLength) + '...'
     }
     fileLinkElem.querySelector('.dj-file-link-ref').textContent = newName
     return fileLinkElem
+}
+
+function getNameSize(width) {
+    if (width < 380) {
+        return 12
+    } else if (screen.width > 380 && screen.width < 500) {
+        return 20
+    } else if (screen.width > 500 && screen.width < 1500) {
+        return 40
+    } else {
+        return 60
+    }
 }
 
 function getPwIcon(data, type, row, meta) {
@@ -305,7 +306,7 @@ export function bulkExpire(event) {
     console.debug(`bulkExpireFile: pks: ${pks}`, event)
     fileExpireModal.find('input[name=pks]').val(pks)
     let s = ''
-    if (pks.length > 1) s = "s"
+    if (pks.length > 1) s = 's'
     $('#expr').val('')
     $('#fileExpireModal #fileExpireModalLabel').text(
         `Set ${pks.length} File Expirations`
@@ -316,7 +317,6 @@ export function bulkExpire(event) {
     fileExpireModal.modal('show')
 }
 
-
 // Start private expire actions
 $('.bulk-private').on('click', bulkPrivate)
 
@@ -325,7 +325,9 @@ export function bulkPrivate(event) {
     filesDataTable.rows('.selected').every(function () {
         pks.push(this.data().id)
     })
-    socket.send(JSON.stringify({ method: 'private_files', pks: pks, private: true }))
+    socket.send(
+        JSON.stringify({ method: 'private_files', pks: pks, private: true })
+    )
 }
 
 // Start public expire actions
@@ -336,5 +338,7 @@ export function bulkPublic(event) {
     filesDataTable.rows('.selected').every(function () {
         pks.push(this.data().id)
     })
-    socket.send(JSON.stringify({ method: 'private_files', pks: pks, private: false }))
+    socket.send(
+        JSON.stringify({ method: 'private_files', pks: pks, private: false })
+    )
 }
