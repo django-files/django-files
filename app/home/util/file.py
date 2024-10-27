@@ -149,9 +149,9 @@ def get_formatted_name(name: str, _format: str = '') -> str:
 
 def truncate_long_names(name: str) -> str:
     if (trunc := (240 - len(name))) < 0:
-        log.info("Truncating filename since filename is too long.")
+        log.debug("Truncating filename since filename is too long.")
         exts = '.'.join(pathlib.Path(name).suffixes)
-        log.info(f"extensions {exts}")
+        log.debug(f"extensions {exts}")
         name = name[:trunc + len(exts)] + (('.' + exts) if len(exts) > 0 else '')
-        log.info(f"New name {name}")
+        log.debug(f"New name {name}")
     return name
