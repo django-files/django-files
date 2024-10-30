@@ -227,7 +227,7 @@ function buildGalleryCheckbox(file) {
     } else {
         checkbox.checked = false
     }
-    checkbox.addEventListener("click",  function() {
+    checkbox.addEventListener('click', function () {
         if (this.checked) {
             filesDataTable.rows(`#file-${file.id}`).select()
             this.classList.remove('gallery-mouse')
@@ -265,7 +265,6 @@ function mouseOver(event) {
     if (!isTouchDevice()) {
         divs.forEach((div) => div.classList.remove('d-none'))
     }
-
 }
 
 /**
@@ -384,7 +383,7 @@ function buildImageLabels(file, bottomLeft) {
         addSpan(bottomLeft, formatBytes(file.size))
     }
     if (file.meta.PILImageWidth && file.meta.PILImageHeight) {
-        const text = `${file.meta.PILImageWidth}x${file.meta.PILImageWidth}`
+        const text = `${file.meta.PILImageWidth}x${file.meta.PILImageHeight}`
         addSpan(bottomLeft, text)
     }
     if (file.name) {
@@ -393,8 +392,9 @@ function buildImageLabels(file, bottomLeft) {
 }
 
 function isTouchDevice() {
-    return (('ontouchstart' in window) ||
-       (navigator.maxTouchPoints > 0) ||
-       (navigator.msMaxTouchPoints > 0));
-  }
-  
+    return (
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        navigator.msMaxTouchPoints > 0
+    )
+}

@@ -125,13 +125,50 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% if file.exif.FocalLength %}<b>Focal Length:</b> {{ file.exif.FocalLength|floatformat:"0" }}mm<br>{% endif %}
                         {% if file.exif.FNumber %}<b>Aperture:</b> 𝑓 {{ file.exif.FNumber }}<br>{% endif %}
                         {% if file.exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ file.exif.ISOSpeedRatings }}<br>{% endif %}
-                        {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s{% endif %}</p>
+                        {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s<br>{% endif %}
+                        {% if creatorTool %}<b>Editor:</b> {{ creatorTool }}{% endif %}</p>
                 {% endif %}
-                <div class="row g-2 text-center mt-auto">
-                </div>
+                {% if tags %}
+                    <row class="">
+                        <h6 class="">Tags</h6>
+                        {% for tag in tags %}<span class="badge rounded-pill text-bg-secondary ps-2 ms-1">{{ tag }}</span>{% endfor %}
+                    </row>
+                {% endif %}
+                {% if full_context %}
+                <row class="pt-3">
+                    <h6 class="pt-3">Albums</h6>
+                    <div class="album-container" id="albums-file-{{ file.id }}">
+                        {% for album in file.albums.all %}
+                            <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1" id="album-{{ album.id }}">
+                                <a class="text-reset text-decoration-none p-0" href="/gallery?album={{album.id}}">{{ album.name }} </a>
+                                <button id="remove-album-{{ album.id }}" class="btn p-0 mt-0 remove-album">
+                                    <i class="fa-solid fa-xmark text-small remove-album"></i>
+                                </button>
+                            </span>
+                        {% endfor %}
+                        <span class="badge rounded-pill text-bg-primary p-0">
+                            <button class="btn p-0 m-0 addto-album"><span class="badge rounded-pill text-bg-primary"><i class="fa-solid fa-plus"></i></span></button>
+                            <input list="add-album-list" id="addto-album-list" name="addto-album-list" class="form-control d-flex d-none"/>
+                            <datalist id="add-album-list">
+                                <option value="">New Album</option>
+                            </datalist>
+                        </span>
+                    </div>
+                </row>
+                {% endif %}
             </div>
         </div>
     </div>
+
+    {% comment %} Begin reusable elements {% endcomment %}
+    <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1 d-none album-badge" id="">
+        <a class="text-reset text-decoration-none p-0 album-badge-label" href=""></a>
+        <button id="remove-album-" class="btn p-0 mt-0 remove-album">
+            <i class="fa-solid fa-xmark text-small remove-album"></i>
+        </button>
+    </span>
+
+
     {% include 'files/ctx-modals.html' %}
 {% endblock %}
 

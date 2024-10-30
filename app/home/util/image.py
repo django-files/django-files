@@ -63,10 +63,14 @@ class ImageProcessor(object):
             for k, v in exif_data.items():
                 exif_clean[k] = v.decode() if isinstance(v, bytes) else str(v)
         except Exception as error:
-            log.error("Error processing exif: %s", error)
+            log.info("Error processing exif, using fallback: %s", error)
             for tag, value in exif.items():
                 exif_clean[ExifTags.TAGS.get(tag, tag)] = value
         exif_clean['GPSInfo'] = exif.get_ifd(ExifTags.IFD.GPSInfo)
+        try:
+            exif_clean['xmpmeta'] = image.getxmp()['xmpmeta']
+        except Exception as error:
+            log.debug(f"Failed to read xmp metadata: {error}")
         return image, exif_clean, exif
 
     @classmethod

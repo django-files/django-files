@@ -345,7 +345,10 @@ def file_view(request, idname):
     """
     kwargs = id_or_name(idname)
     log.debug('kwargs: %s', kwargs)
-    file = get_object_or_404(Files, user=request.user, **kwargs)
+    if request.user.is_superuser:
+        file = get_object_or_404(Files, **kwargs)
+    else:
+        file = get_object_or_404(Files, user=request.user, **kwargs)
     log.debug('file_view: ' + request.method + ': ' + file.name)
     try:
         if request.method == 'DELETE':

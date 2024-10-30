@@ -77,5 +77,61 @@ socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)
     if (data.event === 'set-file-name') {
         renameFile(data)
+    } else if (data.event === 'set-file-albums') {
+        handleAlbumBadges(data)
     }
 })
+
+function handleAlbumBadges(data) {
+    let container = document.querySelector('.album-container')
+    if (data.removed_from) {
+        for (const [key, value] of Object.entries(data.removed_from)) {
+            document.getElementById(`album-${key}`).remove()
+        }
+    }
+    if (data.added_to) {
+        for (const [key, value] of Object.entries(data.added_to)) {
+            let badge = document
+                .querySelector('.d-none.album-badge')
+                .cloneNode(true)
+            console.log(badge)
+            badge.id = `album-${key}`
+            let button = badge.querySelector('.remove-album')
+            button.id = `remove-album-${key}`
+            button.onclick = removeAlbumPress
+            let label = badge.querySelector('.album-badge-label')
+            label.href = `/gallery?album=${key}`
+            label.innerHTML = value
+            badge.classList.remove('d-none')
+            container.appendChild(badge)
+        }
+    }
+}
+
+function removeAlbumPress(event) {
+    console.log(event.target.closest('div'))
+    let album = stripAlbumID(event)
+    let pk = event.target.closest('div').id.replace('albums-file-', '')
+    let data = {
+        album: album,
+        pk: pk,
+        method: 'remove_file_album',
+    }
+    console.log(data)
+    socket.send(JSON.stringify(data))
+}
+
+function stripAlbumID(object) {
+    return object.target.closest('button').id.replace('remove-album-', '')
+}
+
+$('.remove-album').on('click', removeAlbumPress)
+
+$('.addto-album').on('click', addToAlbum)
+
+
+function addToAlbum(event) {
+    document.querySelector('#addto-album-list').classList.remove('d-none')
+    console.log(event)
+
+}
