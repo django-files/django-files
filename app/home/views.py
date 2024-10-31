@@ -444,13 +444,7 @@ def url_route_view(request, filename):
         "file_avatar_url": file.user.get_avatar_url(),
         'full_context': request.user.is_authenticated and request.user == file.user
     }
-    try:
-        # we can probably manage this better
-        # TODO: Look into putting these into meta field.
-        ctx['tags'] = file.exif["xmpmeta"]["RDF"]["Description"]["subject"]["Bag"]["li"]
-        ctx['creatorTool'] = file.exif["xmpmeta"]["RDF"]["Description"]["CreatorTool"]
-    except KeyError:
-        pass
+    ctx['tags'] = parse_xmp_tags(file.exif)
     if session_view:
         request.session[f'view_{file.name}'] = False
     if lock := handle_lock(request, ctx=ctx):
@@ -523,3 +517,13 @@ def handle_lock(request, ctx):
             if supplied_password is not None:
                 messages.warning(request, 'Invalid Password!')
             return render(request, 'embed/password.html', context=ctx, status=403)
+
+
+def parse_xmp_tags(exif: dict) -> list:
+    ptr = exif
+    for key in ["xmpmeta","RDF","Description","subject","Bag","li"]:
+        if isinstance(ptr, dict):
+            ptr = ptr[key]
+        elif isinstance(ptr, list):
+            ptr = {k: v for d in ptr for k, v in d.items()}[key]
+    return ptr
