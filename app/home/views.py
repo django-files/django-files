@@ -521,9 +521,13 @@ def handle_lock(request, ctx):
 
 def parse_xmp_tags(exif: dict) -> list:
     ptr = exif
-    for key in ["xmpmeta", "RDF", "Description", "subject", "Bag", "li"]:
-        if isinstance(ptr, dict):
-            ptr = ptr[key]
-        elif isinstance(ptr, list):
-            ptr = {k: v for d in ptr for k, v in d.items()}[key]
+    try:
+        for key in ["xmpmeta", "RDF", "Description", "subject", "Bag", "li"]:
+            if isinstance(ptr, dict):
+                ptr = ptr[key]
+            elif isinstance(ptr, list):
+                ptr = {k: v for d in ptr for k, v in d.items()}[key]
+    except (KeyError, IndexError):
+        log.debug('No image tags or failed to parse image tags.')
+        ptr = []
     return ptr
