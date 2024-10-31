@@ -104,6 +104,7 @@ function handleAlbumBadges(data) {
             label.innerHTML = value
             badge.classList.remove('d-none')
             container.appendChild(badge)
+            container.appendChild(document.querySelector('.addto-album-group'))
         }
     }
 }
@@ -127,11 +128,23 @@ function stripAlbumID(object) {
 
 $('.remove-album').on('click', removeAlbumPress)
 
-$('.addto-album').on('click', addToAlbum)
+let addToAlbumButton = $('.addto-album')
+addToAlbumButton.on('click', addToAlbum)
 
+let list = document.querySelector('#addto-album-list')
 
 function addToAlbum(event) {
-    document.querySelector('#addto-album-list').classList.remove('d-none')
+    // addToAlbumButton.attr(
+    //     'data-bs-content',
+    //     '<input list="add-album-list" id="addto-album-list" name="addto-album-list" class="form-control d-flex col-sm-6 d-none"/>'
+    // )
+    list.classList.remove('d-none')
+    list.focus()
+    list.onblur = minimizeToAlbum
     console.log(event)
+}
 
+function minimizeToAlbum(event) {
+    console.log(event)
+    list.classList.add('d-none')
 }

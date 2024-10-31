@@ -146,9 +146,9 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                                 </button>
                             </span>
                         {% endfor %}
-                        <span class="badge rounded-pill text-bg-primary p-0">
-                            <button class="btn p-0 m-0 addto-album"><span class="badge rounded-pill text-bg-primary"><i class="fa-solid fa-plus"></i></span></button>
-                            <input list="add-album-list" id="addto-album-list" name="addto-album-list" class="form-control d-flex d-none"/>
+                        <span class="badge rounded-pill text-bg-primary p-0 input-group-sm addto-album-group mx-2">
+                            <button class="btn py-0 px-1 addto-album"><i class="fa-solid fa-plus"></i></span></button>
+                            <input list="add-album-list" id="addto-album-list" name="addto-album-list" class="form-control d-inline input-sm d-none"/>
                             <datalist id="add-album-list">
                                 <option value="">New Album</option>
                             </datalist>
