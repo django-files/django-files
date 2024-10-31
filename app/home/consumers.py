@@ -280,7 +280,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 file.file.name = name  # this will rename on OS and cloud
                 if file.thumb:
                     file.thumb.name = 'thumbs/' + name  # renames thumbnail
-                file[0].save(update_fields=['name'])
+                file.save(update_fields=['name'])
                 response = model_to_dict(file, exclude=['file', 'thumb', 'albums'])
                 response.update({'event': 'set-file-name',
                                  'uri': file.preview_uri(),
@@ -353,6 +353,32 @@ class HomeConsumer(AsyncWebsocketConsumer):
         album = Albums.objects.get(id=album)
         file[0].albums.remove(album)
         return {'event': 'set-file-albums', 'file_id': pk, 'removed_from': {album.id: album.name}}
+    
+    def add_file_album(self, *, user_id: int = None, pk: int = None, album: int = None, album_name: str = None, create: bool = False, **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: Integer - File ID
+        :param album: Integer = Album ID
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug('remove_file_album')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
+        if not album:
+            return self._error('No album specified.', **kwargs)
+        if file := Files.objects.filter(pk=pk):
+            if len(file) == 0:
+                return self._error('File not found.', **kwargs)
+            if user_id and file[0].user.id != user_id and not file[0].user.is_superuser:
+                return self._error('File owned by another user.', **kwargs)
+        if album_name:
+            qalbum = Albums.objects.filter(name=album_name)
+        if create and not qalbum.exists():
+            album = Albums.objects.create(name=album_name, user_id=user_id)
+        else:
+            album = Albums.objects.get(id=album if album else album.id)
+        file[0].albums.add(album)
+        return {'event': 'set-file-albums', 'file_id': pk, 'added_to': {album.id: album.name}}
 
     async def check_for_update(self, *args, **kwargs) -> dict:
         log.debug('async - check_for_update')
