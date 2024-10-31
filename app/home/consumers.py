@@ -353,8 +353,15 @@ class HomeConsumer(AsyncWebsocketConsumer):
         album = Albums.objects.get(id=album)
         file[0].albums.remove(album)
         return {'event': 'set-file-albums', 'file_id': pk, 'removed_from': {album.id: album.name}}
-    
-    def add_file_album(self, *, user_id: int = None, pk: int = None, album: int = None, album_name: str = None, create: bool = False, **kwargs) -> dict:
+
+    def add_file_album(
+            self, *,
+            user_id: int = None,
+            pk: int = None,
+            album: int = None,
+            album_name: str = None,
+            create: bool = False,
+            **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
