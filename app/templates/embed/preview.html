@@ -148,10 +148,10 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% endfor %}
                         <span class="badge rounded-pill text-bg-primary p-0 input-group-sm addto-album-group mx-2">
                             <button class="btn py-0 px-1 addto-album"><i class="fa-solid fa-plus"></i></span></button>
-                            <input list="add-album-list" name="add-album-list" class="form-control d-inline input-sm add-album-list-input d-none"/>
-                            <datalist id="add-album-list">
-                                <option value="">New Album</option>
-                            </datalist>
+                            <span class="album-add-container d-none">
+                                <label for="add-album" class="d-none" id="add-album-label"> </label>
+                                <input name="add-album-list" class="form-control d-inline input-sm album-list" id="add-album"></input>
+                            </span>
                         </span>
                     </div>
                 </row>
@@ -202,6 +202,8 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
     {% endif %}
     {% if request.user.is_authenticated %}
         <script type="module" src="{% static 'js/file-context-menu.js' %}"></script>
+        <link rel="stylesheet" href="{% static 'dist/jquery-ui/jquery-ui.min.css'%}">
+        <script src={% static 'dist/jquery-ui/jquery-ui.min.js' %}></script>
     {% endif %}
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
     <script type="module" src="{% static 'js/preview.js' %}"></script>

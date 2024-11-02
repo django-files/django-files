@@ -360,32 +360,44 @@ class HomeConsumer(AsyncWebsocketConsumer):
             pk: int = None,
             album: int = None,
             album_name: str = None,
-            create: bool = False,
+            create_if_absent: bool = True,
             **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
         :param album: Integer = Album ID
+        :param album_name: String = Name of Album
+        :param create_if_absent: Bool = Bool if to create album if cannot find matching album with name.
         :return: Dictionary - With Key: 'success': bool
         """
         log.debug('remove_file_album')
         log.debug('user_id: %s', user_id)
         log.debug('pk: %s', pk)
-        if not album:
+        log.debug('name: %s', album_name)
+        log.debug('create: %s', create_if_absent)
+        if not album and not album_name:
             return self._error('No album specified.', **kwargs)
         if file := Files.objects.filter(pk=pk):
             if len(file) == 0:
                 return self._error('File not found.', **kwargs)
             if user_id and file[0].user.id != user_id and not file[0].user.is_superuser:
                 return self._error('File owned by another user.', **kwargs)
-        if album_name:
-            qalbum = Albums.objects.filter(name=album_name)
-        if create and not qalbum.exists():
-            album = Albums.objects.create(name=album_name, user_id=user_id)
+        qalbum, selected_album, new_album = [], None, None
+        if album:
+            # find by album id
+            qalbum = Albums.objects.filter(pk=album, user_id=user_id)
+        elif album_name:
+            # find by album name
+            qalbum = Albums.objects.filter(name=album_name, user_id=user_id)
+        if len(qalbum) > 0:
+            selected_album = qalbum[0]
+        elif (create_if_absent and album_name and
+              (new_album := Albums.objects.create(user_id=user_id, name=album_name))):
+            selected_album = new_album
         else:
-            album = Albums.objects.get(id=album if album else album.id)
-        file[0].albums.add(album)
-        return {'event': 'set-file-albums', 'file_id': pk, 'added_to': {album.id: album.name}}
+            return self._error('Album not found or cannot create album.', **kwargs)
+        file[0].albums.add(selected_album)
+        return {'event': 'set-file-albums', 'file_id': pk, 'added_to': {selected_album.id: selected_album.name}}
 
     async def check_for_update(self, *args, **kwargs) -> dict:
         log.debug('async - check_for_update')

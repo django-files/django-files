@@ -408,7 +408,6 @@ def albums_view(request, page=None, count=100):
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     albums = extract_albums(page_obj.object_list)
-    log.info(albums)
     log.debug('albums: %s', albums)
     _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {

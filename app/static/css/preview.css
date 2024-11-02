@@ -135,7 +135,17 @@ main {
     object-fit: contain; /* Adjusted to 'contain' */
 }
 
-.link-unstyled, .link-unstyled:link, .link-unstyled:hover {
+.link-unstyled,
+.link-unstyled:link,
+.link-unstyled:hover {
     color: inherit;
     text-decoration: inherit;
-  }
+}
+
+.ui-autocomplete {
+    max-height: 300px;
+    max-width: 300px;
+    overflow-y: auto;
+    /* prevent horizontal scrollbar */
+    overflow-x: hidden;
+}

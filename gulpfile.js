@@ -40,6 +40,15 @@ gulp.task('datatables', () => {
         .pipe(gulp.dest('app/static/dist/datatables'))
 })
 
+gulp.task('jquery-ui', () => {
+    return gulp
+        .src([
+            'node_modules/jquery-ui/dist/jquery-ui.min.js',
+            'node_modules/jquery-ui/dist/themes/ui-darkness/jquery-ui.min.css',
+        ])
+        .pipe(gulp.dest('app/static/dist/jquery-ui'))
+})
+
 gulp.task('fontawesome', () => {
     return gulp
         .src(
@@ -109,6 +118,7 @@ gulp.task(
         'js-cookie',
         'jquery',
         'moment',
+        'jquery-ui',
         'swagger-ui',
         'swagger-yaml',
         'tsparticles',

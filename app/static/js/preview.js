@@ -7,6 +7,10 @@ import { fetchFile, fetchAlbums } from './api-fetch.js'
 document.addEventListener('DOMContentLoaded', domLoaded)
 window.addEventListener('resize', checkSize)
 
+const filePk = document
+    .querySelector('.album-container')
+    .id.replace('albums-file-', '')
+
 const previewSidebar = $('#previewSidebar')
 const contextPlacement = $('#contextPlacement')
 const sidebarCard = $('.sidebarCard')
@@ -84,9 +88,17 @@ socket?.addEventListener('message', function (event) {
     }
 })
 
-///////////////
-// Album Badges
+////////////////////////
+// Album Badges Section
+let addToAlbumButton = $('.addto-album')
+let addAlbumInput = $('#add-album')
+let addAlbumContainer = document.querySelector('.album-add-container')
 
+/**
+ * Adds or removed displayed album tags on a file when a websocket album add/remove event is received.
+ *
+ * @param {JSON} data - JSON of albums a file was added or removed from.
+ */
 function handleAlbumBadges(data) {
     let container = document.querySelector('.album-container')
     if (data.removed_from) {
@@ -99,7 +111,6 @@ function handleAlbumBadges(data) {
             let badge = document
                 .querySelector('.d-none.album-badge')
                 .cloneNode(true)
-            console.log(badge)
             badge.id = `album-${key}`
             let button = badge.querySelector('.remove-album')
             button.id = `remove-album-${key}`
@@ -116,17 +127,11 @@ function handleAlbumBadges(data) {
 
 $('.remove-album').on('click', removeAlbumPress)
 
-let filePk = document
-    .querySelector('.album-container')
-    .id.replace('albums-file-', '')
-let addToAlbumButton = $('.addto-album')
-addToAlbumButton.on('click', addToAlbumList)
-
-let listInput = document.querySelector('.add-album-list-input')
-let albumDataList = document.querySelector('#add-album-list')
-
-listInput.addEventListener('change', AddToAlbum)
-
+/**
+ * Removes the file from an album when album tag X is pressed.
+ *
+ * @param {object} event - The triggering event.
+ */
 function removeAlbumPress(event) {
     console.log(event.target.closest('div'))
     let album = stripAlbumID(event)
@@ -140,67 +145,104 @@ function removeAlbumPress(event) {
     socket.send(JSON.stringify(data))
 }
 
+/**
+ * Adds the file to the selected element from the album selector.
+ *
+ * @param {object} object - The button clicked to remove an album.
+ * @returns {string} - the string representation of the respective album id.
+ */
 function stripAlbumID(object) {
     return object.target.closest('button').id.replace('remove-album-', '')
 }
 
-function addToAlbumList(event) {
-    listInput.classList.remove('d-none')
-    listInput.value = ''
-    listInput.focus()
-    listInput.onblur = minimizeToAlbum
-    console.log(event)
-    getAlbums()
+// Album list/selector event listeners
+addToAlbumButton.on('click', addToAlbumList)
+
+addAlbumInput.on('blur', minimizeToAlbum)
+
+/**
+ * Adds the file to the selected element from the album selector.
+ *
+ * @param {object} event - The triggering event.
+ */
+async function addToAlbumList(event) {
+    addAlbumContainer.classList.remove('d-none')
+    let albumList = await getAlbums()
+    addAlbumInput.val('')
+    addAlbumInput
+        .autocomplete({
+            source: albumList,
+            select: AddToAlbum,
+            minLength: 0,
+            scroll: true,
+            response: defaultHandle,
+        })
+        .focus(function () {
+            $(this).autocomplete('search', $(this).val())
+        })
+    addAlbumInput.trigger('focus')
 }
 
-function minimizeToAlbum(event) {
-    listInput.classList.add('d-none')
-}
-
-function AddToAlbum(event, album_name = null, create = false) {
-    console.log(this.value)
-    let options = Array.from(albumDataList.options).map(
-        (option) => option.value
-    )
-    if (!options.includes(this.value)) {
-        console.debug('creating album')
-        create = true
-        album_name = this.value
+function defaultHandle(event, ui) {
+    if (ui.content.length === 0) {
+        ui.content.push({
+            label: `Create Album "${addAlbumInput.val()}"`,
+            value: addAlbumInput.val(),
+        })
     }
+}
+
+/**
+ * Hides the album selector when unfocused.
+ *
+ * @param {object} event - The triggering event.
+ */
+function minimizeToAlbum(event) {
+    addAlbumInput.val('')
+    addAlbumContainer.classList.add('d-none')
+}
+
+/**
+ * Adds the file to the selected element from the album selector.
+ *
+ * @param {object} event - The triggering event.
+ * @param {string} album_name - The name of the album.
+ * @param {boolean} create - If to create the album (if the album does not exist).
+ */
+function AddToAlbum(event, ui) {
     let data = {
-        create: create,
-        album_name: album_name,
-        album: this.value,
+        album_name: ui.item.value,
         pk: filePk,
         method: 'add_file_album',
     }
-    console.debug(data)
     socket.send(JSON.stringify(data))
+    addAlbumContainer.classList.add('d-none')
 }
 
+/**
+ * Fetchs albums and adds them to the add to album selector.
+ *
+ * @returns {list} - returns a list of strings (album names)
+ */
 async function getAlbums() {
-    albumDataList.innerHTML = '' // Clear the list to start fresh every search
+    let albumNames = []
     let nextPage = 1
     const file = await fetchFile(filePk)
-    console.debug('file:', file)
     while (nextPage) {
         const resp = await fetchAlbums(nextPage)
-        console.debug('resp:', resp)
         nextPage = resp.next
         /**
          * @type {Object}
          * @property {Array[Object]} albums
          */
         for (const album of resp.albums) {
-            console.debug('album:', album)
             if (!file.albums.includes(album.id)) {
-                console.debug('actually displaying')
-                let option = createOption(album.id, album.name)
-                if (file.albums.includes(album.id)) {
-                    option.selected = true
-                }
-                albumDataList.appendChild(option)
+                albumNames.push(album.name)
             }
         }
     }
+    return albumNames
 }
+
+// End Album Badges Section
+////////////////////////////
