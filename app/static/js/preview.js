@@ -1,15 +1,10 @@
 // JS for embed/preview.html
 
 import { socket } from './socket.js'
-import { createOption } from './file-context-menu.js'
 import { fetchFile, fetchAlbums } from './api-fetch.js'
 
 document.addEventListener('DOMContentLoaded', domLoaded)
 window.addEventListener('resize', checkSize)
-
-const filePk = document
-    .querySelector('.album-container')
-    .id.replace('albums-file-', '')
 
 const previewSidebar = $('#previewSidebar')
 const contextPlacement = $('#contextPlacement')
@@ -93,6 +88,10 @@ socket?.addEventListener('message', function (event) {
 let addToAlbumButton = $('.addto-album')
 let addAlbumInput = $('#add-album')
 let addAlbumContainer = document.querySelector('.album-add-container')
+
+const filePk = document
+    .querySelector('.album-container')
+    .id.replace('albums-file-', '')
 
 /**
  * Adds or removed displayed album tags on a file when a websocket album add/remove event is received.
