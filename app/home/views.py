@@ -452,7 +452,7 @@ def url_route_view(request, filename):
     log.debug('ctx: %s', ctx)
     if file.mime.startswith('image'):
         log.debug('IMAGE')
-        if file.exif:
+        if file.exif and isinstance(file.exif, dict):
             if exposure_time := file.exif.get('ExposureTime'):
                 file.exif['ExposureTime'] = str(Fraction(exposure_time).limit_denominator(5000))
             if lens_model := file.exif.get('LensModel'):
