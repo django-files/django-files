@@ -101,7 +101,7 @@ const filePk = document
 function handleAlbumBadges(data) {
     let container = document.querySelector('.album-container')
     if (data.removed_from) {
-        for (const [key, value] of Object.entries(data.removed_from)) {
+        for (const [key] of Object.entries(data.removed_from)) {
             document.getElementById(`album-${key}`).remove()
         }
     }
