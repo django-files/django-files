@@ -280,7 +280,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 file.file.name = name  # this will rename on OS and cloud
                 if file.thumb:
                     file.thumb.name = 'thumbs/' + name  # renames thumbnail
-                file[0].save(update_fields=['name'])
+                file.save(update_fields=['name'])
                 response = model_to_dict(file, exclude=['file', 'thumb', 'albums'])
                 response.update({'event': 'set-file-name',
                                  'uri': file.preview_uri(),
@@ -300,14 +300,15 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug('set_file_albums')
         log.debug('user_id: %s', user_id)
         log.debug('pk: %s', pk)
-        added = []
-        file_albums = []
+        log.debug('albums: %s', albums)
+        added = {}
+        file_albums = {}
         if file := Files.objects.filter(pk=pk):
             if len(file) == 0:
                 return self._error('File not found.', **kwargs)
-            if user_id and file[0].user.id != user_id:
+            if user_id and file[0].user.id != user_id and not file[0].user.is_superuser:
                 return self._error('File owned by another user.', **kwargs)
-            file_albums = list(Albums.objects.filter(files__id=pk).values_list('id', flat=True))
+            file_albums = dict(Albums.objects.filter(files__id=pk).values_list('id', 'name'))
         if not albums:
             albums = []
         if not isinstance(albums, list):
@@ -316,20 +317,86 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug(f'Sent albums: {albums}')
         log.debug(f'Current Albums: {file_albums}')
         for album in albums:
-            if album not in file_albums:
+            if album not in file_albums.keys():
                 # if the file is not linked to an album in the list, link it
-                file[0].albums.add(Albums.objects.filter(id=album)[0])
-                added.append(album)
-                log.debug(f'Adding file {pk} to album {album}')
+                album = Albums.objects.filter(id=album)[0]
+                file[0].albums.add(album)
+                added[album.id] = album.name
+                log.debug(f'Adding file {pk} to album {album.name}')
             else:
                 # if the album is linked and still in the new album list, remove it from our list
-                file_albums.remove(album)
+                del file_albums[album]
                 log.debug(f'Keeping file {pk} in album {album}')
-        for album in file_albums:
+        for album in file_albums.keys():
             # if a file was linked to an album that we removed unlink it
             log.debug(f'removing {pk} from {album}')
             file[0].albums.remove(Albums.objects.get(id=album))
-        return {'file_id': pk, 'added_to': added, 'removed_from': file_albums}
+        return {'event': 'set-file-albums', 'file_id': pk, 'added_to': added, 'removed_from': file_albums}
+
+    def remove_file_album(self, *, user_id: int = None, pk: int = None, album: int = None, **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: Integer - File ID
+        :param album: Integer = Album ID
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug('remove_file_album')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
+        if not album:
+            return self._error('No album specified.', **kwargs)
+        if file := Files.objects.filter(pk=pk):
+            if len(file) == 0:
+                return self._error('File not found.', **kwargs)
+            if user_id and file[0].user.id != user_id and not file[0].user.is_superuser:
+                return self._error('File owned by another user.', **kwargs)
+        album = Albums.objects.get(id=album)
+        file[0].albums.remove(album)
+        return {'event': 'set-file-albums', 'file_id': pk, 'removed_from': {album.id: album.name}}
+
+    def add_file_album(
+            self, *,
+            user_id: int = None,
+            pk: int = None,
+            album: int = None,
+            album_name: str = None,
+            create_if_absent: bool = True,
+            **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: Integer - File ID
+        :param album: Integer = Album ID
+        :param album_name: String = Name of Album
+        :param create_if_absent: Bool = Bool if to create album if cannot find matching album with name.
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug('remove_file_album')
+        log.debug('user_id: %s', user_id)
+        log.debug('pk: %s', pk)
+        log.debug('name: %s', album_name)
+        log.debug('create: %s', create_if_absent)
+        if not album and not album_name:
+            return self._error('No album specified.', **kwargs)
+        if file := Files.objects.filter(pk=pk):
+            if len(file) == 0:
+                return self._error('File not found.', **kwargs)
+            if user_id and file[0].user.id != user_id and not file[0].user.is_superuser:
+                return self._error('File owned by another user.', **kwargs)
+        qalbum, selected_album = [], None
+        if album:
+            # find by album id
+            qalbum = Albums.objects.filter(pk=album, user_id=user_id)
+        elif album_name:
+            # find by album name
+            qalbum = Albums.objects.filter(name=album_name, user_id=user_id)
+        if len(qalbum) > 0:
+            selected_album = qalbum[0]
+        elif create_if_absent and album_name:
+            selected_album = Albums.objects.create(user_id=user_id, name=album_name)
+        else:
+            return self._error('Album not found.', **kwargs)
+        file[0].albums.add(selected_album)
+        return {'event': 'set-file-albums', 'file_id': pk, 'added_to': {selected_album.id: selected_album.name}}
 
     async def check_for_update(self, *args, **kwargs) -> dict:
         log.debug('async - check_for_update')

@@ -41,7 +41,10 @@ class ImageProcessor(object):
             log.info('Parsing and storing EXIF: %s', self.local_path)
             image, exif_clean, exif = self._handle_exif(image)
             # write exif in case exif modified
-            image.save(self.local_path, format=self.detected_extension, exif=exif, quality='keep')
+            image_kwargs = {'format': self.detected_extension, 'exif': exif}
+            if image.format == 'JPEG':
+                image_kwargs['quality'] = 'keep'
+            image.save(self.local_path, **image_kwargs)
             # determine photo area from gps and store in metadata
             if area := city_state_from_exif(exif_clean.get('GPSInfo')):
                 self.meta['GPSArea'] = area
@@ -63,10 +66,14 @@ class ImageProcessor(object):
             for k, v in exif_data.items():
                 exif_clean[k] = v.decode() if isinstance(v, bytes) else str(v)
         except Exception as error:
-            log.error("Error processing exif: %s", error)
+            log.info("Error processing exif, using fallback: %s", error)
             for tag, value in exif.items():
                 exif_clean[ExifTags.TAGS.get(tag, tag)] = value
         exif_clean['GPSInfo'] = exif.get_ifd(ExifTags.IFD.GPSInfo)
+        try:
+            exif_clean['xmpmeta'] = image.getxmp()['xmpmeta']
+        except Exception as error:
+            log.debug(f"Failed to read xmp metadata: {error}")
         return image, exif_clean, exif
 
     @classmethod

@@ -390,7 +390,7 @@ socket?.addEventListener('message', function (event) {
  * @param {String} name
  * @return {HTMLOptionElement}
  */
-function createOption(id, name) {
+export function createOption(id, name) {
     const option = document.createElement('option')
     option.textContent = name
     option.value = id

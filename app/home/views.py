@@ -451,14 +451,7 @@ def url_route_view(request, filename):
     log.debug('ctx: %s', ctx)
     if file.mime.startswith('image'):
         log.debug('IMAGE')
-        if file.exif:
-            if exposure_time := file.exif.get('ExposureTime'):
-                file.exif['ExposureTime'] = str(Fraction(exposure_time).limit_denominator(5000))
-            if lens_model := file.exif.get('LensModel'):
-                # handle cases where lensmodel is relevant but some values are redundant
-                lm_f_stripped = lens_model.replace(f"f/{file.exif.get('FNumber', '')}", "")
-                lm_model_stripped = lm_f_stripped.replace(f"{file.exif.get('Model')}", "")
-                file.exif['LensModel'] = lm_model_stripped
+        ctx = {**ctx, **handle_image_meta(file.exif)}
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
         log.debug('MARKDOWN')
@@ -516,3 +509,31 @@ def handle_lock(request, ctx):
             if supplied_password is not None:
                 messages.warning(request, 'Invalid Password!')
             return render(request, 'embed/password.html', context=ctx, status=403)
+
+
+def handle_image_meta(exif: dict) -> dict:
+    """Parses XMP from exif and handles exif formatting for clients."""
+    if not isinstance(exif, dict):
+        return {}
+    resp = {}
+    ptr = exif
+    try:
+        for key in ["xmpmeta", "RDF", "Description", "subject", "Bag", "li"]:
+            if isinstance(ptr, dict):
+                ptr = ptr[key]
+            elif isinstance(ptr, list):
+                ptr = {k: v for d in ptr for k, v in d.items()}[key]
+    except (KeyError, IndexError):
+        log.debug('No image tags or failed to parse image tags.')
+        ptr = []
+    resp["tags"] = ptr
+    resp["software"] = exif.get("Software")
+    if exposure_time := exif.get('ExposureTime'):
+        exif['ExposureTime'] = str(Fraction(exposure_time).limit_denominator(5000))
+    if lens_model := exif.get('LensModel'):
+        # handle cases where lensmodel is relevant but some values are redundant
+        lm_f_stripped = lens_model.replace(f"f/{exif.get('FNumber', '')}", "")
+        lm_model_stripped = lm_f_stripped.replace(f"{exif.get('Model')}", "")
+        exif['LensModel'] = lm_model_stripped
+    resp['exif'] = exif
+    return resp

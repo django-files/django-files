@@ -134,3 +134,31 @@ main {
     padding-top: 0.5em;
     object-fit: contain; /* Adjusted to 'contain' */
 }
+
+.link-unstyled,
+.link-unstyled:link,
+.link-unstyled:hover {
+    color: inherit;
+    text-decoration: inherit;
+}
+
+.ui-autocomplete {
+    max-height: 300px;
+    max-width: 300px;
+    overflow-y: auto;
+    /* prevent horizontal scrollbar */
+    overflow-x: hidden;
+    opacity: 0.6;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius: 5px;
+    border: 0;
+    background: rgba(0 0 0 / 60%);
+}
+
+.ui-menu-item .ui-menu-item-wrapper.ui-state-active {
+    background: #444 !important;
+    font-weight: normal !important;
+    border: 0;
+    border-radius: 5px;
+}
