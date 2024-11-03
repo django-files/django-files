@@ -115,7 +115,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         <span title="File Expires in {{ file.expr }}" class="ms-2 expire-icon" {% if not file.expr %}style="display: none"{% endif %}><i class="fa-solid fa-hourglass"></i></span>
                     </div>
                 </row>
-                <p class="card-text py-2">Uploaded {{ file.date }}</p>
+                <p class="card-text py-2 pt-0">Uploaded {{ file.date }}</p>
                 {% if file.meta_preview and file.exif %}
                     <p class="card-text text-body-secondary">
                         {% if file.exif.DateTime %}<b>Captured On:</b> {{ file.exif.DateTimeOriginal|convert_str_date }}<br>{% endif %}
