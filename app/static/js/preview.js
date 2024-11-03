@@ -89,9 +89,13 @@ let addToAlbumButton = $('.addto-album')
 let addAlbumInput = $('#add-album')
 let addAlbumContainer = document.querySelector('.album-add-container')
 
-const filePk = document
-    .querySelector('.album-container')
-    .id.replace('albums-file-', '')
+
+let filePk
+const albumContainer = document.querySelector('.album-container')
+
+if (albumContainer) {
+    filePk = albumContainer.id.replace('albums-file-', '')
+}
 
 /**
  * Adds or removed displayed album tags on a file when a websocket album add/remove event is received.
@@ -132,15 +136,13 @@ $('.remove-album').on('click', removeAlbumPress)
  * @param {object} event - The triggering event.
  */
 function removeAlbumPress(event) {
-    console.log(event.target.closest('div'))
     let album = stripAlbumID(event)
-
     let data = {
         album: album,
         pk: filePk,
         method: 'remove_file_album',
     }
-    console.log(data)
+    console.debug(data)
     socket.send(JSON.stringify(data))
 }
 
@@ -156,7 +158,6 @@ function stripAlbumID(object) {
 
 // Album list/selector event listeners
 addToAlbumButton.on('click', addToAlbumList)
-
 addAlbumInput.on('blur', minimizeToAlbum)
 
 /**

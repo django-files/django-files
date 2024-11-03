@@ -382,7 +382,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 return self._error('File not found.', **kwargs)
             if user_id and file[0].user.id != user_id and not file[0].user.is_superuser:
                 return self._error('File owned by another user.', **kwargs)
-        qalbum, selected_album, new_album = [], None, None
+        qalbum, selected_album = [], None
         if album:
             # find by album id
             qalbum = Albums.objects.filter(pk=album, user_id=user_id)
@@ -391,11 +391,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
             qalbum = Albums.objects.filter(name=album_name, user_id=user_id)
         if len(qalbum) > 0:
             selected_album = qalbum[0]
-        elif (create_if_absent and album_name and
-              (new_album := Albums.objects.create(user_id=user_id, name=album_name))):
-            selected_album = new_album
+        elif create_if_absent and album_name:
+            selected_album = Albums.objects.create(user_id=user_id, name=album_name)
         else:
-            return self._error('Album not found or cannot create album.', **kwargs)
+            return self._error('Album not found.', **kwargs)
         file[0].albums.add(selected_album)
         return {'event': 'set-file-albums', 'file_id': pk, 'added_to': {selected_album.id: selected_album.name}}
 

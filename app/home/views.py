@@ -444,7 +444,6 @@ def url_route_view(request, filename):
         "file_avatar_url": file.user.get_avatar_url(),
         'full_context': request.user.is_authenticated and request.user == file.user
     }
-    ctx['tags'] = parse_xmp_tags(file.exif)
     if session_view:
         request.session[f'view_{file.name}'] = False
     if lock := handle_lock(request, ctx=ctx):
@@ -452,14 +451,7 @@ def url_route_view(request, filename):
     log.debug('ctx: %s', ctx)
     if file.mime.startswith('image'):
         log.debug('IMAGE')
-        if file.exif and isinstance(file.exif, dict):
-            if exposure_time := file.exif.get('ExposureTime'):
-                file.exif['ExposureTime'] = str(Fraction(exposure_time).limit_denominator(5000))
-            if lens_model := file.exif.get('LensModel'):
-                # handle cases where lensmodel is relevant but some values are redundant
-                lm_f_stripped = lens_model.replace(f"f/{file.exif.get('FNumber', '')}", "")
-                lm_model_stripped = lm_f_stripped.replace(f"{file.exif.get('Model')}", "")
-                file.exif['LensModel'] = lm_model_stripped
+        ctx = {**ctx, **handle_image_meta(file.exif)}
         return render(request, 'embed/preview.html', context=ctx)
     elif file.mime == 'text/markdown':
         log.debug('MARKDOWN')
@@ -519,7 +511,11 @@ def handle_lock(request, ctx):
             return render(request, 'embed/password.html', context=ctx, status=403)
 
 
-def parse_xmp_tags(exif: dict) -> list:
+def handle_image_meta(exif: dict) -> dict:
+    """Parses XMP from exif and handles exif formatting for clients."""
+    if not isinstance(exif, dict):
+        return {}
+    resp = {}
     ptr = exif
     try:
         for key in ["xmpmeta", "RDF", "Description", "subject", "Bag", "li"]:
@@ -530,4 +526,14 @@ def parse_xmp_tags(exif: dict) -> list:
     except (KeyError, IndexError):
         log.debug('No image tags or failed to parse image tags.')
         ptr = []
-    return ptr
+    resp["tags"] = ptr
+    resp["software"] = exif.get("Software")
+    if exposure_time := exif.get('ExposureTime'):
+        exif['ExposureTime'] = str(Fraction(exposure_time).limit_denominator(5000))
+    if lens_model := exif.get('LensModel'):
+        # handle cases where lensmodel is relevant but some values are redundant
+        lm_f_stripped = lens_model.replace(f"f/{exif.get('FNumber', '')}", "")
+        lm_model_stripped = lm_f_stripped.replace(f"{exif.get('Model')}", "")
+        exif['LensModel'] = lm_model_stripped
+    resp['exif'] = exif
+    return resp
