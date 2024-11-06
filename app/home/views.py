@@ -16,6 +16,7 @@ from fractions import Fraction
 from api.views import auth_from_token, process_file_upload, parse_expire
 from home.models import Files, FileStats, ShortURLs, Albums
 from home.tasks import clear_shorts_cache, process_stats
+from home.util.geolocation import dms_to_degrees
 from home.util.s3 import use_s3
 from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
@@ -513,6 +514,7 @@ def handle_lock(request, ctx):
 
 def handle_image_meta(exif: dict) -> dict:
     """Parses XMP from exif and handles exif formatting for clients."""
+    log.debug('handle_image_meta: %s', exif)
     if not isinstance(exif, dict):
         return {}
     resp = {}
@@ -536,4 +538,12 @@ def handle_image_meta(exif: dict) -> dict:
         lm_model_stripped = lm_f_stripped.replace(f"{exif.get('Model')}", "")
         exif['LensModel'] = lm_model_stripped
     resp['exif'] = exif
+    if 'GPSInfo' in exif:
+        try:
+            lat, lon = dms_to_degrees(exif['GPSInfo'])
+            log.debug('lat: %s lon: %s', lat, lon)
+            resp['latitude'] = lat
+            resp['longitude'] = lon
+        except Exception as error:
+            log.error(error)
     return resp

@@ -27,8 +27,8 @@ def city_state_from_exif(gps_ifd: dict) -> str:
 
 
 def dms_to_degrees(gps_ifd: dict) -> Tuple[float, float]:
-    dn, mn, sn = gps_ifd[2]
-    dw, mw, sw = gps_ifd[4]
+    dn, mn, sn = gps_ifd['2'] if '2' in gps_ifd else gps_ifd[2]
+    dw, mw, sw = gps_ifd['4'] if '4' in gps_ifd else gps_ifd[4]
     lat_deg = dn + mn / 60 + sn / 3600
     lon_deg = dw + mw / 60 + sw / 3600
     return lat_deg, -lon_deg

@@ -80,6 +80,12 @@ gulp.task('moment', () => {
         .pipe(gulp.dest('app/static/dist/moment'))
 })
 
+gulp.task('ol', () => {
+    return gulp
+        .src(['node_modules/ol/dist/ol.js', 'node_modules/ol/ol.css'])
+        .pipe(gulp.dest('app/static/dist/ol'))
+})
+
 gulp.task('swagger-ui', () => {
     return gulp
         .src([
@@ -118,6 +124,7 @@ gulp.task(
         'js-cookie',
         'jquery',
         'moment',
+        'ol',
         'jquery-ui',
         'swagger-ui',
         'swagger-yaml',

@@ -51,6 +51,13 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         {{ css|safe }}
     </style>
     <link rel="stylesheet" href="{% static 'css/preview.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/ol/ol.css' %}">
+    <style>
+        #map {
+            width: 100%;
+            height: 400px;
+        }
+    </style>
 {% endblock %}
 
 {% block nav1color %}{{ file.user.nav_color_1 }}{% endblock %}
@@ -71,7 +78,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 Your browser does not support the audio tag.
             </audio>
         {% elif file.mime == 'application/pdf' %}
-            <embed src="{{ static_url }}" type="application/pdf" frameBorder="0" scrolling="auto" width="100%" class="h-100 pt-3 mt-5">               
+            <embed src="{{ static_url }}" type="application/pdf" frameBorder="0" scrolling="auto" width="100%" class="h-100 pt-3 mt-5">
         {% elif render in 'text,code' %}
             <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
             <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
@@ -137,33 +144,81 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                     </row>
                 {% endif %}
                 {% if full_context %}
-                <row class="pt-3">
-                    <h6 class="pt-3">Albums</h6>
-                    <div class="album-container" id="albums-file-{{ file.id }}">
-                        {% for album in file.albums.all %}
-                            <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1" id="album-{{ album.id }}">
-                                <a class="text-reset text-decoration-none p-0" href="/gallery?album={{album.id}}">{{ album.name }} </a>
-                                <button id="remove-album-{{ album.id }}" class="btn p-0 mt-0 remove-album">
-                                    <i class="fa-solid fa-xmark text-small remove-album"></i>
-                                </button>
+                    <div class="row">
+                        <h6 class="">Albums</h6>
+                        <div class="album-container" id="albums-file-{{ file.id }}">
+                            {% for album in file.albums.all %}
+                                <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1" id="album-{{ album.id }}">
+                                    <a class="text-reset text-decoration-none p-0" href="/gallery?album={{album.id}}">{{ album.name }} </a>
+                                    <button id="remove-album-{{ album.id }}" class="btn p-0 mt-0 remove-album">
+                                        <i class="fa-solid fa-xmark text-small remove-album"></i>
+                                    </button>
+                                </span>
+                            {% endfor %}
+                            <span class="badge rounded-pill text-bg-primary p-0 input-group-sm addto-album-group mx-2">
+                                <button class="btn py-0 px-1 addto-album"><i class="fa-solid fa-plus"></i></span></button>
+                                <span class="album-add-container d-none">
+                                    <label for="add-album" class="d-none" id="add-album-label"> </label>
+                                    <input name="add-album-list" class="form-control d-inline input-sm album-list" id="add-album"></input>
+                                </span>
                             </span>
-                        {% endfor %}
-                        <span class="badge rounded-pill text-bg-primary p-0 input-group-sm addto-album-group mx-2">
-                            <button class="btn py-0 px-1 addto-album"><i class="fa-solid fa-plus"></i></span></button>
-                            <span class="album-add-container d-none">
-                                <label for="add-album" class="d-none" id="add-album-label"> </label>
-                                <input name="add-album-list" class="form-control d-inline input-sm album-list" id="add-album"></input>
-                            </span>
-                        </span>
+                        </div>
                     </div>
-                </row>
+                    
+                    {% if latitude and latitude %}
+                        <div id="map"></div>
+                        <script src="/static/dist/ol/ol.js"></script>
+                        <script>
+                            const latitude = {{ latitude }};
+                            console.debug('latitude:', latitude)
+                            const longitude = {{ longitude }};
+                            console.debug('longitude:', longitude)
+        
+                            const map = new ol.Map({
+                                target: 'map',
+                                layers: [
+                                    new ol.layer.Tile({
+                                        source: new ol.source.OSM()
+                                    })
+                                ],
+                                view: new ol.View({
+                                    center: ol.proj.fromLonLat([longitude, latitude]),
+                                    zoom: 10
+                                })
+                            });
+        
+                            const marker = new ol.Feature({
+                                geometry: new ol.geom.Point(ol.proj.fromLonLat([longitude, latitude]))
+                            });
+        
+                            marker.setStyle(new ol.style.Style({
+                                image: new ol.style.Circle({
+                                    radius: 8,
+                                    fill: new ol.style.Fill({ color: 'red' }),
+                                    stroke: new ol.style.Stroke({ color: 'white', width: 2 })
+                                })
+                            }));
+        
+        
+                            const vectorSource = new ol.source.Vector({
+                                features: [marker]
+                            });
+        
+                            const markerLayer = new ol.layer.Vector({
+                                source: vectorSource
+                            });
+        
+                            map.addLayer(markerLayer);
+                        </script>
+                    {% endif %}
+                    
                 {% endif %}
             </div>
         </div>
     </div>
 
     {% comment %} Begin reusable elements {% endcomment %}
-    <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1 d-none album-badge" id="">
+    <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1 d-none album-badge">
         <a class="text-reset text-decoration-none p-0 album-badge-label" href=""></a>
         <button id="remove-album-" class="btn p-0 mt-0 remove-album">
             <i class="fa-solid fa-xmark text-small remove-album"></i>
