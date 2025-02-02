@@ -101,7 +101,7 @@ jobs:
     name: "Cleanup"
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: deploy
+    needs: [deploy, deploy3]
     if: ${{ !contains(github.event.head_commit.message, '#noclean') }}
     steps:
       - name: "Purge Cache"
