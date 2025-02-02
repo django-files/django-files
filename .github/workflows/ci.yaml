@@ -1,29 +1,18 @@
 name: "Dev CI"
 
-on:
-  workflow_dispatch:
-  #  inputs:
-  #    TAG:
-  #      description: "Tag to Deploy"
-  #      type: string
-  #      required: true
-  #      default: "dev"
-  #    CLEANUP:
-  #      description: "Run Cleanup"
-  #      type: boolean
-  #      required: true
-  #      default: true
-  push:
-    branches-ignore:
-      - master
-
-#secrets:
+#secrets: TODO
 #  SERVICE_CONFIGS_KEY:
 #  GHCR_USER:
 #  GHCR_PASS:
 #  PORTAINER_URL:
 #  PORTAINER_TOKEN:
 #  CLOUDFLARE_API_TOKEN:
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore:
+      - master
 
 jobs:
   verify:
@@ -64,14 +53,6 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           platforms: linux/amd64,linux/arm64
-
-      #- name: "Build and Push"
-      #  uses: docker/build-push-action@v4
-      #  with:
-      #    context: .
-      #    platforms: linux/amd64,linux/arm64
-      #    push: true
-      #    tags: ${{ steps.tags.outputs.tags }}
 
       - name: "Bake and Push"
         uses: docker/bake-action@v5
@@ -115,62 +96,6 @@ jobs:
       SERVICE_CONFIGS_KEY: ${{ secrets.SERVICE_CONFIGS_KEY }}
       PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
       PORTAINER_TOKEN: ${{ secrets.PORTAINER_TOKEN }}
-
-  #deploy:
-  #  name: "Deploy"
-  #  runs-on: ubuntu-latest
-  #  timeout-minutes: 5
-  #  needs: build
-  #  if: ${{ !contains(github.event.head_commit.message, '#nodep') }}
-  #  permissions:
-  #    contents: read
-  #  steps:
-  #    - name: "Checkout"
-  #      uses: actions/checkout@v4
-  #
-  #    - name: "Find and Replace"
-  #      uses: jacobtomlinson/gha-find-replace@v3
-  #      with:
-  #        find: "STACK_NAME"
-  #        replace: ${{ env.STACK_NAME }}
-  #        include: ${{ env.COMPOSE_FILE}}
-  #        regex: false
-  #
-  #    - name: "Debug"
-  #      run: |
-  #        env
-  #        cat ${{ env.COMPOSE_FILE}}
-  #
-  #    - name: "Checkout Service Configs"
-  #      uses: actions/checkout@v4
-  #      with:
-  #        repository: "hosted-domains/service-configs"
-  #        ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
-  #        ref: master
-  #        path: ${{ env.CONFIGS_DIR }}
-  #        sparse-checkout: |
-  #          ${{ env.CONFIG_FILE }}
-  #        sparse-checkout-cone-mode: false
-  #
-  #    - name: "Update Environment"
-  #      run: |
-  #        echo "VERSION=${{ env.GITHUB_REF_NAME }}" | tee -a "${{ env.CONFIGS_DIR }}/${{ env.CONFIG_FILE }}"
-  #
-  #    - name: "Parse Environment"
-  #      id: parse
-  #      uses: cssnr/env-json-action@master
-  #      with:
-  #        source: ${{ env.CONFIGS_DIR }}/${{ env.CONFIG_FILE }}
-  #
-  #    - name: "Portainer Deploy"
-  #      uses: cssnr/portainer-stack-deploy-action@v1
-  #      with:
-  #        url: ${{ secrets.PORTAINER_URL }}
-  #        token: ${{ secrets.PORTAINER_TOKEN }}
-  #        file: ${{ env.COMPOSE_FILE}}
-  #        name: ${{ env.STACK_NAME}}
-  #        type: file
-  #        env_json: "${{ steps.parse.outputs.result }}"
 
   cleanup:
     name: "Cleanup"
