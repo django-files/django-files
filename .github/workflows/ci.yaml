@@ -72,6 +72,7 @@ jobs:
     name: "Deploy Dev"
     uses: ./.github/workflows/deploy.yaml
     needs: build
+    if: ${{ !contains(github.event.head_commit.message, '#nodev') }}
     permissions:
       contents: read
     with:
@@ -88,6 +89,7 @@ jobs:
     name: "Deploy Dev S3"
     uses: ./.github/workflows/deploy.yaml
     needs: build
+    if: ${{ !contains(github.event.head_commit.message, '#nos3') }}
     permissions:
       contents: read
     with:
