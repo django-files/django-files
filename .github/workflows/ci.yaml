@@ -17,11 +17,6 @@ on:
     branches-ignore:
       - master
 
-env:
-  COMPOSE_FILE: docker-compose-swarm.yaml
-  CONFIG_FILE: settings.env
-  CONFIGS_DIR: service-configs
-
 #secrets:
 #  SERVICE_CONFIGS_KEY:
 #  GHCR_USER:
@@ -84,66 +79,98 @@ jobs:
           files: docker-bake.json
           push: true
           set: |
-            app.tags=ghcr.io/django-files/django-files-app:${{ env.GITHUB_REF_NAME }}
-            nginx.tags=ghcr.io/django-files/django-files-nginx:${{ env.GITHUB_REF_NAME }}
+            app.tags=ghcr.io/django-files/django-files-app:${{ github.ref_name }}
+            nginx.tags=ghcr.io/django-files/django-files-nginx:${{ github.ref_name }}
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
 
   deploy:
-    name: "Deploy"
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+    name: "Deploy Dev"
+    uses: ./.github/workflows/deploy.yaml
     needs: build
-    if: ${{ !contains(github.event.head_commit.message, '#nodep') }}
     permissions:
       contents: read
-    steps:
-      - name: "Checkout"
-        uses: actions/checkout@v4
+    with:
+      VERSION: ${{ github.ref_name }}
+      STACK_NAME: dev_django-files_django-files
+      COMPOSE_FILE: docker-compose-swarm.yaml
+      CONFIG_FILE: services/django-files/django-files/dev/settings.env
+    secrets:
+      SERVICE_CONFIGS_KEY: ${{ secrets.SERVICE_CONFIGS_KEY }}
+      PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+      PORTAINER_TOKEN: ${{ secrets.PORTAINER_TOKEN }}
 
-      - name: "Find and Replace"
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "STACK_NAME"
-          replace: ${{ env.STACK_NAME }}
-          include: ${{ env.COMPOSE_FILE}}
-          regex: false
+  deploy3:
+    name: "Deploy Dev S3"
+    uses: ./.github/workflows/deploy.yaml
+    needs: build
+    permissions:
+      contents: read
+    with:
+      VERSION: ${{ github.ref_name }}
+      STACK_NAME: dev3_django-files_django-files
+      COMPOSE_FILE: docker-compose-swarm.yaml
+      CONFIG_FILE: services/django-files/django-files/dev3/settings.env
+    secrets:
+      SERVICE_CONFIGS_KEY: ${{ secrets.SERVICE_CONFIGS_KEY }}
+      PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+      PORTAINER_TOKEN: ${{ secrets.PORTAINER_TOKEN }}
 
-      - name: "Debug"
-        run: |
-          env
-          cat ${{ env.COMPOSE_FILE}}
-
-      - name: "Checkout Service Configs"
-        uses: actions/checkout@v4
-        with:
-          repository: "hosted-domains/service-configs"
-          ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
-          ref: master
-          path: ${{ env.CONFIGS_DIR }}
-          sparse-checkout: |
-            ${{ env.CONFIG_FILE }}
-          sparse-checkout-cone-mode: false
-
-      - name: "Update Environment"
-        run: |
-          echo "VERSION=${{ env.GITHUB_REF_NAME }}" | tee -a "${{ env.CONFIGS_DIR }}/${{ env.CONFIG_FILE }}"
-
-      - name: "Parse Environment"
-        id: parse
-        uses: cssnr/env-json-action@master
-        with:
-          source: ${{ env.CONFIGS_DIR }}/${{ env.CONFIG_FILE }}
-
-      - name: "Portainer Deploy"
-        uses: cssnr/portainer-stack-deploy-action@v1
-        with:
-          url: ${{ secrets.PORTAINER_URL }}
-          token: ${{ secrets.PORTAINER_TOKEN }}
-          file: ${{ env.COMPOSE_FILE}}
-          name: ${{ env.STACK_NAME}}
-          type: file
-          env_json: "${{ steps.parse.outputs.result }}"
+  #deploy:
+  #  name: "Deploy"
+  #  runs-on: ubuntu-latest
+  #  timeout-minutes: 5
+  #  needs: build
+  #  if: ${{ !contains(github.event.head_commit.message, '#nodep') }}
+  #  permissions:
+  #    contents: read
+  #  steps:
+  #    - name: "Checkout"
+  #      uses: actions/checkout@v4
+  #
+  #    - name: "Find and Replace"
+  #      uses: jacobtomlinson/gha-find-replace@v3
+  #      with:
+  #        find: "STACK_NAME"
+  #        replace: ${{ env.STACK_NAME }}
+  #        include: ${{ env.COMPOSE_FILE}}
+  #        regex: false
+  #
+  #    - name: "Debug"
+  #      run: |
+  #        env
+  #        cat ${{ env.COMPOSE_FILE}}
+  #
+  #    - name: "Checkout Service Configs"
+  #      uses: actions/checkout@v4
+  #      with:
+  #        repository: "hosted-domains/service-configs"
+  #        ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
+  #        ref: master
+  #        path: ${{ env.CONFIGS_DIR }}
+  #        sparse-checkout: |
+  #          ${{ env.CONFIG_FILE }}
+  #        sparse-checkout-cone-mode: false
+  #
+  #    - name: "Update Environment"
+  #      run: |
+  #        echo "VERSION=${{ env.GITHUB_REF_NAME }}" | tee -a "${{ env.CONFIGS_DIR }}/${{ env.CONFIG_FILE }}"
+  #
+  #    - name: "Parse Environment"
+  #      id: parse
+  #      uses: cssnr/env-json-action@master
+  #      with:
+  #        source: ${{ env.CONFIGS_DIR }}/${{ env.CONFIG_FILE }}
+  #
+  #    - name: "Portainer Deploy"
+  #      uses: cssnr/portainer-stack-deploy-action@v1
+  #      with:
+  #        url: ${{ secrets.PORTAINER_URL }}
+  #        token: ${{ secrets.PORTAINER_TOKEN }}
+  #        file: ${{ env.COMPOSE_FILE}}
+  #        name: ${{ env.STACK_NAME}}
+  #        type: file
+  #        env_json: "${{ steps.parse.outputs.result }}"
 
   cleanup:
     name: "Cleanup"
