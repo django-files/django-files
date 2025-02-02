@@ -5,7 +5,7 @@ services:
     build:
       context: ./nginx
       network: host
-    image: ghcr.io/djangofiles/djangofiles-nginx:${VERSION:?err}
+    image: ghcr.io/django-files/django-files-nginx:${VERSION:?err}
     environment: &environment
       SECRET: ${SECRET}
       SITE_URL: ${SITE_URL}
@@ -82,7 +82,7 @@ services:
       network: host
       args:
         - BUILD_SHA=${COMMIT_SHA}
-    image: ghcr.io/djangofiles/djangofiles-app:${VERSION:?err}
+    image: ghcr.io/django-files/django-files-app:${VERSION:?err}
     environment: *environment
     command: "gunicorn djangofiles.asgi:application -b 0.0.0.0:9000 -w 2 -k uvicorn.workers.UvicornWorker"
     healthcheck:
@@ -102,7 +102,7 @@ services:
       - net-internal
 
   worker:
-    image: ghcr.io/djangofiles/djangofiles-app:${VERSION:?err}
+    image: ghcr.io/django-files/django-files-app:${VERSION:?err}
     environment: *environment
     command: "celery -A djangofiles worker -l INFO -c 4"
     deploy:
@@ -117,7 +117,7 @@ services:
       - net-internal
 
   beat:
-    image: ghcr.io/djangofiles/djangofiles-app:${VERSION:?err}
+    image: ghcr.io/django-files/django-files-app:${VERSION:?err}
     environment: *environment
     command: "celery -A djangofiles beat -l INFO -S django"
     deploy:
