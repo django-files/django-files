@@ -1,22 +1,67 @@
-version: "3.7"
+version: "3.8"
 
 services:
   nginx:
     build:
       context: ./nginx
       network: host
-    image: ${REGISTRY_HOST}/${REGISTRY_GROUP}/djangofiles-nginx:${VERSION}
-    env_file: ${ENV_FILE}
+    image: ghcr.io/django-files/django-files-nginx:${VERSION:?err}
+    environment: &environment
+      SECRET: ${SECRET}
+      SITE_URL: ${SITE_URL}
+      SUPER_USERS: ${SUPER_USERS}
+      OAUTH_REDIRECT_URL: ${OAUTH_REDIRECT_URL}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL}
+      AWS_REGION_NAME: ${AWS_REGION_NAME}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME}
+      AWS_QUERYSTRING_EXPIRE: ${AWS_QUERYSTRING_EXPIRE}
+      #DATABASE_TYPE: ${DATABASE_TYPE}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASS: ${DATABASE_PASS}
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT}
+      SENTRY_URL: ${SENTRY_URL}
+      SENTRY_SAMPLE_RATE: ${SENTRY_SAMPLE_RATE}
+      SENTRY_DEBUG: ${SENTRY_DEBUG}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT}
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL}
+      DJANGO_LOG_LEVEL: ${DJANGO_LOG_LEVEL}
+      #DATABSE_LOCATION: ${DATABSE_LOCATION}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      CSRF_ORIGINS: ${CSRF_ORIGINS}
+      SESSION_COOKIE_AGE: ${SESSION_COOKIE_AGE}
+      #STATIC_ROOT: ${STATIC_ROOT}
+      #MEDIA_ROOT: ${MEDIA_ROOT}
+      #USE_TZ: ${USE_TZ}
+      LANGUAGE_CODE: ${LANGUAGE_CODE}
+      TZ: ${TZ}
+      USE_X_FORWARDED_HOST: ${USE_X_FORWARDED_HOST}
+      SECURE_REFERRER_POLICY: ${SECURE_REFERRER_POLICY}
+      CACHE_BACKEND: ${CACHE_BACKEND}
+      CACHE_LOCATION: ${CACHE_LOCATION}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+      REDIS_IGNORE_EXCEPTIONS: ${REDIS_IGNORE_EXCEPTIONS}
     deploy:
       mode: global
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=traefik-public"
         - "traefik.constraint-label=traefik-public"
-        - "traefik.http.routers.STACK_NAME-http.rule=Host(`${TRAEFIK_HOST:-}`)"
+        - "traefik.http.routers.STACK_NAME-http.rule=Host(`${TRAEFIK_HOST:?err}`)"
         - "traefik.http.routers.STACK_NAME-http.entrypoints=http"
         - "traefik.http.routers.STACK_NAME-http.middlewares=https-redirect"
-        - "traefik.http.routers.STACK_NAME-https.rule=Host(`${TRAEFIK_HOST:-}`)"
+        - "traefik.http.routers.STACK_NAME-https.rule=Host(`${TRAEFIK_HOST:?err}`)"
         - "traefik.http.routers.STACK_NAME-https.entrypoints=https"
         - "traefik.http.routers.STACK_NAME-https.tls=true"
         - "traefik.http.services.STACK_NAME.loadbalancer.server.port=80"
@@ -37,8 +82,8 @@ services:
       network: host
       args:
         - BUILD_SHA=${COMMIT_SHA}
-    image: ${REGISTRY_HOST}/${REGISTRY_GROUP}/djangofiles-app:${VERSION}
-    env_file: ${ENV_FILE}
+    image: ghcr.io/django-files/django-files-app:${VERSION:?err}
+    environment: *environment
     command: "gunicorn djangofiles.asgi:application -b 0.0.0.0:9000 -w 2 -k uvicorn.workers.UvicornWorker"
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:9000/app-health-check/"]
@@ -57,8 +102,8 @@ services:
       - net-internal
 
   worker:
-    image: ${REGISTRY_HOST}/${REGISTRY_GROUP}/djangofiles-app:${VERSION}
-    env_file: ${ENV_FILE}
+    image: ghcr.io/django-files/django-files-app:${VERSION:?err}
+    environment: *environment
     command: "celery -A djangofiles worker -l INFO -c 4"
     deploy:
       replicas: 1
@@ -72,8 +117,8 @@ services:
       - net-internal
 
   beat:
-    image: ${REGISTRY_HOST}/${REGISTRY_GROUP}/djangofiles-app:${VERSION}
-    env_file: ${ENV_FILE}
+    image: ghcr.io/django-files/django-files-app:${VERSION:?err}
+    environment: *environment
     command: "celery -A djangofiles beat -l INFO -S django"
     deploy:
       replicas: 1

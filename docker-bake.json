@@ -1,0 +1,23 @@
+{
+  "group": {
+    "default": {
+      "targets": ["app", "nginx"]
+    }
+  },
+  "target": {
+    "app": {
+      "context": "app",
+      "dockerfile": "Dockerfile",
+      "tags": ["ghcr.io/django-files/django-files-app:latest"],
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "output": ["type=image,push=true"]
+    },
+    "nginx": {
+      "context": "nginx",
+      "dockerfile": "Dockerfile",
+      "tags": ["ghcr.io/django-files/django-files-nginx:latest"],
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "output": ["type=image,push=true"]
+    }
+  }
+}
