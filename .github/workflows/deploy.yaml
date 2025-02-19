@@ -66,6 +66,7 @@ jobs:
         uses: cssnr/env-json-action@master
         with:
           source: service-configs/${{ inputs.CONFIG_FILE }}
+          sensitive: true
 
       - name: "Portainer Deploy"
         uses: cssnr/portainer-stack-deploy-action@v1
