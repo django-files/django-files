@@ -4,20 +4,20 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    #branches: [master, develop]
-    #paths-ignore:
-    #  - ".assets/**"
-    #  - ".github/disabled/**"
-    #  - "app/requirements*"
-    #  - "nginx/**"
-    #  - ".dockerignore"
-    #  - ".gitignore"
-    #  - ".prettierignore"
-    #  - "Makefile"
-    #  - "pyproject.toml"
-    #  - "requirements.txt"
-    #  - "settings.env.example"
-    #  - "test.env"
+    branches: [master]
+    paths-ignore:
+      - ".assets/**"
+      - ".github/disabled/**"
+      - "app/requirements*"
+      - "nginx/**"
+      - ".dockerignore"
+      - ".gitignore"
+      - ".prettierignore"
+      - "Makefile"
+      - "pyproject.toml"
+      - "requirements.txt"
+      - "settings.env.example"
+      - "test.env"
 
 jobs:
   lint:
