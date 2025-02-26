@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import sentry_sdk
+from asgiref.sync import sync_to_async
 from celery.schedules import crontab
 from decouple import Csv, config
 from django.contrib.messages import constants as message_constants
@@ -331,10 +332,11 @@ if config("SENTRY_URL", False):
 
 if DEBUG:
 
-    def show_toolbar(request):
+    async def show_toolbar(request):
         if config("DISABLE_DEBUG_TOOLBAR", False, bool):
             return False
-        return True if request.user.is_superuser else False
+        return await sync_to_async(lambda: request.user.is_superuser)()
+        # return True if request.user.is_superuser else False
 
     DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": show_toolbar}
     DEBUG_TOOLBAR_PANELS = [
