@@ -19,6 +19,9 @@ jobs:
     name: "Build"
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: "Checkout"
@@ -57,6 +60,22 @@ jobs:
           fi
           echo "APP_VERSION=${GITHUB_REF_NAME}" >> app/.env
           echo "APP_VERSION: ${GITHUB_REF_NAME}"
+
+      - name: "Debug Tags"
+        run: |
+          echo inputs.tags: '${{ inputs.tags }}'
+          echo tags: '${{ steps.tags.outputs.tags }}'
+
+      - name: "Docker Tags"
+        id: dtags
+        uses: cssnr/docker-tags-action@v1
+        tags: ${{ inputs.tags }}
+
+      - name: "Debug Docker Tags"
+        run: |
+          echo inputs.tags: '${{ inputs.tags }}'
+          echo -e "tags:\n${{ steps.dtags.outputs.tags }}"
+          echo -e "labels:\n${{ steps.dtags.outputs.labels }}"
 
       - name: "Setup Buildx"
         uses: docker/setup-buildx-action@v3

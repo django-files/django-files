@@ -2,7 +2,7 @@
 // TODO: Look Into Moving Everything Here for Auto Reconnect
 
 let disconnected = false
-export let socket
+export let socket //NOSONAR
 let ws
 
 console.log('Connecting to WebSocket...')
@@ -70,7 +70,7 @@ async function initListener() {
         } else if (data.event === 'set-expr-file') {
             messageExpire(data)
         } else if (data.event === 'toggle-private-file') {
-            if ('objects' in data){
+            if ('objects' in data) {
                 data.objects.forEach((obj) => {
                     messagePrivate(obj)
                 })

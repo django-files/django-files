@@ -1,24 +1,27 @@
-import logging
 import datetime
+import logging
+
 from decouple import config
 from django import template
 from django.conf import settings
+
+
 # from django.templatetags.static import static
 
-logger = logging.getLogger('app')
+logger = logging.getLogger("app")
 register = template.Library()
 
 
-@register.filter(name='if_true')
+@register.filter(name="if_true")
 def if_true(value, output):
     # return output if value is true else empty
-    return output if value else ''
+    return output if value else ""
 
 
-@register.filter(name='get_config')
+@register.filter(name="get_config")
 def get_config(value):
     # get django setting or config value or empty
-    return getattr(settings, value, None) or config(value, '')
+    return getattr(settings, value, None) or config(value, "")
 
 
 # @register.filter(name='avatar_url')
@@ -31,16 +34,16 @@ def get_config(value):
 #         return static('images/assets/default.png')
 
 
-@register.filter(name='single_type')
+@register.filter(name="single_type")
 def single_type(mime_type):
     # returns the absolute_url from the absolute_uri
-    return str(mime_type.split('/', 1)[0]).lower()
+    return str(mime_type.split("/", 1)[0]).lower()
 
 
-@register.filter(name='bytes_human')
+@register.filter(name="bytes_human")
 def bytes_human(num):
     # TODO: Update JSON to Include this...
-    suffix = 'B'
+    suffix = "B"
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
         if abs(num) < 1024.0:
             return f"{num:3.1f}{unit}{suffix}"
@@ -51,17 +54,17 @@ def bytes_human(num):
 @register.filter(name="convert_str_date")
 def convert_str_date(value):
     if not value:
-        return ''
+        return ""
     try:
-        return str(datetime.datetime.strptime(value, '%Y:%m:%d %H:%M:%S').strftime('%m/%d/%Y %H:%M:%S'))
+        return str(datetime.datetime.strptime(value, "%Y:%m:%d %H:%M:%S").strftime("%m/%d/%Y %H:%M:%S"))
     except Exception as error:
         logger.info(error)
-        return ''
+        return ""
 
 
 @register.filter(name="sort_mimes")
 def sort_mimes(mimes, count=0):
-    srt = sorted(mimes.items(), key=lambda x: x[1]['count'])
+    srt = sorted(mimes.items(), key=lambda x: x[1]["count"])
     if count:
         return list(reversed(srt))[:count]
     else:

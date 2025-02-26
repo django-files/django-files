@@ -89,7 +89,6 @@ let addToAlbumButton = $('.addto-album')
 let addAlbumInput = $('#add-album')
 let addAlbumContainer = document.querySelector('.album-add-container')
 
-
 let filePk
 const albumContainer = document.querySelector('.album-container')
 

@@ -28,18 +28,12 @@ jobs:
     name: "Deploy"
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
 
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
-
-      - name: "Find and Replace"
-        uses: jacobtomlinson/gha-find-replace@v3
-        with:
-          find: "STACK_NAME"
-          replace: ${{ inputs.STACK_NAME }}
-          include: ${{ inputs.COMPOSE_FILE}}
-          regex: false
 
       - name: "Debug"
         run: |
@@ -60,13 +54,14 @@ jobs:
       - name: "Update Environment"
         run: |
           echo "VERSION=${{ inputs.VERSION }}" | tee -a "service-configs/${{ inputs.CONFIG_FILE }}"
+          echo "STACK_NAME=${{ inputs.STACK_NAME }}" | tee -a "service-configs/${{ inputs.CONFIG_FILE }}"
 
-      - name: "Parse Environment"
-        id: parse
-        uses: cssnr/env-json-action@master
-        with:
-          source: service-configs/${{ inputs.CONFIG_FILE }}
-          sensitive: true
+      #- name: "Parse Environment"
+      #  id: parse
+      #  uses: cssnr/env-json-action@v1
+      #  with:
+      #    source: service-configs/${{ inputs.CONFIG_FILE }}
+      #    sensitive: true
 
       - name: "Portainer Deploy"
         uses: cssnr/portainer-stack-deploy-action@v1
@@ -76,4 +71,5 @@ jobs:
           file: ${{ inputs.COMPOSE_FILE}}
           name: ${{ inputs.STACK_NAME}}
           type: file
-          env_json: "${{ steps.parse.outputs.result }}"
+          #env_json: "${{ steps.parse.outputs.result }}"
+          env_file: "service-configs/${{ inputs.CONFIG_FILE }}"

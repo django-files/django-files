@@ -1,9 +1,14 @@
-[![Build](https://github.com/django-files/django-files/actions/workflows/build.yaml/badge.svg)](https://github.com/django-files/django-files/actions/workflows/build.yaml)
-[![Test](https://github.com/django-files/django-files/actions/workflows/test.yaml/badge.svg)](https://github.com/django-files/django-files/actions/workflows/test.yaml)
-[![Deploy](https://img.shields.io/drone/build/django-files/django-files?label=Deploy&logo=drone&server=https%3A%2F%2Fdrone.hosted-domains.com)](https://drone.hosted-domains.com/django-files/django-files)
-[![Codacy](https://img.shields.io/codacy/grade/7c41f4f6526c4233ba1304bfb45981c4?label=Codacy&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/dashboard)
+[![CI](https://img.shields.io/github/actions/workflow/status/django-files/django-files/ci.yaml?logo=github&logoColor=white&label=ci)](https://github.com/django-files/django-files/actions/workflows/ci.yaml)
+[![Test](https://img.shields.io/github/actions/workflow/status/django-files/django-files/test.yaml?logo=github&logoColor=white&label=test)](https://github.com/django-files/django-files/actions/workflows/test.yaml)
+[![Lint](https://img.shields.io/github/actions/workflow/status/django-files/django-files/lint.yaml?logo=github&logoColor=white&label=lint)](https://github.com/django-files/django-files/actions/workflows/lint.yaml)
 [![Coverage](https://img.shields.io/codacy/coverage/7c41f4f6526c4233ba1304bfb45981c4?label=Coverage&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/dashboard)
-[![GitHub release (with filter)](https://img.shields.io/github/v/release/django-files/django-files?logo=github&label=Release)](https://github.com/django-files/django-files/releases/latest)
+[![Codacy](https://img.shields.io/codacy/grade/7c41f4f6526c4233ba1304bfb45981c4?label=Codacy&logo=codacy&logoColor=white)](https://app.codacy.com/gh/django-files/django-files/dashboard)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=django-files_django-files&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=django-files_django-files)
+[![GitHub Release Version](https://img.shields.io/github/v/release/django-files/django-files?logo=github)](https://github.com/django-files/django-files/releases/latest)
+[![GitHub Top Language](https://img.shields.io/github/languages/top/django-files/django-files?logo=htmx&logoColor=white)](https://github.com/django-files/django-files)
+[![GitHub Last Commit](https://img.shields.io/github/last-commit/django-files/django-files?logo=github&logoColor=white&label=updated)](https://github.com/django-files/django-files/graphs/commit-activity)
+[![GitHub Repo Stars](https://img.shields.io/github/stars/django-files/django-files?style=flat&logo=github&logoColor=white)](https://github.com/django-files/django-files/stargazers)
+[![GitHub Org Stars](https://img.shields.io/github/stars/django-files?style=flat&logo=github&logoColor=white&label=org%20stars)](https://django-files.github.io/)
 [![](https://repository-images.githubusercontent.com/672712475/52cf00a8-31de-4b0a-8522-63670bb4314a)](https://github.com/django-files/django-files)
 
 # Django Files
@@ -18,21 +23,21 @@ or submit an [Issue](https://github.com/django-files/django-files/issues/new) fo
 
 ## Table of Contents
 
--   [Overview](#overview)
--   [Running](#running)
-    -   [Docker Run](#docker-run)
-    -   [Docker Compose](#docker-compose)
--   [Features](#features)
--   [Screen Shots](#screen-shots)
--   [Usage](#usage)
-    -   [Files](#files)
-    -   [Short URL](#short-urls)
-    -   [User Settings](#user-settings)
-    -   [Site Settings](#site-settings)
--   [Variables](#variables)
--   [Database](#database)
--   [Dev Deploy](#dev-deploy)
--   [Frameworks](#frameworks)
+- [Overview](#overview)
+- [Running](#running)
+  - [Docker Run](#docker-run)
+  - [Docker Compose](#docker-compose)
+- [Features](#features)
+- [Screen Shots](#screen-shots)
+- [Usage](#usage)
+  - [Files](#files)
+  - [Short URL](#short-urls)
+  - [User Settings](#user-settings)
+  - [Site Settings](#site-settings)
+- [Variables](#variables)
+- [Database](#database)
+- [Dev Deploy](#dev-deploy)
+- [Frameworks](#frameworks)
 
 ## Overview
 
@@ -59,8 +64,8 @@ For Extra Options See: [Variables](#variables)
 
 You **should** override the default credentials with environment variables or settings.env. You will be prompted to set your password on first login.
 
--   **Username:** `admin`
--   **Password:** `12345`
+- **Username:** `admin`
+- **Password:** `12345`
 
 ### Docker Run:
 
@@ -94,15 +99,15 @@ docker run --name "django-files" -d --restart unless-stopped  \
 version: '3'
 
 services:
-    django-files:
-        image: ghcr.io/django-files/django-files:latest
-        volumes:
-            - media_dir:/data/media
-        ports:
-            - '80:80'
+  django-files:
+    image: ghcr.io/django-files/django-files:latest
+    volumes:
+      - media_dir:/data/media
+    ports:
+      - '80:80'
 
 volumes:
-    media_dir:
+  media_dir:
 ```
 
 Instead of using a settings.env you can specify any settings variables via the environment section in the docker compose file.
@@ -112,21 +117,22 @@ Or Manually Specify a Username and Password:
 version: '3'
 
 services:
-    django-files:
-        image: ghcr.io/django-files/django-files:latest
-        environment:
-            USERNAME: 'cooluser'
-            PASSWORD: 'secretpassword'
-        volumes:
-            - media_dir:/data/media
-        ports:
-            - '80:80'
+  django-files:
+    image: ghcr.io/django-files/django-files:latest
+    environment:
+      USERNAME: 'cooluser'
+      PASSWORD: 'secretpassword'
+    volumes:
+      - media_dir:/data/media
+    ports:
+      - '80:80'
 
 volumes:
-    media_dir:
+  media_dir:
 ```
 
 Then Finally:
+
 ```bash
 vim docker-compose.yaml
 docker compose up --remove-orphans --force-recreate --detach
@@ -142,79 +148,78 @@ You can find some planned features and known issues on the [TODO.md](TODO.md). U
 
 ### Core
 
--   Local or S3 file storage
--   Ready-to-use ShareX, Flameshot, iOS Shortcuts upload scripts
--   Customizable branding and appearance. Dark + light modes.
--   Google Chrome and Mozilla Firefox Web Extension
--   Optional Sentry Error Reporting
--   Optional user and global storage quotas
--   Optional public upload function
+- Local or S3 file storage
+- Ready-to-use ShareX, Flameshot, iOS Shortcuts upload scripts
+- Customizable branding and appearance. Dark + light modes.
+- Google Chrome and Mozilla Firefox Web Extension
+- Optional Sentry Error Reporting
+- Optional user and global storage quotas
+- Optional public upload function
 
 ### Auth
 
--   Multiple Users, Local, and Optional OAuth
--   Connect existing accounts to configured OAuth Services
--   Configure OAuth Services from the Django Admin UI (no restart required)
--   Oauth Currently Supports: Discord, GitHub, Google [Request Another](https://github.com/django-files/django-files/discussions/new?category=feature-requests)
--   Optional Duo Two-Factor Authentication
--   Generate Invite links and Invite users to your django-files instance.
-
+- Multiple Users, Local, and Optional OAuth
+- Connect existing accounts to configured OAuth Services
+- Configure OAuth Services from the Django Admin UI (no restart required)
+- Oauth Currently Supports: Discord, GitHub, Google [Request Another](https://github.com/django-files/django-files/discussions/new?category=feature-requests)
+- Optional Duo Two-Factor Authentication
+- Generate Invite links and Invite users to your django-files instance.
 
 ### UI Features
 
--   Home Page; with Overview and Stats
--   Stats Page; with Stats and Graphs (WIP)
--   Gallery; to Preview Image Files
--   Albums; create custom albums for sharing multiple images/files
--   Upload; with Drag and Drop
--   Files; View and Delete
--   Short URLs; View, Create, and Delete Shorts
--   Settings; Configure Settings via UI
--   Django Admin to Manage all data for Superusers
--   Preview Page for Embeds with optional file metadata
+- Home Page; with Overview and Stats
+- Stats Page; with Stats and Graphs (WIP)
+- Gallery; to Preview Image Files
+- Albums; create custom albums for sharing multiple images/files
+- Upload; with Drag and Drop
+- Files; View and Delete
+- Short URLs; View, Create, and Delete Shorts
+- Settings; Configure Settings via UI
+- Django Admin to Manage all data for Superusers
+- Preview Page for Embeds with optional file metadata
 
 ### User Settings
 
--   Per User Default Expiration for Files
--   Metadata control: Remove EXIF Data on Upload OR Remove EXIF GPS Only
--   Theme Customization: Custom Embed Color and Navbar Colors per user
--   Avatars: Select local or oauth sourced avatar.
+- Per User Default Expiration for Files
+- Metadata control: Remove EXIF Data on Upload OR Remove EXIF GPS Only
+- Theme Customization: Custom Embed Color and Navbar Colors per user
+- Avatars: Select local or oauth sourced avatar.
 
 ### Files
 
--   File Expiration
--   View Counting
--   EXIF Metadata Preview
--   Private Files
--   Password-Protected Files
--   Syntax highligting for code/text files.
--   Bulk file actions (delete, public/private)
+- File Expiration
+- View Counting
+- EXIF Metadata Preview
+- Private Files
+- Password-Protected Files
+- Syntax highligting for code/text files.
+- Bulk file actions (delete, public/private)
 
 ### FileStats
 
--   Total Files
--   Total Size
--   Total Short URLs
--   Total Views
--   Individual MIME Type Stats
+- Total Files
+- Total Size
+- Total Short URLs
+- Total Views
+- Individual MIME Type Stats
 
 ### Short URLs
 
--   Vanity URLs
--   Use Counting
--   Max Uses
+- Vanity URLs
+- Use Counting
+- Max Uses
 
 ### External
 
--   Firefox Extension:https://addons.mozilla.org/addon/django-files
--   Chrome Extension: https://chrome.google.com/webstore/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej
+- Firefox Extension:https://addons.mozilla.org/addon/django-files
+- Chrome Extension: https://chrome.google.com/webstore/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej
 
 ## Screen Shots
 
 There are some Screen Shots available on the GitHub Pages site by selecting
 [Screen Shots](https://django-files.github.io/screenshots.html) from the menu.
 
--   [https://django-files.github.io/](https://django-files.github.io/)
+- [https://django-files.github.io/](https://django-files.github.io/)
 
 ## Usage
 
@@ -229,10 +234,10 @@ Response Type: JSON
 
 ```json
 {
-    "files": ["full-url"],
-    "url": "full-url",
-    "name": "file-name",
-    "size": "size-bytes"
+  "files": ["full-url"],
+  "url": "full-url",
+  "name": "file-name",
+  "size": "size-bytes"
 }
 ```
 
@@ -243,12 +248,14 @@ Response Type: JSON
 
 ```json
 {
-    "url": "full-short-url"
+  "url": "full-short-url"
 }
 ```
+
 You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 
 ### User Settings
+
 - Avatar: Can be reuploaded if set to Local/Cloud.
 - Avatar Source: If to use oauth avatars, or local avatars. (Oauth avatars cannot be changed via django files.)
 - First Name: User's first name, for personalization of username display.
@@ -264,7 +271,6 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 - Appearance Nav Colors: Color of navbar for this user and anonymous users viewing shared user files.
 - Discord Webhooks: Discord webhooks to trigger when a file is uploaded.
 
-
 ### Site Settings
 
 - Site URL: The site url to use, used to generate links.
@@ -276,7 +282,6 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 - Public Uploads: /public : When enabled anonymous users can upload.
 - Oauth Registration: When enabled ANY user may sign up via oauth login.
 - Local Authentication: When disabled, only oauth authentication can be performed. (Falls back to enabled when oauth not configured)
-
 
 ## Variables
 
@@ -316,9 +321,9 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 
 ## Database
 
--   sqlite3 - **default** - zero configuration, works out of the box
--   mysql - must set up and maintain your own database
--   postgresql - must set up and maintain your own database
+- sqlite3 - **default** - zero configuration, works out of the box
+- mysql - must set up and maintain your own database
+- postgresql - must set up and maintain your own database
 
 | Variable      | Description                          |
 | ------------- | ------------------------------------ |
@@ -357,21 +362,22 @@ docker compose down --remove-orphans
 ```
 
 Auto restarting dev deployment using settings.env for config. (ctrl+c to restart, double ctrl+c to exit)
+
 ```text
 _file="docker-compose-dev.yaml";while true;do docker compose -f "${_file}" down --remove-orphans;sep 10;docker compose -f "${_file}" up --build --remove-orphans -d --force-recreate;docker compose -f "${_file}" logs -f;echo sleep 1;sleep 1;done
 ```
 
 ## Frameworks/Credits
 
--   Python (3.11) https://www.python.org/
--   Django (4.x) https://www.djangoproject.com/
--   Celery (5.x) https://docs.celeryproject.org/
--   Font Awesome (6.x) http://fontawesome.io/
--   Bootstrap (5.3) http://getbootstrap.com/
--   Uppy (3.x) https://uppy.io/
--   Highlight.js (11.x) https://highlightjs.org/
--   Datatables (2.0.x ) https://datatables.net/
--   Swagger (5.x) https://swagger.io/
+- Python (3.13) https://www.python.org/
+- Django (4.x) https://www.djangoproject.com/
+- Celery (5.x) https://docs.celeryproject.org/
+- Font Awesome (6.x) http://fontawesome.io/
+- Bootstrap (5.3) http://getbootstrap.com/
+- Uppy (3.x) https://uppy.io/
+- Highlight.js (11.x) https://highlightjs.org/
+- Datatables (2.0.x ) https://datatables.net/
+- Swagger (5.x) https://swagger.io/
 
 [Feature Requests](https://github.com/django-files/django-files/discussions/new?category=feature-requests) |
 [Issues](https://github.com/django-files/django-files/issues/new)

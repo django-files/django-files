@@ -57,7 +57,10 @@ gulp.task('fontawesome', () => {
                 'node_modules/@fortawesome/fontawesome-free/js/all.min.js',
                 'node_modules/@fortawesome/fontawesome-free/webfonts/**/*',
             ],
-            { base: 'node_modules/@fortawesome/fontawesome-free' }
+            {
+                base: 'node_modules/@fortawesome/fontawesome-free',
+                encoding: false,
+            }
         )
         .pipe(gulp.dest('app/static/dist/fontawesome'))
 })

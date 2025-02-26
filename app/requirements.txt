@@ -1,27 +1,22 @@
+# Production
+
 boto3
 celery>=5,<6
-# coverage
-channels[daphne]
-channels-redis
-defusedxml
-django>=4,<5
-django-debug-toolbar>=4,<5
-django-celery-beat
-django-extensions
-django-redis
+channels[daphne]<5
+channels-redis<5
+django>=5,<6
+django-celery-beat<3
+django-redis>=5,<6
 django-storages==1.14
-django-cors-headers
+django-cors-headers<5
 duo_universal
-# flake8
 geopy
 gunicorn
 httpx
 markdown
 mysqlclient
-packaging
 Pillow
 psycopg[binary]
-# pytest-playwright
 python-decouple
 python-dotenv
 python-magic
@@ -29,5 +24,26 @@ pytimeparse2
 sentry-sdk
 uvicorn[standard]
 validators
+
+
+# Development
+
+django-debug-toolbar<6
+django-extensions
+# pytest-playwright
 watchdog
 Werkzeug
+
+
+# Tools
+
+#black
+#coverage
+#flake8
+#mypy
+packaging  # TODO: Check This
+#ruff
+
+
+# TODO: Why is this only in here?
+defusedxml

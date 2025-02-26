@@ -3,11 +3,11 @@ import string
 
 
 def rand_string(length=32):
-    choices = (string.ascii_uppercase + string.ascii_lowercase + string.digits)
-    return ''.join(random.choices(choices, k=length))
+    choices = string.ascii_uppercase + string.ascii_lowercase + string.digits
+    return "".join(random.choices(choices, k=length))
 
 
-def rand_color_hex(prefix: str = '#'):
+def rand_color_hex(prefix: str = "#"):
     rgb = ""
     for _ in "RGB":
         i = random.randrange(0, 2**8)

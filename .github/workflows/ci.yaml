@@ -38,6 +38,9 @@ jobs:
     timeout-minutes: 25
     #needs: verify
     if: ${{ !contains(github.event.head_commit.message, '#noci') }}
+    concurrency:
+      group: ci-build
+      cancel-in-progress: true
     permissions:
       contents: read
       packages: write
@@ -45,6 +48,20 @@ jobs:
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
+
+      - name: "Docker Tags"
+        id: dtags
+        uses: cssnr/docker-tags-action@v1
+        with:
+          images: |
+            "ghcr.io/${{ github.repository }}-app"
+            "ghcr.io/${{ github.repository }}-nginx"
+
+      - name: "Debug Docker Tags"
+        run: |
+          echo github.ref_name: '${{ github.ref_name }}'
+          echo -e "tags:\n${{ steps.dtags.outputs.tags }}"
+          echo -e "labels:\n${{ steps.dtags.outputs.labels }}"
 
       - name: "Docker Login"
         uses: docker/login-action@v3
@@ -61,11 +78,12 @@ jobs:
       - name: "Bake and Push"
         uses: docker/bake-action@v5
         with:
-          files: docker-bake.json
+          files: docker-compose-swarm.yaml
           push: true
           set: |
-            app.tags=ghcr.io/django-files/django-files-app:${{ github.ref_name }}
-            nginx.tags=ghcr.io/django-files/django-files-nginx:${{ github.ref_name }}
+            app.tags=ghcr.io/${{ github.repository }}-app:${{ github.ref_name }}
+            nginx.tags=ghcr.io/${{ github.repository }}-nginx:${{ github.ref_name }}
+            *.platform=linux/amd64,linux/arm64
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
 
@@ -80,7 +98,7 @@ jobs:
       VERSION: ${{ github.ref_name }}
       STACK_NAME: dev_django-files_django-files
       COMPOSE_FILE: docker-compose-swarm.yaml
-      CONFIG_FILE: services/django-files/django-files/dev/settings.env
+      CONFIG_FILE: services/${{ github.repository }}/dev/settings.env
     secrets:
       SERVICE_CONFIGS_KEY: ${{ secrets.SERVICE_CONFIGS_KEY }}
       PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
@@ -111,7 +129,7 @@ jobs:
     if: ${{ !contains(github.event.head_commit.message, '#noclean') }}
     steps:
       - name: "Purge Cache"
-        uses: cssnr/cloudflare-purge-cache-action@v1
+        uses: cssnr/cloudflare-purge-cache-action@v2
         with:
           token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           domains: cssnr.com
