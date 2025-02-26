@@ -1,22 +1,22 @@
 import inspect
 import json
 import logging
+from io import BytesIO
+from typing import List, Optional
+
 from asgiref.sync import async_to_sync, sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.forms.models import model_to_dict
-from io import BytesIO
-from pytimeparse2 import parse
-from typing import Optional, List
 from django.core.cache import cache
-
-
-from home.models import Files, Albums
+from django.forms.models import model_to_dict
+from home.models import Albums, Files
 from home.tasks import version_check
 from home.util.file import process_file
 from home.util.storage import file_rename
 from oauth.models import CustomUser
+from pytimeparse2 import parse
 from settings.models import SiteSettings
+
 
 log = logging.getLogger("app")
 

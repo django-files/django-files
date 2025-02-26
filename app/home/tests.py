@@ -1,20 +1,26 @@
 import logging
 import os
 import shutil
-from django.test import TestCase
 from pathlib import Path
-from django.conf import settings
-from channels.testing import ChannelsLiveServerTestCase
-from django.core.management import call_command
-from django.urls import reverse
-from playwright.sync_api import sync_playwright
 
 from api.views import gen_short
+from channels.testing import ChannelsLiveServerTestCase
+from django.conf import settings
+from django.core.management import call_command
+from django.test import TestCase
+from django.urls import reverse
 from home.models import Files, ShortURLs
-from home.tasks import delete_expired_files, app_init, process_stats, flush_template_cache
+from home.tasks import (
+    app_init,
+    delete_expired_files,
+    flush_template_cache,
+    process_stats,
+)
 from home.util.file import process_file
 from oauth.models import CustomUser
+from playwright.sync_api import sync_playwright
 from settings.models import SiteSettings
+
 
 log = logging.getLogger("app")
 

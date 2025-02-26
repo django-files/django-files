@@ -1,11 +1,11 @@
 from django.conf import settings
-from django.conf.urls.static import static
-from django.contrib.auth.decorators import login_required
 from django.conf.urls import include
+from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
 from django.urls import path
-
 from djangofiles import views
+
 
 handler400 = "djangofiles.views.handler400_view"
 handler403 = "djangofiles.views.handler403_view"

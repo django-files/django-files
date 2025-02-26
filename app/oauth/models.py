@@ -1,16 +1,16 @@
 import datetime
 import zoneinfo
+
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.shortcuts import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
-from home.util.rand import rand_string, rand_color_hex
 from home.util.misc import bytes_to_human_read
+from home.util.rand import rand_color_hex, rand_string
 from oauth.managers import DiscordWebhooksManager, UserInvitesManager
 from settings.models import SiteSettings
-from django.core.exceptions import ObjectDoesNotExist
 
 
 def rand_invite():

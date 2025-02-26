@@ -1,8 +1,8 @@
 import zoneinfo
-from django.db import models
 
-from home.util.rand import rand_color_hex
+from django.db import models
 from home.util.misc import bytes_to_human_read
+from home.util.rand import rand_color_hex
 from settings.managers import SiteSettingsManager
 
 

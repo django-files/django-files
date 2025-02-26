@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from home.models import Albums, Files, FileStats, ShortURLs
 
-from home.models import Files, FileStats, ShortURLs, Albums
 
 admin.site.site_header = "Django Files Administration"
 

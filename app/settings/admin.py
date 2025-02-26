@@ -1,7 +1,7 @@
 from django.contrib import admin
-
 from oauth.models import DiscordWebhooks
 from settings.models import SiteSettings
+
 
 admin.site.site_header = "Django Files Administration"
 

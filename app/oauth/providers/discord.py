@@ -1,15 +1,15 @@
-import httpx
 import logging
 import urllib.parse
 from datetime import datetime, timedelta
-from decouple import config
-from django.shortcuts import HttpResponseRedirect
 from typing import Optional
 
-from oauth.models import Discord
+import httpx
+from decouple import config
+from django.shortcuts import HttpResponseRedirect
+from oauth.models import Discord, DiscordWebhooks
 from oauth.providers.base import BaseOauth
 from oauth.providers.helpers import is_super_id
-from oauth.models import DiscordWebhooks
+
 
 provider = "discord"
 log = logging.getLogger(f"app.{provider}")

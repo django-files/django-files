@@ -1,21 +1,26 @@
 import logging
+
 import duo_universal
 from decouple import config
 from django.contrib import messages
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-
-from settings.models import SiteSettings
 from oauth.forms import LoginForm
 from oauth.models import CustomUser, DiscordWebhooks
-from oauth.providers.helpers import get_login_redirect_url, get_next_url, get_or_create_user
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
+from oauth.providers.helpers import (
+    get_login_redirect_url,
+    get_next_url,
+    get_or_create_user,
+)
+from settings.models import SiteSettings
+
 
 log = logging.getLogger("app")
 

@@ -1,7 +1,10 @@
+import json
 import logging
 import os
+from typing import Optional
+
 import httpx
-import json
+from api.utils import extract_files
 from asgiref.sync import async_to_sync
 from celery import shared_task
 from celery.signals import worker_shutdown
@@ -12,20 +15,17 @@ from django.core.cache import cache
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
-from packaging import version
-from pytimeparse2 import parse
-from PIL import UnidentifiedImageError
-from typing import Optional
-
-from home.util.storage import use_s3
-from home.util.image import thumbnail_processor
-from home.models import Files, FileStats, ShortURLs
-from home.util.quota import regenerate_all_storage_values
-from oauth.models import CustomUser
-from settings.models import SiteSettings
-from oauth.models import DiscordWebhooks
 from django_celery_beat import models
-from api.utils import extract_files
+from home.models import Files, FileStats, ShortURLs
+from home.util.image import thumbnail_processor
+from home.util.quota import regenerate_all_storage_values
+from home.util.storage import use_s3
+from oauth.models import CustomUser, DiscordWebhooks
+from packaging import version
+from PIL import UnidentifiedImageError
+from pytimeparse2 import parse
+from settings.models import SiteSettings
+
 
 log = logging.getLogger("app")
 

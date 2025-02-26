@@ -1,10 +1,11 @@
 import logging
-from decouple import config, Csv
-from django.urls import reverse
 from typing import Optional
 
+from decouple import Csv, config
+from django.urls import reverse
 from oauth.models import CustomUser
 from settings.models import SiteSettings
+
 
 log = logging.getLogger("app")
 

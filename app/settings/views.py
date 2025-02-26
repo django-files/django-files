@@ -1,18 +1,18 @@
 import logging
 import zoneinfo
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render, reverse, redirect
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect, render, reverse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-
-from oauth.models import CustomUser, UserInvites
+from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
-from oauth.models import DiscordWebhooks
+
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4

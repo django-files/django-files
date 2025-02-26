@@ -1,13 +1,15 @@
 import datetime
-import sentry_sdk
-import sys
 import os
-from celery.schedules import crontab
-from decouple import config, Csv
-from dotenv import find_dotenv, load_dotenv
-from django.contrib.messages import constants as message_constants
+import sys
 from pathlib import Path
+
+import sentry_sdk
+from celery.schedules import crontab
+from decouple import Csv, config
+from django.contrib.messages import constants as message_constants
+from dotenv import find_dotenv, load_dotenv
 from sentry_sdk.integrations.django import DjangoIntegration
+
 
 VERSION_CHECK_URL = config("VERSION_CHECK_URL", "https://github.com/django-files/django-files/releases/latest")
 

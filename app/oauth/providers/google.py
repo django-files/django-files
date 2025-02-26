@@ -1,13 +1,13 @@
-import httpx
 import logging
 import urllib.parse
-from decouple import config
-from django.shortcuts import HttpResponseRedirect
 from typing import Optional
 
+import httpx
+from decouple import config
+from django.shortcuts import HttpResponseRedirect
 from oauth.models import Google
-from oauth.providers.helpers import is_super_id
 from oauth.providers.base import BaseOauth
+from oauth.providers.helpers import is_super_id
 
 
 provider = "google"

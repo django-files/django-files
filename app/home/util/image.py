@@ -1,11 +1,12 @@
 import logging
 import os
-from PIL import Image, ExifTags, TiffImagePlugin, ImageOps
-from django.core.files import File
 from io import BytesIO
 
-from home.util.geolocation import city_state_from_exif
+from django.core.files import File
 from home.models import Files
+from home.util.geolocation import city_state_from_exif
+from PIL import ExifTags, Image, ImageOps, TiffImagePlugin
+
 
 log = logging.getLogger("app")
 

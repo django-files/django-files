@@ -1,8 +1,10 @@
-import logging
 import datetime
+import logging
+
 from decouple import config
 from django import template
 from django.conf import settings
+
 
 # from django.templatetags.static import static
 

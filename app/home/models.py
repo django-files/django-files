@@ -1,12 +1,16 @@
+from django.conf import settings
+from django.core.cache import cache
 from django.db import models
 from django.db.models import F
 from django.shortcuts import reverse
-from django.conf import settings
-from django.core.cache import cache
-
-from home.managers import FilesManager, FileStatsManager, ShortURLsManager, AlbumsManager
-from home.util.storage import StoragesRouterFileField, use_s3
+from home.managers import (
+    AlbumsManager,
+    FilesManager,
+    FileStatsManager,
+    ShortURLsManager,
+)
 from home.util.nginx import sign_nginx_urls
+from home.util.storage import StoragesRouterFileField, use_s3
 from oauth.models import CustomUser
 
 

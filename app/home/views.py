@@ -1,27 +1,33 @@
 import logging
+from fractions import Fraction
+
 import markdown
+from api.views import auth_from_token, parse_expire, process_file_upload
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.db.models import F
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse, HttpResponseNotFound
-from django.shortcuts import redirect, render, reverse, get_object_or_404
+from django.http import (
+    HttpResponse,
+    HttpResponseNotFound,
+    HttpResponseRedirect,
+    JsonResponse,
+)
+from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.views.decorators.cache import cache_control, cache_page
 from django.views.decorators.common import no_append_slash
-from django.views.decorators.cache import cache_page, cache_control
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
-from fractions import Fraction
-
-from api.views import auth_from_token, process_file_upload, parse_expire
-from home.models import Files, FileStats, ShortURLs, Albums
+from home.models import Albums, Files, FileStats, ShortURLs
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
+from home.util.storage import fetch_file, fetch_raw_file
 from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
-from settings.models import SiteSettings
 from settings.context_processors import site_settings_processor
-from home.util.storage import fetch_file, fetch_raw_file
+from settings.models import SiteSettings
+
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4

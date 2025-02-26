@@ -1,22 +1,23 @@
 import datetime
 import logging
-import magic
 import mimetypes
 import os
 import pathlib
-import uuid
 import tempfile
-from django.core.files import File
+import uuid
 from typing import BinaryIO
-from django.core.exceptions import ObjectDoesNotExist
 
-from home.models import Files, Albums
+import magic
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.files import File
+from home.models import Albums, Files
+from home.tasks import new_file_websocket, send_discord_message
 from home.util.image import ImageProcessor, thumbnail_processor
-from home.util.rand import rand_string
 from home.util.misc import anytobool
 from home.util.quota import increment_storage_usage
-from home.tasks import send_discord_message, new_file_websocket
+from home.util.rand import rand_string
 from oauth.models import CustomUser
+
 
 log = logging.getLogger("app")
 

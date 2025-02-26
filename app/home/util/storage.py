@@ -1,12 +1,11 @@
-import boto3
 import os
 
+import boto3
+from botocore.exceptions import ClientError
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models.fields.files import FieldFile
-from botocore.exceptions import ClientError
-
 from home.util.s3 import S3Bucket, use_s3
 
 
