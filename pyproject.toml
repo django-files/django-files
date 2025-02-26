@@ -1,29 +1,29 @@
 # Black
 [tool.black]
 line-length = 119
-extend-exclude = "(\\.github)"
-
-# Ruff
-[tool.ruff]
-line-length = 119
-target-version = "py313"
-extend-exclude = [".github"]
-
-[tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "B", "Q"]
+extend-exclude = "(migrations|templates|\\.github)"
 
 # Coverage
 [tool.coverage.run]
-omit = ["venv/*", "node_modules/*", ".github/*"]
 source = ["src"]
+omit = ["venv/*", "node_modules/*"]
 
 # Isort
 [tool.isort]
 profile = "black"
 lines_after_imports = 2
 src_paths = ["src", "test"]
-skip = ["venv", "node_modules", ".github"]
+skip = ["venv", "node_modules", "migrations", "templates", ".github"]
 
 # Mypy
 [tool.mypy]
 ignore_missing_imports = true
+
+# Ruff
+[tool.ruff]
+line-length = 119
+target-version = "py313"
+extend-exclude = ["migrations", "templates", ".github"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B", "Q"]
