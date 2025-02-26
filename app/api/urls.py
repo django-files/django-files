@@ -22,4 +22,5 @@ urlpatterns = [
     path('stats/', views.stats_view, name='stats'),
     path('file/<path:idname>', views.file_view, name='file'),
     path('delete/<path:idname>', views.file_view, name='delete'),
+    path('token/', views.token_view, name='token')
 ]

@@ -544,3 +544,19 @@ def id_or_name(id_name: Union[str, int], name='name') -> dict:
         return {'id': int(id_name)}
     else:
         return {name: id_name}
+
+
+@require_http_methods(['POST', 'GET'])
+def token_view(request):
+    """
+    View  /api/token
+    GET to fetch token value
+    POST to refresh and fetch token value
+    """
+    if not request.user:
+        return HttpResponse(status=401)
+    if request.method == 'POST':
+        user = request.user
+        user.authorization = rand_string()
+        user.save()
+    return HttpResponse(request.user.authorization)
