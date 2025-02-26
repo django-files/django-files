@@ -1,26 +1,22 @@
+# Production
+
 boto3
 celery>=5,<6
-# coverage
 channels
 channels-redis
 django>=4,<5
-# django-debug-toolbar>=4,<5
 django-celery-beat
-# django-extensions
 django-redis
-django-storages
+django-storages==1.14
 django-cors-headers
 duo_universal
-# flake8
 geopy
 gunicorn
 httpx
 markdown
 mysqlclient
-packaging
 Pillow
 psycopg[binary]
-# pytest-playwright
 python-decouple
 python-dotenv
 python-magic
@@ -28,5 +24,22 @@ pytimeparse2
 sentry-sdk
 uvicorn[standard]
 validators
-# watchdog
-# Werkzeug
+
+
+# Development
+
+#django-debug-toolbar>=4,<5
+#django-extensions
+#pytest-playwright
+#watchdog
+#Werkzeug
+
+
+# Tools
+
+#black
+#coverage
+#flake8
+#mypy
+packaging  # TODO: Check This
+#ruff

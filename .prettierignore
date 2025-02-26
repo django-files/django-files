@@ -1,1 +1,21 @@
+# App
+
 **/*.html
+app/static/highlightjs/**
+app/static/swagger/SwaggerDark.css
+
+# IDE
+.idea/
+.vscode/
+
+# Build
+dist/
+node_modules/
+
+# Tools
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Files
+package-lock.json

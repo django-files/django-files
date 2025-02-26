@@ -38,9 +38,9 @@ $('#modal-expire-form').on('submit', function (event) {
     console.debug('data:', data)
     socket.send(JSON.stringify(data))
     fileExpireModal.modal('hide')
-    data.pks.forEach(pk => {
-        $(`#ctx-menu-${pk} input[name=current-file-expiration]`).val(data.expr) 
-    });
+    data.pks.forEach((pk) => {
+        $(`#ctx-menu-${pk} input[name=current-file-expiration]`).val(data.expr)
+    })
 })
 
 // Password Form
@@ -121,9 +121,7 @@ export function ctxSetExpire(event) {
     const expireValue = expire.val().toString().trim()
     console.debug(`expireInput: ${expireValue}`)
     $('#expr').val(expireValue)
-    $('#fileExpireModal #fileExpireModalLabel').text(
-        `Set File Expiration`
-    )
+    $('#fileExpireModal #fileExpireModalLabel').text(`Set File Expiration`)
     $('#fileExpireModal #fileExpireModalBodyText').html(
         `Set the file's expiration.`
     )
@@ -152,7 +150,9 @@ export function ctxDeleteFile(event) {
     console.debug(`ctxDeleteFile: pks: ${pks}`, event)
     confirmDelete?.data('pks', pks)
     $('#fileDeleteModal #fileDeleteModalLabel').text(`Delete File`)
-    $('#fileDeleteModal #fileDeleteModalBody').text(`Are you sure you want to delete this file?`)
+    $('#fileDeleteModal #fileDeleteModalBody').text(
+        `Are you sure you want to delete this file?`
+    )
     fileDeleteModal.modal('show')
 }
 
