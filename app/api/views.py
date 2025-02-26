@@ -26,7 +26,7 @@ from home.util.file import process_file
 from home.util.rand import rand_string
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
-from oauth.models import CustomUser, UserInvites
+from oauth.models import CustomUser, UserInvites, rand_string
 from settings.models import SiteSettings
 from settings.context_processors import site_settings_processor
 from api.utils import extract_files, extract_albums
@@ -544,3 +544,20 @@ def id_or_name(id_name: Union[str, int], name='name') -> dict:
         return {'id': int(id_name)}
     else:
         return {name: id_name}
+
+
+@require_http_methods(['POST', 'GET'])
+def token_view(request):
+    """
+    View  /api/token
+    GET to fetch token value
+    POST to refresh and fetch token value
+    """
+    if not request.user:
+        return HttpResponse(status=403)
+    if request.method == 'POST':
+        user = request.user
+        user.authorization = rand_string()
+        user.save()
+    return HttpResponse(request.user.authorization)
+        
