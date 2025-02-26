@@ -7,7 +7,7 @@ COPY ["package.json", "package-lock.json", "gulpfile.js", "swagger.yaml", "/work
 RUN npm install
 
 
-FROM python:3.13-slim AS python
+FROM python:3.11-slim AS python
 
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -20,7 +20,7 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip  &&\
     python3 -m pip install --no-cache-dir -r requirements.txt
 
 
-FROM python:3.13-slim
+FROM python:3.11-slim
 
 LABEL org.opencontainers.image.source="https://github.com/django-files/django-files"
 LABEL org.opencontainers.image.description="Django Files"
@@ -35,7 +35,7 @@ ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE=1
 
 COPY --from=node /work/app/static/dist/ /app/static/dist/
-COPY --from=python /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
+COPY --from=python /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
 COPY --from=python /usr/local/bin/ /usr/local/bin/
 
 RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
