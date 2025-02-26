@@ -58,13 +58,13 @@ jobs:
       #  if: ${{ always() }}
       #  uses: astral-sh/ruff-action@v3
 
-      #- name: "Black"
-      #  if: ${{ always() }}
-      #  uses: psf/black@stable
+      - name: "Black"
+        if: ${{ always() }}
+        uses: psf/black@stable
 
-      #- name: "Isort"
-      #  if: ${{ always() }}
-      #  uses: isort/isort-action@v1
+      - name: "Isort"
+        if: ${{ always() }}
+        uses: isort/isort-action@v1
 
       #- name: "Mypy"
       #  if: ${{ always() }}
