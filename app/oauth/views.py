@@ -153,6 +153,7 @@ def pre_login(request, user, site_settings):
 
 
 def post_login(request, user):
+    # TODO: Explain why this method is empty
     pass
 
 
@@ -198,7 +199,7 @@ def duo_redirect(request, username):
         duo_client.health_check()
     except duo_universal.DuoException as error:
         log.exception(error)
-        raise ValueError("Duo Health Check Failed: %s", error)
+        raise ValueError("Duo Health Check Failed: %s", error) from error
 
     state = duo_client.generate_state()
     log.debug("state: %s", state)

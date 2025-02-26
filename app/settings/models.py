@@ -7,7 +7,9 @@ from settings.managers import SiteSettingsManager
 
 
 class SiteSettings(models.Model):
-    TIMEZONE_CHOICES = zip(sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()))
+    TIMEZONE_CHOICES = zip(
+        sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()), strict=False
+    )
 
     id = models.AutoField(primary_key=True)
     site_url = models.URLField(max_length=128, blank=True, null=True, verbose_name="Site URL")

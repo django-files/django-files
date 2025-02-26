@@ -133,10 +133,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
         file = process_file(name, f, user_id, **kwargs)
         log.debug("file.name: %s", file.name)
 
-    def delete_files(self, *, user_id: int = None, pks: List[int] = [], **kwargs) -> dict:
+    def delete_files(self, *, user_id: int = None, pks: List[List[int]] = None, **kwargs) -> Optional[dict]:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
-        :param pk: List of Integers - File IDs
+        :param pks: List of Integers - File IDs
         :return: Dictionary - With Key: 'success': bool
         """
         log.debug("delete_files")
@@ -149,7 +149,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         else:
             return self._error("File not found.", **kwargs)
 
-    def delete_album(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
+    def delete_album(self, *, user_id: int = None, pk: int = None, **kwargs) -> Optional[dict]:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
@@ -185,10 +185,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return response
         return self._error("File not found.", **kwargs)
 
-    def private_files(self, *, user_id: int = None, pks: List[int] = [], private: bool, **kwargs) -> dict:
+    def private_files(self, *, user_id: int = None, pks: List[int] = None, private: bool, **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
-        :param pk: List of Integers - File IDs
+        :param pks: List of Integers - File IDs
         :param private: Bool, False Make Public, True Make Private
         :return: Dictionary - With Key: 'success': bool
         """
@@ -198,15 +198,14 @@ class HomeConsumer(AsyncWebsocketConsumer):
         files = Files.objects.filter(**filter_kwargs(pks, user_id))
         files.update(private=private)
         if len(files) > 0:
-            response = {}
-            response["objects"] = []
+            response = {"objects": []}
             for file in files:
                 response["objects"].append(model_to_dict(file, exclude=["file", "thumb", "albums"]))
             response.update({"event": "toggle-private-file"})
             return response
         return self._error("File(s) not found.", **kwargs)
 
-    def set_expr_files(self, *, user_id: int = None, pks: List[int] = [], expr: str = None, **kwargs) -> dict:
+    def set_expr_files(self, *, user_id: int = None, pks: List[int] = None, expr: str = None, **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pks: List of Integer - File ID
@@ -225,8 +224,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             file.expr = expr or ""
         Files.objects.bulk_update(files, ["expr"])
         if len(files) > 0:
-            response = {}
-            response["objects"] = []
+            response = {"objects": []}
             for file in files:
                 response["objects"].append(model_to_dict(file, exclude=["file", "thumb", "albums"]))
             response.update({"event": "set-expr-file"})

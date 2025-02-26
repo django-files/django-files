@@ -54,9 +54,9 @@ jobs:
         run: |
           flake8 --max-line-length 119 --extend-exclude "venv,node_modules,migrations" .
 
-      #- name: "Ruff"
-      #  if: ${{ always() }}
-      #  uses: astral-sh/ruff-action@v3
+      - name: "Ruff"
+        if: ${{ always() }}
+        uses: astral-sh/ruff-action@v3
 
       - name: "Black"
         if: ${{ always() }}

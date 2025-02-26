@@ -1,7 +1,7 @@
 # Black
 [tool.black]
 line-length = 119
-extend-exclude = "(migrations|templates|\\.github)"
+extend-exclude = '(migrations|templates|\.github)'
 
 # Coverage
 [tool.coverage.run]
@@ -13,11 +13,12 @@ omit = ["venv/*", "node_modules/*"]
 profile = "black"
 lines_after_imports = 2
 src_paths = ["src", "test"]
-skip = ["venv", "node_modules", "migrations", "templates", ".github"]
+skip = ["venv", "migrations", "node_modules", "templates", ".github"]
 
 # Mypy
 [tool.mypy]
 ignore_missing_imports = true
+exclude = ["venv", "migrations", "templates"]
 
 # Ruff
 [tool.ruff]

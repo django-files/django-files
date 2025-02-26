@@ -12,7 +12,9 @@ from pytimeparse2 import parse
 class SiteSettingsForm(forms.Form):
     site_url = forms.CharField(max_length=128)
     site_title = forms.CharField(max_length=64)
-    timezone = forms.ChoiceField(choices=zip(zoneinfo.available_timezones(), zoneinfo.available_timezones()))
+    timezone = forms.ChoiceField(
+        choices=zip(zoneinfo.available_timezones(), zoneinfo.available_timezones(), strict=False)
+    )
     site_description = forms.CharField(max_length=155)
     site_color = forms.CharField(max_length=7)
     oauth_reg = forms.BooleanField(required=False)
@@ -60,7 +62,9 @@ class SiteSettingsForm(forms.Form):
 
 class UserSettingsForm(forms.Form):
     first_name = forms.CharField(max_length=128, required=False)
-    timezone = forms.ChoiceField(choices=zip(zoneinfo.available_timezones(), zoneinfo.available_timezones()))
+    timezone = forms.ChoiceField(
+        choices=zip(zoneinfo.available_timezones(), zoneinfo.available_timezones(), strict=False)
+    )
     default_expire = forms.CharField(max_length=128, required=False)
     default_color = forms.CharField(max_length=7)
     nav_color_1 = forms.CharField(max_length=7)
@@ -96,7 +100,9 @@ class WelcomeForm(forms.Form):
     username = forms.CharField(max_length=128, strip=True)
     password = forms.CharField(min_length=6, max_length=128, strip=True, required=False)
     site_url = forms.CharField(max_length=255, strip=True, required=False)
-    timezone = forms.ChoiceField(choices=zip(zoneinfo.available_timezones(), zoneinfo.available_timezones()))
+    timezone = forms.ChoiceField(
+        choices=zip(zoneinfo.available_timezones(), zoneinfo.available_timezones(), strict=False)
+    )
 
     def clean_site_url(self):
         data = self.cleaned_data["site_url"]

@@ -18,7 +18,9 @@ def rand_invite():
 
 
 class CustomUser(AbstractUser):
-    TIMEZONE_CHOICES = zip(sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()))
+    TIMEZONE_CHOICES = zip(
+        sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()), strict=False
+    )
 
     class UploadNameFormats(models.TextChoices):
         NAME = "name", _("name")
@@ -70,11 +72,11 @@ class CustomUser(AbstractUser):
     def get_avatar_url(self):
         avatar_url = None
         try:
-            if self.user_avatar_choice == "DC" and hasattr(self, "discord") and getattr(self.discord, "avatar"):
-                avatar_url = f"https://cdn.discordapp.com/avatars/" f"{self.discord.id}/{self.discord.avatar}.png"
-            elif self.user_avatar_choice == "GH" and hasattr(self, "github") and getattr(self.github, "avatar"):
+            if self.user_avatar_choice == "DC" and hasattr(self, "discord") and self.discord.avatar:
+                avatar_url = f"https://cdn.discordapp.com/avatars/{self.discord.id}/{self.discord.avatar}.png"
+            elif self.user_avatar_choice == "GH" and hasattr(self, "github") and self.github.avatar:
                 avatar_url = self.github.avatar
-            elif self.user_avatar_choice == "GO" and hasattr(self, "google") and getattr(self.google, "avatar"):
+            elif self.user_avatar_choice == "GO" and hasattr(self, "google") and self.google.avatar:
                 avatar_url = self.google.avatar
             elif self.user_avatar_choice == "DF":
                 # filter vs get just in case a user users admin to set more than 1 file as avatar
