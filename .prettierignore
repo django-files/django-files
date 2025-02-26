@@ -1,5 +1,4 @@
 # App
-
 **/*.html
 app/static/highlightjs/**
 app/static/swagger/SwaggerDark.css
