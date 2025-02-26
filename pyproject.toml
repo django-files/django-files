@@ -1,14 +1,17 @@
 # Black
+# https://black.readthedocs.io/en/stable/usage_and_configuration/
 [tool.black]
 line-length = 119
 extend-exclude = '(migrations|templates|\.github)'
 
 # Coverage
+# https://coverage.readthedocs.io/en/latest/
 [tool.coverage.run]
 source = ["src"]
-omit = ["venv/*", "node_modules/*"]
+omit = ["venv/*", "migrations/*", "node_modules/*"]
 
 # Isort
+# https://pycqa.github.io/isort/docs/configuration/options.html
 [tool.isort]
 profile = "black"
 lines_after_imports = 2
@@ -16,11 +19,13 @@ src_paths = ["src", "test"]
 skip = ["venv", "migrations", "node_modules", "templates", ".github"]
 
 # Mypy
+# https://mypy.readthedocs.io/en/stable/config_file.html
 [tool.mypy]
 ignore_missing_imports = true
 exclude = ["venv", "migrations", "templates"]
 
 # Ruff
+# https://docs.astral.sh/ruff/configuration/
 [tool.ruff]
 line-length = 119
 target-version = "py313"
