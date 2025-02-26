@@ -2,7 +2,7 @@ import logging
 from geopy.geocoders import Nominatim
 from typing import Tuple
 
-log = logging.getLogger('app')
+log = logging.getLogger("app")
 
 # TODO: This should probably be a Class or merged into one
 
@@ -10,20 +10,20 @@ log = logging.getLogger('app')
 def city_state_from_exif(gps_ifd: dict) -> str:
     # TODO: Possibly fix try/expect
     try:
-        geolocator = Nominatim(user_agent='django-files')
+        geolocator = Nominatim(user_agent="django-files")
         location = geolocator.reverse(dms_to_degrees(gps_ifd))
         location_strings = []
-        if location.raw['address'].get('city', None):
-            location_strings.append(location.raw['address'].get('city'))
+        if location.raw["address"].get("city", None):
+            location_strings.append(location.raw["address"].get("city"))
         else:
-            location_strings.append(location.raw['address'].get('county'))
-        location_strings.append(location.raw['address'].get('state'))
-        location_strings.append(location.raw['address'].get('country'))
+            location_strings.append(location.raw["address"].get("county"))
+        location_strings.append(location.raw["address"].get("state"))
+        location_strings.append(location.raw["address"].get("country"))
         location_strings = list(filter(None, location_strings))
         return ", ".join(location_strings)
     except Exception as error:
         log.info(error)
-        return ''
+        return ""
 
 
 def dms_to_degrees(gps_ifd: dict) -> Tuple[float, float]:

@@ -3,23 +3,42 @@ from django.utils.html import format_html
 
 from home.models import Files, FileStats, ShortURLs, Albums
 
-admin.site.site_header = 'Django Files Administration'
+admin.site.site_header = "Django Files Administration"
 
 
 @admin.register(Albums)
 class AlbumAdmin(admin.ModelAdmin):
     model = Albums
-    list_display = ('id', 'name')
+    list_display = ("id", "name")
 
 
 @admin.register(Files)
 class FilesAdmin(admin.ModelAdmin):
     model = Files
-    list_display = ('id', 'show_file', 'size', 'expr', 'mime', 'user', 'date',)
-    list_filter = ('user', 'expr', 'mime',)
-    readonly_fields = ('id', 'show_file', 'size', 'user', 'date', 'avatar')
-    search_fields = ('id', 'show_file', 'size', 'expr', 'mime', 'date',)
-    ordering = ('-date',)
+    list_display = (
+        "id",
+        "show_file",
+        "size",
+        "expr",
+        "mime",
+        "user",
+        "date",
+    )
+    list_filter = (
+        "user",
+        "expr",
+        "mime",
+    )
+    readonly_fields = ("id", "show_file", "size", "user", "date", "avatar")
+    search_fields = (
+        "id",
+        "show_file",
+        "size",
+        "expr",
+        "mime",
+        "date",
+    )
+    ordering = ("-date",)
 
     @staticmethod
     def show_file(obj):
@@ -29,11 +48,15 @@ class FilesAdmin(admin.ModelAdmin):
 @admin.register(FileStats)
 class FileStatsAdmin(admin.ModelAdmin):
     model = FileStats
-    list_display = ('id', 'user', 'created_at',)
-    list_filter = ('user',)
-    readonly_fields = ('id', 'user', 'created_at', 'stats')
-    search_fields = ('id',)
-    ordering = ('-created_at',)
+    list_display = (
+        "id",
+        "user",
+        "created_at",
+    )
+    list_filter = ("user",)
+    readonly_fields = ("id", "user", "created_at", "stats")
+    search_fields = ("id",)
+    ordering = ("-created_at",)
 
     @admin.display(empty_value="Total")
     def view_user(self, obj):
@@ -46,8 +69,26 @@ class FileStatsAdmin(admin.ModelAdmin):
 @admin.register(ShortURLs)
 class ShortURLsAdmin(admin.ModelAdmin):
     model = ShortURLs
-    list_display = ('id', 'short', 'views', 'max', 'url', 'user', 'created_at',)
-    list_filter = ('user',)
-    readonly_fields = ('id', 'short', 'views', 'user', 'created_at',)
-    search_fields = ('id', 'short', 'url',)
-    ordering = ('-created_at',)
+    list_display = (
+        "id",
+        "short",
+        "views",
+        "max",
+        "url",
+        "user",
+        "created_at",
+    )
+    list_filter = ("user",)
+    readonly_fields = (
+        "id",
+        "short",
+        "views",
+        "user",
+        "created_at",
+    )
+    search_fields = (
+        "id",
+        "short",
+        "url",
+    )
+    ordering = ("-created_at",)

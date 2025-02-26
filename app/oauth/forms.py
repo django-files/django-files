@@ -8,13 +8,13 @@ from oauth.models import CustomUser
 class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm):
         model = CustomUser
-        fields = ('username',)
+        fields = ("username",)
 
 
 class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = CustomUser
-        fields = ('username',)
+        fields = ("username",)
 
 
 class LoginForm(forms.Form):
@@ -27,6 +27,6 @@ class UserForm(forms.Form):
     password = forms.CharField(min_length=6, max_length=128, strip=True)
 
     def clean_username(self):
-        if CustomUser.objects.filter(username=self.cleaned_data['username']):
-            raise ValidationError('The Chosen Username is Not Available.')
-        return self.cleaned_data['username']
+        if CustomUser.objects.filter(username=self.cleaned_data["username"]):
+            raise ValidationError("The Chosen Username is Not Available.")
+        return self.cleaned_data["username"]

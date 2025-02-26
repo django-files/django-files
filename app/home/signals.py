@@ -5,13 +5,22 @@ from django.dispatch import receiver
 from django.forms.models import model_to_dict
 from botocore.exceptions import ClientError
 
-from home.tasks import clear_files_cache, clear_stats_cache, clear_shorts_cache, clear_albums_cache, app_startup, \
-    delete_file_websocket, send_success_message, delete_album_websocket, update_file_websocket
+from home.tasks import (
+    clear_files_cache,
+    clear_stats_cache,
+    clear_shorts_cache,
+    clear_albums_cache,
+    app_startup,
+    delete_file_websocket,
+    send_success_message,
+    delete_album_websocket,
+    update_file_websocket,
+)
 from home.models import Files, FileStats, ShortURLs, Albums
 from oauth.models import DiscordWebhooks
 from home.util.quota import decrement_storage_usage
 
-log = logging.getLogger('app')
+log = logging.getLogger("app")
 
 
 @worker_ready.connect
@@ -21,7 +30,7 @@ def run_startup_task(sender, **kwargs):
 
 @receiver(pre_delete, sender=Files)
 def files_delete_signal(sender, instance, **kwargs):
-    data = model_to_dict(instance, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta', 'thumb', 'albums'])
+    data = model_to_dict(instance, exclude=["file", "info", "exif", "date", "edit", "meta", "thumb", "albums"])
     try:
         decrement_storage_usage(instance.file.size, instance.user.pk)
     except (ClientError, FileNotFoundError):
@@ -36,20 +45,20 @@ def files_delete_signal(sender, instance, **kwargs):
 @receiver(post_save, sender=Files)
 def files_post_save_signal(sender, instance, **kwargs):
     try:
-        log.info('files_post_save_signal, %s, %s, %s', sender, instance, kwargs)
+        log.info("files_post_save_signal, %s, %s, %s", sender, instance, kwargs)
         # clear_files_cache.delay()
-        data = model_to_dict(instance, exclude=['file', 'info', 'exif', 'date', 'edit', 'meta', 'thumb', 'albums'])
-        update_fields = list(kwargs['update_fields'])
-        log.debug('update_fields: %s', update_fields)
+        data = model_to_dict(instance, exclude=["file", "info", "exif", "date", "edit", "meta", "thumb", "albums"])
+        update_fields = list(kwargs["update_fields"])
+        log.debug("update_fields: %s", update_fields)
         update_file_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
     except Exception as error:
-        log.warning('ERROR: %s', error)
+        log.warning("ERROR: %s", error)
 
 
 @receiver(post_save, sender=Files)
 @receiver(post_delete, sender=Files)
 def clear_files_cache_signal(sender, instance, **kwargs):
-    log.debug('clear_files_cache_signal')
+    log.debug("clear_files_cache_signal")
     clear_files_cache.delay()
 
 
@@ -79,5 +88,5 @@ def clear_stats_cache_signal(sender, instance, **kwargs):
 
 @receiver(post_save, sender=DiscordWebhooks)
 def send_success_message_signal(sender, instance, **kwargs):
-    if kwargs.get('created'):
+    if kwargs.get("created"):
         send_success_message.delay(instance.id)
