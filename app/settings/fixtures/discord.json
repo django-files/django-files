@@ -1,14 +1,14 @@
 [
-    {
-        "model": "oauth.discord",
-        "pk": 1,
-        "fields": {
-            "id": 123,
-            "profile": {},
-            "access_token": "aaa",
-            "refresh_token": "aaa",
-            "expires_in": "2023-09-12T20:35:57.194Z",
-            "user": 1
-        }
+  {
+    "model": "oauth.discord",
+    "pk": 1,
+    "fields": {
+      "id": 123,
+      "profile": {},
+      "access_token": "aaa",
+      "refresh_token": "aaa",
+      "expires_in": "2023-09-12T20:35:57.194Z",
+      "user": 1
     }
+  }
 ]

@@ -26,11 +26,8 @@
     position: relative;
     background-color: #495057;
     background-size: 25px 25px;
-    background-image: linear-gradient(
-            45deg,
-            rgb(145 145 145) 25%,
-            transparent 25%
-        ),
+    background-image:
+        linear-gradient(45deg, rgb(145 145 145) 25%, transparent 25%),
         linear-gradient(135deg, rgb(145 145 145) 25%, transparent 25%),
         linear-gradient(45deg, transparent 75%, rgb(145 145 145) 75%),
         linear-gradient(135deg, transparent 75%, rgb(145 145 145) 75%);
@@ -74,11 +71,11 @@
     left: 12px;
 }
 
-input[type="checkbox"] {
+input[type='checkbox'] {
     transform: scale(1.5);
-  }
+}
 
-/* I hate that we have to do this, but datatables has no option to not 
+/* I hate that we have to do this, but datatables has no option to not
 highlight a row and it fucks up our other stylings */
 .dt-select-no-highlight {
     background-color: transparent !important;

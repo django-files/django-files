@@ -33,15 +33,20 @@ const dataTablesOptions = {
     columns: [
         { data: 'id' },
         { data: 'name' },
-        { data: 'date'},
+        { data: 'date' },
         { data: 'expr' },
         { data: 'view' },
         { data: 'maxv' },
         { data: 'delete' },
     ],
     columnDefs: [
-        { targets: 0, width: '30px', responsivePriority: 5},
-        { targets: 1, render: renderAlbumLink, defaultContent: '', responsivePriority: 1},
+        { targets: 0, width: '30px', responsivePriority: 5 },
+        {
+            targets: 1,
+            render: renderAlbumLink,
+            defaultContent: '',
+            responsivePriority: 1,
+        },
         {
             name: 'date',
             targets: 2,
@@ -57,8 +62,20 @@ const dataTablesOptions = {
             className: 'expire-value text-center',
             responsivePriority: 7,
         },
-        { targets: [4, 5], className: 'text-center', width: '30px', responsivePriority: 4},
-        { targets: 6, orderable: false, render: renderDeleteBtn, defaultContent: '', className: 'text-center', responsivePriority: 3 },
+        {
+            targets: [4, 5],
+            className: 'text-center',
+            width: '30px',
+            responsivePriority: 4,
+        },
+        {
+            targets: 6,
+            orderable: false,
+            render: renderDeleteBtn,
+            defaultContent: '',
+            className: 'text-center',
+            responsivePriority: 3,
+        },
     ],
 }
 
@@ -68,7 +85,7 @@ async function initAlbumsTable() {
     window.dispatchEvent(new Event('resize'))
 }
 
-function renderDeleteBtn(data, type, row, meta){
+function renderDeleteBtn(data, type, row, meta) {
     let deleteBtn = deleteAlbumButton.cloneNode(true)
     deleteBtn.setAttribute('data-hook-id', row.id)
     deleteBtn.addEventListener('click', handleDeleteClick)
@@ -86,7 +103,9 @@ function renderAlbumLink(data, type, row, meta) {
     }
     const albumLinkElem = albumLink.cloneNode(true)
     albumLinkElem.classList.add(`dj-album-link-${row.id}`)
-    albumLinkElem.querySelector('.dj-album-link-clip').setAttribute('data-clipboard-text', row.url)
+    albumLinkElem
+        .querySelector('.dj-album-link-clip')
+        .setAttribute('data-clipboard-text', row.url)
     albumLinkElem.querySelector('.dj-album-link-ref').href = row.url
     albumLinkElem.querySelector('.dj-album-link-ref').ariaLabel = row.name
     let newName = row.name
@@ -142,7 +161,6 @@ $('#albumsForm').on('submit', function (event) {
     })
 })
 
-
 function handleDeleteClick(event) {
     const pk = $(this).data('hook-id')
     $('#album-delete-confirm').data('pk', pk)
@@ -155,12 +173,11 @@ $('#album-delete-confirm').on('click', function (event) {
     deleteAlbumModal.modal('hide')
 })
 
-
 socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)
     if (data.event === 'album-delete') {
         $(`#album-${data.id}`).remove()
     } else if (data.event === 'album-new') {
         addAlbumRow(data)
-    } 
+    }
 })
