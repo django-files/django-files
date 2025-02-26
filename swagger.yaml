@@ -328,6 +328,38 @@ paths:
         "401":
           $ref: "#/components/responses/UnauthorizedError"
 
+  /token/:
+    post:
+      summary: Regenerate an api token
+      description: Regenerates API token for current user and returns new token
+      tags:
+        - Users
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: A raw string value of the token.
+          content:
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+    get:
+      summary: Get the current api token.
+      description: Get the current api token, expects cookie authentication.
+      tags:
+        - Users
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: A raw string value of the token.
+          content:
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
 components:
   securitySchemes:
     Authorization:

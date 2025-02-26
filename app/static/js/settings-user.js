@@ -44,3 +44,19 @@ function toggleThemeSwitch() {
     }
     document.documentElement.setAttribute('data-bs-theme', prefers)
 }
+
+function tokenRefresh() {
+    const csrfToken = document.querySelector(
+        'input[name="csrfmiddlewaretoken"]'
+    ).value
+    fetch('/api/token/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+    })
+        .then((response) => response.text())
+        .then((token) => {
+            document.getElementById('primary-token').innerText = token // Update the HTML element
+        })
+        .then((data) => console.log('Success:', data))
+        .catch((error) => console.log('Error:', error))
+}

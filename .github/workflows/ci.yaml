@@ -1,0 +1,117 @@
+name: "Dev CI"
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore:
+      - master
+
+jobs:
+  #verify:
+  #  name: "Verify"
+  #  runs-on: ubuntu-latest
+  #  timeout-minutes: 2
+  #  if: ${{ !contains(github.event.head_commit.message, '#noci') }}
+  #  steps:
+  #    - name: "Checkout"
+  #      uses: actions/checkout@v4
+  #
+  #    - name: "Flake8"
+  #      uses: ricardochaves/python-lint@v1.4.0
+  #      with:
+  #        python-root-list: "app"
+  #        use-pylint: false
+  #        use-pycodestyle: false
+  #        use-flake8: true
+  #        use-black: false
+  #        use-mypy: false
+  #        use-isort: false
+  #
+  #    #- name: "Flake8"
+  #    #  working-directory: app
+  #    #  run: |
+  #    #    flake8
+
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    #needs: verify
+    if: ${{ !contains(github.event.head_commit.message, '#noci') }}
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Docker Login"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ vars.GHCR_USER }}
+          password: ${{ secrets.GHCR_PASS }}
+
+      - name: "Setup Buildx"
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: "Bake and Push"
+        uses: docker/bake-action@v5
+        with:
+          files: docker-bake.json
+          push: true
+          set: |
+            app.tags=ghcr.io/django-files/django-files-app:${{ github.ref_name }}
+            nginx.tags=ghcr.io/django-files/django-files-nginx:${{ github.ref_name }}
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
+
+  deploy:
+    name: "Deploy Dev"
+    uses: ./.github/workflows/deploy.yaml
+    needs: build
+    if: ${{ !contains(github.event.head_commit.message, '#nodev') }}
+    permissions:
+      contents: read
+    with:
+      VERSION: ${{ github.ref_name }}
+      STACK_NAME: dev_django-files_django-files
+      COMPOSE_FILE: docker-compose-swarm.yaml
+      CONFIG_FILE: services/django-files/django-files/dev/settings.env
+    secrets:
+      SERVICE_CONFIGS_KEY: ${{ secrets.SERVICE_CONFIGS_KEY }}
+      PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+      PORTAINER_TOKEN: ${{ secrets.PORTAINER_TOKEN }}
+
+  deploy3:
+    name: "Deploy Dev S3"
+    uses: ./.github/workflows/deploy.yaml
+    needs: build
+    if: ${{ !contains(github.event.head_commit.message, '#nos3') }}
+    permissions:
+      contents: read
+    with:
+      VERSION: ${{ github.ref_name }}
+      STACK_NAME: dev3_django-files_django-files
+      COMPOSE_FILE: docker-compose-swarm.yaml
+      CONFIG_FILE: services/django-files/django-files/dev3/settings.env
+    secrets:
+      SERVICE_CONFIGS_KEY: ${{ secrets.SERVICE_CONFIGS_KEY }}
+      PORTAINER_URL: ${{ secrets.PORTAINER_URL }}
+      PORTAINER_TOKEN: ${{ secrets.PORTAINER_TOKEN }}
+
+  cleanup:
+    name: "Cleanup"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [deploy, deploy3]
+    if: ${{ !contains(github.event.head_commit.message, '#noclean') }}
+    steps:
+      - name: "Purge Cache"
+        uses: cssnr/cloudflare-purge-cache-action@v1
+        with:
+          token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          domains: cssnr.com

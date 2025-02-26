@@ -374,8 +374,11 @@
 
     <p>Treat this token like a password.</p>
     <p><a class="btn btn-lg btn-outline-light clip" role="button" data-clipboard-text="{{ user.authorization }}">
-        <i class="fa-solid fa-key me-2"></i> Copy Token</a></p>
-    <p><kbd>{{ user.authorization }}</kbd></p>
+        <i class="fa-solid fa-key me-2"></i> Copy Token</a>
+        <a class="btn btn-lg btn-outline-danger" role="button" onclick="tokenRefresh()">
+            <i class="fa-solid fa-key me-2"></i> Regenerate Token</a>
+    </p>
+    <p><kbd id="primary-token">{{ user.authorization }}</kbd></p>
 
     {% include 'settings/user-settings-modals.html' %}
     </section>
