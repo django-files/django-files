@@ -21,7 +21,6 @@ let filesDataTable
 let fileNameLength = getNameSize(window.innerWidth)
 
 const dataTablesOptions = {
-    sScrollX: '100%',
     paging: false,
     order: [1, 'desc'],
     responsive: {

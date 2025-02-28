@@ -47,4 +47,5 @@ async function initHome() {
             document.getElementById('bulk-actions').disabled = true
         }
     })
+    filesDataTable?.columns.adjust().draw()
 }

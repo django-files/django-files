@@ -68,6 +68,7 @@ async function initGallery() {
             document.getElementById('bulk-actions').disabled = true
         }
     })
+    filesDataTable?.columns.adjust().draw()
 }
 
 $('#user').on('change', function (event) {
