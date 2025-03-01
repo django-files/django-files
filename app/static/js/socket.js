@@ -43,7 +43,7 @@ async function wsConnect() {
                         .addClass('text-danger')
                         .text('Reconnecting...')
                     toast.show()
-                }, 2 * 1000)
+                }, 5 * 1000)
             }
         }
         setTimeout(function () {
