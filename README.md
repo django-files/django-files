@@ -129,7 +129,7 @@ Django Files is packed with features for seamless file management and sharing. M
 
 ### 🔒 Authentication & Security
 
--Multi-user support with local & OAuth authentication
+- Multi-user support with local & OAuth authentication options
 - Invite system for user onboarding
 - OAuth configuration via Django Admin (no restart required)
 
@@ -138,8 +138,8 @@ Django Files is packed with features for seamless file management and sharing. M
 - Drag & Drop file uploads
 - Short URLs with vanity support
 - Private & password-protected files
-- EXIF metadata removal on upload
-- Bulk actions (delete, change visibility)
+- Configurable EXIF metadata removal on upload
+- Bulk file actions
 - Albums & galleries for organizing files
 
 ### 📈 Stats & Insights
