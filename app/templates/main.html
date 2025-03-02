@@ -33,6 +33,9 @@
     {% if site_settings.site_animations %}
         <link rel="stylesheet" href="{% static 'dist/animate/animate.min.css' %}">
     {% endif %}
+    {% if request.META.HTTP_USER_AGENT|default:''|slice:":11" == "DjangoFiles" %}
+        <link rel="stylesheet" href="{% static 'css/ios.css' %}">
+    {% endif %}
     {% block head %}{% endblock %}
 </head>
 <body class="d-flex flex-column h-100">
@@ -253,9 +256,6 @@
         <script type="module" src="{% static 'js/socket.js' %}"></script>
         <script type="text/javascript" src="{% static 'js/user.js' %}"></script>
         <script type="text/javascript" src="{% static 'js/keybinds.js' %}"></script>
-    {% endif %}
-    {% if request.META.HTTP_USER_AGENT|default:''|slice:":11" == "DjangoFiles" %}
-        <script type="text/javascript" src="{% static 'js/ios.js' %}"></script>
     {% endif %}
 {% endblock %}
 
