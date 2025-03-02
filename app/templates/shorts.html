@@ -46,25 +46,8 @@
 {% endblock %}
 
 {% block tail %}
-    <script type="text/javascript" src="{% static 'js/shorts.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
-
-    <script>
-        $(document).ready(function() {
-            $('#shorts-table').DataTable({
-                order: [],
-                processing: true,
-                saveState: true,
-                pageLength: -1,
-                lengthMenu: [
-                    [10, 25, 50, 100, -1],
-                    [10, 25, 50, 100, 'All'],
-                ],
-                columnDefs: [
-                    { targets: [3, 4], orderable: false },
-                ],
-            });
-        });
-    </script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/shorts.js' %}"></script>
 {% endblock %}
