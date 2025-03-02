@@ -33,9 +33,6 @@
     {% if site_settings.site_animations %}
         <link rel="stylesheet" href="{% static 'dist/animate/animate.min.css' %}">
     {% endif %}
-    {% if request.META.HTTP_USER_AGENT|default:''|slice:":11" == "DjangoFiles" %}
-        <link rel="stylesheet" href="{% static 'css/ios.css' %}">
-    {% endif %}
     {% block head %}{% endblock %}
 </head>
 <body class="d-flex flex-column h-100">
