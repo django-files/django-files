@@ -1,6 +1,7 @@
 // JS for shorts
 
 const deleteShortModal = $('#delete-short-modal')
+let shortsDataTable
 
 // Handle Shorts FORM Submit
 $('#shortsForm').on('submit', function (event) {
@@ -65,4 +66,27 @@ $('#short-delete-confirm').on('click', function () {
         contentType: false,
         processData: false,
     })
+})
+
+document.addEventListener('DOMContentLoaded', function () {
+    shortsDataTable = $('#shorts-table').DataTable({
+        order: [],
+        processing: true,
+        responsive: {
+            details: false,
+        },
+        saveState: true,
+        pageLength: -1,
+        lengthMenu: [
+            [10, 25, 50, 100, -1],
+            [10, 25, 50, 100, 'All'],
+        ],
+        scrollX: false,
+        columnDefs: [
+            { targets: [0], responsivePriority: 1 },
+            { targets: [1], responsivePriority: 2 },
+            { targets: [2, 3, 4], responsivePriority: 3 },
+        ],
+    })
+    shortsDataTable?.columns.adjust().draw()
 })

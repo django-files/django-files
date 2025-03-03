@@ -53,7 +53,7 @@ const dataTablesOptions = {
             render: DataTable.render.select(),
             width: '10px',
             targets: 0,
-            responsivePriority: 4,
+            responsivePriority: 2,
         },
         {
             targets: 1,
@@ -64,7 +64,7 @@ const dataTablesOptions = {
         {
             target: 2,
 
-            responsivePriority: 0,
+            responsivePriority: 1,
             render: getFileLink,
             defaultContent: '',
             type: 'html',
@@ -165,7 +165,7 @@ function getFileLink(data, type, row, meta) {
 
     let newName = row.name
     if (row.name.length > fileNameLength) {
-        newName = row.name.substring(0, fileNameLength) + '...'
+        newName = row.name.substring(0, fileNameLength - 5) + '...'
     }
     fileLinkElem.querySelector('.dj-file-link-ref').textContent = newName
     return fileLinkElem
