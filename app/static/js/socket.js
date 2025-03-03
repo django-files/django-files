@@ -48,7 +48,7 @@ async function wsConnect() {
         }
         setTimeout(function () {
             wsConnect()
-        }, 10 * 1000)
+        }, 2 * 1000)
     }
     socket.onerror = function (event) {
         if (!disconnected) {
