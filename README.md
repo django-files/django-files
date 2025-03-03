@@ -20,7 +20,6 @@ A Self-Hosted File Manager designed for seamless file sharing, with built-in sup
 🔹 Have an idea? Submit a [Feature Request](https://github.com/django-files/
 🐛 Found a bug? Report an [Issue](https://github.com/django-files/django-files/issues/new) for any bugs.
 
-
 ## Table of Contents
 
 - [Overview](#overview)
@@ -45,12 +44,10 @@ Django Files is a Django-based web application with a Celery task queue, built u
 
 ## 🚀 Getting Started
 
-
-
->⚠️ Important Notice
+> ⚠️ Important Notice
 >
->🔸 This project is in Beta – Expect breaking changes without migrations.
->🔸 If not using S3, you must mount media_dir to /data/media for file storage and SQLite database persistence.
+> 🔸 This project is in Beta – Expect breaking changes without migrations.
+> 🔸 If not using S3, you must mount media_dir to /data/media for file storage and SQLite database persistence.
 
 For Extra Options See: [Variables](#variables)
 
@@ -115,7 +112,7 @@ For a Docker Swarm and Traefik example, see: [docker-compose-prod.yaml](docker-c
 
 ## Features
 
-Django Files is packed with features for seamless file management and sharing. More features are in progress! 
+Django Files is packed with features for seamless file management and sharing. More features are in progress!
 [Request a Feature](https://github.com/django-files/django-files/discussions/new?category=feature-requests).
 
 ### 🔹 Core Features
@@ -155,7 +152,7 @@ Django Files is packed with features for seamless file management and sharing. M
 
 ## Screen Shots
 
-Screenshots and UI previews are available on the 
+Screenshots and UI previews are available on the
 [Django Files Github Site.](https://django-files.github.io/screenshots.html) from the menu.
 
 ## Usage
