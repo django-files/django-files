@@ -82,10 +82,7 @@
             </li>
             {% if request.META.HTTP_USER_AGENT|default:''|slice:":11" == "DjangoFiles" %} 
                 <li class="nav-item">
-                    <a class="nav-link" href="djangofiles://serverlist">App Server List</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="djangofiles://serversettings">App Server Settings</a>
+                    <a class="nav-link" href="djangofiles://serverlist">Server List</a>
                 </li>
             {% endif %}
         </ul>
