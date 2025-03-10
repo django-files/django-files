@@ -49,3 +49,7 @@
 .hvr-grow:hover {
     transform: scale(1.05);
 }
+
+.navbar {
+    padding-top: max(env(safe-area-inset-top), 8px);
+}
