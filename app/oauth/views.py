@@ -59,7 +59,7 @@ def oauth_show(request):
 
 
 @require_http_methods(["GET"])
-def oauth_methods():
+def oauth_methods(request):
     """
     View     /oauth/methods/
     returns list of configured methods of oauth.
