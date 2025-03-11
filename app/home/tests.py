@@ -30,6 +30,7 @@ class TestAuthViews(TestCase):
 
     views = {
         "oauth:login": 302,
+        "oauth:methods": 200,
         "home:index": 200,
         "home:gallery": 200,
         "home:uppy": 200,

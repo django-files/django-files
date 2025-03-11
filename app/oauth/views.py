@@ -58,6 +58,23 @@ def oauth_show(request):
     return render(request, "login.html", {"local": site_settings.get_local_auth()})
 
 
+def oauth_methods(request):
+    """
+    View     /oauth/methods/
+    Accepts request and returns list of configured methods of oauth.
+    """
+    
+    site_settings = SiteSettings.objects.settings() 
+    methods = []
+    if site_settings.discord_client_id:
+        methods.append("discord")
+    if site_settings.github_client_id:
+        methods.append("github")
+    if site_settings.google_client_id:
+        methods.append("google")
+    return JsonResponse({"methods": methods})
+
+
 def oauth_discord(request):
     """
     View  /oauth/discord/
