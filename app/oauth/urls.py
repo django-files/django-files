@@ -6,7 +6,6 @@ app_name = "oauth"
 
 urlpatterns = [
     path("", views.oauth_show, name="login"),
-    path("methods/", views.oauth_methods, name="methods"),
     path("discord/", views.oauth_discord, name="discord"),
     path("github/", views.oauth_github, name="github"),
     path("google/", views.oauth_google, name="google"),

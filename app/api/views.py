@@ -569,3 +569,21 @@ def token_view(request):
         user.authorization = rand_string()
         user.save()
     return HttpResponse(request.user.authorization)
+
+@require_http_methods(["GET"])
+def oauth_methods(request):
+    """
+    View     /oauth/methods/
+    returns list of configured methods of oauth.
+    """
+    site_settings = SiteSettings.objects.settings()
+    methods = []
+    if site_settings.local_auth:
+        methods.append({"name": "local", "url": reverse("oauth:login")})
+    if site_settings.discord_client_id:
+        methods.append({"name": "discord", "url": reverse("oauth:discord")})
+    if site_settings.github_client_id:
+        methods.append({"name": "github", "url": reverse("oauth:github")})
+    if site_settings.google_client_id:
+        methods.append({"name": "google", "url": reverse("oauth:google")})
+    return JsonResponse({"auth_methods": methods})
