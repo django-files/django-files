@@ -571,9 +571,9 @@ def token_view(request):
     return HttpResponse(request.user.authorization)
 
 @require_http_methods(["GET"])
-def oauth_methods(request):
+def auth_methods(request):
     """
-    View     /oauth/methods/
+    View     /api/auth/methods/
     returns list of configured methods of oauth.
     """
     site_settings = SiteSettings.objects.settings()

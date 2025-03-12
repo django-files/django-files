@@ -30,7 +30,6 @@ class TestAuthViews(TestCase):
 
     views = {
         "oauth:login": 302,
-        "oauth:methods": 200,
         "home:index": 200,
         "home:gallery": 200,
         "home:uppy": 200,
@@ -46,6 +45,7 @@ class TestAuthViews(TestCase):
         "api:status": 200,
         "api:stats": 200,
         "api:recent": 200,
+        "api:auth-methods": 200,
     }
 
     def setUp(self):
