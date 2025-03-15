@@ -55,7 +55,7 @@ class DiscordOauth(BaseOauth):
     @classmethod
     def get_login_url(cls, site_settings) -> str:
         params = {
-            "redirect_uri": site_settings.oauth_redirect_url + "discord",
+            "redirect_uri": site_settings.oauth_redirect_url + "discord" if site_settings.oauth_redirect_url else None,
             "client_id": site_settings.discord_client_id,
             "response_type": config("OAUTH_RESPONSE_TYPE", "code"),
             "scope": config("OAUTH_SCOPE", "identify"),
