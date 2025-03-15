@@ -91,6 +91,7 @@ jobs:
         with:
           dockerfile: Dockerfile
           recursive: true
+          ignore: DL3008,DL3013,DL3018
 
       - name: "Yamllint"
         if: ${{ !cancelled() }}

@@ -15,6 +15,7 @@ gunicorn
 httpx
 markdown
 mysqlclient
+packaging
 Pillow
 psycopg[binary]
 python-decouple
@@ -37,13 +38,9 @@ Werkzeug
 
 # Tools
 
+#bandit
 #black
 #coverage
 #flake8
 #mypy
-packaging  # TODO: Check This
 #ruff
-
-
-# TODO: Why is this only in here?
-defusedxml
