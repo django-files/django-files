@@ -31,7 +31,6 @@ validators
 
 django-debug-toolbar<6
 django-extensions
-pytest-playwright
 watchdog
 Werkzeug
 
@@ -42,5 +41,6 @@ bandit
 black
 coverage
 flake8
+pytest-playwright
 mypy
 ruff
