@@ -94,11 +94,14 @@ def get_next_url(request) -> str:
     return reverse("home:index")
 
 
-def get_login_redirect_url(request) -> str:
+def get_login_redirect_url(request, native_auth: bool = False, token: str = None) -> str:
     """
     Determine 'login_redirect_url' parameter
     """
     log.debug("get_login_redirect_url: login_redirect_url: %s", request.session.get("login_redirect_url"))
+    if native_auth:
+        log.info("get_login_redirect_url: native_auth: %s", native_auth)
+        return "djangofiles://oauth/callback?token=%s" % token
     if "login_redirect_url" in request.session:
         url = request.session["login_redirect_url"]
         del request.session["login_redirect_url"]

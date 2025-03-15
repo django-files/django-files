@@ -85,7 +85,7 @@ def oauth_google(request):
     return GoogleOauth.redirect_login(request, settings)
 
 
-def oauth_callback(request):
+def oauth_callback(request, oauth_provider: str = None):
     """
     View  /oauth/callback/
     """
@@ -101,15 +101,24 @@ def oauth_callback(request):
         if not (code := request.GET.get("code")):
             messages.warning(request, "User aborted or no code in response...")
             return HttpResponseRedirect(get_login_redirect_url(request))
+        
+        log.info("request.META: %s", request.META)
+        if request.META.get('HTTP_X_CLIENT_IDENTIFIER') == "iOS":
+            log.debug("NATIVE APP:oauth_callback: oauth_provider: %s", oauth_provider)
+            native_auth = True
+        else:
+            native_auth = False
+        provider = oauth_provider if oauth_provider else request.session.get("oauth_provider")
+        log.debug("oauth_callback: provider: %s", provider)
 
-        if request.session["oauth_provider"] == "github":
+        if provider == "github":
             oauth = GithubOauth(code)
-        elif request.session["oauth_provider"] == "discord":
+        elif provider == "discord":
             oauth = DiscordOauth(code)
-        elif request.session["oauth_provider"] == "google":
+        elif provider == "google":
             oauth = GoogleOauth(code)
         else:
-            messages.error(request, "Unknown Provider: %s" % request.session["oauth_provider"])
+            messages.error(request, "Unknown Provider: %s" % provider)
             return HttpResponseRedirect(get_login_redirect_url(request))
         log.debug("oauth.id %s", oauth.id)
         log.debug("oauth.username %s", oauth.username)
@@ -119,10 +128,10 @@ def oauth_callback(request):
             del request.session["webhook"]
             webhook = oauth.add_webhook(request)
             messages.info(request, f"Webhook successfully added: {webhook.id}")
-            return HttpResponseRedirect(get_login_redirect_url(request))
+            return CustomSchemeRedirect(get_login_redirect_url(request, native_auth=native_auth))
 
         user = get_or_create_user(
-            request, oauth.id, oauth.username, request.session["oauth_provider"], first_name=oauth.first_name
+            request, oauth.id, oauth.username, provider, first_name=oauth.first_name
         )
         log.debug("user: %s", user)
         if not user:
@@ -135,13 +144,17 @@ def oauth_callback(request):
         login(request, user)
         post_login(request, user)
         messages.info(request, f"Successfully logged in. {user.first_name}.")
-        return HttpResponseRedirect(get_login_redirect_url(request))
+        return CustomSchemeRedirect(get_login_redirect_url(request, native_auth=native_auth, token=user.authorization))
 
     except Exception as error:
         log.exception(error)
         messages.error(request, f"Exception during login: {error}")
         return HttpResponseRedirect(get_login_redirect_url(request))
 
+
+class CustomSchemeRedirect(HttpResponseRedirect):
+    # This allows us to redirect to ios deeplinks
+    allowed_schemes = ['djangofiles']
 
 def pre_login(request, user, site_settings):
     log.debug("username: %s", user.username)
