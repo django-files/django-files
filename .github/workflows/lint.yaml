@@ -75,7 +75,7 @@ jobs:
       - name: "Bandit"
         if: ${{ !cancelled() }}
         run: |
-          bandit app
+          bandit -c pyproject.toml -r app
 
       - name: "Prettier"
         if: ${{ !cancelled() }}
