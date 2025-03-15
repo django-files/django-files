@@ -18,8 +18,8 @@ log = logging.getLogger(f"app.{provider}")
 class DiscordOauth(BaseOauth):
     api_url = "https://discord.com/api/v8/"
 
-    def process_login(self, site_settings) -> None:
-        self.data = self.get_token(site_settings, self.code)
+    def process_login(self, site_settings, native_app: bool = False) -> None:
+        self.data = self.get_token(site_settings, self.code, native_app)
         self.profile = self.get_profile(self.data)
         self.id: Optional[int] = self.profile["id"]
         self.username: Optional[str] = self.profile["username"]
@@ -53,9 +53,13 @@ class DiscordOauth(BaseOauth):
         )
 
     @classmethod
-    def get_login_url(cls, site_settings) -> str:
+    def get_login_url(cls, site_settings, native_app: bool = False) -> str:
         params = {
-            "redirect_uri": site_settings.oauth_redirect_url + "discord" if site_settings.oauth_redirect_url else None,
+            "redirect_uri": (
+                site_settings.oauth_redirect_url + "discord"
+                if site_settings.oauth_redirect_url and native_app
+                else None
+            ),
             "client_id": site_settings.discord_client_id,
             "response_type": config("OAUTH_RESPONSE_TYPE", "code"),
             "scope": config("OAUTH_SCOPE", "identify"),
@@ -85,10 +89,14 @@ class DiscordOauth(BaseOauth):
         return HttpResponseRedirect(url)
 
     @classmethod
-    def get_token(cls, site_settings, code: str) -> dict:
+    def get_token(cls, site_settings, code: str, native_app: bool = False) -> dict:
         log.debug("get_token")
         data = {
-            "redirect_uri": site_settings.get_oauth_redirect_url() + "discord",
+            "redirect_uri": (
+                site_settings.get_oauth_redirect_url() + "discord"
+                if site_settings.oauth_redirect_url and native_app
+                else None
+            ),
             "client_id": site_settings.discord_client_id,
             "client_secret": site_settings.discord_client_secret,
             "grant_type": config("OAUTH_GRANT_TYPE", "authorization_code"),
