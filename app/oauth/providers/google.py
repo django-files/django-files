@@ -43,7 +43,7 @@ class GoogleOauth(BaseOauth):
     def get_login_url(cls, settings) -> str:
         params = {
             "client_id": settings.google_client_id,
-            "redirect_uri": settings.get_oauth_redirect_url() + 'google',
+            "redirect_uri": settings.get_oauth_redirect_url() + "google",
             "scope": config("OAUTH_SCOPE", "openid email profile"),
             "response_type": config("OAUTH_RESPONSE_TYPE", "code"),
         }
@@ -60,7 +60,7 @@ class GoogleOauth(BaseOauth):
     def get_token(cls, site_settings, code: str) -> dict:
         log.debug("get_token")
         data = {
-            "redirect_uri": site_settings.get_oauth_redirect_url() + 'google',
+            "redirect_uri": site_settings.get_oauth_redirect_url() + "google",
             "client_id": site_settings.google_client_id,
             "client_secret": site_settings.google_client_secret,
             "grant_type": config("OAUTH_GRANT_TYPE", "authorization_code"),

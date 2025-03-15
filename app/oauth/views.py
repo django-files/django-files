@@ -101,9 +101,9 @@ def oauth_callback(request, oauth_provider: str = None):
         if not (code := request.GET.get("code")):
             messages.warning(request, "User aborted or no code in response...")
             return HttpResponseRedirect(get_login_redirect_url(request))
-        
+
         log.info("request.META: %s", request.META)
-        if request.META.get('HTTP_X_CLIENT_IDENTIFIER') == "iOS":
+        if request.META.get("HTTP_X_CLIENT_IDENTIFIER") == "iOS":
             log.debug("NATIVE APP:oauth_callback: oauth_provider: %s", oauth_provider)
             native_auth = True
         else:
@@ -130,9 +130,7 @@ def oauth_callback(request, oauth_provider: str = None):
             messages.info(request, f"Webhook successfully added: {webhook.id}")
             return CustomSchemeRedirect(get_login_redirect_url(request, native_auth=native_auth))
 
-        user = get_or_create_user(
-            request, oauth.id, oauth.username, provider, first_name=oauth.first_name
-        )
+        user = get_or_create_user(request, oauth.id, oauth.username, provider, first_name=oauth.first_name)
         log.debug("user: %s", user)
         if not user:
             messages.error(request, "User Not Found or Already Taken.")
@@ -154,7 +152,8 @@ def oauth_callback(request, oauth_provider: str = None):
 
 class CustomSchemeRedirect(HttpResponseRedirect):
     # This allows us to redirect to ios deeplinks
-    allowed_schemes = ['djangofiles']
+    allowed_schemes = ["djangofiles"]
+
 
 def pre_login(request, user, site_settings):
     log.debug("username: %s", user.username)
