@@ -16,8 +16,8 @@ log = logging.getLogger(f"app.{provider}")
 
 class GoogleOauth(BaseOauth):
 
-    def process_login(self, site_settings, native_app: bool = False) -> None:
-        self.data = self.get_token(site_settings, self.code, native_app)
+    def process_login(self, site_settings) -> None:
+        self.data = self.get_token(site_settings, self.code)
         self.profile = self.get_profile(self.data)
         self.id: Optional[int] = self.profile["id"]
         self.username: Optional[str] = self.profile["email"]
@@ -40,12 +40,10 @@ class GoogleOauth(BaseOauth):
             user.save()
 
     @classmethod
-    def get_login_url(cls, settings, native_app: bool = False) -> str:
+    def get_login_url(cls, settings) -> str:
         params = {
             "client_id": settings.google_client_id,
-            "redirect_uri": (
-                settings.get_oauth_redirect_url() + "google" if settings.oauth_redirect_url and native_app else None
-            ),
+            "redirect_uri": settings.get_oauth_redirect_url() + "google",
             "scope": config("OAUTH_SCOPE", "openid email profile"),
             "response_type": config("OAUTH_RESPONSE_TYPE", "code"),
         }
@@ -59,14 +57,10 @@ class GoogleOauth(BaseOauth):
         return HttpResponseRedirect(cls.get_login_url(settings))
 
     @classmethod
-    def get_token(cls, site_settings, code: str, native_app: bool = False) -> dict:
+    def get_token(cls, site_settings, code: str) -> dict:
         log.debug("get_token")
         data = {
-            "redirect_uri": (
-                site_settings.get_oauth_redirect_url() + "google"
-                if site_settings.oauth_redirect_url and native_app
-                else None
-            ),
+            "redirect_uri": site_settings.get_oauth_redirect_url() + "google",
             "client_id": site_settings.google_client_id,
             "client_secret": site_settings.google_client_secret,
             "grant_type": config("OAUTH_GRANT_TYPE", "authorization_code"),

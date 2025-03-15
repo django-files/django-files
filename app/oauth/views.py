@@ -122,7 +122,7 @@ def oauth_callback(request, oauth_provider: str = None):
         log.debug("oauth.id %s", oauth.id)
         log.debug("oauth.username %s", oauth.username)
         log.debug("oauth.first_name %s", oauth.first_name)
-        oauth.process_login(site_settings, native_app=native_auth)
+        oauth.process_login(site_settings)
         if request.session.get("webhook"):
             del request.session["webhook"]
             webhook = oauth.add_webhook(request)
