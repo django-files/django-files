@@ -586,11 +586,11 @@ def auth_methods(request):
     if site_settings.local_auth:
         methods.append({"name": "local", "url": site_settings.site_url + reverse("oauth:login")})
     if site_settings.discord_client_id:
-        methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings) + '&state=iOSApp'})
+        methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings) + "&state=iOSApp"})
     if site_settings.github_client_id:
-        methods.append({"name": "github", "url": GithubOauth.get_login_url(site_settings) + '&state=iOSApp'})
+        methods.append({"name": "github", "url": GithubOauth.get_login_url(site_settings) + "&state=iOSApp"})
     if site_settings.google_client_id:
-        methods.append({"name": "google", "url": GoogleOauth.get_login_url(site_settings) + '&state=iOSApp'})
+        methods.append({"name": "google", "url": GoogleOauth.get_login_url(site_settings) + "&state=iOSApp"})
     return JsonResponse({"authMethods": methods, "siteName": site_settings.site_title})
 
 
