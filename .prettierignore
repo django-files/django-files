@@ -1,20 +1,19 @@
-# App
-**/*.html
-app/static/highlightjs/**
-app/static/swagger/SwaggerDark.css
-
 # IDE
 .idea/
 .vscode/
-
-# Build
-dist/
-node_modules/
 
 # Tools
 .ruff_cache/
 .mypy_cache/
 .pytest_cache/
 
+# Build
+dist/
+node_modules/
+.github/disabled/
+
 # Files
-package-lock.json
+**/*.html
+app/static/highlightjs/**
+app/static/swagger/SwaggerDark.css
+.github/pull_request_template.md

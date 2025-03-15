@@ -28,7 +28,7 @@ exclude = ["venv", "migrations", "templates"]
 # https://docs.astral.sh/ruff/configuration/
 [tool.ruff]
 line-length = 119
-target-version = "py313"
+target-version = "py312"
 extend-exclude = ["migrations", "templates", ".github"]
 
 [tool.ruff.lint]
