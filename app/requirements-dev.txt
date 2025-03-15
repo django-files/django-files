@@ -38,9 +38,9 @@ Werkzeug
 
 # Tools
 
-#bandit
-#black
+bandit
+black
 coverage
 flake8
-#mypy
+mypy
 ruff
