@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import httpx
 import validators
 from api.utils import extract_albums, extract_files
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core import serializers
 from django.core.paginator import Paginator
@@ -26,7 +27,11 @@ from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
+from oauth.providers.discord import DiscordOauth
+from oauth.providers.github import GithubOauth
+from oauth.providers.google import GoogleOauth
 from oauth.models import CustomUser, UserInvites
+from oauth.views import pre_login
 from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
@@ -579,11 +584,34 @@ def auth_methods(request):
     site_settings = SiteSettings.objects.settings()
     methods = []
     if site_settings.local_auth:
-        methods.append({"name": "local", "url": reverse("oauth:login")})
+        methods.append({"name": "local", "url": site_settings.site_url + reverse("oauth:login")})
     if site_settings.discord_client_id:
-        methods.append({"name": "discord", "url": reverse("oauth:discord")})
+        methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings)})
     if site_settings.github_client_id:
-        methods.append({"name": "github", "url": reverse("oauth:github")})
+        methods.append({"name": "github", "url": GithubOauth.get_login_url(site_settings)})
     if site_settings.google_client_id:
-        methods.append({"name": "google", "url": reverse("oauth:google")})
-    return JsonResponse({"auth_methods": methods})
+        methods.append({"name": "google", "url": GoogleOauth.get_login_url(site_settings)})
+    return JsonResponse({"authMethods": methods, "siteName": site_settings.site_title})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def local_auth_for_native_client(request):
+    """
+    View     /api/auth/token/
+    returns raw token for local auth for native client
+    """
+    site_settings = SiteSettings.objects.settings()
+    data = get_json_body(request)
+    log.info("data: %s", data)
+    if not data:
+        return JsonResponse({"error": "Error Parsing JSON Body"}, status=400)
+    user = authenticate(request, username=data.get('username'), password=data.get('password'))
+    log.info(user)
+    if not user or not site_settings.get_local_auth():
+        return HttpResponse(status=401)
+    # TODO: Handle DUO for native clients
+    # if response := pre_login(request, user, site_settings):
+    #     return response
+    login(request, user)
+    # post_login(request, user) # um its an empty method
+    return HttpResponse('{"token": "%s"}' % request.user.authorization)

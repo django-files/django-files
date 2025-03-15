@@ -53,10 +53,7 @@ class DiscordOauth(BaseOauth):
         )
 
     @classmethod
-    def redirect_login(cls, request, site_settings) -> HttpResponseRedirect:
-        request.session["oauth_provider"] = provider
-        if request.user.is_authenticated:
-            request.session["oauth_claim_username"] = request.user.username
+    def get_login_url(cls, site_settings) -> str:
         params = {
             "redirect_uri": site_settings.oauth_redirect_url,
             "client_id": site_settings.discord_client_id,
@@ -64,9 +61,14 @@ class DiscordOauth(BaseOauth):
             "scope": config("OAUTH_SCOPE", "identify"),
             "prompt": config("OAUTH_PROMPT", "none"),
         }
-        url_params = urllib.parse.urlencode(params)
-        url = f"{cls.api_url}/oauth2/authorize?{url_params}"
-        return HttpResponseRedirect(url)
+        return f"https://discord.com/oauth2/authorize?{urllib.parse.urlencode(params)}"
+
+    @classmethod
+    def redirect_login(cls, request, site_settings) -> HttpResponseRedirect:
+        request.session["oauth_provider"] = provider
+        if request.user.is_authenticated:
+            request.session["oauth_claim_username"] = request.user.username
+        return HttpResponseRedirect(cls.get_login_url(site_settings))
 
     @classmethod
     def redirect_webhook(cls, request, site_settings) -> HttpResponseRedirect:

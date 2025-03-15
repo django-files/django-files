@@ -40,19 +40,21 @@ class GoogleOauth(BaseOauth):
             user.save()
 
     @classmethod
-    def redirect_login(cls, request, settings) -> HttpResponseRedirect:
-        request.session["oauth_provider"] = provider
-        if request.user.is_authenticated:
-            request.session["oauth_claim_username"] = request.user.username
+    def get_login_url(cls, settings) -> str:
         params = {
             "client_id": settings.google_client_id,
             "redirect_uri": settings.get_oauth_redirect_url(),
             "scope": config("OAUTH_SCOPE", "openid email profile"),
             "response_type": config("OAUTH_RESPONSE_TYPE", "code"),
         }
-        url_params = urllib.parse.urlencode(params)
-        url = f"https://accounts.google.com/o/oauth2/v2/auth?{url_params}"
-        return HttpResponseRedirect(url)
+        return f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+
+    @classmethod
+    def redirect_login(cls, request, settings) -> HttpResponseRedirect:
+        request.session["oauth_provider"] = provider
+        if request.user.is_authenticated:
+            request.session["oauth_claim_username"] = request.user.username
+        return HttpResponseRedirect(cls.get_login_url(settings))
 
     @classmethod
     def get_token(cls, site_settings, code: str) -> dict:
