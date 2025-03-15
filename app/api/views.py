@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 import httpx
 import validators
 from api.utils import extract_albums, extract_files
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.core import serializers
 from django.core.paginator import Paginator
@@ -27,11 +27,10 @@ from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
+from oauth.models import CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
-from oauth.models import CustomUser, UserInvites
-from oauth.views import pre_login
 from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
@@ -575,6 +574,7 @@ def token_view(request):
         user.save()
     return HttpResponse(request.user.authorization)
 
+
 @require_http_methods(["GET"])
 def auth_methods(request):
     """
@@ -592,6 +592,7 @@ def auth_methods(request):
     if site_settings.google_client_id:
         methods.append({"name": "google", "url": GoogleOauth.get_login_url(site_settings)})
     return JsonResponse({"authMethods": methods, "siteName": site_settings.site_title})
+
 
 @csrf_exempt
 @require_http_methods(["POST"])
