@@ -8,7 +8,7 @@ skips = ["B311"]
 # https://black.readthedocs.io/en/stable/usage_and_configuration/
 [tool.black]
 line-length = 119
-extend-exclude = '(migrations|templates|\.github)'
+extend-exclude = '(migrations|\.github)'
 
 # Coverage
 # https://coverage.readthedocs.io/en/latest/
@@ -22,20 +22,20 @@ omit = ["venv/*", "migrations/*", "node_modules/*"]
 profile = "black"
 lines_after_imports = 2
 src_paths = ["src", "test"]
-skip = ["venv", "migrations", "node_modules", "templates", ".github"]
+skip = ["venv", "migrations", "node_modules", ".github"]
 
 # Mypy
 # https://mypy.readthedocs.io/en/stable/config_file.html
 [tool.mypy]
 ignore_missing_imports = true
-exclude = ["venv", "migrations", "templates"]
+exclude = ["venv", "migrations"]
 
 # Ruff
 # https://docs.astral.sh/ruff/configuration/
 [tool.ruff]
 line-length = 119
 target-version = "py312"
-extend-exclude = ["migrations", "templates", ".github"]
+extend-exclude = ["migrations", ".github"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "B", "Q"]
