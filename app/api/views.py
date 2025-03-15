@@ -596,6 +596,7 @@ def auth_methods(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@auth_from_token
 def local_auth_for_native_client(request):
     """
     View     /api/auth/token/
@@ -606,7 +607,10 @@ def local_auth_for_native_client(request):
     log.info("data: %s", data)
     if not data:
         return JsonResponse({"error": "Error Parsing JSON Body"}, status=400)
-    user = authenticate(request, username=data.get("username"), password=data.get("password"))
+    if request.user.is_authenticated:
+        user = request.user
+    else:
+        user = authenticate(request, username=data.get("username"), password=data.get("password"))
     log.info(user)
     if not user or not site_settings.get_local_auth():
         return HttpResponse(status=401)
