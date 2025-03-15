@@ -15,9 +15,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 RUN apt-get -y update  &&  apt-get -y install --no-install-recommends  \
     build-essential gcc libmariadb-dev-compat pkg-config
 
-COPY app/requirements-build.txt requirements.txt
-RUN python3 -m pip install --no-cache-dir --upgrade pip  &&\
-    python3 -m pip install --no-cache-dir -r requirements.txt
+COPY app/requirements-build.txt /requirements.txt
+RUN python3 -m pip install --no-cache-dir -U pip  &&\
+    python3 -m pip install --no-cache-dir -r /requirements.txt
 
 
 FROM python:3.12-slim
@@ -55,7 +55,9 @@ COPY docker/redis.conf /etc/redis/redis.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/docker-entrypoint.sh /docker-entrypoint.sh
 
-COPY --chown=app:app app app
+# WORKDIR /app  # TODO: Set WORKDIR ?
+
+COPY --chown=app:app app /app
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 ENTRYPOINT ["bash", "/docker-entrypoint.sh"]

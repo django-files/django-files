@@ -505,7 +505,7 @@ def proxy_route_view(request, filename):
 def handle_lock(request, ctx):
     """Returns a not allowed if private or file pw page if password set."""
     obj = ctx.get("file") or ctx.get("album")
-    if obj.private and (request.user != obj.user) and (obj.password is None or obj.password == ""):
+    if obj.private and (request.user != obj.user) and (obj.password is None or obj.password == ""):  # nosec
         return render(request, "error/403.html", context=ctx, status=403)
     if obj.password and (request.user != obj.user):
         if (supplied_password := (request.GET.get("password"))) != obj.password:

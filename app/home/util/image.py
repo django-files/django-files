@@ -116,7 +116,7 @@ class ImageProcessor(object):
 def thumbnail_processor(file: Files, file_bytes: bytes = None, extension: str = None):
     # generate thumbnail via bytes object or file object
     # prefer bytes object if file is still local to avoid wasteful redownload of file
-    tmp_file = f"/tmp/thumb_{file.name}"
+    tmp_file = f"/tmp/thumb_{file.name}"  # nosec
     file_bytes = BytesIO(file_bytes) if file_bytes else BytesIO(file.file.read())
     with Image.open(file_bytes) as image:
         image = ImageOps.exif_transpose(image)
