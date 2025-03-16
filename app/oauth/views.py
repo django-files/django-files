@@ -141,7 +141,11 @@ def oauth_callback(request, oauth_provider: str = None):
         login(request, user)
         post_login(request, user)
         messages.info(request, f"Successfully logged in. {user.first_name}.")
-        return CustomSchemeRedirect(get_login_redirect_url(request, native_auth=native_auth, token=user.authorization, session_key=request.session.session_key))
+        return CustomSchemeRedirect(
+            get_login_redirect_url(
+                request, native_auth=native_auth, token=user.authorization, session_key=request.session.session_key
+            )
+        )
 
     except Exception as error:
         log.exception(error)
