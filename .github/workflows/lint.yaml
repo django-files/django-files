@@ -83,7 +83,7 @@ jobs:
       - name: "Yamllint"
         if: ${{ !cancelled() }}
         env:
-          CONFIG: "{extends: relaxed, ignore: [node_modules/], rules: {line-length: {max: 119}}}"
+          CONFIG: "{extends: relaxed, ignore: [node_modules/,.github/disabled/], rules: {line-length: {max: 119}}}"
         run: |
           echo "::group::List Files"
           yamllint -d '${{ env.CONFIG }}' --list-files .
