@@ -15,6 +15,7 @@ gunicorn
 httpx
 markdown
 mysqlclient
+packaging
 Pillow
 psycopg[binary]
 python-decouple
@@ -30,16 +31,16 @@ validators
 
 django-debug-toolbar<6
 django-extensions
-pytest-playwright
 watchdog
 Werkzeug
 
 
 # Tools
 
-#black
+bandit
+black
 coverage
 flake8
-#mypy
-packaging  # TODO: Check This
+pytest-playwright
+mypy
 ruff
