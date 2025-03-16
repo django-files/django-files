@@ -30,6 +30,12 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v4
 
+      - name: "Debug event.json"
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: |
+          cat "${GITHUB_EVENT_PATH}"
+
       - name: "Setup Python 3.12"
         uses: actions/setup-python@v5
         with:
