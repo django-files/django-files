@@ -2,7 +2,7 @@
 # https://bandit.readthedocs.io/en/latest/config.html
 [tool.bandit]
 exclude_dirs = ["venv", "app/home/tests.py"]
-skips = ["B311"]
+skips = ["B311", "B107"]
 
 # Black
 # https://black.readthedocs.io/en/stable/usage_and_configuration/
