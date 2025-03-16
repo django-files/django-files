@@ -579,24 +579,24 @@ def token_view(request):
 def auth_methods(request):
     """
     View     /api/auth/methods/
-    returns list of configured methods of oauth.
+    returns dictionary of configured auth methods, and branding for native client login pages
     """
     site_settings = SiteSettings.objects.settings()
+    state_string = "&state=iOSApp"
     methods = []
     if site_settings.local_auth:
         methods.append({"name": "local", "url": site_settings.site_url + reverse("oauth:login")})
     if site_settings.discord_client_id:
-        methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings) + "&state=iOSApp"})
+        methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings) + state_string})
     if site_settings.github_client_id:
-        methods.append({"name": "github", "url": GithubOauth.get_login_url(site_settings) + "&state=iOSApp"})
+        methods.append({"name": "github", "url": GithubOauth.get_login_url(site_settings) + state_string})
     if site_settings.google_client_id:
-        methods.append({"name": "google", "url": GoogleOauth.get_login_url(site_settings) + "&state=iOSApp"})
+        methods.append({"name": "google", "url": GoogleOauth.get_login_url(site_settings) + state_string})
     return JsonResponse({"authMethods": methods, "siteName": site_settings.site_title})
 
 
 @csrf_exempt
 @require_http_methods(["POST"])
-@auth_from_token
 def local_auth_for_native_client(request):
     """
     View     /api/auth/token/
@@ -604,14 +604,15 @@ def local_auth_for_native_client(request):
     """
     site_settings = SiteSettings.objects.settings()
     data = get_json_body(request)
-    log.info("data: %s", data)
     if not data:
         return JsonResponse({"error": "Error Parsing JSON Body"}, status=400)
+    # log request data, cookies and meta
+    log.debug("request.cookies: %s", request.COOKIES)
+    log.debug("request.META: %s", request.META)
     if request.user.is_authenticated:
         user = request.user
     else:
         user = authenticate(request, username=data.get("username"), password=data.get("password"))
-    log.info(user)
     if not user or not site_settings.get_local_auth():
         return HttpResponse(status=401)
     # TODO: Handle DUO for native clients
@@ -619,4 +620,4 @@ def local_auth_for_native_client(request):
     #     return response
     login(request, user)
     # post_login(request, user) # um its an empty method
-    return HttpResponse('{"token": "%s"}' % request.user.authorization)
+    return HttpResponse('{"token": "%s"}' % (request.user.authorization))
