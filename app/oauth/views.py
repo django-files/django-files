@@ -102,13 +102,10 @@ def oauth_callback(request, oauth_provider: str = None):
             messages.warning(request, "User aborted or no code in response...")
             return HttpResponseRedirect(get_login_redirect_url(request))
 
-        if request.GET.get("state") == "iOSApp":
-            log.debug("Using Native App Oauth Flow")
-            native_auth = True
-        else:
-            native_auth = False
+        native_auth = request.GET.get("state") == "iOSApp"
         provider = oauth_provider if oauth_provider else request.session.get("oauth_provider")
-        log.debug("oauth_callback: provider: %s", provider)
+        log.debug("oauth_callback: provider: %s:%s", provider)
+        log.debug("Native App Auth: %s", native_auth)
 
         if provider == "github":
             oauth = GithubOauth(code)
