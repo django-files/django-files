@@ -196,7 +196,7 @@ def album_view(request):
 @csrf_exempt
 @require_http_methods(["GET"])
 @auth_from_token(no_fail=True)
-def random_album(request, user_album: str, idname: str = None):
+def random_album(request, user_album: str, idname: str = ""):
     """
     View /api/random/albums/...
     /album_id/
@@ -621,5 +621,5 @@ def local_auth_for_native_client(request):
     # if response := pre_login(request, user, site_settings):
     #     return response
     login(request, user)
-    # post_login(request, user) # um its an empty method
+    post_login(request, user)  # um its an empty method
     return HttpResponse('{"token": "%s"}' % (request.user.authorization))

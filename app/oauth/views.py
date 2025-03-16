@@ -85,7 +85,7 @@ def oauth_google(request):
     return GoogleOauth.redirect_login(request, settings)
 
 
-def oauth_callback(request, oauth_provider: str = None):
+def oauth_callback(request, oauth_provider: str = ""):
     """
     View  /oauth/callback/
     """
@@ -120,7 +120,7 @@ def oauth_callback(request, oauth_provider: str = None):
         log.debug("oauth.username %s", oauth.username)
         log.debug("oauth.first_name %s", oauth.first_name)
         oauth.process_login(site_settings)
-        if request.session.get("webhook"):
+        if request.session.get("webhook") and provider == "discord":
             del request.session["webhook"]
             webhook = oauth.add_webhook(request)
             messages.info(request, f"Webhook successfully added: {webhook.id}")
@@ -137,7 +137,7 @@ def oauth_callback(request, oauth_provider: str = None):
             return response
         login(request, user)
         post_login(request, user)
-        messages.info(request, f"Successfully logged in. {user.first_name}.")
+        messages.info(request, f"Successfully logged in via oauth. {user.username} {user.first_name}.")
         return CustomSchemeRedirect(
             get_login_redirect_url(
                 request, native_auth=native_auth, token=user.authorization, session_key=request.session.session_key
