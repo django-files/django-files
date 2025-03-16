@@ -2,21 +2,13 @@ name: "Lint"
 
 on:
   workflow_dispatch:
-  pull_request:
   push:
-    #branches: [master]
-    #paths-ignore:
-    #  - ".assets/**"
-    #  - ".github/disabled/**"
-    #  - "app/requirements*"
-    #  - ".dockerignore"
-    #  - ".gitignore"
-    #  - ".prettierignore"
-    #  - "Makefile"
-    #  - "pyproject.toml"
-    #  - "requirements.txt"
-    #  - "settings.env.example"
-    #  - "test.env"
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
@@ -31,15 +23,10 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v4
 
-      #- name: "Debug event.json"
-      #  if: ${{ always() }}
-      #  run: |
-      #    cat "${GITHUB_EVENT_PATH}"
-
-      - name: "Setup Python 3.13"
+      - name: "Setup Python 3.12"
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.12"
           cache: "pip"
 
       - name: "Install"

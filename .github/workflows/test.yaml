@@ -3,9 +3,8 @@ name: "Test"
 on:
   workflow_dispatch:
   push:
-  #  branches: ["master"]
-  #pull_request:
-  #  branches: ["master", "*.*.*"]
+    branches: [master]
+  pull_request:
 
 jobs:
   test:
@@ -31,10 +30,10 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v4
 
-      - name: "Setup Python 3.13"
+      - name: "Setup Python 3.12"
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.12"
 
       - name: "Python Install"
         working-directory: app
@@ -43,13 +42,14 @@ jobs:
           python -m pip install -r requirements-dev.txt
           playwright install chromium
 
-      - name: "Setup Node 20"
+      - name: "Setup Node 22"
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: "Node Install"
-        run: npm install
+        run: |
+          npm install
 
       - name: "Test Migrations"
         working-directory: app
@@ -81,6 +81,7 @@ jobs:
 
       - name: "Push Artifacts"
         uses: cssnr/push-artifacts-action@master
+        continue-on-error: true
         with:
           source: "app/screenshots/"
           dest: "/static"
@@ -89,5 +90,5 @@ jobs:
           pass: ${{ secrets.RSYNC_PASS }}
           port: ${{ secrets.RSYNC_PORT }}
           webhost: "https://artifacts.hosted-domains.com"
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          #webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          #token: ${{ secrets.GITHUB_TOKEN }}

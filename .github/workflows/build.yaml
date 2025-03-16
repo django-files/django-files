@@ -62,6 +62,7 @@ jobs:
           echo "APP_VERSION: ${GITHUB_REF_NAME}"
 
       - name: "Debug Tags"
+        continue-on-error: true
         run: |
           echo inputs.tags: '${{ inputs.tags }}'
           echo tags: '${{ steps.tags.outputs.tags }}'
@@ -69,10 +70,12 @@ jobs:
       - name: "Docker Tags"
         id: dtags
         uses: cssnr/docker-tags-action@v1
+        continue-on-error: true
         with:
           tags: ${{ inputs.tags }}
 
       - name: "Debug Docker Tags"
+        continue-on-error: true
         run: |
           echo inputs.tags: '${{ inputs.tags }}'
           echo -e "tags:\n${{ steps.dtags.outputs.tags }}"
@@ -97,3 +100,10 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.tags.outputs.tags }}
+
+      - name: "Update Release Notes Action"
+        uses: smashedr/update-release-notes-action@master
+        continue-on-error: true
+        with:
+          tags: ${{ steps.tags.outputs.tags }}
+          location: tail

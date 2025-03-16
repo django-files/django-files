@@ -6,6 +6,10 @@ on:
     branches-ignore:
       - master
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   #verify:
   #  name: "Verify"
@@ -52,12 +56,14 @@ jobs:
       - name: "Docker Tags"
         id: dtags
         uses: cssnr/docker-tags-action@v1
+        continue-on-error: true
         with:
           images: |
             "ghcr.io/${{ github.repository }}-app"
             "ghcr.io/${{ github.repository }}-nginx"
 
       - name: "Debug Docker Tags"
+        continue-on-error: true
         run: |
           echo github.ref_name: '${{ github.ref_name }}'
           echo -e "tags:\n${{ steps.dtags.outputs.tags }}"
