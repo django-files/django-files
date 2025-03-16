@@ -621,5 +621,4 @@ def local_auth_for_native_client(request):
     # if response := pre_login(request, user, site_settings):
     #     return response
     login(request, user)
-    post_login(request, user)  # um its an empty method
     return HttpResponse('{"token": "%s"}' % (request.user.authorization))
