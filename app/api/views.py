@@ -586,8 +586,9 @@ def auth_methods(request):
     site_settings = SiteSettings.objects.settings()
     state_string = "&state=iOSApp"
     methods = []
+    site_url = site_settings.site_url if site_settings.site_url else f"{request.scheme}://{request.get_host()}"
     if site_settings.local_auth:
-        methods.append({"name": "local", "url": site_settings.site_url + reverse("oauth:login")})
+        methods.append({"name": "local", "url": site_url + reverse("oauth:login")})
     if site_settings.discord_client_id:
         methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings) + state_string})
     if site_settings.github_client_id:
