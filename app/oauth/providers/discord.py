@@ -54,8 +54,9 @@ class DiscordOauth(BaseOauth):
 
     @classmethod
     def get_login_url(cls, site_settings) -> str:
+        log.info("get_login_url: %s", site_settings.get_oauth_redirect_url(provider="discord"))
         params = {
-            "redirect_uri": site_settings.oauth_redirect_url + "discord" if site_settings.oauth_redirect_url else None,
+            "redirect_uri": site_settings.get_oauth_redirect_url(provider="discord"),
             "client_id": site_settings.discord_client_id,
             "response_type": config("OAUTH_RESPONSE_TYPE", "code"),
             "scope": config("OAUTH_SCOPE", "identify"),
@@ -75,7 +76,7 @@ class DiscordOauth(BaseOauth):
         request.session["oauth_provider"] = provider
         request.session["webhook"] = "discord"
         params = {
-            "redirect_uri": site_settings.get_oauth_redirect_url() + "discord",
+            "redirect_uri": site_settings.get_oauth_redirect_url(provider="discord"),
             "client_id": site_settings.discord_client_id,
             "response_type": config("OAUTH_RESPONSE_TYPE", "code"),
             "scope": config("OAUTH_SCOPE", "identify") + " webhook.incoming",
@@ -88,7 +89,7 @@ class DiscordOauth(BaseOauth):
     def get_token(cls, site_settings, code: str) -> dict:
         log.debug("get_token")
         data = {
-            "redirect_uri": site_settings.get_oauth_redirect_url() + "discord",
+            "redirect_uri": site_settings.get_oauth_redirect_url(provider="discord"),
             "client_id": site_settings.discord_client_id,
             "client_secret": site_settings.discord_client_secret,
             "grant_type": config("OAUTH_GRANT_TYPE", "authorization_code"),

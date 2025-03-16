@@ -42,7 +42,7 @@ class GithubOauth(BaseOauth):
     @classmethod
     def get_login_url(cls, site_settings) -> str:
         params = {
-            "redirect_uri": site_settings.get_oauth_redirect_url() + "github",
+            "redirect_uri": site_settings.get_oauth_redirect_url(provider="github"),
             "client_id": site_settings.github_client_id,
             "response_type": config("OAUTH_RESPONSE_TYPE", "code"),
             "scope": config("OAUTH_SCOPE", ""),
@@ -60,7 +60,7 @@ class GithubOauth(BaseOauth):
     def get_token(cls, site_settings, code: str) -> dict:
         log.debug("get_token")
         data = {
-            "redirect_uri": site_settings.get_oauth_redirect_url() + "github",
+            "redirect_uri": site_settings.get_oauth_redirect_url(provider="github"),
             "client_id": site_settings.github_client_id,
             "client_secret": site_settings.github_client_secret,
             "grant_type": config("OAUTH_GRANT_TYPE", "authorization_code"),
