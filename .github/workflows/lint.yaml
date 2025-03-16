@@ -15,7 +15,6 @@ jobs:
     name: "Lint"
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: ${{ !contains(github.event.head_commit.message, '#nolint') }}
     permissions:
       contents: read
 

@@ -3,8 +3,7 @@ name: "Dev CI"
 on:
   workflow_dispatch:
   push:
-    branches-ignore:
-      - master
+    branches-ignore: [master]
 
 concurrency:
   group: ${{ github.workflow }}
