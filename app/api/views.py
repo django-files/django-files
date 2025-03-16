@@ -39,7 +39,7 @@ from settings.models import SiteSettings
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
 
-json_error_message = ""Error Parsing JSON Body"
+json_error_message = "Error Parsing JSON Body"
 
 def auth_from_token(view=None, no_fail=False):
     @wraps(view)
