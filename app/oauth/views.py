@@ -104,7 +104,7 @@ def oauth_callback(request, oauth_provider: str = None):
 
         native_auth = request.GET.get("state") == "iOSApp"
         provider = oauth_provider if oauth_provider else request.session.get("oauth_provider")
-        log.debug("oauth_callback: provider: %s:%s", provider)
+        log.debug("oauth_callback: provider: %s", provider)
         log.debug("Native App Auth: %s", native_auth)
 
         if provider == "github":

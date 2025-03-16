@@ -50,6 +50,7 @@ class GithubOauth(BaseOauth):
         }
         return f"https://github.com/login/oauth/authorize?{urllib.parse.urlencode(params)}"
 
+    @classmethod
     def redirect_login(cls, request, site_settings) -> HttpResponseRedirect:
         request.session["oauth_provider"] = provider
         if request.user.is_authenticated:

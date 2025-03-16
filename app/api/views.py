@@ -39,6 +39,7 @@ from settings.models import SiteSettings
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
 
+json_error_message = ""Error Parsing JSON Body"
 
 def auth_from_token(view=None, no_fail=False):
     @wraps(view)
@@ -361,7 +362,7 @@ def file_view(request, idname):
             data = get_json_body(request)
             log.debug("data: %s", data)
             if not data:
-                return JsonResponse({"error": "Error Parsing JSON Body"}, status=400)
+                return JsonResponse({"error": json_error_message}, status=400)
             if "expr" in data and not parse(data["expr"]):
                 data["expr"] = ""
             # TODO: We should probably not use .update here and convert to a function, see below TODO
@@ -441,7 +442,7 @@ def remote_view(request):
     data = get_json_body(request)
     log.debug("data: %s", data)
     if not data:
-        return JsonResponse({"error": "Error Parsing JSON Body"}, status=400)
+        return JsonResponse({"error": json_error_message}, status=400)
 
     url = data.get("url")
     log.debug("url: %s", url)
@@ -605,7 +606,7 @@ def local_auth_for_native_client(request):
     site_settings = SiteSettings.objects.settings()
     data = get_json_body(request)
     if not data:
-        return JsonResponse({"error": "Error Parsing JSON Body"}, status=400)
+        return JsonResponse({"error": json_error_message}, status=400)
     # log request data, cookies and meta
     log.debug("request.cookies: %s", request.COOKIES)
     log.debug("request.META: %s", request.META)
