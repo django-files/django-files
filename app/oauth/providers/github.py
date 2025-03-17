@@ -40,26 +40,28 @@ class GithubOauth(BaseOauth):
             user.save()
 
     @classmethod
-    def redirect_login(cls, request, site_settings) -> HttpResponseRedirect:
-        request.session["oauth_provider"] = provider
-        if request.user.is_authenticated:
-            request.session["oauth_claim_username"] = request.user.username
+    def get_login_url(cls, site_settings) -> str:
         params = {
-            "redirect_uri": site_settings.get_oauth_redirect_url(),
+            "redirect_uri": site_settings.get_oauth_redirect_url(provider="github"),
             "client_id": site_settings.github_client_id,
             "response_type": config("OAUTH_RESPONSE_TYPE", "code"),
             "scope": config("OAUTH_SCOPE", ""),
             "prompt": config("OAUTH_PROMPT", "none"),
         }
-        url_params = urllib.parse.urlencode(params)
-        url = f"https://github.com/login/oauth/authorize?{url_params}"
-        return HttpResponseRedirect(url)
+        return f"https://github.com/login/oauth/authorize?{urllib.parse.urlencode(params)}"
+
+    @classmethod
+    def redirect_login(cls, request, site_settings) -> HttpResponseRedirect:
+        request.session["oauth_provider"] = provider
+        if request.user.is_authenticated:
+            request.session["oauth_claim_username"] = request.user.username
+        return HttpResponseRedirect(cls.get_login_url(site_settings))
 
     @classmethod
     def get_token(cls, site_settings, code: str) -> dict:
         log.debug("get_token")
         data = {
-            "redirect_uri": site_settings.get_oauth_redirect_url(),
+            "redirect_uri": site_settings.get_oauth_redirect_url(provider="github"),
             "client_id": site_settings.github_client_id,
             "client_secret": site_settings.github_client_secret,
             "grant_type": config("OAUTH_GRANT_TYPE", "authorization_code"),

@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import httpx
 import validators
 from api.utils import extract_albums, extract_files
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.core import serializers
 from django.core.paginator import Paginator
@@ -27,6 +28,9 @@ from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from oauth.models import CustomUser, UserInvites
+from oauth.providers.discord import DiscordOauth
+from oauth.providers.github import GithubOauth
+from oauth.providers.google import GoogleOauth
 from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
@@ -34,6 +38,8 @@ from settings.models import SiteSettings
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
+
+json_error_message = "Error Parsing JSON Body"
 
 
 def auth_from_token(view=None, no_fail=False):
@@ -190,7 +196,7 @@ def album_view(request):
 @csrf_exempt
 @require_http_methods(["GET"])
 @auth_from_token(no_fail=True)
-def random_album(request, user_album: str, idname: str = None):
+def random_album(request, user_album: str, idname: str = ""):
     """
     View /api/random/albums/...
     /album_id/
@@ -357,7 +363,7 @@ def file_view(request, idname):
             data = get_json_body(request)
             log.debug("data: %s", data)
             if not data:
-                return JsonResponse({"error": "Error Parsing JSON Body"}, status=400)
+                return JsonResponse({"error": json_error_message}, status=400)
             if "expr" in data and not parse(data["expr"]):
                 data["expr"] = ""
             # TODO: We should probably not use .update here and convert to a function, see below TODO
@@ -437,7 +443,7 @@ def remote_view(request):
     data = get_json_body(request)
     log.debug("data: %s", data)
     if not data:
-        return JsonResponse({"error": "Error Parsing JSON Body"}, status=400)
+        return JsonResponse({"error": json_error_message}, status=400)
 
     url = data.get("url")
     log.debug("url: %s", url)
@@ -569,3 +575,51 @@ def token_view(request):
         user.authorization = rand_string()
         user.save()
     return HttpResponse(request.user.authorization)
+
+
+@require_http_methods(["GET"])
+def auth_methods(request):
+    """
+    View     /api/auth/methods/
+    returns dictionary of configured auth methods, and branding for native client login pages
+    """
+    site_settings = SiteSettings.objects.settings()
+    state_string = "&state=iOSApp"
+    methods = []
+    site_url = site_settings.site_url if site_settings.site_url else f"{request.scheme}://{request.get_host()}"
+    if site_settings.local_auth:
+        methods.append({"name": "local", "url": site_url + reverse("oauth:login")})
+    if site_settings.discord_client_id:
+        methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings) + state_string})
+    if site_settings.github_client_id:
+        methods.append({"name": "github", "url": GithubOauth.get_login_url(site_settings) + state_string})
+    if site_settings.google_client_id:
+        methods.append({"name": "google", "url": GoogleOauth.get_login_url(site_settings) + state_string})
+    return JsonResponse({"authMethods": methods, "siteName": site_settings.site_title})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def local_auth_for_native_client(request):
+    """
+    View     /api/auth/token/
+    returns raw token for local auth for native client
+    """
+    site_settings = SiteSettings.objects.settings()
+    data = get_json_body(request)
+    if not data:
+        return JsonResponse({"error": json_error_message}, status=400)
+    # log request data, cookies and meta
+    log.debug("request.cookies: %s", request.COOKIES)
+    log.debug("request.META: %s", request.META)
+    if request.user.is_authenticated:
+        user = request.user
+    else:
+        user = authenticate(request, username=data.get("username"), password=data.get("password"))
+    if not user or not site_settings.get_local_auth():
+        return HttpResponse(status=401)
+    # TODO: Handle DUO for native clients
+    # if response := pre_login(request, user, site_settings):
+    #     return response
+    login(request, user)
+    return HttpResponse('{"token": "%s"}' % (request.user.authorization))
