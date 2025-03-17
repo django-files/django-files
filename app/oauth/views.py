@@ -24,6 +24,16 @@ from settings.models import SiteSettings
 
 log = logging.getLogger("app")
 
+provider_map = {
+    "github": GithubOauth,
+    "discord": DiscordOauth,
+    "google": GoogleOauth,
+}
+
+
+def route_callback(provider: str, code: str):
+    return provider_map[provider](code)
+
 
 @csrf_exempt
 def oauth_show(request):
@@ -107,13 +117,9 @@ def oauth_callback(request, oauth_provider: str = ""):
         log.debug("oauth_callback: provider: %s", provider)
         log.debug("Native App Auth: %s", native_auth)
 
-        if provider == "github":
-            oauth = GithubOauth(code)
-        elif provider == "discord":
-            oauth = DiscordOauth(code)
-        elif provider == "google":
-            oauth = GoogleOauth(code)
-        else:
+        try:
+            oauth = route_callback(provider, code)
+        except KeyError:
             messages.error(request, "Unknown Provider: %s" % provider)
             return HttpResponseRedirect(get_login_redirect_url(request))
         log.debug("oauth.id %s", oauth.id)
