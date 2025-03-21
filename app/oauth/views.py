@@ -9,6 +9,7 @@ from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from home.util.requests import CustomSchemeRedirect
 from oauth.forms import LoginForm
 from oauth.models import CustomUser, DiscordWebhooks
 from oauth.providers.discord import DiscordOauth
@@ -65,6 +66,10 @@ def oauth_show(request):
     if "next" in request.GET:
         log.debug("setting login_next_url to: %s", request.GET.get("next"))
         request.session["login_next_url"] = request.GET.get("next")
+    if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles"):
+        # If a native app is redirect to login in the app web view,
+        # we need to tell the app the client is no longer authenticated
+        return CustomSchemeRedirect("djangofiles://logout")
     return render(request, "login.html", {"local": site_settings.get_local_auth()})
 
 
@@ -135,8 +140,11 @@ def oauth_callback(request, oauth_provider: str = ""):
         user = get_or_create_user(request, oauth.id, oauth.username, provider, first_name=oauth.first_name)
         log.debug("user: %s", user)
         if not user:
-            messages.error(request, "User Not Found or Already Taken.")
-            return HttpResponseRedirect(get_login_redirect_url(request))
+            message = "User Not Found or Already Taken."
+            messages.error(request, message)
+            return CustomSchemeRedirect(
+                get_login_redirect_url(request, native_auth=native_auth, native_client_error=message)
+            )
 
         oauth.update_profile(user)
         if response := pre_login(request, user, SiteSettings.objects.settings()):
@@ -154,11 +162,6 @@ def oauth_callback(request, oauth_provider: str = ""):
         log.exception(error)
         messages.error(request, f"Exception during login: {error}")
         return HttpResponseRedirect(get_login_redirect_url(request))
-
-
-class CustomSchemeRedirect(HttpResponseRedirect):
-    # This allows us to redirect to ios deeplinks
-    allowed_schemes = ["djangofiles"]
 
 
 def pre_login(request, user, site_settings):
@@ -254,6 +257,8 @@ def oauth_logout(request):
     request.session["login_next_url"] = next_url
     messages.info(request, "Successfully logged out.")
     log.debug("oauth_logout: login_next_url: %s", request.session.get("login_next_url"))
+    if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles"):
+        return CustomSchemeRedirect("djangofiles://logout")
     return redirect(next_url)
 
 
