@@ -101,9 +101,9 @@ jobs:
           push: true
           tags: ${{ steps.tags.outputs.tags }}
 
-      - name: "Update Release Notes Action"
-        uses: smashedr/update-release-notes-action@master
+      - name: "Send Build Notification"
+        if: ${{ always() }}
         continue-on-error: true
+        uses: sarisia/actions-status-discord@v1
         with:
-          tags: ${{ steps.tags.outputs.tags }}
-          location: tail
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
