@@ -9,6 +9,7 @@ from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from home.util.requests import CustomSchemeRedirect
 from oauth.forms import LoginForm
 from oauth.models import CustomUser, DiscordWebhooks
 from oauth.providers.discord import DiscordOauth
@@ -23,6 +24,16 @@ from settings.models import SiteSettings
 
 
 log = logging.getLogger("app")
+
+provider_map = {
+    "github": GithubOauth,
+    "discord": DiscordOauth,
+    "google": GoogleOauth,
+}
+
+
+def route_callback(provider: str, code: str):
+    return provider_map[provider](code)
 
 
 @csrf_exempt
@@ -55,6 +66,10 @@ def oauth_show(request):
     if "next" in request.GET:
         log.debug("setting login_next_url to: %s", request.GET.get("next"))
         request.session["login_next_url"] = request.GET.get("next")
+    if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles"):
+        # If a native app is redirect to login in the app web view,
+        # we need to tell the app the client is no longer authenticated
+        return CustomSchemeRedirect("djangofiles://logout")
     return render(request, "login.html", {"local": site_settings.get_local_auth()})
 
 
@@ -85,7 +100,7 @@ def oauth_google(request):
     return GoogleOauth.redirect_login(request, settings)
 
 
-def oauth_callback(request):
+def oauth_callback(request, oauth_provider: str = ""):
     """
     View  /oauth/callback/
     """
@@ -102,40 +117,46 @@ def oauth_callback(request):
             messages.warning(request, "User aborted or no code in response...")
             return HttpResponseRedirect(get_login_redirect_url(request))
 
-        if request.session["oauth_provider"] == "github":
-            oauth = GithubOauth(code)
-        elif request.session["oauth_provider"] == "discord":
-            oauth = DiscordOauth(code)
-        elif request.session["oauth_provider"] == "google":
-            oauth = GoogleOauth(code)
-        else:
-            messages.error(request, "Unknown Provider: %s" % request.session["oauth_provider"])
+        native_auth = request.GET.get("state") == "iOSApp"
+        provider = oauth_provider if oauth_provider else request.session.get("oauth_provider")
+        log.debug("oauth_callback: provider: %s", provider)
+        log.debug("Native App Auth: %s", native_auth)
+
+        try:
+            oauth = route_callback(provider, code)
+        except KeyError:
+            messages.error(request, "Unknown Provider: %s" % provider)
             return HttpResponseRedirect(get_login_redirect_url(request))
         log.debug("oauth.id %s", oauth.id)
         log.debug("oauth.username %s", oauth.username)
         log.debug("oauth.first_name %s", oauth.first_name)
         oauth.process_login(site_settings)
-        if request.session.get("webhook"):
+        if request.session.get("webhook") and provider == "discord":
             del request.session["webhook"]
             webhook = oauth.add_webhook(request)
             messages.info(request, f"Webhook successfully added: {webhook.id}")
-            return HttpResponseRedirect(get_login_redirect_url(request))
+            return CustomSchemeRedirect(get_login_redirect_url(request, native_auth=native_auth))
 
-        user = get_or_create_user(
-            request, oauth.id, oauth.username, request.session["oauth_provider"], first_name=oauth.first_name
-        )
+        user = get_or_create_user(request, oauth.id, oauth.username, provider, first_name=oauth.first_name)
         log.debug("user: %s", user)
         if not user:
-            messages.error(request, "User Not Found or Already Taken.")
-            return HttpResponseRedirect(get_login_redirect_url(request))
+            message = "User Not Found or Already Taken."
+            messages.error(request, message)
+            return CustomSchemeRedirect(
+                get_login_redirect_url(request, native_auth=native_auth, native_client_error=message)
+            )
 
         oauth.update_profile(user)
         if response := pre_login(request, user, SiteSettings.objects.settings()):
             return response
         login(request, user)
         post_login(request, user)
-        messages.info(request, f"Successfully logged in. {user.first_name}.")
-        return HttpResponseRedirect(get_login_redirect_url(request))
+        messages.info(request, f"Successfully logged in via oauth. {user.username} {user.first_name}.")
+        return CustomSchemeRedirect(
+            get_login_redirect_url(
+                request, native_auth=native_auth, token=user.authorization, session_key=request.session.session_key
+            )
+        )
 
     except Exception as error:
         log.exception(error)
@@ -236,6 +257,8 @@ def oauth_logout(request):
     request.session["login_next_url"] = next_url
     messages.info(request, "Successfully logged out.")
     log.debug("oauth_logout: login_next_url: %s", request.session.get("login_next_url"))
+    if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles"):
+        return CustomSchemeRedirect("djangofiles://logout")
     return redirect(next_url)
 
 

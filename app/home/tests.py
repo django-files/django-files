@@ -45,6 +45,7 @@ class TestAuthViews(TestCase):
         "api:status": 200,
         "api:stats": 200,
         "api:recent": 200,
+        "api:auth-methods": 200,
     }
 
     def setUp(self):

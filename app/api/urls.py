@@ -23,4 +23,6 @@ urlpatterns = [
     path("file/<path:idname>", views.file_view, name="file"),
     path("delete/<path:idname>", views.file_view, name="delete"),
     path("token/", views.token_view, name="token"),
+    path("auth/methods/", views.auth_methods, name="auth-methods"),
+    path("auth/token/", views.local_auth_for_native_client, name="auth-token"),
 ]
