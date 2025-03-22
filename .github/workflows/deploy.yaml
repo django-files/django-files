@@ -56,13 +56,6 @@ jobs:
           echo "VERSION=${{ inputs.VERSION }}" | tee -a "service-configs/${{ inputs.CONFIG_FILE }}"
           echo "STACK_NAME=${{ inputs.STACK_NAME }}" | tee -a "service-configs/${{ inputs.CONFIG_FILE }}"
 
-      #- name: "Parse Environment"
-      #  id: parse
-      #  uses: cssnr/env-json-action@v1
-      #  with:
-      #    source: service-configs/${{ inputs.CONFIG_FILE }}
-      #    sensitive: true
-
       - name: "Portainer Deploy"
         uses: cssnr/portainer-stack-deploy-action@v1
         with:
@@ -71,5 +64,4 @@ jobs:
           file: ${{ inputs.COMPOSE_FILE}}
           name: ${{ inputs.STACK_NAME}}
           type: file
-          #env_json: "${{ steps.parse.outputs.result }}"
           env_file: "service-configs/${{ inputs.CONFIG_FILE }}"
