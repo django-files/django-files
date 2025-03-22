@@ -1,0 +1,59 @@
+name: "Pull"
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pull:
+    name: "Pull"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Get Commit Message"
+        id: commit
+        continue-on-error: true
+        run: |
+          echo "message=$(git show -s --format=%s ${{ github.event.pull_request.head.sha }})" >> "${GITHUB_OUTPUT}"
+
+      - name: "Debug"
+        continue-on-error: true
+        run: |
+          echo "sha: ${{ github.event.pull_request.head.sha }}"
+          echo "message: ${{ steps.commit.outputs.message }}"
+          echo "::group::Event JSON"
+          cat "${GITHUB_EVENT_PATH}"
+          echo "::endgroup::"
+
+      - name: "NPM Outdated Check"
+        continue-on-error: true
+        uses: cssnr/npm-outdated-action@master
+
+      - name: "ChatGPT CodeReview"
+        if: ${{ contains(steps.commit.outputs.message, '#gpt') }}
+        continue-on-error: true
+        uses: anc95/ChatGPT-CodeReview@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LANGUAGE: English
+          OPENAI_API_ENDPOINT: https://api.openai.com/v1
+          MODEL: gpt-4o-mini
+          PROMPT: "Please check the following code diff for errors and improvements."
+          top_p: 1
+          temperature: 1
+          max_tokens: 10000
+          MAX_PATCH_LENGTH: 10000
+          IGNORE_PATTERNS: "**/migrations/**,**/dist/**"
+          INCLUDE_PATTERNS: "/app/**"
