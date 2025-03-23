@@ -49,5 +49,5 @@ jobs:
           temperature: 1
           max_tokens: 10000
           MAX_PATCH_LENGTH: 10000
-          IGNORE_PATTERNS: "**/migrations/**,**/dist/**"
-          INCLUDE_PATTERNS: "**/*.py,**/*.js,**/*.css,**/*.yaml,/.github/workflows/**"
+          IGNORE_PATTERNS: "/app/static/dist/**,**/migrations/**"
+          INCLUDE_PATTERNS: "**/*.py,**/*.js,**/*.css,**/*.yaml"
