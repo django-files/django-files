@@ -26,6 +26,7 @@ jobs:
         with:
           sha: ${{ github.event.pull_request.head.sha }}
           selector: "commit.message"
+          summary: false
 
       - name: "NPM Outdated Check"
         continue-on-error: true
