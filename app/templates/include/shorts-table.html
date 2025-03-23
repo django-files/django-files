@@ -1,32 +1,33 @@
 {% load home_tags %}
 
-<table class="table table-sm table-striped table-hover" id="shorts-table">
+<table class="display responsive nowrap table table-hover table-responsive mb-0 dt-select-no-highlight" id="shorts-table" style='width:100%'>
     <caption class="visually-hidden">List of Short URLs</caption>
     <thead>
-    <tr>
-        <th scope="col" class="d-none d-sm-table-cell">Short</th>
-        <th scope="col">URL</th>
-        <th scope="col" class="d-none d-md-table-cell"><i class="fa-solid fa-eye"></i></th>
-        <th scope="col" class="d-none d-md-table-cell"><i class="fa-solid fa-bomb"></i></th>
-        <th scope="col" class="text-center"><i class="fa-solid fa-gears"></i></th>
-    </tr>
+        <tr>
+            <th scope="col" class="">Short</th>
+            <th scope="col" class="">URL</th>
+            <th scope="col" class=""><i class="fa-solid fa-eye"></i></th>
+            <th scope="col" class=""><i class="fa-solid fa-bomb"></i></th>
+            <th scope="col" class="text-center"><i class="fa-solid fa-gears"></i></th>
+        </tr>
     </thead>
     <tbody>
-    {% for short in shorts %}
-    <tr id="short-{{ short.id }}">
-        <th scope="row" class="d-none d-sm-table-cell">
-            <a href="{{ site_settings.site_url }}{% url 'home:short' short=short.short %}"
-               class="link-body-emphasis" target="_blank">{{ short.short }}</a></th>
-        <td><a href="{{ short.url }}" target="_blank" class="link-body-emphasis">{{ short.url }}</a></td>
-        <td class="d-none d-md-table-cell">{{ short.views }}</td>
-        <td class="d-none d-md-table-cell">{{ short.max|default:"-" }}</td>
-        <td class="text-center">
-            <a class="clip text-white mx-1" role="button" data-clipboard-text="{{ site_settings.site_url }}{% url 'home:short' short=short.short %}">
-            <i class="fa-regular fa-clipboard"></i></a>
-            <a role="button" class="delete-short-btn" data-hook-id="{{ short.id }}" title="Delete">
-                <i class="fa-regular fa-trash-can link-danger"></i></a></td>
-    </tr>
-    {% endfor %}
+        {% for short in shorts %}
+        <tr id="short-{{ short.id }}">
+            <td class=""> <!-- Short -->
+                <a href="{{ site_settings.site_url }}{% url 'home:short' short=short.short %}"
+                class="link-body-emphasis" target="_blank">{{ short.short }}</a></td>
+            <td class=""><a href="{{ short.url }}" target="_blank" class="link-body-emphasis">{{ short.url }}</a></td>  <!-- URL -->
+            <td class="">{{ short.views }}</td> <!-- Views -->
+            <td class="">{{ short.max|default:"-" }}</td>  <!-- Bomb -->
+            <td class="text-center"> <!-- Copy/Delete -->
+                <a class="clip text-white mx-1" role="button" data-clipboard-text="{{ site_settings.site_url }}{% url 'home:short' short=short.short %}">
+                <i class="fa-regular fa-clipboard"></i></a>
+                <a role="button" class="delete-short-btn" data-hook-id="{{ short.id }}" title="Delete">
+                    <i class="fa-regular fa-trash-can link-danger"></i></a>
+            </td>
+        </tr>
+        {% endfor %}
     </tbody>
 </table>
 

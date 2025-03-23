@@ -92,11 +92,14 @@ function show_toast(message, bsClass = 'success', delay = '6000') {
  * @param {InputEvent} event
  */
 function saveOptions(event) {
+    const excludes = ['data-bs-theme-value']
+    if (excludes.includes(event.target.id)) {
+        return console.debug('ignored setting:', event.target.id)
+    }
     console.debug(`saveOptions: ${event.type}`, event)
-    const form = $(settingsForm)
-    // console.debug('form', form)
-    const data = new FormData(settingsForm[0])
-    // console.debug('data', data)
+    const form = $(this)
+    const data = new FormData(this)
+    // console.debug('data:', data)
     $.ajax({
         type: 'post',
         url: window.location.pathname,
@@ -118,8 +121,14 @@ function saveOptions(event) {
         } else {
             // let message = 'Settings Saved Successfully.'
             // show_toast(message, 'success')
-            event.target.classList.add('is-valid')
-            setTimeout(() => event.target.classList.remove('is-valid'), 3000)
+            // TODO: Improve handling for other types and add to this if
+            if (event.target.type === 'text') {
+                event.target.classList.add('is-valid')
+                setTimeout(
+                    () => event.target.classList.remove('is-valid'),
+                    3000
+                )
+            }
         }
     }
 }
@@ -174,18 +183,65 @@ function debounce(fn, timeout = 250) {
 }
 
 /**
- * Throttle Function
- * @function throttle
- * @param {Function} fn
- * @param {Number} limit
+ * Paginated onScroll Callback
+ * @function pageScroll
+ * @param {Event} event
+ * @param {Number} buffer
+ * @param {Function} callable (async)
  */
-function throttle(fn, limit = 250) {
-    let lastExecutedTime = 0
-    return function (...args) {
-        const currentTime = Date.now()
-        if (currentTime - lastExecutedTime >= limit) {
-            fn(...args)
-            lastExecutedTime = currentTime
-        }
+async function pageScroll(event, nextPage, callable, buffer = 500) {
+    // await sleep(200)
+    const maxScrollY = document.body.scrollHeight - window.innerHeight
+    console.debug(
+        `pageScroll: ${window.scrollY} > ${maxScrollY - buffer}`,
+        window.scrollY > maxScrollY - buffer
+    )
+    if (nextPage && (!maxScrollY || window.scrollY > maxScrollY - buffer)) {
+        console.debug('End of Scroll')
+        await callable()
     }
 }
+
+/**
+ * Generate Random String at length
+ * @param {Number} length
+ * @return {String}
+ */
+function genRand(length) {
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    let result = ''
+    let counter = 0
+    while (counter < length) {
+        const rand = Math.floor(Math.random() * chars.length)
+        result += chars.charAt(rand)
+        counter += 1
+    }
+    return result
+}
+
+$('#password-unmask').on('click', function (event) {
+    console.log('#password-unmask click:', event)
+    const input = $('#password')
+    const type = input.attr('type') === 'password' ? 'text' : 'password'
+    input.prop('type', type)
+})
+
+$('#password-copy').on('click', async function (event) {
+    console.log('#password-copy click:', event)
+    const text = $('#password').val()
+    if (text) {
+        await navigator.clipboard.writeText(text)
+        show_toast('Password copied.', 'info')
+    } else {
+        show_toast('Empty Password!', 'warning')
+    }
+})
+
+$('#password-generate').on('click', async function (event) {
+    console.log('#password-generate click:', event)
+    const password = genRand(12)
+    $('#password').val(password)
+    await navigator.clipboard.writeText(password)
+    show_toast('Password generated and copied!', 'info')
+})

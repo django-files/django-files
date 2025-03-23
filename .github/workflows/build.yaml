@@ -1,4 +1,4 @@
-name: Build
+name: "Build"
 
 on:
   release:
@@ -19,10 +19,13 @@ jobs:
     name: "Build"
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: "Tags"
         id: tags
@@ -58,22 +61,49 @@ jobs:
           echo "APP_VERSION=${GITHUB_REF_NAME}" >> app/.env
           echo "APP_VERSION: ${GITHUB_REF_NAME}"
 
+      - name: "Debug Tags"
+        continue-on-error: true
+        run: |
+          echo inputs.tags: '${{ inputs.tags }}'
+          echo tags: '${{ steps.tags.outputs.tags }}'
+
+      - name: "Docker Tags"
+        id: dtags
+        uses: cssnr/docker-tags-action@v1
+        continue-on-error: true
+        with:
+          tags: ${{ inputs.tags }}
+
+      - name: "Debug Docker Tags"
+        continue-on-error: true
+        run: |
+          echo inputs.tags: '${{ inputs.tags }}'
+          echo -e "tags:\n${{ steps.dtags.outputs.tags }}"
+          echo -e "labels:\n${{ steps.dtags.outputs.labels }}"
+
       - name: "Setup Buildx"
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           platforms: linux/amd64,linux/arm64
 
       - name: "Docker Login"
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.GHCR_USER }}
           password: ${{ secrets.GHCR_PASS }}
 
       - name: "Build and Push"
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.tags.outputs.tags }}
+
+      - name: "Send Build Notification"
+        if: ${{ always() }}
+        continue-on-error: true
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}

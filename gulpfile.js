@@ -1,4 +1,5 @@
 const gulp = require('gulp')
+const download = require('gulp-download2')
 // const copy = require('gulp-copy')
 // const concat = require('gulp-concat')
 
@@ -33,8 +34,19 @@ gulp.task('datatables', () => {
             'node_modules/datatables.net-plugins/dataRender/datetime.min.js',
             'node_modules/datatables.net-plugins/sorting/file-size.min.js',
             'node_modules/datatables.net-responsive/js/dataTables.responsive.min.js',
+            'node_modules/datatables.net-select/js/dataTables.select.min.js',
+            'node_modules/datatables.net-buttons/js/dataTables.buttons.min.js',
         ])
         .pipe(gulp.dest('app/static/dist/datatables'))
+})
+
+gulp.task('jquery-ui', () => {
+    return gulp
+        .src([
+            'node_modules/jquery-ui/dist/jquery-ui.min.js',
+            'node_modules/jquery-ui/dist/themes/ui-darkness/jquery-ui.min.css',
+        ])
+        .pipe(gulp.dest('app/static/dist/jquery-ui'))
 })
 
 gulp.task('fontawesome', () => {
@@ -45,7 +57,10 @@ gulp.task('fontawesome', () => {
                 'node_modules/@fortawesome/fontawesome-free/js/all.min.js',
                 'node_modules/@fortawesome/fontawesome-free/webfonts/**/*',
             ],
-            { base: 'node_modules/@fortawesome/fontawesome-free' }
+            {
+                base: 'node_modules/@fortawesome/fontawesome-free',
+                encoding: false,
+            }
         )
         .pipe(gulp.dest('app/static/dist/fontawesome'))
 })
@@ -78,6 +93,19 @@ gulp.task('swagger-ui', () => {
         .pipe(gulp.dest('app/static/dist/swagger-ui'))
 })
 
+gulp.task('tsparticles', () => {
+    return gulp
+        .src(['node_modules/tsparticles/tsparticles.bundle.min.js'])
+        .pipe(gulp.dest('app/static/dist/tsparticles'))
+})
+
+gulp.task('uppy', () => {
+    return download([
+        'https://releases.transloadit.com/uppy/v3.27.0/uppy.min.mjs',
+        'https://releases.transloadit.com/uppy/v3.27.0/uppy.min.css',
+    ]).pipe(gulp.dest('app/static/dist/uppy'))
+})
+
 gulp.task('swagger-yaml', () => {
     return gulp.src(['swagger.yaml']).pipe(gulp.dest('app/static/dist/'))
 })
@@ -93,7 +121,10 @@ gulp.task(
         'js-cookie',
         'jquery',
         'moment',
+        'jquery-ui',
         'swagger-ui',
-        'swagger-yaml'
+        'swagger-yaml',
+        'tsparticles',
+        'uppy'
     )
 )

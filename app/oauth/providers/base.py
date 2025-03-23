@@ -4,12 +4,12 @@ from typing import Optional
 class BaseOauth(object):
 
     __slots__ = [
-        'code',
-        'id',
-        'username',
-        'first_name',
-        'data',
-        'profile',
+        "code",
+        "id",
+        "username",
+        "first_name",
+        "data",
+        "profile",
     ]
 
     def __init__(self, code: str) -> None:

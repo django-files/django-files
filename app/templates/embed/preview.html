@@ -3,6 +3,7 @@
 {% load home_tags %}
 {% block title %}{{ file.name }}{% endblock %}
 
+
 {% block meta %}
     <meta name="theme-color" content="{{ file.user.default_color }}">
 
@@ -56,85 +57,121 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
 {% block nav2color %}{{ file.user.nav_color_2 }}{% endblock %}
 
 {% block body %}
-    <div class="container-fluid p-2 h-100">
-    <div class="h-100" style="position: relative;">
-        <div class="card h-100">
-            {# TODO: Fix this so that we dont check mime type in the template and the view #}
-            <div class="container-fluid card-img h-100">
-                {% if render == 'image' %}
-                    <img src="{{ static_url }}" alt="{{ file.name }}" class="img-fluid preview-image">
-                {% elif render == 'video' %}
-                    <video class="mw-100 pt-2 ps-2 pe-2" controls>
-                        <source src="{{ static_url }}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                {% elif render == 'audio' %}
-                    <audio class="w-100 pt-3 mt-5" controls>
-                        <source src="{{ static_url }}" type="{{ file.mime }}">
-                        Your browser does not support the audio tag.
-                    </audio>
-                {% elif file.mime == 'application/pdf' %}
-                    <embed src="{{ static_url }}" type="application/pdf" frameBorder="0" scrolling="auto" width="100%" class="h-100 pt-3 mt-5 pb-5"></embed>                
-                {% elif render in 'text,code' %}
-                    <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
-                    <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
-                    <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
-                    <pre class="pt-3 ps-3"><code id="text-preview"><i class="fas fa-spinner fa-pulse"></i></code></pre>
-                {% else %}
-                    <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
-                {% endif %}
-                <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
-                <div class="context-placement" data-bs-toggle="dropdown" id="contextPlacement">
-                    <i class="fa-regular fa-square-caret-down"></i>
-                    <button class="file-context-dropdown my-0 py-0" type="button" aria-expanded="false" hidden></button>
-                </div>
-                {% include 'files/ctx-menu.html' with file=file extraclass='dropdown-menu-end' %}
-            </div>
+    <div class="card h-100">
+        {% if render == 'image' %}
+            <img src="{{ static_url }}" alt="{{ file.name }}" class="preview">
+        {% elif render == 'video' %}
+            <video class="mw-100 pt-2 ps-2 pe-2 preview" controls>
+                <source src="{{ static_url }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        {% elif render == 'audio' %}
+            <audio class="w-100 pt-3 mt-5" controls>
+                <source src="{{ static_url }}" type="{{ file.mime }}">
+                Your browser does not support the audio tag.
+            </audio>
+        {% elif file.mime == 'application/pdf' %}
+            <embed src="{{ static_url }}" type="application/pdf" frameBorder="0" scrolling="auto" width="100%" class="h-100 pt-3 mt-5">               
+        {% elif render in 'text,code' %}
+            <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
+            <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
+            <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
+            <pre class="pt-3 ps-3 w-100"><code id="text-preview"><i class="fas fa-spinner fa-pulse"></i></code></pre>
+        {% else %}
+            <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
+        {% endif %}
+        <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
+        <div class="context-placement" data-bs-toggle="dropdown" id="contextPlacement">
+            <i class="fa-regular fa-square-caret-down"></i>
+            <button class="file-context-dropdown my-0 py-0" type="button" aria-expanded="false" hidden></button>
         </div>
-        {% include 'files/ctx-modals.html' %}
+        {% include 'files/ctx-menu.html' with file=file extraclass='dropdown-menu-end' %}
         <div id="previewSidebar" class="sidebar h-100">
             <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
-            <div id="file-{{ file.id }}" class="card-body sidebarCard px-3">
-                <h3 class="card-title text-break">{{ file.name }}</h3>
-                <strong class="d-inline-block mb-2 text-primary-emphasis">{{ file.mime }}</strong>
-                {% if file.meta.PILImageWidth %}
-                    <p><strong class="d-inline-block text-secondary-emphasis">{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}</strong></p>
-                {% endif %}
-                {% if file.info %}<p class="card-tex mt-0">{{ file.info }}</p>{% endif %}
-                <p class="card-text mb-2"><img src="{{ file_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P"></a> {{ file.user.get_name }}</p>
-                <p class="card-text mt-0 mb-0">
-                    {% if 'image' in file.mime %}
-                        <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
-                    {% else %}
-                        <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
-                    {% endif %}
-                    <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
-                    <i title="Private File" class="fa-solid fa-lock ms-2" id="previewIcon" {% if not file.private %}style="display: none"{% endif %}></i>
-                    <i title="Password Protected File" class="fa-solid fa-key ms-2 passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i>
-                    <span title="File Expires in {{ file.expr }}" class="ms-2 expire-icon" {% if not file.expr %}style="display: none"{% endif %}>
-                        <i class="fa-solid fa-hourglass"></i>
-                    </span>
-                </p>
-                <p class="card-text">Uploaded {{ file.date }}</p>
+            <div id="file-{{ file.id }}" class="card-body sidebarCard">
+                <h3 class="card-title mb-0 text-break">{{ file.name }}</h3>
+                <row>
+                    <strong class="d-inline-block mb-1 text-primary-emphasis col-md-6 text-start">{{ file.mime }}</strong>
+                    <strong class="d-inline-block text-secondary-emphasis col-md-5 text-end">{% if file.meta.PILImageWidth %}{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}</strong>
+                </row>
+                <row>
+                    {% if file.info %}<p class="card-text mt-0">{{ file.info }}</p>{% endif %}
+                    <div class="d-inline-block col-md-5 text-start">
+                        <img src="{{ file_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P"><span class="fw-semibold  ps-1">{{ file.user.get_name }}</span>
+                    </div>
+                    <div class="d-inline-block col-md-6 text-end">
+                        {% if 'image' in file.mime %}
+                            <i class="fa-solid fa-eye me-1"></i> {{ file.view }}
+                        {% else %}
+                            <i class="fa-solid fa-eye fa-download me-1"></i> {{ file.view }}
+                        {% endif %}
+                        <i class="fa-regular fa-hard-drive ms-3 me-1"></i>  {{ file.get_size }}
+                    </div>
+                </row>
+                <row>
+                    <div class="d-inline-block w-100 text-end pe-4">
+                        <i title="Private File" class="fa-solid fa-lock ms-2" id="previewIcon" {% if not file.private %}style="display: none"{% endif %}></i>
+                        <i title="Password Protected File" class="fa-solid fa-key ms-2 passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i>
+                        <span title="File Expires in {{ file.expr }}" class="ms-2 expire-icon" {% if not file.expr %}style="display: none"{% endif %}><i class="fa-solid fa-hourglass"></i></span>
+                    </div>
+                </row>
+                <p class="card-text py-2 pt-0">Uploaded {{ file.date }}</p>
                 {% if file.meta_preview and file.exif %}
                     <p class="card-text text-body-secondary">
-                        {% if file.exif.DateTime %}<b>Taken On:</b> {{ file.exif.DateTimeOriginal|convert_str_date }}<br>{% endif %}
-                        {% if file.exif.Model %}<b>Camera:</b> {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}<br>{% endif %}
+                        {% if file.exif.DateTime %}<b>Captured On:</b> {{ file.exif.DateTimeOriginal|convert_str_date }}<br>{% endif %}
                         {% if file.meta.GPSArea %}<b>Location:</b> {{ file.meta.GPSArea }}<br>{% endif %}
                         {% if file.exif.GPSInfo.6 %}<b>Elevation:</b> {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
                     <p class="card-text text-body-secondary me-auto">
+                        {% if file.exif.Model %}<b>Camera:</b> {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}<br>{% endif %}
                         {% if file.exif.LensModel %}<b>Lens: </b>{{ file.exif.LensModel }}<br>{% endif %}
                         {% if file.exif.FocalLength %}<b>Focal Length:</b> {{ file.exif.FocalLength|floatformat:"0" }}mm<br>{% endif %}
                         {% if file.exif.FNumber %}<b>Aperture:</b> 𝑓 {{ file.exif.FNumber }}<br>{% endif %}
                         {% if file.exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ file.exif.ISOSpeedRatings }}<br>{% endif %}
-                        {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s{% endif %}</p>
+                        {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s<br>{% endif %}
+                        {% if software %}<b>Software:</b> {{ software }}{% endif %}</p>
                 {% endif %}
-                <div class="row g-2 text-center mt-auto">
-                </div>
+                {% if tags %}
+                    <row class="">
+                        <h6 class="">Tags</h6>
+                        {% for tag in tags %}<span class="badge rounded-pill text-bg-secondary ps-2 ms-1">{{ tag }}</span>{% endfor %}
+                    </row>
+                {% endif %}
+                {% if full_context %}
+                <row class="pt-3">
+                    <h6 class="pt-3">Albums</h6>
+                    <div class="album-container" id="albums-file-{{ file.id }}">
+                        {% for album in file.albums.all %}
+                            <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1" id="album-{{ album.id }}">
+                                <a class="text-reset text-decoration-none p-0" href="/gallery?album={{album.id}}">{{ album.name }} </a>
+                                <button id="remove-album-{{ album.id }}" class="btn p-0 mt-0 remove-album">
+                                    <i class="fa-solid fa-xmark text-small remove-album"></i>
+                                </button>
+                            </span>
+                        {% endfor %}
+                        <span class="badge rounded-pill text-bg-primary p-0 input-group-sm addto-album-group mx-2">
+                            <button class="btn py-0 px-1 addto-album"><i class="fa-solid fa-plus"></i></span></button>
+                            <span class="album-add-container d-none">
+                                <label for="add-album" class="d-none" id="add-album-label"> </label>
+                                <input name="add-album-list" class="form-control d-inline input-sm album-list" id="add-album"></input>
+                            </span>
+                        </span>
+                    </div>
+                </row>
+                {% endif %}
             </div>
         </div>
     </div>
-    </div>
+
+    {% comment %} Begin reusable elements {% endcomment %}
+    <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1 d-none album-badge" id="">
+        <a class="text-reset text-decoration-none p-0 album-badge-label" href=""></a>
+        <button id="remove-album-" class="btn p-0 mt-0 remove-album">
+            <i class="fa-solid fa-xmark text-small remove-album"></i>
+        </button>
+    </span>
+
+
+    {% include 'files/ctx-modals.html' %}
 {% endblock %}
 
 {% block tail %}
@@ -167,6 +204,8 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
     {% endif %}
     {% if request.user.is_authenticated %}
         <script type="module" src="{% static 'js/file-context-menu.js' %}"></script>
+        <link rel="stylesheet" href="{% static 'dist/jquery-ui/jquery-ui.min.css'%}">
+        <script src={% static 'dist/jquery-ui/jquery-ui.min.js' %}></script>
     {% endif %}
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
     <script type="module" src="{% static 'js/preview.js' %}"></script>

@@ -1,0 +1,67 @@
+name: "Deploy"
+
+on:
+  workflow_call:
+    inputs:
+      VERSION:
+        required: true
+        type: string
+      STACK_NAME:
+        required: true
+        type: string
+      COMPOSE_FILE:
+        required: true
+        type: string
+      CONFIG_FILE:
+        required: true
+        type: string
+    secrets:
+      SERVICE_CONFIGS_KEY:
+        required: true
+      PORTAINER_URL:
+        required: true
+      PORTAINER_TOKEN:
+        required: true
+
+jobs:
+  deploy:
+    name: "Deploy"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Debug"
+        run: |
+          env
+          cat ${{ inputs.COMPOSE_FILE}}
+
+      - name: "Checkout Service Configs"
+        uses: actions/checkout@v4
+        with:
+          repository: "hosted-domains/service-configs"
+          ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
+          ref: master
+          path: service-configs
+          sparse-checkout: |
+            ${{ inputs.CONFIG_FILE }}
+          sparse-checkout-cone-mode: false
+
+      - name: "Update Environment"
+        run: |
+          echo "VERSION=${{ inputs.VERSION }}" | tee -a "service-configs/${{ inputs.CONFIG_FILE }}"
+          echo "STACK_NAME=${{ inputs.STACK_NAME }}" | tee -a "service-configs/${{ inputs.CONFIG_FILE }}"
+
+      - name: "Portainer Deploy"
+        uses: cssnr/portainer-stack-deploy-action@v1
+        with:
+          url: ${{ secrets.PORTAINER_URL }}
+          token: ${{ secrets.PORTAINER_TOKEN }}
+          file: ${{ inputs.COMPOSE_FILE}}
+          name: ${{ inputs.STACK_NAME}}
+          type: file
+          env_file: "service-configs/${{ inputs.CONFIG_FILE }}"

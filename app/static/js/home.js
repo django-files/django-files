@@ -4,6 +4,8 @@ import { initFilesTable, addFileTableRows } from './file-table.js'
 
 import { fetchFiles } from './api-fetch.js'
 
+let filesDataTable
+
 document.addEventListener('DOMContentLoaded', initHome)
 
 $('#quick-short-form').on('submit', function (event) {
@@ -31,10 +33,19 @@ $('#quick-short-form').on('submit', function (event) {
 })
 
 async function initHome() {
-    initFilesTable(false, false, false)
+    filesDataTable = initFilesTable(false, false, false)
     let files = await fetchFiles(1, 10)
     if (files.files.length >= 10) {
         $('.files-truncation-warning').show()
     }
     addFileTableRows(await fetchFiles(1, 10))
+    filesDataTable.on('select', function (e, dt, type, indexes) {
+        document.getElementById('bulk-actions').disabled = false
+    })
+    filesDataTable.on('deselect', function (e, dt, type, indexes) {
+        if (filesDataTable.rows({ selected: true }).count() === 0) {
+            document.getElementById('bulk-actions').disabled = true
+        }
+    })
+    filesDataTable?.columns.adjust().draw()
 }

@@ -2,7 +2,10 @@
 {% load static %}
 {% load home_tags %}
 {% load cache %}
-{% block title %}Login{% endblock %}
+{% block title %}Invite{% endblock %}
+
+{% block htmltag %}data-bs-theme="dark"{% endblock %}
+{% block themejs %}{% endblock %}
 
 {% block meta %}
     {% if invite %}
@@ -29,12 +32,15 @@
 {% block navbar %}{% endblock %}
 
 {% block body %}
-<video poster="{% static 'video/loop.jpg' %}" id="bgvid" playsinline autoplay muted loop>
-    <source src="{% static 'video/loop.mp4' %}" type="video/mp4" id="bgvidsrc">
+
+<div id="tsparticles"></div>
+
+<video  id="bgvid" class="d-none" playsinline autoplay muted loop>
+    <source src="{{ site_settings.background_video }}" type="video/mp4" id="bgvidsrc">
 </video>
 
 <div class="d-flex flex-column h-100 align-items-center">
-<div id="login-outer" class="animate__animated animate__fadeIn " style="width: 320px;">
+<div id="login-outer" class="rounded rounded-4 m-auto p-4 animate__animated animate__backInDown animate__fast">
     <div class="text-center">
         <img class="img-responsive" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
         <h3 class="text-white mt-2">{{ site_settings.site_title }}</h3>
@@ -47,19 +53,25 @@
         <form name="inviteForm" id="inviteForm" method="post" action="{% url 'home:invite' invite=invite.invite %}">
             {% csrf_token %}
 
-            <label for="username" class="form-label">Username</label>
-            <input type="text" class="form-control" id="username" name="username" autocomplete="username"
-                   placeholder="Username" aria-describedby="username-invalid" autofocus required>
-            <div id="username-invalid" class="invalid-feedback"></div>
+            <div id="local-inputs">
+                <div class="form-floating mb-2 ">
+                    <input type="text" id="username" class="form-control" name="username" autocomplete="username" placeholder="Username" aria-describedby="username-label" required autofocus>
+                    <label for="username" id="username-label">Username</label>
+                </div>
 
-            <label for="password" class="form-label mt-2">Password</label>
-            <input type="password" class="form-control" id="password" name="password" autocomplete="password"
-                   placeholder="Password" aria-describedby="password-invalid" required>
-            <div id="password-invalid" class="invalid-feedback"></div>
+                <div class="form-floating mb-2 ">
+                    <input type="password" id="password" class="form-control" name="password" autocomplete="current-password" placeholder="Password" aria-describedby="password-label" required>
+                    <label for="password" id="password-label">Password</label>
+                </div>
+            </div>
+
+            <div id="passwordFeedback" class="invalid-feedback text-center mb-2" aria-describedby="Username or Password feedback.">
+                Invalid Username or Password.
+            </div>
 
             <div class="d-grid gap-2 mt-4">
-                <button class="btn btn-success opacity-75" type="submit">
-                    <i class="fa-solid fa-user-plus me-2"></i> Create Account</button>
+                <button class="btn btn-lg btn-secondary opacity-75 d-flex align-items-center hvr-grow" type="submit">
+                    <i class="fa-solid fa-user-plus position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i> <span class="w-100 text-center">Create Account</span></button>
             </div>
         </form>
     {% else %}
@@ -67,21 +79,24 @@
             <span class="text-danger-emphasis">Invite Not Found.</span></p>
 
         <form name="inviteSearch" id="inviteSearch" action="{% url 'home:invite-base' %}">
-            <label for="invite" class="form-label mt-2">Invite Lookup</label>
-            <input type="text" class="form-control" id="invite" name="invite" autocomplete="invite"
-                   placeholder="Invite Code" required>
+            <div class="form-floating mb-2 ">
+                <input type="text" class="form-control" id="invite" name="invite" autocomplete="off"
+                    placeholder="Invite Code" aria-describedby="invite-label" required>
+                <label for="invite" id="invite-label">Invite Lookup</label>
+            </div>
 
             <div class="d-grid gap-2 mt-4">
-                <button class="btn btn-success opacity-75" type="submit">
-                    <i class="fa-solid fa-magnifying-glass me-2"></i> Lookup Invite</button>
+                <button class="btn btn-lg btn-secondary opacity-75 d-flex align-items-center hvr-grow" type="submit">
+                    <i class="fa-solid fa-magnifying-glass  position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i> <span class="w-100 text-center">Lookup Invite</span></button>
             </div>
+
         </form>
 
         <hr>
 
         <div class="d-grid gap-2 mt-4">
-            <a role="button" class="btn btn-outline-warning col" href="{% url 'home:index' %}">
-                <i class="fa-solid fa-house-laptop me-2"></i> Go Home</a>
+            <a role="button" class="btn btn-outline-warning d-flex align-items-center hvr-grow" href="{% url 'home:index' %}">
+                <i class="fa-solid fa-house-laptop position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i> <span class="w-100 text-center">Go Home</span></a>
         </div>
     {% endif %}
 </div> <!-- login-outer -->
@@ -91,6 +106,12 @@
 {% block footer %}{% endblock %}
 
 {% block tail %}
+    {{ site_settings.login_background|json_script:"login_background" }}
+    {{ site_settings.background_picture|json_script:"background_picture" }}
+    {{ site_settings.tsparticles_enabled|json_script:"tsparticles_enabled" }}
+    {{ site_settings.tsparticles_config|json_script:"tsparticles_config" }}
+    <script type="text/javascript" src="{% static 'dist/tsparticles/tsparticles.bundle.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/login.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/invite.js' %}"></script>
 {% endblock %}
 

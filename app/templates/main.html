@@ -3,10 +3,10 @@
 {% load cache %}
 
 <!doctype html>
-<html lang="en" class="h-100">
+<html lang="en" class="h-100" {% block htmltag %}{% endblock %}>
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     {% if 'DEBUG'|get_config %}<meta name="robots" content="noindex, nofollow">{% endif %}
 
     <title>{{ site_settings.site_title }} - {% block title %}{% endblock %}</title>
@@ -27,18 +27,22 @@
     <link rel="stylesheet" href="{% static 'dist/bootstrap/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'dist/fontawesome/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
-    <link rel="stylesheet" href="{% static 'dist/animate/animate.min.css' %}">
-    <script type="text/javascript" src="{% static 'bootstrap/theme.js' %}"></script>
-
+    {% block themejs %}
+        <script type="text/javascript" src="{% static 'bootstrap/theme.js' %}"></script>
+    {% endblock %}
+    {% if site_settings.site_animations %}
+        <link rel="stylesheet" href="{% static 'dist/animate/animate.min.css' %}">
+    {% endif %}
     {% block head %}{% endblock %}
 </head>
 <body class="d-flex flex-column h-100">
 
 {% block navbar %}
 <header>
-<nav class="navbar navbar-expand-md navbar-dark border-bottom" style="background-image: linear-gradient(15deg,
-    {% block nav1color %}{{ user.nav_color_1|default:"#130e36" }}{% endblock %} 0%,
-    {% block nav2color %}{{ user.nav_color_2|default:"#1e1c21" }}{% endblock %} 100%);">
+<nav class="navbar navbar-expand-md navbar-dark border-bottom" aria-label="Main Navigation"
+     style="background-image: linear-gradient(15deg,
+         {% block nav1color %}{{ user.nav_color_1|default:"#130e36" }}{% endblock %} 0%,
+         {% block nav2color %}{{ user.nav_color_2|default:"#1e1c21" }}{% endblock %} 100%);">
 <div class="container-fluid">
     <a class="navbar-brand" href="{% url 'home:index' %}">
         <img src="{% static 'images/logo.png' %}" width="30" height="30" alt="logo"></a>
@@ -68,11 +72,19 @@
                 <a class="nav-link {% block files_active %}{% endblock %}" href="{% url 'home:files' %}">Files</a>
             </li>
             <li class="nav-item">
+                <a class="nav-link {% block albums_active %}{% endblock %}" href="{% url 'home:albums' %}">Albums</a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {% block shorts_active %}{% endblock %}" href="{% url 'home:shorts' %}">Shorts</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% block stats_active %}{% endblock %}" href="{% url 'home:stats' %}">Stats</a>
             </li>
+            {% if request.META.HTTP_USER_AGENT|default:''|slice:":11" == "DjangoFiles" %} 
+                <li class="nav-item">
+                    <a class="nav-link" href="djangofiles://serverlist">Server List</a>
+                </li>
+            {% endif %}
         </ul>
         {% endif %}
         <ul class="navbar-nav ms-auto">

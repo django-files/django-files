@@ -2,7 +2,7 @@
 // TODO: Look Into Moving Everything Here for Auto Reconnect
 
 let disconnected = false
-export let socket
+export let socket //NOSONAR
 let ws
 
 console.log('Connecting to WebSocket...')
@@ -48,7 +48,7 @@ async function wsConnect() {
         }
         setTimeout(function () {
             wsConnect()
-        }, 10 * 1000)
+        }, 2 * 1000)
     }
     socket.onerror = function (event) {
         if (!disconnected) {
@@ -70,13 +70,23 @@ async function initListener() {
         } else if (data.event === 'set-expr-file') {
             messageExpire(data)
         } else if (data.event === 'toggle-private-file') {
-            messagePrivate(data)
+            if ('objects' in data) {
+                data.objects.forEach((obj) => {
+                    messagePrivate(obj)
+                })
+            } else {
+                messagePrivate(data)
+            }
         } else if (data.event === 'set-password-file') {
             messagePassword(data)
         } else if (data.event === 'file-delete') {
             messageDelete(data)
         } else if (data.event === 'set-file-name') {
             messageFileRename(data)
+        } else if (data.event === 'album-delete') {
+            messageAlbumDelete(data)
+        } else if (data.event === 'album-new') {
+            messageAlbumNew(data)
         } else if (data.event === 'message') {
             console.log(`data.message: ${data.message}`)
             const bsClass = data.bsClass || 'info'
@@ -96,24 +106,26 @@ function messageFileRename(data) {
 }
 
 function messageExpire(data) {
-    console.log('messageExpire:', data)
-    const expireText = $(`#file-${data.id} .expire-value`)
-    const expireIcon = $(`#file-${data.id} .expire-icon`)
-    if (data.expr) {
-        expireText.text(data.expr).data('clipboard-text', data.expr)
-        expireIcon.attr('title', `File Expires in ${data.expr}`).show()
-        show_toast(
-            `${truncateName(data.name)} - Expire set to: ${data.expr}`,
-            'success'
-        )
-    } else {
-        expireText.text('Never').data('clipboard-text', 'Never')
-        expireIcon.attr('title', 'No Expiration').hide()
-        show_toast(
-            `${truncateName(data.name)} - Cleared Expiration.`,
-            'success'
-        )
-    }
+    data.objects.forEach((element) => {
+        console.debug('messageExpire:', element)
+        const expireText = $(`#file-${element.id} .expire-value`)
+        const expireIcon = $(`#file-${element.id} .expire-icon`)
+        if (element.expr) {
+            expireText.text(element.expr).data('clipboard-text', element.expr)
+            expireIcon.attr('title', `File Expires in ${element.expr}`).show()
+            show_toast(
+                `${truncateName(element.name)} - Expire set to: ${element.expr}`,
+                'success'
+            )
+        } else {
+            expireText.text('Never').data('clipboard-text', 'Never')
+            expireIcon.attr('title', 'No Expiration').hide()
+            show_toast(
+                `${truncateName(element.name)} - Cleared Expiration.`,
+                'success'
+            )
+        }
+    })
 }
 
 function messagePrivate(data) {
@@ -153,12 +165,20 @@ function messageDelete(data) {
     show_toast(`${truncateName(data.name)} deleted by ${data.user}.`)
 }
 
+function messageAlbumDelete(data) {
+    show_toast(`"${truncateName(data.name)}" Album deleted by ${data.user}.`)
+}
+
+function messageAlbumNew(data) {
+    show_toast(`"${truncateName(data.name)}" Album created by ${data.user}.`)
+}
+
 function messageNewFile(data) {
     show_toast(`${truncateName(data.name)} added.`)
 }
 
 function truncateName(filename) {
-    if (filename.length > 42) {
+    if (filename.length && filename.length > 42) {
         return filename.substring(0, 40) + '...'
     }
     return filename

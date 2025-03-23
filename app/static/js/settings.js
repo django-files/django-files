@@ -2,16 +2,13 @@
 
 console.debug('LOADING: settings.js')
 
+import { socket } from './socket.js'
+
 const deleteDiscordHookModal = $('#deleteDiscordHookModal')
 const fileUploadModal = $('#avatarUploadModal')
 const settingsForm = $('#settingsForm')
 
 settingsForm.on('change', saveOptions)
-
-// document.addEventListener('dragenter', (event) => {
-//     event.preventDefault()
-//     fileUploadModal.modal('show')
-// })
 
 // TODO: Use a proper selector
 let hookID
@@ -22,8 +19,8 @@ $('.deleteDiscordHookBtn').on('click', function (event) {
     deleteDiscordHookModal.modal('show')
 })
 
-$('.uploadAvatarHookBtn').on('click', function (event) {
-    console.log('.uploadAvatarHookBtn click', event)
+$('#uploadAvatarHookBtn').on('click', function (event) {
+    console.log('#uploadAvatarHookBtn click', event)
     hookID = $(this).data('hook-id')
     console.log(hookID)
     fileUploadModal.modal('show')

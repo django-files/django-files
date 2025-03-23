@@ -1,0 +1,73 @@
+{% extends "main.html" %}
+{% load static %}
+{% load tz %}
+{% load home_tags %}
+{% load cache %}
+{% block albums_active %}active{% endblock %}
+{% block title %}Albums{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/gallery.css' %}" />
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-3 px-4">
+
+    <h1><i class="fa-solid fa-images me-2"></i> Albums</h1>
+
+    
+    <form id="albumsForm" class="pt-2 pb-2" method="post" action="{% url 'api:album' %}">
+        <div class="row g-1">
+            <div class="col-sm-12">
+                <input type="text" class="form-control" placeholder="Album Name" aria-label="Vanity"
+                       id="name" name="name" required>
+            </div>
+        </div>
+        <div class="row g-1 my-1">
+
+            <div class="col-12">
+                <input type="text" class="form-control" placeholder="Album Description" aria-label="Album Description"
+                       id="description" name="description">
+            </div>
+        </div>
+        <div class="row my-1 g-1">
+            <div class="col-md-3 d-grid">
+                <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-images me-2"></i> Create</button>
+            </div>
+            <div class="col-md-3">
+                <div class="input-group w-100">
+                    <input type="password" class="form-control" placeholder="Password" aria-label="Password" id="password" name="password" autocomplete="new-password" >
+                    <button type="button" title="Umask password." id="password-unmask" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye me-1"></i></button>
+                    <button type="button" title="Copy Password" id="password-copy" class="btn btn-warning btn-sm"><i class="fa-regular fa-copy"></i></button>
+                    <button type="button" title="Generate new password." id="password-generate" class="btn btn-info btn-sm"><i class="fa-solid fa-key"></i></button>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" placeholder="Max Views" aria-label="Max-Views"
+                       id="max-views" name="max-views">
+            </div>
+            <div class="col-md-2">
+                <input type="text" class="form-control" placeholder="Expire" aria-label="Expire"
+                       id="expire" name="expire">
+            </div>
+            <div class="col-md-1 form-check form-switch d-flex h-100 fs-5 justify-content-end me-5 ms-5 pt-1">
+                <input class="form-check-input" type="checkbox" id="private" name="private">
+                <label class="form-check-label w-100 ms-2 ps-3" for="private">Private</label>
+            </div>
+        </div>
+    </form>
+    {% include 'include/albums-table.html' %}
+
+</div>
+{% endblock %}
+
+{% block tail %}
+    <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
+    <script type="module" src="{% static 'js/albums-table.js' %}"></script>
+{% endblock %}

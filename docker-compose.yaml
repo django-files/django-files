@@ -1,93 +1,87 @@
-version: '3.7'
+version: "3.8"
 
 services:
-    nginx:
-        build: ./nginx
-        image: djangofiles-nginx:${VERSION:-latest}
-        env_file: settings.env
-        deploy:
-            mode: global
-            labels:
-                - 'traefik.enable=true'
-                - 'traefik.docker.network=traefik-public'
-                - 'traefik.constraint-label=traefik-public'
-                - 'traefik.http.routers.STACK_NAME-http.rule=Host(`${TRAEFIK_HOST:-}`)'
-                - 'traefik.http.routers.STACK_NAME-http.entrypoints=http'
-                - 'traefik.http.routers.STACK_NAME-http.middlewares=https-redirect'
-                - 'traefik.http.routers.STACK_NAME-https.rule=Host(`${TRAEFIK_HOST:-}`)'
-                - 'traefik.http.routers.STACK_NAME-https.entrypoints=https'
-                - 'traefik.http.routers.STACK_NAME-https.tls=true'
-                - 'traefik.http.services.STACK_NAME.loadbalancer.server.port=80'
-                - 'traefik.http.services.STACK_NAME.loadbalancer.server.scheme=http'
-        volumes:
-            - static_dir:/data/static
-            - logs_dir:/logs
-            - media_dir:/data/media
-        depends_on:
-            - app
-        ports:
-            - '80:80'
+  nginx:
+    build: ./nginx
+    image: djangofiles-nginx:${VERSION:-latest}
+    env_file: settings.env
+    deploy:
+      mode: global
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.constraint-label=traefik-public"
+        - "traefik.http.routers.STACK_NAME-http.rule=Host(`${TRAEFIK_HOST:-}`)"
+        - "traefik.http.routers.STACK_NAME-http.entrypoints=http"
+        - "traefik.http.routers.STACK_NAME-http.middlewares=https-redirect"
+        - "traefik.http.routers.STACK_NAME-https.rule=Host(`${TRAEFIK_HOST:-}`)"
+        - "traefik.http.routers.STACK_NAME-https.entrypoints=https"
+        - "traefik.http.routers.STACK_NAME-https.tls=true"
+        - "traefik.http.services.STACK_NAME.loadbalancer.server.port=80"
+        - "traefik.http.services.STACK_NAME.loadbalancer.server.scheme=http"
+    volumes:
+      - static_dir:/data/static
+      - logs_dir:/logs
+      - media_dir:/data/media
+    depends_on:
+      - app
+    ports:
+      - "80:80"
 
-    app:
-        build: ./app
-        image: djangofiles-app:${VERSION:-latest}
-        env_file: settings.env
-        command: 'gunicorn djangofiles.asgi:application -b 0.0.0.0:9000 -w 2 -k uvicorn.workers.UvicornWorker'
-        healthcheck:
-            test:
-                [
-                    'CMD',
-                    'curl',
-                    '-sf',
-                    'http://localhost:9000/app-health-check/',
-                ]
-            interval: 1m
-            timeout: 10s
-            retries: 3
-            start_period: 5s
-        deploy:
-            mode: global
-        volumes:
-            - static_dir:/data/static
-            - media_dir:/data/media
-        depends_on:
-            - redis
+  app:
+    build: ./app
+    image: djangofiles-app:${VERSION:-latest}
+    env_file: settings.env
+    command: "gunicorn djangofiles.asgi:application -b 0.0.0.0:9000 -w 2 -k uvicorn.workers.UvicornWorker"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9000/app-health-check/"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    deploy:
+      mode: global
+    volumes:
+      - static_dir:/data/static
+      - media_dir:/data/media
+    depends_on:
+      - redis
 
-    worker:
-        image: djangofiles-app:${VERSION:-latest}
-        env_file: settings.env
-        command: 'celery -A djangofiles worker -l INFO -c 4'
-        deploy:
-            replicas: 1
-        volumes:
-            - media_dir:/data/media
-            - logs_dir:/logs
-        depends_on:
-            - app
-            - redis
+  worker:
+    image: djangofiles-app:${VERSION:-latest}
+    env_file: settings.env
+    command: "celery -A djangofiles worker -l INFO -c 4"
+    deploy:
+      replicas: 1
+    volumes:
+      - media_dir:/data/media
+      - logs_dir:/logs
+    depends_on:
+      - app
+      - redis
 
-    beat:
-        image: djangofiles-app:${VERSION:-latest}
-        env_file: settings.env
-        command: 'celery -A djangofiles beat -l INFO -S django'
-        deploy:
-            replicas: 1
-        volumes:
-            - media_dir:/data/media
-        depends_on:
-            - app
-            - redis
+  beat:
+    image: djangofiles-app:${VERSION:-latest}
+    env_file: settings.env
+    command: "celery -A djangofiles beat -l INFO -S django"
+    deploy:
+      replicas: 1
+    volumes:
+      - media_dir:/data/media
+    depends_on:
+      - app
+      - redis
 
-    redis:
-        image: redis:6-alpine
-        command: 'redis-server --appendonly yes'
-        deploy:
-            replicas: 1
-        volumes:
-            - redis_data:/data
+  redis:
+    image: redis:6-alpine
+    command: "redis-server --appendonly yes"
+    deploy:
+      replicas: 1
+    volumes:
+      - redis_data:/data
 
 volumes:
-    static_dir:
-    redis_data:
-    logs_dir:
-    media_dir:
+  static_dir:
+  redis_data:
+  logs_dir:
+  media_dir:

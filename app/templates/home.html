@@ -7,13 +7,15 @@
 {% block title %}Home{% endblock %}
 
 {% block head %}
-    <link href="{% static 'uppy/uppy.min.css' %}" rel="stylesheet">
+    <link href="{% static 'dist/uppy/uppy.min.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block body %}
 <div class="container-fluid py-3 px-4">
 
-    <h1><i class="fa-solid fa-house-laptop me-2"></i> {{ site_settings.site_title }}</h1>
+    <h1 class="">
+        <i class="fa-solid fa-house-laptop me-2"></i> {{ site_settings.site_title }}
+    </h1>
 
     {% if not stats %}
         <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
@@ -41,8 +43,8 @@
     <div class="row mt-1 mb-4">
         <div class="col-md-12">
             <label for="storage_quota" class="form-label">{% firstof user.first_name user.username %}'s Storage Quota Usage</label>
-            <div class="progress" role="progressbar" id="storage_quota" name="storage_quota" aria-label="User Storage Quota"
-            aria-valuenow="2" aria-valuemin="0" aria-valuemax="100" style="height: 35px; font-size: large">
+            <div class="progress" role="progressbar" id="storage_quota" name="storage_quota" aria-label="User Storage Quota" 
+                 aria-valuenow="{{ user.get_storage_usage_pct }}" aria-valuemin="0" aria-valuemax="100" style="height: 35px; font-size: large">
                 <div class="progress-bar overflow-visible {% if user.get_storage_usage_pct > 95 %}bg-danger{% elif user.get_storage_usage_pct > 85 %}bg-warning{% endif %}" style="width: {{ user.get_storage_usage_pct }}%">
                     <b>({{ user.get_storage_used_human_read }}/{{ user.get_storage_quota_human_read }}) {{ user.get_storage_usage_pct }}%</b>
                 </div>
@@ -52,9 +54,12 @@
     {% endif %}
 
     <h2 id="files">Recent Files</h2>
+        {% include 'files/bulk-menu.html' %}
         {% include 'files/table.html' %}
-        <p class="mt-0 files-truncation-warning"><em>This list is truncated to 10 files. </em><span class="d-inline-block">
-            <a href="{% url 'home:files' %}">View All Files</a></span></em></p hidden>
+        <p class="mt-0 files-truncation-warning">
+            <em>This list is truncated to 10 files.</em>
+            <span class="d-inline-block"><a href="{% url 'home:files' %}">View All Files</a></span>
+        </p>
 
     <h2 id="shorts mt-5 pt-5">Shorts</h2>
     <form id="quick-short-form" action="{% url 'home:shorten' %}">
@@ -71,8 +76,10 @@
     {% else %}
         {% include 'include/shorts-table.html' with shorts=shorts|slice:":10"  %}
         {% if shorts|length > 10 %}
-            <p><em>This list is truncated to 10 shorts. <span class="d-inline-block">
-                <a href="{% url 'home:shorts' %}">View All Shorts</a></span></em></p>
+            <p class="mt-0">
+                <em>This list is truncated to 10 shorts.</em>
+                <span class="d-inline-block"><a href="{% url 'home:shorts' %}">View All Shorts</a></span>
+            </p>
         {% endif %}
     {% endif %}
 
@@ -91,6 +98,7 @@
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.select.min.js' %}"></script>
     <script type="module" src="{% static 'js/home.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/stats.js' %}"></script>
     <script type="module" src="{% static 'js/file-context-menu.js' %}"></script>

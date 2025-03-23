@@ -1,0 +1,27 @@
+{% if full_context %}
+<p class="lead">Total Files Displayed: <strong id="total-files-count">{{ files|length }}</strong></p>
+<div class="dropdown">
+    <button id="bulk-actions" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+      Bulk Actions
+    </button>
+    <ul class="dropdown-menu">
+        <li>
+            <a role="button" class="dropdown-item bulk-private" title="Make Private">
+                <i class="fa-solid fa-lock fa-fw me-2"></i> Make Private</a>
+        </li>
+        <li>
+            <a role="button" class="dropdown-item bulk-public" title="Make Public">
+                <i class="fa-solid fa-lock-open fa-fw me-2"></i> Make Public</a>
+        </li>
+        <li>
+            <a role="button" class="dropdown-item bulk-expire" title="Bulk Expiration">
+                <i class="fa-solid fa-hourglass fa-fw me-2"></i> Set Expiration</a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a role="button" class="dropdown-item bulk-delete" title="Bulk Delete">
+                <i class="fa-regular fa-trash-can fa-fw me-2 link-danger"></i> Delete</a>
+        </li>
+    </ul>
+</div>
+{% endif %}

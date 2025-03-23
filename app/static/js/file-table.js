@@ -13,21 +13,31 @@ export const faCaret = document.querySelector(
 export const fileLink = document.querySelector('div.d-none > .dj-file-link')
 export const totalFilesCount = document.getElementById('total-files-count')
 
+const fileExpireModal = $('#fileExpireModal')
+const confirmDelete = $('#confirm-delete')
+const fileDeleteModal = $('#fileDeleteModal')
+
 let filesDataTable
+let fileNameLength = getNameSize(window.innerWidth)
 
 const dataTablesOptions = {
     paging: false,
-    order: [0, 'desc'],
-    responsive: true,
+    order: [1, 'desc'],
+    responsive: {
+        details: false,
+    },
     processing: true,
     saveState: true,
     pageLength: -1,
     lengthMenu: [
-        [10, 25, 50, 100, 250, -1],
-        [10, 25, 50, 100, 250, 'All'],
+        [1, 10, 25, 45, 100, 250, -1],
+        [1, 10, 25, 45, 100, 250, 'All'],
     ],
     columns: [
-        { data: 'id' },
+        {
+            data: null,
+        },
+        { data: 'id', name: 'id' },
         { data: 'name' },
         { data: 'size' },
         { data: 'mime' },
@@ -39,80 +49,105 @@ const dataTablesOptions = {
     ],
     columnDefs: [
         {
+            orderable: true,
+            render: DataTable.render.select(),
+            width: '10px',
             targets: 0,
-            width: '30px',
+            responsivePriority: 2,
+        },
+        {
+            targets: 1,
+            width: '15px',
             responsivePriority: 5,
             defaultContent: '',
         },
         {
-            target: 1,
-            width: '40%',
+            target: 2,
+
             responsivePriority: 1,
             render: getFileLink,
             defaultContent: '',
             type: 'html',
         },
         {
-            targets: 2,
+            targets: 3,
             render: formatBytes,
             defaultContent: '',
-            responsivePriority: 3,
+            responsivePriority: 4,
+            width: '150px',
         },
-        { targets: 3, defaultContent: '', responsivePriority: 9 },
+        {
+            targets: 4,
+            defaultContent: '',
+            responsivePriority: 9,
+        },
         {
             name: 'date',
-            targets: 4,
+            targets: 5,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
             responsivePriority: 8,
-            width: '170px',
+            width: '500px',
         },
         {
-            targets: 5,
-            width: '30px',
+            targets: 6,
+            width: '15px',
             defaultContent: '',
             className: 'expire-value text-center',
             responsivePriority: 7,
         },
         {
-            targets: 6,
-            width: '30px',
+            targets: 7,
+            width: '15px',
             render: getPwIcon,
             defaultContent: '',
             responsivePriority: 7,
         },
         {
-            targets: 7,
-            width: '30px',
+            targets: 8,
+            width: '15px',
             responsivePriority: 5,
             render: getPrivateIcon,
             defaultContent: '',
         },
         {
-            targets: 8,
-            width: '30px',
+            targets: 9,
+            width: '15px',
             defaultContent: '',
             responsivePriority: 4,
             className: 'text-center',
         },
         {
-            targets: 9,
+            targets: 10,
             orderable: false,
             width: '30px',
-            responsivePriority: 2,
+            responsivePriority: 3,
             render: getContextMenu,
             defaultContent: '',
         },
     ],
+    select: {
+        style: 'multi',
+        selector: 'td:first-child',
+    },
+    language: {
+        info: '',
+    },
 }
 
 export function initFilesTable(search = true, ordering = true, info = true) {
     dataTablesOptions.searching = search
     dataTablesOptions.ordering = ordering
     dataTablesOptions.info = info
+    // TODO: Disabling select boxes causes a bunch issues, we should address for cases we dont want select
+    // if (!select) {
+    //     delete dataTablesOptions.select
+    //     dataTablesOptions.columnDefs.splice(0, 1)
+    //     dataTablesOptions.columns.splice(0, 1)
+    //     document.getElementById('files-table').rows[0].deleteCell(0)
+    // }
     filesDataTable = filesTable.DataTable(dataTablesOptions)
     filesDataTable.on('draw.dt', debounce(dtDraw, 150))
-    console.log(filesDataTable.columns)
     return filesDataTable
 }
 
@@ -120,24 +155,32 @@ export function initFilesTable(search = true, ordering = true, info = true) {
 // Custom DataTables Renderers
 
 function getFileLink(data, type, row, meta) {
-    let max_name_length
-    if (screen.width < 500) {
-        max_name_length = 20
-    } else if (screen.width > 500 && screen.width < 1500) {
-        max_name_length = 40
-    } else {
-        max_name_length = 60
-    }
     const fileLinkElem = fileLink.cloneNode(true)
     fileLinkElem.classList.add(`dj-file-link-${row.id}`)
-    fileLinkElem.querySelector('.dj-file-link-clip').clipboardText = row.url
+    fileLinkElem
+        .querySelector('.dj-file-link-clip')
+        .setAttribute('data-clipboard-text', row.url)
     fileLinkElem.querySelector('.dj-file-link-ref').href = row.url
+    fileLinkElem.querySelector('.dj-file-link-ref').ariaLabel = row.name
+
     let newName = row.name
-    if (row.name.length > max_name_length) {
-        newName = row.name.substring(0, max_name_length) + '...'
+    if (row.name.length > fileNameLength) {
+        newName = row.name.substring(0, fileNameLength - 5) + '...'
     }
     fileLinkElem.querySelector('.dj-file-link-ref').textContent = newName
     return fileLinkElem
+}
+
+function getNameSize(width) {
+    if (width < 380) {
+        return 12
+    } else if (screen.width > 380 && screen.width < 500) {
+        return 20
+    } else if (screen.width > 500 && screen.width < 1500) {
+        return 40
+    } else {
+        return 60
+    }
 }
 
 function getPwIcon(data, type, row, meta) {
@@ -181,10 +224,8 @@ export function formatBytes(bytes) {
 
 function dtDraw(event) {
     console.debug('dtDraw:', event)
-    try {
+    if (totalFilesCount) {
         totalFilesCount.textContent = filesDataTable.rows().count()
-    } catch (e) {
-        console.log(e)
     }
 }
 
@@ -227,3 +268,77 @@ socket?.addEventListener('message', function (event) {
         renameFileRow(data)
     }
 })
+
+////////////////
+// Bulk Actions
+////////////////
+// Todo: find a better place for these
+
+// bulk delete actions
+$('.bulk-delete').on('click', bulkDelete)
+
+export function bulkDelete(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    console.debug(`bulkDeleteFile: pks: ${pks}`, event)
+    confirmDelete?.data('pks', pks)
+    let s = ''
+    if (pks.length > 1) s = 's'
+    $('#fileDeleteModal #fileDeleteModalLabel').text(
+        `Delete ${pks.length} File${s}`
+    )
+    $('#fileDeleteModal #fileDeleteModalBody').text(
+        `Are you sure you want to delete ${pks.length} file${s}?`
+    )
+    fileDeleteModal.modal('show')
+}
+
+// bulk expire actions
+$('.bulk-expire').on('click', bulkExpire)
+
+export function bulkExpire(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    console.debug(`bulkExpireFile: pks: ${pks}`, event)
+    fileExpireModal.find('input[name=pks]').val(pks)
+    let s = ''
+    if (pks.length > 1) s = 's'
+    $('#expr').val('')
+    $('#fileExpireModal #fileExpireModalLabel').text(
+        `Set ${pks.length} File Expirations`
+    )
+    $('#fileExpireModal #fileExpireModalBodyText').html(
+        `This will set the expiration for ${pks.length} file${s}.`
+    )
+    fileExpireModal.modal('show')
+}
+
+// Start private expire actions
+$('.bulk-private').on('click', bulkPrivate)
+
+export function bulkPrivate(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    socket.send(
+        JSON.stringify({ method: 'private_files', pks: pks, private: true })
+    )
+}
+
+// Start public expire actions
+$('.bulk-public').on('click', bulkPublic)
+
+export function bulkPublic(event) {
+    let pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    socket.send(
+        JSON.stringify({ method: 'private_files', pks: pks, private: false })
+    )
+}

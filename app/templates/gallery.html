@@ -2,38 +2,56 @@
 {% load static %}
 {% load home_tags %}
 {% load cache %}
-{% block gallery_active %}active{% endblock %}
-{% block title %}Gallery{% endblock %}
+{% block files_active %}active{% endblock %}
+{% block title %}{% if album %}{{ album.name }}{% else %}Files{% endif %}{% endblock %}
+
+{% if album %}
+    {% block meta %}
+        <meta name="theme-color" content="{{ album.user.default_color }}">
+        <meta name="author" content="{{ album.user.get_name }}"/>
+        <meta name="title" content="Album: {{ album.name }}"/>
+        <meta name="description" content="{{ album.info|default:"" }} created by {{ album.user.get_name }}"/>
+        <meta property="og:author" content="{{ album.user.get_name }}">
+        <meta property="og:title" content="Album: {{ album.name }}">
+        <meta property="og:description" content="{{ album.info|default:"" }} created by {{ album.user.get_name }}"/>
+        <meta property="og:url" content="{{ request.build_absolute_uri }}">
+        <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+        <meta property="twitter:title" content="Album: {{ album.name }}">
+    {% endblock%}
+{% endif %}
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
-    <link rel="stylesheet" href="{% static 'uppy/uppy.min.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/uppy/uppy.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/gallery.css' %}" />
 {% endblock %}
 
 {% block body %}
 
     <div class="container-fluid py-3 px-4">
-
-        <h1><i class="fa-regular fa-folder-open me-2"></i> Files</h1>
-
+        <h1><i class="fa-regular fa-folder-open me-2"></i> {% if album %}{{ album.name }}{% else %}Files{% endif %}</h1>
         <p class="lead">
-            <a class="link-body-emphasis show-list" role="button" title="List">List</a> |
-            <a class="link-body-emphasis show-gallery" role="button" title="Gallery">Gallery</a>
+            <a class="link-body-emphasis show-list" role="button" title="List" href="{% url 'home:files' %}">List</a> |
+            <a class="link-body-emphasis show-gallery" role="button" title="Gallery" href={% url 'home:gallery' %}>Gallery</a>
         </p>
-
-        {% if request.user.is_superuser %}
-            <div class="float-end">
-                <select id="user" name="user" class="form-select" aria-label="Default select example">
-                    <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
-                    <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
-                    {% for user in users %}
-                        <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        {% if request.user.is_superuser and not album %}
+                <div class="float-end">
+                    <select id="user" name="user" class="form-select" aria-label="Default select example">
+                        <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
+                        <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
+                        {% for user in users %}
+                            <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
         {% endif %}
-        <p class="lead">Total Files Displayed: <strong id="total-files-count">{{ files|length }}</strong></p>
+        {% if album %}
+        <div class=row>
+            <p class="lead col-md-10">{% if album.info %}{{ album.info }}{% endif %}</p>
+            <p class="col-md-2 text-end">Views: <strong id="views-count">{{ album.view }}</strong></p>
+        </div>
+        {% endif %}
+        {% include 'files/bulk-menu.html' %}
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap" {% if 'gallery' in request.path %}{% else %} hidden{% endif%}></div>
         {% include 'files/table.html'%}
     </div>
@@ -41,9 +59,17 @@
     {% include 'files/file-upload-modal.html' %}
     {% include 'files/ctx-menu.html' %}
     {% include 'files/ctx-modals.html' %}
+    <div class="d-none">
+        <div class="gallery-outer m-1 rounded-1 border border-3 border-secondary"></div>
+        <div class="gallery-mouse image-icons d-none text-shadow text-nowrap small text-warning-emphasis" data-bs-theme="dark"></div>
+        <div class="gallery-inner"></div>
+        <div class="gallery-mouse image-labels d-none text-shadow text-nowrap text-white small text lh-sm" data-bs-theme="dark"></div>
+        <div class="gallery-ctx text-stroke fs-2 ctx-menu"></div>
+        <button class="gallery-ctx-toggle link-body-emphasis ctx-menu" aria-expanded="false" data-bs-toggle="dropdown"></button>
+        <input class="d-none form-check-input gallery-inner gallery-checkbox gallery-mouse" type="checkbox"></input> <!-- //NOSONAR -->
+    </div>
 {% endblock %}
 
-{% block footer %}{% endblock %}
 
 {% block tail %}
     <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
@@ -52,7 +78,9 @@
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.select.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.buttons.min.js' %}"></script>
     <script type="module" src="{% static 'js/file-context-menu.js' %}"></script>
     <script type="module" src="{% static 'js/gallery.js' %}"></script>
-    <script type="module" src="{% static 'js/uppy.js' %}"></script>
+    {% if full_context %}<script type="module" src="{% static 'js/uppy.js' %}"></script>{% endif %}
 {% endblock %}

@@ -1,0 +1,121 @@
+name: "Lint"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: "Lint"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Debug event.json"
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: |
+          cat "${GITHUB_EVENT_PATH}"
+
+      - name: "Setup Python 3.12"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: "Install"
+        id: install
+        run: |
+          python -m pip install -U pip
+          python -m pip install -Ur app/requirements-dev.txt
+
+      - name: "Flake8"
+        if: ${{ !cancelled() }}
+        run: |
+          flake8 --max-line-length 119 --extend-exclude "venv,node_modules,migrations" .
+
+      - name: "Ruff"
+        if: ${{ !cancelled() }}
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: latest
+
+      - name: "Black"
+        if: ${{ !cancelled() }}
+        uses: psf/black@stable
+
+      - name: "Isort"
+        if: ${{ !cancelled() }}
+        uses: isort/isort-action@v1
+
+      #- name: "Mypy"
+      #  if: ${{ !cancelled() }}
+      #  run: |
+      #    mypy app
+
+      - name: "Bandit"
+        if: ${{ !cancelled() }}
+        run: |
+          bandit -c pyproject.toml -r app
+
+      - name: "Prettier"
+        if: ${{ !cancelled() }}
+        run: |
+          echo "::group::Install"
+          npm install prettier
+          echo "::endgroup::"
+          npx prettier --check .
+
+      - name: "Hadolint"
+        if: ${{ !cancelled() }}
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          recursive: true
+          ignore: DL3008,DL3009,DL3013,DL3018
+
+      - name: "Yamllint"
+        if: ${{ !cancelled() }}
+        env:
+          CONFIG: "{extends: relaxed, ignore: [node_modules/,.github/disabled/], rules: {line-length: {max: 119}}}"
+        run: |
+          echo "::group::List Files"
+          yamllint -d '${{ env.CONFIG }}' --list-files .
+          echo "::endgroup::"
+          yamllint -d '${{ env.CONFIG }}' .
+
+      - name: "Actionlint"
+        if: ${{ !cancelled() }}
+        run: |
+          echo "::group::Download"
+          loc=$(curl -sI https://github.com/rhysd/actionlint/releases/latest | grep -i '^location:')
+          echo "loc: ${loc}"
+          tag=$(echo "${loc}" | sed -E 's|.*/tag/v?(.*)|\1|' | tr -d '\t\r\n')
+          echo "tag: ${tag}"
+          url="https://github.com/rhysd/actionlint/releases/latest/download/actionlint_${tag}_linux_amd64.tar.gz"
+          echo "url: ${url}"
+          curl -sL "${url}" | tar xz -C "${RUNNER_TEMP}" actionlint
+          file "${RUNNER_TEMP}/actionlint"
+          "${RUNNER_TEMP}/actionlint" --version
+          echo "::endgroup::"
+          "${RUNNER_TEMP}/actionlint" -color -verbose -shellcheck= -pyflakes=
+
+      #- name: "Vale"
+      #  if: ${{ !cancelled() }}
+      #  uses: errata-ai/vale-action@v2.1.1
+
+      #- name: "SonarQube"
+      #  uses: SonarSource/sonarqube-scan-action@v4
+      #  env:
+      #    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

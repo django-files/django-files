@@ -5,13 +5,13 @@
 {% load static %}
 
 {% block head %}
-    <link href="{% static 'uppy/uppy.min.css' %}" rel="stylesheet">
+    <link href="{% static 'dist/uppy/uppy.min.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block body %}
     <div class="container-fluid py-3 px-4 h-100">
         {% include 'include/upload-menu.html' with heading='Upload Files' fa_class='fa-solid fa-upload' %}
-        <div id="uppy"></div>
+        {% include 'files/uppy-form.html' %}
     </div>
 {% endblock %}
 

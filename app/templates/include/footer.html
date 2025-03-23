@@ -1,16 +1,9 @@
 {% load home_tags %}
 
-<footer class="flex-shrink-0 footer mt-auto p-2">
-<div class="container-fluid">
-<div class="row">
-    <div class="col-12 col-lg-3">
-        {% if not request.user.is_authenticated %}
-            <p class="d-lg-none float-end text-end">
-                <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                    Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
-            </p>
-        {% endif %}
-        <p>
+<footer class="flex-shrink-0 footer mt-auto py-2 px-1 px-sm-2">
+    <div class="d-flex {% if request.user.is_authenticated %}flex-column flex-lg-row{% else %}flex-row{% endif %}">
+
+        <div class="ms-2 me-auto mb-2 mb-lg-0">
             <a class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover" target="_blank" rel="noopener"
                href="https://github.com/django-files/django-files">
                 <i class="fab fa-github"></i> Django Files</a>
@@ -22,61 +15,67 @@
             {% else %}
                 <span class="text-body-secondary">v{{ 'APP_VERSION'|get_config }}</span>
             {% endif %}
-        </p>
-    </div>
+        </div> <!-- left/top -->
 
-    {% if request.user.is_authenticated %}
-        <div class="col-12 col-lg-9 text-lg-end">
-            <ul class="list-unstyled list-inline d-none d-md-block ps-0">
-                <li class="list-inline-item"><a href="{% url 'home:index' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                    <i class="fa-solid fa-house-laptop me-1"></i> Home</a></li>
-                <li class="list-inline-item"><a href="{% url 'home:uppy' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                    <i class="fa-solid fa-upload me-1"></i> Upload</a></li>
-                <li class="list-inline-item"><a href="{% url 'home:paste' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                    <i class="fa-regular fa-file-lines me-1"></i> Paste</a></li>
-                <li class="list-inline-item"><a href="{% url 'home:files' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                    <i class="fa-regular fa-folder-open me-1"></i> Files</a></li>
-                <li class="list-inline-item"><a href="{% url 'home:shorts' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                    <i class="fa-solid fa-link me-1"></i> Shorts</a></li>
-                <li class="list-inline-item"><a href="{% url 'home:stats' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                    <i class="fa-solid fa-chart-line me-1"></i> Stats</a></li>
-                <li class="list-inline-item"><a href="{% url 'settings:user' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                    <i class="fas fa-user-circle me-1"></i> User</a></li>
-                {% if request.user.is_superuser %}
-                <li class="list-inline-item"><a href="{% url 'settings:site' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                    <i class="fa-solid fa-gears me-1"></i> Site</a></li>
-                {% endif %}
-            </ul>
-        </div>
+        {% if request.user.is_authenticated %}
+            <div class="ms-lg-auto me-0 me-lg-2">
+                <nav aria-label="Secondary Navigation" class="d-none d-md-block">
+                    <ul class="list-unstyled list-inline ms-2 ms-lg-0">
+                        <li class="list-inline-item"><a href="{% url 'home:index' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                            <i class="fa-solid fa-house-laptop me-1"></i> Home</a></li>
+                        <li class="list-inline-item"><a href="{% url 'home:uppy' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                            <i class="fa-solid fa-upload me-1"></i> Upload</a></li>
+                        <li class="list-inline-item"><a href="{% url 'home:paste' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                            <i class="fa-regular fa-file-lines me-1"></i> Paste</a></li>
+                        <li class="list-inline-item"><a href="{% url 'home:files' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                            <i class="fa-regular fa-folder-open me-1"></i> Files</a></li>
+                        <li class="list-inline-item"><a href="{% url 'home:albums' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                            <i class="fa-regular fa-images me-1"></i> Albums</a></li>
+                        <li class="list-inline-item"><a href="{% url 'home:shorts' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                            <i class="fa-solid fa-link me-1"></i> Shorts</a></li>
+                        <li class="list-inline-item"><a href="{% url 'home:stats' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                            <i class="fa-solid fa-chart-line me-1"></i> Stats</a></li>
+                        <li class="list-inline-item"><a href="{% url 'settings:user' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                            <i class="fas fa-user-circle me-1"></i> User</a></li>
+                        {% if request.user.is_superuser %}
+                            <li class="list-inline-item"><a href="{% url 'settings:site' %}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                                <i class="fa-solid fa-gears me-1"></i> Site</a></li>
+                        {% endif %}
+                    </ul>
+                </nav> <!-- nav-text -->
 
-        <div class="col-12 d-xs-block d-md-none d-lg-none d-xl-none">
-            <ul class="list-unstyled list-inline">
-                <li class="list-inline-item"><a href="{% url 'home:index' %}" title="Home" class="link-body-emphasis ">
-                    <i class="fa-solid fa-house-laptop "></i></a></li>
-                <li class="list-inline-item"><a href="{% url 'home:uppy' %}" title="Upload" class="link-body-emphasis ">
-                    <i class="fa-solid fa-upload "></i></a></li>
-                <li class="list-inline-item"><a href="{% url 'home:paste' %}" title="Paste" class="link-body-emphasis ">
-                    <i class="fa-regular fa-file-lines "></i></a></li>
-                <li class="list-inline-item"><a href="{% url 'home:files' %}" title="Files" class="link-body-emphasis ">
-                    <i class="fa-regular fa-folder-open "></i></a></li>
-                <li class="list-inline-item"><a href="{% url 'home:shorts' %}" title="Shorts" class="link-body-emphasis ">
-                    <i class="fa-solid fa-link "></i></a></li>
-                <li class="list-inline-item"><a href="{% url 'home:stats' %}" title="Stats" class="link-body-emphasis ">
-                    <i class="fa-solid fa-chart-line "></i></a></li>
-                <li class="list-inline-item"><a href="{% url 'settings:user' %}" title="User Settings" class="link-body-emphasis ">
-                    <i class="fas fa-user-circle "></i></a></li>
-                {% if request.user.is_superuser %}
-                <li class="list-inline-item"><a href="{% url 'settings:site' %}" title="Site Settings" class="link-body-emphasis ">
-                    <i class="fa-solid fa-gears "></i></a></li>
-                {% endif %}
-            </ul>
-        </div>
-    {% else %}
-        <div class="col-12 col-lg-9 d-none d-lg-block text-end">
-            <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
-        </div>
-    {% endif %}
-</div> <!-- row -->
-</div> <!-- container -->
+                <nav aria-label="Secondary Navigation" class="d-xs-block d-md-none d-lg-none d-xl-none">
+                    <ul class="list-unstyled list-inline d-flex">
+                        <li class="list-inline-item mx-0"><a href="{% url 'home:index' %}" title="Home" class="link-body-emphasis px-2">
+                            <i class="fa-solid fa-house-laptop"></i></a></li>
+                        <li class="list-inline-item mx-0"><a href="{% url 'home:uppy' %}" title="Upload" class="link-body-emphasis px-2">
+                            <i class="fa-solid fa-upload"></i></a></li>
+                        <li class="list-inline-item mx-0"><a href="{% url 'home:paste' %}" title="Paste" class="link-body-emphasis px-2">
+                            <i class="fa-regular fa-file-lines"></i></a></li>
+                        <li class="list-inline-item mx-0"><a href="{% url 'home:files' %}" title="Files" class="link-body-emphasis px-2">
+                            <i class="fa-regular fa-folder-open"></i></a></li>
+                        <li class="list-inline-item mx-0"><a href="{% url 'home:albums' %}" title="Albums" class="link-body-emphasis px-2">
+                            <i class="fa-regular fa-images"></i></a></li>
+                        <li class="list-inline-item mx-0"><a href="{% url 'home:shorts' %}" title="Shorts" class="link-body-emphasis px-2">
+                            <i class="fa-solid fa-link"></i></a></li>
+                        <li class="list-inline-item mx-0"><a href="{% url 'home:stats' %}" title="Stats" class="link-body-emphasis px-2">
+                            <i class="fa-solid fa-chart-line"></i></a></li>
+                        <li class="list-inline-item mx-0"><a href="{% url 'settings:user' %}" title="User Settings" class="link-body-emphasis px-2">
+                            <i class="fas fa-user-circle"></i></a></li>
+                        {% if request.user.is_superuser %}
+                            <li class="list-inline-item mx-0"><a href="{% url 'settings:site' %}" title="Site Settings" class="link-body-emphasis px-2">
+                                <i class="fa-solid fa-gears "></i></a></li>
+                        {% endif %}
+                    </ul>
+                </nav><!-- nav-icons -->
+            </div> <!-- right/bottom - authenticated -->
+
+        {% else %}
+            <div class="">
+                <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
+                    Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
+            </div> <!-- right/bottom - unauthenticated -->
+        {% endif %}
+
+    </div> <!-- d-flex -->
 </footer>
