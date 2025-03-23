@@ -7,18 +7,27 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  pull-requests: write
+
 jobs:
-  pull:
-    name: "Pull"
+  check-npm:
+    name: "Check NPM"
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    permissions:
-      pull-requests: write
-
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
 
+      - name: "NPM Outdated Action"
+        continue-on-error: true
+        uses: cssnr/npm-outdated-action@master
+
+  chat-gpt:
+    name: "Chat GPT"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
       - name: "Get Commit Action"
         id: commit
         continue-on-error: true
@@ -26,11 +35,14 @@ jobs:
         with:
           sha: ${{ github.event.pull_request.head.sha }}
           selector: "commit.message"
-          summary: false
 
-      - name: "NPM Outdated Check"
+      - name: "Debug Commit Message"
         continue-on-error: true
-        uses: cssnr/npm-outdated-action@master
+        env:
+          COMMIT_MESSAGE: ${{ steps.commit.outputs.result }}
+        run: |
+          echo "COMMIT_MESSAGE: ${COMMIT_MESSAGE}"
+          echo "${COMMIT_MESSAGE}" | od -c
 
       - name: "ChatGPT CodeReview"
         if: ${{ contains(steps.commit.outputs.result, '#gpt') }}
@@ -42,9 +54,10 @@ jobs:
           LANGUAGE: English
           OPENAI_API_ENDPOINT: https://api.openai.com/v1
           MODEL: gpt-4o-mini
-          PROMPT: |
-            Check the following code diff for errors and improvements.
-            Please focus on simple quality responses.
+          PROMPT: >-
+            Check the following code diff for errors and/or improvements. Please
+            focus on simple, quality responses. Only provide suggestions for things
+            that are fully understood and do not make recommendations based on assumptions!
           top_p: 1
           temperature: 1
           max_tokens: 10000
