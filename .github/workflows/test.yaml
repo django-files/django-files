@@ -101,4 +101,4 @@ jobs:
           port: ${{ secrets.RSYNC_PORT }}
           webhost: "https://artifacts.hosted-domains.com"
           #webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          #token: ${{ secrets.GITHUB_TOKEN }}
+          #token:  ${{ secrets.GITHUB_TOKEN }}
