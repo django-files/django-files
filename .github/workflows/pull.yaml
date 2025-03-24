@@ -7,41 +7,47 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  pull-requests: write
+
 jobs:
-  pull:
-    name: "Pull"
+  check-npm:
+    name: "Check NPM"
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    permissions:
-      pull-requests: write
-
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: "Get Commit Message"
-        id: commit
-        continue-on-error: true
-        run: |
-          echo "message=$(git show -s --format=%s ${{ github.event.pull_request.head.sha }})" >> "${GITHUB_OUTPUT}"
-
-      - name: "Debug"
-        continue-on-error: true
-        run: |
-          echo "sha: ${{ github.event.pull_request.head.sha }}"
-          echo "message: ${{ steps.commit.outputs.message }}"
-          echo "::group::Event JSON"
-          cat "${GITHUB_EVENT_PATH}"
-          echo "::endgroup::"
-
-      - name: "NPM Outdated Check"
+      - name: "NPM Outdated Action"
         continue-on-error: true
         uses: cssnr/npm-outdated-action@master
+        with:
+          exclude: "tsparticles"
+
+  chat-gpt:
+    name: "Chat GPT"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: "Get Commit Action"
+        id: commit
+        continue-on-error: true
+        uses: cssnr/get-commit-action@master
+        with:
+          sha: ${{ github.event.pull_request.head.sha }}
+          selector: "commit.message"
+
+      - name: "Debug Commit Message"
+        continue-on-error: true
+        env:
+          COMMIT_MESSAGE: ${{ steps.commit.outputs.result }}
+        run: |
+          echo "COMMIT_MESSAGE: ${COMMIT_MESSAGE}"
+          echo "${COMMIT_MESSAGE}" | od -c
 
       - name: "ChatGPT CodeReview"
-        if: ${{ contains(steps.commit.outputs.message, '#gpt') }}
+        if: ${{ contains(steps.commit.outputs.result, '#gpt') }}
         continue-on-error: true
         uses: anc95/ChatGPT-CodeReview@main
         env:
@@ -50,10 +56,13 @@ jobs:
           LANGUAGE: English
           OPENAI_API_ENDPOINT: https://api.openai.com/v1
           MODEL: gpt-4o-mini
-          PROMPT: "Please check the following code diff for errors and improvements."
+          PROMPT: >-
+            Check the following code diff for errors and/or improvements. Please
+            focus on simple, quality responses. Only provide suggestions for things
+            that are fully understood and do not make recommendations based on assumptions!
           top_p: 1
           temperature: 1
           max_tokens: 10000
           MAX_PATCH_LENGTH: 10000
-          IGNORE_PATTERNS: "**/migrations/**,**/dist/**"
-          INCLUDE_PATTERNS: "/app/**"
+          IGNORE_PATTERNS: "/app/static/dist/**,**/migrations/**"
+          #INCLUDE_PATTERNS: "**/*.py,**/*.js,**/*.css,*.yaml"

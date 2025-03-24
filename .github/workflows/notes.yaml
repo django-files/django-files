@@ -1,0 +1,41 @@
+name: "Get Release Notes"
+
+on:
+  workflow_dispatch:
+    inputs:
+      previous:
+        description: "Manually Specify Previous Tag"
+        type: string
+      pre:
+        description: "Skip Non Pre-Releases"
+        type: boolean
+        default: true
+      max:
+        description: "Max Releases to Process"
+        type: number
+        default: 30
+
+jobs:
+  notes:
+    name: "Notes"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: "Combine Release Notes Action"
+        id: notes
+        uses: smashedr/combine-release-notes-action@master
+        with:
+          previous: ${{ inputs.previous }}
+          pre: ${{ inputs.pre }}
+          max: ${{ inputs.max }}
+          update: false
+
+      - name: "Echo Markdown"
+        continue-on-error: true
+        env:
+          MARKDOWN: ${{ steps.notes.outputs.markdown }}
+        run: |
+          echo "${MARKDOWN}"
