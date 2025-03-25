@@ -65,6 +65,8 @@ function domContentLoaded() {
             toastAlert.show()
         }
     })
+    setTimeout(getAuthToken, 5000)
+    getAuthToken()
 }
 
 /**
