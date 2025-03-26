@@ -62,8 +62,7 @@ function domContentLoaded() {
     })
     if (isAndroid && Android.receiveAuthToken) {
         console.log('Android Detected.')
-        setTimeout(getAuthToken, 5000)
-        getAuthToken()
+        setTimeout(getAuthToken, 250)
     }
 }
 
