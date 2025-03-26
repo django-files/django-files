@@ -80,7 +80,7 @@
             <li class="nav-item">
                 <a class="nav-link {% block stats_active %}{% endblock %}" href="{% url 'home:stats' %}">Stats</a>
             </li>
-            {% if request.META.HTTP_USER_AGENT|default:''|slice:":11" == "DjangoFiles" or request.META.HTTP_USER_AGENT|default:''|slice:":18" == "AndroidDjangoFiles" %}
+            {% if request.META.HTTP_USER_AGENT|default:''|slice:":11" == "DjangoFiles" %}
                 <li class="nav-item">
                     <a class="nav-link" href="djangofiles://serverlist">Server List</a>
                 </li>
