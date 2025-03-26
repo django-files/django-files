@@ -90,6 +90,8 @@ def upload_view(request):
     log.debug(request.FILES)
     try:
         f = request.FILES.get("file")
+        log.debug("f: %s", f)
+        log.debug("f.size: %s", f.size)
         if any(pq := process_storage_quotas(request.user, f.size)):
             if pq[1]:
                 message = "Upload Failed: Global storage quota exceeded."
@@ -331,7 +333,7 @@ def files_view(request, page, count=25):
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
-    log.debug("files: %s", files)
+    # log.debug("files: %s", files)
     _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {
         "files": files,
