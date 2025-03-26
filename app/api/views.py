@@ -90,8 +90,7 @@ def upload_view(request):
     log.debug(request.FILES)
     try:
         f = request.FILES.get("file")
-        log.debug("f: %s", f)
-        log.debug("f.size: %s", f.size)
+        # log.debug("f.size: %s", f.size)
         if any(pq := process_storage_quotas(request.user, f.size)):
             if pq[1]:
                 message = "Upload Failed: Global storage quota exceeded."
