@@ -66,7 +66,7 @@ def oauth_show(request):
     if "next" in request.GET:
         log.debug("setting login_next_url to: %s", request.GET.get("next"))
         request.session["login_next_url"] = request.GET.get("next")
-    if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles"):
+    if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles iOS"):
         # If a native app is redirect to login in the app web view,
         # we need to tell the app the client is no longer authenticated
         return CustomSchemeRedirect("djangofiles://logout")
@@ -257,7 +257,7 @@ def oauth_logout(request):
     request.session["login_next_url"] = next_url
     messages.info(request, "Successfully logged out.")
     log.debug("oauth_logout: login_next_url: %s", request.session.get("login_next_url"))
-    if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles"):
+    if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles iOS"):
         return CustomSchemeRedirect("djangofiles://logout")
     return redirect(next_url)
 

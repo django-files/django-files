@@ -43,7 +43,7 @@
     <div class="row mt-1 mb-4">
         <div class="col-md-12">
             <label for="storage_quota" class="form-label">{% firstof user.first_name user.username %}'s Storage Quota Usage</label>
-            <div class="progress" role="progressbar" id="storage_quota" name="storage_quota" aria-label="User Storage Quota" 
+            <div class="progress" role="progressbar" id="storage_quota" name="storage_quota" aria-label="User Storage Quota"
                  aria-valuenow="{{ user.get_storage_usage_pct }}" aria-valuemin="0" aria-valuemax="100" style="height: 35px; font-size: large">
                 <div class="progress-bar overflow-visible {% if user.get_storage_usage_pct > 95 %}bg-danger{% elif user.get_storage_usage_pct > 85 %}bg-warning{% endif %}" style="width: {{ user.get_storage_usage_pct }}%">
                     <b>({{ user.get_storage_used_human_read }}/{{ user.get_storage_quota_human_read }}) {{ user.get_storage_usage_pct }}%</b>

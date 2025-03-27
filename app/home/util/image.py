@@ -79,7 +79,11 @@ class ImageProcessor(object):
     def cast(cls, v):
         # casts exif nested json into nested dictionary
         if isinstance(v, TiffImagePlugin.IFDRational):
-            return float(v)
+            try:
+                return float(v)
+            except ZeroDivisionError as error:
+                log.debug("error: %s", error)
+                return 0
         elif isinstance(v, tuple):
             return tuple(cls.cast(t) for t in v)
         elif isinstance(v, bytes):
