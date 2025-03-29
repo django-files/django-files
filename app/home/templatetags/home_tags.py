@@ -1,9 +1,11 @@
 import datetime
 import logging
+from typing import Literal, Optional, Union
 
 from decouple import config
 from django import template
 from django.conf import settings
+from django.http import HttpRequest
 
 
 # from django.templatetags.static import static
@@ -25,13 +27,28 @@ def get_config(value: str):
 
 
 @register.simple_tag(name="is_mobile")
-def is_mobile(value: str):
-    if value and value.startswith("DjangoFiles"):
-        return {
-            "android": "DjangoFiles Android" in value,
-            "ios": "DjangoFilesIOS" in value,
-        }
-    return None
+def is_mobile(request: HttpRequest, platform: Optional[Literal["android", "ios"]] = None) -> Union[dict, bool]:
+    """
+    Returns a Dictionary of Mobile Clients else False
+    If the platform is specified, only a boolean is returned
+    :param request: HttpRequest: request
+    :param platform: Literal: android|ios
+    :return: bool|dict
+    """
+    if request and isinstance(request.META, dict):
+        ua = request.META.get("HTTP_USER_AGENT", "")
+        if "DjangoFiles" in ua:
+            data = {
+                "android": "Android" in ua,
+                "ios": "iOS" in ua,
+            }
+            if platform:
+                if platform in data:
+                    return data[platform]
+                else:
+                    raise ValueError(f"Unknown platform: {platform}")
+            return data
+    return False
 
 
 # @register.filter(name='avatar_url')

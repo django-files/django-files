@@ -9,6 +9,7 @@ from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from home.templatetags.home_tags import is_mobile
 from home.util.requests import CustomSchemeRedirect
 from oauth.forms import LoginForm
 from oauth.models import CustomUser, DiscordWebhooks
@@ -66,7 +67,8 @@ def oauth_show(request):
     if "next" in request.GET:
         log.debug("setting login_next_url to: %s", request.GET.get("next"))
         request.session["login_next_url"] = request.GET.get("next")
-    if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles iOS"):
+    # if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles iOS"):
+    if is_mobile(request, "ios"):
         # If a native app is redirect to login in the app web view,
         # we need to tell the app the client is no longer authenticated
         return CustomSchemeRedirect("djangofiles://logout")
@@ -257,7 +259,8 @@ def oauth_logout(request):
     request.session["login_next_url"] = next_url
     messages.info(request, "Successfully logged out.")
     log.debug("oauth_logout: login_next_url: %s", request.session.get("login_next_url"))
-    if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles iOS"):
+    # if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles iOS"):
+    if is_mobile(request, "ios"):
         return CustomSchemeRedirect("djangofiles://logout")
     return redirect(next_url)
 

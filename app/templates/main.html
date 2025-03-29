@@ -86,7 +86,7 @@
                 <a class="nav-link {% block stats_active %}{% endblock %}" href="{% url 'home:stats' %}">
                     <i class="fa-solid fa-chart-line me-2 d-md-none"></i> Stats</a>
             </li>
-            {% is_mobile request.META.HTTP_USER_AGENT as mobile %}
+            {% is_mobile request as mobile %}
             {% if mobile %}
                 <li class="nav-item">
                     <a class="nav-link" href="djangofiles://serverlist">

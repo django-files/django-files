@@ -87,7 +87,7 @@
                 <span class="flex-grow-1 text-center">Google Login</span>
             </a>
             {% endif %}
-            {% is_mobile request.META.HTTP_USER_AGENT as mobile %}
+            {% is_mobile request as mobile %}
             {% if mobile %}
                 <a class="btn btn-lg btn-light opacity-75 d-flex align-items-center hvr-grow" href="djangofiles://serverlist">
                     <i class="fa-brands {% if mobile.android %}fa-android{% else %}fa-apple{% endif %} position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
