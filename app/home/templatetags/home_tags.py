@@ -19,9 +19,19 @@ def if_true(value, output):
 
 
 @register.filter(name="get_config")
-def get_config(value):
+def get_config(value: str):
     # get django setting or config value or empty
     return getattr(settings, value, None) or config(value, "")
+
+
+@register.simple_tag(name="is_mobile")
+def is_mobile(value: str):
+    if value and value.startswith("DjangoFiles"):
+        return {
+            "android": "DjangoFiles Android" in value,
+            "ios": "DjangoFilesIOS" in value,
+        }
+    return None
 
 
 # @register.filter(name='avatar_url')
@@ -35,9 +45,9 @@ def get_config(value):
 
 
 @register.filter(name="single_type")
-def single_type(mime_type):
-    # returns the absolute_url from the absolute_uri
-    return str(mime_type.split("/", 1)[0]).lower()
+def single_type(mime_type: str):
+    parts = mime_type.split("/", 1)
+    return parts[0].lower() if parts else ""
 
 
 @register.filter(name="bytes_human")
