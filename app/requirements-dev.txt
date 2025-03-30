@@ -2,7 +2,7 @@
 
 boto3
 celery>=5,<6
-channels[daphne]<5
+channels[daphne]==4.2.0
 channels-redis<5
 defusedxml
 django>=5,<6

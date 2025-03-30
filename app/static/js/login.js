@@ -8,7 +8,7 @@ loginOuter.one('animationend', () => {
     loginOuter.removeClass(['animate__animated', 'animate__backInDown'])
 })
 
-$('#login-buttons > a').on('click', () => {
+$('#login-buttons > .login').on('click', () => {
     loginOuter.addClass([
         'animate__animated',
         'animate__backOutUp',

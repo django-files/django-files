@@ -70,22 +70,29 @@
                 {% endif %}
             {% endif %}
             {% if site_settings.discord_client_id %}
-                <a class="btn btn-lg btn-primary opacity-75 d-flex align-items-center hvr-grow" href="{% url 'oauth:discord' %}?next={{ request.path }}">
+                <a class="btn btn-lg btn-primary opacity-75 d-flex align-items-center hvr-grow login" href="{% url 'oauth:discord' %}?next={{ request.path }}">
                     <i class="fa-brands fa-discord  position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
                     <span class="flex-grow-1 text-center">Discord Login</span>
                 </a>
             {% endif %}
             {% if site_settings.github_client_id %}
-                <a class="btn btn-lg btn-dark opacity-75 d-flex align-items-center hvr-grow" href="{% url 'oauth:github' %}?next={{ request.path }}">
+                <a class="btn btn-lg btn-dark opacity-75 d-flex align-items-center hvr-grow login" href="{% url 'oauth:github' %}?next={{ request.path }}">
                     <i class="fa-brands fa-github  position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
                     <span class="flex-grow-1 text-center">GitHub Login</span>
                 </a>
             {% endif %}
             {% if site_settings.google_client_id %}
-            <a class="btn btn-lg btn-info opacity-75 d-flex align-items-center hvr-grow" href="{% url 'oauth:google' %}?next={{ request.path }}">
+            <a class="btn btn-lg btn-info opacity-75 d-flex align-items-center hvr-grow login" href="{% url 'oauth:google' %}?next={{ request.path }}">
                 <i class="fa-brands fa-google  position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
                 <span class="flex-grow-1 text-center">Google Login</span>
             </a>
+            {% endif %}
+            {% is_mobile request as mobile %}
+            {% if mobile %}
+                <a class="btn btn-lg btn-light opacity-75 d-flex align-items-center hvr-grow" href="djangofiles://serverlist">
+                    <i class="fa-brands {% if mobile.android %}fa-android{% else %}fa-apple{% endif %} position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                    <span class="flex-grow-1 text-center">Server List</span>
+                </a>
             {% endif %}
         </div>
     </form>

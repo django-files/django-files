@@ -1,9 +1,11 @@
 import datetime
 import logging
+from typing import Literal, Optional, Union
 
 from decouple import config
 from django import template
 from django.conf import settings
+from django.http import HttpRequest
 
 
 # from django.templatetags.static import static
@@ -19,9 +21,34 @@ def if_true(value, output):
 
 
 @register.filter(name="get_config")
-def get_config(value):
+def get_config(value: str):
     # get django setting or config value or empty
     return getattr(settings, value, None) or config(value, "")
+
+
+@register.simple_tag(name="is_mobile")
+def is_mobile(request: HttpRequest, platform: Optional[Literal["android", "ios"]] = None) -> Union[dict, bool]:
+    """
+    Returns a Dictionary of Mobile Clients else False
+    If the platform is specified, only a boolean is returned
+    :param request: HttpRequest: request
+    :param platform: Literal: android|ios
+    :return: bool|dict
+    """
+    if request and isinstance(request.META, dict):
+        ua = request.META.get("HTTP_USER_AGENT", "")
+        if "DjangoFiles" in ua:
+            data = {
+                "android": "Android" in ua,
+                "ios": "iOS" in ua,
+            }
+            if platform:
+                if platform in data:
+                    return data[platform]
+                else:
+                    raise ValueError(f"Unknown platform: {platform}")
+            return data
+    return False
 
 
 # @register.filter(name='avatar_url')
@@ -35,9 +62,9 @@ def get_config(value):
 
 
 @register.filter(name="single_type")
-def single_type(mime_type):
-    # returns the absolute_url from the absolute_uri
-    return str(mime_type.split("/", 1)[0]).lower()
+def single_type(mime_type: str):
+    parts = mime_type.split("/", 1)
+    return parts[0].lower() if parts else ""
 
 
 @register.filter(name="bytes_human")
