@@ -82,7 +82,7 @@ def version_view(request):
     """
     View  /api/version
     """
-    return HttpResponse(settings.APP_VERSION)
+    return HttpResponse(f"DjangoFiles {settings.APP_VERSION}")
 
 
 @csrf_exempt
