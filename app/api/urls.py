@@ -6,6 +6,7 @@ app_name = "api"
 
 urlpatterns = [
     path("", views.api_view, name="status"),
+    re_path(r"^version/?$", views.version_view, name="version"),
     re_path(r"^upload/?$", views.upload_view, name="upload"),
     re_path(r"^shorten/?$", views.shorten_view, name="shorten"),
     path("invites/", views.invites_view, name="invites"),

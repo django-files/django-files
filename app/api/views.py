@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import httpx
 import validators
 from api.utils import extract_albums, extract_files
+from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.core import serializers
@@ -74,6 +75,14 @@ def api_view(request):
     """
     log.debug("%s - api_view: is_secure: %s", request.method, request.is_secure())
     return render(request, "api.html")
+
+
+@require_http_methods(["GET", "HEAD"])
+def version_view(request):
+    """
+    View  /api/version
+    """
+    return HttpResponse(settings.APP_VERSION)
 
 
 @csrf_exempt
@@ -165,7 +174,7 @@ def shorten_view(request):
 @auth_from_token
 def album_view(request):
     """
-    View  /api/album
+    View  /api/album/
     """
     try:
         if request.method == "POST":
@@ -423,14 +432,6 @@ def albums_view(request, page=None, count=100):
     return JsonResponse(response, safe=False, status=200)
 
 
-def get_json_body(request):
-    try:
-        return json.loads(request.body.decode())
-    except Exception as error:
-        log.debug(error)
-        return {}
-
-
 @csrf_exempt
 @require_http_methods(["OPTIONS", "POST"])
 @auth_from_token
@@ -466,6 +467,78 @@ def remote_view(request):
     response = {"url": f'{site_settings["site_url"] + file.preview_uri()}'}
     log.debug("response: %s", response)
     return JsonResponse(response)
+
+
+@require_http_methods(["POST", "GET"])
+def token_view(request):
+    """
+    View  /api/token/
+    GET to fetch token value
+    POST to refresh and fetch token value
+    """
+    if not request.user:
+        return HttpResponse(status=401)
+    if request.method == "POST":
+        user = request.user
+        user.authorization = rand_string()
+        user.save()
+    return HttpResponse(request.user.authorization)
+
+
+@require_http_methods(["GET"])
+def auth_methods(request):
+    """
+    View     /api/auth/methods/
+    returns dictionary of configured auth methods, and branding for native client login pages
+    """
+    site_settings = SiteSettings.objects.settings()
+    state_string = "&state=iOSApp"
+    methods = []
+    site_url = site_settings.site_url if site_settings.site_url else f"{request.scheme}://{request.get_host()}"
+    if site_settings.local_auth:
+        methods.append({"name": "local", "url": site_url + reverse("oauth:login")})
+    if site_settings.discord_client_id:
+        methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings) + state_string})
+    if site_settings.github_client_id:
+        methods.append({"name": "github", "url": GithubOauth.get_login_url(site_settings) + state_string})
+    if site_settings.google_client_id:
+        methods.append({"name": "google", "url": GoogleOauth.get_login_url(site_settings) + state_string})
+    return JsonResponse({"authMethods": methods, "siteName": site_settings.site_title})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def local_auth_for_native_client(request):
+    """
+    View     /api/auth/token/
+    returns raw token for local auth for native client
+    """
+    site_settings = SiteSettings.objects.settings()
+    data = get_json_body(request)
+    if not data:
+        return JsonResponse({"error": json_error_message}, status=400)
+    # log request data, cookies and meta
+    log.debug("request.cookies: %s", request.COOKIES)
+    log.debug("request.META: %s", request.META)
+    if request.user.is_authenticated:
+        user = request.user
+    else:
+        user = authenticate(request, username=data.get("username"), password=data.get("password"))
+    if not user or not site_settings.get_local_auth():
+        return HttpResponse(status=401)
+    # TODO: Handle DUO for native clients
+    # if response := pre_login(request, user, site_settings):
+    #     return response
+    login(request, user)
+    return HttpResponse('{"token": "%s"}' % request.user.authorization)
+
+
+def get_json_body(request):
+    try:
+        return json.loads(request.body.decode())
+    except Exception as error:
+        log.debug(error)
+        return {}
 
 
 def parse_headers(headers: dict, **kwargs) -> dict:
@@ -560,67 +633,3 @@ def id_or_name(id_name: Union[str, int], name="name") -> dict:
         return {"id": int(id_name)}
     else:
         return {name: id_name}
-
-
-@require_http_methods(["POST", "GET"])
-def token_view(request):
-    """
-    View  /api/token
-    GET to fetch token value
-    POST to refresh and fetch token value
-    """
-    if not request.user:
-        return HttpResponse(status=401)
-    if request.method == "POST":
-        user = request.user
-        user.authorization = rand_string()
-        user.save()
-    return HttpResponse(request.user.authorization)
-
-
-@require_http_methods(["GET"])
-def auth_methods(request):
-    """
-    View     /api/auth/methods/
-    returns dictionary of configured auth methods, and branding for native client login pages
-    """
-    site_settings = SiteSettings.objects.settings()
-    state_string = "&state=iOSApp"
-    methods = []
-    site_url = site_settings.site_url if site_settings.site_url else f"{request.scheme}://{request.get_host()}"
-    if site_settings.local_auth:
-        methods.append({"name": "local", "url": site_url + reverse("oauth:login")})
-    if site_settings.discord_client_id:
-        methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings) + state_string})
-    if site_settings.github_client_id:
-        methods.append({"name": "github", "url": GithubOauth.get_login_url(site_settings) + state_string})
-    if site_settings.google_client_id:
-        methods.append({"name": "google", "url": GoogleOauth.get_login_url(site_settings) + state_string})
-    return JsonResponse({"authMethods": methods, "siteName": site_settings.site_title})
-
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def local_auth_for_native_client(request):
-    """
-    View     /api/auth/token/
-    returns raw token for local auth for native client
-    """
-    site_settings = SiteSettings.objects.settings()
-    data = get_json_body(request)
-    if not data:
-        return JsonResponse({"error": json_error_message}, status=400)
-    # log request data, cookies and meta
-    log.debug("request.cookies: %s", request.COOKIES)
-    log.debug("request.META: %s", request.META)
-    if request.user.is_authenticated:
-        user = request.user
-    else:
-        user = authenticate(request, username=data.get("username"), password=data.get("password"))
-    if not user or not site_settings.get_local_auth():
-        return HttpResponse(status=401)
-    # TODO: Handle DUO for native clients
-    # if response := pre_login(request, user, site_settings):
-    #     return response
-    login(request, user)
-    return HttpResponse('{"token": "%s"}' % (request.user.authorization))
