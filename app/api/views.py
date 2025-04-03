@@ -33,7 +33,6 @@ from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
 from packaging import version
-from packaging.version import InvalidVersion
 from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
