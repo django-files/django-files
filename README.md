@@ -166,11 +166,9 @@ client upload settings.
 ### Clients
 
 <a href="https://apps.apple.com/us/app/django-files/id6742523003?itscg=30200&itsct=apps_box_badge&mttnsubad=6742523003" style="display: inline-block;">
-<img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1743638400" alt="Download on the App Store" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain; margin-bottom: 10px;" />
-</a>
-
+<img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1743638400" alt="Download on the App Store" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain; margin-block: 8px;" /></a>
 <a href="https://github.com/django-files/android-client/releases/latest/download/django-files.apk" style="display: inline-block;">
-    <img src="https://dfzdnf7paocvc.cloudfront.net/apk_android_dl.svg" alt="Download for Android via APK" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain;" /></a>
+<img src="https://dfzdnf7paocvc.cloudfront.net/apk_android_dl.svg" alt="Download for Android via APK" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain; margin-block: 8px;" /></a>
 
 ### Files
 
