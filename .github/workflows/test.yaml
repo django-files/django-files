@@ -68,13 +68,6 @@ jobs:
           SECRET_KEY: alsdfjalksdjfllkjdfkerioqweroiu
         run: |
           python manage.py migrate
-          python manage.py makemigrations --noinput
-          echo "----------"
-          cat oauth/migrations/0023_alter_customuser_timezone.py
-          echo "----------"
-          cat settings/migrations/0014_alter_sitesettings_timezone.py
-          echo "----------"
-          exit 1
           python manage.py makemigrations --dry-run --check --noinput
 
       - name: "Test App"
