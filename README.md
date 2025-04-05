@@ -13,7 +13,7 @@
 
 # Django Files
 
-A Self-Hosted File Manager designed for seamless file sharing, with built-in support for client apps like ShareX, Flameshot, and [iOS](https://apps.apple.com/us/app/django-files/id6742523003).
+A Self-Hosted File Manager designed for seamless file sharing, with built-in support for client apps like ShareX, Flameshot, [iOS](https://apps.apple.com/us/app/django-files/id6742523003) and [Android](https://github.com/django-files/android-client).
 
 🚀 Currently in Active Development – Expect breaking changes until an official major version release.
 
@@ -119,7 +119,8 @@ Django Files is packed with features for seamless file management and sharing. M
 
 - Local or S3 storage support
 - One-click integration with ShareX, Flameshot
-- [iOS client](https://apps.apple.com/us/app/django-files/id6742523003) and Android Client Coming Soon
+- [iOS Client](https://apps.apple.com/us/app/django-files/id6742523003)
+- [Android Client](https://github.com/django-files/android-client)
 - Customizable UI with light/dark mode
 - OAuth support (Discord, GitHub, Google) & two-factor authentication (Duo)
 - Web extensions for Chrome and Firefox
