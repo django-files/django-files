@@ -1,5 +1,4 @@
 import datetime
-import zoneinfo
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ObjectDoesNotExist
@@ -9,6 +8,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from home.util.misc import bytes_to_human_read
 from home.util.rand import rand_color_hex, rand_string
+from home.util.time_zones import TIMEZONE_CHOICES
 from oauth.managers import DiscordWebhooksManager, UserInvitesManager
 from settings.models import SiteSettings
 
@@ -18,10 +18,6 @@ def rand_invite():
 
 
 class CustomUser(AbstractUser):
-    TIMEZONE_CHOICES = zip(
-        sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()), strict=False
-    )
-
     class UploadNameFormats(models.TextChoices):
         NAME = "name", _("name")
         RAND = "rand", _("random")
