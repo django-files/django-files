@@ -40,10 +40,10 @@ jobs:
         run: |
           cat "${GITHUB_EVENT_PATH}"
 
-      - name: "Setup Python 3.12.2"
+      - name: "Setup Python 3.12"
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12.2"
+          python-version: "3.12"
 
       - name: "Python Install"
         working-directory: app
@@ -67,8 +67,11 @@ jobs:
           DATABASE_LOCATION: /tmp/migration-test-db
           SECRET_KEY: alsdfjalksdjfllkjdfkerioqweroiu
         run: |
+          python manage.py showmigrations
           python manage.py migrate
+          python manage.py showmigrations
           python manage.py makemigrations --dry-run --check --noinput
+          python manage.py showmigrations
 
       - name: "Test App"
         working-directory: app
