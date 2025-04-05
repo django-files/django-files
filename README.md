@@ -167,6 +167,9 @@ client upload settings.
 <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1743638400" alt="Download on the App Store" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain;" />
 </a>
 
+<a href="https://github.com/django-files/android-client/releases/latest/download/django-files.apk" style="display: inline-block;">
+    <img src="{% static 'images/assets/apk_android_dl.svg' %}" alt="Download for Android via APK" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain;" /></a>
+
 ### Files
 
 Upload Endpoint: `/api/upload/`  
