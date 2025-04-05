@@ -1,16 +1,11 @@
-import zoneinfo
-
 from django.db import models
 from home.util.misc import bytes_to_human_read
 from home.util.rand import rand_color_hex
+from home.util.time_zones import TIMEZONE_CHOICES
 from settings.managers import SiteSettingsManager
 
 
 class SiteSettings(models.Model):
-    TIMEZONE_CHOICES = zip(
-        sorted(zoneinfo.available_timezones()), sorted(zoneinfo.available_timezones()), strict=False
-    )
-
     id = models.AutoField(primary_key=True)
     site_url = models.URLField(max_length=128, blank=True, null=True, verbose_name="Site URL")
     site_title = models.CharField(max_length=64, default="Django Files", verbose_name="Site Title")

@@ -38,7 +38,7 @@ jobs:
       - name: "Debug"
         run: |
           env
-          cat ${{ inputs.COMPOSE_FILE}}
+          cat ${{ inputs.COMPOSE_FILE }}
 
       - name: "Checkout Service Configs"
         uses: actions/checkout@v4
