@@ -53,3 +53,7 @@
 .navbar {
     padding-top: max(env(safe-area-inset-top), 8px);
 }
+
+main {
+    padding-top: 60px;
+}
