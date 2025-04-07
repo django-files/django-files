@@ -54,6 +54,6 @@
     padding-top: max(env(safe-area-inset-top), 8px);
 }
 
-main {
-    padding-top: 60px;
+body {
+    padding-top: 61px;
 }

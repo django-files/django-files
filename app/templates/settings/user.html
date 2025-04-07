@@ -24,6 +24,7 @@
                          {% endif%}
                          height="128" width="128" alt="Avatar" >
                 </div>
+
                 <div class="col-md-10 mt-2">
                     <label for="user_avatar_choice" class="form-label">Avatar Source</label>
                     <select class="form-select" id="user_avatar_choice" name="user_avatar_choice"
@@ -54,7 +55,6 @@
                         First Name.
                     </div>
                 </div>
-
                 <div class="col-md-6">
                     <label for="timezone" class="form-label">Timezone</label>
                     <input class="form-control" list="timezoneOptions" id="timezone" name="timezone"
@@ -94,6 +94,7 @@
                     </div>
                 </div>
             </div>
+
             <hr class="mt-4"/>
             <div class="row">
                 <h4 class="col-md-6">File Defaults</h4>
@@ -156,32 +157,6 @@
                         value="{{ user.nav_color_2 }}" title="Default Color" aria-describedby="nav_color_2-invalid">
                     <div id="nav_color_2-invalid" class="invalid-feedback"></div>
                 </div>
-{#                <div class="col-auto mx-sm-2 mt-4 fs-5">#}
-
-{#                <div class="form-check form-switch">#}
-{#                    <input class="form-check-input" type="checkbox" id="theme-toggle">#}
-{#                    <label class="form-check-label" for="theme-toggle">#}
-{#                        Auto/<span id="new-theme-value">Opposite</span> Mode#}
-{#                    </label>#}
-{#                </div>#}
-
-{#                    <ul class="navbar-nav flex-grow-0">#}
-{#                        <li class="nav-item dropdown">#}
-{#                            <a class="nav-link" id="bd-theme-disabled" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 56px;">#}
-{#                                <i id="theme-icon" class="fa-solid fa-circle-half-stroke fa-lg" style="min-width: 20px;"></i> <i class="fa-solid fa-caret-down fa-xs mx-1"></i>#}
-{#                                <span class="d-md-none me-2">Theme</span></a>#}
-{#                            <ul class="dropdown-menu auto dropdown-menu-end" aria-labelledby="bd-theme-disabled">#}
-{#                                <li><button class="dropdown-item" data-bs-theme-value="dark" aria-pressed="false">#}
-{#                                    <i class="fa-regular fa-moon" style="min-width: 16px;"></i> <span class="ms-3">Dark</span></button></li>#}
-{#                                <li><button class="dropdown-item" data-bs-theme-value="light" aria-pressed="false">#}
-{#                                    <i class="fa-solid fa-sun" style="min-width: 16px;"></i> <span class="ms-3">Light</span></button></li>#}
-{#                                <li><button class="dropdown-item" data-bs-theme-value="auto" aria-pressed="false">#}
-{#                                    <i class="fa-solid fa-circle-half-stroke" style="min-width: 16px;"></i> <span class="ms-3">Auto</span></button></li>#}
-{#                            </ul>#}
-{#                        </li>#}
-{#                    </ul>#}
-
-{#                </div>#}
             </div>
 
         </div>
