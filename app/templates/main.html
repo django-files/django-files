@@ -39,7 +39,7 @@
 
 {% block navbar %}
 <header>
-<nav class="navbar navbar-expand-md navbar-dark border-bottom" aria-label="Main Navigation"
+<nav class="navbar fixed-top navbar-expand-{% if not request.user.is_authenticated %}sm{% else %}md{% endif %} navbar-dark border-bottom" aria-label="Main Navigation"
      style="background-image: linear-gradient(15deg,
          {% block nav1color %}{{ user.nav_color_1|default:"#130e36" }}{% endblock %} 0%,
          {% block nav2color %}{{ user.nav_color_2|default:"#1e1c21" }}{% endblock %} 100%);">
@@ -50,14 +50,12 @@
         <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
-
+    <div class="offcanvas offcanvas-end text-bg-dark" data-bs-scroll="true" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
         <div class="offcanvas-header">
             <img src="{% static 'images/logo.png' %}" width="30" height="30" alt="logo"></a>
             <h5 class="offcanvas-title ms-2" id="offcanvasNavbarLabel">Django Files</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
-
         <div class="offcanvas-body">
 
         {% if request.user.is_authenticated %}
@@ -104,10 +102,25 @@
                         Server List</a>
                 </li>
             {% endif %}
-        </ul>
-        {% endif %}
+        </ul> <!-- navbar-nav flex-grow-1 -->
+        {% else %}<ul class="navbar-nav flex-grow-1"></ul>{% endif %}
 
         <ul class="navbar-nav flex-grow-0">
+
+            <li class="nav-item dropdown">
+                <a class="nav-link" id="bd-theme-disabled" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 56px;">
+                    <i id="theme-icon" class="fa-solid fa-circle-half-stroke fa-lg" style="min-width: 20px;"></i> <i class="fa-solid fa-caret-down fa-xs mx-1"></i>
+                    <span class="d-md-none me-2">Theme</span></a>
+                <ul class="dropdown-menu auto dropdown-menu-end" aria-labelledby="bd-theme-disabled">
+                    <li><button class="dropdown-item" data-bs-theme-value="dark" aria-pressed="false">
+                        <i class="fa-regular fa-moon" style="min-width: 16px;"></i> <span class="ms-3">Dark</span></button></li>
+                    <li><button class="dropdown-item" data-bs-theme-value="light" aria-pressed="false">
+                        <i class="fa-solid fa-sun" style="min-width: 16px;"></i> <span class="ms-3">Light</span></button></li>
+                    <li><button class="dropdown-item" data-bs-theme-value="auto" aria-pressed="false">
+                        <i class="fa-solid fa-circle-half-stroke" style="min-width: 16px;"></i> <span class="ms-3">Auto</span></button></li>
+                </ul>
+            </li>
+
             {% if not request.user.is_authenticated %}
                 <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="btn btn-outline-info" role="button">
                     Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
@@ -157,10 +170,8 @@
                     </ul>
                 </li>
             {% endif %}
-        </ul>
-
+        </ul> <!-- navbar-nav flex-grow-0 -->
         </div> <!-- offcanvas-body -->
-
     </div> <!-- offcanvas -->
 </div> <!-- nav-container -->
 </nav>
@@ -267,7 +278,6 @@
 {% block js %}
     <script type="text/javascript" src="{% static 'dist/jquery/jquery.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/bootstrap/bootstrap.bundle.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/fontawesome/js/all.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/clipboard/clipboard.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
     {% if request.user.is_authenticated %}

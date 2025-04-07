@@ -50,6 +50,15 @@
     transform: scale(1.05);
 }
 
-.navbar {
+.navbar,
+.offcanvas {
     padding-top: max(env(safe-area-inset-top), 8px);
+}
+
+.offcanvas {
+    width: 240px !important;
+}
+
+body {
+    padding-top: 61px;
 }
