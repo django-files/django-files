@@ -10,12 +10,13 @@ let albumsDataTable
 let nextPage = 1
 let fetchLock = false
 
-document.addEventListener('DOMContentLoaded', initAlbumsTable)
+document.addEventListener('DOMContentLoaded', domContentLoaded)
 document.addEventListener('scroll', debounce(scrollHandle))
 window.addEventListener('resize', debounce(scrollHandle))
 
 async function scrollHandle(event) {
-    pageScroll(event, nextPage, addAlbumRows)
+    await pageScroll(event, nextPage, addAlbumRows)
+    albumsDataTable?.columns.adjust().draw()
 }
 
 const dataTablesOptions = {
@@ -79,7 +80,7 @@ const dataTablesOptions = {
     ],
 }
 
-async function initAlbumsTable() {
+async function domContentLoaded() {
     albumsDataTable = albumsTable.DataTable(dataTablesOptions)
     await addAlbumRows()
     window.dispatchEvent(new Event('resize'))
