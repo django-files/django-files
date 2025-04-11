@@ -50,15 +50,26 @@
     transform: scale(1.05);
 }
 
-.navbar {
-    padding-top: max(env(safe-area-inset-top), 8px);
-}
-
 .offcanvas {
-    padding-top: max(env(safe-area-inset-top), 0px);
     width: 240px !important;
 }
 
 body {
-    padding-top: calc(61px + max(env(safe-area-inset-top), 8px));
+    padding-top: 61px;
+}
+
+@supports (padding-top: env(safe-area-inset-top)) {
+    body {
+        padding-top: calc(61px + max(env(safe-area-inset-top), 8px));
+    }
+
+    .navbar {
+        padding-top: max(env(safe-area-inset-top, 0px), 8px);
+    }
+
+    @media (max-width: 992px) {
+        .offcanvas {
+            padding-top: env(safe-area-inset-top);
+        }
+    }
 }
