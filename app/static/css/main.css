@@ -73,3 +73,8 @@ body {
         }
     }
 }
+
+td.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

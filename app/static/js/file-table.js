@@ -20,6 +20,8 @@ const fileDeleteModal = $('#fileDeleteModal')
 let filesDataTable
 let fileNameLength = getNameSize(window.innerWidth)
 
+window.addEventListener('resize', windowResize)
+
 const dataTablesOptions = {
     paging: false,
     order: [1, 'desc'],
@@ -34,9 +36,7 @@ const dataTablesOptions = {
         [1, 10, 25, 45, 100, 250, 'All'],
     ],
     columns: [
-        {
-            data: null,
-        },
+        { data: null },
         { data: 'id', name: 'id' },
         { data: 'name' },
         { data: 'size' },
@@ -63,11 +63,11 @@ const dataTablesOptions = {
         },
         {
             target: 2,
-
             responsivePriority: 1,
             render: getFileLink,
             defaultContent: '',
             type: 'html',
+            className: 'truncate text-nowrap',
         },
         {
             targets: 3,
@@ -135,6 +135,11 @@ const dataTablesOptions = {
     },
 }
 
+function windowResize() {
+    // console.debug('windowResize')
+    filesDataTable?.columns.adjust().draw()
+}
+
 export function initFilesTable(search = true, ordering = true, info = true) {
     dataTablesOptions.searching = search
     dataTablesOptions.ordering = ordering
@@ -146,6 +151,7 @@ export function initFilesTable(search = true, ordering = true, info = true) {
     //     dataTablesOptions.columns.splice(0, 1)
     //     document.getElementById('files-table').rows[0].deleteCell(0)
     // }
+    // console.debug('dataTablesOptions:', dataTablesOptions)
     filesDataTable = filesTable.DataTable(dataTablesOptions)
     filesDataTable.on('draw.dt', debounce(dtDraw, 150))
     return filesDataTable
