@@ -21,12 +21,15 @@ let filesDataTable
 let fileNameLength = getNameSize(window.innerWidth)
 
 // Add window resize handler to update name length and redraw table
-window.addEventListener('resize', debounce(function() {
-    fileNameLength = getNameSize(window.innerWidth);
-    if (filesDataTable) {
-        filesDataTable.rows().invalidate('data').draw(false);
-    }
-}, 100))
+window.addEventListener(
+    'resize',
+    debounce(function () {
+        fileNameLength = getNameSize(window.innerWidth)
+        if (filesDataTable) {
+            filesDataTable.rows().invalidate('data').draw(false)
+        }
+    }, 100)
+)
 
 const dataTablesOptions = {
     paging: false,
@@ -180,7 +183,7 @@ function getFileLink(data, type, row, meta) {
 }
 
 function getNameSize(width) {
-    return Math.round(.04 * width + 8);
+    return Math.round(0.04 * width + 8)
 }
 
 function getPwIcon(data, type, row, meta) {
