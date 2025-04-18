@@ -106,13 +106,18 @@ def version_view(request):
             required_version = version.parse(body["version"])
             log.debug("required_version: %s", required_version)
 
+            if "-" in required_version:
+                log.debug("SUCCESS: DEV CLIENT")
+                data["valid"] = True
+                return JsonResponse(data)
+
             if required_version >= current_version:
                 log.debug("SUCCESS: required version >= current version")
                 data["valid"] = True
                 return JsonResponse(data)
-            else:
-                log.debug("FAILED: required version < current version")
-                return JsonResponse(data)
+
+            log.debug("FAILED: required version < current version")
+            return JsonResponse(data)
         except InvalidVersion as error:
             log.warning("InvalidVersion: %s", error)
             return HttpResponse(error, 400)
