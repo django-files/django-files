@@ -33,6 +33,7 @@ from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
 from packaging import version
+from packaging.version import InvalidVersion
 from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
@@ -84,12 +85,16 @@ def version_view(request):
     """
     View  /api/version
     """
+    log.debug("%s - version_view: APP_VERSION: %s", settings.APP_VERSION)
+    data = {"version": settings.APP_VERSION}
     if request.method != "POST":
-        return HttpResponse(f"DjangoFiles {settings.APP_VERSION}")
+        return JsonResponse(data)
     else:
+        data["valid"] = False
         if settings.APP_VERSION.startswith("DEV:"):
-            log.debug("DEV VERSION")
-            return HttpResponse("0")
+            log.debug("SUCCESS: DEV VERSION")
+            data["valid"] = True
+            return JsonResponse(data)
         try:
             current_version = version.parse(settings.APP_VERSION)
             log.debug("current_version: %s", current_version)
@@ -103,16 +108,17 @@ def version_view(request):
 
             if required_version >= current_version:
                 log.debug("SUCCESS: required version >= current version")
-                return HttpResponse("0")
+                data["valid"] = True
+                return JsonResponse(data)
             else:
                 log.debug("FAILED: required version < current version")
-                return HttpResponse("1")
-        # except InvalidVersion as error:
-        #    log.error("InvalidVersion: %s", error)
-        #    return HttpResponse("2")
+                return JsonResponse(data)
+        except InvalidVersion as error:
+            log.error("InvalidVersion: %s", error)
+            return HttpResponse(error, 400)
         except Exception as error:
             log.error("Exception: %s", error)
-            return HttpResponse(error, 400)
+            return HttpResponse(error, 500)
 
 
 @csrf_exempt
