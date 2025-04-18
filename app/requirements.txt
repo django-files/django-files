@@ -5,7 +5,7 @@ celery>=5,<6
 channels[daphne]==4.2.0
 channels-redis<5
 defusedxml
-django>=5,<6
+django>=5.1,<5.2
 django-celery-beat<3
 django-redis>=5,<6
 django-storages==1.14
