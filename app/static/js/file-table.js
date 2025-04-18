@@ -20,6 +20,17 @@ const fileDeleteModal = $('#fileDeleteModal')
 let filesDataTable
 let fileNameLength = getNameSize(window.innerWidth)
 
+// Add window resize handler to update name length and redraw table
+window.addEventListener(
+    'resize',
+    debounce(function () {
+        fileNameLength = getNameSize(window.innerWidth)
+        if (filesDataTable) {
+            filesDataTable.rows().invalidate('data').draw(false)
+        }
+    }, 100)
+)
+
 const dataTablesOptions = {
     paging: false,
     order: [1, 'desc'],
@@ -172,15 +183,7 @@ function getFileLink(data, type, row, meta) {
 }
 
 function getNameSize(width) {
-    if (width < 380) {
-        return 12
-    } else if (screen.width > 380 && screen.width < 500) {
-        return 20
-    } else if (screen.width > 500 && screen.width < 1500) {
-        return 40
-    } else {
-        return 60
-    }
+    return Math.round(0.04 * width + 8)
 }
 
 function getPwIcon(data, type, row, meta) {
