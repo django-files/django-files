@@ -180,17 +180,7 @@ function getFileLink(data, type, row, meta) {
 }
 
 function getNameSize(width) {
-    if (width < 380) {
-        return 12
-    } else if (width >= 380 && width < 450) {
-        return 20
-    } else if (width >= 450 && width < 570) {
-        return 25
-    } else if (width >= 570 && width < 1500) {
-        return 40
-    } else {
-        return 60
-    }
+    return Math.round(.04 * width + 8);
 }
 
 function getPwIcon(data, type, row, meta) {
