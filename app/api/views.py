@@ -85,7 +85,7 @@ def version_view(request):
     """
     View  /api/version
     """
-    log.debug("%s - version_view: APP_VERSION: %s", settings.APP_VERSION)
+    log.debug("%s - version_view: APP_VERSION: %s", request.method, settings.APP_VERSION)
     data = {"version": settings.APP_VERSION}
     if request.method != "POST":
         return JsonResponse(data)
