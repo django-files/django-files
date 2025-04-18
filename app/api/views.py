@@ -114,10 +114,10 @@ def version_view(request):
                 log.debug("FAILED: required version < current version")
                 return JsonResponse(data)
         except InvalidVersion as error:
-            log.error("InvalidVersion: %s", error)
+            log.warning("InvalidVersion: %s", error)
             return HttpResponse(error, 400)
         except Exception as error:
-            log.error("Exception: %s", error)
+            log.warning("Exception: %s", error)
             return HttpResponse(error, 500)
 
 
