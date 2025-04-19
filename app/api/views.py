@@ -106,7 +106,7 @@ def version_view(request):
             required_version = version.parse(body["version"])
             log.debug("required_version: %s", required_version)
 
-            if "-" in required_version:
+            if required_version.is_prerelease:
                 log.debug("SUCCESS: DEV CLIENT")
                 data["valid"] = True
                 return JsonResponse(data)
@@ -120,10 +120,10 @@ def version_view(request):
             return JsonResponse(data)
         except InvalidVersion as error:
             log.warning("InvalidVersion: %s", error)
-            return HttpResponse(error, 400)
+            return JsonResponse({"error": str(error)}, status=400)
         except Exception as error:
             log.warning("Exception: %s", error)
-            return HttpResponse(error, 500)
+            return JsonResponse({"error": str(error)}, status=500)
 
 
 @csrf_exempt
@@ -561,6 +561,7 @@ def local_auth_for_native_client(request):
     # log request data, cookies and meta
     log.debug("request.cookies: %s", request.COOKIES)
     log.debug("request.META: %s", request.META)
+    log.debug("request.user: %s", request.user)
     if request.user.is_authenticated:
         user = request.user
     else:
