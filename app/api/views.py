@@ -561,11 +561,12 @@ def local_auth_for_native_client(request):
     # log request data, cookies and meta
     log.debug("request.cookies: %s", request.COOKIES)
     log.debug("request.META: %s", request.META)
+    user = None
     if request.user.is_authenticated:
         user = request.user
-    else:
+    elif site_settings.get_local_auth():
         user = authenticate(request, username=data.get("username"), password=data.get("password"))
-    if not user or not site_settings.get_local_auth():
+    if not user:
         return HttpResponse(status=401)
     # TODO: Handle DUO for native clients
     # if response := pre_login(request, user, site_settings):
