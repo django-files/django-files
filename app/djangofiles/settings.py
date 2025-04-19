@@ -20,8 +20,7 @@ DEBUG = config("DEBUG", False, bool)
 print(f"DEBUG: {DEBUG}")
 
 BUILD_SHA = config("BUILD_SHA", "")
-# APP_VERSION = config("APP_VERSION", f"DEV:{BUILD_SHA[:7] or 'source'}")
-APP_VERSION = "0.16.0"
+APP_VERSION = config("APP_VERSION", f"DEV:{BUILD_SHA[:7] or 'source'}")
 
 # determine which env file to use
 if "test" in sys.argv or "test_coverage" in sys.argv:
