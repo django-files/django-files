@@ -8,13 +8,15 @@ def extract_files(q: Files.objects):
     files = []
     for file in q:
         data = model_to_dict(file, exclude=["file", "thumb", "albums"])
+        data["user_name"] = file.user.get_name()
+        data["user_username"] = file.user.username
+
         data["url"] = site_settings["site_url"] + file.preview_uri()
         data["thumb"] = site_settings["site_url"] + file.thumb_path
         data["raw"] = site_settings["site_url"] + file.raw_path
         data["date"] = file.date
         data["albums"] = [album.id for album in Albums.objects.filter(files__id=file.id)]
         files.append(data)
-    # log.debug('files: %s', files)
     return files
 
 
