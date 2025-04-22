@@ -347,7 +347,9 @@ def recent_view(request):
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
     amount = int(request.GET.get("amount", 10))
     log.debug("amount: %s", amount)
-    files = Files.objects.filter(user=request.user).order_by("-id")[:amount]
+    start = int(request.GET.get("start", 0))
+    log.debug("start: %s", start)
+    files = Files.objects.filter(user=request.user).select_related("user")[start : start + amount]  # noqa: E203
     log.debug("files: %s", files)
     log.debug(files)
     response = extract_files(files)
