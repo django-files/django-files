@@ -349,7 +349,7 @@ def recent_view(request):
     log.debug("amount: %s", amount)
     start = int(request.GET.get("start", 0))
     log.debug("start: %s", start)
-    files = Files.objects.filter(user=request.user).select_related("user")[start : start + amount]
+    files = Files.objects.filter(user=request.user).select_related("user")[start : start + amount]  # noqa: E203
     log.debug("files: %s", files)
     log.debug(files)
     response = extract_files(files)
