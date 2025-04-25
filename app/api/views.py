@@ -345,16 +345,20 @@ def recent_view(request):
     """
     log.debug("request.user: %s", request.user)
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
+    query = Files.objects.filter(user=request.user).select_related("user")
+    since = int(request.GET.get("since", 0))
+    log.debug("since: %s", since)
+    if since:
+        files = query.filter(id__gt=since)
+        # log.debug("files[0].id: %s", files[0].id)
+        return JsonResponse(extract_files(files), safe=False)
     amount = int(request.GET.get("amount", 10))
     log.debug("amount: %s", amount)
     start = int(request.GET.get("start", 0))
     log.debug("start: %s", start)
-    files = Files.objects.filter(user=request.user).select_related("user")[start : start + amount]  # noqa: E203
-    log.debug("files: %s", files)
-    log.debug(files)
-    response = extract_files(files)
-    log.debug("response: %s", response)
-    return JsonResponse(response, safe=False, status=200)
+    files = query[start : start + amount]  # noqa: E203
+    # log.debug("files[0].id: %s", files[0].id)
+    return JsonResponse(extract_files(files), safe=False)
 
 
 @csrf_exempt
