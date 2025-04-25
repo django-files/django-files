@@ -560,26 +560,24 @@ def local_auth_for_native_client(request):
     View     /api/auth/token/
     returns raw token for local auth for native client
     """
-    site_settings = SiteSettings.objects.settings()
-    data = get_json_body(request)
-    if not data:
-        return JsonResponse({"error": json_error_message}, status=400)
-    # log request data, cookies and meta
     log.debug("request.cookies: %s", request.COOKIES)
     log.debug("request.META: %s", request.META)
     log.debug("request.user: %s", request.user)
-    user = None
     if request.user.is_authenticated:
-        user = request.user
-    elif site_settings.get_local_auth():
+        return JsonResponse({"token": request.user.authorization})
+
+    data = get_json_body(request)
+    if not data:
+        return JsonResponse({"error": json_error_message}, status=400)
+
+    site_settings = SiteSettings.objects.settings()
+    if site_settings.get_local_auth():
         user = authenticate(request, username=data.get("username"), password=data.get("password"))
-    if not user:
-        return HttpResponse(status=401)
-    # TODO: Handle DUO for native clients
-    # if response := pre_login(request, user, site_settings):
-    #     return response
-    login(request, user)
-    return HttpResponse('{"token": "%s"}' % request.user.authorization)
+        if user:
+            login(request, user)
+            return JsonResponse({"token": request.user.authorization})
+
+    return HttpResponse(status=401)
 
 
 def get_json_body(request):
