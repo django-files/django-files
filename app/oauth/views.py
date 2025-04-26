@@ -1,9 +1,11 @@
 import logging
+from typing import Union
 
 import duo_universal
 from decouple import config
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
@@ -49,7 +51,9 @@ def oauth_show(request):
         if not form.is_valid():
             log.debug(form.errors)
             return HttpResponse(status=400)
-        user = authenticate(request, username=form.cleaned_data["username"], password=form.cleaned_data["password"])
+        user: Union[AbstractBaseUser, CustomUser] = authenticate(
+            request, username=form.cleaned_data["username"], password=form.cleaned_data["password"]
+        )
         if not user or not site_settings.get_local_auth():
             return HttpResponse(status=401)
 
@@ -149,16 +153,22 @@ def oauth_callback(request, oauth_provider: str = ""):
             )
 
         oauth.update_profile(user)
-        if response := pre_login(request, user, SiteSettings.objects.settings()):
+        if response := pre_login(request, user, site_settings):
             return response
         login(request, user)
         post_login(request, user)
-        messages.info(request, f"Successfully logged in via oauth. {user.username} {user.first_name}.")
-        return CustomSchemeRedirect(
-            get_login_redirect_url(
-                request, native_auth=native_auth, token=user.authorization, session_key=request.session.session_key
-            )
+        messages.info(request, f"Successfully logged in via oauth. {user.username} {user.get_name()}.")
+        log.debug("OAuth Login Success: %s", user)
+        log.debug("user.authorization: %s", user.authorization)
+        log.debug("request.session.session_key: %s", request.session.session_key)
+        url = get_login_redirect_url(
+            request,
+            native_auth=native_auth,
+            token=user.authorization,
+            session_key=request.session.session_key,
         )
+        log.debug("url: %s", url)
+        return CustomSchemeRedirect(url)
 
     except Exception as error:
         log.exception(error)
@@ -166,17 +176,18 @@ def oauth_callback(request, oauth_provider: str = ""):
         return HttpResponseRedirect(get_login_redirect_url(request))
 
 
-def pre_login(request, user, site_settings):
-    log.debug("username: %s", user.username)
+def pre_login(request, user: Union[AbstractBaseUser, CustomUser], site_settings):
+    log.debug("pre_login: user.username: %s", user.username)
     if site_settings.duo_auth:
         request.session["username"] = user.username
         url = duo_redirect(request, user.username)
-        log.debug("url: %s", url)
+        log.debug("pre_login: url: %s", url)
         return JsonResponse({"redirect": url})
 
 
 def post_login(request, user):
     # TODO: Explain why this method is empty
+    log.debug("post_login: user: %s", user)
     pass
 
 
@@ -260,7 +271,7 @@ def oauth_logout(request):
     messages.info(request, "Successfully logged out.")
     log.debug("oauth_logout: login_next_url: %s", request.session.get("login_next_url"))
     # if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles iOS"):
-    if is_mobile(request, "ios"):
+    if is_mobile(request):
         return CustomSchemeRedirect("djangofiles://logout")
     return redirect(next_url)
 
