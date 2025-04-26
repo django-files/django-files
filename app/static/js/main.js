@@ -95,7 +95,7 @@ function onScroll() {
  * @param {String} delay
  */
 function show_toast(message, bsClass = 'success', delay = '6000') {
-    console.debug(`show_toast: ${message}`)
+    // console.debug(`show_toast: ${message}`)
     if (isAndroid && Android.showToast) {
         console.log('Android Toast')
         Android.showToast(message)
