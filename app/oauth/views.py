@@ -188,7 +188,6 @@ def pre_login(request, user: Union[AbstractBaseUser, CustomUser], site_settings)
 def post_login(request, user):
     # TODO: Explain why this method is empty
     log.debug("post_login: user: %s", user)
-    pass
 
 
 def duo_callback(request):
@@ -268,11 +267,11 @@ def oauth_logout(request):
     log.debug("oauth_logout: next_url: %s", next_url)
     logout(request)
     request.session["login_next_url"] = next_url
-    messages.info(request, "Successfully logged out.")
     log.debug("oauth_logout: login_next_url: %s", request.session.get("login_next_url"))
     # if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles iOS"):
     if is_mobile(request):
         return CustomSchemeRedirect("djangofiles://logout")
+    messages.info(request, "Successfully logged out.")
     return redirect(next_url)
 
 
