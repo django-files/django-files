@@ -379,12 +379,12 @@ def files_view(request, page, count=25):
         user = request.user.id
     log.debug("user: %s", user)
     if album := request.GET.get("album"):
-        q = Files.objects.filtered_request(request, albums__id=album)
+        q = Files.objects.filtered_request(request, albums__id=album).select_related("user")
     else:
         if user == "0":
-            q = Files.objects.filtered_request(request)
+            q = Files.objects.filtered_request(request).select_related("user")
         else:
-            q = Files.objects.filtered_request(request, user_id=int(user))
+            q = Files.objects.filtered_request(request, user_id=int(user)).select_related("user")
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
