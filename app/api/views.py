@@ -345,16 +345,20 @@ def recent_view(request):
     """
     log.debug("request.user: %s", request.user)
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
+    query = Files.objects.filter(user=request.user).select_related("user")
+    since = int(request.GET.get("since", 0))
+    log.debug("since: %s", since)
+    if since:
+        files = query.filter(id__gt=since)
+        # log.debug("files[0].id: %s", files[0].id)
+        return JsonResponse(extract_files(files), safe=False)
     amount = int(request.GET.get("amount", 10))
     log.debug("amount: %s", amount)
     start = int(request.GET.get("start", 0))
     log.debug("start: %s", start)
-    files = Files.objects.filter(user=request.user).select_related("user")[start : start + amount]  # noqa: E203
-    log.debug("files: %s", files)
-    log.debug(files)
-    response = extract_files(files)
-    log.debug("response: %s", response)
-    return JsonResponse(response, safe=False, status=200)
+    files = query[start : start + amount]  # noqa: E203
+    # log.debug("files[0].id: %s", files[0].id)
+    return JsonResponse(extract_files(files), safe=False)
 
 
 @csrf_exempt
@@ -375,12 +379,12 @@ def files_view(request, page, count=25):
         user = request.user.id
     log.debug("user: %s", user)
     if album := request.GET.get("album"):
-        q = Files.objects.filtered_request(request, albums__id=album)
+        q = Files.objects.filtered_request(request, albums__id=album).select_related("user")
     else:
         if user == "0":
-            q = Files.objects.filtered_request(request)
+            q = Files.objects.filtered_request(request).select_related("user")
         else:
-            q = Files.objects.filtered_request(request, user_id=int(user))
+            q = Files.objects.filtered_request(request, user_id=int(user)).select_related("user")
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
@@ -556,26 +560,24 @@ def local_auth_for_native_client(request):
     View     /api/auth/token/
     returns raw token for local auth for native client
     """
-    site_settings = SiteSettings.objects.settings()
-    data = get_json_body(request)
-    if not data:
-        return JsonResponse({"error": json_error_message}, status=400)
-    # log request data, cookies and meta
     log.debug("request.cookies: %s", request.COOKIES)
     log.debug("request.META: %s", request.META)
     log.debug("request.user: %s", request.user)
-    user = None
     if request.user.is_authenticated:
-        user = request.user
-    elif site_settings.get_local_auth():
+        return JsonResponse({"token": request.user.authorization})
+
+    data = get_json_body(request)
+    if not data:
+        return JsonResponse({"error": json_error_message}, status=400)
+
+    site_settings = SiteSettings.objects.settings()
+    if site_settings.get_local_auth():
         user = authenticate(request, username=data.get("username"), password=data.get("password"))
-    if not user:
-        return HttpResponse(status=401)
-    # TODO: Handle DUO for native clients
-    # if response := pre_login(request, user, site_settings):
-    #     return response
-    login(request, user)
-    return HttpResponse('{"token": "%s"}' % request.user.authorization)
+        if user:
+            login(request, user)
+            return JsonResponse({"token": request.user.authorization})
+
+    return HttpResponse(status=401)
 
 
 def get_json_body(request):

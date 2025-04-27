@@ -1,5 +1,6 @@
 from api import views
 from django.urls import path, re_path
+from oauth.views import oauth_show
 
 
 app_name = "api"
@@ -26,4 +27,5 @@ urlpatterns = [
     path("token/", views.token_view, name="token"),
     path("auth/methods/", views.auth_methods, name="auth-methods"),
     path("auth/token/", views.local_auth_for_native_client, name="auth-token"),
+    path("oauth/", oauth_show, name="oauth-show"),
 ]
