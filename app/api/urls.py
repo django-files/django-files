@@ -12,6 +12,7 @@ urlpatterns = [
     re_path(r"^shorten/?$", views.shorten_view, name="shorten"),
     path("invites/", views.invites_view, name="invites"),
     path("recent/", views.recent_view, name="recent"),
+    path("shorts/", views.shorts_view, name="shorts"),
     path("files/<int:page>/", views.files_view, name="files"),
     path("files/<int:page>/<int:count>/", views.files_view, name="files-amount"),
     path("album/", views.album_view, name="album"),

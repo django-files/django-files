@@ -352,13 +352,17 @@ def recent_view(request):
         files = query.filter(id__gt=since)
         # log.debug("files[0].id: %s", files[0].id)
         return JsonResponse(extract_files(files), safe=False)
-    amount = int(request.GET.get("amount", 10))
-    log.debug("amount: %s", amount)
-    start = int(request.GET.get("start", 0))
-    log.debug("start: %s", start)
-    files = query[start : start + amount]  # noqa: E203
-    # log.debug("files[0].id: %s", files[0].id)
-    return JsonResponse(extract_files(files), safe=False)
+    try:
+        amount = int(request.GET.get("amount", 10))
+        log.debug("amount: %s", amount)
+        start = int(request.GET.get("start", 0))
+        log.debug("start: %s", start)
+        files = query[start : start + amount]  # noqa: E203
+        # log.debug("files[0].id: %s", files[0].id)
+        return JsonResponse(extract_files(files), safe=False)
+    except ValueError as error:
+        log.debug(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
 
 
 @csrf_exempt
@@ -680,3 +684,40 @@ def id_or_name(id_name: Union[str, int], name="name") -> dict:
         return {"id": int(id_name)}
     else:
         return {name: id_name}
+
+
+@csrf_exempt
+@require_http_methods(["OPTIONS", "GET"])
+@auth_from_token
+@cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix="shorts")
+@vary_on_headers("Authorization")
+@vary_on_cookie
+def shorts_view(request):
+    """
+    View  /api/shorts/
+    """
+    log.debug("request.user: %s", request.user)
+    log.debug("%s - shorts_view: is_secure: %s", request.method, request.is_secure())
+    query = ShortURLs.objects.filter(user=request.user)
+    since = int(request.GET.get("since", 0))
+    log.debug("since: %s", since)
+    if since:
+        shorts = query.filter(id__gt=since)
+        return JsonResponse([model_to_dict(short) for short in shorts], safe=False)
+    try:
+        amount = int(request.GET.get("amount", 10))
+        log.debug("amount: %s", amount)
+        start = int(request.GET.get("start", 0))
+        log.debug("start: %s", start)
+        shorts = query[start : start + amount]  # noqa: E203
+    except ValueError as error:
+        log.debug(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
+    site_settings = site_settings_processor(None)["site_settings"]
+    shorts_data = []
+    for short in shorts:
+        short_dict = model_to_dict(short)
+        short_dict["full_url"] = site_settings["site_url"] + reverse("home:short", kwargs={"short": short.short})
+        shorts_data.append(short_dict)
+    return JsonResponse(shorts_data, safe=False)

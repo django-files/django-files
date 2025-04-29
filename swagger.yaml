@@ -193,6 +193,49 @@ paths:
         "401":
           $ref: "#/components/responses/UnauthorizedError"
 
+  /shorts/:
+    get:
+      summary: Get Recent Short URLs
+      description: Get a list of short URLs created by the user
+      tags:
+        - URLs
+      security:
+        - Authorization: []
+
+      parameters:
+        - name: amount
+          in: query
+          description: Amount of Short URLs to Return
+          required: false
+          schema:
+            type: integer
+        - name: start
+          in: query
+          description: Starting index for pagination
+          required: false
+          schema:
+            type: integer
+        - name: since
+          in: query
+          description: Return Short URLs with ID greater than this value
+          required: false
+          schema:
+            type: integer
+
+      responses:
+        "200":
+          description: A JSON array of Short URLs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShortURLDetails"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
   /shorten/:
     post:
       summary: Shorten a URL
@@ -479,6 +522,39 @@ components:
         updated_at:
           type: string
           example: unknown
+
+    ShortURLDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        short:
+          type: string
+          example: ab12
+        url:
+          type: string
+          example: http://example.com/really-long-url.html
+        max:
+          type: integer
+          example: 5
+        views:
+          type: integer
+          example: 2
+        user:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-01-01T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2023-01-01T12:00:00Z"
+        full_url:
+          type: string
+          example: http://example.com/s/ab12
 
 security:
   - Authorization: []
