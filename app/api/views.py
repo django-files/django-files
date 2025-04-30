@@ -345,20 +345,27 @@ def recent_view(request):
     """
     log.debug("request.user: %s", request.user)
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
-    query = Files.objects.filter(user=request.user).select_related("user")
-    since = int(request.GET.get("since", 0))
-    log.debug("since: %s", since)
-    if since:
-        files = query.filter(id__gt=since)
-        # log.debug("files[0].id: %s", files[0].id)
-        return JsonResponse(extract_files(files), safe=False)
     try:
+        query = Files.objects.filter(user=request.user).select_related("user")
+
+        before = int(request.GET.get("before", 0))
+        log.debug("before: %s", before)
+        if before:
+            files = query.filter(id__gt=before)
+            return JsonResponse(extract_files(files), safe=False)
+
         amount = int(request.GET.get("amount", 10))
         log.debug("amount: %s", amount)
+
+        after = int(request.GET.get("after", 0))
+        log.debug("after: %s", after)
+        if after:
+            files = query.filter(id__lt=after)[:amount]
+            return JsonResponse(extract_files(files), safe=False)
+
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
         files = query[start : start + amount]  # noqa: E203
-        # log.debug("files[0].id: %s", files[0].id)
         return JsonResponse(extract_files(files), safe=False)
     except ValueError as error:
         log.debug(error)
@@ -699,25 +706,37 @@ def shorts_view(request):
     """
     log.debug("request.user: %s", request.user)
     log.debug("%s - shorts_view: is_secure: %s", request.method, request.is_secure())
-    query = ShortURLs.objects.filter(user=request.user)
-    since = int(request.GET.get("since", 0))
-    log.debug("since: %s", since)
-    if since:
-        shorts = query.filter(id__gt=since)
-        return JsonResponse([model_to_dict(short) for short in shorts], safe=False)
     try:
+        query = ShortURLs.objects.filter(user=request.user)
+
+        before = int(request.GET.get("before", 0))
+        log.debug("before: %s", before)
+        if before:
+            shorts = query.filter(id__gt=before)
+            return JsonResponse([model_to_dict(short) for short in shorts], safe=False)
+
         amount = int(request.GET.get("amount", 10))
         log.debug("amount: %s", amount)
+
+        after = int(request.GET.get("after", 0))
+        log.debug("after: %s", after)
+        if after:
+            shorts = query.filter(id__lt=after)[:amount]
+            return JsonResponse([model_to_dict(short) for short in shorts], safe=False)
+
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
         shorts = query[start : start + amount]  # noqa: E203
+
+        # TODO: Determine why this data only gets modified at this stage
+        site_settings = site_settings_processor(None)["site_settings"]
+        shorts_data = []
+        for short in shorts:
+            short_dict = model_to_dict(short)
+            short_dict["full_url"] = site_settings["site_url"] + reverse("home:short", kwargs={"short": short.short})
+            shorts_data.append(short_dict)
+        return JsonResponse(shorts_data, safe=False)
+
     except ValueError as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
-    site_settings = site_settings_processor(None)["site_settings"]
-    shorts_data = []
-    for short in shorts:
-        short_dict = model_to_dict(short)
-        short_dict["full_url"] = site_settings["site_url"] + reverse("home:short", kwargs={"short": short.short})
-        shorts_data.append(short_dict)
-    return JsonResponse(shorts_data, safe=False)
