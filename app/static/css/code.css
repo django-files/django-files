@@ -2,13 +2,18 @@ html,
 body,
 pre {
     margin: 0;
-    padding: 2px;
 }
+
+pre {
+    padding: 6px;
+}
+
 html,
 body {
     background: #1c1b1b;
     color: #ccc;
 }
+
 @media (prefers-color-scheme: light) {
     html,
     body {
