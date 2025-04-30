@@ -406,9 +406,11 @@ def get_code_view(request, filename):
     log.debug("get_code_view: filename: %s", filename)
     file = get_object_or_404(Files, name=filename)
     log.debug("get_code_view: file: %s", file)
-    content = file.file.read().decode("utf-8")
+    # content = file.file.read().decode("utf-8")
     # log.debug("get_code_view: content: %s", content)
-    context = {"name": file.name, "content": content}
+    site_settings = site_settings_processor(None)["site_settings"]
+    log.debug("get_code_view: site_settings: %s", site_settings)
+    context = {"name": file.name, "url": site_settings["site_url"] + file.get_gallery_url()}
     return render(request, "embed/code.html", context=context)
 
 
