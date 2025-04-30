@@ -1,28 +1,42 @@
 // JS for embed/code.html
 
-document.addEventListener('DOMContentLoaded', domLoaded)
+const preEl = document.querySelector('pre')
+const darkStyle = document.getElementById('code-dark')
+const lightStyle = document.getElementById('code-light')
+const rawUrl = document.getElementById('raw-url').textContent?.trim()
 
-const resultEl = document.querySelector('pre')
+console.log(`rawUrl: ${rawUrl}`)
 
-function domLoaded() {
-    const url = document.getElementById('raw-url').textContent?.trim()
-    console.log(`url: ${url}`)
-    fetch(url)
-        .then((response) => {
-            return response.text()
-        })
-        .then(loadResult)
-        .catch((e) => {
-            console.log(`e: ${e.message}`)
-        })
-}
+fetch(rawUrl)
+    .then((response) => {
+        return response.text()
+    })
+    .then(loadResult)
+    .catch((e) => {
+        return e.message
+    })
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOMContentLoaded')
+})
 
 function loadResult(result) {
-    console.log(`result: ${result}`)
-    resultEl.textContent = result
-    hljs.highlightElement(resultEl)
-    if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-        document.getElementById('code-light').disabled = false
-        document.getElementById('code-dark').disabled = true
+    console.log('loadResult')
+    // console.log(`result: ${result}`)
+    preEl.textContent = result
+    hljs.highlightElement(preEl)
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    applyTheme(mediaQuery)
+    mediaQuery.addEventListener('change', applyTheme)
+}
+
+function applyTheme(mediaQuery) {
+    console.log(`applyTheme: ${mediaQuery.matches}`)
+    if (mediaQuery.matches) {
+        darkStyle.disabled = false
+        lightStyle.disabled = true
+    } else {
+        darkStyle.disabled = true
+        lightStyle.disabled = false
     }
 }
