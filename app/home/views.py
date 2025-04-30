@@ -407,7 +407,7 @@ def get_code_view(request, filename):
     file = get_object_or_404(Files, name=filename)
     log.debug("get_code_view: file: %s", file)
     content = file.file.read().decode("utf-8")
-    log.debug("get_code_view: content: %s", content)
+    # log.debug("get_code_view: content: %s", content)
     context = {"name": file.name, "content": content}
     return render(request, "embed/code.html", context=context)
 
