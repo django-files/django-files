@@ -33,6 +33,7 @@ urlpatterns = [
     path("ajax/check_password/album/<int:pk>/", views.check_password_album_ajax, name="check-password-album"),
     path("u/<path:filename>", views.url_route_view, name="url-route"),
     path("raw/<path:filename>", views.raw_redirect_view, name="url-raw-redirect"),
+    path("code/<path:filename>", views.get_code_view, name="code-view"),
 ]
 
 if "test" in sys.argv:

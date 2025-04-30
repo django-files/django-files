@@ -398,6 +398,22 @@ def check_password_album_ajax(request, pk):
 
 @no_append_slash
 @require_http_methods(["GET"])
+@auth_from_token()
+def get_code_view(request, filename):
+    """
+    View /code/<path:filename>
+    """
+    log.debug("get_code_view: filename: %s", filename)
+    file = get_object_or_404(Files, name=filename)
+    log.debug("get_code_view: file: %s", file)
+    content = file.file.read().decode("utf-8")
+    log.debug("get_code_view: content: %s", content)
+    context = {"name": file.name, "content": content}
+    return render(request, "embed/code.html", context=context)
+
+
+@no_append_slash
+@require_http_methods(["GET"])
 @auth_from_token(no_fail=True)
 def raw_redirect_view(request, filename):
     """

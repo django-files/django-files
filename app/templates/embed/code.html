@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ name }}</title>
+    <style type="text/css">
+        html, body {
+            background: #1c1b1b;
+            color: #ccc;
+        }
+        html, body, pre {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <pre>{{ content }}</pre>
+
+    <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
+    <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
+    <script src="{% static 'js/code.js' %}"></script>
+</body>
+</html>

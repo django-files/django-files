@@ -71,7 +71,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                 Your browser does not support the audio tag.
             </audio>
         {% elif file.mime == 'application/pdf' %}
-            <embed src="{{ static_url }}" type="application/pdf" frameBorder="0" scrolling="auto" width="100%" class="h-100 pt-3 mt-5">               
+            <embed src="{{ static_url }}" type="application/pdf" frameBorder="0" scrolling="auto" width="100%" class="h-100 pt-3 mt-5">
         {% elif render in 'text,code' %}
             <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
             <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
@@ -149,7 +149,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                             </span>
                         {% endfor %}
                         <span class="badge rounded-pill text-bg-primary p-0 input-group-sm addto-album-group mx-2">
-                            <button class="btn py-0 px-1 addto-album"><i class="fa-solid fa-plus"></i></span></button>
+                            <button class="btn py-0 px-1 addto-album"><i class="fa-solid fa-plus"></i></button>
                             <span class="album-add-container d-none">
                                 <label for="add-album" class="d-none" id="add-album-label"> </label>
                                 <input name="add-album-list" class="form-control d-inline input-sm album-list" id="add-album"></input>
@@ -169,7 +169,6 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             <i class="fa-solid fa-xmark text-small remove-album"></i>
         </button>
     </span>
-
 
     {% include 'files/ctx-modals.html' %}
 {% endblock %}

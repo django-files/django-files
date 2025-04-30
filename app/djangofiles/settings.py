@@ -333,6 +333,8 @@ if config("SENTRY_URL", False):
 if DEBUG:
 
     async def show_toolbar(request):
+        if request.path.startswith("/code/"):
+            return False
         if config("DISABLE_DEBUG_TOOLBAR", False, bool):
             return False
         return await sync_to_async(lambda: request.user.is_superuser)()
