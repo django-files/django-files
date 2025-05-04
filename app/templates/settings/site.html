@@ -304,6 +304,58 @@
         </table>
     {% endif %}
     </section>
+
+    <hr>
+
+    <section id="invites">
+    <h3>Sessions</h3>
+        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#sessions-modal">
+            Delete All Sessions
+        </button>
+
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Username</th>
+                <th scope="col">Expiration</th>
+                <th scope="col">TTL</th>
+                <th scope="col">User Agent</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for session in sessions %}
+            <tr>
+                <th scope="row">{{ session.user_name }}</th>
+                <td>{{ session.date|date }}</td>
+                <td>{{ session.ttl }}/{{ session.age }}</td>
+                <td>{{ session.user_agent|truncatechars:38 }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+    </section>
+
+    <!-- Clear Sessions Modal -->
+    <div class="modal fade" id="sessions-modal" tabindex="-1" aria-labelledby="sessions-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="sessions-modal-label">Delete All Sessions?</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    All <code>{{ sessions|length }}</code> sessions will be removed the applications logged out.
+                    <br>
+                    This excludes your current session.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger">Delete All</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block tail %}

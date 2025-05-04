@@ -4,6 +4,8 @@ import zoneinfo
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.contrib.sessions.backends.cache import SessionStore
+from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render, reverse
 from django.template.loader import render_to_string
@@ -35,6 +37,7 @@ def site_view(request):
         context = {
             "site_settings": site_settings,
             "invites": invites,
+            "sessions": get_sessions(request),
             "timezones": sorted(zoneinfo.available_timezones()),
         }
         return render(request, "settings/site.html", context)
@@ -246,3 +249,28 @@ def gen_flameshot(request):
     response = HttpResponse(message)
     response["Content-Disposition"] = 'attachment; filename="flameshot.sh"'
     return response
+
+
+def get_sessions(request):
+    log.debug("get_sessions: %s", request.session.session_key)
+    user_map = {str(user.id): user.get_name() for user in CustomUser.objects.all()}
+    prefix = "django.contrib.sessions.cache"
+    sessions = []
+    for key in cache.keys(f"{prefix}*"):
+        session_key = key[len(prefix) :]
+        log.debug("session_key: %s", session_key)
+        if session_key == request.session.session_key:
+            continue
+        # data = cache.get(key)
+        session = SessionStore(session_key=session_key)
+        data = session.load()
+        if "_auth_user_id" in data:
+            data["ttl"] = cache.ttl(key)
+            data["age"] = session.get_expiry_age()
+            data["date"] = session.get_expiry_date()
+            data["user_id"] = data["_auth_user_id"]
+            data["user_name"] = user_map.get(data["user_id"], "Deleted")
+            log.debug("data: %s", data)
+            sessions.append(data)
+    log.debug("sessions: %s", sessions)
+    return sessions
