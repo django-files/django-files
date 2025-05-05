@@ -317,8 +317,8 @@
             <tr>
                 <th scope="col" style="width: 28px;"></th>
                 <th scope="col">Username</th>
-                <th scope="col" class="d-none d-md-table-cell" style="width: 160px;">Expiration</th>
-                <th scope="col" class="d-none d-lg-table-cell" style="width: 140px;">Age/TTL</th>
+                <th scope="col" class="d-none d-sm-table-cell" style="width: 164px;">Expiration</th>
+                <th scope="col" class="d-none d-md-table-cell" style="width: 156px;">Age/TTL</th>
                 <th scope="col">User Agent</th>
             </tr>
             </thead>
@@ -332,8 +332,8 @@
                     {% endif %}
                 </td>
                 <th scope="row" class="text-nowrap text-truncate overflow-hidden">{{ session.user_name }}</th>
-                <td class="d-none d-md-table-cell" style="width: 160px;">{{ session.date|date }}</td>
-                <td class="d-none d-lg-table-cell" style="width: 140px;">{{ session.ttl }}/{{ session.age }}</td>
+                <td class="d-none d-sm-table-cell" style="width: 160px;">{{ session.date|date }}</td>
+                <td class="d-none d-md-table-cell" style="width: 140px;">{{ session.ttl }}/{{ session.age }}</td>
                 <td class="text-nowrap text-truncate overflow-hidden">{{ session.user_agent }}</td>
             </tr>
             {% endfor %}
