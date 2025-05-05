@@ -12,8 +12,9 @@ import validators
 from api.utils import extract_albums, extract_files
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core import serializers
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
@@ -589,6 +590,38 @@ def local_auth_for_native_client(request):
             return JsonResponse({"token": request.user.authorization})
 
     return HttpResponse(status=401)
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+@user_passes_test(lambda user: user.is_superuser)
+def session_view(request, sessionid):
+    """
+    View /session/:id/
+    """
+    try:
+        log.debug("request.user: %s", request.user)
+        log.debug("sessionid: %s", sessionid)
+        if sessionid == "all":
+            keys = cache.keys(f"django.contrib.sessions.cache*")
+            log.debug("keys: %s", keys)
+            for key in keys:
+                if request.session.session_key not in key:
+                    log.debug("cache.delete: %s", key)
+                    cache.delete(key)
+            return HttpResponse(status=201)
+
+        keys = cache.keys(f"*{sessionid}")
+        log.debug("keys: %s", keys)
+        if keys:
+            log.debug("keys[0]: %s", keys[0])
+            cache.delete(keys[0])
+            return HttpResponse(status=201)
+        else:
+            return HttpResponse(status=404)
+    except Exception as error:
+        log.debug("error: %s", error)
+        return HttpResponse(str(error), status=500)
 
 
 def get_json_body(request):

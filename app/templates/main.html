@@ -277,6 +277,10 @@
     </div>
 {% endblock %}
 
+{% block site_settings %}
+    <input type="hidden" value="{{ site_settings.site_url }}" id="site_settings-site_url" />
+{% endblock %}
+
 {% block js %}
     <script type="text/javascript" src="{% static 'dist/jquery/jquery.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/bootstrap/bootstrap.bundle.min.js' %}"></script>
