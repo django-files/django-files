@@ -277,5 +277,6 @@ def get_sessions(request, exclude_current=False):
             data["user_name"] = user_map.get(data["user_id"], "Deleted")
             log.debug("data: %s", data)
             sessions.append(data)
+    sessions.sort(key=lambda x: x["date"], reverse=True)
     log.debug("sessions: %s", sessions)
     return sessions
