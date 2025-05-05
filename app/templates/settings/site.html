@@ -357,9 +357,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
-                    {% if sessions|length > 1 %}
-                        <button type="button" class="btn btn-danger" id="delete-all-sessions">Delete All</button>
-                    {% endif %}
+                    <button type="button" class="btn btn-danger {% if sessions|length < 1 %}{% endif %}"
+                            id="delete-all-sessions">Delete All</button>
                 </div>
             </div>
         </div>

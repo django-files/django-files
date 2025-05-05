@@ -88,7 +88,7 @@ async function deleteSession(event, all = false) {
             const count = +code.text() - 1
             code.text(count)
             if (count < 1) {
-                deleteAllSessionsBtn.remove()
+                deleteAllSessionsBtn.classList.add('d-none')
             }
         } else {
             const el = target.closest('tr')
