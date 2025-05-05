@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import logging
 import zoneinfo
 
@@ -262,6 +263,7 @@ def get_sessions(request, exclude_current=False):
         # data = cache.get(key)
         session = SessionStore(session_key=session_key)
         data = session.load()
+        now = datetime.now()
         if "_auth_user_id" in data:
             if session_key == request.session.session_key:
                 if exclude_current:
@@ -270,7 +272,7 @@ def get_sessions(request, exclude_current=False):
             data["key"] = session_key
             data["ttl"] = cache.ttl(key)
             data["age"] = session.get_expiry_age()
-            data["date"] = session.get_expiry_date()
+            data["date"] = now + timedelta(seconds=data["ttl"])
             data["user_id"] = data["_auth_user_id"]
             data["user_name"] = user_map.get(data["user_id"], "Deleted")
             log.debug("data: %s", data)
