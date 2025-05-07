@@ -133,9 +133,7 @@ def oauth_callback(request, oauth_provider: str = ""):
         except KeyError:
             messages.error(request, "Unknown Provider: %s" % provider)
             return HttpResponseRedirect(get_login_redirect_url(request))
-        log.debug("oauth.id %s", oauth.id)
-        log.debug("oauth.username %s", oauth.username)
-        log.debug("oauth.first_name %s", oauth.first_name)
+        log.debug("oauth.id: %s - %s", oauth.id, oauth.username)
         oauth.process_login(site_settings)
         if request.session.get("webhook") and provider == "discord":
             del request.session["webhook"]
@@ -160,7 +158,7 @@ def oauth_callback(request, oauth_provider: str = ""):
         messages.info(request, f"Successfully logged in via oauth. {user.username} {user.get_name()}.")
         log.debug("OAuth Login Success: %s", user)
         log.debug("user.authorization: %s", user.authorization)
-        log.debug("request.session.session_key: %s", request.session.session_key)
+        log.debug("request.session: %s", request.session)
         url = get_login_redirect_url(
             request,
             native_auth=native_auth,
@@ -186,8 +184,13 @@ def pre_login(request, user: Union[AbstractBaseUser, CustomUser], site_settings)
 
 
 def post_login(request, user):
-    # TODO: Explain why this method is empty
     log.debug("post_login: user: %s", user)
+    log.debug("user.authorization: %s", user.authorization)
+    log.debug("request.session: %s", request.session)
+    request.session["user_agent"] = request.META.get("HTTP_USER_AGENT")
+    if is_mobile(request):
+        request.session.set_expiry(config.MOBILE_SESSION_AGE)
+        log.info("MOBILE SESSION EXP: %s", request.get_expiry_age())
 
 
 def duo_callback(request):

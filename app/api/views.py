@@ -12,8 +12,9 @@ import validators
 from api.utils import extract_albums, extract_files
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core import serializers
+from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
@@ -345,20 +346,31 @@ def recent_view(request):
     """
     log.debug("request.user: %s", request.user)
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
-    query = Files.objects.filter(user=request.user).select_related("user")
-    since = int(request.GET.get("since", 0))
-    log.debug("since: %s", since)
-    if since:
-        files = query.filter(id__gt=since)
-        # log.debug("files[0].id: %s", files[0].id)
+    try:
+        query = Files.objects.filter(user=request.user).select_related("user")
+
+        before = int(request.GET.get("before", 0))
+        log.debug("before: %s", before)
+        if before:
+            files = query.filter(id__gt=before)
+            return JsonResponse(extract_files(files), safe=False)
+
+        amount = int(request.GET.get("amount", 10))
+        log.debug("amount: %s", amount)
+
+        after = int(request.GET.get("after", 0))
+        log.debug("after: %s", after)
+        if after:
+            files = query.filter(id__lt=after)[:amount]
+            return JsonResponse(extract_files(files), safe=False)
+
+        start = int(request.GET.get("start", 0))
+        log.debug("start: %s", start)
+        files = query[start : start + amount]
         return JsonResponse(extract_files(files), safe=False)
-    amount = int(request.GET.get("amount", 10))
-    log.debug("amount: %s", amount)
-    start = int(request.GET.get("start", 0))
-    log.debug("start: %s", start)
-    files = query[start : start + amount]  # noqa: E203
-    # log.debug("files[0].id: %s", files[0].id)
-    return JsonResponse(extract_files(files), safe=False)
+    except ValueError as error:
+        log.debug(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
 
 
 @csrf_exempt
@@ -410,7 +422,7 @@ def file_view(request, idname):
     if not request.user.is_superuser:
         kwargs["user"] = request.user
     file = get_object_or_404(Files, **kwargs)
-    log.debug("file_view: " + request.method + ": " + file.name)
+    log.debug("file_view: %s: %s", request.method, file.name)
     try:
         if request.method == "DELETE":
             file.delete()
@@ -580,6 +592,38 @@ def local_auth_for_native_client(request):
     return HttpResponse(status=401)
 
 
+@csrf_exempt
+@require_http_methods(["DELETE"])
+@user_passes_test(lambda user: user.is_superuser)
+def session_view(request, sessionid):
+    """
+    View /session/:id/
+    """
+    try:
+        log.debug("request.user: %s", request.user)
+        log.debug("sessionid: %s", sessionid)
+        if sessionid == "all":
+            keys = cache.keys("django.contrib.sessions.cache*")
+            log.debug("keys: %s", keys)
+            for key in keys:
+                if request.session.session_key not in key:
+                    log.debug("cache.delete: %s", key)
+                    cache.delete(key)
+            return HttpResponse(status=201)
+
+        keys = cache.keys(f"*{sessionid}")
+        log.debug("keys: %s", keys)
+        if keys:
+            log.debug("keys[0]: %s", keys[0])
+            cache.delete(keys[0])
+            return HttpResponse(status=201)
+        else:
+            return HttpResponse(status=404)
+    except Exception as error:
+        log.debug("error: %s", error)
+        return HttpResponse(str(error), status=500)
+
+
 def get_json_body(request):
     try:
         return json.loads(request.body.decode())
@@ -680,3 +724,52 @@ def id_or_name(id_name: Union[str, int], name="name") -> dict:
         return {"id": int(id_name)}
     else:
         return {name: id_name}
+
+
+@csrf_exempt
+@require_http_methods(["OPTIONS", "GET"])
+@auth_from_token
+@cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix="shorts")
+@vary_on_headers("Authorization")
+@vary_on_cookie
+def shorts_view(request):
+    """
+    View  /api/shorts/
+    """
+    log.debug("request.user: %s", request.user)
+    log.debug("%s - shorts_view: is_secure: %s", request.method, request.is_secure())
+    try:
+        query = ShortURLs.objects.filter(user=request.user)
+
+        before = int(request.GET.get("before", 0))
+        log.debug("before: %s", before)
+        if before:
+            shorts = query.filter(id__gt=before)
+            return JsonResponse([model_to_dict(short) for short in shorts], safe=False)
+
+        amount = int(request.GET.get("amount", 10))
+        log.debug("amount: %s", amount)
+
+        after = int(request.GET.get("after", 0))
+        log.debug("after: %s", after)
+        if after:
+            shorts = query.filter(id__lt=after)[:amount]
+            return JsonResponse([model_to_dict(short) for short in shorts], safe=False)
+
+        start = int(request.GET.get("start", 0))
+        log.debug("start: %s", start)
+        shorts = query[start : start + amount]
+
+        # TODO: Determine why this data only gets modified at this stage
+        site_settings = site_settings_processor(None)["site_settings"]
+        shorts_data = []
+        for short in shorts:
+            short_dict = model_to_dict(short)
+            short_dict["full_url"] = site_settings["site_url"] + reverse("home:short", kwargs={"short": short.short})
+            shorts_data.append(short_dict)
+        return JsonResponse(shorts_data, safe=False)
+
+    except ValueError as error:
+        log.debug(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
