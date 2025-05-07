@@ -416,6 +416,7 @@ def files_view(request, page, count=25):
 def files_edit_view(request):
     """
     View  /api/files/
+    TODO: DO not accept DELETE and force /api/files/delete/
     """
     log.debug("file_view: %s" + request.method)
     try:
@@ -427,9 +428,13 @@ def files_edit_view(request):
         del data["ids"]
         # count = Files.objects.filter(id__in=ids, user=request.user).update(**data)
         queryset = Files.objects.filter(id__in=ids)
+        if not queryset:
+            # TODO: Determine if this should return 404 or 200 with a 0 response
+            log.warning("No queryset for provided file IDs.")
+            return HttpResponse(0)
         if not request.user.is_superuser:
             queryset = queryset.filter(user=request.user)
-        if request.method == "DELETE":
+        if request.method == "DELETE" or request.path_info.endswith("/delete/"):
             count, _ = queryset.delete()
         else:
             count = queryset.update(**data)
