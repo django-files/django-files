@@ -366,7 +366,7 @@ def recent_view(request):
 
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
-        files = query[start : start + amount]  # noqa: E203
+        files = query[start : start + amount]
         return JsonResponse(extract_files(files), safe=False)
     except ValueError as error:
         log.debug(error)
@@ -759,7 +759,7 @@ def shorts_view(request):
 
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
-        shorts = query[start : start + amount]  # noqa: E203
+        shorts = query[start : start + amount]
 
         # TODO: Determine why this data only gets modified at this stage
         site_settings = site_settings_processor(None)["site_settings"]

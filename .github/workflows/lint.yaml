@@ -43,7 +43,7 @@ jobs:
       - name: "Flake8"
         if: ${{ !cancelled() }}
         run: |
-          flake8 --max-line-length 119 --extend-exclude "venv,node_modules,migrations" .
+          flake8 --max-line-length 119 --ignore E203 --extend-exclude "venv,node_modules,migrations" .
 
       - name: "Ruff"
         if: ${{ !cancelled() }}
