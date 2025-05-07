@@ -411,6 +411,31 @@ def files_view(request, page, count=25):
 
 
 @csrf_exempt
+@auth_from_token
+def files_edit_view(request):
+    """
+    View  /api/files/
+    """
+    log.debug("file_view: %s" + request.method)
+    try:
+        data = get_json_body(request)
+        log.debug("data: %s", data)
+        ids = data.get("ids", [])
+        if not ids:
+            return JsonResponse({"error": f"No IDs to Process"}, status=400)
+        del data["ids"]
+        # count = Files.objects.filter(id__in=ids, user=request.user).update(**data)
+        queryset = Files.objects.filter(id__in=ids)
+        if not request.user.is_superuser:
+            queryset = queryset.filter(user=request.user)
+        count = queryset.update(**data)
+        return HttpResponse(count)
+    except Exception as error:
+        log.error(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
+
+
+@csrf_exempt
 @require_http_methods(["DELETE", "GET", "OPTIONS", "POST"])
 @auth_from_token
 def file_view(request, idname):
