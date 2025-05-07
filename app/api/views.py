@@ -411,6 +411,7 @@ def files_view(request, page, count=25):
 
 
 @csrf_exempt
+@require_http_methods(["DELETE", "POST"])
 @auth_from_token
 def files_edit_view(request):
     """
@@ -428,7 +429,10 @@ def files_edit_view(request):
         queryset = Files.objects.filter(id__in=ids)
         if not request.user.is_superuser:
             queryset = queryset.filter(user=request.user)
-        count = queryset.update(**data)
+        if request.method == "DELETE":
+            count, _ = queryset.delete()
+        else:
+            count = queryset.update(**data)
         return HttpResponse(count)
     except Exception as error:
         log.error(error)
