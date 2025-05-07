@@ -422,7 +422,7 @@ def file_view(request, idname):
     if not request.user.is_superuser:
         kwargs["user"] = request.user
     file = get_object_or_404(Files, **kwargs)
-    log.debug("file_view: " + request.method + ": " + file.name)
+    log.debug("file_view: %s: %s", request.method, file.name)
     try:
         if request.method == "DELETE":
             file.delete()
@@ -603,7 +603,7 @@ def session_view(request, sessionid):
         log.debug("request.user: %s", request.user)
         log.debug("sessionid: %s", sessionid)
         if sessionid == "all":
-            keys = cache.keys(f"django.contrib.sessions.cache*")
+            keys = cache.keys("django.contrib.sessions.cache*")
             log.debug("keys: %s", keys)
             for key in keys:
                 if request.session.session_key not in key:
