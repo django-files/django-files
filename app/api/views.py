@@ -424,7 +424,7 @@ def files_edit_view(request):
         log.debug("data: %s", data)
         ids = data.get("ids", [])
         if not ids:
-            return JsonResponse({"error": f"No IDs to Process"}, status=400)
+            return JsonResponse({"error": "No IDs to Process"}, status=400)
         del data["ids"]
         # count = Files.objects.filter(id__in=ids, user=request.user).update(**data)
         queryset = Files.objects.filter(id__in=ids)
