@@ -3,6 +3,7 @@ from typing import Union
 
 import duo_universal
 from decouple import config
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.base_user import AbstractBaseUser
@@ -24,6 +25,7 @@ from oauth.providers.helpers import (
     get_or_create_user,
 )
 from settings.models import SiteSettings
+from ua_parser import parse
 
 
 log = logging.getLogger("app")
@@ -123,7 +125,8 @@ def oauth_callback(request, oauth_provider: str = ""):
             messages.warning(request, "User aborted or no code in response...")
             return HttpResponseRedirect(get_login_redirect_url(request))
 
-        native_auth = request.GET.get("state") == "iOSApp"
+        state = request.GET.get("state")
+        native_auth = state == "iOSApp"
         provider = oauth_provider if oauth_provider else request.session.get("oauth_provider")
         log.debug("oauth_callback: provider: %s", provider)
         log.debug("Native App Auth: %s", native_auth)
@@ -187,10 +190,20 @@ def post_login(request, user):
     log.debug("post_login: user: %s", user)
     log.debug("user.authorization: %s", user.authorization)
     log.debug("request.session: %s", request.session)
-    request.session["user_agent"] = request.META.get("HTTP_USER_AGENT")
-    if is_mobile(request):
-        request.session.set_expiry(config.MOBILE_SESSION_AGE)
-        log.info("MOBILE SESSION EXP: %s", request.get_expiry_age())
+    try:
+        ua = parse(request.META.get("HTTP_USER_AGENT", ""))
+        state = request.GET.get("state")
+        if state:
+            request.session["user_agent"] = f"{state} Application"
+        elif ua.user_agent:
+            request.session["user_agent"] = f"{ua.os.family} {ua.user_agent.family} {ua.user_agent.major}"
+        else:
+            request.session["user_agent"] = f"Unknown Agent"
+        if is_mobile(request) or state:
+            request.session.set_expiry(settings.MOBILE_SESSION_AGE)
+        log.debug("MOBILE SESSION EXP: %s", request.get_expiry_age())
+    except Exception as error:
+        log.error("Error Parsing User Agent: %s", error)
 
 
 def duo_callback(request):

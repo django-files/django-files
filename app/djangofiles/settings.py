@@ -56,9 +56,9 @@ SITE_URL = config("SITE_URL", None)
 print(f"SITE_URL: {SITE_URL}")
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", "*", Csv())
-SESSION_COOKIE_AGE = config("SESSION_COOKIE_AGE", 3600 * 24 * 14, int)
+SESSION_COOKIE_AGE = config("SESSION_COOKIE_AGE", 3600 * 24 * 7 * 4, int)
 SESSION_SAVE_EVERY_REQUEST = True
-MOBILE_SESSION_AGE = config("MOBILE_SESSION_AGE", 3600 * 24 * 7 * 52, int)
+MOBILE_SESSION_AGE = config("MOBILE_SESSION_AGE", 3600 * 24 * 7 * 26, int)
 
 ASGI_APPLICATION = "djangofiles.asgi.application"
 ROOT_URLCONF = "djangofiles.urls"
