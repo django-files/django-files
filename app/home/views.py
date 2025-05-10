@@ -77,8 +77,7 @@ def files_view(request):
     album = request.GET.get("album")
     ctx = {"full_context": False}
     if album:
-        if (request.user.is_authenticated and request.user == album.user) or request.user.is_superuser:
-            ctx["full_context"] = True
+        print(album)
         try:
             album = int(album)
         except ValueError:
@@ -90,6 +89,8 @@ def files_view(request):
             return HttpResponseRedirect(f"{request.path}?album={album.id}")
         else:
             return HttpResponseNotFound()
+        if (request.user.is_authenticated and request.user == album.user) or request.user.is_superuser:
+            ctx.update({"full_context": True})
         ctx.update({"album": album})
         if lock := handle_lock(request, ctx):
             return lock
