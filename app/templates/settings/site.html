@@ -304,6 +304,65 @@
         </table>
     {% endif %}
     </section>
+
+    <hr>
+
+    <section id="sessions">
+    <h3>Sessions</h3>
+        <button type="button" class="btn btn-outline-danger my-2" data-bs-toggle="modal" data-bs-target="#delete-sessions-modal">
+            Delete All Sessions
+        </button>
+        <table id="sessions-table" class="table table-sm w-100" style="table-layout: fixed;">
+            <thead>
+            <tr>
+                <th scope="col" style="width: 28px;"></th>
+                <th scope="col">Username</th>
+                <th scope="col" class="d-none d-sm-table-cell" style="width: 164px;">Expiration</th>
+                <th scope="col" class="d-none d-md-table-cell" style="width: 156px;">Age/TTL</th>
+                <th scope="col">User Agent</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for session in sessions %}
+            <tr class="{% if session.current %}table-active{% endif %}">
+                <td>
+                    {% if not session.current %}
+                    <a role="button" class="dropdown-item ctx-delete" data-session="{{ session.key }}"
+                       title="Delete"><i class="fa-regular fa-trash-can fa-fw link-danger"></i></a>
+                    {% endif %}
+                </td>
+                <th scope="row" class="text-nowrap text-truncate overflow-hidden">{{ session.user_name }}</th>
+                <td class="d-none d-sm-table-cell" style="width: 160px;">{{ session.date|date }}</td>
+                <td class="d-none d-md-table-cell" style="width: 140px;">{{ session.ttl }}/{{ session.age }}</td>
+                <td class="text-nowrap text-truncate overflow-hidden">{{ session.user_agent }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+    </section>
+
+    <!-- Clear Sessions Modal -->
+    <div class="modal fade" id="delete-sessions-modal" tabindex="-1" aria-labelledby="delete-sessions-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="delete-sessions-modal-label">Delete All Sessions?</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    All <code>{{ sessions|length|add:"-1" }}</code> sessions will be removed the applications logged out.
+                    <br>
+                    This excludes your current session.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger {% if sessions|length < 1 %}{% endif %}"
+                            id="delete-all-sessions">Delete All</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block tail %}
