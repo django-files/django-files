@@ -74,9 +74,11 @@ def files_view(request):
     """
     View  /files/ or /gallery/
     """
-    ctx = {"full_context": True if request.user.is_authenticated else False}
     album = request.GET.get("album")
+    ctx = {"full_context": False}
     if album:
+        if (request.user.is_authenticated and request.user == album.user) or request.user.is_superuser:
+            ctx["full_context"] = True
         try:
             album = int(album)
         except ValueError:
