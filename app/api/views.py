@@ -24,7 +24,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from home.models import Albums, Files, FileStats, ShortURLs
-from home.tasks import new_album_websocket, clear_files_cache
+from home.tasks import clear_files_cache, new_album_websocket
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
