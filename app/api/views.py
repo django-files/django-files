@@ -349,19 +349,19 @@ def recent_view(request):
     try:
         query = Files.objects.filter(user=request.user).select_related("user")
 
-        before = int(request.GET.get("before", 0))
-        log.debug("before: %s", before)
-        if before:
-            files = query.filter(id__gt=before)
-            return JsonResponse(extract_files(files), safe=False)
-
-        amount = int(request.GET.get("amount", 10))
-        log.debug("amount: %s", amount)
-
         after = int(request.GET.get("after", 0))
         log.debug("after: %s", after)
         if after:
-            files = query.filter(id__lt=after)[:amount]
+            files = query.filter(id__gt=after)
+            return JsonResponse(extract_files(files), safe=False)
+
+        amount = int(request.GET.get("amount", 20))
+        log.debug("amount: %s", amount)
+
+        before = int(request.GET.get("before", 0))
+        log.debug("before: %s", before)
+        if before:
+            files = query.filter(id__lt=before)[:amount]
             return JsonResponse(extract_files(files), safe=False)
 
         start = int(request.GET.get("start", 0))
