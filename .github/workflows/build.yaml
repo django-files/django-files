@@ -13,6 +13,7 @@ env:
   REGISTRY: "ghcr.io"
   USER: "django-files"
   REPO: "django-files"
+  PRE_TAG: "prerelease"
 
 jobs:
   build:
@@ -34,7 +35,7 @@ jobs:
         with:
           tags: |
             ${{ inputs.tags }}
-            ${{ github.event.release.prerelease && 'pre' || '' }}
+            ${{ github.event.release.prerelease && env.PRE_TAG || '' }}
 
       - name: "Debug Docker Tags"
         continue-on-error: true
