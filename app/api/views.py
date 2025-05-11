@@ -4,7 +4,7 @@ import logging
 import os
 import random
 from functools import wraps
-from typing import Any, BinaryIO, Callable, Optional, Union
+from typing import Any, BinaryIO, Callable, List, Optional, Union
 from urllib.parse import urlparse
 
 import httpx
@@ -16,6 +16,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core import serializers
 from django.core.cache import cache
 from django.core.paginator import Paginator
+from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
@@ -416,9 +417,9 @@ def files_view(request, page, count=25):
 def files_edit_view(request):
     """
     View  /api/files/edit|delete/
-    TODO: DO not accept DELETE and force /api/files/delete/
+    TODO: DO not accept DELETE and force POST to /api/files/delete/
     """
-    log.debug("file_view: %s" + request.method)
+    log.debug("files_edit_view: %s" + request.method)
     try:
         data = get_json_body(request)
         log.debug("data: %s", data)
@@ -438,19 +439,14 @@ def files_edit_view(request):
         if request.method == "DELETE" or request.path_info.endswith("/delete/"):
             count, _ = queryset.delete()
         else:
-            albums = None
             if "albums" in data:
                 # queryset = queryset.prefetch_related('albums')
-                albums = Albums.objects.filter(id__in=data["albums"])
+                # albums = Albums.objects.filter(id__in=data["albums"])
+                count = max(count, set_albums(queryset, data["albums"]))
                 del data["albums"]
             if data:
                 log.debug("data: %s", data)
-                count = queryset.update(**data)
-            if albums is not None:
-                log.debug("albums: %s", albums)
-                for obj in queryset:
-                    obj.albums.set(albums)
-                count = queryset.count()
+                count = max(count, queryset.update(**data))
         log.debug("count: %s", count)
         if count:
             log.debug("Flushing Files Cache")
@@ -459,6 +455,19 @@ def files_edit_view(request):
     except Exception as error:
         log.error(error)
         return JsonResponse({"error": f"{error}"}, status=400)
+
+
+def set_albums(queryset: QuerySet, album_ids: List[int]) -> int:
+    log.debug("edit_albums: %s: %s", album_ids, queryset)
+    albums = Albums.objects.filter(id__in=album_ids)
+    log.debug("albums: %s", albums)
+    count = 0
+    if albums:
+        for obj in queryset:
+            obj.albums.set(albums)
+            count += 1
+    log.debug("count: %s", count)
+    return count
 
 
 @csrf_exempt
@@ -487,7 +496,11 @@ def file_view(request, idname):
             if "expr" in data and not parse(data["expr"]):
                 data["expr"] = ""
             # TODO: We should probably not use .update here and convert to a function, see below TODO
-            Files.objects.filter(id=file.id).update(**data)
+            queryset = Files.objects.filter(id=file.id)
+            if "albums" in data:
+                set_albums(queryset, data["albums"])
+                del data["albums"]
+            queryset.update(**data)
             file = Files.objects.get(id=file.id)
             response = model_to_dict(file, exclude=["file", "thumb", "albums"])
             # TODO: Determine why we have to manually flush file cache here
