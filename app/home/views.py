@@ -74,8 +74,8 @@ def files_view(request):
     """
     View  /files/ or /gallery/
     """
-    ctx = {"full_context": True if request.user.is_authenticated else False}
     album = request.GET.get("album")
+    ctx = {"full_context": False}
     if album:
         try:
             album = int(album)
@@ -88,6 +88,8 @@ def files_view(request):
             return HttpResponseRedirect(f"{request.path}?album={album.id}")
         else:
             return HttpResponseNotFound()
+        if (request.user.is_authenticated and request.user == album.user) or request.user.is_superuser:
+            ctx.update({"full_context": True})
         ctx.update({"album": album})
         if lock := handle_lock(request, ctx):
             return lock
@@ -98,6 +100,9 @@ def files_view(request):
                 return render(request, "error/403.html", status=403)
             request.session[f"view_album_{album.id}"] = False
             Albums.objects.filter(pk=album.id).update(view=F("view") + 1)
+    else:
+        if request.user.is_authenticated or request.user.is_superuser:
+            ctx.update({"full_context": True})
     if not request.user.is_authenticated and (not album or album.private):
         return HttpResponseRedirect(reverse("oauth:login"))
     elif request.user.is_superuser:
