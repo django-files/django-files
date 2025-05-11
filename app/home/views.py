@@ -101,6 +101,9 @@ def files_view(request):
                 return render(request, "error/403.html", status=403)
             request.session[f"view_album_{album.id}"] = False
             Albums.objects.filter(pk=album.id).update(view=F("view") + 1)
+    else:
+        if (request.user.is_authenticated) or request.user.is_superuser:
+            ctx.update({"full_context": True})
     if not request.user.is_authenticated and (not album or album.private):
         return HttpResponseRedirect(reverse("oauth:login"))
     elif request.user.is_superuser:
