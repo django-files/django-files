@@ -190,17 +190,22 @@ def post_login(request, user):
     log.debug("user.authorization: %s", user.authorization)
     log.debug("request.session: %s", request.session)
     try:
-        ua = parse(request.META.get("HTTP_USER_AGENT", ""))
+        agent = request.META.get("HTTP_USER_AGENT", "")
+        log.debug("agent: %s", agent)
+        ua = parse(agent or "")
+        log.debug("ua: %s", ua)
         state = request.GET.get("state")
         if state:
             request.session["user_agent"] = f"{state} Application"
         elif ua.user_agent:
             request.session["user_agent"] = f"{ua.os.family} {ua.user_agent.family} {ua.user_agent.major}"
         else:
-            request.session["user_agent"] = "Unknown Agent"
-        if is_mobile(request) or state:
+            request.session["user_agent"] = "Unknown User Agent"
+        log.debug("User Agent: %s", request.session["user_agent"])
+
+        if state or is_mobile(request):
+            log.debug("Set Mobile Session Age: %s", settings.MOBILE_SESSION_AGE)
             request.session.set_expiry(settings.MOBILE_SESSION_AGE)
-        log.debug("MOBILE SESSION EXP: %s", request.get_expiry_age())
     except Exception as error:
         log.error("Error Parsing User Agent: %s", error)
 
