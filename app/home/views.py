@@ -77,7 +77,6 @@ def files_view(request):
     album = request.GET.get("album")
     ctx = {"full_context": False}
     if album:
-        print(album)
         try:
             album = int(album)
         except ValueError:
