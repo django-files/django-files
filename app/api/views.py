@@ -24,7 +24,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from home.models import Albums, Files, FileStats, ShortURLs
-from home.tasks import new_album_websocket
+from home.tasks import new_album_websocket, clear_files_cache
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
@@ -415,13 +415,14 @@ def files_view(request, page, count=25):
 @auth_from_token
 def files_edit_view(request):
     """
-    View  /api/files/
+    View  /api/files/edit|delete/
     TODO: DO not accept DELETE and force /api/files/delete/
     """
     log.debug("file_view: %s" + request.method)
     try:
         data = get_json_body(request)
         log.debug("data: %s", data)
+        count = 0
         ids = data.get("ids", [])
         if not ids:
             return JsonResponse({"error": "No IDs to Process"}, status=400)
@@ -437,7 +438,23 @@ def files_edit_view(request):
         if request.method == "DELETE" or request.path_info.endswith("/delete/"):
             count, _ = queryset.delete()
         else:
-            count = queryset.update(**data)
+            albums = None
+            if "albums" in data:
+                # queryset = queryset.prefetch_related('albums')
+                albums = Albums.objects.filter(id__in=data["albums"])
+                del data["albums"]
+            if data:
+                log.debug("data: %s", data)
+                count = queryset.update(**data)
+            if albums is not None:
+                log.debug("albums: %s", albums)
+                for obj in queryset:
+                    obj.albums.set(albums)
+                count = queryset.count()
+        log.debug("count: %s", count)
+        if count:
+            log.debug("Flushing Files Cache")
+            clear_files_cache.delay()
         return HttpResponse(count)
     except Exception as error:
         log.error(error)
