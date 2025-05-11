@@ -125,8 +125,7 @@ def oauth_callback(request, oauth_provider: str = ""):
             messages.warning(request, "User aborted or no code in response...")
             return HttpResponseRedirect(get_login_redirect_url(request))
 
-        state = request.GET.get("state")
-        native_auth = state == "iOSApp"
+        native_auth = request.GET.get("state") == "iOSApp"
         provider = oauth_provider if oauth_provider else request.session.get("oauth_provider")
         log.debug("oauth_callback: provider: %s", provider)
         log.debug("Native App Auth: %s", native_auth)
