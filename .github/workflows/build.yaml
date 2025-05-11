@@ -27,59 +27,21 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v4
 
-      - name: "Tags"
-        id: tags
-        run: |
-          echo "Input Tags: ${{ inputs.tags }}"
-          echo "GITHUB_REF_NAME: ${GITHUB_REF_NAME}"
-          echo "github.event_name: ${{ github.event_name }}"
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ];then
-            if [ -n "${{ inputs.tags }}" ];then
-              echo "Parsing Input Tags..."
-              TAGS=""
-              IFS=',' read -ra INPUT <<< "${{ inputs.tags }}"
-              for tag in "${INPUT[@]}";do
-                echo "${REGISTRY}/${USER}/${REPO}:${tag}"
-                TAGS+="${REGISTRY}/${USER}/${REPO}:${tag},"
-              done
-              TAGS="$(echo ${TAGS} | sed 's/,*$//g')"
-            else
-              echo "Using Default Tags..."
-              TAGS="${REGISTRY}/${USER}/${REPO}:${GITHUB_REF_NAME}"
-              TAGS+=",${REGISTRY}/${USER}/${REPO}:latest"
-            fi
-            echo "tags=${TAGS}" >> $GITHUB_OUTPUT
-            echo "Parsed Tags: ${TAGS}"
-          else
-            TAGS="${REGISTRY}/${USER}/${REPO}:${GITHUB_REF_NAME}"
-            if [ "${{ github.event.release.prerelease }}" != "true" ];then
-              TAGS+=",${REGISTRY}/${USER}/${REPO}:latest"
-            fi
-            echo "tags=${TAGS}" >> $GITHUB_OUTPUT
-            echo "Parsed Tags: ${TAGS}"
-          fi
-          echo "APP_VERSION=${GITHUB_REF_NAME}" >> app/.env
-          echo "APP_VERSION: ${GITHUB_REF_NAME}"
-
-      - name: "Debug Tags"
-        continue-on-error: true
-        run: |
-          echo inputs.tags: '${{ inputs.tags }}'
-          echo tags: '${{ steps.tags.outputs.tags }}'
-
       - name: "Docker Tags"
-        id: dtags
+        id: tags
         uses: cssnr/docker-tags-action@v1
         continue-on-error: true
         with:
-          tags: ${{ inputs.tags }}
+          tags: |
+            ${{ inputs.tags }}
+            ${{ github.event.release.prerelease && 'pre' || '' }}
 
       - name: "Debug Docker Tags"
         continue-on-error: true
         run: |
           echo inputs.tags: '${{ inputs.tags }}'
-          echo -e "tags:\n${{ steps.dtags.outputs.tags }}"
-          echo -e "labels:\n${{ steps.dtags.outputs.labels }}"
+          echo -e "tags:\n${{ steps.tags.outputs.tags }}"
+          echo -e "labels:\n${{ steps.tags.outputs.labels }}"
 
       - name: "Setup Buildx"
         uses: docker/setup-buildx-action@v3
@@ -100,6 +62,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.tags.outputs.tags }}
+          labels: ${{ steps.tags.outputs.labels }}
 
       - name: "Send Build Notification"
         if: ${{ always() }}
