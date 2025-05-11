@@ -24,6 +24,7 @@ python-dotenv
 python-magic
 pytimeparse2
 sentry-sdk
+ua-parser[regex]
 uvicorn[standard]
 validators
 
