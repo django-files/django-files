@@ -197,7 +197,7 @@ def post_login(request, user):
         elif ua.user_agent:
             request.session["user_agent"] = f"{ua.os.family} {ua.user_agent.family} {ua.user_agent.major}"
         else:
-            request.session["user_agent"] = f"Unknown Agent"
+            request.session["user_agent"] = "Unknown Agent"
         if is_mobile(request) or state:
             request.session.set_expiry(settings.MOBILE_SESSION_AGE)
         log.debug("MOBILE SESSION EXP: %s", request.get_expiry_age())
