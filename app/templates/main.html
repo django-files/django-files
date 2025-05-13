@@ -90,16 +90,12 @@
                 <a class="nav-link {% block shorts_active %}{% endblock %}" href="{% url 'home:shorts' %}">
                     <i class="fa-solid fa-link me-2 d-md-none"></i> Shorts</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link {% block stats_active %}{% endblock %}" href="{% url 'home:stats' %}">
-                    <i class="fa-solid fa-chart-line me-2 d-md-none"></i> Stats</a>
-            </li>
             {% is_mobile request as mobile %}
             {% if mobile %}
                 <li class="nav-item">
                     <a class="nav-link" href="djangofiles://serverlist">
                         <i class="fa-brands {% if mobile.android %}fa-android{% else %}fa-apple{% endif %} me-2 d-md-none"></i>
-                        Server List</a>
+                        Servers</a>
                 </li>
             {% endif %}
         </ul> <!-- navbar-nav flex-grow-1 -->
@@ -129,7 +125,7 @@
                     <a class="nav-link" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <img src="{{ user.get_avatar_url }}" class="rounded-circle me-2 d-inline-block d-md-none"
                              height="20" width="20" alt="P">
-                        {{ user.get_name|truncatechars:18 }} <i class="fas fa-angle-down mx-1"></i>
+                        {{ user.get_name|truncatechars:16 }} <i class="fas fa-angle-down mx-1"></i>
                         <img src="{{ user.get_avatar_url }}" class="rounded-circle mx-2 d-none d-md-inline-block float-end"
                              height="30" width="30" alt="P" style="margin-top: -2px;"></a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
@@ -152,8 +148,12 @@
                             <a class="dropdown-item clip" data-clipboard-text="{{ user.authorization }}" href="javascript:">
                                 <i class="fa-solid fa-key me-2"></i> Copy Token</a>
                         </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item {% block stats_active %}{% endblock %}" href="{% url 'home:stats' %}">
+                                <i class="fa-solid fa-chart-line me-2 d-md-none"></i> Stats</a>
+                        </li>
                         {% if request.user.is_superuser %}
-                            <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-item text-warning" href="{% url 'admin:settings_sitesettings_change' 1 %}">
                                     <i class="fa-solid fa-plane-departure me-2"></i> Admin</a>

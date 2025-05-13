@@ -198,12 +198,23 @@ def post_login(request, user):
         mobile = is_mobile(request)
         if state or mobile:
             client = mobile.get("name", state) if mobile else state
+            log.debug("client: %s", client)
             request.session["user_agent"] = f"{client} Application"
-        elif ua.user_agent:
-            request.session["user_agent"] = f"{ua.os.family} {ua.user_agent.family} {ua.user_agent.major}"
         else:
+            agent_list = []
+            if ua.os:
+                agent_list.append(ua.os.family)
+            if ua.user_agent:
+                if ua.user_agent.family:
+                    agent_list.append(ua.user_agent.family)
+                if ua.user_agent.major:
+                    agent_list.append(ua.user_agent.major)
+            if agent_list:
+                agent_string = " ".join(agent_list)
+                request.session["user_agent"] = agent_string
+        if not request.session["user_agent"]:
             request.session["user_agent"] = "Unknown User Agent"
-        log.debug("User Agent: %s", request.session["user_agent"])
+        log.info("User Agent: %s", request.session["user_agent"])
 
         if state or is_mobile(request):
             log.debug("Set Mobile Session Age: %s", settings.SESSION_MOBILE_AGE)
