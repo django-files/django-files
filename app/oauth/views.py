@@ -195,8 +195,10 @@ def post_login(request, user):
         ua = parse(agent or "")
         log.debug("ua: %s", ua)
         state = request.GET.get("state")
-        if state:
-            request.session["user_agent"] = f"{state} Application"
+        mobile = is_mobile(request)
+        if state or mobile:
+            client = mobile.get("name", state) if mobile else state
+            request.session["user_agent"] = f"{client} Application"
         elif ua.user_agent:
             request.session["user_agent"] = f"{ua.os.family} {ua.user_agent.family} {ua.user_agent.major}"
         else:
@@ -204,8 +206,8 @@ def post_login(request, user):
         log.debug("User Agent: %s", request.session["user_agent"])
 
         if state or is_mobile(request):
-            log.debug("Set Mobile Session Age: %s", settings.MOBILE_SESSION_AGE)
-            request.session.set_expiry(settings.MOBILE_SESSION_AGE)
+            log.debug("Set Mobile Session Age: %s", settings.SESSION_MOBILE_AGE)
+            request.session.set_expiry(settings.SESSION_MOBILE_AGE)
     except Exception as error:
         log.error("Error Parsing User Agent: %s", error)
 
