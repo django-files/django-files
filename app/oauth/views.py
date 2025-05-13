@@ -68,6 +68,7 @@ def oauth_show(request):
 
     if request.user.is_authenticated:
         next_url = get_next_url(request)
+        log.debug("request.user.is_authenticated: %s", next_url)
         return HttpResponseRedirect(next_url)
 
     if "next" in request.GET:
@@ -77,6 +78,7 @@ def oauth_show(request):
     if is_mobile(request, "ios"):
         # If a native app is redirect to login in the app web view,
         # we need to tell the app the client is no longer authenticated
+        log.debug("CustomSchemeRedirect: djangofiles://logout")
         return CustomSchemeRedirect("djangofiles://logout")
     return render(request, "login.html", {"local": site_settings.get_local_auth()})
 
@@ -220,7 +222,7 @@ def post_login(request, user):
             log.debug("Set Mobile Session Age: %s", settings.SESSION_MOBILE_AGE)
             request.session.set_expiry(settings.SESSION_MOBILE_AGE)
     except Exception as error:
-        log.error("Error Parsing User Agent: %s", error)
+        log.warning("Error Parsing User Agent: %s", error)
 
 
 def duo_callback(request):

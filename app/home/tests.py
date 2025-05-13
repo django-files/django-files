@@ -153,9 +153,15 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         self.screenshot(page, "Login")
 
         page.locator("#login-button").click()
+        # page.wait_for_timeout(timeout=500)
+        # self.screenshot(page, "Login2")
+        # page.wait_for_timeout(timeout=1000)
+        # self.screenshot(page, "Login3")
+        # page.wait_for_timeout(timeout=3000)
+        # self.screenshot(page, "Login4")
         page.locator("text=Home")
         # page.wait_for_selector('text=Home', timeout=3000)
-        page.wait_for_timeout(timeout=500)
+        page.wait_for_timeout(timeout=1000)
         self.screenshot(page, "Home")
 
         for view in self.views:
@@ -169,13 +175,20 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 continue
             else:
                 if view == "Gallery":
+                    log.debug("GALLERY")
+                    # page.locator(".nav-link").locator("text=Files").first.click()
+                    page.locator('a[href="/files/"]').first.click()
+                    # page.wait_for_timeout(timeout=350)
+                    # page.locator(".link-body-emphasis").locator("text=Gallery").first.click()
+                    page.locator('a[href="/gallery/"]').first.click()
+                elif view == "Stats":
+                    log.debug("STATS")
                     page.locator("#navbarDropdown").first.click()
-                    page.wait_for_timeout(timeout=350)
-                    page.locator("text=Files").first.click()
-                    page.wait_for_timeout(timeout=350)
-                    page.locator(".link-body-emphasis").locator("text=Gallery").first.click()
-                    page.wait_for_timeout(timeout=500)
+                    # page.wait_for_timeout(timeout=250)
+                    # page.locator("text=Stats").first.click()
+                    page.locator('a[href="/stats/"]').first.click()
                 else:
+                    log.debug("OTHER OTHER OTHER: %s", view)
                     page.locator(".nav-link").locator(f"text={view}").first.click()
 
             if view == "Upload":
