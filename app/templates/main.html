@@ -151,7 +151,7 @@
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item {% block stats_active %}{% endblock %}" href="{% url 'home:stats' %}">
-                                <i class="fa-solid fa-chart-line me-2 d-md-none"></i> Stats</a>
+                                <i class="fa-solid fa-chart-line me-2"></i> Stats</a>
                         </li>
                         {% if request.user.is_superuser %}
                             <li>

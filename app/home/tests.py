@@ -169,7 +169,9 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 continue
             else:
                 if view == "Gallery":
-                    page.locator(".nav-link").locator("text=Files").first.click()
+                    page.locator("#navbarDropdown").first.click()
+                    page.wait_for_timeout(timeout=350)
+                    page.locator("text=Files").first.click()
                     page.wait_for_timeout(timeout=350)
                     page.locator(".link-body-emphasis").locator("text=Gallery").first.click()
                     page.wait_for_timeout(timeout=500)
