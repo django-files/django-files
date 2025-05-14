@@ -68,6 +68,7 @@ def oauth_show(request):
 
     if request.user.is_authenticated:
         next_url = get_next_url(request)
+        log.debug("request.user.is_authenticated: %s", next_url)
         return HttpResponseRedirect(next_url)
 
     if "next" in request.GET:
@@ -77,6 +78,7 @@ def oauth_show(request):
     if is_mobile(request, "ios"):
         # If a native app is redirect to login in the app web view,
         # we need to tell the app the client is no longer authenticated
+        log.debug("CustomSchemeRedirect: djangofiles://logout")
         return CustomSchemeRedirect("djangofiles://logout")
     return render(request, "login.html", {"local": site_settings.get_local_auth()})
 
@@ -195,19 +197,32 @@ def post_login(request, user):
         ua = parse(agent or "")
         log.debug("ua: %s", ua)
         state = request.GET.get("state")
-        if state:
-            request.session["user_agent"] = f"{state} Application"
-        elif ua.user_agent:
-            request.session["user_agent"] = f"{ua.os.family} {ua.user_agent.family} {ua.user_agent.major}"
+        mobile = is_mobile(request)
+        if state or mobile:
+            client = mobile.get("name", state) if mobile else state
+            log.debug("client: %s", client)
+            request.session["user_agent"] = f"{client} Application"
         else:
+            agent_list = []
+            if ua.os:
+                agent_list.append(ua.os.family)
+            if ua.user_agent:
+                if ua.user_agent.family:
+                    agent_list.append(ua.user_agent.family)
+                if ua.user_agent.major:
+                    agent_list.append(ua.user_agent.major)
+            if agent_list:
+                agent_string = " ".join(agent_list)
+                request.session["user_agent"] = agent_string
+        if not request.session["user_agent"]:
             request.session["user_agent"] = "Unknown User Agent"
-        log.debug("User Agent: %s", request.session["user_agent"])
+        log.info("User Agent: %s", request.session["user_agent"])
 
         if state or is_mobile(request):
-            log.debug("Set Mobile Session Age: %s", settings.MOBILE_SESSION_AGE)
-            request.session.set_expiry(settings.MOBILE_SESSION_AGE)
+            log.debug("Set Mobile Session Age: %s", settings.SESSION_MOBILE_AGE)
+            request.session.set_expiry(settings.SESSION_MOBILE_AGE)
     except Exception as error:
-        log.error("Error Parsing User Agent: %s", error)
+        log.warning("Error Parsing User Agent: %s", error)
 
 
 def duo_callback(request):

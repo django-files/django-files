@@ -41,7 +41,12 @@ def is_mobile(request: HttpRequest, platform: Optional[Literal["android", "ios"]
             data = {
                 "android": "Android" in ua,
                 "ios": "iOS" in ua,
+                "name": "Unknown",
             }
+            if data["ios"]:
+                data["name"] = "iOS"
+            if data["android"]:
+                data["name"] = "Android"
             if platform:
                 if platform in data:
                     return data[platform]

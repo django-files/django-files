@@ -51,7 +51,7 @@
 }
 
 .offcanvas {
-    width: 240px !important;
+    --bs-offcanvas-width: 260px;
 }
 
 body {
