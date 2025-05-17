@@ -423,10 +423,10 @@ def files_edit_view(request):
     log.debug("files_edit_view: %s" + request.method)
     try:
         data = get_json_body(request)
-        log.info("data: %s", data)
+        log.debug("data: %s", data)
         count = 0
         ids = data.get("ids", [])
-        log.info("ids: %s", ids)
+        log.debug("ids: %s", ids)
         if not ids:
             return JsonResponse({"error": "No IDs to Process"}, status=400)
         del data["ids"]
