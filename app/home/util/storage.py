@@ -1,12 +1,17 @@
+import logging
 import os
 
 import boto3
 from botocore.exceptions import ClientError
 from django.conf import settings
+from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from home.util.s3 import S3Bucket, use_s3
+
+
+log = logging.getLogger("app")
 
 
 class DynamicStorageFieldFile(FieldFile):
@@ -31,33 +36,42 @@ class StoragesRouterFileField(models.FileField):
         return file
 
 
-def file_rename(current_file_name: str, new_file_name: str, thumb: False) -> bool:
+def file_rename(file, new_file_name: str):
+    current_file_name = file.file.name
+    file.name = new_file_name
+    file.file.name = new_file_name
+    if file.thumb:
+        file.thumb.name = "thumbs/" + new_file_name
     if use_s3():
         s3 = boto3.resource("s3")
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_file_name).copy_from(
             CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/{current_file_name}"
         )
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, current_file_name).delete()
-        if thumb:
+        if file.thumb:
             try:
                 s3.Object(settings.AWS_STORAGE_BUCKET_NAME, "thumbs/" + new_file_name).copy_from(
                     CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/thumbs/{current_file_name}"
                 )
                 s3.Object(settings.AWS_STORAGE_BUCKET_NAME, "thumbs/" + current_file_name).delete()
-            except ClientError:
-                # we dont want to fail a rename just because thumbs failed
-                pass
+            except ClientError as e:
+                log.error(f"Failed to rename thumb for {current_file_name} to {new_file_name}: {e}")
     else:
         os.rename(f"{settings.MEDIA_ROOT}/{current_file_name}", f"{settings.MEDIA_ROOT}/{new_file_name}")
-        if thumb:
+        if file.thumb:
             try:
                 os.rename(
                     f"{settings.MEDIA_ROOT}/thumbs/{current_file_name}",
                     f"{settings.MEDIA_ROOT}/thumbs/{new_file_name}",
                 )
             except FileNotFoundError:
-                pass
-    return True
+                log.error(f"Failed to rename thumb for {current_file_name} to {new_file_name}: not found")
+    file.save(update_fields=["name", "file", "thumb"])
+    cache.delete(f"file.urlcache.gallery.{file.pk}")
+    cache.delete(f"file.urlcache.download.{file.pk}")
+    cache.delete(f"file.urlcache.raw.{file.pk}")
+    cache.delete(f"file.urlcache.meta_static.{file.pk}")
+    return file
 
 
 def fetch_file(file):

@@ -127,7 +127,9 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         for directory in dirs:
             dir_path = Path(directory)
             log.debug("directory: %s", dir_path)
-            for file_name in os.listdir(directory):
+            # Sort the files to ensure consistent order
+            file_names = sorted(os.listdir(directory))
+            for file_name in file_names:
                 if file_name == "gps.jpg":
                     continue
                 path = dir_path / file_name
