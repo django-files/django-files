@@ -423,6 +423,8 @@ def files_edit_view(request):
     log.debug("files_edit_view: %s" + request.method)
     try:
         data = get_json_body(request)
+        # prevent renaming the visible name on file models, no renaming in bulk for now
+        data.pop("name", None)
         log.debug("data: %s", data)
         count = 0
         ids = data.get("ids", [])

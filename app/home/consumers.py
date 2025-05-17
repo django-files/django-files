@@ -7,7 +7,6 @@ from typing import List, Optional
 from asgiref.sync import async_to_sync, sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.core.cache import cache
 from django.forms.models import model_to_dict
 from home.models import Albums, Files
 from home.tasks import version_check
