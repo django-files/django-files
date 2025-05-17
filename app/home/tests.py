@@ -442,7 +442,7 @@ def process_file_path(path: Path, user_id: int) -> Files:
     print(f"--- Processing: path: {path}")
     with path.open(mode="rb") as f:
         file = process_file(path.name, f, user_id)
-        log.debug("file: %s", file)
+        print("file: %s", file)
         return file
 
 
