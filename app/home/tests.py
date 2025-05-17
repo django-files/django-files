@@ -289,7 +289,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, "Public-enabled")
 
-        control = "iamrenamed.jpg"
+        control = "gps2.jpg"
         page.goto(f"{self.live_server_url}/u/{control}")
         page.wait_for_timeout(timeout=350)
         page.locator("text=12/17/2022 12:14:26")
