@@ -1,6 +1,8 @@
 import os
 
 import boto3
+import logging
+
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.core.cache import cache
@@ -8,6 +10,8 @@ from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from home.util.s3 import S3Bucket, use_s3
+
+log = logging.getLogger("app")
 
 
 class DynamicStorageFieldFile(FieldFile):
@@ -50,9 +54,8 @@ def file_rename(file, new_file_name: str):
                     CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/thumbs/{current_file_name}"
                 )
                 s3.Object(settings.AWS_STORAGE_BUCKET_NAME, "thumbs/" + current_file_name).delete()
-            except ClientError:
-                # we dont want to fail a rename just because thumbs failed
-                pass
+            except ClientError as e:
+                log.error(f"Failed to rename thumb for {current_file_name} to {new_file_name}: {e}")
     else:
         os.rename(f"{settings.MEDIA_ROOT}/{current_file_name}", f"{settings.MEDIA_ROOT}/{new_file_name}")
         if file.thumb:
@@ -62,8 +65,8 @@ def file_rename(file, new_file_name: str):
                     f"{settings.MEDIA_ROOT}/thumbs/{new_file_name}",
                 )
             except FileNotFoundError:
-                pass
-    file.save(update_fields=["name", "file"])
+                log.error(f"Failed to rename thumb for {current_file_name} to {new_file_name}: not found")
+    file.save(update_fields=["name", "file", "thumb"])
     cache.delete(f"file.urlcache.gallery.{file.pk}")
     cache.delete(f"file.urlcache.download.{file.pk}")
     cache.delete(f"file.urlcache.raw.{file.pk}")
