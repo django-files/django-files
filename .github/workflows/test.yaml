@@ -96,6 +96,7 @@ jobs:
       #    path: app/screenshots/
 
       - name: "Push Artifacts"
+        if: ${{ always() }}
         uses: cssnr/push-artifacts-action@master
         continue-on-error: true
         with:
