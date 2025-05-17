@@ -25,6 +25,7 @@ urlpatterns = [
     path("random/album/<str:user_album>/<path:idname>/", views.random_album, name="random-user-album"),
     path("remote/", views.remote_view, name="remote"),
     path("stats/", views.stats_view, name="stats"),
+    path("stats/current/", views.stats_current_view, name="stats-current"),
     path("file/<path:idname>", views.file_view, name="file"),
     path("delete/<path:idname>", views.file_view, name="delete"),
     path("token/", views.token_view, name="token"),

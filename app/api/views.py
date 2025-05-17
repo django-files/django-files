@@ -330,8 +330,38 @@ def stats_view(request):
     log.debug("amount: %s", amount)
     # TODO: Format Stats
     stats = FileStats.objects.filter(user=request.user)[:amount]
+    # current = stats.first()
+    # log.debug("current.stats: %s", current.stats)
+    # data = {
+    #     "current": current.stats,
+    #     "stats": json.loads(serializers.serialize("json", stats)),
+    # }
+    # return JsonResponse(data)
     data = serializers.serialize("json", stats)
     return JsonResponse(json.loads(data), safe=False)
+
+
+@csrf_exempt
+@require_http_methods(["OPTIONS", "GET"])
+@auth_from_token
+@cache_control(no_cache=True)
+@vary_on_headers("Authorization")
+@vary_on_cookie
+def stats_current_view(request):
+    """
+    View  /api/stats/current/
+    """
+    log.debug("%s - stats_view: is_secure: %s", request.method, request.is_secure())
+    stats = FileStats.objects.filter(user=request.user).first()
+    log.debug("stats: %s", stats)
+    if stats is not None:
+        data = model_to_dict(stats)
+        log.debug("data: %s", data)
+        if stats := data.get("stats"):
+            if "types" in stats:
+                del stats["types"]
+            return JsonResponse(stats)
+    return JsonResponse({})
 
 
 @csrf_exempt
