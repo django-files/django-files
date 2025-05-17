@@ -65,6 +65,9 @@ def file_rename(file, new_file_name: str):
                 pass
     file.save(update_fields=["name", "file"])
     cache.delete(f"file.urlcache.gallery.{file.pk}")
+    cache.delete(f"file.urlcache.download.{file.pk}")
+    cache.delete(f"file.urlcache.raw.{file.pk}")
+    cache.delete(f"file.urlcache.meta_static.{file.pk}")
     return file
 
 
