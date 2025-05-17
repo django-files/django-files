@@ -272,13 +272,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
             file = file[0]
             if user_id and file.user.id != user_id:
                 return self._error("File owned by another user.", **kwargs)
-            if file_rename(file.file.name, name, True if file.thumb else False):
-                old_name = file.name
-                file.name = name
-                file.file.name = name  # this will rename on OS and cloud
-                if file.thumb:
-                    file.thumb.name = "thumbs/" + name  # renames thumbnail
-                file.save(update_fields=["name", "file"])
+            old_name = file.name
+            if file := file_rename(file, name):
                 response = model_to_dict(file, exclude=["file", "thumb", "albums"])
                 response.update(
                     {
@@ -288,7 +283,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
                         "old_name": old_name,
                     }
                 )
-                cache.delete(f"file.urlcache.gallery.{file.pk}")
                 return response
         return self._error("File not found.", **kwargs)
 

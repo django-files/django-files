@@ -30,6 +30,7 @@ from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
+from home.util.storage import file_rename
 from oauth.models import CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
@@ -422,9 +423,10 @@ def files_edit_view(request):
     log.debug("files_edit_view: %s" + request.method)
     try:
         data = get_json_body(request)
-        log.debug("data: %s", data)
+        log.info("data: %s", data)
         count = 0
         ids = data.get("ids", [])
+        log.info("ids: %s", ids)
         if not ids:
             return JsonResponse({"error": "No IDs to Process"}, status=400)
         del data["ids"]
@@ -501,8 +503,13 @@ def file_view(request, idname):
                 set_albums(queryset, data["albums"])
                 del data["albums"]
             queryset.update(**data)
-            file = Files.objects.get(id=file.id)
+            if "name" in data and data["name"] != file.name:
+                file = file_rename(file, data["name"])
+                del data["name"]
+            else:
+                file = Files.objects.get(id=file.id)
             response = model_to_dict(file, exclude=["file", "thumb", "albums"])
+            file.file.name = data["name"]
             # TODO: Determine why we have to manually flush file cache here
             #       The Website seems to flush, but not the api/recent/ endpoint
             #       ANSWER: This is not called on .update(), you must call .save()
