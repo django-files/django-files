@@ -400,7 +400,7 @@ def recent_view(request):
 
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
-        files = query[start: start + amount]
+        files = query[start : start + amount]
         return JsonResponse(extract_files(files), safe=False)
     except ValueError as error:
         log.debug(error)
