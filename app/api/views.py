@@ -379,7 +379,10 @@ def recent_view(request):
     log.debug("request.user: %s", request.user)
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
     try:
-        query = Files.objects.filter(user=request.user).select_related("user")
+        if album := request.GET.get("album"):
+            query = Files.objects.filtered_request(request, albums__id=album).select_related("user")
+        else:
+            query = Files.objects.filtered_request(request).select_related("user")
 
         after = int(request.GET.get("after", 0))
         log.debug("after: %s", after)
@@ -398,7 +401,7 @@ def recent_view(request):
 
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
-        files = query[start : start + amount]
+        files = query[start: start + amount]
         return JsonResponse(extract_files(files), safe=False)
     except ValueError as error:
         log.debug(error)
