@@ -24,6 +24,8 @@ jobs:
       - name: "Draft Release Action"
         id: draft
         uses: cssnr/draft-release-action@master
+        with:
+          identifier: "beta"
 
       - name: "Process Release Draft URL"
         run: |

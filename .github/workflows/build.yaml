@@ -44,6 +44,11 @@ jobs:
           echo -e "tags:\n${{ steps.tags.outputs.tags }}"
           echo -e "labels:\n${{ steps.tags.outputs.labels }}"
 
+      - name: "Set App Version"
+        run: |
+          echo "APP_VERSION: ${GITHUB_REF_NAME}"
+          echo "APP_VERSION=${GITHUB_REF_NAME}" >> app/.env
+
       - name: "Setup Buildx"
         uses: docker/setup-buildx-action@v3
         with:
