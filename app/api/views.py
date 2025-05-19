@@ -538,6 +538,8 @@ def file_view(request, idname):
                 del data["albums"]
             queryset.update(**data)
             if "name" in data and data["name"] != file.name:
+                if Files.objects.filter(name=data["name"]).exists():
+                    return JsonResponse({"error": "File name already in use."}, status=400)
                 file = file_rename(file, data["name"])
                 del data["name"]
             else:
