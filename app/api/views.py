@@ -379,7 +379,9 @@ def recent_view(request):
     log.debug("request.user: %s", request.user)
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
     try:
-        query = Files.objects.filter(user=request.user).select_related("user")
+        query = Files.objects.filtered_request(request).select_related("user")
+        if album := request.GET.get("album"):
+            query.filter(albums__id=album)
 
         after = int(request.GET.get("after", 0))
         log.debug("after: %s", after)
@@ -536,6 +538,8 @@ def file_view(request, idname):
                 del data["albums"]
             queryset.update(**data)
             if "name" in data and data["name"] != file.name:
+                if Files.objects.filter(name=data["name"]).exists():
+                    return JsonResponse({"error": "File name already in use."}, status=400)
                 file = file_rename(file, data["name"])
                 del data["name"]
             else:
