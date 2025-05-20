@@ -214,6 +214,7 @@ def shorten_view(request):
         return JsonResponse({"error": str(error)}, status=500)
 
 
+@csrf_exempt
 @require_http_methods(["OPTIONS", "POST", "GET"])
 @auth_from_token
 def album_view(request):
@@ -409,7 +410,7 @@ def recent_view(request):
 
 @csrf_exempt
 @require_http_methods(["OPTIONS", "GET"])
-@auth_from_token(no_fail=True)
+@auth_from_token()
 @cache_control(no_cache=True)
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers("Authorization")
@@ -595,6 +596,8 @@ def albums_view(request, page=None, count=100):
         "next": _next,
         "count": count,
     }
+    print(request.user)
+    print(response)
     return JsonResponse(response, safe=False, status=200)
 
 
