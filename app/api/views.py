@@ -596,8 +596,6 @@ def albums_view(request, page=None, count=100):
         "next": _next,
         "count": count,
     }
-    print(request.user)
-    print(response)
     return JsonResponse(response, safe=False, status=200)
 
 
