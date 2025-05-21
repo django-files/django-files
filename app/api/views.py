@@ -532,12 +532,6 @@ def file_view(request, idname):
                 return JsonResponse({"error": json_error_message}, status=400)
             if "expr" in data and not parse(data["expr"]):
                 data["expr"] = ""
-            # TODO: We should probably not use .update here and convert to a function, see below TODO
-            queryset = Files.objects.filter(id=file.id)
-            if "albums" in data:
-                set_albums(queryset, data["albums"])
-                del data["albums"]
-            queryset.update(**data)
             if "name" in data and data["name"] != file.name:
                 if Files.objects.filter(name=data["name"]).exists():
                     return JsonResponse({"error": "File name already in use."}, status=400)
@@ -545,8 +539,14 @@ def file_view(request, idname):
                 del data["name"]
             else:
                 file = Files.objects.get(id=file.id)
+            # TODO: We should probably not use .update here and convert to a function, see below TODO
+            queryset = Files.objects.filter(id=file.id)
+            if "albums" in data:
+                set_albums(queryset, data["albums"])
+                del data["albums"]
+            queryset.update(**data)
             response = model_to_dict(file, exclude=["file", "thumb", "albums"])
-            file.file.name = data["name"]
+            # file.file.name = data["name"]
             # TODO: Determine why we have to manually flush file cache here
             #       The Website seems to flush, but not the api/recent/ endpoint
             #       ANSWER: This is not called on .update(), you must call .save()
