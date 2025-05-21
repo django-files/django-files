@@ -537,16 +537,15 @@ def file_view(request, idname):
             if "albums" in data:
                 set_albums(queryset, data["albums"])
                 del data["albums"]
+            new_name = data.pop("name", None)
             queryset.update(**data)
-            if "name" in data and data["name"] != file.name:
-                if Files.objects.filter(name=data["name"]).exists():
+            if new_name and new_name != file.name:
+                if Files.objects.filter(name=new_name).exists():
                     return JsonResponse({"error": "File name already in use."}, status=400)
-                file = file_rename(file, data["name"])
-                del data["name"]
+                file = file_rename(file, new_name)
             else:
                 file = Files.objects.get(id=file.id)
             response = model_to_dict(file, exclude=["file", "thumb", "albums"])
-            file.file.name = data["name"]
             # TODO: Determine why we have to manually flush file cache here
             #       The Website seems to flush, but not the api/recent/ endpoint
             #       ANSWER: This is not called on .update(), you must call .save()
