@@ -217,7 +217,7 @@ def shorten_view(request):
 @csrf_exempt
 @require_http_methods(["OPTIONS", "POST", "GET", "DELETE"])
 @auth_from_token
-def album_view(request, id: int):
+def album_view(request, id: int = None):
     """
     View  /api/album/
     """
