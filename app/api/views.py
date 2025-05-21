@@ -215,9 +215,9 @@ def shorten_view(request):
 
 
 @csrf_exempt
-@require_http_methods(["OPTIONS", "POST", "GET"])
+@require_http_methods(["OPTIONS", "POST", "GET", "DELETE"])
 @auth_from_token
-def album_view(request):
+def album_view(request, id: int):
     """
     View  /api/album/
     """
@@ -240,8 +240,12 @@ def album_view(request):
             # clear_albums_cache.delay()  # this is redundant and handled by a signal
             new_album_websocket.apply_async(args=[extract_albums([album])[0]])  # no time to de-tangle this line
             return JsonResponse({"url": full_url}, safe=False)
+        elif request.method == "DELETE":
+            album = get_object_or_404(Albums, id=id)
+            album.delete()
+            return HttpResponse(status=204)
         else:
-            album = get_object_or_404(Albums, id=request.GET.get("id"))
+            album = get_object_or_404(Albums, id=id if id else request.GET.get("id"))
             return JsonResponse(album)
     except Exception as error:
         log.error(error)
