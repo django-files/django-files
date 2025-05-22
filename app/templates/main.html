@@ -244,6 +244,16 @@
         <input type="hidden" id="site-url" value="{{ site_settings.site_url }}">
         <input type="hidden" id="auth-token" value="{{ user.authorization }}">
     </form>
+{#    {% if stats %}#}
+{#        {% with stats=stats|first  %}#}
+{#            <form id="stats-form">#}
+{#                <input type="hidden" id="statFiles" value="{{ stats.stats.count }}">#}
+{#                <input type="hidden" id="statSize" value="{{ stats.stats.size }}">#}
+{#                <input type="hidden" id="statHuman" value="{{ stats.stats.human_size }}">#}
+{#                <input type="hidden" id="statShorts" value="{{ stats.stats.shorts }}">#}
+{#            </form>#}
+{#        {% endwith %}#}
+{#    {% endif %}#}
 {% endif %}
 
 {% block toast %}

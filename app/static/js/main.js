@@ -60,9 +60,23 @@ function domContentLoaded() {
             toastAlert.show()
         }
     })
-    if (isAndroid && Android.receiveAuthToken) {
+    if (isAndroid) {
         console.log('Android Detected.')
-        setTimeout(getAuthToken, 250)
+        if (Android.receiveAuthToken) {
+            setTimeout(getAuthToken, 250)
+        }
+        //if (Android.receiveStats) {
+        //    const statsForm = document.getElementById('stats-form')
+        //    if (statsForm) {
+        //        console.log('Android.receiveStats: ', statsForm)
+        //        Android.receiveStats(
+        //            statsForm.elements?.statFiles.value,
+        //            statsForm.elements?.statSize.value,
+        //            statsForm.elements?.statHuman.value,
+        //            statsForm.elements?.statShorts.value
+        //        )
+        //    }
+        //}
     }
 }
 
