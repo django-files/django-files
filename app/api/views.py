@@ -384,7 +384,8 @@ def recent_view(request):
     log.debug("request.user: %s", request.user)
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
     try:
-        query = Files.objects.filtered_request(request).select_related("user")
+        # query = Files.objects.filtered_request(request).select_related("user")
+        query = Files.objects.filter(user=request.user).select_related("user")
         if album := request.GET.get("album"):
             query.filter(albums__id=album)
 
