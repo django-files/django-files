@@ -789,7 +789,7 @@ def process_file_upload(f: BinaryIO, user_id: int, **kwargs):
     log.debug("kwargs: %s", kwargs)
     site_settings = site_settings_processor(None)["site_settings"]
     name = kwargs.pop("name", f.name)
-    file = process_file(name, f, user_id if user_id else None, **kwargs)
+    file = process_file(name, f, user_id, **kwargs)
     data = {
         "files": [site_settings["site_url"] + file.preview_uri()],
         "url": site_settings["site_url"] + file.preview_uri(),
