@@ -118,7 +118,7 @@ def app_startup():
                 password=config("PASSWORD"),
             )
             log.info("Custom User Created: %s", user.username)
-    CustomUser.objects.get_or_create(username="anonymous", name="Anonymous")
+    CustomUser.objects.get_or_create(username="anonymous", first_name="Anonymous")
     regenerate_all_storage_values()
     refresh_gallery_static_urls_cache()
     return "app_startup - finished"
