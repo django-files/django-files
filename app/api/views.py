@@ -420,7 +420,7 @@ def recent_view(request):
 
 @csrf_exempt
 @require_http_methods(["OPTIONS", "GET"])
-@auth_from_token()
+@auth_from_token(no_fail=True)
 @cache_control(no_cache=True)
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers("Authorization")
@@ -432,16 +432,20 @@ def files_view(request, page, count=25):
     log.debug("%s - files_page_view: %s", request.method, page)
     if request.user.is_superuser:
         user = request.GET.get("user") or request.user.id
-    else:
+    elif request.user.is_authenticated:
         user = request.user.id
+    else:
+        user = None
     log.debug("user: %s", user)
     if album := request.GET.get("album"):
         q = Files.objects.filtered_request(request, albums__id=album).select_related("user")
-    else:
+    elif user:
         if user == "0":
             q = Files.objects.filtered_request(request).select_related("user")
         else:
             q = Files.objects.filtered_request(request, user_id=int(user)).select_related("user")
+    else:
+        return JsonResponse({"error": "Not Authenticated"}, status=401)
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
