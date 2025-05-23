@@ -131,7 +131,7 @@ def version_view(request):
 
 @csrf_exempt
 @require_http_methods(["OPTIONS", "POST"])
-@auth_from_token
+@auth_from_token(no_fail=True)
 def upload_view(request):
     """
     View  /upload/ and /api/upload
@@ -141,6 +141,11 @@ def upload_view(request):
     post = request.POST.dict().copy()
     log.debug(post)
     log.debug(request.FILES)
+    site_settings = SiteSettings.objects.settings()
+    if not site_settings.pub_load and not request.user.is_authenticated:
+        return JsonResponse({"error": "Public uploads are disabled."}, status=403)
+    elif request.user.is_anonymous:
+        request.user = CustomUser.objects.get(username="anonymous")
     try:
         f = request.FILES.get("file")
         # log.debug("f.size: %s", f.size)
@@ -780,7 +785,7 @@ def process_file_upload(f: BinaryIO, user_id: int, **kwargs):
     log.debug("kwargs: %s", kwargs)
     site_settings = site_settings_processor(None)["site_settings"]
     name = kwargs.pop("name", f.name)
-    file = process_file(name, f, user_id, **kwargs)
+    file = process_file(name, f, user_id if user_id else None, **kwargs)
     data = {
         "files": [site_settings["site_url"] + file.preview_uri()],
         "url": site_settings["site_url"] + file.preview_uri(),
