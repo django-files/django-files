@@ -131,7 +131,7 @@ def version_view(request):
 
 @csrf_exempt
 @require_http_methods(["OPTIONS", "POST"])
-@auth_from_token
+@auth_from_token(no_fail=True)
 def upload_view(request):
     """
     View  /upload/ and /api/upload
@@ -141,6 +141,11 @@ def upload_view(request):
     post = request.POST.dict().copy()
     log.debug(post)
     log.debug(request.FILES)
+    site_settings = SiteSettings.objects.settings()
+    if not site_settings.pub_load and not request.user.is_authenticated:
+        return JsonResponse({"error": "Public uploads are disabled."}, status=403)
+    elif request.user.is_anonymous:
+        request.user = CustomUser.objects.get(username="anonymous")
     try:
         f = request.FILES.get("file")
         # log.debug("f.size: %s", f.size)
@@ -415,7 +420,7 @@ def recent_view(request):
 
 @csrf_exempt
 @require_http_methods(["OPTIONS", "GET"])
-@auth_from_token()
+@auth_from_token(no_fail=True)
 @cache_control(no_cache=True)
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers("Authorization")
@@ -425,18 +430,22 @@ def files_view(request, page, count=25):
     View  /api/files/{page}/{count}/
     """
     log.debug("%s - files_page_view: %s", request.method, page)
+    user = None
     if request.user.is_superuser:
         user = request.GET.get("user") or request.user.id
-    else:
+    elif request.user.is_authenticated:
         user = request.user.id
     log.debug("user: %s", user)
     if album := request.GET.get("album"):
         q = Files.objects.filtered_request(request, albums__id=album).select_related("user")
-    else:
+    elif user:
         if user == "0":
+            # this grabs files for ALL users, user parameter only is accepted for superusers
             q = Files.objects.filtered_request(request).select_related("user")
         else:
             q = Files.objects.filtered_request(request, user_id=int(user)).select_related("user")
+    else:
+        return JsonResponse({"error": "Not Authenticated"}, status=401)
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
