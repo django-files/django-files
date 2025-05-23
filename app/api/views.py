@@ -430,17 +430,17 @@ def files_view(request, page, count=25):
     View  /api/files/{page}/{count}/
     """
     log.debug("%s - files_page_view: %s", request.method, page)
+    user = None
     if request.user.is_superuser:
         user = request.GET.get("user") or request.user.id
     elif request.user.is_authenticated:
         user = request.user.id
-    else:
-        user = None
     log.debug("user: %s", user)
     if album := request.GET.get("album"):
         q = Files.objects.filtered_request(request, albums__id=album).select_related("user")
     elif user:
         if user == "0":
+            # this grabs files for ALL users, user parameter only is accepted for superusers
             q = Files.objects.filtered_request(request).select_related("user")
         else:
             q = Files.objects.filtered_request(request, user_id=int(user)).select_related("user")
