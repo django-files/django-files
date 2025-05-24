@@ -18,18 +18,6 @@ deleteAllSessionsBtn.addEventListener('click', (e) => deleteSession(e, true))
 
 document.getElementById('pub_load').addEventListener('change', togglePublic)
 const publicAlbum = document.getElementById('public-album')
-async function togglePublic(event) {
-    console.debug('togglePublic: event:', event)
-    console.debug('togglePublic: event.target:', event.target)
-    console.debug('togglePublic: event.target.checked:', event.target.checked)
-    if (event.target.checked) {
-        console.debug('CHECKED')
-        publicAlbum.classList.remove('d-none')
-    } else {
-        console.debug('NOT CHECKED')
-        publicAlbum.classList.add('d-none')
-    }
-}
 
 /**
  * DOMContentLoaded Callback
@@ -42,6 +30,20 @@ async function domContentLoaded() {
     )
     console.debug('selected:', selected.value)
     updateBackgroundInput(selected.value)
+}
+
+/**
+ * togglePublic
+ * @param event
+ * @return {Promise<void>}
+ */
+async function togglePublic(event) {
+    console.debug('togglePublic: event:', event)
+    if (event.target.checked) {
+        publicAlbum.classList.remove('d-none')
+    } else {
+        publicAlbum.classList.add('d-none')
+    }
 }
 
 /**
