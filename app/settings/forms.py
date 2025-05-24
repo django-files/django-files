@@ -1,3 +1,4 @@
+import logging
 import re
 import zoneinfo
 
@@ -7,6 +8,9 @@ from django.core.exceptions import ValidationError
 from home.util.misc import human_read_to_byte
 from oauth.models import CustomUser
 from pytimeparse2 import parse
+
+
+log = logging.getLogger("app")
 
 
 class SiteSettingsForm(forms.Form):
@@ -20,6 +24,7 @@ class SiteSettingsForm(forms.Form):
     oauth_reg = forms.BooleanField(required=False)
     local_auth = forms.BooleanField(required=False)
     pub_load = forms.BooleanField(required=False)
+    pub_album = forms.IntegerField(required=False)
     two_factor = forms.BooleanField(required=False)
     duo_auth = forms.BooleanField(required=False)
     site_animations = forms.BooleanField(required=False)
@@ -31,6 +36,14 @@ class SiteSettingsForm(forms.Form):
     background_picture = forms.CharField(max_length=255, required=False)
     tsparticles_enabled = forms.BooleanField(required=False)
     tsparticles_config = forms.CharField(max_length=255, required=False)
+
+    def clean_pub_album(self):
+        data = self.cleaned_data["pub_album"]
+        log.debug("data: %s", data)
+        log.debug("type(data): %s", type(data))
+        if not data:
+            return 0
+        return int(data)
 
     def clean_global_storage_quota(self):
         data = self.cleaned_data["global_storage_quota"]

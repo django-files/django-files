@@ -115,6 +115,14 @@
                             Public Uploads: <kbd>/public</kbd>
                         </label>
                     </div>
+                    <div id="public-album" class="row g-3 align-items-center my-1 ms-0 ms-md-5 {{ site_settings.pub_load|if_false:"d-none" }}">
+                        <div class="col-auto my-0">
+                            <label for="pub_album" class="col-form-label">Public Album ID</label>
+                        </div>
+                        <div class="col-auto my-0">
+                            <input type="text" name="pub_album" id="pub_album" class="form-control" placeholder="Album ID" aria-label="Album ID" value="{{ site_settings.pub_album }}">
+                        </div>
+                    </div>
                 </div>
                 {% if site_settings.discord_client_id or site_settings.google_client_id or site_settings.github_client_id %}
                     <div class="col-12">

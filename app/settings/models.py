@@ -22,6 +22,7 @@ class SiteSettings(models.Model):
         default=rand_color_hex, max_length=7, verbose_name="Site Color", help_text="Site Theme Color for Site Embeds"
     )
     pub_load = models.BooleanField(default=False, verbose_name="Public Upload", help_text="Allow Public Uploads")
+    pub_album = models.IntegerField(default=0, verbose_name="Public Album", help_text="Public Upload Album")
     oauth_reg = models.BooleanField(default=False, verbose_name="Oauth Reg", help_text="Allow Oauth Auto Registration")
     two_factor = models.BooleanField(
         default=False, verbose_name="Two-Factor", help_text="Require Two-Factor Authentication"

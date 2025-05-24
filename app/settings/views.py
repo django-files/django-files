@@ -59,6 +59,7 @@ def site_view(request):
     site_settings.site_description = form.cleaned_data["site_description"]
     site_settings.site_color = form.cleaned_data["site_color"]
     site_settings.pub_load = form.cleaned_data["pub_load"]
+    site_settings.pub_album = form.cleaned_data["pub_album"]
     site_settings.oauth_reg = form.cleaned_data["oauth_reg"]
     site_settings.local_auth = form.cleaned_data["local_auth"]
     site_settings.duo_auth = form.cleaned_data["duo_auth"]
