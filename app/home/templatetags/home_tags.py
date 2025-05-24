@@ -20,6 +20,12 @@ def if_true(value, output):
     return output if value else ""
 
 
+@register.filter(name="if_false")
+def if_false(value, output):
+    # return output if value is true else empty
+    return output if not value else ""
+
+
 @register.filter(name="get_config")
 def get_config(value: str):
     # get django setting or config value or empty

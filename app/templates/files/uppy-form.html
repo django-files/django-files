@@ -1,3 +1,4 @@
+{% if request.user.is_authenticated %}
 <form id="upload_inputs" class="row justify-content-center">
     <div class="col col-md-12 pb-3 align-self-center" id="dest_album">
         <label for="upload_albums" class="form-label">Destination Album</label>
@@ -11,4 +12,5 @@
         </div>
     </div>
 </form>
+{% endif %}
 <div id="uppy"></div>

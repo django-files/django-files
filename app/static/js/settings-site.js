@@ -16,6 +16,21 @@ document
 const deleteAllSessionsBtn = document.getElementById('delete-all-sessions')
 deleteAllSessionsBtn.addEventListener('click', (e) => deleteSession(e, true))
 
+document.getElementById('pub_load').addEventListener('change', togglePublic)
+const publicAlbum = document.getElementById('public-album')
+async function togglePublic(event) {
+    console.debug('togglePublic: event:', event)
+    console.debug('togglePublic: event.target:', event.target)
+    console.debug('togglePublic: event.target.checked:', event.target.checked)
+    if (event.target.checked) {
+        console.debug('CHECKED')
+        publicAlbum.classList.remove('d-none')
+    } else {
+        console.debug('NOT CHECKED')
+        publicAlbum.classList.add('d-none')
+    }
+}
+
 /**
  * DOMContentLoaded Callback
  * @function domContentLoaded
