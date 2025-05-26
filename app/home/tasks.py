@@ -119,6 +119,10 @@ def app_startup():
             )
             log.info("Custom User Created: %s", user.username)
     CustomUser.objects.get_or_create(username="anonymous", first_name="Anonymous")
+    qrcode_dir = f"{settings.MEDIA_ROOT}/qr"
+    if not os.path.isdir(qrcode_dir):
+        log.info("Creating QR Code Directory: %s", qrcode_dir)
+        os.mkdir(qrcode_dir)
     regenerate_all_storage_values()
     refresh_gallery_static_urls_cache()
     return "app_startup - finished"

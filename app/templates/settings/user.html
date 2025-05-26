@@ -252,8 +252,12 @@
             </div>
         </div>
         <div class="text-center">
-            <a href="/settings/user/qr.png">
-                <img src="/settings/user/qr.png" alt="QRCode" class="img-fluid d-inline-block">
+            <p><a id="show-qrcode" class="btn btn-primary" role="button">
+                <i class="fa-solid fa-qrcode me-2"></i>
+                View QR Authentication Code
+                <i class="fa-solid fa-camera ms-2"></i></a></p>
+            <a href="{% url 'settings:qrcode' %}">
+                <img src="{% url 'settings:qrcode' %}" alt="QRCode" class="">
             </a>
         </div>
     </section>

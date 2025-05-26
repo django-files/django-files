@@ -26,3 +26,10 @@ $('#flush-cache').on('click', function (event) {
         processData: false,
     })
 })
+
+document.getElementById('show-qrcode').addEventListener('click', showQrCode)
+
+async function showQrCode(event) {
+    event.preventDefault()
+    console.log('event:', event)
+}

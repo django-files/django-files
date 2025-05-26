@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urlencode, urlunparse
 
 import qrcode
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -106,7 +107,7 @@ def qr_view(request):
     log.debug("url: %s", url)
     img = qrcode.make(url)
     # TODO: Add a valid MEDIA_ROOT variable since MEDIA_ROOT=/data/media/assets/files
-    path = f"/data/media/assets/qr/{request.user.id}.png"
+    path = f"{settings.MEDIA_ROOT}/qr/{request.user.id}.png"
     log.debug("path: %s", path)
     img.save(path)
     return FileResponse(open(path, "rb"), content_type="image/png")
