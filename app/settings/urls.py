@@ -6,6 +6,7 @@ app_name = "settings"
 
 urlpatterns = [
     path("user/", views.user_view, name="user"),
+    path("user/qr.png", views.qr_view, name="qrcode"),
     path("site/", views.site_view, name="site"),
     path("welcome/", views.welcome_view, name="welcome"),
     path("sharex/", views.gen_sharex, name="sharex"),

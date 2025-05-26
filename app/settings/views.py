@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 import zoneinfo
@@ -12,7 +13,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.sessions.backends.cache import SessionStore
 from django.core.cache import cache
 from django.core.signing import TimestampSigner
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, FileResponse
 from django.shortcuts import redirect, render, reverse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
@@ -92,6 +93,27 @@ def generate_short_lived_token(**kwargs):
     return signed_value
 
 
+@login_required
+def qr_view(request):
+    """
+    View  /settings/user/qr.png
+    """
+    site_settings = SiteSettings.objects.settings()
+    authorization = generate_short_lived_token(user_id=request.user.id)
+    log.debug("authorization: %s", authorization)
+    data = {"url": site_settings.site_url, "authorization": authorization}
+    log.debug("data: %s", data)
+    base = ("djangofiles", "authorize", "/", "", urlencode(data), "")
+    url = urlunparse(base)
+    log.debug("url: %s", url)
+    img = qrcode.make(url)
+    # TODO: Add a valid MEDIA_ROOT variable since MEDIA_ROOT=/data/media/assets/files
+    path = f"/data/media/assets/qr/{request.user.id}.png"
+    log.debug(f"path: %s", path)
+    img.save(path)
+    return FileResponse(open(path, "rb"), content_type="image/png")
+
+
 @csrf_exempt
 @login_required
 def user_view(request):
@@ -100,28 +122,12 @@ def user_view(request):
     """
     log.debug("user_view: %s", request.method)
     if request.method != "POST":
-        site_settings = SiteSettings.objects.settings()
-
-        # TODO: Split this out into a function...
-        authorization = generate_short_lived_token(user_id=request.user.id)
-        log.debug("authorization: %s", authorization)
-
-        data = {"url": site_settings.site_url, "authorization": authorization}
-        log.debug("data: %s", data)
-        base = ("djangofiles", "authorize", "/", "", urlencode(data), "")
-        url = urlunparse(base)
-        log.debug("url: %s", url)
-        img = qrcode.make(url)
-        img.save(f"{settings.MEDIA_ROOT}/qr-{request.user.username}.png")
-        log.debug(f"src: {settings.MEDIA_ROOT}/qr-{request.user.username}.png")
-
         webhooks = DiscordWebhooks.objects.get_request(request)
         context = {
             "webhooks": webhooks,
             "timezones": sorted(zoneinfo.available_timezones()),
             "default_upload_name_formats": CustomUser.UploadNameFormats.choices,
             "user_avatar_choices": CustomUser.UserAvatarChoices.choices,
-            "app_url": url,
         }
         return render(request, "settings/user.html", context)
 

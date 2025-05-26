@@ -717,17 +717,12 @@ def local_auth_for_native_client(request):
     return HttpResponse(status=401)
 
 
-def verify_token(signed_value, max_age_seconds=900):
-    try:
-        original = signer.unsign(signed_value, max_age=max_age_seconds)
-        log.debug("original: %s", original)
-        data = json.loads(original)
-        log.debug("data: %s", data)
-        return data
-    except SignatureExpired:
-        raise ValueError("Token expired")
-    except BadSignature:
-        raise ValueError("Invalid token")
+def verify_token(signed_value, max_age=900):
+    original = signer.unsign(signed_value, max_age=max_age)
+    log.debug("original: %s", original)
+    data = json.loads(original)
+    log.debug("data: %s", data)
+    return data
 
 
 @csrf_exempt
@@ -742,11 +737,12 @@ def auth_application(request):
         data = verify_token(token)
         log.debug("user_id: %s", data["user_id"])
         user = CustomUser.objects.get(id=data["user_id"])
+        log.debug("username: %s", user.username)
         login(request, user)
         return JsonResponse({"token": user.authorization})
     except Exception as error:
         log.debug("error: %s", error)
-        return HttpResponse(str(error), status=500)
+        return JsonResponse({"error": str(error)}, status=400)
 
 
 @csrf_exempt
