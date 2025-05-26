@@ -39,6 +39,7 @@ async function showQrCode(event) {
     const img = document.createElement('img')
     img.src = link.href
     img.alt = 'QR Code'
+    img.classList.add('img-fluid')
     link.appendChild(img)
     const top = img.getBoundingClientRect().top + window.scrollY - 120
     window.scrollTo({ top, behavior: 'smooth' })
