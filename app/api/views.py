@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core import serializers
 from django.core.cache import cache
 from django.core.paginator import Paginator
-from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
+from django.core.signing import TimestampSigner
 from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse

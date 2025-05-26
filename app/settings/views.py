@@ -1,4 +1,3 @@
-import os
 import json
 import logging
 import zoneinfo
@@ -6,14 +5,13 @@ from datetime import datetime, timedelta
 from urllib.parse import urlencode, urlunparse
 
 import qrcode
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.sessions.backends.cache import SessionStore
 from django.core.cache import cache
 from django.core.signing import TimestampSigner
-from django.http import HttpResponse, JsonResponse, FileResponse
+from django.http import FileResponse, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render, reverse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
@@ -109,7 +107,7 @@ def qr_view(request):
     img = qrcode.make(url)
     # TODO: Add a valid MEDIA_ROOT variable since MEDIA_ROOT=/data/media/assets/files
     path = f"/data/media/assets/qr/{request.user.id}.png"
-    log.debug(f"path: %s", path)
+    log.debug("path: %s", path)
     img.save(path)
     return FileResponse(open(path, "rb"), content_type="image/png")
 
