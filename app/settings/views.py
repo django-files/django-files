@@ -86,17 +86,17 @@ def site_view(request):
     return JsonResponse(data, status=200)
 
 
-def generate_short_lived_token(**kwargs):
+def get_signature(**kwargs):
     value = json.dumps(kwargs)
-    signed_value = signer.sign(value)
-    return signed_value
+    signature = signer.sign(value)
+    return signature
 
 
 def get_authorize_url(request):
     site_settings = SiteSettings.objects.settings()
-    authorization = generate_short_lived_token(user_id=request.user.id)
-    log.debug("authorization: %s", authorization)
-    data = {"url": site_settings.site_url, "authorization": authorization}
+    signature = get_signature(user_id=request.user.id)
+    log.debug("signature: %s", signature)
+    data = {"url": site_settings.site_url, "signature": signature}
     log.debug("data: %s", data)
     base = ("djangofiles", "authorize", "/", "", urlencode(data), "")
     url = urlunparse(base)

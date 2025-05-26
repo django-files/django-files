@@ -718,8 +718,8 @@ def local_auth_for_native_client(request):
     return HttpResponse(status=401)
 
 
-def verify_token(signed_value, max_age=600):
-    original = signer.unsign(signed_value, max_age=max_age)
+def verify_signature(signature, max_age=600):
+    original = signer.unsign(signature, max_age=max_age)
     log.debug("original: %s", original)
     data = json.loads(original)
     log.debug("data: %s", data)
@@ -733,9 +733,9 @@ def auth_application(request):
     View /auth/application/
     """
     try:
-        token = request.POST.get("authorization")
-        log.debug("token: %s", token)
-        data = verify_token(token)
+        signature = request.POST.get("signature")
+        log.debug("signature: %s", signature)
+        data = verify_signature(signature)
         log.debug("user_id: %s", data["user_id"])
         user = CustomUser.objects.get(id=data["user_id"])
         log.debug("username: %s", user.username)
