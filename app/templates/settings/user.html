@@ -251,6 +251,11 @@
                     <img src="{% static 'images/assets/apk_android_dl.svg' %}" alt="Download for Android via APK" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain;" /></a>
             </div>
         </div>
+        <div class="text-center">
+            <a href="{{ app_url }}">
+                <img src="/media/qr-{{ user.username }}.png" alt="QRCode" class="img-fluid d-inline-block">
+            </a>
+        </div>
     </section>
     <section id="upload">
     <h3>Upload Methods</h3>

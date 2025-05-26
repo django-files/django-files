@@ -1,12 +1,17 @@
+import json
 import logging
 import zoneinfo
 from datetime import datetime, timedelta
+from urllib.parse import urlencode, urlunparse
 
+import qrcode
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.sessions.backends.cache import SessionStore
 from django.core.cache import cache
+from django.core.signing import TimestampSigner
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render, reverse
 from django.template.loader import render_to_string
@@ -16,6 +21,8 @@ from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
 
+
+signer = TimestampSigner()
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
@@ -79,6 +86,12 @@ def site_view(request):
     return JsonResponse(data, status=200)
 
 
+def generate_short_lived_token(**kwargs):
+    value = json.dumps(kwargs)
+    signed_value = signer.sign(value)
+    return signed_value
+
+
 @csrf_exempt
 @login_required
 def user_view(request):
@@ -87,14 +100,29 @@ def user_view(request):
     """
     log.debug("user_view: %s", request.method)
     if request.method != "POST":
+        site_settings = SiteSettings.objects.settings()
+
+        # TODO: Split this out into a function...
+        authorization = generate_short_lived_token(user_id=request.user.id)
+        log.debug("authorization: %s", authorization)
+
+        data = {"url": site_settings.site_url, "authorization": authorization}
+        log.debug("data: %s", data)
+        base = ("djangofiles", "authorize", "/", "", urlencode(data), "")
+        url = urlunparse(base)
+        log.debug("url: %s", url)
+        img = qrcode.make(url)
+        img.save(f"{settings.MEDIA_ROOT}/qr-{request.user.username}.png")
+        log.debug(f"src: {settings.MEDIA_ROOT}/qr-{request.user.username}.png")
+
         webhooks = DiscordWebhooks.objects.get_request(request)
         context = {
             "webhooks": webhooks,
             "timezones": sorted(zoneinfo.available_timezones()),
             "default_upload_name_formats": CustomUser.UploadNameFormats.choices,
             "user_avatar_choices": CustomUser.UserAvatarChoices.choices,
+            "app_url": url,
         }
-        log.debug("context: %s", context)
         return render(request, "settings/user.html", context)
 
     log.debug(request.POST)

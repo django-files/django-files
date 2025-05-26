@@ -16,6 +16,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core import serializers
 from django.core.cache import cache
 from django.core.paginator import Paginator
+from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
@@ -40,6 +41,9 @@ from packaging.version import InvalidVersion
 from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
+
+
+signer = TimestampSigner()
 
 
 log = logging.getLogger("app")
@@ -711,6 +715,38 @@ def local_auth_for_native_client(request):
             return JsonResponse({"token": request.user.authorization})
 
     return HttpResponse(status=401)
+
+
+def verify_token(signed_value, max_age_seconds=900):
+    try:
+        original = signer.unsign(signed_value, max_age=max_age_seconds)
+        log.debug("original: %s", original)
+        data = json.loads(original)
+        log.debug("data: %s", data)
+        return data
+    except SignatureExpired:
+        raise ValueError("Token expired")
+    except BadSignature:
+        raise ValueError("Invalid token")
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def auth_application(request):
+    """
+    View /auth/application/
+    """
+    try:
+        token = request.POST.get("authorization")
+        log.debug("token: %s", token)
+        data = verify_token(token)
+        log.debug("user_id: %s", data["user_id"])
+        user = CustomUser.objects.get(id=data["user_id"])
+        login(request, user)
+        return JsonResponse({"token": user.authorization})
+    except Exception as error:
+        log.debug("error: %s", error)
+        return HttpResponse(str(error), status=500)
 
 
 @csrf_exempt
