@@ -92,11 +92,7 @@ def generate_short_lived_token(**kwargs):
     return signed_value
 
 
-@login_required
-def qr_view(request):
-    """
-    View  /settings/user/qr.png
-    """
+def get_authorize_url(request):
     site_settings = SiteSettings.objects.settings()
     authorization = generate_short_lived_token(user_id=request.user.id)
     log.debug("authorization: %s", authorization)
@@ -105,6 +101,15 @@ def qr_view(request):
     base = ("djangofiles", "authorize", "/", "", urlencode(data), "")
     url = urlunparse(base)
     log.debug("url: %s", url)
+    return url
+
+
+@login_required
+def qr_view(request):
+    """
+    View  /settings/user/qr.png
+    """
+    url = get_authorize_url(request)
     img = qrcode.make(url)
     # TODO: Add a valid MEDIA_ROOT variable since MEDIA_ROOT=/data/media/assets/files
     path = f"{settings.MEDIA_ROOT}/qr/{request.user.id}.png"
@@ -127,6 +132,7 @@ def user_view(request):
             "timezones": sorted(zoneinfo.available_timezones()),
             "default_upload_name_formats": CustomUser.UploadNameFormats.choices,
             "user_avatar_choices": CustomUser.UserAvatarChoices.choices,
+            "auth_url": get_authorize_url(request),
         }
         return render(request, "settings/user.html", context)
 

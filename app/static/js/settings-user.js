@@ -60,3 +60,41 @@ function tokenRefresh() {
         .then((data) => console.log('Success:', data))
         .catch((error) => console.log('Error:', error))
 }
+
+const qrCodeBtn = document.getElementById('show-qrcode')
+qrCodeBtn.addEventListener('click', showQrCode)
+
+async function showQrCode(event) {
+    event.preventDefault()
+    console.log('event:', event)
+    const div = document.getElementById('qrcode-div')
+    const link = document.getElementById('qrcode-link')
+    console.log('link:', link)
+    console.log('link.href:', link.href)
+    const img = document.createElement('img')
+    img.src = link.dataset.qrcode
+    img.alt = 'QR Code'
+    img.classList.add('img-fluid')
+    link.appendChild(img)
+    qrCodeBtn.remove()
+    div.classList.remove('d-none')
+    const span = div.querySelector('span')
+    const top = img.getBoundingClientRect().top + window.scrollY - 120
+    window.scrollTo({ top, behavior: 'smooth' })
+
+    let totalSeconds = 599
+    const timer = setInterval(() => {
+        const minutes = Math.floor(totalSeconds / 60)
+        const seconds = totalSeconds % 60
+        span.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+        if (totalSeconds === 0) {
+            span.classList.replace(
+                'text-success-emphasis',
+                'text-danger-emphasis'
+            )
+            clearInterval(timer)
+        } else {
+            totalSeconds--
+        }
+    }, 1000)
+}

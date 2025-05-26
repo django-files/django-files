@@ -36,6 +36,7 @@ from oauth.models import CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
+from oauth.views import post_login
 from packaging import version
 from packaging.version import InvalidVersion
 from pytimeparse2 import parse
@@ -717,7 +718,7 @@ def local_auth_for_native_client(request):
     return HttpResponse(status=401)
 
 
-def verify_token(signed_value, max_age=900):
+def verify_token(signed_value, max_age=600):
     original = signer.unsign(signed_value, max_age=max_age)
     log.debug("original: %s", original)
     data = json.loads(original)
@@ -739,6 +740,7 @@ def auth_application(request):
         user = CustomUser.objects.get(id=data["user_id"])
         log.debug("username: %s", user.username)
         login(request, user)
+        post_login(request)
         return JsonResponse({"token": user.authorization})
     except Exception as error:
         log.debug("error: %s", error)

@@ -252,12 +252,17 @@
             </div>
         </div>
         <div class="d-flex flex-md-row flex-column pb-4 justify-content-md-center justify-content-start">
+        <div>
             <a id="show-qrcode" class="btn btn-primary align-self-start" role="button">
                 <i class="fa-solid fa-qrcode me-2"></i>
                 View QR Authentication Code
                 <i class="fa-solid fa-camera ms-2"></i>
             </a>
-            <a id="qrcode-link" href="{% url 'settings:qrcode' %}"></a>
+            <div id="qrcode-div" class="d-none">
+                <p class="text-center">Valid for <span class="text-success-emphasis">10:00</span> minutes.</p>
+                <a id="qrcode-link" href="{{ auth_url }}" data-qrcode="{% url 'settings:qrcode' %}"></a>
+            </div>
+        </div>
         </div>
     </section>
     <section id="upload">
