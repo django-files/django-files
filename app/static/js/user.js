@@ -40,7 +40,7 @@ async function showQrCode(event) {
     img.src = link.href
     img.alt = 'QR Code'
     link.appendChild(img)
-    const top = img.getBoundingClientRect().top + window.scrollY - 100
+    const top = img.getBoundingClientRect().top + window.scrollY - 120
     window.scrollTo({ top, behavior: 'smooth' })
     qrCodeBtn.remove()
 }

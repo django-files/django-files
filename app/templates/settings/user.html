@@ -251,11 +251,12 @@
                     <img src="{% static 'images/assets/apk_android_dl.svg' %}" alt="Download for Android via APK" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain;" /></a>
             </div>
         </div>
-        <div class="text-center">
-            <a id="show-qrcode" class="btn btn-primary" role="button">
+        <div class="d-flex flex-md-row flex-column pb-4 justify-content-md-center justify-content-start">
+            <a id="show-qrcode" class="btn btn-primary align-self-start" role="button">
                 <i class="fa-solid fa-qrcode me-2"></i>
                 View QR Authentication Code
-                <i class="fa-solid fa-camera ms-2"></i></a>
+                <i class="fa-solid fa-camera ms-2"></i>
+            </a>
             <a id="qrcode-link" href="{% url 'settings:qrcode' %}"></a>
         </div>
     </section>
