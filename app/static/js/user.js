@@ -27,9 +27,20 @@ $('#flush-cache').on('click', function (event) {
     })
 })
 
-document.getElementById('show-qrcode').addEventListener('click', showQrCode)
+const qrCodeBtn = document.getElementById('show-qrcode')
+qrCodeBtn.addEventListener('click', showQrCode)
 
 async function showQrCode(event) {
     event.preventDefault()
     console.log('event:', event)
+    const link = document.getElementById('qrcode-link')
+    console.log('link:', link)
+    console.log('link.href:', link.href)
+    const img = document.createElement('img')
+    img.src = link.href
+    img.alt = 'QR Code'
+    link.appendChild(img)
+    const top = img.getBoundingClientRect().top + window.scrollY - 100
+    window.scrollTo({ top, behavior: 'smooth' })
+    qrCodeBtn.remove()
 }

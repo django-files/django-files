@@ -252,13 +252,11 @@
             </div>
         </div>
         <div class="text-center">
-            <p><a id="show-qrcode" class="btn btn-primary" role="button">
+            <a id="show-qrcode" class="btn btn-primary" role="button">
                 <i class="fa-solid fa-qrcode me-2"></i>
                 View QR Authentication Code
-                <i class="fa-solid fa-camera ms-2"></i></a></p>
-            <a href="{% url 'settings:qrcode' %}">
-                <img src="{% url 'settings:qrcode' %}" alt="QRCode" class="">
-            </a>
+                <i class="fa-solid fa-camera ms-2"></i></a>
+            <a id="qrcode-link" href="{% url 'settings:qrcode' %}"></a>
         </div>
     </section>
     <section id="upload">
