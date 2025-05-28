@@ -79,6 +79,11 @@ function tokenRefresh() {
 async function showQrCode(event) {
     event.preventDefault()
     console.log('showQrCode:', event)
+    //if (qrCodeBtn.dataset.hide === 'yes') {
+    //    console.log('REMOVE QR CODE')
+    //    document.getElementById('qr-code-image').remove()
+    //    return
+    //}
     const div = document.getElementById('qrcode-div')
     const link = document.getElementById('qrcode-link')
     console.log('link:', link)
@@ -93,6 +98,7 @@ async function showQrCode(event) {
     )
     img.src = link.dataset.qrcode
     img.alt = 'QR Code'
+    img.id = 'qr-code-image'
     img.classList.add('img-fluid')
     link.appendChild(img)
     bootstrap.Tooltip.getInstance(qrCodeBtn)?.dispose()
