@@ -255,13 +255,11 @@
             </div>
         </div>
 
-        <div class="d-flex flex-sm-row flex-column pb-4 justify-content-sm-center justify-content-start">
+        <div id="qrCodeParent" class="d-flex flex-sm-row flex-column pb-4 justify-content-sm-center justify-content-start">
             <div>
                 <a id="show-qrcode" class="btn btn-outline-warning align-self-start" role="button"
                    data-bs-toggle="tooltip" data-bs-title="Sensitive Info">
-                    <i class="fa-solid fa-qrcode me-2"></i>
-                    View QR Authentication Code
-                    <i class="fa-solid fa-camera ms-2"></i>
+                    View QR Authentication Code <i class="fa-solid fa-camera ms-2"></i>
                 </a>
                 <div id="qrcode-div" class="d-none">
                     <p class="text-center">Valid for <span class="text-success-emphasis">10:00</span> minutes.</p>
@@ -417,6 +415,8 @@
 {% endblock %}
 
 {% block tail %}
+{#    <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>#}
+    <script type="module" src="{% static 'dist/qr-code-styling/qr-code-styling.js' %}"></script>
     <script type="module" src="{% static 'js/settings.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/settings-user.js' %}"></script>
     <script type="module" src="{% static 'js/avatar.js' %}"></script>

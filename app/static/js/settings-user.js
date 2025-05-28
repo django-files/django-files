@@ -1,5 +1,7 @@
 // JS for settings/user.html
 
+// import QRCodeStyling from '../dist/qr-code-styling/qr-code-styling.js'
+
 const qrCodeBtn = document.getElementById('show-qrcode')
 const showTokenBtn = document.getElementById('showTokenBtn')
 const primaryToken = document.getElementById('primary-token')
@@ -17,38 +19,8 @@ document
  */
 async function domContentLoaded() {
     console.debug('DOMContentLoaded: settings-user.js')
-    // const storedTheme = localStorage.getItem('theme')
-    // console.debug('storedTheme:', storedTheme)
-    // if (storedTheme && storedTheme !== 'auto') {
-    //     themeToggle.checked = true
-    // }
-    // const prefers = window.matchMedia('(prefers-color-scheme: dark)').matches
-    //     ? 'Light'
-    //     : 'Dark'
-    // console.log('prefers:', prefers)
-    // newThemeValue.textContent = prefers
+    //qrCode.download({ name: 'qr', extension: 'svg' })
 }
-
-// function toggleThemeSwitch() {
-//     const query = window.matchMedia('prefers-color-scheme: dark')
-//     console.info('data-bs-theme-value', query)
-//
-//     const storedTheme = localStorage.getItem('theme')
-//     console.info('storedTheme:', storedTheme)
-//     let prefers
-//     if (storedTheme) {
-//         prefers = storedTheme === 'light' ? 'dark' : 'light'
-//         console.debug('reverting to auto theme')
-//         localStorage.removeItem('theme')
-//     } else {
-//         prefers = window.matchMedia('(prefers-color-scheme: dark)').matches
-//             ? 'light'
-//             : 'dark'
-//         console.log('forcing opposite theme:', prefers)
-//         localStorage.setItem('theme', prefers)
-//     }
-//     document.documentElement.setAttribute('data-bs-theme', prefers)
-// }
 
 function toggleToken(event) {
     event.preventDefault()
@@ -88,39 +60,55 @@ async function showQrCode(event) {
     const link = document.getElementById('qrcode-link')
     console.log('link:', link)
     console.log('link.href:', link.href)
-    const img = document.createElement('img')
     fetch('/settings/user/signature').then((response) =>
         response.json().then((data) => {
             console.log('data:', data)
             link.href = data.url
             console.log('link.href:', link.href)
+            const qrCode = genQrCode(link.href)
+            qrCode.append(link)
+            bootstrap.Tooltip.getInstance(qrCodeBtn)?.dispose()
+            qrCodeBtn.remove()
+            div.classList.remove('d-none')
+            const span = div.querySelector('span')
+            const top = div.getBoundingClientRect().top + window.scrollY - 80
+            window.scrollTo({ top, behavior: 'smooth' })
+            let totalSeconds = 599
+            const timer = setInterval(() => {
+                const minutes = Math.floor(totalSeconds / 60)
+                const seconds = totalSeconds % 60
+                span.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+                if (totalSeconds === 0) {
+                    span.classList.replace(
+                        'text-success-emphasis',
+                        'text-danger-emphasis'
+                    )
+                    clearInterval(timer)
+                } else {
+                    totalSeconds--
+                }
+            }, 1000)
         })
     )
-    img.src = link.dataset.qrcode
-    img.alt = 'QR Code'
-    img.id = 'qr-code-image'
-    img.classList.add('img-fluid')
-    link.appendChild(img)
-    bootstrap.Tooltip.getInstance(qrCodeBtn)?.dispose()
-    qrCodeBtn.remove()
-    div.classList.remove('d-none')
-    const span = div.querySelector('span')
-    const top = img.getBoundingClientRect().top + window.scrollY - 120
-    window.scrollTo({ top, behavior: 'smooth' })
+}
 
-    let totalSeconds = 599
-    const timer = setInterval(() => {
-        const minutes = Math.floor(totalSeconds / 60)
-        const seconds = totalSeconds % 60
-        span.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-        if (totalSeconds === 0) {
-            span.classList.replace(
-                'text-success-emphasis',
-                'text-danger-emphasis'
-            )
-            clearInterval(timer)
-        } else {
-            totalSeconds--
-        }
-    }, 1000)
+function genQrCode(data) {
+    return new QRCodeStyling({
+        width: 300,
+        height: 300,
+        type: 'svg',
+        data: data,
+        image: 'https://intranet.cssnr.com/static/images/logo.png',
+        dotsOptions: {
+            color: '#4267b2',
+            type: 'rounded',
+        },
+        backgroundOptions: {
+            color: '#e9ebee',
+        },
+        imageOptions: {
+            crossOrigin: 'anonymous',
+            margin: 20,
+        },
+    })
 }
