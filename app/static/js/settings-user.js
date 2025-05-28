@@ -2,9 +2,11 @@
 
 const qrCodeBtn = document.getElementById('show-qrcode')
 const showTokenBtn = document.getElementById('showTokenBtn')
+const primaryToken = document.getElementById('primary-token')
+
 document.addEventListener('DOMContentLoaded', domContentLoaded)
 qrCodeBtn.addEventListener('click', showQrCode)
-showTokenBtn.addEventListener('click', showToken)
+showTokenBtn.addEventListener('click', toggleToken)
 document
     .getElementById('tokenRefreshBtn')
     .addEventListener('click', tokenRefresh)
@@ -48,10 +50,14 @@ async function domContentLoaded() {
 //     document.documentElement.setAttribute('data-bs-theme', prefers)
 // }
 
-function showToken(event) {
+function toggleToken(event) {
     event.preventDefault()
-    console.log('showToken:', event)
-    document.getElementById('primary-token').style.filter = ''
+    console.log('toggleToken:', event)
+    if (primaryToken.style.filter) {
+        primaryToken.style.filter = ''
+    } else {
+        primaryToken.style.filter = 'blur(3px)'
+    }
 }
 
 function tokenRefresh() {
