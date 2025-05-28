@@ -1,9 +1,10 @@
 // JS for settings/user.html
 
 const qrCodeBtn = document.getElementById('show-qrcode')
-
+const showTokenBtn = document.getElementById('showTokenBtn')
 document.addEventListener('DOMContentLoaded', domContentLoaded)
 qrCodeBtn.addEventListener('click', showQrCode)
+showTokenBtn.addEventListener('click', showToken)
 document
     .getElementById('tokenRefreshBtn')
     .addEventListener('click', tokenRefresh)
@@ -47,6 +48,12 @@ async function domContentLoaded() {
 //     document.documentElement.setAttribute('data-bs-theme', prefers)
 // }
 
+function showToken(event) {
+    event.preventDefault()
+    console.log('showToken:', event)
+    document.getElementById('primary-token').style.filter = ''
+}
+
 function tokenRefresh() {
     const csrfToken = document.querySelector(
         'input[name="csrfmiddlewaretoken"]'
@@ -65,7 +72,7 @@ function tokenRefresh() {
 
 async function showQrCode(event) {
     event.preventDefault()
-    console.log('event:', event)
+    console.log('showQrCode:', event)
     const div = document.getElementById('qrcode-div')
     const link = document.getElementById('qrcode-link')
     console.log('link:', link)

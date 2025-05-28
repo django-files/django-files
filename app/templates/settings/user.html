@@ -96,43 +96,46 @@
             </div>
 
             <hr class="mt-4"/>
-            <div class="row">
-                <h4 class="col-md-6">File Defaults</h4>
-                <h4 class="col-md-6">User Settings</h4>
-                <div class="col mx-sm-4 fs-5">
-
-                    <div class="form-check form-switch px-lg-5">
-                        <input class="form-check-input" type="checkbox" id="remove_exif" name="remove_exif" {{ request.user.remove_exif|if_true:"checked" }}>
-                        <label class="form-check-label" for="remove_exif">
-                          Strip All EXIF Data
-                        </label>
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="remove_exif_geo" name="remove_exif_geo" {{ request.user.remove_exif_geo|if_true:"checked" }}>
-                        <label class="form-check-label" for="remove_exif_geo">
-                            Strip GPS EXIF Data
-                        </label>
-                    </div>
-
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="default_file_private" name="default_file_private" {{ request.user.default_file_private|if_true:"checked" }}>
-                        <label class="form-check-label" for="default_file_private">
-                          Private Files
-                        </label>
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="default_file_password" name="default_file_password" {{ request.user.default_file_password|if_true:"checked" }}>
-                        <label class="form-check-label" for="default_file_password">
-                          Password Protected Files
-                        </label>
+            <div class="row g-0 ms-0">
+                <div class="col-12 col-md-6">
+                    <h4 class="">File Defaults</h4>
+                    <div class="ms-0 ms-sm-4">
+                        <div class="form-check form-switch px-lg-5">
+                            <input class="form-check-input" type="checkbox" id="remove_exif" name="remove_exif" {{ request.user.remove_exif|if_true:"checked" }}>
+                            <label class="form-check-label" for="remove_exif">
+                              Strip All EXIF Data
+                            </label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="remove_exif_geo" name="remove_exif_geo" {{ request.user.remove_exif_geo|if_true:"checked" }}>
+                            <label class="form-check-label" for="remove_exif_geo">
+                                Strip GPS EXIF Data
+                            </label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="default_file_private" name="default_file_private" {{ request.user.default_file_private|if_true:"checked" }}>
+                            <label class="form-check-label" for="default_file_private">
+                              Private Files
+                            </label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="default_file_password" name="default_file_password" {{ request.user.default_file_password|if_true:"checked" }}>
+                            <label class="form-check-label" for="default_file_password">
+                              Password Protected Files
+                            </label>
+                        </div>
                     </div>
                 </div>
-                <div class="col mx-sm-4 fs-5">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="show_exif_preview" name="show_exif_preview" {{ request.user.show_exif_preview|if_true:"checked" }}>
-                        <label class="form-check-label" for="show_exif_preview">
-                          Enable EXIF Embeds
-                        </label>
+
+                <div class="col-12 col-md-6 mt-4 mt-md-0">
+                    <h4 class="">User Settings</h4>
+                    <div class="ms-0 ms-sm-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="show_exif_preview" name="show_exif_preview" {{ request.user.show_exif_preview|if_true:"checked" }}>
+                            <label class="form-check-label" for="show_exif_preview">
+                              Enable EXIF Embeds
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -241,24 +244,21 @@
         <h3>Clients</h3>
         <p>Django Files has the following native clients.
 
-        <div class="d-flex flex-md-row flex-column justify-content-evenly pb-4">
+        <div class="d-flex flex-md-row flex-column justify-content-evenly align-items-start pb-4">
             <div class="p-2 d-flex flex-column align-items-md-center">
-                <a href="https://apps.apple.com/us/app/django-files/id6742523003?itscg=30200&itsct=apps_box_badge&mttnsubad=6742523003" class="d-inline-block">
-                    <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1743638400" alt="Download on the App Store" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain;" /></a>
-                <a href="https://apps.apple.com/us/app/django-files/id6742523003?itscg=30200&itsct=apps_box_badge&mttnsubad=6742523003" class="d-inline-block mt-2 ms-4 ms-md-0">
+                <a href="https://apps.apple.com/us/app/django-files/id6742523003?itscg=30200&itsct=apps_box_badge&mttnsubad=6742523003">
                     <img src="{% static 'images/assets/qr-code-apple.svg' %}" alt="Download on the App Store"  /></a>
             </div>
             <div class="p-2 d-flex flex-column align-items-md-center">
-                <a href="https://github.com/django-files/android-client/releases/latest/download/django-files.apk" class="d-inline-block">
-                    <img src="{% static 'images/assets/apk_android_dl.svg' %}" alt="Download for Android via APK" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain;" /></a>
-                <a href="https://github.com/django-files/android-client/releases/latest/download/django-files.apk" class="d-inline-block mt-2 ms-4 ms-md-0">
+                <a href="https://github.com/django-files/android-client/releases/latest/download/django-files.apk">
                     <img src="{% static 'images/assets/qr-code-android.svg' %}" alt="Download on the App Store"  /></a>
             </div>
         </div>
 
         <div class="d-flex flex-md-row flex-column pb-4 justify-content-md-center justify-content-start">
             <div>
-                <a id="show-qrcode" class="btn btn-primary align-self-start" role="button">
+                <a id="show-qrcode" class="btn btn-outline-warning align-self-start" role="button"
+                   data-bs-toggle="tooltip" data-bs-title="Secure Information.">
                     <i class="fa-solid fa-qrcode me-2"></i>
                     View QR Authentication Code
                     <i class="fa-solid fa-camera ms-2"></i>
@@ -325,7 +325,7 @@
     <div class="tab-content" id="myTabContent">
         <div class="tab-pane fade show active" id="cli-tab-pane" role="tabpanel" aria-labelledby="cli-tab" tabindex="0">
             <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#cli-code">
-                <i class="fa-regular fa-clipboard ms-2"></i> Copy</a></p>
+                <i class="fa-regular fa-clipboard ms-2 mt-3"></i> Copy</a></p>
             <h4>Install From PyPI:</h4>
             <p><kbd id="cli-code">python3 -m pip install zipline-cli</kbd></p>
             <p>Or alternatively from GitHub:</p>
@@ -398,12 +398,18 @@
     <h3>Authorization Token</h3>
 
     <p>Treat this token like a password.</p>
-    <p><a class="btn btn-lg btn-outline-light clip" role="button" data-clipboard-text="{{ user.authorization }}">
-        <i class="fa-solid fa-key me-2"></i> Copy Token</a>
-        <a id="tokenRefreshBtn" class="btn btn-lg btn-outline-danger" role="button">
+    <p>
+        <a class="btn btn-outline-light clip" role="button" data-clipboard-target="#primary-token">
+            <i class="fa-solid fa-key me-2"></i> Copy</a>
+        <a id="showTokenBtn" class="btn btn-outline-warning" role="button">
+            <i class="fa-solid fa-eye me-2"></i> Show</a>
+    </p>
+    <p><kbd id="primary-token" style="filter: blur(3px)">{{ user.authorization }}</kbd></p>
+    <p>
+
+        <a id="tokenRefreshBtn" class="btn btn-outline-danger" role="button">
             <i class="fa-solid fa-key me-2"></i> Regenerate Token</a>
     </p>
-    <p><kbd id="primary-token">{{ user.authorization }}</kbd></p>
 
     {% include 'settings/user-settings-modals.html' %}
     </section>
