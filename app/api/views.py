@@ -16,6 +16,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core import serializers
 from django.core.cache import cache
 from django.core.paginator import Paginator
+from django.core.signing import TimestampSigner
 from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
@@ -35,11 +36,15 @@ from oauth.models import CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
+from oauth.views import post_login
 from packaging import version
 from packaging.version import InvalidVersion
 from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
+
+
+signer = TimestampSigner()
 
 
 log = logging.getLogger("app")
@@ -711,6 +716,35 @@ def local_auth_for_native_client(request):
             return JsonResponse({"token": request.user.authorization})
 
     return HttpResponse(status=401)
+
+
+def verify_signature(signature, max_age=600):
+    original = signer.unsign(signature, max_age=max_age)
+    log.debug("original: %s", original)
+    data = json.loads(original)
+    log.debug("data: %s", data)
+    return data
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def auth_application(request):
+    """
+    View /auth/application/
+    """
+    try:
+        signature = request.POST.get("signature")
+        log.debug("signature: %s", signature)
+        data = verify_signature(signature)
+        log.debug("user_id: %s", data["user_id"])
+        user = CustomUser.objects.get(id=data["user_id"])
+        log.debug("username: %s", user.username)
+        login(request, user)
+        post_login(request)
+        return JsonResponse({"token": user.authorization})
+    except Exception as error:
+        log.debug("error: %s", error)
+        return JsonResponse({"error": str(error)}, status=400)
 
 
 @csrf_exempt

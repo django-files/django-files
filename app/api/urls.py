@@ -32,6 +32,7 @@ urlpatterns = [
     path("token/", views.token_view, name="token"),
     path("auth/methods/", views.auth_methods, name="auth-methods"),
     path("auth/token/", views.local_auth_for_native_client, name="auth-token"),
+    path("auth/application/", views.auth_application, name="auth-application"),
     path("session/<path:sessionid>", views.session_view, name="session"),
     path("oauth/", oauth_show, name="oauth-show"),
 ]

@@ -1,10 +1,15 @@
 // JS for settings/user.html
 
-// const themeToggle = document.getElementById('theme-toggle')
-// const newThemeValue = document.getElementById('new-theme-value')
+const qrCodeBtn = document.getElementById('show-qrcode')
+const showTokenBtn = document.getElementById('showTokenBtn')
+const primaryToken = document.getElementById('primary-token')
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)
-// themeToggle.addEventListener('click', toggleThemeSwitch)
+qrCodeBtn.addEventListener('click', showQrCode)
+showTokenBtn.addEventListener('click', toggleToken)
+document
+    .getElementById('tokenRefreshBtn')
+    .addEventListener('click', tokenRefresh)
 
 /**
  * DOMContentLoaded Callback
@@ -45,6 +50,16 @@ async function domContentLoaded() {
 //     document.documentElement.setAttribute('data-bs-theme', prefers)
 // }
 
+function toggleToken(event) {
+    event.preventDefault()
+    console.log('toggleToken:', event)
+    if (primaryToken.style.filter) {
+        primaryToken.style.filter = ''
+    } else {
+        primaryToken.style.filter = 'blur(3px)'
+    }
+}
+
 function tokenRefresh() {
     const csrfToken = document.querySelector(
         'input[name="csrfmiddlewaretoken"]'
@@ -55,8 +70,57 @@ function tokenRefresh() {
     })
         .then((response) => response.text())
         .then((token) => {
-            document.getElementById('primary-token').innerText = token // Update the HTML element
+            document.getElementById('primary-token').textContent = token
         })
         .then((data) => console.log('Success:', data))
         .catch((error) => console.log('Error:', error))
+}
+
+async function showQrCode(event) {
+    event.preventDefault()
+    console.log('showQrCode:', event)
+    //if (qrCodeBtn.dataset.hide === 'yes') {
+    //    console.log('REMOVE QR CODE')
+    //    document.getElementById('qr-code-image').remove()
+    //    return
+    //}
+    const div = document.getElementById('qrcode-div')
+    const link = document.getElementById('qrcode-link')
+    console.log('link:', link)
+    console.log('link.href:', link.href)
+    const img = document.createElement('img')
+    fetch('/settings/user/signature').then((response) =>
+        response.json().then((data) => {
+            console.log('data:', data)
+            link.href = data.url
+            console.log('link.href:', link.href)
+        })
+    )
+    img.src = link.dataset.qrcode
+    img.alt = 'QR Code'
+    img.id = 'qr-code-image'
+    img.classList.add('img-fluid')
+    link.appendChild(img)
+    bootstrap.Tooltip.getInstance(qrCodeBtn)?.dispose()
+    qrCodeBtn.remove()
+    div.classList.remove('d-none')
+    const span = div.querySelector('span')
+    const top = img.getBoundingClientRect().top + window.scrollY - 120
+    window.scrollTo({ top, behavior: 'smooth' })
+
+    let totalSeconds = 599
+    const timer = setInterval(() => {
+        const minutes = Math.floor(totalSeconds / 60)
+        const seconds = totalSeconds % 60
+        span.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+        if (totalSeconds === 0) {
+            span.classList.replace(
+                'text-success-emphasis',
+                'text-danger-emphasis'
+            )
+            clearInterval(timer)
+        } else {
+            totalSeconds--
+        }
+    }, 1000)
 }

@@ -1,13 +1,18 @@
+import json
 import logging
 import zoneinfo
 from datetime import datetime, timedelta
+from urllib.parse import urlencode, urlunparse
 
+import qrcode
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.sessions.backends.cache import SessionStore
 from django.core.cache import cache
-from django.http import HttpResponse, JsonResponse
+from django.core.signing import TimestampSigner
+from django.http import FileResponse, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render, reverse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
@@ -16,6 +21,8 @@ from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
 
+
+signer = TimestampSigner()
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
@@ -94,7 +101,6 @@ def user_view(request):
             "default_upload_name_formats": CustomUser.UploadNameFormats.choices,
             "user_avatar_choices": CustomUser.UserAvatarChoices.choices,
         }
-        log.debug("context: %s", context)
         return render(request, "settings/user.html", context)
 
     log.debug(request.POST)
@@ -243,7 +249,7 @@ def gen_sharex_url(request):
 @require_http_methods(["GET"])
 def gen_flameshot(request):
     """
-    View  /gen/flameshot/
+    View  /settings/flameshot/
     """
     context = {"site_url": request.build_absolute_uri(reverse("home:upload")), "token": request.user.authorization}
     log.debug("context: %s", context)
@@ -251,6 +257,30 @@ def gen_flameshot(request):
     response = HttpResponse(message)
     response["Content-Disposition"] = 'attachment; filename="flameshot.sh"'
     return response
+
+
+@login_required
+def signature_view(request):
+    """
+    View  /settings/user/signature
+    """
+    signature = get_signature(user_id=request.user.id)
+    url = get_signed_url(request)
+    return JsonResponse({"signature": signature, "url": url})
+
+
+@login_required
+def qr_view(request):
+    """
+    View  /settings/user/qr.png
+    """
+    url = get_signed_url(request)
+    img = qrcode.make(url)
+    # TODO: Add a valid MEDIA_ROOT variable since MEDIA_ROOT=/data/media/assets/files
+    path = f"{settings.MEDIA_ROOT}/qr/{request.user.id}.png"
+    log.debug("path: %s", path)
+    img.save(path)
+    return FileResponse(open(path, "rb"), content_type="image/png")
 
 
 def get_sessions(request, exclude_current=False):
@@ -281,3 +311,21 @@ def get_sessions(request, exclude_current=False):
     sessions.sort(key=lambda x: x["date"], reverse=True)
     log.debug("sessions: %s", sessions)
     return sessions
+
+
+def get_signed_url(request):
+    site_settings = SiteSettings.objects.settings()
+    signature = get_signature(user_id=request.user.id)
+    log.debug("signature: %s", signature)
+    data = {"url": site_settings.site_url, "signature": signature}
+    log.debug("data: %s", data)
+    base = ("djangofiles", "authorize", "/", "", urlencode(data), "")
+    url = urlunparse(base)
+    log.debug("url: %s", url)
+    return url
+
+
+def get_signature(**kwargs):
+    value = json.dumps(kwargs)
+    signature = signer.sign(value)
+    return signature

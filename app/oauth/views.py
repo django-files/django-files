@@ -62,7 +62,7 @@ def oauth_show(request):
         if response := pre_login(request, user, site_settings):
             return response
         login(request, user)
-        post_login(request, user)
+        post_login(request)
         messages.info(request, f"Successfully logged in as {user.username}.")
         return HttpResponse()
 
@@ -158,7 +158,7 @@ def oauth_callback(request, oauth_provider: str = ""):
         if response := pre_login(request, user, site_settings):
             return response
         login(request, user)
-        post_login(request, user)
+        post_login(request)
         messages.info(request, f"Successfully logged in via oauth. {user.username} {user.get_name()}.")
         log.debug("OAuth Login Success: %s", user)
         log.debug("user.authorization: %s", user.authorization)
@@ -187,9 +187,9 @@ def pre_login(request, user: Union[AbstractBaseUser, CustomUser], site_settings)
         return JsonResponse({"redirect": url})
 
 
-def post_login(request, user):
-    log.debug("post_login: user: %s", user)
-    log.debug("user.authorization: %s", user.authorization)
+def post_login(request):
+    log.debug("post_login: %s", request.user.username)
+    log.debug("user.authorization: %s", request.user.authorization)
     log.debug("request.session: %s", request.session)
     try:
         agent = request.META.get("HTTP_USER_AGENT", "")
