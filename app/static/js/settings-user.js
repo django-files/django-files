@@ -89,6 +89,7 @@ async function showQrCode(event) {
     img.alt = 'QR Code'
     img.classList.add('img-fluid')
     link.appendChild(img)
+    bootstrap.Tooltip.getInstance(qrCodeBtn)?.dispose()
     qrCodeBtn.remove()
     div.classList.remove('d-none')
     const span = div.querySelector('span')
