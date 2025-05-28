@@ -240,29 +240,34 @@
     <section id="clients">
         <h3>Clients</h3>
         <p>Django Files has the following native clients.
+
         <div class="d-flex flex-md-row flex-column justify-content-evenly pb-4">
-            <div class="p-2">
+            <div class="p-2 d-flex flex-column align-items-md-center">
                 <a href="https://apps.apple.com/us/app/django-files/id6742523003?itscg=30200&itsct=apps_box_badge&mttnsubad=6742523003" class="d-inline-block">
-                <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1743638400" alt="Download on the App Store" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain;" />
-                </a>
+                    <img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1743638400" alt="Download on the App Store" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain;" /></a>
+                <a href="https://apps.apple.com/us/app/django-files/id6742523003?itscg=30200&itsct=apps_box_badge&mttnsubad=6742523003" class="d-inline-block mt-2 ms-4 ms-md-0">
+                    <img src="{% static 'images/assets/qr-code-apple.svg' %}" alt="Download on the App Store"  /></a>
             </div>
-            <div class="p-2">
+            <div class="p-2 d-flex flex-column align-items-md-center">
                 <a href="https://github.com/django-files/android-client/releases/latest/download/django-files.apk" class="d-inline-block">
                     <img src="{% static 'images/assets/apk_android_dl.svg' %}" alt="Download for Android via APK" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain;" /></a>
+                <a href="https://github.com/django-files/android-client/releases/latest/download/django-files.apk" class="d-inline-block mt-2 ms-4 ms-md-0">
+                    <img src="{% static 'images/assets/qr-code-android.svg' %}" alt="Download on the App Store"  /></a>
             </div>
         </div>
+
         <div class="d-flex flex-md-row flex-column pb-4 justify-content-md-center justify-content-start">
-        <div>
-            <a id="show-qrcode" class="btn btn-primary align-self-start" role="button">
-                <i class="fa-solid fa-qrcode me-2"></i>
-                View QR Authentication Code
-                <i class="fa-solid fa-camera ms-2"></i>
-            </a>
-            <div id="qrcode-div" class="d-none">
-                <p class="text-center">Valid for <span class="text-success-emphasis">10:00</span> minutes.</p>
-                <a id="qrcode-link" href="{{ auth_url }}" data-qrcode="{% url 'settings:qrcode' %}"></a>
+            <div>
+                <a id="show-qrcode" class="btn btn-primary align-self-start" role="button">
+                    <i class="fa-solid fa-qrcode me-2"></i>
+                    View QR Authentication Code
+                    <i class="fa-solid fa-camera ms-2"></i>
+                </a>
+                <div id="qrcode-div" class="d-none">
+                    <p class="text-center">Valid for <span class="text-success-emphasis">10:00</span> minutes.</p>
+                    <a id="qrcode-link" href="{% url 'settings:qrcode' %}" data-qrcode="{% url 'settings:qrcode' %}"></a>
+                </div>
             </div>
-        </div>
         </div>
     </section>
     <section id="upload">
@@ -395,7 +400,7 @@
     <p>Treat this token like a password.</p>
     <p><a class="btn btn-lg btn-outline-light clip" role="button" data-clipboard-text="{{ user.authorization }}">
         <i class="fa-solid fa-key me-2"></i> Copy Token</a>
-        <a class="btn btn-lg btn-outline-danger" role="button" onclick="tokenRefresh()">
+        <a id="tokenRefreshBtn" class="btn btn-lg btn-outline-danger" role="button">
             <i class="fa-solid fa-key me-2"></i> Regenerate Token</a>
     </p>
     <p><kbd id="primary-token">{{ user.authorization }}</kbd></p>

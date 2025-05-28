@@ -1,10 +1,12 @@
 // JS for settings/user.html
 
-// const themeToggle = document.getElementById('theme-toggle')
-// const newThemeValue = document.getElementById('new-theme-value')
+const qrCodeBtn = document.getElementById('show-qrcode')
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)
-// themeToggle.addEventListener('click', toggleThemeSwitch)
+qrCodeBtn.addEventListener('click', showQrCode)
+document
+    .getElementById('tokenRefreshBtn')
+    .addEventListener('click', tokenRefresh)
 
 /**
  * DOMContentLoaded Callback
@@ -55,14 +57,11 @@ function tokenRefresh() {
     })
         .then((response) => response.text())
         .then((token) => {
-            document.getElementById('primary-token').innerText = token // Update the HTML element
+            document.getElementById('primary-token').textContent = token
         })
         .then((data) => console.log('Success:', data))
         .catch((error) => console.log('Error:', error))
 }
-
-const qrCodeBtn = document.getElementById('show-qrcode')
-qrCodeBtn.addEventListener('click', showQrCode)
 
 async function showQrCode(event) {
     event.preventDefault()
@@ -72,6 +71,13 @@ async function showQrCode(event) {
     console.log('link:', link)
     console.log('link.href:', link.href)
     const img = document.createElement('img')
+    fetch('/settings/user/signature').then((response) =>
+        response.json().then((data) => {
+            console.log('data:', data)
+            link.href = data.url
+            console.log('link.href:', link.href)
+        })
+    )
     img.src = link.dataset.qrcode
     img.alt = 'QR Code'
     img.classList.add('img-fluid')
