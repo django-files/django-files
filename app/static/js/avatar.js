@@ -15,7 +15,6 @@ console.debug('LOADING: avatar.js')
 console.debug('uploadUrl:', uploadUrl)
 
 const uppy = new Uppy({
-    debug: true,
     autoProceed: false,
     restrictions: {
         allowedFileTypes: ['.jpeg', '.jpg', '.png', '.gif'],

@@ -93,6 +93,10 @@ gulp.task('swagger-ui', () => {
         .pipe(gulp.dest('app/static/dist/swagger-ui'))
 })
 
+gulp.task('swagger-yaml', () => {
+    return gulp.src(['swagger.yaml']).pipe(gulp.dest('app/static/dist/'))
+})
+
 gulp.task('tsparticles', () => {
     return gulp
         .src(['node_modules/tsparticles/tsparticles.bundle.min.js'])
@@ -106,8 +110,10 @@ gulp.task('uppy', () => {
     ]).pipe(gulp.dest('app/static/dist/uppy'))
 })
 
-gulp.task('swagger-yaml', () => {
-    return gulp.src(['swagger.yaml']).pipe(gulp.dest('app/static/dist/'))
+gulp.task('ua-parser-js', () => {
+    return gulp
+        .src(['node_modules/ua-parser-js/dist/ua-parser.min.js'])
+        .pipe(gulp.dest('app/static/dist/ua-parser-js'))
 })
 
 gulp.task(
@@ -125,6 +131,7 @@ gulp.task(
         'swagger-ui',
         'swagger-yaml',
         'tsparticles',
+        'ua-parser-js',
         'uppy'
     )
 )
