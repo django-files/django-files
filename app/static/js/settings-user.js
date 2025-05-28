@@ -67,11 +67,12 @@ async function showQrCode(event) {
             console.log('link.href:', link.href)
             const qrCode = genQrCode(link.href)
             qrCode.append(link)
-            bootstrap.Tooltip.getInstance(qrCodeBtn)?.dispose()
-            qrCodeBtn.remove()
+            link.querySelector('svg').classList.add('img-fluid')
+            // bootstrap.Tooltip.getInstance(qrCodeBtn)?.dispose()
+            // qrCodeBtn.remove()
             div.classList.remove('d-none')
             const span = div.querySelector('span')
-            const top = div.getBoundingClientRect().top + window.scrollY - 80
+            const top = div.getBoundingClientRect().top + window.scrollY - 100
             window.scrollTo({ top, behavior: 'smooth' })
             let totalSeconds = 599
             const timer = setInterval(() => {
@@ -100,15 +101,26 @@ function genQrCode(data) {
         data: data,
         image: 'https://intranet.cssnr.com/static/images/logo.png',
         dotsOptions: {
-            color: '#4267b2',
+            color: '#565aa9',
             type: 'rounded',
         },
         backgroundOptions: {
-            color: '#e9ebee',
+            color: isDark() ? '#181a1b' : '#e9ebee',
         },
         imageOptions: {
             crossOrigin: 'anonymous',
             margin: 20,
         },
     })
+}
+
+function isDark() {
+    let theme = localStorage.getItem('theme')
+    if (theme !== 'dark' || theme !== 'light') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+    }
+    console.log('theme:', theme)
+    return theme === 'dark'
 }
