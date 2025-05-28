@@ -245,20 +245,20 @@
         <p>Django Files has the following native clients.
 
         <div class="d-flex flex-sm-row flex-column justify-content-evenly align-items-start pb-4">
-            <div class="p-2 d-flex flex-column align-items-sm-center">
+            <div class="d-flex flex-column align-items-sm-center">
                 <a href="https://apps.apple.com/us/app/django-files/id6742523003?itscg=30200&itsct=apps_box_badge&mttnsubad=6742523003">
-                    <img src="{% static 'images/assets/qr-code-apple.svg' %}" alt="Download on the App Store"  /></a>
+                    <img class="img-fluid" src="{% static 'images/assets/qr-code-apple.svg' %}" alt="Download on the App Store"  /></a>
             </div>
-            <div class="p-2 d-flex flex-column align-items-sm-center">
+            <div class="d-flex flex-column align-items-sm-center mt-4 mt-sm-0">
                 <a href="https://github.com/django-files/android-client/releases/latest/download/django-files.apk">
-                    <img src="{% static 'images/assets/qr-code-android.svg' %}" alt="Download on the App Store"  /></a>
+                    <img class="img-fluid" src="{% static 'images/assets/qr-code-android.svg' %}" alt="Download on the App Store"  /></a>
             </div>
         </div>
 
         <div class="d-flex flex-sm-row flex-column pb-4 justify-content-sm-center justify-content-start">
             <div>
                 <a id="show-qrcode" class="btn btn-outline-warning align-self-start" role="button"
-                   data-bs-toggle="tooltip" data-bs-title="Sensitive Authentication Information.">
+                   data-bs-toggle="tooltip" data-bs-title="Sensitive Info">
                     <i class="fa-solid fa-qrcode me-2"></i>
                     View QR Authentication Code
                     <i class="fa-solid fa-camera ms-2"></i>
@@ -399,9 +399,11 @@
 
     <p>Treat this token like a password.</p>
     <p>
-        <a class="btn btn-outline-light clip" role="button" data-clipboard-target="#primary-token">
+        <a class="btn btn-outline-light clip" role="button" data-clipboard-target="#primary-token"
+           data-bs-toggle="tooltip" data-bs-title="Sensitive Info">
             <i class="fa-solid fa-key me-2"></i> Copy</a>
-        <a id="showTokenBtn" class="btn btn-outline-warning" role="button">
+        <a id="showTokenBtn" class="btn btn-outline-warning" role="button"
+           data-bs-toggle="tooltip" data-bs-title="Sensitive Info">
             <i class="fa-solid fa-eye me-2"></i> Show</a>
     </p>
     <p><kbd id="primary-token" style="filter: blur(3px)">{{ user.authorization }}</kbd></p>
