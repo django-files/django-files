@@ -734,7 +734,15 @@ def auth_application(request):
     """
     try:
         signature = request.POST.get("signature")
-        log.debug("signature: %s", signature)
+        log.debug("signature 1: %s", signature)
+        if not signature:
+            body = get_json_body(request)
+            log.debug("body: %s", body)
+            signature = body.get("signature")
+            log.debug("signature 2: %s", signature)
+        if not signature:
+            raise ValueError("No signature provided.")
+        log.debug("signature 3: %s", signature)
         data = verify_signature(signature)
         log.debug("user_id: %s", data["user_id"])
         user = CustomUser.objects.get(id=data["user_id"])
