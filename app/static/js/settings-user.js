@@ -1,15 +1,27 @@
 // JS for settings/user.html
 
-const qrCodeBtn = document.getElementById('show-qrcode')
+const showCodeBtn = document.getElementById('showCodeBtn')
+const hideCodeBtn = document.getElementById('hideCodeBtn')
+const cameraIcon = document.getElementById('cameraIcon')
 const showTokenBtn = document.getElementById('showTokenBtn')
+const codeDiv = document.getElementById('qrcode-div')
+const codeLink = document.getElementById('qrcode-link')
 const primaryToken = document.getElementById('primary-token')
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)
-qrCodeBtn.addEventListener('click', showQrCode)
+showCodeBtn.addEventListener('click', showQrCode)
+hideCodeBtn.addEventListener('click', hideQrCode)
 showTokenBtn.addEventListener('click', toggleToken)
 document
     .getElementById('tokenRefreshBtn')
     .addEventListener('click', tokenRefresh)
+
+showCodeBtn.addEventListener('mouseover', () =>
+    cameraIcon.classList.add('fa-beat')
+)
+showCodeBtn.addEventListener('mouseout', () =>
+    cameraIcon.classList.remove('fa-beat')
+)
 
 /**
  * DOMContentLoaded Callback
@@ -46,34 +58,41 @@ function tokenRefresh() {
         .catch((error) => console.log('Error:', error))
 }
 
+let codeTimer
+
+async function hideQrCode(event) {
+    event.preventDefault()
+    console.log('hideQrCode:', event)
+    codeLink.innerHTML = ''
+    clearInterval(codeTimer)
+    hideCodeBtn.classList.add('d-none')
+    showCodeBtn.classList.remove('d-none')
+    codeDiv.classList.add('d-none')
+    const span = codeDiv.querySelector('span')
+    span.textContent = '10:00'
+}
+
 async function showQrCode(event) {
     event.preventDefault()
     console.log('showQrCode:', event)
-    //if (qrCodeBtn.dataset.hide === 'yes') {
-    //    console.log('REMOVE QR CODE')
-    //    document.getElementById('qr-code-image').remove()
-    //    return
-    //}
-    const div = document.getElementById('qrcode-div')
-    const link = document.getElementById('qrcode-link')
-    console.log('link:', link)
-    console.log('link.href:', link.href)
+    cameraIcon.classList.replace('fa-beat', 'fa-flip')
+    console.log('link:', codeLink)
+    console.log('codeLink.href:', codeLink.href)
     fetch('/settings/user/signature').then((response) =>
         response.json().then((data) => {
             console.log('data:', data)
-            link.href = data.url
-            console.log('link.href:', link.href)
-            const qrCode = genQrCode(link.href)
-            qrCode.append(link)
-            link.querySelector('svg').classList.add('img-fluid')
-            bootstrap.Tooltip.getInstance(qrCodeBtn)?.dispose()
-            qrCodeBtn.remove() // TODO: Add Proper Toggle Button...
-            div.classList.remove('d-none')
-            const span = div.querySelector('span')
-            const top = div.getBoundingClientRect().top + window.scrollY - 100
+            codeLink.href = data.url
+            console.log('codeLink.href:', codeLink.href)
+            const qrCode = genQrCode(codeLink.href)
+            qrCode.append(codeLink)
+            codeLink.querySelector('svg').classList.add('img-fluid')
+            codeDiv.classList.remove('d-none')
+            const span = codeDiv.querySelector('span')
+            const top =
+                codeDiv.getBoundingClientRect().top + window.scrollY - 100
             window.scrollTo({ top, behavior: 'smooth' })
             let totalSeconds = 599
-            const timer = setInterval(() => {
+            codeTimer = setInterval(() => {
                 const minutes = Math.floor(totalSeconds / 60)
                 const seconds = totalSeconds % 60
                 span.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
@@ -82,11 +101,16 @@ async function showQrCode(event) {
                         'text-success-emphasis',
                         'text-danger-emphasis'
                     )
-                    clearInterval(timer)
+                    clearInterval(codeTimer)
                 } else {
                     totalSeconds--
                 }
             }, 1000)
+
+            cameraIcon.classList.remove('fa-beat', 'fa-flip')
+            bootstrap.Tooltip.getInstance(showCodeBtn)?.hide()
+            showCodeBtn.classList.add('d-none')
+            hideCodeBtn.classList.remove('d-none')
         })
     )
 }

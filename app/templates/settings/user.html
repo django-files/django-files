@@ -257,10 +257,13 @@
 
         <div class="d-flex flex-sm-row flex-column pb-4 justify-content-sm-center justify-content-start">
             <div class="text-center">
-                <a id="show-qrcode" class="btn btn-outline-warning align-self-start" role="button"
+                <a id="showCodeBtn" class="btn btn-outline-warning align-self-start" role="button"
                    data-bs-toggle="tooltip" data-bs-title="Sensitive Info">
-                    View QR Authentication Code <i class="fa-solid fa-camera ms-2"></i>
-                </a>
+                    View QR Authentication Code
+                    <i id="cameraIcon" class="fa-solid fa-camera ms-2"></i></a>
+                <a id="hideCodeBtn" class="btn btn-success align-self-start d-none" role="button">
+                    Hide QR Authentication Code
+                    <i class="fa-solid fa-eye ms-2"></i></a>
                 <div id="qrcode-div" class="d-none">
                     <p class="text-center">Valid for <span class="text-success-emphasis">10:00</span> minutes.</p>
                     <a id="qrcode-link" href="{% url 'settings:qrcode' %}" data-qrcode="{% url 'settings:qrcode' %}"></a>
