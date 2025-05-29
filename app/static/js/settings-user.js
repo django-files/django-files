@@ -66,8 +66,8 @@ async function showQrCode(event) {
             const qrCode = genQrCode(link.href)
             qrCode.append(link)
             link.querySelector('svg').classList.add('img-fluid')
-            // bootstrap.Tooltip.getInstance(qrCodeBtn)?.dispose()
-            // qrCodeBtn.remove()
+            bootstrap.Tooltip.getInstance(qrCodeBtn)?.dispose()
+            qrCodeBtn.remove() // TODO: Add Proper Toggle Button...
             div.classList.remove('d-none')
             const span = div.querySelector('span')
             const top = div.getBoundingClientRect().top + window.scrollY - 100
