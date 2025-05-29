@@ -84,7 +84,7 @@ function domContentLoaded() {
     const parser = new UAParser()
     const ua = parser.getResult()
     console.log('ua:', ua)
-    if (ua.device?.type === 'mobile') {
+    if (ua.device?.type === 'mobile' || ua.device?.type === 'tablet') {
         console.log(`%cMobile Client Detected`, 'color: Lime')
         const navItem = document.getElementById('mobileAuthNav')
         navItem.classList.remove('d-none')
