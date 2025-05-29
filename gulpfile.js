@@ -83,6 +83,12 @@ gulp.task('moment', () => {
         .pipe(gulp.dest('app/static/dist/moment'))
 })
 
+gulp.task('qr-code-styling', () => {
+    return download([
+        'https://cdn.jsdelivr.net/npm/qr-code-styling@1.9.2/lib/qr-code-styling.min.js',
+    ]).pipe(gulp.dest('app/static/dist/qr-code-styling'))
+})
+
 gulp.task('swagger-ui', () => {
     return gulp
         .src([
@@ -126,8 +132,9 @@ gulp.task(
         'fontawesome',
         'js-cookie',
         'jquery',
-        'moment',
         'jquery-ui',
+        'moment',
+        'qr-code-styling',
         'swagger-ui',
         'swagger-yaml',
         'tsparticles',

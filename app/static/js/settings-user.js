@@ -1,7 +1,5 @@
 // JS for settings/user.html
 
-// import QRCodeStyling from '../dist/qr-code-styling/qr-code-styling.js'
-
 const qrCodeBtn = document.getElementById('show-qrcode')
 const showTokenBtn = document.getElementById('showTokenBtn')
 const primaryToken = document.getElementById('primary-token')
@@ -100,16 +98,25 @@ function genQrCode(data) {
         type: 'svg',
         data: data,
         image: 'https://intranet.cssnr.com/static/images/logo.png',
+        margin: 0,
         dotsOptions: {
             color: '#565aa9',
-            type: 'rounded',
+            type: 'extra-rounded',
+        },
+        cornersDotOptions: {
+            color: '#ffffff',
+            type: 'extra-rounded',
+        },
+        cornersSquareOptions: {
+            color: '#565aa9',
+            type: 'extra-rounded',
         },
         backgroundOptions: {
             color: isDark() ? '#181a1b' : '#e9ebee',
         },
         imageOptions: {
             crossOrigin: 'anonymous',
-            margin: 20,
+            margin: 4,
         },
     })
 }
