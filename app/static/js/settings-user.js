@@ -97,7 +97,7 @@ function genQrCode(data) {
         height: 300,
         type: 'svg',
         data: data,
-        image: 'https://intranet.cssnr.com/static/images/logo.png',
+        image: '/static/images/logo.png',
         margin: 0,
         dotsOptions: {
             color: '#565aa9',
