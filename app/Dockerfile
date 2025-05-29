@@ -1,3 +1,12 @@
+FROM node:20-bookworm-slim AS node
+
+ENV TZ=UTC
+ENV NODE_ENV=production
+WORKDIR /work
+COPY ["package.json", "package-lock.json", "gulpfile.js", "swagger.yaml", "/work/"]
+RUN npm install
+
+
 FROM python:3.12-alpine AS python
 
 ENV TZ=UTC
@@ -17,6 +26,7 @@ FROM python:3.12-alpine
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE=1
 
+COPY --from=node /work/app/static/dist/ /app/static/dist/
 COPY --from=python /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
 COPY --from=python /usr/local/bin/ /usr/local/bin/
 
