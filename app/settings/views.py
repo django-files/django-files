@@ -2,7 +2,7 @@ import json
 import logging
 import zoneinfo
 from datetime import datetime, timedelta
-from urllib.parse import urlencode, urlunparse
+from urllib.parse import quote
 
 import qrcode
 from django.conf import settings
@@ -319,9 +319,11 @@ def get_signed_url(request):
     log.debug("signature: %s", signature)
     data = {"url": site_settings.site_url, "signature": signature}
     log.debug("data: %s", data)
-    base = ("djangofiles", "authorize", "/", "", urlencode(data), "")
-    url = urlunparse(base)
-    log.debug("url: %s", url)
+    scheme = "djangofiles"
+    host = "authorize"
+    path = "/"
+    query = "&".join(f"{quote(k)}={quote(v)}" for k, v in data.items())
+    url = f"{scheme}://{host}{quote(path)}?{query}"
     return url
 
 
