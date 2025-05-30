@@ -100,6 +100,10 @@
                         Servers</a>
                 </li>
             {% endif %}
+            <li id="mobileAuthNav" class="nav-item d-none">
+                <a class="nav-link" href="">
+                    <i class="fa-solid fa-mobile-screen me-2 d-md-none"></i> Mobile Auth</a>
+            </li>
         </ul> <!-- navbar-nav flex-grow-1 -->
         {% else %}<ul class="navbar-nav flex-grow-1"></ul>{% endif %}
 
@@ -297,6 +301,7 @@
     <script type="text/javascript" src="{% static 'dist/jquery/jquery.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/bootstrap/bootstrap.bundle.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/clipboard/clipboard.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/ua-parser-js/ua-parser.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
     {% if request.user.is_authenticated %}
         <script type="module" src="{% static 'js/socket.js' %}"></script>

@@ -83,6 +83,12 @@ gulp.task('moment', () => {
         .pipe(gulp.dest('app/static/dist/moment'))
 })
 
+gulp.task('qr-code-styling', () => {
+    return download([
+        'https://cdn.jsdelivr.net/npm/qr-code-styling@1.9.2/lib/qr-code-styling.min.js',
+    ]).pipe(gulp.dest('app/static/dist/qr-code-styling'))
+})
+
 gulp.task('swagger-ui', () => {
     return gulp
         .src([
@@ -91,6 +97,10 @@ gulp.task('swagger-ui', () => {
             'node_modules/swagger-ui/dist/swagger-ui-standalone-preset.js',
         ])
         .pipe(gulp.dest('app/static/dist/swagger-ui'))
+})
+
+gulp.task('swagger-yaml', () => {
+    return gulp.src(['swagger.yaml']).pipe(gulp.dest('app/static/dist/'))
 })
 
 gulp.task('tsparticles', () => {
@@ -106,8 +116,10 @@ gulp.task('uppy', () => {
     ]).pipe(gulp.dest('app/static/dist/uppy'))
 })
 
-gulp.task('swagger-yaml', () => {
-    return gulp.src(['swagger.yaml']).pipe(gulp.dest('app/static/dist/'))
+gulp.task('ua-parser-js', () => {
+    return gulp
+        .src(['node_modules/ua-parser-js/dist/ua-parser.min.js'])
+        .pipe(gulp.dest('app/static/dist/ua-parser-js'))
 })
 
 gulp.task(
@@ -120,11 +132,13 @@ gulp.task(
         'fontawesome',
         'js-cookie',
         'jquery',
-        'moment',
         'jquery-ui',
+        'moment',
+        'qr-code-styling',
         'swagger-ui',
         'swagger-yaml',
         'tsparticles',
+        'ua-parser-js',
         'uppy'
     )
 )

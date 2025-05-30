@@ -1,15 +1,27 @@
 // JS for settings/user.html
 
-const qrCodeBtn = document.getElementById('show-qrcode')
+const showCodeBtn = document.getElementById('showCodeBtn')
+const hideCodeBtn = document.getElementById('hideCodeBtn')
+const cameraIcon = document.getElementById('cameraIcon')
 const showTokenBtn = document.getElementById('showTokenBtn')
+const codeDiv = document.getElementById('qrcode-div')
+const codeLink = document.getElementById('qrcode-link')
 const primaryToken = document.getElementById('primary-token')
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)
-qrCodeBtn.addEventListener('click', showQrCode)
+showCodeBtn.addEventListener('click', showQrCode)
+hideCodeBtn.addEventListener('click', hideQrCode)
 showTokenBtn.addEventListener('click', toggleToken)
 document
     .getElementById('tokenRefreshBtn')
     .addEventListener('click', tokenRefresh)
+
+showCodeBtn.addEventListener('mouseover', () =>
+    cameraIcon.classList.add('fa-beat')
+)
+showCodeBtn.addEventListener('mouseout', () =>
+    cameraIcon.classList.remove('fa-beat')
+)
 
 /**
  * DOMContentLoaded Callback
@@ -17,38 +29,8 @@ document
  */
 async function domContentLoaded() {
     console.debug('DOMContentLoaded: settings-user.js')
-    // const storedTheme = localStorage.getItem('theme')
-    // console.debug('storedTheme:', storedTheme)
-    // if (storedTheme && storedTheme !== 'auto') {
-    //     themeToggle.checked = true
-    // }
-    // const prefers = window.matchMedia('(prefers-color-scheme: dark)').matches
-    //     ? 'Light'
-    //     : 'Dark'
-    // console.log('prefers:', prefers)
-    // newThemeValue.textContent = prefers
+    //qrCode.download({ name: 'qr', extension: 'svg' })
 }
-
-// function toggleThemeSwitch() {
-//     const query = window.matchMedia('prefers-color-scheme: dark')
-//     console.info('data-bs-theme-value', query)
-//
-//     const storedTheme = localStorage.getItem('theme')
-//     console.info('storedTheme:', storedTheme)
-//     let prefers
-//     if (storedTheme) {
-//         prefers = storedTheme === 'light' ? 'dark' : 'light'
-//         console.debug('reverting to auto theme')
-//         localStorage.removeItem('theme')
-//     } else {
-//         prefers = window.matchMedia('(prefers-color-scheme: dark)').matches
-//             ? 'light'
-//             : 'dark'
-//         console.log('forcing opposite theme:', prefers)
-//         localStorage.setItem('theme', prefers)
-//     }
-//     document.documentElement.setAttribute('data-bs-theme', prefers)
-// }
 
 function toggleToken(event) {
     event.preventDefault()
@@ -76,51 +58,100 @@ function tokenRefresh() {
         .catch((error) => console.log('Error:', error))
 }
 
+let codeTimer
+
+async function hideQrCode(event) {
+    event.preventDefault()
+    console.log('hideQrCode:', event)
+    codeLink.innerHTML = ''
+    clearInterval(codeTimer)
+    hideCodeBtn.classList.add('d-none')
+    showCodeBtn.classList.remove('d-none')
+    codeDiv.classList.add('d-none')
+    const span = codeDiv.querySelector('span')
+    span.textContent = '10:00'
+}
+
 async function showQrCode(event) {
     event.preventDefault()
     console.log('showQrCode:', event)
-    //if (qrCodeBtn.dataset.hide === 'yes') {
-    //    console.log('REMOVE QR CODE')
-    //    document.getElementById('qr-code-image').remove()
-    //    return
-    //}
-    const div = document.getElementById('qrcode-div')
-    const link = document.getElementById('qrcode-link')
-    console.log('link:', link)
-    console.log('link.href:', link.href)
-    const img = document.createElement('img')
+    cameraIcon.classList.replace('fa-beat', 'fa-flip')
+    console.log('link:', codeLink)
+    console.log('codeLink.href:', codeLink.href)
     fetch('/settings/user/signature').then((response) =>
         response.json().then((data) => {
             console.log('data:', data)
-            link.href = data.url
-            console.log('link.href:', link.href)
+            codeLink.href = data.url
+            console.log('codeLink.href:', codeLink.href)
+            const qrCode = genQrCode(codeLink.href)
+            qrCode.append(codeLink)
+            codeLink.querySelector('svg').classList.add('img-fluid')
+            codeDiv.classList.remove('d-none')
+            const span = codeDiv.querySelector('span')
+            const top =
+                codeDiv.getBoundingClientRect().top + window.scrollY - 100
+            window.scrollTo({ top, behavior: 'smooth' })
+            let totalSeconds = 599
+            codeTimer = setInterval(() => {
+                const minutes = Math.floor(totalSeconds / 60)
+                const seconds = totalSeconds % 60
+                span.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+                if (totalSeconds === 0) {
+                    span.classList.replace(
+                        'text-success-emphasis',
+                        'text-danger-emphasis'
+                    )
+                    clearInterval(codeTimer)
+                } else {
+                    totalSeconds--
+                }
+            }, 1000)
+
+            cameraIcon.classList.remove('fa-beat', 'fa-flip')
+            bootstrap.Tooltip.getInstance(showCodeBtn)?.hide()
+            showCodeBtn.classList.add('d-none')
+            hideCodeBtn.classList.remove('d-none')
         })
     )
-    img.src = link.dataset.qrcode
-    img.alt = 'QR Code'
-    img.id = 'qr-code-image'
-    img.classList.add('img-fluid')
-    link.appendChild(img)
-    bootstrap.Tooltip.getInstance(qrCodeBtn)?.dispose()
-    qrCodeBtn.remove()
-    div.classList.remove('d-none')
-    const span = div.querySelector('span')
-    const top = img.getBoundingClientRect().top + window.scrollY - 120
-    window.scrollTo({ top, behavior: 'smooth' })
+}
 
-    let totalSeconds = 599
-    const timer = setInterval(() => {
-        const minutes = Math.floor(totalSeconds / 60)
-        const seconds = totalSeconds % 60
-        span.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-        if (totalSeconds === 0) {
-            span.classList.replace(
-                'text-success-emphasis',
-                'text-danger-emphasis'
-            )
-            clearInterval(timer)
-        } else {
-            totalSeconds--
-        }
-    }, 1000)
+function genQrCode(data) {
+    return new QRCodeStyling({
+        width: 300,
+        height: 300,
+        type: 'svg',
+        data: data,
+        image: '/static/images/logo.png',
+        margin: 0,
+        dotsOptions: {
+            color: '#565aa9',
+            type: 'extra-rounded',
+        },
+        cornersDotOptions: {
+            color: '#ffffff',
+            type: 'extra-rounded',
+        },
+        cornersSquareOptions: {
+            color: '#565aa9',
+            type: 'extra-rounded',
+        },
+        backgroundOptions: {
+            color: isDark() ? '#181a1b' : '#e9ebee',
+        },
+        imageOptions: {
+            crossOrigin: 'anonymous',
+            margin: 4,
+        },
+    })
+}
+
+function isDark() {
+    let theme = localStorage.getItem('theme')
+    if (theme !== 'dark' || theme !== 'light') {
+        theme = window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+    }
+    console.log('theme:', theme)
+    return theme === 'dark'
 }
