@@ -85,7 +85,7 @@ function domContentLoaded() {
     const ua = parser.getResult()
     console.log('ua:', ua)
     if (
-        !ua.ua.includes('Django Files') &&
+        !ua.ua.includes('DjangoFiles') &&
         ['mobile', 'tablet'].includes(ua.device?.type)
     ) {
         console.log(`%cMobile Client Detected`, 'color: Lime')
