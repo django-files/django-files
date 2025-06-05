@@ -931,7 +931,7 @@ def shorts_view(request):
 
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
-        shorts = query[start : start + amount]
+        shorts = query[start:start + amount]
 
         # TODO: Determine why this data only gets modified at this stage
         site_settings = site_settings_processor(None)["site_settings"]
@@ -943,5 +943,105 @@ def shorts_view(request):
         return JsonResponse(shorts_data, safe=False)
 
     except ValueError as error:
+        log.debug(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["OPTIONS", "GET"])
+@auth_from_token
+@cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix="users")
+@vary_on_headers("Authorization")
+@vary_on_cookie
+def users_view(request):
+    """
+    View  /api/users/
+    """
+    log.debug("request.user: %s", request.user)
+    log.debug("%s - users_view: is_secure: %s", request.method, request.is_secure())
+
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Superuser required"}, status=403)
+    try:
+        query = CustomUser.objects.all()
+        after = int(request.GET.get("after", 0))
+        log.debug("after: %s", after)
+        if after:
+            users = query.filter(id__gt=after)
+            users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
+            return JsonResponse(users_data, safe=False)
+
+        amount = int(request.GET.get("amount", 20))
+        log.debug("amount: %s", amount)
+
+        before = int(request.GET.get("before", 0))
+        log.debug("before: %s", before)
+        if before:
+            users = query.filter(id__lt=before)[:amount]
+            users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
+            return JsonResponse(users_data, safe=False)
+
+        start = int(request.GET.get("start", 0))
+        log.debug("start: %s", start)
+        users = query[start:start + amount]
+        users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
+        return JsonResponse(users_data, safe=False)
+    except ValueError as error:
+        log.debug(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["OPTIONS", "GET", "PATCH"])
+@auth_from_token
+@cache_control(no_cache=True)
+@vary_on_headers("Authorization")
+@vary_on_cookie
+def user_view(request, user_id=None):
+    """
+    View  /api/user/ | /api/user/{user_id}/
+    """
+    log.debug("request.user: %s", request.user)
+    log.debug("%s - user_view: user_id: %s", request.method, user_id)
+
+    try:
+        # Determine target user
+        if user_id is None:
+            target_user = request.user
+        else:
+            # Check if requesting own user info or if superuser
+            if int(user_id) != request.user.id and not request.user.is_superuser:
+                return JsonResponse({"error": "Access Denied"}, status=403)
+            target_user = get_object_or_404(CustomUser, id=user_id)
+
+        if request.method == "PATCH":
+            data = get_json_body(request)
+            log.debug("update data: %s", data)
+            if not data:
+                return JsonResponse({"error": json_error_message}, status=400)
+
+            if not request.user.is_superuser:
+                sensitive_fields = ["authorization", "is_superuser", "is_staff"]
+                for field in sensitive_fields:
+                    data.pop(field, None)
+
+            for key, value in data.items():
+                if hasattr(target_user, key):
+                    setattr(target_user, key, value)
+                else:
+                    log.warning("Attempted to update non-existent field: %s", key)
+
+            target_user.save()
+            log.debug("User updated successfully")
+
+        user_data = model_to_dict(target_user, exclude=["password", "authorization"])
+        log.debug("user_data: %s", user_data)
+        return JsonResponse(user_data, safe=False)
+    
+    except ValueError as error:
+        log.debug(error)
+        return JsonResponse({"error": "Invalid user ID"}, status=400)
+    except Exception as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
