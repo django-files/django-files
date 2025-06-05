@@ -952,8 +952,6 @@ def shorts_view(request):
 @auth_from_token
 @cache_control(no_cache=True)
 @cache_page(cache_seconds, key_prefix="users")
-@vary_on_headers("Authorization")
-@vary_on_cookie
 def users_view(request):
     """
     View  /api/users/
@@ -996,8 +994,6 @@ def users_view(request):
 @require_http_methods(["OPTIONS", "GET", "PATCH"])
 @auth_from_token
 @cache_control(no_cache=True)
-@vary_on_headers("Authorization")
-@vary_on_cookie
 def user_view(request, user_id=None):
     """
     View  /api/user/ | /api/user/{user_id}/
