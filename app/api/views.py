@@ -984,7 +984,7 @@ def users_view(request):
 
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
-        users = query[start:start + amount]
+        users = query[start : start + amount]
         users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
         return JsonResponse(users_data, safe=False)
     except ValueError as error:
@@ -1038,7 +1038,7 @@ def user_view(request, user_id=None):
         user_data = model_to_dict(target_user, exclude=["password", "authorization"])
         log.debug("user_data: %s", user_data)
         return JsonResponse(user_data, safe=False)
-    
+
     except ValueError as error:
         log.debug(error)
         return JsonResponse({"error": "Invalid user ID"}, status=400)
