@@ -190,9 +190,9 @@ class Discord(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, primary_key=True)
     id = models.CharField(max_length=128, unique=True)
     profile = models.JSONField(null=True, blank=True)
-    avatar = models.CharField(null=True, blank=True, max_length=64)
-    access_token = models.CharField(null=True, blank=True, max_length=64)
-    refresh_token = models.CharField(null=True, blank=True, max_length=64)
+    avatar = models.CharField(null=True, blank=True, max_length=255)
+    access_token = models.CharField(null=True, blank=True, max_length=255)
+    refresh_token = models.CharField(null=True, blank=True, max_length=255)
     expires_in = models.DateTimeField(null=True, blank=True)
 
     class Meta:
