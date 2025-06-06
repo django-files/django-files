@@ -35,6 +35,7 @@
     "moment": "^2.30.1",
     "qr-code-styling": "^1.9.2",
     "swagger-ui": "^5.21.0",
+    "swiper": "^11.2.8",
     "tsparticles": "3.0.3",
     "ua-parser-js": "^2.0.3"
   },

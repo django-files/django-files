@@ -103,6 +103,15 @@ gulp.task('swagger-yaml', () => {
     return gulp.src(['swagger.yaml']).pipe(gulp.dest('app/static/dist/'))
 })
 
+gulp.task('swiper', () => {
+    return gulp
+        .src([
+            'node_modules/swiper/swiper-bundle.min.js',
+            'node_modules/swiper/swiper-bundle.min.css',
+        ])
+        .pipe(gulp.dest('app/static/dist/swiper'))
+})
+
 gulp.task('tsparticles', () => {
     return gulp
         .src(['node_modules/tsparticles/tsparticles.bundle.min.js'])
@@ -137,6 +146,7 @@ gulp.task(
         'qr-code-styling',
         'swagger-ui',
         'swagger-yaml',
+        'swiper',
         'tsparticles',
         'ua-parser-js',
         'uppy'

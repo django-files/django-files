@@ -1,0 +1,40 @@
+{% load static %}
+{% load home_tags %}
+
+
+{% block head %}
+{#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.css" integrity="sha512-pmAAV1X4Nh5jA9m+jcvwJXFQvCBi3T17aZ1KWkqXr7g/O2YMvO8rfaa5ETWDuBvRq6fbDjlw4jHL44jNTScaKg==" crossorigin="anonymous" referrerpolicy="no-referrer" />#}
+    <link rel="stylesheet" href="{% static 'dist/swiper/swiper-bundle.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/slideshow.css' %}">
+{% endblock %}
+
+
+<div class="offcanvas offcanvas-bottom h-100" tabindex="-1" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasBottomLabel">
+            <a id="slideshow-fullscreen" role="button" class="link">Show Full Screen</a>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+
+    <div class="swiper-container images">
+        <div class="swiper-wrapper" id="swiper-images">
+            <!-- Swiper slides -->
+        </div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+        <div class="swiper-pagination"></div>
+    </div>
+    <div thumbsSlider="" class="swiper-container thumbs">
+        <div class="swiper-wrapper" id="swiper-thumbs">
+            <!-- Swiper slides -->
+        </div>
+    </div>
+</div>
+
+
+{% block tail %}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js" integrity="sha512-Ysw1DcK1P+uYLqprEAzNQJP+J4hTx4t/3X2nbVwszao8wD+9afLjBQYjz7Uk4ADP+Er++mJoScI42ueGtQOzEA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>#}
+    <script type="text/javascript" src="{% static 'dist/swiper/swiper-bundle.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/slideshow.js' %}"></script>
+{% endblock %}
