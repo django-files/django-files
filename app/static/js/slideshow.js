@@ -59,15 +59,6 @@ const swiperThumbs = document.getElementById('swiper-thumbs')
 //     },
 // })
 
-const fullScreen = document.getElementById('slideshow-fullscreen')
-fullScreen.addEventListener('click', (event) => {
-    event.preventDefault()
-    const myOffcanvas = document.getElementById('offcanvasBottom')
-    myOffcanvas.requestFullscreen().then(() => {
-        console.log(`%c requestFullscreen CALLBACK`, 'color: Red')
-    })
-})
-
 document.addEventListener('DOMContentLoaded', (event) => {
     console.log(`%c DOMContentLoaded: slideshow.js`, 'color: Lime')
     // console.log('albumsDataTable:', albumsDataTable)
@@ -126,11 +117,21 @@ function slideshowCallback(data) {
 }
 
 const myOffcanvas = document.getElementById('offcanvasBottom')
-myOffcanvas.addEventListener('hide.bs.offcanvas', (event) => {
-    console.log(`%c hide.bs.offcanvas`, 'color: Lime')
-    document.exitFullscreen()
-    // const el = document.getElementById('offcanvasBottom')
-    // el.requestFullscreen().then(() => {
-    //     console.log(`%c requestFullscreen CALLBACK`, 'color: Red')
-    // })
+myOffcanvas.addEventListener('hide.bs.offcanvas', () => {
+    if (document.fullscreenElement) {
+        console.log(`Close Button: %c EXIT`, 'color: Yellow')
+        document.exitFullscreen()
+    }
+})
+
+const fullScreen = document.getElementById('slideshow-fullscreen')
+fullScreen.addEventListener('click', (event) => {
+    event.preventDefault()
+    if (document.fullscreenElement) {
+        console.log(`Full Screen Button: %c EXIT`, 'color: Yellow')
+        document.exitFullscreen()
+    } else {
+        console.log(`Full Screen Button: %c ENTER`, 'color: Lime')
+        myOffcanvas.requestFullscreen()
+    }
 })
