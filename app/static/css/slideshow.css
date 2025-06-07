@@ -12,7 +12,7 @@
 
 .swiper-slide {
     position: relative;
-    background-color: var(--bs-body-bg);
+    background-color: var(--bs-black);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -28,7 +28,7 @@
     max-height: 100%;
     object-fit: contain;
     display: block;
-    background-color: var(--bs-body-bg);
+    background-color: var(--bs-black);
 }
 
 .images {
@@ -65,3 +65,7 @@
 /*.custom-height {*/
 /*    height: calc(100vh - 80px) !important;*/
 /*}*/
+
+#offcanvasBottom {
+    background-color: var(--bs-black);
+}
