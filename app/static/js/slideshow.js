@@ -135,3 +135,16 @@ fullScreen.addEventListener('click', (event) => {
         myOffcanvas.requestFullscreen()
     }
 })
+
+const thumbsEl = document.querySelector('.thumbs')
+const imagesEl = document.querySelector('.images')
+document.getElementById('toggle-thumbs').addEventListener('click', (e) => {
+    e.preventDefault()
+    if (thumbsEl.classList.contains('d-none')) {
+        thumbsEl.classList.remove('d-none')
+        imagesEl.style.height = '80%'
+    } else {
+        thumbsEl.classList.add('d-none')
+        imagesEl.style.height = '100%'
+    }
+})
