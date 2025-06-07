@@ -124,9 +124,8 @@ myOffcanvas.addEventListener('hide.bs.offcanvas', () => {
     }
 })
 
-const fullScreen = document.getElementById('slideshow-fullscreen')
-fullScreen.addEventListener('click', (event) => {
-    event.preventDefault()
+document.getElementById('toggle-show').addEventListener('click', (e) => {
+    e.preventDefault()
     if (document.fullscreenElement) {
         console.log(`Full Screen Button: %c EXIT`, 'color: Yellow')
         document.exitFullscreen()
