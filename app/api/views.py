@@ -1037,27 +1037,3 @@ def user_view(request, user_id=None):
     except Exception as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
-
-
-@require_http_methods(["GET"])
-def get_file_info(request, file_id):
-    """
-    View  /api/file/{file_id}/info/
-    """
-    log.debug("%s - get_file_info: file_id: %s", request.method, file_id)
-    try:
-        file = Files.objects.get(id=file_id)
-        data = model_to_dict(file, exclude=["file", "thumb", "albums"])
-        data["user_name"] = file.user.get_name()
-        data["user_username"] = file.user.username
-        data["url"] = file.preview_uri()
-        data["thumb"] = file.thumb_path
-        data["raw"] = file.raw_path
-        data["date"] = file.date
-        data["albums"] = [album.id for album in Albums.objects.filter(files__id=file.id)]
-        return JsonResponse(data, safe=False)
-    except Files.DoesNotExist:
-        return JsonResponse({"error": "File not found"}, status=404)
-    except Exception as error:
-        log.debug(error)
-        return JsonResponse({"error": f"{error}"}, status=400)
