@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 import httpx
 import validators
-from api.utils import extract_albums, extract_files
+from api.utils import extract_albums, extract_files, serialize_user, serialize_users
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -361,6 +361,7 @@ def stats_view(request):
 @require_http_methods(["OPTIONS", "GET"])
 @auth_from_token
 @cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix="stats")
 @vary_on_headers("Authorization")
 @vary_on_cookie
 def stats_current_view(request):
@@ -967,8 +968,7 @@ def users_view(request):
         log.debug("after: %s", after)
         if after:
             users = query.filter(id__gt=after)
-            users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
-            return JsonResponse(users_data, safe=False)
+            return JsonResponse(serialize_users(users), safe=False)
 
         amount = int(request.GET.get("amount", 20))
         log.debug("amount: %s", amount)
@@ -977,14 +977,12 @@ def users_view(request):
         log.debug("before: %s", before)
         if before:
             users = query.filter(id__lt=before)[:amount]
-            users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
-            return JsonResponse(users_data, safe=False)
+            return JsonResponse(serialize_users(users), safe=False)
 
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
-        users = query[start : start + amount]
-        users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
-        return JsonResponse(users_data, safe=False)
+        users = query[start:start + amount]
+        return JsonResponse(serialize_users(users), safe=False)
     except ValueError as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
@@ -1031,13 +1029,35 @@ def user_view(request, user_id=None):
             target_user.save()
             log.debug("User updated successfully")
 
-        user_data = model_to_dict(target_user, exclude=["password", "authorization"])
-        log.debug("user_data: %s", user_data)
-        return JsonResponse(user_data, safe=False)
+        return JsonResponse(serialize_user(target_user), safe=False)
 
     except ValueError as error:
         log.debug(error)
         return JsonResponse({"error": "Invalid user ID"}, status=400)
+    except Exception as error:
+        log.debug(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
+
+
+@require_http_methods(["GET"])
+def get_file_info(request, file_id):
+    """
+    View  /api/file/{file_id}/info/
+    """
+    log.debug("%s - get_file_info: file_id: %s", request.method, file_id)
+    try:
+        file = Files.objects.get(id=file_id)
+        data = model_to_dict(file, exclude=["file", "thumb", "albums"])
+        data["user_name"] = file.user.get_name()
+        data["user_username"] = file.user.username
+        data["url"] = file.preview_uri()
+        data["thumb"] = file.thumb_path
+        data["raw"] = file.raw_path
+        data["date"] = file.date
+        data["albums"] = [album.id for album in Albums.objects.filter(files__id=file.id)]
+        return JsonResponse(data, safe=False)
+    except Files.DoesNotExist:
+        return JsonResponse({"error": "File not found"}, status=404)
     except Exception as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
