@@ -1,17 +1,18 @@
+from typing import Any, Dict, List
+
 from django.forms.models import model_to_dict
 from home.models import Albums, Files
-from settings.context_processors import site_settings_processor
 from oauth.models import CustomUser
-from typing import List, Dict, Any
+from settings.context_processors import site_settings_processor
 
 
 def serialize_user(user: CustomUser) -> Dict[str, Any]:
     """
     Serialize a user instance into a dictionary with consistent exclusions and additions.
-    
+
     Args:
         user: CustomUser instance to serialize
-        
+
     Returns:
         Dict containing user data with password and authorization excluded, and avatar_url added
     """
@@ -23,10 +24,10 @@ def serialize_user(user: CustomUser) -> Dict[str, Any]:
 def serialize_users(users: List[CustomUser]) -> List[Dict[str, Any]]:
     """
     Serialize a list of user instances into a list of dictionaries.
-    
+
     Args:
         users: List of CustomUser instances to serialize
-        
+
     Returns:
         List of dictionaries containing user data
     """

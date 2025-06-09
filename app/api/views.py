@@ -981,7 +981,7 @@ def users_view(request):
 
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
-        users = query[start:start + amount]
+        users = query[start : start + amount]
         return JsonResponse(serialize_users(users), safe=False)
     except ValueError as error:
         log.debug(error)
