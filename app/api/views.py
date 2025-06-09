@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 import httpx
 import validators
-from api.utils import extract_albums, extract_files
+from api.utils import extract_albums, extract_files, serialize_user, serialize_users
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -361,6 +361,7 @@ def stats_view(request):
 @require_http_methods(["OPTIONS", "GET"])
 @auth_from_token
 @cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix="stats")
 @vary_on_headers("Authorization")
 @vary_on_cookie
 def stats_current_view(request):
@@ -967,8 +968,7 @@ def users_view(request):
         log.debug("after: %s", after)
         if after:
             users = query.filter(id__gt=after)
-            users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
-            return JsonResponse(users_data, safe=False)
+            return JsonResponse(serialize_users(users), safe=False)
 
         amount = int(request.GET.get("amount", 20))
         log.debug("amount: %s", amount)
@@ -977,14 +977,12 @@ def users_view(request):
         log.debug("before: %s", before)
         if before:
             users = query.filter(id__lt=before)[:amount]
-            users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
-            return JsonResponse(users_data, safe=False)
+            return JsonResponse(serialize_users(users), safe=False)
 
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
         users = query[start : start + amount]
-        users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
-        return JsonResponse(users_data, safe=False)
+        return JsonResponse(serialize_users(users), safe=False)
     except ValueError as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
@@ -1031,9 +1029,7 @@ def user_view(request, user_id=None):
             target_user.save()
             log.debug("User updated successfully")
 
-        user_data = model_to_dict(target_user, exclude=["password", "authorization"])
-        log.debug("user_data: %s", user_data)
-        return JsonResponse(user_data, safe=False)
+        return JsonResponse(serialize_user(target_user), safe=False)
 
     except ValueError as error:
         log.debug(error)
