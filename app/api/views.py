@@ -529,22 +529,25 @@ def set_albums(queryset: QuerySet, album_ids: List[int]) -> int:
 
 @csrf_exempt
 @require_http_methods(["DELETE", "GET", "OPTIONS", "POST"])
-@auth_from_token
+@auth_from_token(no_fail=True)
 def file_view(request, idname):
     """
     View  /api/file/{id or name}
     """
     kwargs = id_or_name(idname)
     log.debug("kwargs: %s", kwargs)
-    if not request.user.is_superuser:
+    if not request.user.is_superuser and request.user.is_authenticated:
         kwargs["user"] = request.user
     file = get_object_or_404(Files, **kwargs)
+    # for unautheticated requests we need to make sure the file is public or has the password
+    if not request.user.is_authenticated and (file.private or request.GET.get("password", "") != file.password):
+        return JsonResponse({"error": "File not found."}, status=404)
     log.debug("file_view: %s: %s", request.method, file.name)
     try:
-        if request.method == "DELETE":
+        if request.method == "DELETE" and (request.user == file.user or request.user.is_superuser):
             file.delete()
             return HttpResponse(status=204)
-        elif request.method == "POST":
+        elif request.method == "POST" and (request.user == file.user or request.user.is_superuser):
             log.debug(request.POST)
             data = get_json_body(request)
             log.debug("data: %s", data)
@@ -565,7 +568,7 @@ def file_view(request, idname):
                 file = file_rename(file, new_name)
             else:
                 file = Files.objects.get(id=file.id)
-            response = model_to_dict(file, exclude=["file", "thumb", "albums"])
+            response = extract_files([file])[0]
             # TODO: Determine why we have to manually flush file cache here
             #       The Website seems to flush, but not the api/recent/ endpoint
             #       ANSWER: This is not called on .update(), you must call .save()
@@ -575,9 +578,7 @@ def file_view(request, idname):
             log.debug("response: %s" % response)
             return JsonResponse(response, status=200)
         elif request.method == "GET":
-            response = model_to_dict(file, exclude=["file", "thumb", "albums"])
-            response["date"] = file.date  # not sure why this is not getting included
-            response["albums"] = [album.id for album in Albums.objects.filter(files__id=file.id)]
+            response = extract_files([file])[0]
             log.debug("response: %s" % response)
             return JsonResponse(response, status=200)
     except Exception as error:
