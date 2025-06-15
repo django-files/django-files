@@ -437,6 +437,7 @@ def url_route_view(request, filename):
     View  /u/<path:filename>
     """
     # TODO: Fix Type Hinting on file.exif ?
+    site_settings = SiteSettings.objects.settings()
     code_mimes = [
         "application/json",
         "application/x-perl",
@@ -454,6 +455,11 @@ def url_route_view(request, filename):
         "static_meta_url": file.get_meta_static_url(),
         "file_avatar_url": file.user.get_avatar_url(),
         "full_context": request.user.is_authenticated and request.user == file.user,
+        "native_app_arg": (
+            f"djangofiles://preview/?url={site_settings.site_url}"
+            f"&file_name={file.name}&file_id={file.id}"
+            f"&file_password={file.password}"
+        ),
     }
     if session_view:
         request.session[f"view_{file.name}"] = False

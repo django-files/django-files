@@ -62,6 +62,19 @@ def is_mobile(request: HttpRequest, platform: Optional[Literal["android", "ios"]
     return False
 
 
+@register.simple_tag(name="is_ios_browser")
+def is_ios_browser(request: HttpRequest) -> bool:
+    """
+    Returns True if the request is from an iOS device (iPhone, iPad, iPod)
+    :param request: HttpRequest: request
+    :return: bool
+    """
+    if request and isinstance(request.META, dict):
+        ua = request.META.get("HTTP_USER_AGENT", "").lower()
+        return any(x in ua for x in ["iphone", "ipad"])
+    return False
+
+
 # @register.filter(name='avatar_url')
 # def avatar_url(user):
 #     # return discord avatar url from user model
