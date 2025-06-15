@@ -89,15 +89,14 @@
                 </a>
 
             </div> <!-- right/bottom - unauthenticated -->
-            <div class="d-xs-block d-md-none d-lg-none d-xl-none px-3">
+            <div class="d-xs-block d-md-none d-lg-none d-xl-none me-2">
                 <a href="{{ native_app_arg }}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                    <i class="fa-brands fa-apple me-2"></i> App
-                </a>
+                    <i class="fa-brands fa-apple me-1"></i></a> App
             </div>
             {% endif %}
             <div class="">
                 <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="link-body-emphasis link-offset-2 link-underline-opacity-25 link-underline-opacity-75-hover">
-                    <i class="fas fa-sign-in-alt ms-2"></i></a> Log In 
+                    <i class="fas fa-sign-in-alt me-1"></i></a> Log In 
             </div> <!-- right/bottom - unauthenticated -->
         {% endif %}
 
