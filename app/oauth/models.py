@@ -81,7 +81,11 @@ class CustomUser(AbstractUser):
             pass
         if not avatar_url or avatar_url == "":
             # if avatar_url fails to be set for any reason fallback to a safe default
-            avatar_url = "/static/images/default_avatar.png"
+            site_settings = SiteSettings.objects.settings()
+            if site_settings.site_url:
+                avatar_url = site_settings.site_url.rstrip("/") + "/static/images/default_avatar.png"
+            else:
+                avatar_url = "/static/images/default_avatar.png"
         return avatar_url
 
     class UserAvatarChoices(models.TextChoices):

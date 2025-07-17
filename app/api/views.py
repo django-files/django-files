@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 import httpx
 import validators
-from api.utils import extract_albums, extract_files
+from api.utils import extract_albums, extract_files, serialize_user, serialize_users
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -361,6 +361,7 @@ def stats_view(request):
 @require_http_methods(["OPTIONS", "GET"])
 @auth_from_token
 @cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix="stats")
 @vary_on_headers("Authorization")
 @vary_on_cookie
 def stats_current_view(request):
@@ -528,22 +529,25 @@ def set_albums(queryset: QuerySet, album_ids: List[int]) -> int:
 
 @csrf_exempt
 @require_http_methods(["DELETE", "GET", "OPTIONS", "POST"])
-@auth_from_token
+@auth_from_token(no_fail=True)
 def file_view(request, idname):
     """
     View  /api/file/{id or name}
     """
     kwargs = id_or_name(idname)
     log.debug("kwargs: %s", kwargs)
-    if not request.user.is_superuser:
+    if not request.user.is_superuser and request.user.is_authenticated:
         kwargs["user"] = request.user
     file = get_object_or_404(Files, **kwargs)
+    # for unautheticated requests we need to make sure the file is public or has the password
+    if not request.user.is_authenticated and (file.private or request.GET.get("password", "") != file.password):
+        return JsonResponse({"error": "File not found."}, status=404)
     log.debug("file_view: %s: %s", request.method, file.name)
     try:
-        if request.method == "DELETE":
+        if request.method == "DELETE" and (request.user == file.user or request.user.is_superuser):
             file.delete()
             return HttpResponse(status=204)
-        elif request.method == "POST":
+        elif request.method == "POST" and (request.user == file.user or request.user.is_superuser):
             log.debug(request.POST)
             data = get_json_body(request)
             log.debug("data: %s", data)
@@ -564,7 +568,7 @@ def file_view(request, idname):
                 file = file_rename(file, new_name)
             else:
                 file = Files.objects.get(id=file.id)
-            response = model_to_dict(file, exclude=["file", "thumb", "albums"])
+            response = extract_files([file])[0]
             # TODO: Determine why we have to manually flush file cache here
             #       The Website seems to flush, but not the api/recent/ endpoint
             #       ANSWER: This is not called on .update(), you must call .save()
@@ -574,9 +578,7 @@ def file_view(request, idname):
             log.debug("response: %s" % response)
             return JsonResponse(response, status=200)
         elif request.method == "GET":
-            response = model_to_dict(file, exclude=["file", "thumb", "albums"])
-            response["date"] = file.date  # not sure why this is not getting included
-            response["albums"] = [album.id for album in Albums.objects.filter(files__id=file.id)]
+            response = extract_files([file])[0]
             log.debug("response: %s" % response)
             return JsonResponse(response, status=200)
     except Exception as error:
@@ -967,8 +969,7 @@ def users_view(request):
         log.debug("after: %s", after)
         if after:
             users = query.filter(id__gt=after)
-            users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
-            return JsonResponse(users_data, safe=False)
+            return JsonResponse(serialize_users(users), safe=False)
 
         amount = int(request.GET.get("amount", 20))
         log.debug("amount: %s", amount)
@@ -977,14 +978,12 @@ def users_view(request):
         log.debug("before: %s", before)
         if before:
             users = query.filter(id__lt=before)[:amount]
-            users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
-            return JsonResponse(users_data, safe=False)
+            return JsonResponse(serialize_users(users), safe=False)
 
         start = int(request.GET.get("start", 0))
         log.debug("start: %s", start)
         users = query[start : start + amount]
-        users_data = [model_to_dict(user, exclude=["password", "authorization"]) for user in users]
-        return JsonResponse(users_data, safe=False)
+        return JsonResponse(serialize_users(users), safe=False)
     except ValueError as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
@@ -1031,9 +1030,7 @@ def user_view(request, user_id=None):
             target_user.save()
             log.debug("User updated successfully")
 
-        user_data = model_to_dict(target_user, exclude=["password", "authorization"])
-        log.debug("user_data: %s", user_data)
-        return JsonResponse(user_data, safe=False)
+        return JsonResponse(serialize_user(target_user), safe=False)
 
     except ValueError as error:
         log.debug(error)

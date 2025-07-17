@@ -8,6 +8,19 @@ loginOuter.one('animationend', () => {
     loginOuter.removeClass(['animate__animated', 'animate__backInDown'])
 })
 
+$(window).on('pageshow', () => {
+    loginOuter.removeClass([
+        'animate__animated',
+        'animate__backOutUp',
+        'animate__slow',
+    ])
+    loginOuter.addClass([
+        'animate__animated',
+        'animate__backInDown',
+        'animate__fast',
+    ])
+})
+
 $('#login-buttons > .login').on('click', () => {
     loginOuter.addClass([
         'animate__animated',
