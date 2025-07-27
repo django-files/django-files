@@ -25,8 +25,6 @@ RUN curl --proto '=https' -L "https://nginx.org/download/nginx-${NGINX_VERSION}.
         --prefix=/etc/nginx \
         --sbin-path=/usr/sbin/nginx \
         --conf-path=/etc/nginx/nginx.conf \
-        --error-log-path=/var/log/nginx/error.log \
-        --http-log-path=/var/log/nginx/access.log \
         --pid-path=/var/run/nginx.pid \
         --lock-path=/var/run/nginx.lock \
         --with-http_ssl_module \
