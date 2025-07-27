@@ -14,7 +14,7 @@ RUN apk add --no-cache \
     zlib-dev
 
 WORKDIR /tmp/build
-RUN curl -L https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar xz &&\
+RUN curl --proto '=https' -L https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar xz &&\
     git clone https://github.com/arut/nginx-rtmp-module.git -b ${RTMP_MODULE_VERSION} &&\
     cp ./nginx-rtmp-module/stat.xsl /stat.xsl &&\
     cd nginx-${NGINX_VERSION} &&\

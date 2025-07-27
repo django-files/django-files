@@ -15,18 +15,18 @@
     "lint": "npx eslint app/static/js"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@fortawesome/fontawesome-free": "^7.0.0",
     "animate.css": "^4.1.1",
-    "bootstrap": "^5.3.6",
+    "bootstrap": "^5.3.7",
     "clipboard": "^2.0.11",
-    "datatables.net": "^2.3.0",
-    "datatables.net-bs5": "^2.3.0",
-    "datatables.net-buttons": "^3.2.3",
-    "datatables.net-datetime": "^1.5.5",
-    "datatables.net-plugins": "^2.3.0",
-    "datatables.net-responsive": "^3.0.4",
-    "datatables.net-select": "^3.0.0",
-    "gulp": "^5.0.0",
+    "datatables.net": "^2.3.2",
+    "datatables.net-bs5": "^2.3.2",
+    "datatables.net-buttons": "^3.2.4",
+    "datatables.net-datetime": "^1.5.6",
+    "datatables.net-plugins": "^2.3.2",
+    "datatables.net-responsive": "^3.0.5",
+    "datatables.net-select": "^3.0.1",
+    "gulp": "^5.0.1",
     "gulp-download2": "^1.1.0",
     "highlight.js": "^11.11.1",
     "jquery": "^3.7.1",
@@ -34,17 +34,17 @@
     "js-cookie": "^3.0.5",
     "moment": "^2.30.1",
     "qr-code-styling": "^1.9.2",
-    "swagger-ui": "^5.21.0",
-    "swiper": "^11.2.8",
-    "tsparticles": "3.0.3",
-    "ua-parser-js": "^2.0.3"
+    "swagger-ui": "^5.27.0",
+    "swiper": "^11.2.10",
+    "tsparticles": "3.8.1",
+    "ua-parser-js": "^2.0.4"
   },
   "devDependencies": {
-    "@eslint/js": "^9.26.0",
-    "@rollup/plugin-commonjs": "^28.0.3",
+    "@eslint/js": "^9.32.0",
+    "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-node-resolve": "^16.0.1",
-    "eslint": "^9.26.0",
-    "prettier": "^3.5.3",
-    "rollup": "^4.41.1"
+    "eslint": "^9.32.0",
+    "prettier": "^3.6.2",
+    "rollup": "^4.45.3"
   }
 }
