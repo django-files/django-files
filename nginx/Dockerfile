@@ -9,14 +9,13 @@ RUN apk add --no-cache \
     curl \
     linux-headers \
     openssl-dev \
-    git \
     pcre-dev \
+    git \
     zlib-dev
 
 WORKDIR /tmp/build
-# hadolint ignore=DL3003
-RUN set -o pipefail &&\
-    curl --proto '=https' -L "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" | tar xz &&\
+SHELL ["/bin/sh", "-o", "pipefail", "-c"]
+RUN curl --proto '=https' -L "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" | tar xz &&\
     git clone https://github.com/arut/nginx-rtmp-module.git -b "${RTMP_MODULE_VERSION}" &&\
     cp ./nginx-rtmp-module/stat.xsl /stat.xsl &&\
     cd "nginx-${NGINX_VERSION}" &&\
