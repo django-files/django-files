@@ -14,7 +14,7 @@ RUN apk add --no-cache \
     zlib-dev
 
 WORKDIR /tmp/build
-RUN curl -L http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar xz &&\
+RUN curl -L https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar xz &&\
     git clone https://github.com/arut/nginx-rtmp-module.git -b ${RTMP_MODULE_VERSION} &&\
     cp ./nginx-rtmp-module/stat.xsl /stat.xsl &&\
     cd nginx-${NGINX_VERSION} &&\
@@ -48,4 +48,5 @@ STOPSIGNAL SIGTERM
 
 WORKDIR /
 COPY --chmod=0755 docker-entrypoint.sh /docker-entrypoint.sh
+#USER nginx
 ENTRYPOINT ["sh", "docker-entrypoint.sh"]

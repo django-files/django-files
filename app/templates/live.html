@@ -4,7 +4,7 @@
 {% load static %}
 
 {% block head %}
-    <link href="https://vjs.zencdn.net/8.23.3/video-js.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video-js.min.css" integrity="sha512-7wMpNCbZmQmUPa3OOvqZo2TbK4n4xy4hdSWvxXKaJH8tR/9+7YFS0qyiKK3FV3tE6ANeSAdd3xfFQbf71P5Dfw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 {% endblock %}
 
 {% block body %}
@@ -25,6 +25,6 @@
 {% endblock %}
 
 {% block tail %}
-    <script src="https://vjs.zencdn.net/8.23.3/video.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="text/javascript" src="{% static 'js/live.js' %}"></script>
 {% endblock %}
