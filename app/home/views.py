@@ -48,6 +48,16 @@ def home_view(request):
     return render(request, "home.html", context)
 
 
+@vary_on_cookie
+def live_view(request, key):
+    """
+    View  /live/:key/
+    """
+    log.debug("%s - shorts_view: is_secure: %s", request.method, request.is_secure())
+    context = {"key": key}
+    return render(request, "live.html", context)
+
+
 @cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="stats.shorts")

@@ -5,7 +5,7 @@ import os
 import random
 from functools import wraps
 from typing import Any, BinaryIO, Callable, List, Optional, Union
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 import httpx
 import validators
@@ -787,6 +787,54 @@ def session_view(request, sessionid):
     except Exception as error:
         log.debug("error: %s", error)
         return HttpResponse(str(error), status=500)
+
+
+@csrf_exempt
+def stream_auth_view(request):
+    """
+    View /stream/auth/
+    """
+    try:
+        log.debug("stream_auth_view: %s - %s", request.method, request.META["PATH_INFO"])
+        log.debug("stream_auth_view: %s", request.GET)
+        name = request.GET.get("name")
+        log.debug("name: %s", name)
+        if not name:
+            log.debug("No Stream Name Provided: %s", name)
+            return HttpResponse(status=401)
+
+        url = urlparse(request.GET.get("tcurl"))
+        data = parse_qs(url.query)
+        log.debug("data: %s", data)
+        token = data["token"][0]
+        log.debug("token: %s", token)
+        user = CustomUser.objects.filter(authorization=token).first()
+        log.debug("user: %s", user)
+        if not user:
+            log.debug("User Authorization Failed: %s", name)
+            return HttpResponse(status=401)
+
+        return HttpResponse()
+    except Exception as error:
+        log.debug("error: %s", error)
+        return HttpResponse(status=401)
+
+
+@csrf_exempt
+def stream_done_view(request):
+    """
+    View /stream/done/
+    """
+    try:
+        log.debug("stream_done_view: %s - %s", request.method, request.META["PATH_INFO"])
+        log.debug("stream_done_view: %s", request.GET)
+        name = request.GET.get("name")
+        log.debug("name: %s", name)
+
+    except Exception as error:
+        log.debug("error: %s", error)
+
+    return HttpResponse()
 
 
 def get_json_body(request):
