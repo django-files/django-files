@@ -5,7 +5,7 @@ import os
 import random
 from functools import wraps
 from typing import Any, BinaryIO, Callable, List, Optional, Union
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 import validators

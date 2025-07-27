@@ -1,6 +1,6 @@
-FROM alpine:latest
+FROM alpine:3
 
-ENV NGINX_VERSION=1.25.3
+ENV NGINX_VERSION=1.28.0
 ENV RTMP_MODULE_VERSION=master
 ENV TZ=UTC
 
@@ -14,10 +14,12 @@ RUN apk add --no-cache \
     zlib-dev
 
 WORKDIR /tmp/build
-RUN curl --proto '=https' -L https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar xz &&\
-    git clone https://github.com/arut/nginx-rtmp-module.git -b ${RTMP_MODULE_VERSION} &&\
+# hadolint ignore=DL3003
+RUN set -o pipefail &&\
+    curl --proto '=https' -L "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" | tar xz &&\
+    git clone https://github.com/arut/nginx-rtmp-module.git -b "${RTMP_MODULE_VERSION}" &&\
     cp ./nginx-rtmp-module/stat.xsl /stat.xsl &&\
-    cd nginx-${NGINX_VERSION} &&\
+    cd "nginx-${NGINX_VERSION}" &&\
     ./configure \
         --user=nginx \
         --group=nginx \
@@ -35,7 +37,7 @@ RUN curl --proto '=https' -L https://nginx.org/download/nginx-${NGINX_VERSION}.t
         --with-threads \
         --with-file-aio \
         --add-module=../nginx-rtmp-module &&\
-    make -j$(nproc) && make install && rm -rf /tmp/build
+    make -j"$(nproc)" && make install && rm -rf /tmp/build
 
 RUN mkdir -p /etc/nginx/conf.rtmp.d /opt/nginx /tmp/record &&\
     addgroup nginx && adduser -S nginx -G nginx && chown nginx /tmp/record
