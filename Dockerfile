@@ -20,33 +20,22 @@ RUN python3 -m pip install --no-cache-dir -U pip  &&\
     python3 -m pip install --no-cache-dir -r /requirements.txt
 
 
-FROM python:3.12-slim
+FROM python:3.12-slim AS nginx-builder
 
-LABEL org.opencontainers.image.source="https://github.com/django-files/django-files"
-LABEL org.opencontainers.image.description="Django Files"
-LABEL org.opencontainers.image.authors="smashedr,raluaces"
-LABEL org.opencontainers.image.licenses="GPL-3.0"
-
-ARG BUILD_SHA=''
-ENV BUILD_SHA=${BUILD_SHA}
-RUN touch build_sha && echo "${BUILD_SHA}" > build_sha
-
-ENV TZ=UTC
-ENV PYTHONDONTWRITEBYTECODE=1
 ENV NGINX_VERSION=1.28.0
 ENV RTMP_MODULE_VERSION=master
 
-COPY --from=node /work/app/static/dist/ /app/static/dist/
-COPY --from=python /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
-COPY --from=python /usr/local/bin/ /usr/local/bin/
-
-RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
-    groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin/nologin app  &&\
-    groupadd -g 101 nginx  &&  useradd -r -d /var/cache/nginx -M -u 101 -g 101 -s /usr/sbin/nologin nginx  &&\
-    mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
-    chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
-    apt-get -y install --no-install-recommends libmagic-dev libmariadb-dev-compat  \
-        pkg-config redis-server supervisor build-essential linux-headers-generic libssl-dev libpcre3-dev git zlib1g-dev
+RUN apt-get -y update && \
+    apt-get -y install --no-install-recommends \
+        build-essential \
+        linux-headers-generic \
+        libssl-dev \
+        libpcre3-dev \
+        git \
+        zlib1g-dev \
+        curl && \
+    apt-get -y clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Build nginx with RTMP module
 WORKDIR /tmp/build
@@ -72,8 +61,36 @@ RUN set -e && \
         --add-module=../nginx-rtmp-module && \
     make -j"$(nproc)" && make install && rm -rf /tmp/build
 
-# Cleanup build dependencies
-RUN apt-get -y remove --auto-remove curl build-essential linux-headers-generic git  &&  apt-get -y autoremove  &&\
+
+FROM python:3.12-slim
+
+LABEL org.opencontainers.image.source="https://github.com/django-files/django-files"
+LABEL org.opencontainers.image.description="Django Files"
+LABEL org.opencontainers.image.authors="smashedr,raluaces"
+LABEL org.opencontainers.image.licenses="GPL-3.0"
+
+ARG BUILD_SHA=''
+ENV BUILD_SHA=${BUILD_SHA}
+RUN touch build_sha && echo "${BUILD_SHA}" > build_sha
+
+ENV TZ=UTC
+ENV PYTHONDONTWRITEBYTECODE=1
+
+COPY --from=node /work/app/static/dist/ /app/static/dist/
+COPY --from=python /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
+COPY --from=python /usr/local/bin/ /usr/local/bin/
+COPY --from=nginx-builder /usr/sbin/nginx /usr/sbin/nginx
+COPY --from=nginx-builder /etc/nginx /etc/nginx
+COPY --from=nginx-builder /stat.xsl /stat.xsl
+
+RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
+    groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin/nologin app  &&\
+    groupadd -g 101 nginx  &&  useradd -r -d /var/cache/nginx -M -u 101 -g 101 -s /usr/sbin/nologin nginx  &&\
+    mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
+    chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
+    apt-get -y install --no-install-recommends libmagic-dev libmariadb-dev-compat  \
+        pkg-config redis-server supervisor libpcre3 libssl3 zlib1g  &&\
+    apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
     apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
 # Create RTMP configuration directories
