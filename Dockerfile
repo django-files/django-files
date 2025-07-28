@@ -20,6 +20,48 @@ RUN python3 -m pip install --no-cache-dir -U pip  &&\
     python3 -m pip install --no-cache-dir -r /requirements.txt
 
 
+FROM python:3.12-slim AS nginx-builder
+
+ENV NGINX_VERSION=1.28.0
+ENV RTMP_MODULE_VERSION=master
+
+RUN apt-get -y update && \
+    apt-get -y install --no-install-recommends \
+        build-essential \
+        linux-headers-generic \
+        libssl-dev \
+        libpcre3-dev \
+        git \
+        zlib1g-dev \
+        curl && \
+    apt-get -y clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Build nginx with RTMP module
+WORKDIR /tmp/build
+RUN set -e && \
+    curl --proto '=https' -L "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" | tar xz && \
+    git clone https://github.com/arut/nginx-rtmp-module.git -b "${RTMP_MODULE_VERSION}" && \
+    cp ./nginx-rtmp-module/stat.xsl /stat.xsl && \
+    cd "nginx-${NGINX_VERSION}" && \
+    ./configure \
+        --user=nginx \
+        --group=nginx \
+        --prefix=/etc/nginx \
+        --sbin-path=/usr/sbin/nginx \
+        --conf-path=/etc/nginx/nginx.conf \
+        --pid-path=/var/run/nginx.pid \
+        --lock-path=/var/run/nginx.lock \
+        --with-http_ssl_module \
+        --with-http_v2_module \
+        --with-http_gzip_static_module \
+        --with-http_secure_link_module \
+        --with-threads \
+        --with-file-aio \
+        --add-module=../nginx-rtmp-module && \
+    make -j"$(nproc)" && make install && rm -rf /tmp/build
+
+
 FROM python:3.12-slim
 
 LABEL org.opencontainers.image.source="https://github.com/django-files/django-files"
@@ -37,6 +79,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 COPY --from=node /work/app/static/dist/ /app/static/dist/
 COPY --from=python /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
 COPY --from=python /usr/local/bin/ /usr/local/bin/
+COPY --from=nginx-builder /usr/sbin/nginx /usr/sbin/nginx
+COPY --from=nginx-builder /etc/nginx /etc/nginx
+COPY --from=nginx-builder /stat.xsl /stat.xsl
 
 RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
     groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin/nologin app  &&\
@@ -44,13 +89,19 @@ RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
     mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
     chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
     apt-get -y install --no-install-recommends libmagic-dev libmariadb-dev-compat  \
-        nginx pkg-config redis-server supervisor  &&\
+        pkg-config redis-server supervisor libpcre3 libssl3 zlib1g  &&\
     apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
     apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
+
+# Create RTMP configuration directories
+RUN mkdir -p /etc/nginx/conf.rtmp.d /opt/nginx /tmp/record /tmp/hls &&\
+    chown nginx /tmp/record /tmp/hls
 
 COPY nginx/60-sign-secret.sh /docker-entrypoint.d/60-sign-secret.sh
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY nginx/raw-mime.types /etc/nginx/raw-mime.types
+COPY nginx/record.conf /opt/nginx/
+COPY nginx/docker-entrypoint.sh /nginx-entrypoint.sh
 COPY docker/redis.conf /etc/redis/redis.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/docker-entrypoint.sh /docker-entrypoint.sh
