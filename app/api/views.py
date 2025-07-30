@@ -9,7 +9,6 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 import validators
-from api.utils import extract_albums, extract_files, serialize_user, serialize_users
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -25,8 +24,13 @@ from django.views.decorators.cache import cache_control, cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from packaging import version
+from packaging.version import InvalidVersion
+from pytimeparse2 import parse
+
+from api.utils import extract_albums, extract_files, serialize_user, serialize_users
 from home.models import Albums, Files, FileStats, ShortURLs
-from home.tasks import clear_files_cache, new_album_websocket
+from home.tasks import clear_files_cache, new_album_websocket, send_push_live
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
@@ -37,12 +41,8 @@ from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
 from oauth.views import post_login
-from packaging import version
-from packaging.version import InvalidVersion
-from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
-
 
 signer = TimestampSigner()
 
@@ -813,6 +813,8 @@ def stream_auth_view(request):
         if not user:
             log.debug("User Authorization Failed: %s", name)
             return HttpResponse(status=401)
+
+        send_push_live.delay(user.id, name)
 
         return HttpResponse()
     except Exception as error:

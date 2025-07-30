@@ -1,27 +1,38 @@
 {% extends "main.html" %}
+{% load webpush_notifications %}
 {% block title %}Live{% endblock %}
 {% load home_tags %}
 {% load static %}
 
 {% block head %}
+    {% webpush_header %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video-js.min.css" integrity="sha512-7wMpNCbZmQmUPa3OOvqZo2TbK4n4xy4hdSWvxXKaJH8tR/9+7YFS0qyiKK3FV3tE6ANeSAdd3xfFQbf71P5Dfw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 {% endblock %}
 
 {% block body %}
-    <video
-        id="my-video"
-        class="video-js"
-        controls
-        preload="auto"
-        poster="{% static 'images/logo.png' %}"
-        data-setup='{"fill": true, "autoplay": "play"}'>
-        <source src="/hls/{{ key }}.m3u8" type="application/x-mpegURL" />
-        <p class="vjs-no-js">
-            To view this video please enable JavaScript, and consider upgrading to a
-            web browser that
-            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-        </p>
-    </video>
+    <div class="d-flex flex-column h-100">
+        <div class="flex-grow-1">
+            <video
+                id="my-video"
+                class="video-js"
+                controls
+                preload="auto"
+                poster="{% static 'images/logo.png' %}"
+                data-setup='{"fill": true, "autoplay": "play"}'>
+                <source src="/hls/{{ key }}.m3u8" type="application/x-mpegURL" />
+                <p class="vjs-no-js">
+                    To view this video please enable JavaScript, and consider upgrading to a
+                    web browser that
+                    <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                </p>
+            </video>
+        </div>
+        <div class="p-2">
+{#            <button id="push-subscribe" class="btn btn-success">Subscribe to Trash</button>#}
+            {% webpush_button with_class="btn btn-outline-info" %}
+        </div>
+    </div>
+
 {% endblock %}
 
 {% block tail %}

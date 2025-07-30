@@ -22,6 +22,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("flush-cache/", views.flush_cache_view, name="flush_cache"),
     path("app-health-check/", views.health_check, name="health_check"),
+    path("webpush/", include("webpush.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 

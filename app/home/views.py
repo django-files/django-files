@@ -19,6 +19,7 @@ from django.views.decorators.common import no_append_slash
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
+from djangofiles import settings
 from home.models import Albums, Files, FileStats, ShortURLs
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
@@ -53,8 +54,8 @@ def live_view(request, key):
     """
     View  /live/:key/
     """
-    log.debug("%s - shorts_view: is_secure: %s", request.method, request.is_secure())
-    context = {"key": key}
+    log.debug("%s - live_view: is_secure: %s", request.method, request.is_secure())
+    context = {"key": key, "webpush": {"group": key}}
     return render(request, "live.html", context)
 
 

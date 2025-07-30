@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from time import sleep
 from typing import Optional
 
 import httpx
@@ -25,6 +26,7 @@ from packaging import version
 from PIL import UnidentifiedImageError
 from pytimeparse2 import parse
 from settings.models import SiteSettings
+from webpush import send_group_notification
 
 
 log = logging.getLogger("app")
@@ -394,6 +396,23 @@ def delete_album_websocket(data: dict, user_id):
         "text": json.dumps(data),
     }
     async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
+
+
+# @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 1, "countdown": 300})
+@shared_task()
+def send_push_live(pk: int, name: str, delay: int = 10, ttl: int = 1800):
+    # Send a Push Message for New Live Stream
+    log.info("send_push_live: pk: %s delay: %s - name: %s", pk, delay, name)
+    user = CustomUser.objects.get(pk=pk)
+    site_settings = SiteSettings.objects.settings()
+    sleep(delay)
+    payload = {
+        "head": f"{name} is Live!",
+        "body": "Click here for some Hot Garbage!",
+        "icon": user.get_avatar_url(),
+        "url": f"{site_settings.site_url}/live/{name}/",
+    }
+    send_group_notification(group_name=name, payload=payload, ttl=ttl)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 6, "countdown": 30})
