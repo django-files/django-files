@@ -20,10 +20,12 @@ from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.utils.timezone import now
 from django.views.decorators.cache import cache_control, cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from django_redis import get_redis_connection
 from packaging import version
 from packaging.version import InvalidVersion
 from pytimeparse2 import parse
@@ -837,6 +839,68 @@ def stream_done_view(request):
         log.debug("error: %s", error)
 
     return HttpResponse()
+
+
+# @csrf_exempt
+# def stream_update_view(request):
+#     """
+#     View /stream/update/
+#     """
+#     try:
+#         log.debug("stream_update_view: %s - %s", request.method, request.META["PATH_INFO"])
+#         log.debug("stream_update_view: %s", request.GET)
+#         # name = request.GET.get("name")
+#         # log.debug("name: %s", name)
+#
+#     except Exception as error:
+#         log.debug("error: %s", error)
+#
+#     return HttpResponse()
+
+
+def stream_ping_view(request, name):
+    """
+    View /stream/ping/
+    """
+    log.debug("stream_ping_view: name: %s", name)
+    session_key = request.session.session_key
+    if not session_key:
+        log.debug("no session_key: request.session.save()")
+        request.session.save()
+        session_key = request.session.session_key
+    log.debug("stream_ping_view: session_key: %s", session_key)
+
+    key = f"stream:{name}:viewers"
+    redis = get_redis_connection("default")
+    redis.zadd(key, {session_key: int(now().timestamp())})
+    redis.expire(key, 60)
+    return HttpResponse()
+
+
+def stream_viewers_view(request, name):
+    log.debug("stream_viewers_view - name: %s", name)
+    log.debug("stream_viewers_view - request.GET: %s", request.GET)
+    count = get_viewer_count(name)
+    log.debug("stream_viewers_view - count: %s", count)
+    if request.headers.get("accept") == "application/json":
+        return JsonResponse({"count": count})
+    context = {
+        "viewers": count,
+        "prefix": request.GET.get("prefix") or "",
+        "suffix": request.GET.get("suffix") or "",
+    }
+    log.debug("stream_viewers_view - context: %s", context)
+    return render(request, "stream/overlay/viewers.html", context)
+
+
+def get_viewer_count(name):
+    log.debug("stream_viewers_view - name: %s", name)
+    key = f"stream:{name}:viewers"
+    redis = get_redis_connection("default")
+    cutoff = int(now().timestamp()) - 60
+    count = redis.zcount(key, min=cutoff, max="+inf")
+    log.debug("stream_viewers_view - count: %s", count)
+    return count
 
 
 def get_json_body(request):

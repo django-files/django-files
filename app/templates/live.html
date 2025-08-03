@@ -17,8 +17,7 @@
                 class="video-js"
                 controls
                 preload="auto"
-                poster="{% static 'images/logo.png' %}"
-                data-setup='{"fill": true, "autoplay": "play"}'>
+                poster="{% static 'images/logo.png' %}">
                 <source src="/hls/{{ key }}.m3u8" type="application/x-mpegURL" />
                 <p class="vjs-no-js">
                     To view this video please enable JavaScript, and consider upgrading to a

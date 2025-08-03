@@ -90,9 +90,9 @@ function domContentLoaded() {
     ) {
         console.log(`%cMobile Client Detected`, 'color: Lime')
         const navItem = document.getElementById('mobileAuthNav')
-        navItem.classList.remove('d-none')
-        const link = navItem.querySelector('a')
-        link.addEventListener('click', processAuth)
+        navItem?.classList.remove('d-none')
+        const link = navItem?.querySelector('a')
+        link?.addEventListener('click', processAuth)
     }
 }
 

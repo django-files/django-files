@@ -1,0 +1,15 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="15">
+    <title>Stream Overlay</title>
+    <link rel="stylesheet" href="{% static 'css/stream.css' %}">
+</head>
+<body>
+    <div style="white-space: nowrap; overflow-x: hidden; display: flex; justify-content: start; align-items: center; width: 100vw; height: 100vh;">
+        <div style="font-size: 80vh;">{{ prefix }} {{ viewers }} {{ suffix }}</div>
+    </div>
+</body>
+</html>
