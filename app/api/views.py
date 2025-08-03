@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 import validators
+from api.utils import extract_albums, extract_files, serialize_user, serialize_users
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -26,11 +27,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from django_redis import get_redis_connection
-from packaging import version
-from packaging.version import InvalidVersion
-from pytimeparse2 import parse
-
-from api.utils import extract_albums, extract_files, serialize_user, serialize_users
 from home.models import Albums, Files, FileStats, ShortURLs
 from home.tasks import clear_files_cache, new_album_websocket, send_push_live
 from home.util.file import process_file
@@ -43,8 +39,12 @@ from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
 from oauth.views import post_login
+from packaging import version
+from packaging.version import InvalidVersion
+from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
+
 
 signer = TimestampSigner()
 
@@ -860,7 +860,7 @@ def stream_done_view(request):
 
 def stream_ping_view(request, name):
     """
-    View /stream/ping/
+    View /stream/ping/:name/
     """
     log.debug("stream_ping_view: name: %s", name)
     session_key = request.session.session_key
@@ -878,6 +878,9 @@ def stream_ping_view(request, name):
 
 
 def stream_viewers_view(request, name):
+    """
+    View /stream/viewers/:name/
+    """
     log.debug("stream_viewers_view - name: %s", name)
     log.debug("stream_viewers_view - request.GET: %s", request.GET)
     count = get_viewer_count(name)
