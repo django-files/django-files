@@ -54,9 +54,10 @@
     --bs-offcanvas-width: 260px;
 }
 
-body {
-    padding-top: 61px;
-}
+/* TODO: CONFIRM THIS REMOVAL: */
+/*body {*/
+/*    padding-top: 37px;*/
+/*}*/
 
 @supports (padding-top: env(safe-area-inset-top)) {
     body {

@@ -26,9 +26,17 @@
                 </p>
             </video>
         </div>
-        <div class="p-2">
-{#            <button id="push-subscribe" class="btn btn-success">Subscribe to Trash</button>#}
-            {% webpush_button with_class="btn btn-outline-info" %}
+        <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm">
+                {% webpush_button with_class="btn btn-outline-info m-1" %}
+            </div>
+            <div class="col-sm text-sm-end fs-4">
+                <p class="m-0 m-1">
+                Viewers: <span id="view-count">N/A</span>
+                </p>
+            </div>
+        </div>
         </div>
     </div>
 
