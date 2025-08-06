@@ -1,6 +1,6 @@
 {% extends "main.html" %}
 {% load webpush_notifications %}
-{% block title %}Live{% endblock %}
+{% block title %}Live - {{ key }}{% endblock %}
 {% load home_tags %}
 {% load static %}
 
@@ -8,6 +8,18 @@
     <link rel="manifest" href="/live/{{ key }}/manifest.json">
     {% webpush_header %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video-js.min.css" integrity="sha512-7wMpNCbZmQmUPa3OOvqZo2TbK4n4xy4hdSWvxXKaJH8tR/9+7YFS0qyiKK3FV3tE6ANeSAdd3xfFQbf71P5Dfw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% endblock %}
+
+{% block meta %}
+    <meta name="title" content="{{ key }}"/>
+    <meta name="description" content="Watch {{ key }} live!"/>
+
+    <meta property="og:title" content="{{ key }}">
+    <meta property="og:description" content="Watch {{ key }} live!">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:image" content="{{ site_settings.site_url }}% static 'images/logo.png' %}">
+    <meta name="theme-color" content="{{ site_settings.site_color }}">
 {% endblock %}
 
 {% block body %}
@@ -42,6 +54,8 @@
     </div>
 
 {% endblock %}
+
+{% block footer %}{% endblock %}
 
 {% block tail %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
