@@ -816,7 +816,8 @@ def stream_auth_view(request):
             log.debug("User Authorization Failed: %s", name)
             return HttpResponse(status=401)
 
-        send_push_live.delay(user.id, name)
+        title = request.GET.get("title", "Click here to watch the stream.")
+        send_push_live.delay(user.id, name, title)
 
         return HttpResponse()
     except Exception as error:

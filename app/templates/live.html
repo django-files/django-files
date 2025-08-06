@@ -5,6 +5,7 @@
 {% load static %}
 
 {% block head %}
+    <link rel="manifest" href="/live/{{ key }}/manifest.json">
     {% webpush_header %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video-js.min.css" integrity="sha512-7wMpNCbZmQmUPa3OOvqZo2TbK4n4xy4hdSWvxXKaJH8tR/9+7YFS0qyiKK3FV3tE6ANeSAdd3xfFQbf71P5Dfw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 {% endblock %}

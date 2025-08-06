@@ -403,7 +403,7 @@ def delete_album_websocket(data: dict, user_id):
 
 # @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 1, "countdown": 300})
 @shared_task()
-def send_push_live(pk: int, name: str, delay: int = 10, ttl: int = 1800):
+def send_push_live(pk: int, name: str, body: str, delay: int = 10, ttl: int = 1800):
     # Send a Push Message for New Live Stream
     log.info("send_push_live: pk: %s delay: %s - name: %s", pk, delay, name)
     user = CustomUser.objects.get(pk=pk)
@@ -411,10 +411,11 @@ def send_push_live(pk: int, name: str, delay: int = 10, ttl: int = 1800):
     sleep(delay)
     payload = {
         "head": f"{name} is Live!",
-        "body": "Click here for some Hot Garbage!",
+        "body": body,
         "icon": user.get_avatar_url(),
         "url": f"{site_settings.site_url}/live/{name}/",
     }
+    log.info("payload: %s", payload)
     send_group_notification(group_name=name, payload=payload, ttl=ttl)
 
 

@@ -59,6 +59,27 @@ def live_view(request, key):
     return render(request, "live.html", context)
 
 
+@vary_on_cookie
+def live_manifest_view(request, key):
+    """
+    View  /live/:key/manifest.json
+    """
+    log.debug("%s - live_manifest_view: is_secure: %s", request.method, request.is_secure())
+    # TODO: This information needs to come from a users stream model
+    data = {
+        "name": f"Live Stream",
+        "short_name": f"{key}",
+        "start_url": f"/live/{key}/",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#003366",
+        "icons": [{"src": "/static/images/logo.png", "sizes": "192x192", "type": "image/png"}],
+        "scope": "/",
+        "id": "/",
+    }
+    return JsonResponse(data)
+
+
 @cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="stats.shorts")

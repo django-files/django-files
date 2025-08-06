@@ -10,6 +10,7 @@ app_name = "home"
 urlpatterns = [
     path("", views.home_view, name="index"),
     path("live/<str:key>/", views.live_view, name="live"),
+    path("live/<str:key>/manifest.json", views.live_manifest_view, name="live-manifest"),
     path("files/", views.files_view, name="files"),
     path("gallery/", views.files_view, name="gallery"),
     path("uppy/", views.uppy_view, name="uppy"),
