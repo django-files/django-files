@@ -27,7 +27,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from django_redis import get_redis_connection
-from home.models import Albums, Files, FileStats, ShortURLs
+from home.models import Albums, Files, FileStats, ShortURLs, Stream
 from home.tasks import clear_files_cache, new_album_websocket, send_push_live
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte
@@ -817,8 +817,21 @@ def stream_auth_view(request):
             return HttpResponse(status=401)
 
         title = data.get("title") or data.get("message") or "Click here to watch the stream."
+        stream_kwargs = {}
+        if public := data.get("public"):
+            stream_kwargs["public"] = anytobool(public)
+        if viewer_limit := data.get("viewer_limit"):
+            stream_kwargs["viewer_limit"] = int(viewer_limit)
+        if description := data.get("description"):
+            stream_kwargs["description"] = description
+        if title := data.get("title")[0]:
+            stream_kwargs["title"] = title
+        stream, created = Stream.objects.update_or_create(
+            name=name,
+            defaults={'user': user, **stream_kwargs}
+        )
         log.debug("title: %s", title)
-        send_push_live.delay(user.id, name, title)
+        send_push_live.delay(user.id, name, stream.title)
 
         return HttpResponse()
     except Exception as error:
