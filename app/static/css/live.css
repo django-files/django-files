@@ -4,3 +4,18 @@
 #previewSidebar.sidebar {
     position: relative !important;
 }
+
+.text-glow {
+animation: glowPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+0%, 100% {
+    text-shadow: 0 0 5px rgba(220, 53, 69, 0.5),
+                0 0 10px rgba(220, 53, 69, 0.3);
+}
+50% {
+    text-shadow: 0 0 10px rgba(220, 53, 69, 0.8),
+                0 0 20px rgba(220, 53, 69, 0.6);
+}
+}

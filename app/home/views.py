@@ -177,6 +177,23 @@ def albums_view(request):
     return render(request, "albums.html", context)
 
 
+@cache_control(no_cache=True)
+@login_required
+@cache_page(cache_seconds, key_prefix="streams")
+@vary_on_cookie
+def streams_view(request):
+    """
+    View  /streams/
+    """
+    log.debug("%s - streams_view: is_secure: %s", request.method, request.is_secure())
+    if request.user.is_superuser:
+        users = CustomUser.objects.all()
+        context = {"users": users, "full_context": True}
+    else:
+        context = {"full_context": True}
+    return render(request, "streams.html", context)
+
+
 @csrf_exempt
 @cache_control(no_cache=True)
 @login_required

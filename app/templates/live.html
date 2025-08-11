@@ -48,11 +48,32 @@
                 </div>
                 <div id="previewSidebar" class="sidebar h-100">
                     <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
-                    <div id="file-{{ file.id }}" class="card-body sidebarCard">
+                    <div id="file-{{ file.id }}" class="card-body sidebarCard p-3">
                         <h3 class="card-title mb-0 text-break">{{ stream.title }}</h3>
                         <row>
                             <strong class="d-inline-block mb-1 col-md-6 text-start">{{ stream.description }}</strong>
                         </row>
+                        <div class="row">
+                            <div class="col-md d-flex justify-content-betweent pb-1">
+                                <img src="{{ stream.user.get_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P"><span class="fw-semibold  ps-1">{{ stream.user.get_name }}</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md d-flex justify-content-between align-items-center">
+                                {% if stream.is_live %}
+                                <strong class="m-0 text-danger fw-bold text-glow">
+                                    Live
+                                </strong>
+                                {% else %}
+                                <strong class="m-0 text-secondary fw-bold">
+                                    Offline
+                                </strong>
+                                {% endif %}
+                                <strong class="m-0 text-info text-end">
+                                    <span id="view-count">N/A</span> Viewers
+                                </strong>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-sm">
                                 <p class="m-0 m-1">
@@ -65,13 +86,13 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="row">
+                        <!-- <div class="row">
                             <div class="col-sm text-sm fs-4">
                                 <p class="m-0 m-1">
                                 Viewers: <span id="view-count">N/A</span>
                                 </p>
                             </div>
-                        </div>
+                        </div> -->
 
                         <div class="row">
                             <div class="col-sm">
