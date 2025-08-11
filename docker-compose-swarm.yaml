@@ -57,7 +57,7 @@ services:
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       REDIS_IGNORE_EXCEPTIONS: ${REDIS_IGNORE_EXCEPTIONS}
     deploy:
-      mode: global
+      replicas: 1
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=traefik-public"
@@ -95,7 +95,7 @@ services:
       retries: 3
       start_period: 3s
     deploy:
-      mode: global
+      replicas: 1
     volumes:
       - static_dir:/data/static
       - media_dir:/data/media
