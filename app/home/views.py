@@ -20,7 +20,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from djangofiles import settings
-from home.models import Albums, Files, FileStats, ShortURLs
+from home.models import Albums, Files, FileStats, ShortURLs, Stream
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
@@ -55,7 +55,10 @@ def live_view(request, key):
     View  /live/:key/
     """
     log.debug("%s - live_view: is_secure: %s", request.method, request.is_secure())
-    context = {"key": key, "webpush": {"group": key}}
+    stream = get_object_or_404(Stream, name=key)
+    if not stream.public and not request.user.is_authenticated:
+        return HttpResponseNotFound()
+    context = {"key": key, "webpush": {"group": key}, "stream": stream}
     return render(request, "live.html", context)
 
 
@@ -65,17 +68,19 @@ def live_manifest_view(request, key):
     View  /live/:key/manifest.json
     """
     log.debug("%s - live_manifest_view: is_secure: %s", request.method, request.is_secure())
-    # TODO: This information needs to come from a users stream model
+    stream = get_object_or_404(Stream, name=key)
+    if not stream.public and not request.user.is_authenticated:
+        return HttpResponseNotFound()
     data = {
-        "name": f"Live Stream",
-        "short_name": f"{key}",
+        "name": stream.title,
+        "short_name": stream.name,
         "start_url": f"/live/{key}/",
         "display": "standalone",
         "background_color": "#ffffff",
         "theme_color": "#003366",
         "icons": [{"src": "/static/images/logo.png", "sizes": "192x192", "type": "image/png"}],
         "scope": "/",
-        "id": "/",
+        "id": stream.name,
     }
     return JsonResponse(data)
 

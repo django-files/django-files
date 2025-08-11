@@ -17,7 +17,7 @@ from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django_celery_beat import models
-from home.models import Files, FileStats, ShortURLs
+from home.models import Files, FileStats, ShortURLs, Stream
 from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
 from home.util.storage import use_s3
@@ -403,20 +403,20 @@ def delete_album_websocket(data: dict, user_id):
 
 # @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 1, "countdown": 300})
 @shared_task()
-def send_push_live(pk: int, name: str, body: str, delay: int = 10, ttl: int = 1800):
+def send_push_live(stream_name: str, delay: int = 10, ttl: int = 1800):
     # Send a Push Message for New Live Stream
-    log.info("send_push_live: pk: %s delay: %s - name: %s", pk, delay, name)
-    user = CustomUser.objects.get(pk=pk)
+    stream = Stream.objects.get(name=stream_name)
+    log.info("send_push_live: delay: %s - name: %s - user: %s", delay, stream.name, stream.user.username)
     site_settings = SiteSettings.objects.settings()
     sleep(delay)
     payload = {
-        "head": f"{name} is Live!",
-        "body": body,
-        "icon": user.get_avatar_url(),
-        "url": f"{site_settings.site_url}/live/{name}/",
+        "head": f"{stream.user.username} went Live!",
+        "body": stream.title,
+        "icon": stream.user.get_avatar_url(),
+        "url": f"{site_settings.site_url}/live/{stream.name}/",
     }
     log.info("payload: %s", payload)
-    send_group_notification(group_name=name, payload=payload, ttl=ttl)
+    send_group_notification(group_name=stream.name, payload=payload, ttl=ttl)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 6, "countdown": 30})

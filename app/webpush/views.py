@@ -13,7 +13,7 @@ from .forms import SubscriptionForm, WebPushForm
 def save_info(request):
     # Parse the  json object from post data. return 400 if the json encoding is wrong
     try:
-        post_data = json.loads(request.body.decode('utf-8'))
+        post_data = json.loads(request.body.decode("utf-8"))
     except ValueError:
         return HttpResponse(status=400)
 
@@ -36,11 +36,11 @@ def save_info(request):
             # as the subscription data is a dictionary and its valid
             subscription = subscription_form.get_or_save()
             web_push_form.save_or_delete(
-                subscription=subscription, user=request.user,
-                status_type=status_type, group_name=group_name)
+                subscription=subscription, user=request.user, status_type=status_type, group_name=group_name
+            )
 
             # If subscribe is made, means object is created. So return 201
-            if status_type == 'subscribe':
+            if status_type == "subscribe":
                 return HttpResponse(status=201)
             # Unsubscribe is made, means object is deleted. So return 202
             elif "unsubscribe":
@@ -58,7 +58,7 @@ def process_subscription_data(post_data):
     subscription_data.update(keys)
     # Insert the browser name and user agent
     subscription_data["browser"] = post_data.pop("browser", None)
-    subscription_data["user_agent"] = post_data.pop("user_agent", '')
+    subscription_data["user_agent"] = post_data.pop("user_agent", "")
     return subscription_data
 
 
@@ -68,5 +68,5 @@ class ServiceWorkerView(TemplateView):
     Therefore, use TemplateView in order to server the webpush_serviceworker.js
     """
 
-    template_name = 'webpush_serviceworker.js'
-    content_type = 'application/javascript'
+    template_name = "webpush_serviceworker.js"
+    content_type = "application/javascript"

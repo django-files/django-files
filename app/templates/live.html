@@ -1,6 +1,6 @@
 {% extends "main.html" %}
 {% load webpush_notifications %}
-{% block title %}Live - {{ key }}{% endblock %}
+{% block title %}{{ stream.title }} - Live - {{ stream.user.username }}{% endblock %}
 {% load home_tags %}
 {% load static %}
 
@@ -8,14 +8,19 @@
     <link rel="manifest" href="/live/{{ key }}/manifest.json">
     {% webpush_header %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video-js.min.css" integrity="sha512-7wMpNCbZmQmUPa3OOvqZo2TbK4n4xy4hdSWvxXKaJH8tR/9+7YFS0qyiKK3FV3tE6ANeSAdd3xfFQbf71P5Dfw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        {{ css|safe }}
+    </style>
+    <link rel="stylesheet" href="{% static 'css/preview.css' %}">
+    <link rel="stylesheet" href="{% static 'css/live.css' %}">
 {% endblock %}
 
 {% block meta %}
-    <meta name="title" content="{{ key }}"/>
-    <meta name="description" content="Watch {{ key }} live!"/>
+    <meta name="title" content="{{ stream.title }}"/>
+    <meta name="description" content="{{ stream.description }}"/>
 
-    <meta property="og:title" content="{{ key }}">
-    <meta property="og:description" content="Watch {{ key }} live!">
+    <meta property="og:title" content="{{ stream.title }}">
+    <meta property="og:description" content="{{ stream.description }}">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="og:image" content="{{ site_settings.site_url }}% static 'images/logo.png' %}">
@@ -24,35 +29,61 @@
 
 {% block body %}
     <div class="d-flex flex-column h-100">
-        <div class="flex-grow-1">
-            <video
-                id="my-video"
-                class="video-js"
-                controls
-                preload="auto"
-                poster="{% static 'images/logo.png' %}">
-                <source src="/hls/{{ key }}.m3u8" type="application/x-mpegURL" />
-                <p class="vjs-no-js">
-                    To view this video please enable JavaScript, and consider upgrading to a
-                    web browser that
-                    <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                </p>
-            </video>
-        </div>
-        <div class="container-fluid">
-        <div class="row">
-            <div class="col-sm">
-                {% webpush_button with_class="btn btn-outline-info m-1" %}
+        <div class="flex-grow-1 position-relative">
+            <div class="video-container d-flex">
+                <div class="video-wrapper flex-grow-1">
+                    <video
+                        id="my-video"
+                        class="video-js"
+                        controls
+                        preload="auto"
+                        poster="{% static 'images/logo.png' %}">
+                        <source src="/hls/{{ key }}.m3u8" type="application/x-mpegURL" />
+                        <p class="vjs-no-js">
+                            To view this video please enable JavaScript, and consider upgrading to a
+                            web browser that
+                            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                        </p>
+                    </video>
+                </div>
+                <div id="previewSidebar" class="sidebar h-100">
+                    <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
+                    <div id="file-{{ file.id }}" class="card-body sidebarCard">
+                        <h3 class="card-title mb-0 text-break">{{ stream.title }}</h3>
+                        <row>
+                            <strong class="d-inline-block mb-1 col-md-6 text-start">{{ stream.description }}</strong>
+                        </row>
+                        <div class="row">
+                            <div class="col-sm">
+                                <p class="m-0 m-1">
+                                    <strong>Started:</strong> {{ stream.started_at|date:"M j, Y g:i A T" }}
+                                </p>
+                                {% if not stream.is_live and stream.ended_at %}
+                                    <p class="m-0 m-1">
+                                        <strong>Ended:</strong> {{ stream.ended_at|date:"M j, Y g:i A T" }}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm text-sm fs-4">
+                                <p class="m-0 m-1">
+                                Viewers: <span id="view-count">N/A</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm">
+                                {% webpush_button with_class="btn btn-outline-info m-1" %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-sm text-sm-end fs-4">
-                <p class="m-0 m-1">
-                Viewers: <span id="view-count">N/A</span>
-                </p>
-            </div>
-        </div>
+            <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
         </div>
     </div>
-
 {% endblock %}
 
 {% block footer %}{% endblock %}
@@ -60,4 +91,6 @@
 {% block tail %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="text/javascript" src="{% static 'js/live.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
+    <script type="module" src="{% static 'js/preview.js' %}"></script>
 {% endblock %}
