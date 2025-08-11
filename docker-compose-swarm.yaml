@@ -81,6 +81,8 @@ services:
       args:
         - BUILD_SHA=${COMMIT_SHA}
     image: ghcr.io/django-files/django-files-app:${VERSION:-latest}
+    ports:
+    - "9126:9125"
     environment: *environment
     command: "gunicorn djangofiles.asgi:application -b 0.0.0.0:9000 -w 2 -k uvicorn.workers.UvicornWorker"
     healthcheck:
