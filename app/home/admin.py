@@ -101,24 +101,24 @@ class StreamAdmin(admin.ModelAdmin):
         "name",
         "title",
         "user",
-        "isLive",
-        "startedAt",
-        "endedAt",
-        "uniqueViewers",
+        "is_live",
+        "started_at",
+        "ended_at",
+        "unique_views",
         "public",
-        "viewerLimit",
+        "viewer_limit",
     )
     list_filter = (
         "user",
-        "isLive",
+        "is_live",
         "public",
-        "startedAt",
-        "endedAt",
+        "started_at",
+        "ended_at",
     )
     readonly_fields = (
         "name",
-        "startedAt",
-        "uniqueViewers",
+        "started_at",
+        "unique_views",
     )
     search_fields = (
         "name",
@@ -126,8 +126,8 @@ class StreamAdmin(admin.ModelAdmin):
         "description",
         "user__username",
     )
-    ordering = ("-startedAt",)
-    list_editable = ("isLive", "public", "viewerLimit")
+    ordering = ("-started_at",)
+    list_editable = ("is_live", "public", "viewer_limit")
 
 
 @admin.register(StreamHistory)
@@ -136,28 +136,28 @@ class StreamHistoryAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "stream",
-        "startedAt",
-        "endedAt",
-        "peakViewers",
-        "avgViewers",
+        "started_at",
+        "ended_at",
+        "peak_viewers",
+        "avg_viewers",
         "title",
         "recording",
     )
     list_filter = (
         "stream",
-        "startedAt",
-        "endedAt",
+        "started_at",
+        "ended_at",
     )
     readonly_fields = (
         "id",
-        "startedAt",
+        "started_at",
     )
     search_fields = (
         "stream__name",
         "title",
         "description",
     )
-    ordering = ("-startedAt",)
+    ordering = ("-started_at",)
     raw_id_fields = ("stream", "recording")
 
 

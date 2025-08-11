@@ -231,7 +231,7 @@ class ShortURLs(models.Model):
 
 class Stream(models.Model):
     class Meta:
-        ordering = ["-startedAt"]
+        ordering = ["-started_at"]
         verbose_name = "Stream"
         verbose_name_plural = "Streams"
 
@@ -254,7 +254,7 @@ class Stream(models.Model):
         verbose_name="Description",
         help_text="Stream Description"
     )
-    isLive = models.BooleanField(
+    is_live = models.BooleanField(
         default=False,
         verbose_name="Live Status",
         help_text="Stream Live Status"
@@ -264,20 +264,20 @@ class Stream(models.Model):
         on_delete=models.CASCADE,
         verbose_name="User",
     )
-    startedAt = models.DateTimeField(
+    started_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Started At",
         help_text="Stream Started DateTime"
     )
-    endedAt = models.DateTimeField(
+    ended_at = models.DateTimeField(
         null=True,
         blank=True,
         verbose_name="Ended At",
         help_text="Stream Ended DateTime"
     )
-    uniqueViewers = models.IntegerField(
+    unique_views = models.IntegerField(
         default=0,
-        verbose_name="Unique Viewers",
+        verbose_name="Unique Views",
         help_text="Unique stream impressions"
     )
     public = models.BooleanField(
@@ -292,10 +292,20 @@ class Stream(models.Model):
         verbose_name="Password", 
         help_text="Stream Password"
     )
-    viewerLimit = models.IntegerField(
+    viewer_limit = models.IntegerField(
         default=0,
         verbose_name="Viewer Limit",
         help_text="Max stream viewers"
+    )
+    live_chat = models.BooleanField(
+        default=False,
+        verbose_name="Live Chat",
+        help_text="Stream Live Chat Enabled"
+    )
+    anonymous_chat = models.BooleanField(
+        default=False,
+        verbose_name="Anonymous Chat",
+        help_text="Stream Anonymous Chat Enabled"
     )
 
     def __str__(self):
@@ -304,7 +314,7 @@ class Stream(models.Model):
 
 class StreamHistory(models.Model):
     class Meta:
-        ordering = ["-startedAt"]
+        ordering = ["-started_at"]
         verbose_name = "Stream History"
         verbose_name_plural = "Streams History"
 
@@ -315,23 +325,23 @@ class StreamHistory(models.Model):
         verbose_name="Stream",
         help_text="Stream Object"
     )
-    startedAt = models.DateTimeField(
+    started_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Started At",
         help_text="Stream Start Datetime."
     )
-    endedAt = models.DateTimeField(
+    ended_at = models.DateTimeField(
         null=True,
         blank=True,
         verbose_name="Ended At",
         help_text="Stream End Datetime."
     )
-    peakViewers = models.IntegerField(
+    peak_viewers = models.IntegerField(
         default=0,
         verbose_name="Peak Viewers",
         help_text="Peak View Count"
     )
-    avgViewers = models.IntegerField(
+    avg_viewers = models.IntegerField(
         default=0,
         verbose_name="Average Viewers",
         help_text="Average View Count"
@@ -358,7 +368,7 @@ class StreamHistory(models.Model):
     )
 
     def __str__(self):
-        return f"<StreamHistory(id={self.id}, stream={self.stream.name}, startedAt={self.startedAt}, endedAt={self.endedAt})>"
+        return f"<StreamHistory(id={self.id}, stream={self.stream.name}, started_at={self.started_at}, ended_at={self.ended_at})>"
 
 
 class StreamDiscordWebhooks(models.Model):

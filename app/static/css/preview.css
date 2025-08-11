@@ -116,8 +116,44 @@
     }
 }
 
+/* Responsive behavior for smaller screens */
+@media screen and (max-width: 768px) {
+    .video-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 300px;
+        order: -1;
+    }
+
+    .video-wrapper {
+        flex: 1;
+        min-height: 0;
+    }
+}
+
 main {
     overflow: hidden;
+}
+
+.video-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.video-wrapper {
+    position: relative;
+    transition: 0.5s;
+}
+
+.video-js {
+    width: 100%;
+    height: 100%;
+    transition: 0.5s;
 }
 
 .card {

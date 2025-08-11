@@ -6,6 +6,7 @@ import random
 from functools import wraps
 from typing import Any, BinaryIO, Callable, List, Optional, Union
 from urllib.parse import parse_qs, urlparse
+from datetime import datetime
 
 import httpx
 import validators
@@ -828,10 +829,17 @@ def stream_auth_view(request):
             stream_kwargs["title"] = title
         stream, created = Stream.objects.update_or_create(
             name=name,
-            defaults={'user': user, **stream_kwargs}
+            defaults={"user": user, "is_live": True, "started_at": datetime.now(), **stream_kwargs}
         )
+        log.debug("stream: %s", stream.__dict__)
+        # if the stream ended, we want to set started_at to now, and clear ended_at
+        if stream.ended_at:
+            log.debug("stream ended, resetting started_at and ended_at")
+            stream.started_at = datetime.now()
+            stream.ended_at = None
+            stream.save()
         log.debug("title: %s", title)
-        send_push_live.delay(user.id, name, stream.title)
+        send_push_live.delay(stream.name)
 
         return HttpResponse()
     except Exception as error:
@@ -849,6 +857,11 @@ def stream_done_view(request):
         log.debug("stream_done_view: %s", request.GET)
         name = request.GET.get("name")
         log.debug("name: %s", name)
+        stream = Stream.objects.get(name=name)
+        log.debug("stream: %s", stream)
+        stream.ended_at = datetime.now()
+        stream.is_live = False
+        stream.save()
 
     except Exception as error:
         log.debug("error: %s", error)

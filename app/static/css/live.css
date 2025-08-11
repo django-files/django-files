@@ -1,0 +1,6 @@
+/* Live page specific styles - overrides for sidebar positioning */
+
+/* Override sidebar positioning to prevent it from affecting video layout */
+#previewSidebar.sidebar {
+    position: relative !important;
+}
