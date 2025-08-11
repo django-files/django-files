@@ -5,6 +5,11 @@ services:
     build:
       context: nginx
     image: ghcr.io/django-files/django-files-nginx:${VERSION:-latest}
+    ports:
+      - target: 9135
+        published: 9136
+        protocol: tcp
+        mode: host
     environment: &environment
       SECRET: ${SECRET}
       SITE_URL: ${SITE_URL}
@@ -137,8 +142,6 @@ services:
       - redis_data:/data
     networks:
       - net-internal
-    ports:
-      - "9126:9125"
 
 networks:
   net-internal:
