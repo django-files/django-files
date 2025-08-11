@@ -236,76 +236,29 @@ class Stream(models.Model):
         verbose_name_plural = "Streams"
 
     name = models.CharField(
-        max_length=255,
-        primary_key=True,
-        unique=True,
-        verbose_name="Name",
-        help_text="Stream Name"
+        max_length=255, primary_key=True, unique=True, verbose_name="Name", help_text="Stream Name"
     )
-    title = models.CharField(
-        max_length=255,
-        blank=False,
-        verbose_name="Title",
-        help_text="Stream Title"
-    )
-    description = models.TextField(
-        default="",
-        blank=True,
-        verbose_name="Description",
-        help_text="Stream Description"
-    )
-    is_live = models.BooleanField(
-        default=False,
-        verbose_name="Live Status",
-        help_text="Stream Live Status"
-    )
+    title = models.CharField(max_length=255, blank=False, verbose_name="Title", help_text="Stream Title")
+    description = models.TextField(default="", blank=True, verbose_name="Description", help_text="Stream Description")
+    is_live = models.BooleanField(default=False, verbose_name="Live Status", help_text="Stream Live Status")
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
         verbose_name="User",
     )
     started_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Started At",
-        help_text="Stream Started DateTime"
+        auto_now_add=True, verbose_name="Started At", help_text="Stream Started DateTime"
     )
-    ended_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Ended At",
-        help_text="Stream Ended DateTime"
-    )
-    unique_views = models.IntegerField(
-        default=0,
-        verbose_name="Unique Views",
-        help_text="Unique stream impressions"
-    )
-    public = models.BooleanField(
-        default=True,
-        verbose_name="Public",
-        help_text="Stream Public Boolean"
-    )
+    ended_at = models.DateTimeField(null=True, blank=True, verbose_name="Ended At", help_text="Stream Ended DateTime")
+    unique_views = models.IntegerField(default=0, verbose_name="Unique Views", help_text="Unique stream impressions")
+    public = models.BooleanField(default=True, verbose_name="Public", help_text="Stream Public Boolean")
     password = models.CharField(
-        default="",
-        max_length=255,
-        blank=True,
-        verbose_name="Password", 
-        help_text="Stream Password"
+        default="", max_length=255, blank=True, verbose_name="Password", help_text="Stream Password"
     )
-    viewer_limit = models.IntegerField(
-        default=0,
-        verbose_name="Viewer Limit",
-        help_text="Max stream viewers"
-    )
-    live_chat = models.BooleanField(
-        default=False,
-        verbose_name="Live Chat",
-        help_text="Stream Live Chat Enabled"
-    )
+    viewer_limit = models.IntegerField(default=0, verbose_name="Viewer Limit", help_text="Max stream viewers")
+    live_chat = models.BooleanField(default=False, verbose_name="Live Chat", help_text="Stream Live Chat Enabled")
     anonymous_chat = models.BooleanField(
-        default=False,
-        verbose_name="Anonymous Chat",
-        help_text="Stream Anonymous Chat Enabled"
+        default=False, verbose_name="Anonymous Chat", help_text="Stream Anonymous Chat Enabled"
     )
 
     def __str__(self):
@@ -319,44 +272,16 @@ class StreamHistory(models.Model):
         verbose_name_plural = "Streams History"
 
     id = models.AutoField(primary_key=True)
-    stream = models.ForeignKey(
-        Stream,
-        on_delete=models.CASCADE,
-        verbose_name="Stream",
-        help_text="Stream Object"
-    )
-    started_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Started At",
-        help_text="Stream Start Datetime."
-    )
-    ended_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Ended At",
-        help_text="Stream End Datetime."
-    )
-    peak_viewers = models.IntegerField(
-        default=0,
-        verbose_name="Peak Viewers",
-        help_text="Peak View Count"
-    )
-    avg_viewers = models.IntegerField(
-        default=0,
-        verbose_name="Average Viewers",
-        help_text="Average View Count"
-    )
+    stream = models.ForeignKey(Stream, on_delete=models.CASCADE, verbose_name="Stream", help_text="Stream Object")
+    started_at = models.DateTimeField(auto_now_add=True, verbose_name="Started At", help_text="Stream Start Datetime.")
+    ended_at = models.DateTimeField(null=True, blank=True, verbose_name="Ended At", help_text="Stream End Datetime.")
+    peak_viewers = models.IntegerField(default=0, verbose_name="Peak Viewers", help_text="Peak View Count")
+    avg_viewers = models.IntegerField(default=0, verbose_name="Average Viewers", help_text="Average View Count")
     title = models.CharField(
-        max_length=255,
-        blank=True,
-        verbose_name="Title",
-        help_text="Stream title at time of recording."
+        max_length=255, blank=True, verbose_name="Title", help_text="Stream title at time of recording."
     )
     description = models.TextField(
-        default="",
-        blank=True,
-        verbose_name="Description",
-        help_text="Stream description at time of recording."
+        default="", blank=True, verbose_name="Description", help_text="Stream description at time of recording."
     )
     recording = models.OneToOneField(
         Files,
@@ -364,7 +289,7 @@ class StreamHistory(models.Model):
         null=True,
         blank=True,
         verbose_name="Recording",
-        help_text="Link to recording as a file object."
+        help_text="Link to recording as a file object.",
     )
 
     def __str__(self):
@@ -381,12 +306,7 @@ class StreamDiscordWebhooks(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created", help_text="Hook Created Date.")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated", help_text="Hook Updated Date.")
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    stream = models.ForeignKey(
-        Stream,
-        on_delete=models.CASCADE,
-        verbose_name="Stream",
-        help_text="Stream Object"
-    )
+    stream = models.ForeignKey(Stream, on_delete=models.CASCADE, verbose_name="Stream", help_text="Stream Object")
     objects = DiscordWebhooksManager()
 
     def __str__(self):

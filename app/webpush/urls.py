@@ -11,12 +11,12 @@ from . import views
 last_modified_date = timezone.now().strftime("%Y-%m-%d_%H:%M:%S")
 
 urlpatterns = [
-    path('jsi18n/',
-         cache_page(86400, key_prefix='js18n-%s' % last_modified_date)(
-             JavaScriptCatalog.as_view(packages=['webpush'])
-         ),
-         name='javascript-catalog'),
-    path('save_information', views.save_info, name='save_webpush_info'),
+    path(
+        "jsi18n/",
+        cache_page(86400, key_prefix="js18n-%s" % last_modified_date)(JavaScriptCatalog.as_view(packages=["webpush"])),
+        name="javascript-catalog",
+    ),
+    path("save_information", views.save_info, name="save_webpush_info"),
     # Service worker need to be loaded from same domain
-    path('service-worker.js', views.ServiceWorkerView.as_view(), name='service_worker')
+    path("service-worker.js", views.ServiceWorkerView.as_view(), name="service_worker"),
 ]

@@ -19,19 +19,19 @@ class WebPushExtension(Extension):
 
     def __init__(self, environment):
         super(WebPushExtension, self).__init__(environment)
-        environment.globals['webpush_header'] = self.webpush_header
-        environment.globals['webpush_button'] = self.webpush_button
+        environment.globals["webpush_header"] = self.webpush_header
+        environment.globals["webpush_button"] = self.webpush_button
 
     @pass_context
     def webpush_header(self, context):
         template_context = get_templatetag_context(context)
-        data = render_to_string('webpush_header.html', template_context, using='django')
+        data = render_to_string("webpush_header.html", template_context, using="django")
         return mark_safe(data)
 
     @pass_context
     def webpush_button(self, context, with_class=None):
         template_context = get_templatetag_context(context)
         if with_class:
-            template_context['class'] = with_class
-        data = render_to_string('webpush_button.html', template_context, using='django')
+            template_context["class"] = with_class
+        data = render_to_string("webpush_button.html", template_context, using="django")
         return mark_safe(data)

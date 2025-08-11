@@ -20,6 +20,7 @@ class PushInfoAdmin(admin.ModelAdmin):
                 self.message_user(request, _("Test sent successfully"))
             else:
                 self.message_user(request, _("Deprecated subscription deleted"))
+
     send_test_message.short_description = _("Send test message")
 
 

@@ -828,8 +828,7 @@ def stream_auth_view(request):
         if title := data.get("title")[0]:
             stream_kwargs["title"] = title
         stream, created = Stream.objects.update_or_create(
-            name=name,
-            defaults={"user": user, "is_live": True, "started_at": datetime.now(), **stream_kwargs}
+            name=name, defaults={"user": user, "is_live": True, "started_at": datetime.now(), **stream_kwargs}
         )
         log.debug("stream: %s", stream.__dict__)
         # if the stream ended, we want to set started_at to now, and clear ended_at
