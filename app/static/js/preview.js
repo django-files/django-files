@@ -68,6 +68,9 @@ function closeSidebar() {
     sidebarCard.fadeOut(200)
 }
 
+window.openSidebar = openSidebar
+window.closeSidebar = closeSidebar
+
 function renameFile(data) {
     let fileName = document.getElementsByClassName('card-title')[0]
     fileName.innerHTML = data.name

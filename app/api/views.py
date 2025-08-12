@@ -819,14 +819,17 @@ def stream_auth_view(request):
 
         title = data.get("title") or data.get("message") or "Click here to watch the stream."
         stream_kwargs = {}
-        if public := data.get("public")[0]:
-            stream_kwargs["public"] = anytobool(public)
-        if viewer_limit := data.get("viewer_limit")[0]:
-            stream_kwargs["viewer_limit"] = int(viewer_limit)
-        if description := data.get("description")[0]:
-            stream_kwargs["description"] = description
-        if title := data.get("title")[0]:
-            stream_kwargs["title"] = title
+        if public := data.get("public"):
+            stream_kwargs["public"] = anytobool(public[0])
+        if viewer_limit := data.get("viewer_limit"):
+            try:
+                stream_kwargs["viewer_limit"] = int(viewer_limit[0])
+            except ValueError:
+                log.error("Invalid viewer_limit: %s", viewer_limit)
+        if description := data.get("description"):
+            stream_kwargs["description"] = description[0]
+        if title := data.get("title"):
+            stream_kwargs["title"] = title[0]
         stream, created = Stream.objects.update_or_create(
             name=name, defaults={"user": user, "is_live": True, "started_at": datetime.now(), **stream_kwargs}
         )

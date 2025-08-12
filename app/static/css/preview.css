@@ -106,35 +106,6 @@
     }
 }
 
-/* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
-@media screen and (max-height <= 450px) {
-    .sidebar {
-        padding-top: 15px;
-    }
-    .sidebar a {
-        font-size: 18px;
-    }
-}
-
-/* Responsive behavior for smaller screens */
-@media screen and (max-width: 768px) {
-    .video-container {
-        flex-direction: column;
-    }
-
-    .sidebar {
-        width: 100% !important;
-        height: auto !important;
-        max-height: 300px;
-        order: -1;
-    }
-
-    .video-wrapper {
-        flex: 1;
-        min-height: 0;
-    }
-}
-
 main {
     overflow: hidden;
 }

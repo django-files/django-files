@@ -29,6 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('%c player.on: stop', 'color: OrangeRed')
         clearInterval(pingInterval)
     })
+    player.on('error', (error) => {
+        console.error('Video player error:', error)
+        window.openSidebar()
+    })
 })
 
 async function pingServer() {
