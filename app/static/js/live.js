@@ -10,9 +10,8 @@ let player
 document.addEventListener('DOMContentLoaded', () => {
     console.log(`DOMContentLoaded: live.js - ${streamName}`)
     player = videojs('my-video', {
-        // fluid: true,
         fill: true,
-        autoplay: 'play',
+        autoplay: true,
     })
     console.log('player:', player)
     if (!checkInterval) {

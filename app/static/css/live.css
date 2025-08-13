@@ -1,5 +1,12 @@
 /* Live page specific styles - fixed sidebar layout */
 
+/* Fix height constraint to prevent video component height changes */
+html,
+body {
+    height: 100vh;
+    overflow: hidden;
+}
+
 /* Main container layout */
 .live-container {
     display: flex;
