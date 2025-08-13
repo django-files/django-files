@@ -3,14 +3,20 @@ import json
 import logging
 import os
 import random
+from datetime import datetime
 from functools import wraps
 from typing import Any, BinaryIO, Callable, List, Optional, Union
 from urllib.parse import parse_qs, urlparse
-from datetime import datetime
 
 import httpx
 import validators
-from api.utils import extract_albums, extract_files, extract_streams, serialize_user, serialize_users
+from api.utils import (
+    extract_albums,
+    extract_files,
+    extract_streams,
+    serialize_user,
+    serialize_users,
+)
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test

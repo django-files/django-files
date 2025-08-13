@@ -1,6 +1,14 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from home.models import Albums, Files, FileStats, ShortURLs, Stream, StreamHistory, StreamDiscordWebhooks
+from home.models import (
+    Albums,
+    Files,
+    FileStats,
+    ShortURLs,
+    Stream,
+    StreamDiscordWebhooks,
+    StreamHistory,
+)
 
 
 admin.site.site_header = "Django Files Administration"
