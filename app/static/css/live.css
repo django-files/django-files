@@ -9,8 +9,10 @@
 
 /* Video container - will shrink when sidebar opens */
 .video-container {
-    flex: 1;
+    width: 100%;
+    height: 100%;
     position: relative;
+    flex: 1;
     transition: all 0.5s ease;
     min-width: 0; /* Allow flex item to shrink below content size */
 }
@@ -23,10 +25,135 @@
     transition: all 0.5s ease;
 }
 
+/* Video.js styling */
+.video-js {
+    width: 100%;
+    height: 100%;
+    transition: 0.5s;
+}
 
 /* Sidebar - positioned as flex item instead of absolute */
 #previewSidebar.sidebar {
     position: relative !important;
+}
+
+/* Sidebar base styles */
+.sidebar {
+    width: 0;
+    position: absolute;
+    top: 0;
+    right: 0;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    overflow: hidden;
+    transition: 0.5s;
+    padding-top: 60px;
+    border-top-right-radius: 9px;
+    border-bottom-right-radius: 9px;
+    border-top: 1px ridge rgba(66 69 73 / 100%);
+    border-right: 1px ridge rgba(66 69 73 / 100%);
+    border-bottom: 1px ridge rgba(66 69 73 / 100%);
+    z-index: 11;
+}
+
+.sidebar a {
+    padding: 8px 8px 8px 32px;
+    color: #818181;
+    transition: 0.3s;
+}
+
+.sidebar a:hover {
+    color: #f1f1f1;
+}
+
+.sidebar .closebtn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+}
+
+/* Button styles */
+.openbtn {
+    font-size: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    position: absolute;
+    transition: 0.5s;
+    top: 5px;
+    right: 10px;
+    z-index: 10;
+}
+
+/* Theme-specific styles */
+[data-bs-theme='dark'] {
+    .context-placement {
+        background-color: rgba(0 0 0 / 70%);
+    }
+
+    .openbtn {
+        background-color: rgba(0 0 0 / 70%);
+    }
+
+    .context-placement:hover {
+        background-color: #444;
+    }
+
+    .openbtn:hover {
+        background-color: #444;
+    }
+
+    .sidebar {
+        background-color: rgba(0 0 0 / 60%);
+    }
+}
+
+[data-bs-theme='light'] {
+    .context-placement {
+        background-color: rgba(200 200 200 / 70%);
+    }
+
+    .openbtn {
+        background-color: rgba(200 200 200 / 70%);
+    }
+
+    .context-placement:hover {
+        background-color: #e7e6e6;
+    }
+
+    .openbtn:hover {
+        background-color: #e7e6e6;
+    }
+
+    .sidebar {
+        background-color: rgba(200 200 200 / 70%);
+    }
+}
+
+/* Main content overflow */
+main {
+    overflow: hidden;
+}
+
+/* Card styling */
+.card {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: flex-start;
+    /*overflow: hidden; */
+    padding: 0 10px;
+}
+
+.ui-menu-item .ui-menu-item-wrapper.ui-state-active {
+    background: #444 !important;
+    font-weight: normal !important;
+    border: 0;
+    border-radius: 5px;
 }
 
 /* Live status glow animation */
