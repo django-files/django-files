@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log(`DOMContentLoaded: live.js - ${streamName}`)
     player = videojs('my-video', {
         fill: true,
-        autoplay: true,
     })
     console.log('player:', player)
     if (!checkInterval) {

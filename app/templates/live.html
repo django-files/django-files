@@ -27,17 +27,17 @@
 {% endblock %}
 
 {% block body %}
-    <div class="d-flex flex-column">
-        <div class="flex-grow-1 position-relative vh-100">
-            <!-- Main live container with flexbox layout -->
-            <div class="live-container">
-                <!-- Video container - will shrink when sidebar opens -->
-                <div class="video-container">
-                    <div class="video-wrapper">
+    <div class="d-flex flex-column h-100">
+        <div class="flex-grow-1 position-relative">
+            <div class="live-container d-flex h-100">
+                <div class="video-container flex-grow-1 d-flex align-items-center justify-content-center">
+                    <div class="video-wrapper w-100 h-100 d-flex align-items-center justify-content-center">
                         <video
+                            autoplay="true"
+                            muted="true"
                             id="my-video"
-                            class="video-js"
-                            controls
+                            class="video-js w-100 h-100"
+                            controls="true"
                             preload="auto"
                             poster="{% static 'images/logo.png' %}">
                             <source src="/hls/{{ key }}.m3u8" type="application/x-mpegURL" />
@@ -53,17 +53,16 @@
                 <!-- Sidebar button - positioned over video -->
                 <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
                 
-                <!-- Sidebar - now part of flexbox layout -->
-                <div id="previewSidebar" class="sidebar h-100">
+                <div id="previewSidebar" class="sidebar d-flex flex-column h-100">
                     <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
-                    <div id="file-{{ file.id }}" class="card-body sidebarCard p-3">
+                    <div id="file-{{ file.id }}" class="card-body sidebarCard p-3 flex-grow-1">
                         <h2 class="card-title mb-0 text-break">{{ stream.title }}</h2>
-                        <row>
-                            <strong class="d-inline-block mb-1 text-start text-secondary">{{ stream.description }}</strong>
-                        </row>
                         <div class="row">
-                            <div class="col-md d-flex justify-content-betweent pb-1">
-                                <img src="{{ stream.user.get_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P"><span class="fw-semibold  ps-1">{{ stream.user.get_name }}</span>
+                            <strong class="d-inline-block mb-1 text-start text-secondary">{{ stream.description }}</strong>
+                        </div>
+                        <div class="row">
+                            <div class="col-md d-flex justify-content-between pb-1">
+                                <img src="{{ stream.user.get_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P"><span class="fw-semibold ps-1">{{ stream.user.get_name }}</span>
                             </div>
                         </div>
                         <div class="row">
