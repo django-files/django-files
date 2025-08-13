@@ -5,6 +5,7 @@ html,
 body {
     height: 100vh;
     overflow: hidden;
+    padding-top: 30px;
 }
 
 /* Main container layout */
