@@ -18,11 +18,15 @@ class UserApiTestCase(TestCase):
 
         # Create test users
         self.superuser = CustomUser.objects.create_superuser(
-            username="superuser", email="super@test.com", password="12345"  # nosec
+            username="superuser",
+            email="super@test.com",
+            password="12345",  # nosec
         )
 
         self.regular_user = CustomUser.objects.create_user(
-            username="regularuser", email="regular@test.com", password="12345"  # nosec
+            username="regularuser",
+            email="regular@test.com",
+            password="12345",  # nosec
         )
 
     def test_current_user_get_with_auth(self):

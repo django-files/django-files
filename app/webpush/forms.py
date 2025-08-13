@@ -33,7 +33,6 @@ class WebPushForm(forms.Form):
 
 
 class SubscriptionForm(forms.ModelForm):
-
     class Meta:
         model = SubscriptionInfo
         fields = ("endpoint", "auth", "p256dh", "browser", "user_agent")

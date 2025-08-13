@@ -39,6 +39,7 @@ RUN apt-get -y update && \
 
 # Build nginx with RTMP module
 WORKDIR /tmp/build
+SHELL ["/bin/ash"]
 RUN set -e && \
     curl --proto '=https' -L "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" | tar xz && \
     git clone https://github.com/arut/nginx-rtmp-module.git -b "${RTMP_MODULE_VERSION}" && \
@@ -106,7 +107,7 @@ COPY docker/redis.conf /etc/redis/redis.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/docker-entrypoint.sh /docker-entrypoint.sh
 
-# WORKDIR /app  # TODO: Set WORKDIR ?
+WORKDIR /app
 
 COPY --chown=app:app app /app
 

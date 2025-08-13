@@ -15,10 +15,10 @@ RUN apk add --no-cache \
 
 WORKDIR /tmp/build
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
-RUN curl --proto '=https' -L "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" | tar xz &&\
-    git clone https://github.com/arut/nginx-rtmp-module.git -b "${RTMP_MODULE_VERSION}" &&\
-    cp ./nginx-rtmp-module/stat.xsl /stat.xsl &&\
-    cd "nginx-${NGINX_VERSION}" &&\
+RUN curl --proto '=https' -L "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" | tar xz && \
+    git clone https://github.com/arut/nginx-rtmp-module.git -b "${RTMP_MODULE_VERSION}" && \
+    cp ./nginx-rtmp-module/stat.xsl /stat.xsl && \
+    cd "nginx-${NGINX_VERSION}" && \
     ./configure \
         --user=nginx \
         --group=nginx \
@@ -33,7 +33,7 @@ RUN curl --proto '=https' -L "https://nginx.org/download/nginx-${NGINX_VERSION}.
         --with-http_secure_link_module \
         --with-threads \
         --with-file-aio \
-        --add-module=../nginx-rtmp-module &&\
+        --add-module=../nginx-rtmp-module && \
     make -j"$(nproc)" && make install && rm -rf /tmp/build
 
 RUN mkdir -p /etc/nginx/conf.rtmp.d /opt/nginx /tmp/record &&\

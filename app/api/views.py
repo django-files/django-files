@@ -654,7 +654,7 @@ def remote_view(request):
     extra_args = parse_headers(request.headers, expr=parse_expire(request), **request.POST.dict())
     log.debug("extra_args: %s", extra_args)
     file = process_file(name, io.BytesIO(r.content), request.user.id, **extra_args)
-    response = {"url": f'{site_settings["site_url"] + file.preview_uri()}'}
+    response = {"url": f"{site_settings['site_url'] + file.preview_uri()}"}
     log.debug("response: %s", response)
     return JsonResponse(response)
 
