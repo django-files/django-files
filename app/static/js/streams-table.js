@@ -126,13 +126,21 @@ const dataTablesOptions = {
 function getStreamLink(data, type, row) {
     if (type === 'display') {
         const link = streamLink.cloneNode(true)
-        const linkRef = link.querySelector('.dj-stream-link-ref')
         const linkClip = link.querySelector('.dj-stream-link-clip')
 
-        linkRef.textContent = data.name
-        linkRef.href = row.url
-
+        // Set clipboard functionality
         linkClip.setAttribute('data-clipboard-text', row.url)
+
+        // Create and insert the stream name link before the clipboard icon
+        const nameLink = document.createElement('a')
+        nameLink.href = row.url
+        nameLink.className = 'link-body-emphasis me-2'
+        nameLink.textContent = row.name
+
+        const span = link.querySelector('span')
+        span.insertBefore(nameLink, span.lastChild)
+
+        span.className = 'd-inline-block'
 
         return link.outerHTML
     }
