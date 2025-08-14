@@ -24,7 +24,6 @@ class DynamicStorageFieldFile(FieldFile):
 
 
 class StoragesRouterFileField(models.FileField):
-
     attr_class = DynamicStorageFieldFile
 
     def pre_save(self, model_instance, add):

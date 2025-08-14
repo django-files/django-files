@@ -2,7 +2,6 @@ from typing import Optional
 
 
 class BaseOauth(object):
-
     __slots__ = [
         "code",
         "id",

@@ -1,4 +1,3 @@
-import arrow
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 
@@ -9,14 +8,11 @@ except ImportError:
     # NOTE(willkg): We can get rid of this when we stop supporting Jinja2 < 3.
     from jinja2 import contextfunction as pass_context
 
-from jinja2 import nodes
 from jinja2.ext import Extension
-from markupsafe import Markup
 from webpush.utils import get_templatetag_context
 
 
 class WebPushExtension(Extension):
-
     def __init__(self, environment):
         super(WebPushExtension, self).__init__(environment)
         environment.globals["webpush_header"] = self.webpush_header

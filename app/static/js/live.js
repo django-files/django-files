@@ -10,9 +10,7 @@ let player
 document.addEventListener('DOMContentLoaded', () => {
     console.log(`DOMContentLoaded: live.js - ${streamName}`)
     player = videojs('my-video', {
-        // fluid: true,
         fill: true,
-        autoplay: 'play',
     })
     console.log('player:', player)
     if (!checkInterval) {
@@ -28,6 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
     player.on('stop', () => {
         console.log('%c player.on: stop', 'color: OrangeRed')
         clearInterval(pingInterval)
+    })
+    player.on('error', (error) => {
+        console.error('Video player error:', error)
+        window.openSidebar()
     })
 })
 

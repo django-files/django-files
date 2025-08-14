@@ -91,6 +91,10 @@
                     <i class="fa-regular fa-images me-2 d-md-none"></i> Albums</a>
             </li>
             <li class="nav-item">
+                <a class="nav-link {% block streams_active %}{% endblock %}" href="{% url 'home:streams' %}">
+                    <i class="fa-solid fa-video me-2 d-md-none"></i> Streams</a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {% block shorts_active %}{% endblock %}" href="{% url 'home:shorts' %}">
                     <i class="fa-solid fa-link me-2 d-md-none"></i> Shorts</a>
             </li>

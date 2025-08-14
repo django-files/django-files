@@ -1,0 +1,37 @@
+{% load home_tags %}
+{% load static %}
+
+<p class="d-xl-none text-muted mb-0"><em>Some columns hidden due to narrow viewport.</em></p>
+<table class="display responsive nowrap table table-hover table-responsive mb-0 dt-select-no-highlight" id="streams-table" style="width:100%">
+    <caption class="visually-hidden">List of Streams</caption>
+    <thead>
+    <tr>
+        <th scope="col" class=""></th>
+        <th scope="col" class="" title="Stream Name">Name</th>
+        <th scope="col" class="" title="Stream Title">Title</th>
+        <th scope="col" class="" title="Stream Owner">Owner</th>
+        <th scope="col" class="" title="Live Status">Status</th>
+        <th scope="col" class="" title="Started At">Started</th>
+        <th scope="col" class="" title="Ended At">Ended</th>
+        <th scope="col" class="" title="Unique Views">Views</th>
+        <th scope="col" class="" title="Password"><i class="fa-solid fa-key"></i></th>
+        <th scope="col" class="" title="Public"><i class="fa-solid fa-globe"></i></th>
+        <th scope="col" class="text-center" title="Actions"><i class="fa-solid fa-ellipsis-vertical"></i></th>
+    </tr>
+    </thead>
+</table>
+
+<div class="d-none">
+    <input type="hidden" value="{{ site_settings.site_url }}" id="site_url">
+    <i class="fa-solid fa-key me-1"></i>
+    <i class="fa-solid fa-globe me-1"></i>
+    <i class="fa-solid fa-video me-1"></i>
+    <i class="fa-solid fa-stop me-1"></i>
+    <i class="fa-solid fa-circle me-1"></i>
+    <div class="dj-stream-link">
+        <span class="d-none d-sm-inline">
+            <a class="link-body-emphasis clip dj-stream-link-clip" role="button">
+                <i class="fa-regular fa-clipboard pe-1"></i></a>
+        </span>
+    </div>
+</div>

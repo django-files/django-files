@@ -11,7 +11,6 @@
     <style>
         {{ css|safe }}
     </style>
-    <link rel="stylesheet" href="{% static 'css/preview.css' %}">
     <link rel="stylesheet" href="{% static 'css/live.css' %}">
 {% endblock %}
 
@@ -30,29 +29,58 @@
 {% block body %}
     <div class="d-flex flex-column h-100">
         <div class="flex-grow-1 position-relative">
-            <div class="video-container d-flex">
-                <div class="video-wrapper flex-grow-1">
-                    <video
-                        id="my-video"
-                        class="video-js"
-                        controls
-                        preload="auto"
-                        poster="{% static 'images/logo.png' %}">
-                        <source src="/hls/{{ key }}.m3u8" type="application/x-mpegURL" />
-                        <p class="vjs-no-js">
-                            To view this video please enable JavaScript, and consider upgrading to a
-                            web browser that
-                            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
-                        </p>
-                    </video>
+            <div class="live-container d-flex h-100">
+                <div class="video-container flex-grow-1 d-flex align-items-center justify-content-center">
+                    <div class="video-wrapper w-100 h-100 d-flex align-items-center justify-content-center">
+                        <video
+                            autoplay="true"
+                            muted="true"
+                            id="my-video"
+                            class="video-js w-100 h-100"
+                            controls="true"
+                            preload="auto"
+                            poster="{% static 'images/logo.png' %}">
+                            <source src="/hls/{{ key }}.m3u8" type="application/x-mpegURL" />
+                            <p class="vjs-no-js">
+                                To view this video please enable JavaScript, and consider upgrading to a
+                                web browser that
+                                <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>
+                            </p>
+                        </video>
+                    </div>
                 </div>
-                <div id="previewSidebar" class="sidebar h-100">
+                
+                <!-- Sidebar button - positioned over video -->
+                <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
+                
+                <div id="previewSidebar" class="sidebar d-flex flex-column h-100">
                     <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
-                    <div id="file-{{ file.id }}" class="card-body sidebarCard">
-                        <h3 class="card-title mb-0 text-break">{{ stream.title }}</h3>
-                        <row>
-                            <strong class="d-inline-block mb-1 col-md-6 text-start">{{ stream.description }}</strong>
-                        </row>
+                    <div id="file-{{ file.id }}" class="card-body sidebarCard p-3 flex-grow-1">
+                        <h2 class="card-title mb-0 text-break">{{ stream.title }}</h2>
+                        <div class="row">
+                            <strong class="d-inline-block mb-1 text-start text-secondary">{{ stream.description }}</strong>
+                        </div>
+                        <div class="row">
+                            <div class="col-md d-flex justify-content-between pb-1">
+                                <img src="{{ stream.user.get_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P"><span class="fw-semibold ps-1">{{ stream.user.get_name }}</span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md d-flex justify-content-between align-items-center">
+                                {% if stream.is_live %}
+                                <strong class="m-0 text-danger fw-bold text-glow">
+                                    Live
+                                </strong>
+                                {% else %}
+                                <strong class="m-0 text-secondary fw-bold">
+                                    Offline
+                                </strong>
+                                {% endif %}
+                                <strong class="m-0 text-info text-end">
+                                    <span id="view-count">N/A</span> Viewers
+                                </strong>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-sm">
                                 <p class="m-0 m-1">
@@ -66,14 +94,6 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-sm text-sm fs-4">
-                                <p class="m-0 m-1">
-                                Viewers: <span id="view-count">N/A</span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-sm">
                                 {% webpush_button with_class="btn btn-outline-info m-1" %}
                             </div>
@@ -81,7 +101,6 @@
                     </div>
                 </div>
             </div>
-            <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
         </div>
     </div>
 {% endblock %}
@@ -89,8 +108,9 @@
 {% block footer %}{% endblock %}
 
 {% block tail %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script type="text/javascript" src="{% static 'js/live.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'dist/jquery-ui/jquery-ui.min.css'%}">
     <script type="module" src="{% static 'js/preview.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/live.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
 {% endblock %}

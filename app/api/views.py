@@ -3,14 +3,20 @@ import json
 import logging
 import os
 import random
+from datetime import datetime
 from functools import wraps
 from typing import Any, BinaryIO, Callable, List, Optional, Union
 from urllib.parse import parse_qs, urlparse
-from datetime import datetime
 
 import httpx
 import validators
-from api.utils import extract_albums, extract_files, serialize_user, serialize_users
+from api.utils import (
+    extract_albums,
+    extract_files,
+    extract_streams,
+    serialize_user,
+    serialize_users,
+)
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -654,7 +660,7 @@ def remote_view(request):
     extra_args = parse_headers(request.headers, expr=parse_expire(request), **request.POST.dict())
     log.debug("extra_args: %s", extra_args)
     file = process_file(name, io.BytesIO(r.content), request.user.id, **extra_args)
-    response = {"url": f'{site_settings["site_url"] + file.preview_uri()}'}
+    response = {"url": f"{site_settings['site_url'] + file.preview_uri()}"}
     log.debug("response: %s", response)
     return JsonResponse(response)
 
@@ -820,13 +826,16 @@ def stream_auth_view(request):
         title = data.get("title") or data.get("message") or "Click here to watch the stream."
         stream_kwargs = {}
         if public := data.get("public"):
-            stream_kwargs["public"] = anytobool(public)
+            stream_kwargs["public"] = anytobool(public[0])
         if viewer_limit := data.get("viewer_limit"):
-            stream_kwargs["viewer_limit"] = int(viewer_limit)
+            try:
+                stream_kwargs["viewer_limit"] = int(viewer_limit[0])
+            except ValueError:
+                log.error("Invalid viewer_limit: %s", viewer_limit)
         if description := data.get("description"):
-            stream_kwargs["description"] = description
-        if title := data.get("title")[0]:
-            stream_kwargs["title"] = title
+            stream_kwargs["description"] = description[0]
+        if title := data.get("title"):
+            stream_kwargs["title"] = title[0]
         stream, created = Stream.objects.update_or_create(
             name=name, defaults={"user": user, "is_live": True, "started_at": datetime.now(), **stream_kwargs}
         )
@@ -1182,3 +1191,31 @@ def user_view(request, user_id=None):
     except Exception as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
+
+
+@vary_on_cookie
+@auth_from_token
+def streams_view(request, page=None, count=100):
+    """
+    View  /api/streams/{page}/{count}/
+    """
+    log.info("%s - streams_page_view: %s - %s", request.method, page, count)
+    if request.user.is_superuser:
+        user = request.GET.get("user") or request.user.id
+    else:
+        user = request.user.id
+    if user == "0":
+        q = Stream.objects.all()
+    else:
+        q = Stream.objects.filter(user_id=int(user))
+    paginator = Paginator(q, count)
+    page_obj = paginator.get_page(page)
+    streams = extract_streams(page_obj.object_list)
+    log.debug("streams: %s", streams)
+    _next = page_obj.next_page_number() if page_obj.has_next() else None
+    response = {
+        "streams": streams,
+        "next": _next,
+        "count": count,
+    }
+    return JsonResponse(response, safe=False, status=200)

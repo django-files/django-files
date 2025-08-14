@@ -9,9 +9,9 @@ from home.managers import (
     FileStatsManager,
     ShortURLsManager,
 )
-from oauth.managers import DiscordWebhooksManager
 from home.util.nginx import sign_nginx_urls
 from home.util.storage import StoragesRouterFileField, use_s3
+from oauth.managers import DiscordWebhooksManager
 from oauth.models import CustomUser
 
 
@@ -293,7 +293,10 @@ class StreamHistory(models.Model):
     )
 
     def __str__(self):
-        return f"<StreamHistory(id={self.id}, stream={self.stream.name}, started_at={self.started_at}, ended_at={self.ended_at})>"
+        return (
+            f"<StreamHistory(id={self.id}, stream={self.stream.name}, "
+            f"started_at={self.started_at}, ended_at={self.ended_at})>"
+        )
 
 
 class StreamDiscordWebhooks(models.Model):

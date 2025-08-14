@@ -19,7 +19,6 @@ from django.views.decorators.common import no_append_slash
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
-from djangofiles import settings
 from home.models import Albums, Files, FileStats, ShortURLs, Stream
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
@@ -175,6 +174,23 @@ def albums_view(request):
     albums = Albums.objects.get_request(request)
     context = {"albums": albums}
     return render(request, "albums.html", context)
+
+
+@cache_control(no_cache=True)
+@login_required
+@cache_page(cache_seconds, key_prefix="streams")
+@vary_on_cookie
+def streams_view(request):
+    """
+    View  /streams/
+    """
+    log.debug("%s - streams_view: is_secure: %s", request.method, request.is_secure())
+    if request.user.is_superuser:
+        users = CustomUser.objects.all()
+        context = {"users": users, "full_context": True}
+    else:
+        context = {"full_context": True}
+    return render(request, "streams.html", context)
 
 
 @csrf_exempt
