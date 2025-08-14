@@ -22,7 +22,7 @@ RUN python3 -m pip install --no-cache-dir -U pip  &&\
 
 FROM python:3.12-slim AS nginx-builder
 
-ENV NGINX_VERSION=1.28.0
+ENV NGINX_VERSION=1.29.1
 ENV RTMP_MODULE_VERSION=master
 
 RUN apt-get -y update && \
@@ -30,7 +30,7 @@ RUN apt-get -y update && \
         build-essential \
         linux-headers-generic \
         libssl-dev \
-        libpcre3-dev \
+        libpcre2-dev \
         git \
         zlib1g-dev \
         curl && \
@@ -92,7 +92,7 @@ RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
     mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
     chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
     apt-get -y install --no-install-recommends libmagic-dev libmariadb-dev-compat  \
-        pkg-config redis-server supervisor libpcre3 libssl3 zlib1g  &&\
+        pkg-config redis-server supervisor libssl3 zlib1g  &&\
     apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
     apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
 
