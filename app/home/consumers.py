@@ -8,7 +8,7 @@ from asgiref.sync import async_to_sync, sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.forms.models import model_to_dict
-from home.models import Albums, Files
+from home.models import Albums, Files, Stream
 from home.tasks import version_check
 from home.util.file import process_file
 from home.util.storage import file_rename
@@ -284,6 +284,35 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 )
                 return response
         return self._error("File not found.", **kwargs)
+
+    def set_stream_title(self, *, user_id: int = None, name: str = None, title: str = None, **kwargs) -> dict:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param name: String - Stream Name
+        :param title: String - New Stream Title
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug("set_stream_title")
+        log.debug("user_id: %s", user_id)
+        log.debug("name: %s", name)
+        log.debug("title: %s", title)
+        if not name:
+            return self._error("No stream name provided.", **kwargs)
+        if not title:
+            return self._error("No title provided.", **kwargs)
+        stream = Stream.objects.filter(name=name)
+        if not stream:
+            return self._error("Stream not found.", **kwargs)
+        stream = stream[0]
+        if user_id and stream.user.id != user_id:
+            return self._error("Stream owned by another user.", **kwargs)
+        stream.title = title
+        stream.save()
+        return {
+            "event": "set-stream-title",
+            "name": name,
+            "title": title,
+        }
 
     def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = None, **kwargs) -> dict:
         """

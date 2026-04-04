@@ -1210,7 +1210,7 @@ def streams_view(request, page=None, count=100):
         q = Stream.objects.filter(user_id=int(user))
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
-    streams = extract_streams(page_obj.object_list)
+    streams = extract_streams(page_obj.object_list, request.user.id)
     log.debug("streams: %s", streams)
     _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {
