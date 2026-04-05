@@ -36,9 +36,9 @@
     </form>
 
     {% if not shorts %}
-        <p class="lead">Short URLs will show up here once created...</p>
+        <p class="text-muted mb-0">Short URLs will show up here once created...</p>
     {% else %}
-        <p class="lead mt-2">Total Shorts: <strong>{{ shorts|length }}</strong></p>
+        <p class="mt-2 mb-2">Total Shorts: <strong>{{ shorts|length }}</strong></p>
         {% include 'include/shorts-table.html' with shorts=shorts  %}
     {% endif %}
 

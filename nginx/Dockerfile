@@ -15,6 +15,7 @@ RUN apk add --no-cache \
 
 WORKDIR /tmp/build
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
+# hadolint ignore=DL4006
 RUN curl --proto '=https' -L "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" | tar xz && \
     git clone https://github.com/arut/nginx-rtmp-module.git -b "${RTMP_MODULE_VERSION}" && \
     cp ./nginx-rtmp-module/stat.xsl /stat.xsl

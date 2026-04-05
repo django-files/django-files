@@ -62,7 +62,7 @@ def extract_albums(q: Albums.objects):
     return albums
 
 
-def extract_streams(q: Stream.objects):
+def extract_streams(q: Stream.objects, user_id: int = None):
     site_settings = site_settings_processor(None)["site_settings"]
     streams = []
     for stream in q:
@@ -72,5 +72,6 @@ def extract_streams(q: Stream.objects):
         data["started_at"] = stream.started_at
         data["ended_at"] = stream.ended_at
         data["url"] = site_settings["site_url"] + f"/live/{stream.name}/"
+        data["is_owner"] = user_id is not None and stream.user_id == user_id
         streams.append(data)
     return streams

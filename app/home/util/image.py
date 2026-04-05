@@ -7,7 +7,6 @@ from home.models import Files
 from home.util.geolocation import city_state_from_exif
 from PIL import ExifTags, Image, ImageOps, TiffImagePlugin
 
-
 log = logging.getLogger("app")
 
 

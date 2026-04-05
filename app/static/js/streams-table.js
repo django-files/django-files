@@ -59,6 +59,8 @@ const dataTablesOptions = {
             responsivePriority: 1,
             defaultContent: '',
             width: '200px',
+            render: getStreamTitle,
+            type: 'html',
         },
         {
             targets: 3,
@@ -121,6 +123,7 @@ const dataTablesOptions = {
         url: '/api/streams/',
         dataSrc: 'streams',
     },
+    dom: "<'row'<'col-sm-12 col-md-6'><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end gap-2'<'user-filter-slot'>f>>rt<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
 }
 
 function getStreamLink(data, type, row) {
@@ -143,6 +146,16 @@ function getStreamLink(data, type, row) {
         span.className = 'd-inline-block'
 
         return link.outerHTML
+    }
+    return data
+}
+
+function getStreamTitle(data, type, row) {
+    if (type === 'display') {
+        if (row.is_owner) {
+            return `<span class="stream-title-edit text-break d-inline-block align-middle" contenteditable="true" data-stream-name="${row.name}">${data}</span>`
+        }
+        return `<span class="text-break">${data}</span>`
     }
     return data
 }
@@ -216,6 +229,13 @@ function getActions(data, type, row) {
 $(document).ready(function () {
     streamsDataTable = streamsTable.DataTable(dataTablesOptions)
 
+    // Move user select into the slot DataTables rendered alongside the search input
+    const userSelectContainer = document.getElementById('user-select-container')
+    const slot = document.querySelector('.user-filter-slot')
+    if (userSelectContainer && slot) {
+        slot.appendChild(userSelectContainer)
+    }
+
     // Handle user filter for superusers
     if (document.getElementById('user')) {
         $('#user').on('change', function () {
@@ -248,5 +268,40 @@ $(document).ready(function () {
                 })
             }
         }
+    })
+
+    // Handle stream title editing
+    streamsTable.on('blur', '.stream-title-edit', function () {
+        const span = $(this)
+        const streamName = span.data('stream-name')
+        const newTitle = span.text().trim()
+        if (newTitle) {
+            socket.send(
+                JSON.stringify({
+                    method: 'set-stream-title',
+                    name: streamName,
+                    title: newTitle,
+                })
+            )
+        } else {
+            // Revert to original if empty
+            span.trigger('revert-title')
+        }
+    })
+
+    streamsTable.on('keydown', '.stream-title-edit', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            $(this).blur()
+        } else if (e.key === 'Escape') {
+            const span = $(this)
+            span.trigger('revert-title')
+            span.blur()
+        }
+    })
+
+    streamsTable.on('revert-title', '.stream-title-edit', function () {
+        // This event can be used to store original value for revert
+        // Currently we just keep the current value in DOM
     })
 })

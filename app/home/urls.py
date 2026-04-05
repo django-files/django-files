@@ -4,7 +4,6 @@ from api.views import shorten_view, upload_view
 from django.urls import path, re_path
 from home import views
 
-
 app_name = "home"
 
 urlpatterns = [
