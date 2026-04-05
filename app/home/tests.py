@@ -21,7 +21,6 @@ from oauth.models import CustomUser
 from playwright.sync_api import sync_playwright
 from settings.models import SiteSettings
 
-
 log = logging.getLogger("app")
 
 

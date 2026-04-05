@@ -28,7 +28,6 @@ from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
 
-
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
 

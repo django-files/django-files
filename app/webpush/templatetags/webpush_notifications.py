@@ -1,7 +1,6 @@
 from django import template
 from webpush.utils import get_templatetag_context
 
-
 register = template.Library()
 
 

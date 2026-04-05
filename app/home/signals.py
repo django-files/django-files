@@ -20,7 +20,6 @@ from home.tasks import (
 from home.util.quota import decrement_storage_usage
 from oauth.models import DiscordWebhooks
 
-
 log = logging.getLogger("app")
 
 
