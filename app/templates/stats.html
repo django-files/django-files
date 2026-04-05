@@ -16,7 +16,7 @@
     <h1><i class="fa-solid fa-chart-line me-2"></i> Stats</h1>
 
     {% if not stats %}
-        <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
+        <p class="text-muted mb-0">Stats will show up here after files are uploaded and stats are generated...</p>
     {% endif %}
     {% with stats=stats|first  %}
     {% if stats %}

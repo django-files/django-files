@@ -18,7 +18,7 @@
     </h1>
 
     {% if not stats %}
-        <p class="lead">Stats will show up here after files are uploaded and stats are generated...</p>
+        <p class="text-muted mb-0">Stats will show up here after files are uploaded and stats are generated...</p>
     {% else %}
         {% with stats=stats|first  %}
             <div class="row">
@@ -72,7 +72,7 @@
     </form>
     <p><em><a href="{% url 'home:shorts' %}">More Short Options</a></em></p>
     {% if not shorts %}
-        <p class="lead">Short URLs will show up here once created...</p>
+        <p class="text-muted mb-0">Short URLs will show up here once created...</p>
     {% else %}
         {% include 'include/shorts-table.html' with shorts=shorts|slice:":10"  %}
         {% if shorts|length > 10 %}

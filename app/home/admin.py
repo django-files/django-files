@@ -10,7 +10,6 @@ from home.models import (
     StreamHistory,
 )
 
-
 admin.site.site_header = "Django Files Administration"
 
 

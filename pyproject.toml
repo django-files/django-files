@@ -2,7 +2,8 @@
 # https://bandit.readthedocs.io/en/latest/config.html
 [tool.bandit]
 exclude_dirs = ["venv", "app/home/tests.py"]
-skips = ["B311", "B107"]
+# B703/B308: django render_to_string + mark_safe in webpush/jinja2.py (trusted templates only)
+skips = ["B311", "B107", "B703", "B308"]
 
 # Black
 # https://black.readthedocs.io/en/stable/usage_and_configuration/
@@ -20,7 +21,6 @@ omit = ["venv/*", ".venv/*", "migrations/*", "node_modules/*"]
 # https://pycqa.github.io/isort/docs/configuration/options.html
 [tool.isort]
 profile = "black"
-lines_after_imports = 2
 src_paths = ["src", "test"]
 skip = ["venv", ".venv", "migrations", "node_modules", ".github"]
 

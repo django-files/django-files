@@ -10,7 +10,6 @@ from django.db import models
 from django.db.models.fields.files import FieldFile
 from home.util.s3 import S3Bucket, use_s3
 
-
 log = logging.getLogger("app")
 
 

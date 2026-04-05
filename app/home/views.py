@@ -28,7 +28,6 @@ from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
 
-
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
 
@@ -57,7 +56,8 @@ def live_view(request, key):
     stream = get_object_or_404(Stream, name=key)
     if not stream.public and not request.user.is_authenticated:
         return HttpResponseNotFound()
-    context = {"key": key, "webpush": {"group": key}, "stream": stream}
+    is_owner = request.user.is_authenticated and stream.user_id == request.user.id
+    context = {"key": key, "webpush": {"group": key}, "stream": stream, "is_owner": is_owner}
     return render(request, "live.html", context)
 
 

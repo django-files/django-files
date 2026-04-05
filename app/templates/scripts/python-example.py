@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import requests
 
-
 file_name = "example-file-name.txt"
 
 upload_url = '{{ site_url }}{% url "api:upload" %}'

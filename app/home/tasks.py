@@ -28,7 +28,6 @@ from pytimeparse2 import parse
 from settings.models import SiteSettings
 from webpush import send_group_notification
 
-
 log = logging.getLogger("app")
 
 

@@ -2,7 +2,6 @@ from api import views
 from django.urls import path, re_path
 from oauth.views import oauth_show
 
-
 app_name = "api"
 
 urlpatterns = [
