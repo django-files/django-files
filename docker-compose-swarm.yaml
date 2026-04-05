@@ -7,7 +7,7 @@ services:
     image: ghcr.io/django-files/django-files-nginx:${VERSION:-latest}
     ports:
       - target: 1935
-        published: 1936
+        published: ${RTMP_PORT:-1936}
         protocol: tcp
         mode: host
     environment: &environment
