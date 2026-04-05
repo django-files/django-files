@@ -123,6 +123,7 @@ const dataTablesOptions = {
         url: '/api/streams/',
         dataSrc: 'streams',
     },
+    dom: "<'row'<'col-sm-12 col-md-6'><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end gap-2'<'user-filter-slot'>f>>rt<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
 }
 
 function getStreamLink(data, type, row) {
@@ -152,7 +153,7 @@ function getStreamLink(data, type, row) {
 function getStreamTitle(data, type, row) {
     if (type === 'display') {
         if (row.is_owner) {
-            return `<span class="stream-title-edit text-break" contenteditable="true" data-stream-name="${row.name}">${data}</span>`
+            return `<span class="stream-title-edit text-break d-inline-block align-middle" contenteditable="true" data-stream-name="${row.name}">${data}</span>`
         }
         return `<span class="text-break">${data}</span>`
     }
@@ -228,6 +229,13 @@ function getActions(data, type, row) {
 $(document).ready(function () {
     streamsDataTable = streamsTable.DataTable(dataTablesOptions)
 
+    // Move user select into the slot DataTables rendered alongside the search input
+    const userSelectContainer = document.getElementById('user-select-container')
+    const slot = document.querySelector('.user-filter-slot')
+    if (userSelectContainer && slot) {
+        slot.appendChild(userSelectContainer)
+    }
+
     // Handle user filter for superusers
     if (document.getElementById('user')) {
         $('#user').on('change', function () {
@@ -268,11 +276,13 @@ $(document).ready(function () {
         const streamName = span.data('stream-name')
         const newTitle = span.text().trim()
         if (newTitle) {
-            socket.send(JSON.stringify({
-                method: 'set-stream-title',
-                name: streamName,
-                title: newTitle,
-            }))
+            socket.send(
+                JSON.stringify({
+                    method: 'set-stream-title',
+                    name: streamName,
+                    title: newTitle,
+                })
+            )
         } else {
             // Revert to original if empty
             span.trigger('revert-title')

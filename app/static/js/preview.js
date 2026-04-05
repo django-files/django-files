@@ -101,11 +101,13 @@ if (streamTitleEdit) {
     streamTitleEdit.addEventListener('blur', function () {
         const newTitle = this.textContent.trim()
         if (newTitle) {
-            socket.send(JSON.stringify({
-                method: 'set-stream-title',
-                name: this.dataset.streamName,
-                title: newTitle,
-            }))
+            socket.send(
+                JSON.stringify({
+                    method: 'set-stream-title',
+                    name: this.dataset.streamName,
+                    title: newTitle,
+                })
+            )
         }
     })
 

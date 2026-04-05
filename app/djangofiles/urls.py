@@ -6,7 +6,6 @@ from django.contrib.auth.decorators import login_required
 from django.urls import path
 from djangofiles import views
 
-
 handler400 = "djangofiles.views.handler400_view"
 handler403 = "djangofiles.views.handler403_view"
 handler404 = "djangofiles.views.handler404_view"
