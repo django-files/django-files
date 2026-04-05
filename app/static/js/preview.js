@@ -202,7 +202,7 @@ addAlbumInput.on('blur', minimizeToAlbum)
  *
  * @param {object} event - The triggering event.
  */
-async function addToAlbumList(event) {
+async function addToAlbumList(_event) {
     addAlbumContainer.classList.remove('d-none')
     let albumList = await getAlbums()
     addAlbumInput.val('')
@@ -234,7 +234,7 @@ function defaultHandle(event, ui) {
  *
  * @param {object} event - The triggering event.
  */
-function minimizeToAlbum(event) {
+function minimizeToAlbum(_event) {
     addAlbumInput.val('')
     addAlbumContainer.classList.add('d-none')
 }

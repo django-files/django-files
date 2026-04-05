@@ -59,11 +59,12 @@ const swiperThumbs = document.getElementById('swiper-thumbs')
 //     },
 // })
 
-document.addEventListener('DOMContentLoaded', (event) => {
+document.addEventListener('DOMContentLoaded', () => {
     console.log(`%c DOMContentLoaded: slideshow.js`, 'color: Lime')
     // console.log('albumsDataTable:', albumsDataTable)
 })
 
+// eslint-disable-next-line no-unused-vars
 function slideshowCallback(data) {
     console.log(`%c slideshowCallback: data:`, 'color: Yellow', data)
     for (const file of data.files) {
@@ -92,7 +93,7 @@ function slideshowCallback(data) {
         watchSlidesProgress: true,
     })
 
-    const swiper = new Swiper('.images', {
+    new Swiper('.images', {
         grabCursor: true,
         effect: 'fade',
         loop: true,
