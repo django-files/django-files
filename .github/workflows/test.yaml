@@ -58,7 +58,7 @@ jobs:
         working-directory: app
         continue-on-error: true
         run: |
-          python -m pip freeze
+          uv pip freeze
 
       - name: "Setup Node 22"
         uses: actions/setup-node@v4
