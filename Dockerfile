@@ -20,7 +20,7 @@ RUN python3 -m pip install --no-cache-dir -U pip  &&\
     python3 -m pip install --no-cache-dir -r /requirements.txt
 
 
-FROM ghcr.io/django-files/docker-nginx:latest AS nginx-base
+FROM ghcr.io/django-files/docker-nginx:1.29.7 AS nginx-base
 
 
 FROM python:3.12-slim
