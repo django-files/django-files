@@ -21,7 +21,6 @@ from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
 
-
 signer = TimestampSigner()
 
 log = logging.getLogger("app")
@@ -165,7 +164,7 @@ def welcome_view(request):
             return JsonResponse(form.errors, status=400)
 
         if not request.session.get("oauth_provider") and not form.cleaned_data["password"]:
-            return JsonResponse({"password": "This Field is Required."}, status=400)
+            return JsonResponse({"password": "This Field is Required."}, status=400)  # nosec B105
 
         site_settings.show_setup = False
         site_settings.save()

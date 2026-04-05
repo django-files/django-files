@@ -5,6 +5,11 @@ services:
     build:
       context: nginx
     image: ghcr.io/django-files/django-files-nginx:${VERSION:-latest}
+    ports:
+      - target: 1935
+        published: ${RTMP_PORT:-1936}
+        protocol: tcp
+        mode: host
     environment: &environment
       SECRET: ${SECRET}
       SITE_URL: ${SITE_URL}
@@ -52,7 +57,14 @@ services:
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
       REDIS_IGNORE_EXCEPTIONS: ${REDIS_IGNORE_EXCEPTIONS}
     deploy:
-      mode: global
+      replicas: 1
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=traefik-public"
@@ -90,7 +102,14 @@ services:
       retries: 3
       start_period: 3s
     deploy:
-      mode: global
+      replicas: 1
+      resources:
+        limits:
+          memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
     volumes:
       - static_dir:/data/static
       - media_dir:/data/media
@@ -105,6 +124,13 @@ services:
     command: "celery -A djangofiles worker -l INFO -c 4"
     deploy:
       replicas: 1
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+        reservations:
+          memory: 1G
+          cpus: "0.5"
     volumes:
       - media_dir:/data/media
       - logs_dir:/logs
@@ -120,6 +146,13 @@ services:
     command: "celery -A djangofiles beat -l INFO -S django"
     deploy:
       replicas: 1
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
     volumes:
       - media_dir:/data/media
     depends_on:
@@ -133,6 +166,13 @@ services:
     command: "redis-server --appendonly yes"
     deploy:
       replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.25"
     volumes:
       - redis_data:/data
     networks:

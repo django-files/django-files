@@ -7,12 +7,10 @@ from home.models import Files
 from home.util.geolocation import city_state_from_exif
 from PIL import ExifTags, Image, ImageOps, TiffImagePlugin
 
-
 log = logging.getLogger("app")
 
 
 class ImageProcessor(object):
-
     def __init__(
         self, local_path: str, default_remove_exif: bool, default_exif_geo: bool, ctx, detected_extension: str = None
     ):

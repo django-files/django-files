@@ -10,7 +10,6 @@ from django.db import models
 from django.db.models.fields.files import FieldFile
 from home.util.s3 import S3Bucket, use_s3
 
-
 log = logging.getLogger("app")
 
 
@@ -24,7 +23,6 @@ class DynamicStorageFieldFile(FieldFile):
 
 
 class StoragesRouterFileField(models.FileField):
-
     attr_class = DynamicStorageFieldFile
 
     def pre_save(self, model_instance, add):

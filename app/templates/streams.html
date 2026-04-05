@@ -1,0 +1,45 @@
+{% extends "main.html" %}
+{% load static %}
+{% load home_tags %}
+{% load cache %}
+{% block streams_active %}active{% endblock %}
+{% block title %}Streams{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/gallery.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/stream.css' %}" />
+{% endblock %}
+
+{% block body %}
+
+    <div class="container-fluid py-3 px-4">
+        <h1><i class="fa-solid fa-video me-2"></i> Streams</h1>
+        {% if request.user.is_superuser %}
+                <div id="user-select-container">
+                    <select id="user" name="user" class="form-select" aria-label="Default select example">
+                        <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
+                        <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
+                        {% for user in users %}
+                            <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+        {% endif %}
+        {% include 'streams/table.html'%}
+    </div>
+
+{% endblock %}
+
+
+{% block tail %}
+    <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.select.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.buttons.min.js' %}"></script>
+    <script type="module" src="{% static 'js/streams-table.js' %}"></script>
+{% endblock %}

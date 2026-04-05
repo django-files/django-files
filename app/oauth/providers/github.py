@@ -9,13 +9,11 @@ from oauth.models import Github
 from oauth.providers.base import BaseOauth
 from oauth.providers.helpers import is_super_id
 
-
 provider = "github"
 log = logging.getLogger(f"app.{provider}")
 
 
 class GithubOauth(BaseOauth):
-
     def process_login(self, site_settings) -> None:
         self.data = self.get_token(site_settings, self.code)
         self.profile = self.get_profile(self.data)

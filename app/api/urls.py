@@ -2,7 +2,6 @@ from api import views
 from django.urls import path, re_path
 from oauth.views import oauth_show
 
-
 app_name = "api"
 
 urlpatterns = [
@@ -25,6 +24,9 @@ urlpatterns = [
     path("albums/", views.albums_view, name="albums"),
     path("albums/<int:page>/", views.albums_view, name="albums"),
     path("albums/<int:page>/<int:count>/", views.albums_view, name="albums-amount"),
+    path("streams/", views.streams_view, name="streams"),
+    path("streams/<int:page>/", views.streams_view, name="streams"),
+    path("streams/<int:page>/<int:count>/", views.streams_view, name="streams-amount"),
     path("random/album/<str:user_album>/", views.random_album, name="random-album"),
     path("random/album/<str:user_album>/<path:idname>/", views.random_album, name="random-user-album"),
     path("remote/", views.remote_view, name="remote"),
@@ -37,5 +39,12 @@ urlpatterns = [
     path("auth/token/", views.local_auth_for_native_client, name="auth-token"),
     path("auth/application/", views.auth_application, name="auth-application"),
     path("session/<path:sessionid>", views.session_view, name="session"),
+    path("stream/auth/", views.stream_auth_view, name="stream-auth"),
+    path("stream/done/", views.stream_done_view, name="stream-done"),
+    path("stream/ping/<str:name>/", views.stream_ping_view, name="stream-ping"),
+    path("stream/viewers/<str:name>/", views.stream_viewers_view, name="stream-viewers"),
+    # path("stream/update/", views.stream_update_view, name="stream-update"),
+    # path("stream/play/", views.stream_update_view, name="stream-play"),
+    # path("stream/play_done/", views.stream_update_view, name="stream-play_done"),
     path("oauth/", oauth_show, name="oauth-show"),
 ]

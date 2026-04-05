@@ -1,3 +1,4 @@
+import base64
 import logging
 from typing import Union
 
@@ -26,7 +27,6 @@ from oauth.providers.helpers import (
 )
 from settings.models import SiteSettings
 from ua_parser import parse
-
 
 log = logging.getLogger("app")
 
@@ -212,11 +212,14 @@ def post_login(request):
                 if ua.user_agent.major:
                     agent_list.append(ua.user_agent.major)
             if agent_list:
-                agent_string = " ".join(agent_list)
-                request.session["user_agent"] = agent_string
+                request.session["user_agent"] = " ".join(agent_list)
         if not request.session["user_agent"]:
             request.session["user_agent"] = "Unknown User Agent"
-        log.info("User Agent: %s", request.session["user_agent"])
+        user_agent = request.session["user_agent"]
+        if user_agent.isprintable():
+            log.info("User Agent: %s", user_agent)
+        else:
+            log.info("User Agent: %s", base64.b64encode(user_agent.encode("UTF-8")))
 
         if state or is_mobile(request):
             log.debug("Set Mobile Session Age: %s", settings.SESSION_MOBILE_AGE)

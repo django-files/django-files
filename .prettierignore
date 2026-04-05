@@ -18,3 +18,4 @@ node_modules/
 app/static/highlightjs/**
 app/static/swagger/SwaggerDark.css
 .github/pull_request_template.md
+app/webpush/**

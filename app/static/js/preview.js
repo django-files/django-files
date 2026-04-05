@@ -6,9 +6,9 @@ import { fetchFile, fetchAlbums } from './api-fetch.js'
 document.addEventListener('DOMContentLoaded', domLoaded)
 window.addEventListener('resize', checkSize)
 
-const previewSidebar = $('#previewSidebar')
+const previewSidebar = $('#preview-sidebar')
 const contextPlacement = $('#contextPlacement')
-const sidebarCard = $('.sidebarCard')
+const sidebarCard = $('.sidebar-card')
 const openSidebarButton = $('#openSidebar')
 openSidebarButton.on('click', openSidebarCallback)
 $('#closeSidebar').on('click', closeSidebarCallback)
@@ -68,6 +68,9 @@ function closeSidebar() {
     sidebarCard.fadeOut(200)
 }
 
+window.openSidebar = openSidebar
+window.closeSidebar = closeSidebar
+
 function renameFile(data) {
     let fileName = document.getElementsByClassName('card-title')[0]
     fileName.innerHTML = data.name
@@ -80,8 +83,43 @@ socket?.addEventListener('message', function (event) {
         renameFile(data)
     } else if (data.event === 'set-file-albums') {
         handleAlbumBadges(data)
+    } else if (data.event === 'set-stream-title') {
+        handleStreamTitleUpdate(data)
     }
 })
+
+function handleStreamTitleUpdate(data) {
+    const titleEl = document.querySelector('.stream-title-edit')
+    if (titleEl) {
+        titleEl.textContent = data.title
+    }
+}
+
+// Stream title editing
+const streamTitleEdit = document.querySelector('.stream-title-edit')
+if (streamTitleEdit) {
+    streamTitleEdit.addEventListener('blur', function () {
+        const newTitle = this.textContent.trim()
+        if (newTitle) {
+            socket.send(
+                JSON.stringify({
+                    method: 'set-stream-title',
+                    name: this.dataset.streamName,
+                    title: newTitle,
+                })
+            )
+        }
+    })
+
+    streamTitleEdit.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            this.blur()
+        } else if (e.key === 'Escape') {
+            this.blur()
+        }
+    })
+}
 
 ////////////////////////
 // Album Badges Section

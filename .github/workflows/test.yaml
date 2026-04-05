@@ -45,18 +45,20 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: "Setup uv"
+        uses: astral-sh/setup-uv@v5
+
       - name: "Python Install"
         working-directory: app
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt
+          uv pip install --system -r requirements-dev.txt
           playwright install chromium
 
       - name: "Debug Python"
         working-directory: app
         continue-on-error: true
         run: |
-          python -m pip freeze
+          uv pip freeze
 
       - name: "Setup Node 22"
         uses: actions/setup-node@v4

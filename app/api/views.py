@@ -3,13 +3,20 @@ import json
 import logging
 import os
 import random
+from datetime import datetime
 from functools import wraps
 from typing import Any, BinaryIO, Callable, List, Optional, Union
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import httpx
 import validators
-from api.utils import extract_albums, extract_files, serialize_user, serialize_users
+from api.utils import (
+    extract_albums,
+    extract_files,
+    extract_streams,
+    serialize_user,
+    serialize_users,
+)
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -21,12 +28,14 @@ from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.utils.timezone import now
 from django.views.decorators.cache import cache_control, cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
-from home.models import Albums, Files, FileStats, ShortURLs
-from home.tasks import clear_files_cache, new_album_websocket
+from django_redis import get_redis_connection
+from home.models import Albums, Files, FileStats, ShortURLs, Stream
+from home.tasks import clear_files_cache, new_album_websocket, send_push_live
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
@@ -42,7 +51,6 @@ from packaging.version import InvalidVersion
 from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
-
 
 signer = TimestampSigner()
 
@@ -651,7 +659,7 @@ def remote_view(request):
     extra_args = parse_headers(request.headers, expr=parse_expire(request), **request.POST.dict())
     log.debug("extra_args: %s", extra_args)
     file = process_file(name, io.BytesIO(r.content), request.user.id, **extra_args)
-    response = {"url": f'{site_settings["site_url"] + file.preview_uri()}'}
+    response = {"url": f"{site_settings['site_url'] + file.preview_uri()}"}
     log.debug("response: %s", response)
     return JsonResponse(response)
 
@@ -787,6 +795,150 @@ def session_view(request, sessionid):
     except Exception as error:
         log.debug("error: %s", error)
         return HttpResponse(str(error), status=500)
+
+
+@csrf_exempt
+def stream_auth_view(request):
+    """
+    View /stream/auth/
+    """
+    try:
+        log.debug("stream_auth_view: %s - %s", request.method, request.META["PATH_INFO"])
+        log.debug("stream_auth_view: %s", request.GET)
+        name = request.GET.get("name")
+        log.debug("name: %s", name)
+        if not name:
+            log.debug("No Stream Name Provided: %s", name)
+            return HttpResponse(status=401)
+
+        url = urlparse(request.GET.get("tcurl"))
+        data = parse_qs(url.query)
+        log.debug("data: %s", data)
+        token = data["token"][0]
+        log.debug("token: %s", token)
+        user = CustomUser.objects.filter(authorization=token).first()
+        log.debug("user: %s", user)
+        if not user:
+            log.debug("User Authorization Failed: %s", name)
+            return HttpResponse(status=401)
+
+        title = data.get("title") or data.get("message") or "Click here to watch the stream."
+        stream_kwargs = {}
+        if public := data.get("public"):
+            stream_kwargs["public"] = anytobool(public[0])
+        if viewer_limit := data.get("viewer_limit"):
+            try:
+                stream_kwargs["viewer_limit"] = int(viewer_limit[0])
+            except ValueError:
+                log.error("Invalid viewer_limit: %s", viewer_limit)
+        if description := data.get("description"):
+            stream_kwargs["description"] = description[0]
+        if title := data.get("title"):
+            stream_kwargs["title"] = title[0]
+        stream, _ = Stream.objects.update_or_create(
+            name=name, defaults={"user": user, "is_live": True, "started_at": datetime.now(), **stream_kwargs}
+        )
+        log.debug("stream: %s", stream.__dict__)
+        # if the stream ended, we want to set started_at to now, and clear ended_at
+        if stream.ended_at:
+            log.debug("stream ended, resetting started_at and ended_at")
+            stream.started_at = datetime.now()
+            stream.ended_at = None
+            stream.save()
+        log.debug("title: %s", title)
+        send_push_live.delay(stream.name)
+
+        return HttpResponse()
+    except Exception as error:
+        log.debug("error: %s", error)
+        return HttpResponse(status=401)
+
+
+@csrf_exempt
+def stream_done_view(request):
+    """
+    View /stream/done/
+    """
+    try:
+        log.debug("stream_done_view: %s - %s", request.method, request.META["PATH_INFO"])
+        log.debug("stream_done_view: %s", request.GET)
+        name = request.GET.get("name")
+        log.debug("name: %s", name)
+        stream = Stream.objects.get(name=name)
+        log.debug("stream: %s", stream)
+        stream.ended_at = datetime.now()
+        stream.is_live = False
+        stream.save()
+
+    except Exception as error:
+        log.debug("error: %s", error)
+
+    return HttpResponse()
+
+
+# @csrf_exempt
+# def stream_update_view(request):
+#     """
+#     View /stream/update/
+#     """
+#     try:
+#         log.debug("stream_update_view: %s - %s", request.method, request.META["PATH_INFO"])
+#         log.debug("stream_update_view: %s", request.GET)
+#         # name = request.GET.get("name")
+#         # log.debug("name: %s", name)
+#
+#     except Exception as error:
+#         log.debug("error: %s", error)
+#
+#     return HttpResponse()
+
+
+def stream_ping_view(request, name):
+    """
+    View /stream/ping/:name/
+    """
+    log.debug("stream_ping_view: name: %s", name)
+    session_key = request.session.session_key
+    if not session_key:
+        log.debug("no session_key: request.session.save()")
+        request.session.save()
+        session_key = request.session.session_key
+    log.debug("stream_ping_view: session_key: %s", session_key)
+
+    key = f"stream:{name}:viewers"
+    redis = get_redis_connection("default")
+    redis.zadd(key, {session_key: int(now().timestamp())})
+    redis.expire(key, 60)
+    return HttpResponse()
+
+
+def stream_viewers_view(request, name):
+    """
+    View /stream/viewers/:name/
+    """
+    log.debug("stream_viewers_view - name: %s", name)
+    log.debug("stream_viewers_view - request.GET: %s", request.GET)
+    count = get_viewer_count(name)
+    log.debug("stream_viewers_view - count: %s", count)
+    if request.headers.get("accept") == "application/json":
+        return JsonResponse({"count": count})
+    context = {
+        "viewers": count,
+        "prefix": request.GET.get("prefix") or "",
+        "suffix": request.GET.get("suffix") or "",
+    }
+    log.debug("stream_viewers_view - context: %s", context)
+    return render(request, "stream/overlay/viewers.html", context)
+
+
+def get_viewer_count(name):
+    log.debug("stream_viewers_view - name: %s", name)
+    key = f"stream:{name}:viewers"
+    redis = get_redis_connection("default")
+    cutoff = int(now().timestamp()) - 60
+    count = redis.zcount(key, min=cutoff, max="+inf")
+    log.debug("stream_viewers_view - count: %s", count)
+    return count
 
 
 def get_json_body(request):
@@ -1038,3 +1190,31 @@ def user_view(request, user_id=None):
     except Exception as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
+
+
+@vary_on_cookie
+@auth_from_token
+def streams_view(request, page=None, count=100):
+    """
+    View  /api/streams/{page}/{count}/
+    """
+    log.info("%s - streams_page_view: %s - %s", request.method, page, count)
+    if request.user.is_superuser:
+        user = request.GET.get("user") or request.user.id
+    else:
+        user = request.user.id
+    if user == "0":
+        q = Stream.objects.all()
+    else:
+        q = Stream.objects.filter(user_id=int(user))
+    paginator = Paginator(q, count)
+    page_obj = paginator.get_page(page)
+    streams = extract_streams(page_obj.object_list, request.user.id)
+    log.debug("streams: %s", streams)
+    _next = page_obj.next_page_number() if page_obj.has_next() else None
+    response = {
+        "streams": streams,
+        "next": _next,
+        "count": count,
+    }
+    return JsonResponse(response, safe=False, status=200)

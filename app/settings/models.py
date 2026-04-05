@@ -109,3 +109,9 @@ class SiteSettings(models.Model):
             return f"{self.oauth_redirect_url}{provider}"
         if self.site_url:
             return f"{self.site_url}/oauth/callback/{provider}"
+
+
+class VAPIDKeys(models.Model):
+    public = models.CharField(max_length=255)
+    private = models.CharField(max_length=255)
+    email = models.EmailField()

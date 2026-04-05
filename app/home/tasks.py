@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from time import sleep
 from typing import Optional
 
 import httpx
@@ -16,7 +17,7 @@ from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django_celery_beat import models
-from home.models import Files, FileStats, ShortURLs
+from home.models import Files, FileStats, ShortURLs, Stream
 from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
 from home.util.storage import use_s3
@@ -25,7 +26,7 @@ from packaging import version
 from PIL import UnidentifiedImageError
 from pytimeparse2 import parse
 from settings.models import SiteSettings
-
+from webpush import send_group_notification
 
 log = logging.getLogger("app")
 
@@ -131,31 +132,34 @@ def app_startup():
 @shared_task()
 def version_check():
     log.info("version_check")
-    app_version = config("APP_VERSION", "")
-    if not app_version or app_version.lower() in ["dev", "latest"]:
-        return "Skipping Version Check due to APP_VERSION not set or invalid."
-    app_version = version.parse(app_version)
-    log.info("app_version: %s", app_version)
-    r = httpx.head(settings.VERSION_CHECK_URL, timeout=10)
-    if r.status_code != 302:
-        return "Error: Version Check URL Response did not return a 302."
-    log.info("location: %s", r.headers["location"])
-    latest_version = version.parse(os.path.basename(r.headers["location"]))
-    log.info("latest_version: %s", latest_version)
-    site_settings = SiteSettings.objects.settings()
-    log.info("site_settings.latest_version: %s", site_settings.latest_version)
-    if latest_version > app_version:
-        if str(latest_version) != site_settings.latest_version:
-            site_settings.latest_version = str(latest_version)
-            site_settings.save()
-            return f"New Update Found. Setting version to: {latest_version}"
-        return f"New Update already set. latest_version: {latest_version}"
-    else:
-        if site_settings.latest_version:
-            site_settings.latest_version = ""
-            site_settings.save()
-            return f"App Updated. Clearing latest_version: {latest_version}"
-        return f"No Update Available. Current Version: {app_version}"
+    try:
+        app_version = config("APP_VERSION", "")
+        if not app_version or app_version.lower() in ["dev", "latest"]:
+            return "Skipping Version Check due to APP_VERSION not set or invalid."
+        app_version = version.parse(app_version)
+        log.info("app_version: %s", app_version)
+        r = httpx.head(settings.VERSION_CHECK_URL, timeout=10)
+        if r.status_code != 302:
+            return "Error: Version Check URL Response did not return a 302."
+        log.info("location: %s", r.headers["location"])
+        latest_version = version.parse(os.path.basename(r.headers["location"]))
+        log.info("latest_version: %s", latest_version)
+        site_settings = SiteSettings.objects.settings()
+        log.info("site_settings.latest_version: %s", site_settings.latest_version)
+        if latest_version > app_version:
+            if str(latest_version) != site_settings.latest_version:
+                site_settings.latest_version = str(latest_version)
+                site_settings.save()
+                return f"New Update Found. Setting version to: {latest_version}"
+            return f"New Update already set. latest_version: {latest_version}"
+        else:
+            if site_settings.latest_version:
+                site_settings.latest_version = ""
+                site_settings.save()
+                return f"App Updated. Clearing latest_version: {latest_version}"
+            return f"No Update Available. Current Version: {app_version}"
+    except Exception as error:
+        log.debug("Exception parsing version: %s", error)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 300})
@@ -394,6 +398,24 @@ def delete_album_websocket(data: dict, user_id):
         "text": json.dumps(data),
     }
     async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
+
+
+# @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 1, "countdown": 300})
+@shared_task()
+def send_push_live(stream_name: str, delay: int = 10, ttl: int = 1800):
+    # Send a Push Message for New Live Stream
+    stream = Stream.objects.get(name=stream_name)
+    log.info("send_push_live: delay: %s - name: %s - user: %s", delay, stream.name, stream.user.username)
+    site_settings = SiteSettings.objects.settings()
+    sleep(delay)
+    payload = {
+        "head": f"{stream.user.username} went Live!",
+        "body": stream.title,
+        "icon": stream.user.get_avatar_url(),
+        "url": f"{site_settings.site_url}/live/{stream.name}/",
+    }
+    log.info("payload: %s", payload)
+    send_group_notification(group_name=stream.name, payload=payload, ttl=ttl)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 6, "countdown": 30})

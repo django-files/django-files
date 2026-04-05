@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from django.forms.models import model_to_dict
-from home.models import Albums, Files
+from home.models import Albums, Files, Stream
 from oauth.models import CustomUser
 from settings.context_processors import site_settings_processor
 
@@ -60,3 +60,18 @@ def extract_albums(q: Albums.objects):
         data["url"] = site_settings["site_url"] + "/gallery?album=" + str(album.id)
         albums.append(data)
     return albums
+
+
+def extract_streams(q: Stream.objects, user_id: int = None):
+    site_settings = site_settings_processor(None)["site_settings"]
+    streams = []
+    for stream in q:
+        data = model_to_dict(stream, exclude=["user"])
+        data["user_name"] = stream.user.get_name()
+        data["user_username"] = stream.user.username
+        data["started_at"] = stream.started_at
+        data["ended_at"] = stream.ended_at
+        data["url"] = site_settings["site_url"] + f"/live/{stream.name}/"
+        data["is_owner"] = user_id is not None and stream.user_id == user_id
+        streams.append(data)
+    return streams

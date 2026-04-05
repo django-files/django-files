@@ -4,17 +4,19 @@ from api.views import shorten_view, upload_view
 from django.urls import path, re_path
 from home import views
 
-
 app_name = "home"
 
 urlpatterns = [
     path("", views.home_view, name="index"),
+    path("live/<str:key>/", views.live_view, name="live"),
+    path("live/<str:key>/manifest.json", views.live_manifest_view, name="live-manifest"),
     path("files/", views.files_view, name="files"),
     path("gallery/", views.files_view, name="gallery"),
     path("uppy/", views.uppy_view, name="uppy"),
     path("paste/", views.paste_view, name="paste"),
     path("shorts/", views.shorts_view, name="shorts"),
     path("albums/", views.albums_view, name="albums"),
+    path("streams/", views.streams_view, name="streams"),
     path("stats/", views.stats_view, name="stats"),
     path("public/", views.pub_uppy_view, name="public-uppy"),
     path("i/", views.invite_view, name="invite-base"),

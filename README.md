@@ -9,7 +9,7 @@
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/django-files/django-files?logo=github&logoColor=white&label=updated)](https://github.com/django-files/django-files/graphs/commit-activity)
 [![GitHub Repo Stars](https://img.shields.io/github/stars/django-files/django-files?style=flat&logo=github&logoColor=white)](https://github.com/django-files/django-files/stargazers)
 [![GitHub Org Stars](https://img.shields.io/github/stars/django-files?style=flat&logo=github&logoColor=white&label=org%20stars)](https://django-files.github.io/)
-[![](https://repository-images.githubusercontent.com/672712475/52cf00a8-31de-4b0a-8522-63670bb4314a)](https://github.com/django-files/django-files)
+[![](https://repository-images.githubusercontent.com/672712475/52cf00a8-31de-4b0a-8522-63670bb4314a)](https://github.com/django-files/django-files?tab=readme-ov-file#readme)
 
 # Django Files
 
@@ -20,14 +20,16 @@ A Self-Hosted File Manager designed for seamless file sharing, with built-in sup
 🔹 Have an idea? Submit a [Feature Request](https://github.com/django-files/
 🐛 Found a bug? Report an [Issue](https://github.com/django-files/django-files/issues/new) for any bugs.
 
-## Table of Contents
-
 - [Overview](#overview)
-- [Running](#running)
-  - [Docker Run](#docker-run)
+  - [Getting Started](#-getting-started)
+  - [Docker Quick Start](#-quick-start-with-docker)
   - [Docker Compose](#docker-compose)
 - [Features](#features)
 - [Screen Shots](#screen-shots)
+- [Clients](#clients)
+  - [Apple](#Apple)
+  - [Android](#Android)
+  - [Web Browser](#Web-Browser)
 - [Usage](#usage)
   - [Files](#files)
   - [Short URL](#short-urls)
@@ -35,8 +37,8 @@ A Self-Hosted File Manager designed for seamless file sharing, with built-in sup
   - [Site Settings](#site-settings)
 - [Variables](#variables)
 - [Database](#database)
-- [Dev Deploy](#dev-deploy)
-- [Frameworks](#frameworks)
+- [Dev Deploy](#-development-deployment)
+- [Frameworks/Credits](#frameworkscredits)
 
 ## Overview
 
@@ -157,18 +159,42 @@ Django Files is packed with features for seamless file management and sharing. M
 Screenshots and UI previews are available on the
 [Django Files Github Site.](https://django-files.github.io/screenshots.html) from the menu.
 
+## Clients
+
+Client Applications are available for iOS, Android, and Web Browsers.
+
+### Apple
+
+<a href="https://apps.apple.com/us/app/django-files/id6742523003?itscg=30200&itsct=apps_box_badge&mttnsubad=6742523003" style="display: inline-block;">
+<img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1743638400" alt="Download on the App Store" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain; margin-block: 8px;" /></a>
+
+### Android
+
+[![Get on GitHub](https://raw.githubusercontent.com/smashedr/repo-images/refs/heads/master/android/get80/github.png)](https://github.com/django-files/android-client/releases/latest/download/app-release.apk)
+[![Get on Obtainium](https://raw.githubusercontent.com/smashedr/repo-images/refs/heads/master/android/get80/obtainium.png)](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/django-files/android-client)
+
+<details><summary>📲 Click to View QR Codes 📸</summary>
+
+[![QR Code GitHub](https://raw.githubusercontent.com/smashedr/repo-images/refs/heads/master/django-files/android/qr-code-github.png)](https://github.com/django-files/android-client/releases/latest/download/app-release.apk)
+
+[![QR Code Obtainium](https://raw.githubusercontent.com/smashedr/repo-images/refs/heads/master/django-files/android/qr-code-obtainium.png)](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/django-files/android-client)
+
+</details>
+
+### Web Browser
+
+[![Chrome](https://raw.githubusercontent.com/smashedr/logo-icons/master/browsers/chrome_48.png)](https://chromewebstore.google.com/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej)
+[![Firefox](https://raw.githubusercontent.com/smashedr/logo-icons/master/browsers/firefox_48.png)](https://addons.mozilla.org/addon/django-files)
+[![Edge](https://raw.githubusercontent.com/smashedr/logo-icons/master/browsers/edge_48.png)](https://chromewebstore.google.com/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej)
+[![Chromium](https://raw.githubusercontent.com/smashedr/logo-icons/master/browsers/chromium_48.png)](https://chromewebstore.google.com/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej)
+[![Brave](https://raw.githubusercontent.com/smashedr/logo-icons/master/browsers/brave_48.png)](https://chromewebstore.google.com/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej)
+[![Opera](https://raw.githubusercontent.com/smashedr/logo-icons/master/browsers/opera_48.png)](https://chromewebstore.google.com/detail/django-files/abpbiefojfkekhkjnpakpekkpeibnjej)
+
 ## Usage
 
 Django Files is backwards compatible with
 [Zipline](https://zipline.diced.vercel.app/docs/api/upload)
 client upload settings.
-
-### Clients
-
-<a href="https://apps.apple.com/us/app/django-files/id6742523003?itscg=30200&itsct=apps_box_badge&mttnsubad=6742523003" style="display: inline-block;">
-<img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us?releaseDate=1743638400" alt="Download on the App Store" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain; margin-block: 8px;" /></a>
-<a href="https://github.com/django-files/android-client/releases/latest/download/django-files.apk" style="display: inline-block;">
-<img src="https://dfzdnf7paocvc.cloudfront.net/apk_android_dl.svg" alt="Download for Android via APK" style="width: 246px; height: 82px; vertical-align: middle; object-fit: contain; margin-block: 8px;" /></a>
 
 ### Files
 

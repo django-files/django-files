@@ -23,7 +23,8 @@ window.addEventListener('keydown', (e) => {
         e.metaKey ||
         e.shiftKey ||
         e.repeat ||
-        tagNames.includes(e.target.tagName)
+        tagNames.includes(e.target.tagName) ||
+        e.target.isContentEditable
     ) {
         return
     }

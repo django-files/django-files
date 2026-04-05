@@ -9,13 +9,11 @@ from oauth.models import Google
 from oauth.providers.base import BaseOauth
 from oauth.providers.helpers import is_super_id
 
-
 provider = "google"
 log = logging.getLogger(f"app.{provider}")
 
 
 class GoogleOauth(BaseOauth):
-
     def process_login(self, site_settings) -> None:
         self.data = self.get_token(site_settings, self.code)
         self.profile = self.get_profile(self.data)

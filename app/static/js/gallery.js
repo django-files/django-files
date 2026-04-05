@@ -39,7 +39,7 @@ document.addEventListener('scroll', debounce(scrollHandle))
 window.addEventListener('resize', debounce(scrollHandle))
 
 async function scrollHandle(event) {
-    pageScroll(event, nextPage, addNodes)
+    await pageScroll(event, nextPage, addNodes)
 }
 
 async function initGallery() {
@@ -97,6 +97,7 @@ async function addNodes() {
         fetchLock = true
         const data = await fetchFiles(nextPage, 25, params.get('album'))
         console.debug('data:', data)
+        slideshowCallback(data)
         nextPage = data.next
         fileData.push(...data.files)
         for (const file of data.files) {

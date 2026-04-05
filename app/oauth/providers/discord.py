@@ -10,7 +10,6 @@ from oauth.models import Discord, DiscordWebhooks
 from oauth.providers.base import BaseOauth
 from oauth.providers.helpers import is_super_id
 
-
 provider = "discord"
 log = logging.getLogger(f"app.{provider}")
 

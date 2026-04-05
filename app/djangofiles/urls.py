@@ -6,7 +6,6 @@ from django.contrib.auth.decorators import login_required
 from django.urls import path
 from djangofiles import views
 
-
 handler400 = "djangofiles.views.handler400_view"
 handler403 = "djangofiles.views.handler403_view"
 handler404 = "djangofiles.views.handler404_view"
@@ -22,6 +21,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("flush-cache/", views.flush_cache_view, name="flush_cache"),
     path("app-health-check/", views.health_check, name="health_check"),
+    path("webpush/", include("webpush.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 

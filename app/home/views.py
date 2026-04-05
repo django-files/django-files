@@ -19,7 +19,7 @@ from django.views.decorators.common import no_append_slash
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
-from home.models import Albums, Files, FileStats, ShortURLs
+from home.models import Albums, Files, FileStats, ShortURLs, Stream
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
@@ -27,7 +27,6 @@ from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
-
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
@@ -46,6 +45,43 @@ def home_view(request):
     shorts = ShortURLs.objects.get_request(request)
     context = {"stats": stats, "shorts": shorts, "full_context": True}
     return render(request, "home.html", context)
+
+
+@vary_on_cookie
+def live_view(request, key):
+    """
+    View  /live/:key/
+    """
+    log.debug("%s - live_view: is_secure: %s", request.method, request.is_secure())
+    stream = get_object_or_404(Stream, name=key)
+    if not stream.public and not request.user.is_authenticated:
+        return HttpResponseNotFound()
+    is_owner = request.user.is_authenticated and stream.user_id == request.user.id
+    context = {"key": key, "webpush": {"group": key}, "stream": stream, "is_owner": is_owner}
+    return render(request, "live.html", context)
+
+
+@vary_on_cookie
+def live_manifest_view(request, key):
+    """
+    View  /live/:key/manifest.json
+    """
+    log.debug("%s - live_manifest_view: is_secure: %s", request.method, request.is_secure())
+    stream = get_object_or_404(Stream, name=key)
+    if not stream.public and not request.user.is_authenticated:
+        return HttpResponseNotFound()
+    data = {
+        "name": stream.title,
+        "short_name": stream.name,
+        "start_url": f"/live/{key}/",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#003366",
+        "icons": [{"src": "/static/images/logo.png", "sizes": "192x192", "type": "image/png"}],
+        "scope": "/",
+        "id": stream.name,
+    }
+    return JsonResponse(data)
 
 
 @cache_control(no_cache=True)
@@ -138,6 +174,23 @@ def albums_view(request):
     albums = Albums.objects.get_request(request)
     context = {"albums": albums}
     return render(request, "albums.html", context)
+
+
+@cache_control(no_cache=True)
+@login_required
+@cache_page(cache_seconds, key_prefix="streams")
+@vary_on_cookie
+def streams_view(request):
+    """
+    View  /streams/
+    """
+    log.debug("%s - streams_view: is_secure: %s", request.method, request.is_secure())
+    if request.user.is_superuser:
+        users = CustomUser.objects.all()
+        context = {"users": users, "full_context": True}
+    else:
+        context = {"full_context": True}
+    return render(request, "streams.html", context)
 
 
 @csrf_exempt

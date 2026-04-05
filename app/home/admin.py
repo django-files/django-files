@@ -1,7 +1,14 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from home.models import Albums, Files, FileStats, ShortURLs
-
+from home.models import (
+    Albums,
+    Files,
+    FileStats,
+    ShortURLs,
+    Stream,
+    StreamDiscordWebhooks,
+    StreamHistory,
+)
 
 admin.site.site_header = "Django Files Administration"
 
@@ -92,3 +99,110 @@ class ShortURLsAdmin(admin.ModelAdmin):
         "url",
     )
     ordering = ("-created_at",)
+
+
+@admin.register(Stream)
+class StreamAdmin(admin.ModelAdmin):
+    model = Stream
+    list_display = (
+        "name",
+        "title",
+        "user",
+        "is_live",
+        "started_at",
+        "ended_at",
+        "unique_views",
+        "public",
+        "viewer_limit",
+    )
+    list_filter = (
+        "user",
+        "is_live",
+        "public",
+        "started_at",
+        "ended_at",
+    )
+    readonly_fields = (
+        "name",
+        "started_at",
+        "unique_views",
+    )
+    search_fields = (
+        "name",
+        "title",
+        "description",
+        "user__username",
+    )
+    ordering = ("-started_at",)
+    list_editable = ("is_live", "public", "viewer_limit")
+
+
+@admin.register(StreamHistory)
+class StreamHistoryAdmin(admin.ModelAdmin):
+    model = StreamHistory
+    list_display = (
+        "id",
+        "stream",
+        "started_at",
+        "ended_at",
+        "peak_viewers",
+        "avg_viewers",
+        "title",
+        "recording",
+    )
+    list_filter = (
+        "stream",
+        "started_at",
+        "ended_at",
+    )
+    readonly_fields = (
+        "id",
+        "started_at",
+    )
+    search_fields = (
+        "stream__name",
+        "title",
+        "description",
+    )
+    ordering = ("-started_at",)
+    raw_id_fields = ("stream", "recording")
+
+
+@admin.register(StreamDiscordWebhooks)
+class StreamDiscordWebhooksAdmin(admin.ModelAdmin):
+    model = StreamDiscordWebhooks
+    list_display = (
+        "id",
+        "url",
+        "hook_id",
+        "guild_id",
+        "channel_id",
+        "active",
+        "owner",
+        "stream",
+        "created_at",
+        "updated_at",
+    )
+    list_filter = (
+        "active",
+        "owner",
+        "stream",
+        "created_at",
+        "updated_at",
+    )
+    readonly_fields = (
+        "id",
+        "created_at",
+        "updated_at",
+    )
+    search_fields = (
+        "url",
+        "hook_id",
+        "guild_id",
+        "channel_id",
+        "owner__username",
+        "stream__name",
+    )
+    ordering = ("-created_at",)
+    list_editable = ("active",)
+    raw_id_fields = ("owner", "stream")

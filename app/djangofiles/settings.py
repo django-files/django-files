@@ -11,7 +11,6 @@ from django.contrib.messages import constants as message_constants
 from dotenv import find_dotenv, load_dotenv
 from sentry_sdk.integrations.django import DjangoIntegration
 
-
 VERSION_CHECK_URL = config("VERSION_CHECK_URL", "https://github.com/django-files/django-files/releases/latest")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -235,6 +234,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_celery_beat",
+    "webpush",
     "home",
     "oauth",
     "settings",
@@ -286,13 +286,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "standard": {
-            "format": (
-                "%(asctime)s - "
-                "%(levelname)s - "
-                "%(filename)s "
-                "%(module)s.%(funcName)s:%(lineno)d - "
-                "%(message)s"
-            ),
+            "format": ("%(asctime)s - %(levelname)s - %(filename)s %(module)s.%(funcName)s:%(lineno)d - %(message)s"),
         },
     },
     "handlers": {

@@ -106,18 +106,25 @@
     }
 }
 
-/* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
-@media screen and (max-height <= 450px) {
-    .sidebar {
-        padding-top: 15px;
-    }
-    .sidebar a {
-        font-size: 18px;
-    }
-}
-
 main {
     overflow: hidden;
+}
+
+.video-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.video-wrapper {
+    position: relative;
+    transition: 0.5s;
+}
+
+.video-js {
+    width: 100%;
+    height: 100%;
+    transition: 0.5s;
 }
 
 .card {

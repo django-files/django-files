@@ -28,6 +28,7 @@ services:
       - app
     ports:
       - "80:80"
+      - "1935:1935"
 
   app:
     build:

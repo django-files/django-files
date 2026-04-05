@@ -30,10 +30,12 @@
 
     <div class="container-fluid py-3 px-4">
         <h1><i class="fa-regular fa-folder-open me-2"></i> {% if album %}{{ album.name }}{% else %}Files{% endif %}</h1>
-        <p class="lead">
+        <nav class="mb-2" aria-label="Files view">
             <a class="link-body-emphasis show-list" role="button" title="List" href="{% url 'home:files' %}">List</a> |
-            <a class="link-body-emphasis show-gallery" role="button" title="Gallery" href={% url 'home:gallery' %}>Gallery</a>
-        </p>
+            <a class="link-body-emphasis show-gallery" role="button" title="Gallery" href={% url 'home:gallery' %}>Gallery</a> |
+            <a class="link-body-emphasis show-slideshow" role="button" title="Slideshow" href="#offcanvas-bottom" data-bs-toggle="offcanvas" aria-controls="offcanvas-bottom">
+                Slideshow</a>
+        </nav>
         {% if request.user.is_superuser and not album %}
                 <div class="float-end">
                     <select id="user" name="user" class="form-select" aria-label="Default select example">
@@ -47,7 +49,7 @@
         {% endif %}
         {% if album %}
         <div class=row>
-            <p class="lead col-md-10">{% if album.info %}{{ album.info }}{% endif %}</p>
+            <p class="col-md-10 mb-0">{% if album.info %}{{ album.info }}{% endif %}</p>
             <p class="col-md-2 text-end">Views: <strong id="views-count">{{ album.view }}</strong></p>
         </div>
         {% endif %}
@@ -68,6 +70,7 @@
         <button class="gallery-ctx-toggle link-body-emphasis ctx-menu" aria-expanded="false" data-bs-toggle="dropdown"></button>
         <input class="d-none form-check-input gallery-inner gallery-checkbox gallery-mouse" type="checkbox"></input> <!-- //NOSONAR -->
     </div>
+    {% include 'include/albums-slideshow.html' %}
 {% endblock %}
 
 

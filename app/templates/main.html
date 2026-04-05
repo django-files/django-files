@@ -23,7 +23,7 @@
         <meta name="theme-color" content="{{ site_settings.site_color }}">
     {% endblock %}
 
-    <meta name="apple-itunes-app" content="app-id=6742523003{% if native_app_arg %}, app-argument={{ native_app_arg }}{% endif %}"">
+    <meta name="apple-itunes-app" content="app-id=6742523003{% if native_app_arg %}, app-argument={{ native_app_arg }}{% endif %}">
 
     <meta name="darkreader-lock">
 
@@ -89,6 +89,10 @@
             <li class="nav-item">
                 <a class="nav-link {% block albums_active %}{% endblock %}" href="{% url 'home:albums' %}">
                     <i class="fa-regular fa-images me-2 d-md-none"></i> Albums</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% block streams_active %}{% endblock %}" href="{% url 'home:streams' %}">
+                    <i class="fa-solid fa-video me-2 d-md-none"></i> Streams</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% block shorts_active %}{% endblock %}" href="{% url 'home:shorts' %}">

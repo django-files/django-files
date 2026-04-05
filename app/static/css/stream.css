@@ -1,0 +1,43 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+/* Streams table alignment */
+#streams-table thead th,
+#streams-table tbody td {
+    vertical-align: middle;
+}
+
+#streams-table thead th:first-child {
+    text-align: center;
+}
+
+#streams-table thead th:first-child input[type='checkbox'] {
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+}
+
+#streams-table tbody td:last-child {
+    text-align: center;
+}
+
+/* Editable stream title (streams list + live sidebar; shared with live.css layout) */
+.stream-title-edit {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 2px 4px;
+    transition: background-color 0.2s;
+}
+
+.stream-title-edit:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.stream-title-edit:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 0;
+    background-color: rgba(0, 123, 255, 0.15);
+}
