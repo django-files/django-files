@@ -128,17 +128,17 @@ body {
 }
 
 /* Sidebar card styling */
-.sidebarCard {
+.sidebar-card {
     overflow-y: hidden;
     max-height: calc(100vh - 120px);
 }
 
 /* Live status glow animation */
 .text-glow {
-    animation: glowPulse 1.5s ease-in-out infinite;
+    animation: glow-pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes glowPulse {
+@keyframes glow-pulse {
     0%,
     100% {
         text-shadow:

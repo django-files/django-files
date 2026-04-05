@@ -835,7 +835,7 @@ def stream_auth_view(request):
             stream_kwargs["description"] = description[0]
         if title := data.get("title"):
             stream_kwargs["title"] = title[0]
-        stream, created = Stream.objects.update_or_create(
+        stream, _ = Stream.objects.update_or_create(
             name=name, defaults={"user": user, "is_live": True, "started_at": datetime.now(), **stream_kwargs}
         )
         log.debug("stream: %s", stream.__dict__)

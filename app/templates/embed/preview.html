@@ -88,7 +88,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         {% include 'files/ctx-menu.html' with file=file extraclass='dropdown-menu-end' %}
         <div id="previewSidebar" class="sidebar h-100">
             <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
-            <div id="file-{{ file.id }}" class="card-body sidebarCard">
+            <div id="file-{{ file.id }}" class="card-body sidebar-card">
                 <h3 class="card-title mb-0 text-break">{{ file.name }}</h3>
                 <row>
                     <strong class="d-inline-block mb-1 text-primary-emphasis col-md-6 text-start">{{ file.mime }}</strong>

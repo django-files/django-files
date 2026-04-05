@@ -56,7 +56,7 @@
                 
                 <div id="previewSidebar" class="sidebar d-flex flex-column h-100">
                     <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
-                    <div id="file-{{ file.id }}" class="card-body sidebarCard p-3 flex-grow-1">
+                    <div id="file-{{ file.id }}" class="card-body sidebar-card p-3 flex-grow-1">
                         <h2 class="card-title mb-0 text-break{% if is_owner %} stream-title-edit{% endif %}" contenteditable="true" data-stream-name="{{ stream.name }}">{{ stream.title }}</h2>
                         <div class="row">
                             <strong class="d-inline-block mb-1 text-start text-secondary">{{ stream.description }}</strong>

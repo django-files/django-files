@@ -8,7 +8,7 @@ window.addEventListener('resize', checkSize)
 
 const previewSidebar = $('#previewSidebar')
 const contextPlacement = $('#contextPlacement')
-const sidebarCard = $('.sidebarCard')
+const sidebarCard = $('.sidebar-card')
 const openSidebarButton = $('#openSidebar')
 openSidebarButton.on('click', openSidebarCallback)
 $('#closeSidebar').on('click', closeSidebarCallback)
