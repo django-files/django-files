@@ -9,6 +9,7 @@ from oauth.models import Github
 from oauth.providers.base import BaseOauth
 from oauth.providers.helpers import is_super_id
 
+
 provider = "github"
 log = logging.getLogger(f"app.{provider}")
 

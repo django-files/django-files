@@ -27,6 +27,7 @@ from oauth.providers.helpers import (
 from settings.models import SiteSettings
 from ua_parser import parse
 
+
 log = logging.getLogger("app")
 
 provider_map = {

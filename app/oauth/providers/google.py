@@ -9,6 +9,7 @@ from oauth.models import Google
 from oauth.providers.base import BaseOauth
 from oauth.providers.helpers import is_super_id
 
+
 provider = "google"
 log = logging.getLogger(f"app.{provider}")
 

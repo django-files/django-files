@@ -1,6 +1,7 @@
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 
+
 try:
     from jinja2 import pass_context as pass_context
 except ImportError:

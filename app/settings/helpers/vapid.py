@@ -5,6 +5,7 @@ from py_vapid import Vapid
 from py_vapid.utils import b64urlencode, num_to_bytes
 from settings.models import VAPIDKeys
 
+
 log = logging.getLogger("app")
 
 

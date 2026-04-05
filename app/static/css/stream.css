@@ -14,7 +14,7 @@ body {
     text-align: center;
 }
 
-#streams-table thead th:first-child input[type="checkbox"] {
+#streams-table thead th:first-child input[type='checkbox'] {
     vertical-align: middle;
     position: relative;
     top: -1px;

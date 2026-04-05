@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from oauth.models import CustomUser
 
+
 log = logging.getLogger("app")
 
 

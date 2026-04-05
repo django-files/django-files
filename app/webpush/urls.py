@@ -5,6 +5,7 @@ from django.views.i18n import JavaScriptCatalog
 
 from . import views
 
+
 # When we last restarted the server; used for cache control headers and
 # invalidating the server side cache on server restart
 last_modified_date = timezone.now().strftime("%Y-%m-%d_%H:%M:%S")

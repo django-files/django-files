@@ -3,6 +3,7 @@ from typing import Tuple
 
 from geopy.geocoders import Nominatim
 
+
 log = logging.getLogger("app")
 
 # TODO: This should probably be a Class or merged into one

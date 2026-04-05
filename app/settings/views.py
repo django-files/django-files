@@ -21,6 +21,7 @@ from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
 
+
 signer = TimestampSigner()
 
 log = logging.getLogger("app")

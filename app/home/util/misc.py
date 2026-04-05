@@ -1,6 +1,7 @@
 import logging
 from math import floor, log10
 
+
 log = logging.getLogger("app")
 
 

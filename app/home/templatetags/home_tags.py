@@ -7,6 +7,7 @@ from django import template
 from django.conf import settings
 from django.http import HttpRequest
 
+
 # from django.templatetags.static import static
 
 logger = logging.getLogger("app")
