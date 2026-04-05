@@ -17,7 +17,7 @@ const fileUploadModal = $('#fileUploadModal')
 
 const albumOptions = document.getElementById('upload_albums')
 
-function getResponseError(responseText, response) {
+function getResponseError(responseText, _response) {
     return new Error(JSON.parse(responseText).message)
 }
 

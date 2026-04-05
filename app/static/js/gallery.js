@@ -55,7 +55,7 @@ async function initGallery() {
     await addNodes()
     // fillInterval = setInterval(fillPage, 250)
     window.dispatchEvent(new Event('resize'))
-    filesDataTable.on('select', function (e, dt, type, indexes) {
+    filesDataTable.on('select', function (_e, dt, _type, _indexes) {
         document.getElementById('bulk-actions').disabled = false
         console.log(`file-${dt.data().id}`)
         let checkbox = document.getElementById(`file-${dt.data().id}`)
@@ -63,7 +63,7 @@ async function initGallery() {
             checkbox.classList.remove('d-none')
         }
     })
-    filesDataTable.on('deselect', function (e, dt, type, indexes) {
+    filesDataTable.on('deselect', function (_e, _dt, _type, _indexes) {
         if (filesDataTable.rows({ selected: true }).count() === 0) {
             document.getElementById('bulk-actions').disabled = true
         }
@@ -71,7 +71,7 @@ async function initGallery() {
     filesDataTable?.columns.adjust().draw()
 }
 
-$('#user').on('change', function (event) {
+$('#user').on('change', function () {
     let user = $(this).val()
     console.log(`user: ${user}`)
     if (user) {
@@ -309,7 +309,7 @@ function changeView(event) {
         })
         dtContainer.hidden = true
         window.history.replaceState({}, null, '/gallery/' + '?' + params)
-        fileData.forEach(function (item, index) {
+        fileData.forEach(function (item) {
             addGalleryImage(item)
         })
         showList.style.fontWeight = 'normal'

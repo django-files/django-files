@@ -3,15 +3,14 @@
 
 let disconnected = false
 export let socket //NOSONAR
-let ws
 
 console.log('Connecting to WebSocket...')
 wsConnect()
 
 async function wsConnect() {
-    if (ws) {
+    if (socket) {
         console.warn('Closing Existing WebSocket Connection!')
-        ws.close()
+        socket.close()
     }
     const toast = bootstrap.Toast.getOrCreateInstance($('#disconnected-toast'))
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
