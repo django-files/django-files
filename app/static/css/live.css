@@ -9,7 +9,7 @@ body {
 }
 
 /* Sidebar - properly integrated into flexbox layout */
-#previewSidebar.sidebar {
+#preview-sidebar.sidebar {
     position: relative !important;
     width: 0;
     min-width: 0;
@@ -25,7 +25,7 @@ body {
 }
 
 /* Sidebar when open */
-#previewSidebar.sidebar.open {
+#preview-sidebar.sidebar.open {
     width: 350px;
     min-width: 350px;
 }

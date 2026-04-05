@@ -54,7 +54,7 @@
                 <!-- Sidebar button - positioned over video -->
                 <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
                 
-                <div id="previewSidebar" class="sidebar d-flex flex-column h-100">
+                <div id="preview-sidebar" class="sidebar d-flex flex-column h-100">
                     <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
                     <div id="file-{{ file.id }}" class="card-body sidebar-card p-3 flex-grow-1">
                         <h2 class="card-title mb-0 text-break{% if is_owner %} stream-title-edit{% endif %}" contenteditable="true" data-stream-name="{{ stream.name }}">{{ stream.title }}</h2>

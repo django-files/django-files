@@ -33,7 +33,7 @@
         <nav class="mb-2" aria-label="Files view">
             <a class="link-body-emphasis show-list" role="button" title="List" href="{% url 'home:files' %}">List</a> |
             <a class="link-body-emphasis show-gallery" role="button" title="Gallery" href={% url 'home:gallery' %}>Gallery</a> |
-            <a class="link-body-emphasis show-slideshow" role="button" title="Slideshow" href="#offcanvasBottom" data-bs-toggle="offcanvas" aria-controls="offcanvasBottom">
+            <a class="link-body-emphasis show-slideshow" role="button" title="Slideshow" href="#offcanvas-bottom" data-bs-toggle="offcanvas" aria-controls="offcanvas-bottom">
                 Slideshow</a>
         </nav>
         {% if request.user.is_superuser and not album %}

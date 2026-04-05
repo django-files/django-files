@@ -116,7 +116,7 @@ function slideshowCallback(data) {
     })
 }
 
-const myOffcanvas = document.getElementById('offcanvasBottom')
+const myOffcanvas = document.getElementById('offcanvas-bottom')
 myOffcanvas.addEventListener('hide.bs.offcanvas', () => {
     if (document.fullscreenElement) {
         console.log(`Close Button: %c EXIT`, 'color: Yellow')

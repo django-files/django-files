@@ -6,7 +6,7 @@ import { fetchFile, fetchAlbums } from './api-fetch.js'
 document.addEventListener('DOMContentLoaded', domLoaded)
 window.addEventListener('resize', checkSize)
 
-const previewSidebar = $('#previewSidebar')
+const previewSidebar = $('#preview-sidebar')
 const contextPlacement = $('#contextPlacement')
 const sidebarCard = $('.sidebar-card')
 const openSidebarButton = $('#openSidebar')
