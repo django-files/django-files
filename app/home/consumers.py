@@ -23,6 +23,7 @@ log = logging.getLogger("app")
 
 _ERR_NO_STREAM_NAME = "No stream name provided."
 _ERR_STREAM_NOT_FOUND = "Stream not found."
+_ERR_STREAM_OWNED_BY_OTHER = "Stream owned by another user."
 _WS_SEND = "websocket.send"
 
 
@@ -325,7 +326,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
         if user_id and stream_user_id != user_id:
-            return self._error("Stream owned by another user.", **kwargs)
+            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
         stream.title = title
         await database_sync_to_async(stream.save)()
         data = {
@@ -358,7 +359,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
         if user_id and stream_user_id != user_id:
-            return self._error("Stream owned by another user.", **kwargs)
+            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
         stream.description = description
         await database_sync_to_async(stream.save)()
         data = {
@@ -447,7 +448,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
         if user_id and stream_user_id != user_id:
-            return self._error("Stream owned by another user.", **kwargs)
+            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
         stream.live_chat = bool(enabled)
         await database_sync_to_async(stream.save)()
         anonymous_chat = await database_sync_to_async(lambda s: s.anonymous_chat)(stream)
@@ -470,7 +471,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
         if user_id and stream_user_id != user_id:
-            return self._error("Stream owned by another user.", **kwargs)
+            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
         stream.anonymous_chat = bool(enabled)
         await database_sync_to_async(stream.save)()
         data = {

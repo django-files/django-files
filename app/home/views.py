@@ -312,7 +312,7 @@ def invite_view(request, invite=None):
     return render(request, "invite.html", context=context)
 
 
-def shorten_short_view(request, short):
+def shorten_short_view(_request, short):
     """
     View  /s/{short}
     """

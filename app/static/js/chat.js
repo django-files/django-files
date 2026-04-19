@@ -75,34 +75,35 @@ function handleMessage(event) {
     }
 }
 
-function applyChatSettings(data) {
-    const chatSection = document.getElementById('live-chat')
-    const infoCard = document.getElementById('stream-info-card')
-    const anonWrapper = document.getElementById('anonChatToggleWrapper')
-    const toggleLiveChatEl = document.getElementById('toggleLiveChat')
-    const toggleAnonChatEl = document.getElementById('toggleAnonChat')
+function updateAnonInput(anonymousChat) {
+    const inputArea = document.getElementById('chat-input-area')
+    const loginPrompt = document.getElementById('chat-login-prompt')
+    if (inputArea) inputArea.style.display = anonymousChat ? '' : 'none'
+    if (loginPrompt) loginPrompt.style.display = anonymousChat ? 'none' : ''
+}
 
-    if (chatSection) {
-        chatSection.classList.toggle('chat-hidden', !data.live_chat)
-    }
+function applyChatSettings(data) {
+    document.getElementById('live-chat')?.classList.toggle('chat-hidden', !data.live_chat)
+
+    const infoCard = document.getElementById('stream-info-card')
     if (infoCard) {
         infoCard.classList.toggle('sidebar-card-with-chat', true)
         infoCard.classList.toggle('flex-grow-1', false)
     }
+
+    const anonWrapper = document.getElementById('anonChatToggleWrapper')
     if (anonWrapper) {
         anonWrapper.style.opacity = data.live_chat ? '1' : '0.5'
         anonWrapper.style.pointerEvents = data.live_chat ? '' : 'none'
     }
+
+    const toggleLiveChatEl = document.getElementById('toggleLiveChat')
     if (toggleLiveChatEl) toggleLiveChatEl.checked = data.live_chat
+
+    const toggleAnonChatEl = document.getElementById('toggleAnonChat')
     if (toggleAnonChatEl) toggleAnonChatEl.checked = data.anonymous_chat
 
-    // For anonymous users, show/hide the input based on anonymous_chat setting
-    if (!userInfo.user_id) {
-        const inputArea = document.getElementById('chat-input-area')
-        const loginPrompt = document.getElementById('chat-login-prompt')
-        if (inputArea) inputArea.style.display = data.anonymous_chat ? '' : 'none'
-        if (loginPrompt) loginPrompt.style.display = data.anonymous_chat ? 'none' : ''
-    }
+    if (!userInfo.user_id) updateAnonInput(data.anonymous_chat)
 }
 
 initChat()

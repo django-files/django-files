@@ -97,11 +97,11 @@
                             <div class="col-sm">
                                 <div class="d-flex flex-wrap gap-2 align-items-center">
                                     <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" id="toggleLiveChat" {% if stream.live_chat %}checked{% endif %}>
+                                        <input class="form-check-input" type="checkbox" role="switch" id="toggleLiveChat" aria-checked="{{ stream.live_chat|yesno:'true,false' }}" {% if stream.live_chat %}checked{% endif %}>
                                         <label class="form-check-label small" for="toggleLiveChat">Live Chat</label>
                                     </div>
                                     <div class="form-check form-switch mb-0" id="anonChatToggleWrapper" {% if not stream.live_chat %}style="opacity:0.5;pointer-events:none"{% endif %}>
-                                        <input class="form-check-input" type="checkbox" role="switch" id="toggleAnonChat" {% if stream.anonymous_chat %}checked{% endif %}>
+                                        <input class="form-check-input" type="checkbox" role="switch" id="toggleAnonChat" aria-checked="{{ stream.anonymous_chat|yesno:'true,false' }}" {% if stream.anonymous_chat %}checked{% endif %}>
                                         <label class="form-check-label small" for="toggleAnonChat">Allow Anonymous Chat</label>
                                     </div>
                                 </div>
