@@ -83,7 +83,9 @@ function updateAnonInput(anonymousChat) {
 }
 
 function applyChatSettings(data) {
-    document.getElementById('live-chat')?.classList.toggle('chat-hidden', !data.live_chat)
+    document
+        .getElementById('live-chat')
+        ?.classList.toggle('chat-hidden', !data.live_chat)
 
     const infoCard = document.getElementById('stream-info-card')
     if (infoCard) {
