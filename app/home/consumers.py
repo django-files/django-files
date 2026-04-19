@@ -284,7 +284,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 return response
         return self._error("File not found.", **kwargs)
 
-    def set_stream_title(self, *, user_id: int = None, name: str = None, title: str = None, **kwargs) -> dict:
+    async def set_stream_title(self, *, user_id: int = None, name: str = None, title: str = None, **kwargs):
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param name: String - Stream Name
@@ -299,19 +299,52 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error("No stream name provided.", **kwargs)
         if not title:
             return self._error("No title provided.", **kwargs)
-        stream = Stream.objects.filter(name=name)
+        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
+        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
         if not stream:
             return self._error("Stream not found.", **kwargs)
-        stream = stream[0]
-        if user_id and stream.user.id != user_id:
+        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
+        if user_id and stream_user_id != user_id:
             return self._error("Stream owned by another user.", **kwargs)
         stream.title = title
-        stream.save()
-        return {
+        await database_sync_to_async(stream.save)()
+        data = {
             "event": "set-stream-title",
             "name": name,
             "title": title,
         }
+        await self.channel_layer.group_send("home", {"type": "websocket.send", "text": json.dumps(data)})
+
+    async def set_stream_description(self, *, user_id: int = None, name: str = None, description: str = None, **kwargs):
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param name: String - Stream Name
+        :param description: String - New Stream Description
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug("set_stream_description")
+        log.debug("user_id: %s", user_id)
+        log.debug("name: %s", name)
+        log.debug("description: %s", description)
+        if not name:
+            return self._error("No stream name provided.", **kwargs)
+        if description is None:
+            return self._error("No description provided.", **kwargs)
+        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
+        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        if not stream:
+            return self._error("Stream not found.", **kwargs)
+        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
+        if user_id and stream_user_id != user_id:
+            return self._error("Stream owned by another user.", **kwargs)
+        stream.description = description
+        await database_sync_to_async(stream.save)()
+        data = {
+            "event": "set-stream-description",
+            "name": name,
+            "description": description,
+        }
+        await self.channel_layer.group_send("home", {"type": "websocket.send", "text": json.dumps(data)})
 
     def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = None, **kwargs) -> dict:
         """

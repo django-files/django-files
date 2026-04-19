@@ -153,7 +153,7 @@ function getStreamLink(data, type, row) {
 function getStreamTitle(data, type, row) {
     if (type === 'display') {
         if (row.is_owner) {
-            return `<span class="stream-title-edit text-break d-inline-block align-middle" contenteditable="true" data-stream-name="${row.name}">${data}</span>`
+            return `<span class="stream-editable rounded-1 text-break d-inline-block align-middle" contenteditable="true" data-stream-name="${row.name}">${data}</span>`
         }
         return `<span class="text-break">${data}</span>`
     }
@@ -271,11 +271,16 @@ $(document).ready(function () {
     })
 
     // Handle stream title editing
-    streamsTable.on('blur', '.stream-title-edit', function () {
+    streamsTable.on('focus', '.stream-editable', function () {
+        $(this).data('original-title', $(this).text().trim())
+    })
+
+    streamsTable.on('blur', '.stream-editable', function () {
         const span = $(this)
         const streamName = span.data('stream-name')
+        const originalTitle = span.data('original-title')
         const newTitle = span.text().trim()
-        if (newTitle) {
+        if (newTitle && newTitle !== originalTitle) {
             socket.send(
                 JSON.stringify({
                     method: 'set-stream-title',
@@ -283,25 +288,18 @@ $(document).ready(function () {
                     title: newTitle,
                 })
             )
-        } else {
-            // Revert to original if empty
-            span.trigger('revert-title')
+        } else if (!newTitle) {
+            span.text(originalTitle)
         }
     })
 
-    streamsTable.on('keydown', '.stream-title-edit', function (e) {
+    streamsTable.on('keydown', '.stream-editable', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault()
             $(this).blur()
         } else if (e.key === 'Escape') {
-            const span = $(this)
-            span.trigger('revert-title')
-            span.blur()
+            $(this).text($(this).data('original-title'))
+            $(this).blur()
         }
-    })
-
-    streamsTable.on('revert-title', '.stream-title-edit', function () {
-        // This event can be used to store original value for revert
-        // Currently we just keep the current value in DOM
     })
 })

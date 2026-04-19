@@ -57,10 +57,8 @@
                 <div id="preview-sidebar" class="sidebar d-flex flex-column h-100">
                     <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
                     <div id="file-{{ file.id }}" class="card-body sidebar-card p-3 flex-grow-1">
-                        <h2 class="card-title mb-0 text-break{% if is_owner %} stream-title-edit{% endif %}" contenteditable="true" data-stream-name="{{ stream.name }}">{{ stream.title }}</h2>
-                        <div class="row">
-                            <strong class="d-inline-block mb-1 text-start text-secondary">{{ stream.description }}</strong>
-                        </div>
+                        <h2 class="card-title mb-0 text-break stream-title{% if is_owner %} stream-editable rounded-1{% endif %}" {% if is_owner %}contenteditable="true"{% endif %} data-stream-name="{{ stream.name }}">{{ stream.title }}</h2>
+                        <strong class="d-block mb-1 text-start text-secondary stream-desc{% if is_owner %} stream-editable rounded-1{% endif %}" {% if is_owner %}contenteditable="true" data-placeholder="Add a description..."{% endif %} data-stream-name="{{ stream.name }}">{{ stream.description }}</strong>
                         <div class="row">
                             <div class="col-md d-flex justify-content-between pb-1">
                                 <img src="{{ stream.user.get_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P"><span class="fw-semibold ps-1">{{ stream.user.get_name }}</span>

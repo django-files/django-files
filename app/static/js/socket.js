@@ -85,6 +85,8 @@ async function initListener() {
             messageFileRename(data)
         } else if (data.event === 'set-stream-title') {
             messageStreamTitleUpdate(data)
+        } else if (data.event === 'set-stream-description') {
+            messageStreamDescriptionUpdate(data)
         } else if (data.event === 'album-delete') {
             messageAlbumDelete(data)
         } else if (data.event === 'album-new') {
@@ -181,6 +183,10 @@ function messageNewFile(data) {
 
 function messageStreamTitleUpdate(data) {
     show_toast(`Stream title updated to "${data.title}"`)
+}
+
+function messageStreamDescriptionUpdate(data) {
+    show_toast(`Stream description updated.`)
 }
 
 function truncateName(filename) {

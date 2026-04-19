@@ -85,22 +85,38 @@ socket?.addEventListener('message', function (event) {
         handleAlbumBadges(data)
     } else if (data.event === 'set-stream-title') {
         handleStreamTitleUpdate(data)
+    } else if (data.event === 'set-stream-description') {
+        handleStreamDescriptionUpdate(data)
     }
 })
 
 function handleStreamTitleUpdate(data) {
-    const titleEl = document.querySelector('.stream-title-edit')
+    const titleEl = document.querySelector('.stream-title')
     if (titleEl) {
         titleEl.textContent = data.title
     }
 }
 
+function handleStreamDescriptionUpdate(data) {
+    const descEl = document.querySelector('.stream-desc')
+    if (descEl) {
+        descEl.textContent = data.description
+    }
+}
+
 // Stream title editing
-const streamTitleEdit = document.querySelector('.stream-title-edit')
+const streamTitleEdit = document.querySelector('.stream-title.stream-editable')
 if (streamTitleEdit) {
+    let originalTitle = streamTitleEdit.textContent.trim()
+
+    streamTitleEdit.addEventListener('focus', function () {
+        originalTitle = this.textContent.trim()
+    })
+
     streamTitleEdit.addEventListener('blur', function () {
         const newTitle = this.textContent.trim()
-        if (newTitle) {
+        if (newTitle && newTitle !== originalTitle) {
+            originalTitle = newTitle
             socket.send(
                 JSON.stringify({
                     method: 'set-stream-title',
@@ -116,6 +132,41 @@ if (streamTitleEdit) {
             e.preventDefault()
             this.blur()
         } else if (e.key === 'Escape') {
+            this.textContent = originalTitle
+            this.blur()
+        }
+    })
+}
+
+// Stream description editing
+const streamDescEdit = document.querySelector('.stream-desc.stream-editable')
+if (streamDescEdit) {
+    let originalDesc = streamDescEdit.textContent.trim()
+
+    streamDescEdit.addEventListener('focus', function () {
+        originalDesc = this.textContent.trim()
+    })
+
+    streamDescEdit.addEventListener('blur', function () {
+        const newDesc = this.textContent.trim()
+        if (newDesc !== originalDesc) {
+            originalDesc = newDesc
+            socket.send(
+                JSON.stringify({
+                    method: 'set-stream-description',
+                    name: this.dataset.streamName,
+                    description: newDesc,
+                })
+            )
+        }
+    })
+
+    streamDescEdit.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            this.blur()
+        } else if (e.key === 'Escape') {
+            this.textContent = originalDesc
             this.blur()
         }
     })
