@@ -201,7 +201,7 @@ function appendMessage(msg) {
     }
 
     const name = document.createElement('strong')
-    name.className = 'chat-msg-name me-1'
+    name.className = 'chat-msg-name'
     if (isOwnerMsg) {
         name.classList.add('text-info')
     } else {
@@ -215,6 +215,7 @@ function appendMessage(msg) {
     text.textContent = msg.message
 
     body.appendChild(name)
+    body.appendChild(document.createTextNode(' '))
     body.appendChild(text)
     el.appendChild(avatar)
     el.appendChild(body)
