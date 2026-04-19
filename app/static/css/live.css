@@ -143,13 +143,18 @@ main {
 
 .sidebar-card-with-chat {
     overflow-y: auto;
-    flex-shrink: 1;
+    flex: 0 0 auto;
 }
 
 /* Live chat styles */
 #live-chat {
+    flex: 1 1 0;
     min-height: 0;
     overflow: hidden;
+}
+
+#live-chat.chat-hidden {
+    display: none !important;
 }
 
 .chat-header {

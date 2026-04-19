@@ -4,12 +4,14 @@
 import { socket } from './socket.js'
 
 const config = globalThis.chatConfig
-if (!config?.liveChatEnabled) {
+if (!config?.streamName) {
     throw new Error('Chat config not found')
 }
 
 const streamName = config.streamName
 const userInfo = config.userInfo
+const isOwner = config.isOwner || false
+let liveChatEnabled = config.liveChatEnabled
 
 const chatMessages = document.getElementById('chat-messages')
 const chatForm = document.getElementById('chat-form')
@@ -33,7 +35,7 @@ function joinChat() {
 // Wait for socket to connect, then join
 function initChat() {
     if (socket?.readyState === WebSocket.OPEN) {
-        joinChat()
+        if (liveChatEnabled) joinChat()
         addSocketListener()
     } else {
         setTimeout(initChat, 500)
@@ -63,7 +65,36 @@ function handleMessage(event) {
         }
     } else if (data.event === 'chat-viewers') {
         updateViewers(data.viewers)
+    } else if (data.event === 'chat-settings') {
+        const wasEnabled = liveChatEnabled
+        liveChatEnabled = data.live_chat
+        applyChatSettings(data)
+        if (!wasEnabled && liveChatEnabled) {
+            joinChat()
+        }
     }
+}
+
+function applyChatSettings(data) {
+    const chatSection = document.getElementById('live-chat')
+    const infoCard = document.getElementById('stream-info-card')
+    const anonWrapper = document.getElementById('anonChatToggleWrapper')
+    const toggleLiveChatEl = document.getElementById('toggleLiveChat')
+    const toggleAnonChatEl = document.getElementById('toggleAnonChat')
+
+    if (chatSection) {
+        chatSection.classList.toggle('chat-hidden', !data.live_chat)
+    }
+    if (infoCard) {
+        infoCard.classList.toggle('sidebar-card-with-chat', true)
+        infoCard.classList.toggle('flex-grow-1', false)
+    }
+    if (anonWrapper) {
+        anonWrapper.style.opacity = data.live_chat ? '1' : '0.5'
+        anonWrapper.style.pointerEvents = data.live_chat ? '' : 'none'
+    }
+    if (toggleLiveChatEl) toggleLiveChatEl.checked = data.live_chat
+    if (toggleAnonChatEl) toggleAnonChatEl.checked = data.anonymous_chat
 }
 
 initChat()
@@ -90,13 +121,39 @@ if (toggleViewersBtn) {
     })
 }
 
+// Owner controls
+if (isOwner) {
+    const toggleLiveChatEl = document.getElementById('toggleLiveChat')
+    const toggleAnonChatEl = document.getElementById('toggleAnonChat')
+
+    if (toggleLiveChatEl) {
+        toggleLiveChatEl.addEventListener('change', () => {
+            sendSocket({
+                method: 'set-stream-live-chat',
+                name: streamName,
+                enabled: toggleLiveChatEl.checked,
+            })
+        })
+    }
+
+    if (toggleAnonChatEl) {
+        toggleAnonChatEl.addEventListener('change', () => {
+            sendSocket({
+                method: 'set-stream-anonymous-chat',
+                name: streamName,
+                enabled: toggleAnonChatEl.checked,
+            })
+        })
+    }
+}
+
 function appendMessage(msg) {
     const el = document.createElement('div')
     el.className = 'chat-msg d-flex align-items-start gap-1 mb-1'
 
     const avatar = document.createElement('img')
     avatar.src = msg.avatar_url
-    avatar.className = 'rounded-circle flex-shrink-0 mt-1'
+    avatar.className = 'rounded-circle flex-shrink-0'
     avatar.width = 20
     avatar.height = 20
     avatar.alt = msg.username

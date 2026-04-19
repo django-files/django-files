@@ -54,7 +54,7 @@
                 
                 <div id="preview-sidebar" class="sidebar d-flex flex-column h-100">
                     <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
-                    <div id="file-{{ file.id }}" class="card-body sidebar-card p-3 {% if stream.live_chat %}sidebar-card-with-chat{% else %}flex-grow-1{% endif %}">
+                    <div id="stream-info-card" class="card-body sidebar-card p-3 {% if stream.live_chat or is_owner %}sidebar-card-with-chat{% else %}flex-grow-1{% endif %}">
                         <h2 class="card-title mb-0 text-break stream-title{% if is_owner %} stream-editable rounded-1{% endif %}" {% if is_owner %}contenteditable="true"{% endif %} data-stream-name="{{ stream.name }}">{{ stream.title }}</h2>
                         <strong class="d-block mb-1 text-start text-secondary stream-desc{% if is_owner %} stream-editable rounded-1{% endif %}" {% if is_owner %}contenteditable="true" data-placeholder="Add a description..."{% endif %} data-stream-name="{{ stream.name }}">{{ stream.description }}</strong>
                         <div class="row">
@@ -95,12 +95,28 @@
                                 {% webpush_button with_class="btn btn-outline-info m-1" %}
                             </div>
                         </div>
+                        {% if is_owner %}
+                        <div class="row mt-1">
+                            <div class="col-sm">
+                                <div class="d-flex flex-wrap gap-2 align-items-center">
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="toggleLiveChat" {% if stream.live_chat %}checked{% endif %}>
+                                        <label class="form-check-label small" for="toggleLiveChat">Live Chat</label>
+                                    </div>
+                                    <div class="form-check form-switch mb-0" id="anonChatToggleWrapper" {% if not stream.live_chat %}style="opacity:0.5;pointer-events:none"{% endif %}>
+                                        <input class="form-check-input" type="checkbox" role="switch" id="toggleAnonChat" {% if stream.anonymous_chat %}checked{% endif %}>
+                                        <label class="form-check-label small" for="toggleAnonChat">Allow Anonymous</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% if stream.live_chat %}
-                    <div id="live-chat" class="d-flex flex-column flex-grow-1 overflow-hidden">
+                    {% if stream.live_chat or is_owner %}
+                    <div id="live-chat" class="d-flex flex-column flex-grow-1 overflow-hidden{% if not stream.live_chat %} chat-hidden{% endif %}">
                         <div class="chat-header d-flex align-items-center justify-content-between px-3 py-1 border-top border-bottom">
                             <strong class="small"><i class="fa-solid fa-comments me-1"></i>Live Chat</strong>
-                            <button class="btn btn-sm btn-link text-secondary p-0" id="toggleViewers" title="Show viewers">
+                            <button class="btn btn-sm btn-outline-secondary" id="toggleViewers" title="Show viewers">
                                 <i class="fa-solid fa-users"></i> <span id="chat-viewer-count">0</span>
                             </button>
                         </div>
@@ -134,12 +150,13 @@
     <script type="text/javascript" src="{% static 'js/live.js' %}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
-    {% if stream.live_chat %}
+    {% if stream.live_chat or is_owner %}
     {{ chat_user_info|json_script:"chat-user-info" }}
     <script>
         window.chatConfig = {
             streamName: '{{ stream.name|escapejs }}',
-            liveChatEnabled: true,
+            liveChatEnabled: {{ stream.live_chat|yesno:"true,false" }},
+            isOwner: {{ is_owner|yesno:"true,false" }},
             userInfo: JSON.parse(document.getElementById('chat-user-info').textContent),
         }
     </script>

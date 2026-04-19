@@ -431,6 +431,47 @@ class HomeConsumer(AsyncWebsocketConsumer):
         recent = self._get_recent_messages(redis, name)
         return {"event": "chat-history", "name": name, "messages": recent}
 
+    async def set_stream_live_chat(self, *, user_id: int = None, name: str = None, enabled: bool = None, **kwargs):
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
+        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
+        if user_id and stream_user_id != user_id:
+            return self._error("Stream owned by another user.", **kwargs)
+        stream.live_chat = bool(enabled)
+        await database_sync_to_async(stream.save)()
+        anonymous_chat = await database_sync_to_async(lambda s: s.anonymous_chat)(stream)
+        data = {
+            "event": "chat-settings",
+            "name": name,
+            "live_chat": stream.live_chat,
+            "anonymous_chat": anonymous_chat,
+        }
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
+
+    async def set_stream_anonymous_chat(self, *, user_id: int = None, name: str = None, enabled: bool = None, **kwargs):
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
+        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
+        if user_id and stream_user_id != user_id:
+            return self._error("Stream owned by another user.", **kwargs)
+        stream.anonymous_chat = bool(enabled)
+        await database_sync_to_async(stream.save)()
+        data = {
+            "event": "chat-settings",
+            "name": name,
+            "live_chat": stream.live_chat,
+            "anonymous_chat": stream.anonymous_chat,
+        }
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
+
     async def leave_stream_chat(self, *, user_id: int = None, name: str = None, **kwargs):
         log.debug("leave_stream_chat")
         if self._stream_chat_group:
