@@ -14,6 +14,7 @@ openSidebarButton.on('click', openSidebarCallback)
 $('#closeSidebar').on('click', closeSidebarCallback)
 
 const sidebarMaxWidth = 768
+const noAutoClose = previewSidebar[0]?.dataset.noAutoClose === 'true'
 let sidebarOpen = false
 
 function domLoaded() {
@@ -31,7 +32,7 @@ function checkSize() {
                 openSidebar()
             }
         }
-    } else if (sidebarOpen) {
+    } else if (sidebarOpen && !noAutoClose) {
         closeSidebar()
     }
 }

@@ -1,6 +1,8 @@
+import hashlib
 import inspect
 import json
 import logging
+import time
 from io import BytesIO
 from typing import List, Optional
 
@@ -8,6 +10,7 @@ from asgiref.sync import async_to_sync, sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.forms.models import model_to_dict
+from django_redis import get_redis_connection
 from home.models import Albums, Files, Stream
 from home.tasks import version_check
 from home.util.file import process_file
@@ -18,14 +21,32 @@ from settings.models import SiteSettings
 
 log = logging.getLogger("app")
 
+_ERR_NO_STREAM_NAME = "No stream name provided."
+_ERR_STREAM_NOT_FOUND = "Stream not found."
+_ERR_STREAM_OWNED_BY_OTHER = "Stream owned by another user."
+_WS_SEND = "websocket.send"
+
 
 class HomeConsumer(AsyncWebsocketConsumer):
+    _stream_chat_group = None
+
     async def websocket_connect(self, event):
         log.debug("websocket_connect")
         log.debug(event)
         await self.channel_layer.group_add("home", self.channel_name)
-        await self.channel_layer.group_add(f"user-{self.scope['user'].id}", self.channel_name)
+        user = self.scope["user"]
+        if hasattr(user, "id") and user.id:
+            await self.channel_layer.group_add(f"user-{user.id}", self.channel_name)
         await self.accept()
+
+    async def websocket_disconnect(self, event):
+        log.debug("websocket_disconnect")
+        if self._stream_chat_group:
+            await self._leave_chat_group()
+        await self.channel_layer.group_discard("home", self.channel_name)
+        user = self.scope["user"]
+        if hasattr(user, "id") and user.id:
+            await self.channel_layer.group_discard(f"user-{user.id}", self.channel_name)
 
     async def websocket_send(self, event):
         log.debug("websocket_send")
@@ -296,16 +317,16 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("name: %s", name)
         log.debug("title: %s", title)
         if not name:
-            return self._error("No stream name provided.", **kwargs)
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         if not title:
             return self._error("No title provided.", **kwargs)
         stream = await database_sync_to_async(Stream.objects.filter)(name=name)
         stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
         if not stream:
-            return self._error("Stream not found.", **kwargs)
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
         if user_id and stream_user_id != user_id:
-            return self._error("Stream owned by another user.", **kwargs)
+            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
         stream.title = title
         await database_sync_to_async(stream.save)()
         data = {
@@ -313,7 +334,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             "name": name,
             "title": title,
         }
-        await self.channel_layer.group_send("home", {"type": "websocket.send", "text": json.dumps(data)})
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
 
     async def set_stream_description(
         self, *, user_id: int = None, name: str = None, description: str = None, **kwargs
@@ -329,16 +350,16 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("name: %s", name)
         log.debug("description: %s", description)
         if not name:
-            return self._error("No stream name provided.", **kwargs)
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         if description is None:
             return self._error("No description provided.", **kwargs)
         stream = await database_sync_to_async(Stream.objects.filter)(name=name)
         stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
         if not stream:
-            return self._error("Stream not found.", **kwargs)
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
         if user_id and stream_user_id != user_id:
-            return self._error("Stream owned by another user.", **kwargs)
+            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
         stream.description = description
         await database_sync_to_async(stream.save)()
         data = {
@@ -346,7 +367,208 @@ class HomeConsumer(AsyncWebsocketConsumer):
             "name": name,
             "description": description,
         }
-        await self.channel_layer.group_send("home", {"type": "websocket.send", "text": json.dumps(data)})
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
+
+    def _anon_name(self, session_key: str) -> str:
+        number = int(hashlib.sha256(session_key.encode()).hexdigest(), 16) % 100000
+        return f"Anonymous#{number:05d}"
+
+    def _get_chat_identity(self):
+        user = self.scope["user"]
+        if hasattr(user, "id") and user.id:
+            return {
+                "viewer_key": str(user.id),
+                "user_id": user.id,
+                "username": user.username,
+            }
+        session = self.scope.get("session")
+        session_key = session.session_key if session else self.channel_name
+        return {
+            "viewer_key": f"anon-{session_key}",
+            "user_id": None,
+            "username": self._anon_name(session_key),
+        }
+
+    async def _get_chat_display(self):
+        user = self.scope["user"]
+        if hasattr(user, "id") and user.id:
+            avatar_url = await database_sync_to_async(user.get_avatar_url)()
+            display_name = await database_sync_to_async(user.get_name)()
+            return display_name, avatar_url
+        session = self.scope.get("session")
+        session_key = session.session_key if session else self.channel_name
+        return self._anon_name(session_key), "/static/images/default_avatar.png"
+
+    async def join_stream_chat(self, *, user_id: int = None, name: str = None, **kwargs):
+        log.debug("join_stream_chat")
+        log.debug("user_id: %s, name: %s", user_id, name)
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
+        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        if not stream.live_chat:
+            return self._error("Chat is not enabled for this stream.", **kwargs)
+        if self._stream_chat_group:
+            await self._leave_chat_group()
+        self._stream_chat_group = f"stream-chat-{name}"
+        await self.channel_layer.group_add(self._stream_chat_group, self.channel_name)
+        identity = self._get_chat_identity()
+        display_name, avatar_url = await self._get_chat_display()
+        redis = get_redis_connection("default")
+        viewer_key = f"stream:{name}:chat_viewers"
+        viewer_data = json.dumps(
+            {
+                "user_id": identity["user_id"],
+                "username": identity["username"],
+                "display_name": display_name,
+                "avatar_url": avatar_url,
+            }
+        )
+        redis.hset(viewer_key, identity["viewer_key"], viewer_data)
+        redis.expire(viewer_key, 300)
+        viewers = self._get_chat_viewers(redis, viewer_key)
+        await self.channel_layer.group_send(
+            self._stream_chat_group,
+            {
+                "type": _WS_SEND,
+                "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
+            },
+        )
+        recent = self._get_recent_messages(redis, name)
+        return {"event": "chat-history", "name": name, "messages": recent}
+
+    async def set_stream_live_chat(self, *, user_id: int = None, name: str = None, enabled: bool = None, **kwargs):
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
+        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
+        if user_id and stream_user_id != user_id:
+            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        stream.live_chat = bool(enabled)
+        await database_sync_to_async(stream.save)()
+        anonymous_chat = await database_sync_to_async(lambda s: s.anonymous_chat)(stream)
+        data = {
+            "event": "chat-settings",
+            "name": name,
+            "live_chat": stream.live_chat,
+            "anonymous_chat": anonymous_chat,
+        }
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
+
+    async def set_stream_anonymous_chat(
+        self, *, user_id: int = None, name: str = None, enabled: bool = None, **kwargs
+    ):
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
+        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
+        if user_id and stream_user_id != user_id:
+            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        stream.anonymous_chat = bool(enabled)
+        await database_sync_to_async(stream.save)()
+        data = {
+            "event": "chat-settings",
+            "name": name,
+            "live_chat": stream.live_chat,
+            "anonymous_chat": stream.anonymous_chat,
+        }
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
+
+    async def leave_stream_chat(self, *, user_id: int = None, name: str = None, **kwargs):
+        log.debug("leave_stream_chat")
+        if self._stream_chat_group:
+            await self._leave_chat_group()
+
+    async def _leave_chat_group(self):
+        group = self._stream_chat_group
+        self._stream_chat_group = None
+        name = group.replace("stream-chat-", "")
+        identity = self._get_chat_identity()
+        redis = get_redis_connection("default")
+        viewer_key = f"stream:{name}:chat_viewers"
+        redis.hdel(viewer_key, identity["viewer_key"])
+        await self.channel_layer.group_discard(group, self.channel_name)
+        viewers = self._get_chat_viewers(redis, viewer_key)
+        await self.channel_layer.group_send(
+            group,
+            {
+                "type": _WS_SEND,
+                "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
+            },
+        )
+
+    async def send_chat_message(self, *, user_id: int = None, name: str = None, message: str = None, **kwargs):
+        log.debug("send_chat_message")
+        log.debug("user_id: %s, name: %s, message: %s", user_id, name, message)
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        if not message or not message.strip():
+            return self._error("Empty message.", **kwargs)
+        message = message.strip()[:500]
+        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
+        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        if not stream.live_chat:
+            return self._error("Chat is not enabled for this stream.", **kwargs)
+        identity = self._get_chat_identity()
+        if not identity["user_id"] and not stream.anonymous_chat:
+            return self._error("Anonymous chat is not enabled for this stream.", **kwargs)
+        display_name, avatar_url = await self._get_chat_display()
+        chat_group = f"stream-chat-{name}"
+        msg_data = {
+            "user_id": identity["user_id"],
+            "username": identity["username"],
+            "display_name": display_name,
+            "avatar_url": avatar_url,
+            "message": message,
+            "timestamp": time.time(),
+        }
+        redis = get_redis_connection("default")
+        history_key = f"stream:{name}:chat_history"
+        redis.lpush(history_key, json.dumps(msg_data))
+        redis.ltrim(history_key, 0, 49)
+        redis.expire(history_key, 3600)
+        broadcast = {"event": "chat-message", "name": name}
+        broadcast.update(msg_data)
+        await self.channel_layer.group_send(
+            chat_group,
+            {
+                "type": _WS_SEND,
+                "text": json.dumps(broadcast),
+            },
+        )
+
+    @staticmethod
+    def _get_chat_viewers(redis, viewer_key):
+        raw = redis.hgetall(viewer_key)
+        viewers = []
+        for v in raw.values():
+            try:
+                viewers.append(json.loads(v))
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return viewers
+
+    @staticmethod
+    def _get_recent_messages(redis, stream_name):
+        history_key = f"stream:{stream_name}:chat_history"
+        raw = redis.lrange(history_key, 0, 49)
+        messages = []
+        for item in reversed(raw):
+            try:
+                messages.append(json.loads(item))
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return messages
 
     def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = None, **kwargs) -> dict:
         """

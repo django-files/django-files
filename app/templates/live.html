@@ -28,8 +28,6 @@
 {% endblock %}
 
 {% block body %}
-    <div class="d-flex flex-column h-100">
-        <div class="flex-grow-1 position-relative">
             <div class="live-container d-flex h-100">
                 <div class="video-container flex-grow-1 d-flex align-items-center justify-content-center">
                     <div class="video-wrapper w-100 h-100 d-flex align-items-center justify-content-center">
@@ -54,30 +52,28 @@
                 <!-- Sidebar button - positioned over video -->
                 <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
                 
-                <div id="preview-sidebar" class="sidebar d-flex flex-column h-100">
+                <div id="preview-sidebar" class="sidebar d-flex flex-column h-100" data-no-auto-close="true">
                     <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
-                    <div id="file-{{ file.id }}" class="card-body sidebar-card p-3 flex-grow-1">
+                    <div id="stream-info-card" class="card-body sidebar-card p-3 {% if stream.live_chat or is_owner %}sidebar-card-with-chat{% else %}flex-grow-1{% endif %}">
                         <h2 class="card-title mb-0 text-break stream-title{% if is_owner %} stream-editable rounded-1{% endif %}" {% if is_owner %}contenteditable="true"{% endif %} data-stream-name="{{ stream.name }}">{{ stream.title }}</h2>
                         <strong class="d-block mb-1 text-start text-secondary stream-desc{% if is_owner %} stream-editable rounded-1{% endif %}" {% if is_owner %}contenteditable="true" data-placeholder="Add a description..."{% endif %} data-stream-name="{{ stream.name }}">{{ stream.description }}</strong>
                         <div class="row">
-                            <div class="col-md d-flex justify-content-between pb-1">
-                                <img src="{{ stream.user.get_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P"><span class="fw-semibold ps-1">{{ stream.user.get_name }}</span>
+                            <div class="col-md d-flex align-items-center justify-content-between pb-1">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="{{ stream.user.get_avatar_url }}" class="rounded-circle" height="50" width="50" alt="P">
+                                    <span class="fw-semibold">{{ stream.user.get_name }}</span>
+                                </div>
+                                {% webpush_button with_class="btn btn-outline-info btn-sm" %}
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md d-flex justify-content-between align-items-center">
                                 {% if stream.is_live %}
-                                <strong class="m-0 text-danger fw-bold text-glow">
-                                    Live
-                                </strong>
+                                <strong class="m-0 text-danger fw-bold text-glow">Live</strong>
                                 {% else %}
-                                <strong class="m-0 text-secondary fw-bold">
-                                    Offline
-                                </strong>
+                                <strong class="m-0 text-secondary fw-bold">Offline</strong>
                                 {% endif %}
-                                <strong class="m-0 text-info text-end">
-                                    <span id="view-count">N/A</span> Viewers
-                                </strong>
+                                <strong class="m-0 text-info text-end"><span id="view-count">N/A</span> Viewers</strong>
                             </div>
                         </div>
                         <div class="row">
@@ -92,16 +88,48 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="row">
+                        {% if is_owner %}
+                        <div class="row mt-1">
                             <div class="col-sm">
-                                {% webpush_button with_class="btn btn-outline-info m-1" %}
+                                <div class="d-flex flex-wrap gap-2 align-items-center">
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="toggleLiveChat" aria-checked="{{ stream.live_chat|yesno:'true,false' }}" {% if stream.live_chat %}checked{% endif %}>
+                                        <label class="form-check-label small" for="toggleLiveChat">Live Chat</label>
+                                    </div>
+                                    <div class="form-check form-switch mb-0" id="anonChatToggleWrapper" {% if not stream.live_chat %}style="opacity:0.5;pointer-events:none"{% endif %}>
+                                        <input class="form-check-input" type="checkbox" role="switch" id="toggleAnonChat" aria-checked="{{ stream.anonymous_chat|yesno:'true,false' }}" {% if stream.anonymous_chat %}checked{% endif %}>
+                                        <label class="form-check-label small" for="toggleAnonChat">Allow Anonymous Chat</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                        {% endif %}
                     </div>
+                    {% if stream.live_chat or is_owner %}
+                    <div id="live-chat" class="d-flex flex-column flex-grow-1 overflow-hidden{% if not stream.live_chat %} chat-hidden{% endif %}">
+                        <div class="chat-header d-flex align-items-center justify-content-between px-3 py-1 border-top border-bottom">
+                            <strong class="small"><i class="fa-solid fa-comments me-1"></i>Live Chat</strong>
+                            <button class="btn btn-sm btn-outline-secondary" id="toggleViewers" title="Show viewers">
+                                <i class="fa-solid fa-users"></i> <span id="chat-viewer-count">0</span>
+                            </button>
+                        </div>
+                        <div id="chat-viewers-panel" class="chat-viewers-panel d-none px-3 py-2 border-bottom">
+                        </div>
+                        <div id="chat-messages" class="chat-messages flex-grow-1 overflow-auto px-3 py-2">
+                        </div>
+                        <div id="chat-input-area" class="chat-input-area px-3 py-2 border-top"{% if not user.is_authenticated and not stream.anonymous_chat %} style="display:none"{% endif %}>
+                            <form id="chat-form" class="d-flex gap-2" autocomplete="off">
+                                <input type="text" id="chat-input" class="form-control form-control-sm" placeholder="Send a message..." maxlength="500" />
+                                <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-paper-plane"></i></button>
+                            </form>
+                        </div>
+                        <div id="chat-login-prompt" class="chat-input-area px-3 py-2 border-top text-center"{% if user.is_authenticated or stream.anonymous_chat %} style="display:none"{% endif %}>
+                            <small class="text-secondary"><a href="{% url 'oauth:login' %}">Log in</a> to chat</small>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
-        </div>
-    </div>
 {% endblock %}
 
 {% block footer %}{% endblock %}
@@ -112,4 +140,17 @@
     <script type="text/javascript" src="{% static 'js/live.js' %}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
+    {% if stream.live_chat or is_owner %}
+    {{ chat_user_info|json_script:"chat-user-info" }}
+    <script>
+        window.chatConfig = {
+            streamName: '{{ stream.name|escapejs }}',
+            liveChatEnabled: {{ stream.live_chat|yesno:"true,false" }},
+            isOwner: {{ is_owner|yesno:"true,false" }},
+            ownerUserId: {{ stream.user.id }},
+            userInfo: JSON.parse(document.getElementById('chat-user-info').textContent),
+        }
+    </script>
+    <script type="module" src="{% static 'js/chat.js' %}"></script>
+    {% endif %}
 {% endblock %}

@@ -8,6 +8,15 @@ body {
     padding-top: 30px;
 }
 
+main {
+    overflow: hidden;
+}
+
+.live-container {
+    height: 100%;
+    position: relative;
+}
+
 /* Sidebar - properly integrated into flexbox layout */
 #preview-sidebar.sidebar {
     position: relative !important;
@@ -39,7 +48,7 @@ body {
     -webkit-backdrop-filter: blur(6px);
     overflow: hidden;
     transition: 0.5s;
-    padding-top: 60px;
+    padding-top: 40px;
     border-top-right-radius: 9px;
     border-bottom-right-radius: 9px;
     border-top: 1px ridge rgba(66 69 73 / 100%);
@@ -131,6 +140,63 @@ body {
 .sidebar-card {
     overflow-y: hidden;
     max-height: calc(100vh - 120px);
+}
+
+.sidebar-card-with-chat {
+    overflow-y: auto;
+    flex: 0 0 auto;
+}
+
+/* Live chat styles */
+#live-chat {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#live-chat.chat-hidden {
+    display: none !important;
+}
+
+.chat-header {
+    flex-shrink: 0;
+}
+
+.chat-messages {
+    min-height: 0;
+    scrollbar-width: thin;
+}
+
+.chat-msg-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-msg-name {
+    white-space: nowrap;
+}
+
+.chat-msg-text {
+    overflow-wrap: anywhere;
+}
+
+.chat-input-area {
+    flex-shrink: 0;
+}
+
+.chat-viewers-panel {
+    max-height: 120px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    scrollbar-width: thin;
+}
+
+[data-bs-theme='dark'] .chat-viewers-panel {
+    background-color: rgba(0 0 0 / 30%);
+}
+
+[data-bs-theme='light'] .chat-viewers-panel {
+    background-color: rgba(0 0 0 / 5%);
 }
 
 /* Live status glow animation */

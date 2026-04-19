@@ -57,7 +57,21 @@ def live_view(request, key):
     if not stream.public and not request.user.is_authenticated:
         return HttpResponseNotFound()
     is_owner = request.user.is_authenticated and stream.user_id == request.user.id
-    context = {"key": key, "webpush": {"group": key}, "stream": stream, "is_owner": is_owner}
+    chat_user_info = {}
+    if request.user.is_authenticated:
+        chat_user_info = {
+            "user_id": request.user.id,
+            "username": request.user.username,
+            "display_name": request.user.get_name(),
+            "avatar_url": request.user.get_avatar_url(),
+        }
+    context = {
+        "key": key,
+        "webpush": {"group": key},
+        "stream": stream,
+        "is_owner": is_owner,
+        "chat_user_info": chat_user_info,
+    }
     return render(request, "live.html", context)
 
 
@@ -298,7 +312,7 @@ def invite_view(request, invite=None):
     return render(request, "invite.html", context=context)
 
 
-def shorten_short_view(request, short):
+def shorten_short_view(_request, short):
     """
     View  /s/{short}
     """
