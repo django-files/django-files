@@ -315,7 +315,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         }
         await self.channel_layer.group_send("home", {"type": "websocket.send", "text": json.dumps(data)})
 
-    async def set_stream_description(self, *, user_id: int = None, name: str = None, description: str = None, **kwargs):
+    async def set_stream_description(
+            self, *, user_id: int = None, name: str = None, description: str = None, **kwargs
+            ):
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param name: String - Stream Name
