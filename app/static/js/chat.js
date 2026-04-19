@@ -30,8 +30,7 @@ function getUserColor(msg) {
     const key = msg.user_id ? String(msg.user_id) : msg.username
     let hash = 0
     for (let i = 0; i < key.length; i++) {
-        hash = (hash << 5) - hash + key.charCodeAt(i)
-        hash |= 0
+        hash = Math.trunc((hash << 5) - hash + key.codePointAt(i))
     }
     return CHAT_COLORS[Math.abs(hash) % CHAT_COLORS.length]
 }
