@@ -149,6 +149,14 @@ Django Files is packed with features for seamless file management and sharing. M
 - Graph-based analytics (work in progress)
 - File expiration & view counting
 
+### 📡 Live Streaming
+
+- Live video streaming via HLS (HTTP Live Streaming)
+- Real-time live chat with account and anonymous support
+- Viewer count/viewer list
+- Owner controls: enable/disable chat and anonymous access live
+- Push notifications for stream start via Web Push
+
 ### External
 
 - Firefox Extension:https://addons.mozilla.org/addon/django-files
@@ -347,6 +355,8 @@ _file="docker-compose-dev.yaml";while true;do docker compose -f "${_file}" down 
 - [Highlight.js](https://highlightjs.org/)
 - [Datatables](https://datatables.net/)
 - [Swagger](https://swagger.io/)
+- [Video.js](https://videojs.com/)
+- [Django Channels](https://channels.readthedocs.io/)
 
 [Feature Requests](https://github.com/django-files/django-files/discussions/new?category=feature-requests) |
 [Issues](https://github.com/django-files/django-files/issues/new)
