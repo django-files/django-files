@@ -20,6 +20,10 @@ from settings.models import SiteSettings
 
 log = logging.getLogger("app")
 
+_ERR_NO_STREAM_NAME = "No stream name provided."
+_ERR_STREAM_NOT_FOUND = "Stream not found."
+_WS_SEND = "websocket.send"
+
 
 class HomeConsumer(AsyncWebsocketConsumer):
     _stream_chat_group = None
@@ -311,13 +315,13 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("name: %s", name)
         log.debug("title: %s", title)
         if not name:
-            return self._error("No stream name provided.", **kwargs)
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         if not title:
             return self._error("No title provided.", **kwargs)
         stream = await database_sync_to_async(Stream.objects.filter)(name=name)
         stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
         if not stream:
-            return self._error("Stream not found.", **kwargs)
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
         if user_id and stream_user_id != user_id:
             return self._error("Stream owned by another user.", **kwargs)
@@ -328,7 +332,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             "name": name,
             "title": title,
         }
-        await self.channel_layer.group_send("home", {"type": "websocket.send", "text": json.dumps(data)})
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
 
     async def set_stream_description(
         self, *, user_id: int = None, name: str = None, description: str = None, **kwargs
@@ -344,13 +348,13 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("name: %s", name)
         log.debug("description: %s", description)
         if not name:
-            return self._error("No stream name provided.", **kwargs)
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         if description is None:
             return self._error("No description provided.", **kwargs)
         stream = await database_sync_to_async(Stream.objects.filter)(name=name)
         stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
         if not stream:
-            return self._error("Stream not found.", **kwargs)
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
         if user_id and stream_user_id != user_id:
             return self._error("Stream owned by another user.", **kwargs)
@@ -361,7 +365,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             "name": name,
             "description": description,
         }
-        await self.channel_layer.group_send("home", {"type": "websocket.send", "text": json.dumps(data)})
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
 
     def _get_chat_identity(self):
         user = self.scope["user"]
@@ -391,11 +395,11 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("join_stream_chat")
         log.debug("user_id: %s, name: %s", user_id, name)
         if not name:
-            return self._error("No stream name provided.", **kwargs)
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         stream = await database_sync_to_async(Stream.objects.filter)(name=name)
         stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
         if not stream:
-            return self._error("Stream not found.", **kwargs)
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         if not stream.live_chat:
             return self._error("Chat is not enabled for this stream.", **kwargs)
         if self._stream_chat_group:
@@ -420,7 +424,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_send(
             self._stream_chat_group,
             {
-                "type": "websocket.send",
+                "type": _WS_SEND,
                 "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
             },
         )
@@ -445,7 +449,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_send(
             group,
             {
-                "type": "websocket.send",
+                "type": _WS_SEND,
                 "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
             },
         )
@@ -454,14 +458,14 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("send_chat_message")
         log.debug("user_id: %s, name: %s, message: %s", user_id, name, message)
         if not name:
-            return self._error("No stream name provided.", **kwargs)
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         if not message or not message.strip():
             return self._error("Empty message.", **kwargs)
         message = message.strip()[:500]
         stream = await database_sync_to_async(Stream.objects.filter)(name=name)
         stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
         if not stream:
-            return self._error("Stream not found.", **kwargs)
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         if not stream.live_chat:
             return self._error("Chat is not enabled for this stream.", **kwargs)
         identity = self._get_chat_identity()
@@ -487,7 +491,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_send(
             chat_group,
             {
-                "type": "websocket.send",
+                "type": _WS_SEND,
                 "text": json.dumps(broadcast),
             },
         )

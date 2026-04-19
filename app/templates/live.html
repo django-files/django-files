@@ -139,11 +139,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
     {% if stream.live_chat %}
+    {{ chat_user_info|json_script:"chat-user-info" }}
     <script>
         window.chatConfig = {
             streamName: '{{ stream.name|escapejs }}',
             liveChatEnabled: true,
-            userInfo: {{ chat_user_info|safe }},
+            userInfo: JSON.parse(document.getElementById('chat-user-info').textContent),
         }
     </script>
     <script type="module" src="{% static 'js/chat.js' %}"></script>

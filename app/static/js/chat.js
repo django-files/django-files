@@ -3,8 +3,8 @@
 
 import { socket } from './socket.js'
 
-const config = window.chatConfig
-if (!config || !config.liveChatEnabled) {
+const config = globalThis.chatConfig
+if (!config?.liveChatEnabled) {
     throw new Error('Chat config not found')
 }
 
@@ -19,7 +19,7 @@ const chatViewersPanel = document.getElementById('chat-viewers-panel')
 const toggleViewersBtn = document.getElementById('toggleViewers')
 
 function sendSocket(data) {
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    if (socket?.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify(data))
         return true
     }
@@ -32,7 +32,7 @@ function joinChat() {
 
 // Wait for socket to connect, then join
 function initChat() {
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    if (socket?.readyState === WebSocket.OPEN) {
         joinChat()
         addSocketListener()
     } else {

@@ -71,7 +71,7 @@ def live_view(request, key):
         "webpush": {"group": key},
         "stream": stream,
         "is_owner": is_owner,
-        "chat_user_info": json.dumps(chat_user_info),
+        "chat_user_info": chat_user_info,
     }
     return render(request, "live.html", context)
 
