@@ -15,19 +15,17 @@ const ownerUserId = config.ownerUserId
 let liveChatEnabled = config.liveChatEnabled
 
 const CHAT_COLORS = [
-    'var(--bs-red)',
-    'var(--bs-green)',
-    'var(--bs-blue)',
-    'var(--bs-yellow)',
-    'var(--bs-purple)',
-    'var(--bs-indigo)',
-    'var(--bs-cyan)',
-    'var(--bs-orange)',
+    '#dc3545', // red
+    '#198754', // green
+    '#0d6efd', // blue
+    '#ffc107', // yellow
+    '#6f42c1', // purple
+    '#6610f2', // indigo
+    '#0dcaf0', // cyan
+    '#fd7e14', // orange
 ]
 
-function getUserColor(msg) {
-    if (msg.user_id === ownerUserId) return 'var(--bs-info)'
-    const key = msg.user_id ? String(msg.user_id) : msg.username
+function getUserColor(key) {
     let hash = 0
     for (let i = 0; i < key.length; i++) {
         hash = Math.trunc((hash << 5) - hash + key.codePointAt(i))
@@ -194,17 +192,22 @@ function appendMessage(msg) {
     const body = document.createElement('div')
     body.className = 'chat-msg-body small'
 
-    if (msg.user_id === ownerUserId) {
+    const isOwnerMsg = msg.user_id === ownerUserId
+    if (isOwnerMsg) {
         const star = document.createElement('i')
-        star.className = 'fa-solid fa-star me-1'
-        star.style.color = 'var(--bs-warning)'
+        star.className = 'fa-solid fa-star me-1 text-warning'
         star.style.fontSize = '0.75em'
         body.appendChild(star)
     }
 
     const name = document.createElement('strong')
     name.className = 'chat-msg-name me-1'
-    name.style.color = getUserColor(msg)
+    if (isOwnerMsg) {
+        name.classList.add('text-info')
+    } else {
+        const colorKey = msg.user_id ? String(msg.user_id) : msg.username
+        name.style.color = getUserColor(colorKey)
+    }
     name.textContent = msg.display_name
 
     const text = document.createElement('span')

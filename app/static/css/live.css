@@ -167,11 +167,23 @@ main {
     scrollbar-width: thin;
 }
 
+.chat-msg-body {
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 0.25rem;
+}
+
 .chat-msg-name {
+    flex-shrink: 0;
     white-space: nowrap;
 }
 
 .chat-msg-text {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
     word-break: break-word;
 }
 
