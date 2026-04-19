@@ -52,7 +52,7 @@
                 <!-- Sidebar button - positioned over video -->
                 <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
                 
-                <div id="preview-sidebar" class="sidebar d-flex flex-column h-100">
+                <div id="preview-sidebar" class="sidebar d-flex flex-column h-100" data-no-auto-close="true">
                     <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
                     <div id="stream-info-card" class="card-body sidebar-card p-3 {% if stream.live_chat or is_owner %}sidebar-card-with-chat{% else %}flex-grow-1{% endif %}">
                         <h2 class="card-title mb-0 text-break stream-title{% if is_owner %} stream-editable rounded-1{% endif %}" {% if is_owner %}contenteditable="true"{% endif %} data-stream-name="{{ stream.name }}">{{ stream.title }}</h2>
@@ -151,6 +151,7 @@
             streamName: '{{ stream.name|escapejs }}',
             liveChatEnabled: {{ stream.live_chat|yesno:"true,false" }},
             isOwner: {{ is_owner|yesno:"true,false" }},
+            ownerUserId: {{ stream.user.id }},
             userInfo: JSON.parse(document.getElementById('chat-user-info').textContent),
         }
     </script>

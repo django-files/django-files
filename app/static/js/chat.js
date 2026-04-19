@@ -11,7 +11,30 @@ if (!config?.streamName) {
 const streamName = config.streamName
 const userInfo = config.userInfo
 const isOwner = config.isOwner || false
+const ownerUserId = config.ownerUserId
 let liveChatEnabled = config.liveChatEnabled
+
+const CHAT_COLORS = [
+    'var(--bs-red)',
+    'var(--bs-green)',
+    'var(--bs-blue)',
+    'var(--bs-yellow)',
+    'var(--bs-purple)',
+    'var(--bs-indigo)',
+    'var(--bs-cyan)',
+    'var(--bs-orange)',
+]
+
+function getUserColor(msg) {
+    if (msg.user_id === ownerUserId) return 'var(--bs-info)'
+    const key = msg.user_id ? String(msg.user_id) : msg.username
+    let hash = 0
+    for (let i = 0; i < key.length; i++) {
+        hash = (hash << 5) - hash + key.charCodeAt(i)
+        hash |= 0
+    }
+    return CHAT_COLORS[Math.abs(hash) % CHAT_COLORS.length]
+}
 
 const chatMessages = document.getElementById('chat-messages')
 const chatForm = document.getElementById('chat-form')
@@ -172,8 +195,17 @@ function appendMessage(msg) {
     const body = document.createElement('div')
     body.className = 'chat-msg-body small'
 
+    if (msg.user_id === ownerUserId) {
+        const star = document.createElement('i')
+        star.className = 'fa-solid fa-star me-1'
+        star.style.color = 'var(--bs-warning)'
+        star.style.fontSize = '0.75em'
+        body.appendChild(star)
+    }
+
     const name = document.createElement('strong')
     name.className = 'chat-msg-name me-1'
+    name.style.color = getUserColor(msg)
     name.textContent = msg.display_name
 
     const text = document.createElement('span')
