@@ -120,7 +120,10 @@ function appendMessage(msg) {
 
     // Auto-scroll if near bottom
     const isNearBottom =
-        chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight < 60
+        chatMessages.scrollHeight -
+            chatMessages.scrollTop -
+            chatMessages.clientHeight <
+        60
     if (isNearBottom || msg.user_id === userInfo.user_id) {
         chatMessages.scrollTop = chatMessages.scrollHeight
     }

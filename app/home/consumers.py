@@ -406,19 +406,24 @@ class HomeConsumer(AsyncWebsocketConsumer):
         display_name, avatar_url = await self._get_chat_display()
         redis = get_redis_connection("default")
         viewer_key = f"stream:{name}:chat_viewers"
-        viewer_data = json.dumps({
-            "user_id": identity["user_id"],
-            "username": identity["username"],
-            "display_name": display_name,
-            "avatar_url": avatar_url,
-        })
+        viewer_data = json.dumps(
+            {
+                "user_id": identity["user_id"],
+                "username": identity["username"],
+                "display_name": display_name,
+                "avatar_url": avatar_url,
+            }
+        )
         redis.hset(viewer_key, identity["viewer_key"], viewer_data)
         redis.expire(viewer_key, 300)
         viewers = self._get_chat_viewers(redis, viewer_key)
-        await self.channel_layer.group_send(self._stream_chat_group, {
-            "type": "websocket.send",
-            "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
-        })
+        await self.channel_layer.group_send(
+            self._stream_chat_group,
+            {
+                "type": "websocket.send",
+                "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
+            },
+        )
         recent = self._get_recent_messages(redis, name)
         return {"event": "chat-history", "name": name, "messages": recent}
 
@@ -437,10 +442,13 @@ class HomeConsumer(AsyncWebsocketConsumer):
         redis.hdel(viewer_key, identity["viewer_key"])
         await self.channel_layer.group_discard(group, self.channel_name)
         viewers = self._get_chat_viewers(redis, viewer_key)
-        await self.channel_layer.group_send(group, {
-            "type": "websocket.send",
-            "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
-        })
+        await self.channel_layer.group_send(
+            group,
+            {
+                "type": "websocket.send",
+                "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
+            },
+        )
 
     async def send_chat_message(self, *, user_id: int = None, name: str = None, message: str = None, **kwargs):
         log.debug("send_chat_message")
@@ -476,10 +484,13 @@ class HomeConsumer(AsyncWebsocketConsumer):
         redis.expire(history_key, 3600)
         broadcast = {"event": "chat-message", "name": name}
         broadcast.update(msg_data)
-        await self.channel_layer.group_send(chat_group, {
-            "type": "websocket.send",
-            "text": json.dumps(broadcast),
-        })
+        await self.channel_layer.group_send(
+            chat_group,
+            {
+                "type": "websocket.send",
+                "text": json.dumps(broadcast),
+            },
+        )
 
     @staticmethod
     def _get_chat_viewers(redis, viewer_key):
