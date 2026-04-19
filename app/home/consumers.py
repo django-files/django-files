@@ -459,7 +459,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         }
         await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
 
-    async def set_stream_anonymous_chat(self, *, user_id: int = None, name: str = None, enabled: bool = None, **kwargs):
+    async def set_stream_anonymous_chat(
+        self, *, user_id: int = None, name: str = None, enabled: bool = None, **kwargs
+    ):
         if not name:
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         stream = await database_sync_to_async(Stream.objects.filter)(name=name)
