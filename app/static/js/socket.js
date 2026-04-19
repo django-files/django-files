@@ -4,6 +4,7 @@
 let disconnected = false
 export let socket //NOSONAR
 let ws
+let heartbeatInterval
 
 console.log('Connecting to WebSocket...')
 wsConnect()
@@ -19,6 +20,12 @@ async function wsConnect() {
     socket.onopen = function (event) {
         console.log('WebSocket Connected.', event)
         disconnected = false
+        clearInterval(heartbeatInterval)
+        heartbeatInterval = setInterval(() => {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send('ping')
+            }
+        }, 30 * 1000)
         if (toast.isShown()) {
             $('#disconnected-toast-title')
                 .removeClass('text-danger')
@@ -31,6 +38,7 @@ async function wsConnect() {
     //     console.log('socket.onmessage:', event)
     // }
     socket.onclose = function (event) {
+        clearInterval(heartbeatInterval)
         if (![1000, 1001].includes(event.code)) {
             if (!disconnected) {
                 console.warn('WebSocket Disconnected!', event)

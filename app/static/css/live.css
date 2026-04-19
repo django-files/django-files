@@ -48,7 +48,7 @@ main {
     -webkit-backdrop-filter: blur(6px);
     overflow: hidden;
     transition: 0.5s;
-    padding-top: 60px;
+    padding-top: 40px;
     border-top-right-radius: 9px;
     border-bottom-right-radius: 9px;
     border-top: 1px ridge rgba(66 69 73 / 100%);
@@ -167,12 +167,17 @@ main {
     scrollbar-width: thin;
 }
 
+.chat-msg-body {
+    flex: 1;
+    min-width: 0;
+}
+
 .chat-msg-name {
     white-space: nowrap;
 }
 
 .chat-msg-text {
-    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .chat-input-area {
