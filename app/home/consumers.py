@@ -1,3 +1,4 @@
+import hashlib
 import inspect
 import json
 import logging
@@ -367,6 +368,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
         }
         await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
 
+    def _anon_name(self, session_key: str) -> str:
+        number = int(hashlib.sha256(session_key.encode()).hexdigest(), 16) % 100000
+        return f"Anonymous#{number:05d}"
+
     def _get_chat_identity(self):
         user = self.scope["user"]
         if hasattr(user, "id") and user.id:
@@ -380,7 +385,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         return {
             "viewer_key": f"anon-{session_key}",
             "user_id": None,
-            "username": "Anonymous",
+            "username": self._anon_name(session_key),
         }
 
     async def _get_chat_display(self):
@@ -389,7 +394,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
             avatar_url = await database_sync_to_async(user.get_avatar_url)()
             display_name = await database_sync_to_async(user.get_name)()
             return display_name, avatar_url
-        return "Anonymous", "/static/images/default_avatar.png"
+        session = self.scope.get("session")
+        session_key = session.session_key if session else self.channel_name
+        return self._anon_name(session_key), "/static/images/default_avatar.png"
 
     async def join_stream_chat(self, *, user_id: int = None, name: str = None, **kwargs):
         log.debug("join_stream_chat")

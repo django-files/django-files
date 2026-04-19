@@ -14,6 +14,7 @@ main {
 
 .live-container {
     height: 100%;
+    position: relative;
 }
 
 /* Sidebar - properly integrated into flexbox layout */

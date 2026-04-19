@@ -95,6 +95,14 @@ function applyChatSettings(data) {
     }
     if (toggleLiveChatEl) toggleLiveChatEl.checked = data.live_chat
     if (toggleAnonChatEl) toggleAnonChatEl.checked = data.anonymous_chat
+
+    // For anonymous users, show/hide the input based on anonymous_chat setting
+    if (!userInfo.user_id) {
+        const inputArea = document.getElementById('chat-input-area')
+        const loginPrompt = document.getElementById('chat-login-prompt')
+        if (inputArea) inputArea.style.display = data.anonymous_chat ? '' : 'none'
+        if (loginPrompt) loginPrompt.style.display = data.anonymous_chat ? 'none' : ''
+    }
 }
 
 initChat()
