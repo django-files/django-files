@@ -24,20 +24,23 @@ body {
     text-align: center;
 }
 
-/* Editable stream title (streams list + live sidebar; shared with live.css layout) */
-.stream-title-edit {
+/* Editable stream fields (title + description, used in live sidebar and streams table) */
+.stream-editable {
     cursor: pointer;
-    border-radius: 4px;
     padding: 2px 4px;
-    transition: background-color 0.2s;
 }
 
-.stream-title-edit:hover {
-    background-color: rgba(0, 123, 255, 0.1);
+.stream-editable:hover {
+    background-color: var(--bs-primary-bg-subtle);
 }
 
-.stream-title-edit:focus {
-    outline: 2px solid #0d6efd;
+.stream-editable:focus {
+    outline: 2px solid var(--bs-primary);
     outline-offset: 0;
-    background-color: rgba(0, 123, 255, 0.15);
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.stream-editable:empty::before {
+    content: attr(data-placeholder);
+    opacity: 0.5;
 }
