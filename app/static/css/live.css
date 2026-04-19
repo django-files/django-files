@@ -133,6 +133,52 @@ body {
     max-height: calc(100vh - 120px);
 }
 
+.sidebar-card-with-chat {
+    overflow-y: hidden;
+    flex-shrink: 0;
+}
+
+/* Live chat styles */
+#live-chat {
+    min-height: 0;
+}
+
+.chat-header {
+    flex-shrink: 0;
+}
+
+.chat-messages {
+    min-height: 0;
+    scrollbar-width: thin;
+}
+
+.chat-msg-name {
+    white-space: nowrap;
+}
+
+.chat-msg-text {
+    word-break: break-word;
+}
+
+.chat-input-area {
+    flex-shrink: 0;
+}
+
+.chat-viewers-panel {
+    max-height: 120px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    scrollbar-width: thin;
+}
+
+[data-bs-theme='dark'] .chat-viewers-panel {
+    background-color: rgba(0 0 0 / 30%);
+}
+
+[data-bs-theme='light'] .chat-viewers-panel {
+    background-color: rgba(0 0 0 / 5%);
+}
+
 /* Live status glow animation */
 .text-glow {
     animation: glow-pulse 1.5s ease-in-out infinite;

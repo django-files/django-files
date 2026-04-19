@@ -56,7 +56,7 @@
                 
                 <div id="preview-sidebar" class="sidebar d-flex flex-column h-100">
                     <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
-                    <div id="file-{{ file.id }}" class="card-body sidebar-card p-3 flex-grow-1">
+                    <div id="file-{{ file.id }}" class="card-body sidebar-card p-3 {% if stream.live_chat %}sidebar-card-with-chat{% else %}flex-grow-1{% endif %}">
                         <h2 class="card-title mb-0 text-break stream-title{% if is_owner %} stream-editable rounded-1{% endif %}" {% if is_owner %}contenteditable="true"{% endif %} data-stream-name="{{ stream.name }}">{{ stream.title }}</h2>
                         <strong class="d-block mb-1 text-start text-secondary stream-desc{% if is_owner %} stream-editable rounded-1{% endif %}" {% if is_owner %}contenteditable="true" data-placeholder="Add a description..."{% endif %} data-stream-name="{{ stream.name }}">{{ stream.description }}</strong>
                         <div class="row">
@@ -98,6 +98,32 @@
                             </div>
                         </div>
                     </div>
+                    {% if stream.live_chat %}
+                    <div id="live-chat" class="d-flex flex-column flex-grow-1 overflow-hidden">
+                        <div class="chat-header d-flex align-items-center justify-content-between px-3 py-1 border-top border-bottom">
+                            <strong class="small"><i class="fa-solid fa-comments me-1"></i>Live Chat</strong>
+                            <button class="btn btn-sm btn-link text-secondary p-0" id="toggleViewers" title="Show viewers">
+                                <i class="fa-solid fa-users"></i> <span id="chat-viewer-count">0</span>
+                            </button>
+                        </div>
+                        <div id="chat-viewers-panel" class="chat-viewers-panel d-none px-3 py-2 border-bottom">
+                        </div>
+                        <div id="chat-messages" class="chat-messages flex-grow-1 overflow-auto px-3 py-2">
+                        </div>
+                        {% if user.is_authenticated or stream.anonymous_chat %}
+                        <div class="chat-input-area px-3 py-2 border-top">
+                            <form id="chat-form" class="d-flex gap-2" autocomplete="off">
+                                <input type="text" id="chat-input" class="form-control form-control-sm" placeholder="Send a message..." maxlength="500" />
+                                <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-paper-plane"></i></button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div class="chat-input-area px-3 py-2 border-top text-center">
+                            <small class="text-secondary"><a href="{% url 'oauth:login' %}">Log in</a> to chat</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -112,4 +138,14 @@
     <script type="text/javascript" src="{% static 'js/live.js' %}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
+    {% if stream.live_chat %}
+    <script>
+        window.chatConfig = {
+            streamName: '{{ stream.name|escapejs }}',
+            liveChatEnabled: true,
+            userInfo: {{ chat_user_info|safe }},
+        }
+    </script>
+    <script type="module" src="{% static 'js/chat.js' %}"></script>
+    {% endif %}
 {% endblock %}
