@@ -120,7 +120,7 @@ async function addNodes() {
 
 function addGalleryImage(file, top = false) {
     // console.log('addGalleryImage:', file)
-    const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp)$/i
+    const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp|jxl|avif)$/i
     if (!file.name.match(imageExtensions)) {
         console.debug(`Skipping non-image: ${file.name}`)
         return
@@ -147,9 +147,35 @@ function addGalleryImage(file, top = false) {
     link.title = file.name
     link.target = '_blank'
     const img = imageNode.cloneNode(true)
-    img.style.minHeight = '64px'
+
+    // Pre-size the image using known dimensions to prevent layout jumping
+    const maxThumbSize = 256
+    if (file.meta?.PILImageWidth && file.meta?.PILImageHeight) {
+        const scale = Math.min(
+            maxThumbSize / file.meta.PILImageWidth,
+            maxThumbSize / file.meta.PILImageHeight
+        )
+        img.width = Math.round(file.meta.PILImageWidth * scale)
+        img.height = Math.round(file.meta.PILImageHeight * scale)
+    } else {
+        img.width = maxThumbSize
+        img.height = maxThumbSize
+    }
+
+    // Skeleton overlay — fades out when image finishes loading
+    const skeleton = document.createElement('div')
+    skeleton.classList.add('img-skeleton')
+    const removeSkeleton = () => {
+        skeleton.style.transition = 'opacity 0.3s'
+        skeleton.style.opacity = '0'
+        skeleton.addEventListener('transitionend', () => skeleton.remove(), { once: true })
+    }
+    img.addEventListener('load', removeSkeleton)
+    img.addEventListener('error', removeSkeleton)
+
     img.src = file.thumb || file.raw
     link.appendChild(img)
+    inner.appendChild(skeleton)
     inner.appendChild(link)
 
     // ICONS

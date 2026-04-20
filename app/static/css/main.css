@@ -59,6 +59,36 @@
 /*    padding-top: 37px;*/
 /*}*/
 
+/* Skeleton glisten loading placeholder */
+.img-skeleton {
+    --skeleton-shine: rgba(255, 255, 255, 0.6);
+    background-color: var(--bs-secondary-bg, #e9ecef);
+    overflow: hidden;
+}
+
+.img-skeleton::after {
+    content: '';
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        110deg,
+        transparent 20%,
+        var(--skeleton-shine) 50%,
+        transparent 80%
+    );
+    animation: glisten 1.5s linear infinite;
+}
+
+[data-bs-theme='dark'] .img-skeleton {
+    --skeleton-shine: rgba(255, 255, 255, 0.12);
+}
+
+@keyframes glisten {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(200%); }
+}
+
 @supports (padding-top: env(safe-area-inset-top)) {
     body {
         padding-top: calc(61px + max(env(safe-area-inset-top), 8px));

@@ -52,6 +52,13 @@
     overflow: hidden;
 }
 
+.gallery-inner .img-skeleton {
+    position: absolute;
+    inset: 0;
+    border-radius: 2px;
+    pointer-events: none;
+}
+
 .gallery-ctx {
     position: absolute;
     top: 0;
