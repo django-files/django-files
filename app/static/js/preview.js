@@ -23,6 +23,53 @@ function domLoaded() {
             openSidebar()
         }
     }
+    initPreviewImage()
+}
+
+function initPreviewImage() {
+    const img = document.querySelector('img.preview')
+    if (!img) return
+    const skeleton = document.getElementById('img-skeleton')
+
+    const onLoad = () => {
+        img.style.opacity = '1'
+        if (skeleton) {
+            skeleton.style.transition = 'opacity 0.3s'
+            skeleton.style.opacity = '0'
+            skeleton.addEventListener(
+                'transitionend',
+                () => skeleton.remove(),
+                { once: true }
+            )
+        }
+    }
+
+    const onError = () => {
+        if (skeleton) skeleton.remove()
+        img.style.display = 'none'
+        const wrapper = img.closest('.preview-wrapper')
+        if (wrapper) {
+            const placeholder = document.createElement('div')
+            placeholder.className = 'img-error-placeholder'
+            placeholder.innerHTML = `
+                <i class="fa-solid fa-file-image"></i>
+                <p>This image format is not supported by your browser.</p>
+            `
+            wrapper.appendChild(placeholder)
+        }
+    }
+
+    if (img.complete) {
+        // Already settled before listeners attached (e.g. cached)
+        if (img.naturalWidth === 0) {
+            onError()
+        } else {
+            onLoad()
+        }
+    } else {
+        img.addEventListener('load', onLoad, { once: true })
+        img.addEventListener('error', onError, { once: true })
+    }
 }
 
 function checkSize() {

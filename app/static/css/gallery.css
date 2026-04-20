@@ -52,6 +52,23 @@
     overflow: hidden;
 }
 
+.gallery-inner .img-skeleton {
+    position: absolute;
+    inset: 0;
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+.gallery-inner .img-error-placeholder {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.gallery-inner .img-error-placeholder i {
+    font-size: 6rem;
+}
+
 .gallery-ctx {
     position: absolute;
     top: 0;

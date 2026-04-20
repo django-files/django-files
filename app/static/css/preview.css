@@ -135,11 +135,35 @@ main {
     padding: 0 10px;
 }
 
+.preview-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 200px;
+    padding-top: 0.5em;
+}
+
 .preview {
     max-height: 100%; /* Adjusted height for the image */
     max-width: 100%;
-    padding-top: 0.5em;
     object-fit: contain; /* Adjusted to 'contain' */
+}
+
+.img-skeleton {
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+}
+
+.preview-wrapper .img-error-placeholder {
+    min-height: 40vh;
+}
+
+.preview-wrapper .img-error-placeholder i {
+    font-size: 8rem;
 }
 
 .link-unstyled,
