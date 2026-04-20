@@ -173,8 +173,8 @@ function addGalleryImage(file, top = false) {
     img.addEventListener('error', () => {
         skeleton.remove()
         img.style.display = 'none'
-        inner.style.minWidth = (img.width || maxThumbSize) + 'px'
-        inner.style.minHeight = (img.height || maxThumbSize) + 'px'
+        inner.style.minWidth = `${img.width || maxThumbSize}px`
+        inner.style.minHeight = `${img.height || maxThumbSize}px`
         const placeholder = document.createElement('div')
         placeholder.className = 'img-error-placeholder'
         placeholder.innerHTML = '<i class="fa-solid fa-file-image"></i>'

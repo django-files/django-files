@@ -57,7 +57,11 @@ function initPreviewImage() {
 
     if (img.complete) {
         // Already settled before listeners attached (e.g. cached)
-        img.naturalWidth === 0 ? onError() : onLoad()
+        if (img.naturalWidth === 0) {
+            onError()
+        } else {
+            onLoad()
+        }
     } else {
         img.addEventListener('load', onLoad, { once: true })
         img.addEventListener('error', onError, { once: true })
