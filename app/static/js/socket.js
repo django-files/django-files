@@ -12,6 +12,7 @@ wsConnect()
 async function wsConnect() {
     if (ws) {
         console.warn('Closing Existing WebSocket Connection!')
+        ws.onclose = null  // Prevent old socket's onclose from scheduling another reconnect
         ws.close()
     }
     const toast = bootstrap.Toast.getOrCreateInstance($('#disconnected-toast'))
