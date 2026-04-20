@@ -72,6 +72,7 @@ async function wsConnect() {
 async function initListener() {
     socket?.addEventListener('message', function (event) {
         // console.log('socket.message: files.js:', event)
+        if (event.data === 'pong') return
         let data = JSON.parse(event.data)
         console.log(event)
         if (data.event === 'file-new') {
