@@ -165,13 +165,21 @@ function addGalleryImage(file, top = false) {
     // Skeleton overlay — fades out when image finishes loading
     const skeleton = document.createElement('div')
     skeleton.classList.add('img-skeleton')
-    const removeSkeleton = () => {
+    img.addEventListener('load', () => {
         skeleton.style.transition = 'opacity 0.3s'
         skeleton.style.opacity = '0'
         skeleton.addEventListener('transitionend', () => skeleton.remove(), { once: true })
-    }
-    img.addEventListener('load', removeSkeleton)
-    img.addEventListener('error', removeSkeleton)
+    }, { once: true })
+    img.addEventListener('error', () => {
+        skeleton.remove()
+        img.style.display = 'none'
+        inner.style.minWidth = (img.width || maxThumbSize) + 'px'
+        inner.style.minHeight = (img.height || maxThumbSize) + 'px'
+        const placeholder = document.createElement('div')
+        placeholder.className = 'img-error-placeholder'
+        placeholder.innerHTML = '<i class="fa-solid fa-file-image"></i>'
+        inner.appendChild(placeholder)
+    }, { once: true })
 
     img.src = file.thumb || file.raw
     link.appendChild(img)

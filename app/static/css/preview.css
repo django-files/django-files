@@ -158,6 +158,14 @@ main {
     border-radius: 6px;
 }
 
+.preview-wrapper .img-error-placeholder {
+    min-height: 40vh;
+}
+
+.preview-wrapper .img-error-placeholder i {
+    font-size: 8rem;
+}
+
 .link-unstyled,
 .link-unstyled:link,
 .link-unstyled:hover {

@@ -62,9 +62,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
             <div class="preview-wrapper">
                 <div class="img-skeleton" id="img-skeleton"></div>
                 <img src="{{ static_url }}" alt="{{ file.name }}" class="preview"
-                     style="opacity: 0; transition: opacity 0.3s ease;"
-                     onload="this.style.opacity='1'; var s=document.getElementById('img-skeleton'); s.style.transition='opacity 0.3s'; s.style.opacity='0'; s.addEventListener('transitionend',function(){s.remove()},{once:true});"
-                     onerror="this.style.opacity='1'; var s=document.getElementById('img-skeleton'); s.remove();">
+                     style="opacity: 0; transition: opacity 0.3s ease;">
             </div>
         {% elif render == 'video' %}
             <video class="mw-100 pt-2 ps-2 pe-2 preview" controls>
