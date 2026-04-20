@@ -26,7 +26,7 @@ async function wsConnect() {
             if (socket.readyState === WebSocket.OPEN) {
                 socket.send('ping')
             }
-        }, 30 * 1000)
+        }, 10 * 1000)
         if (toast.isShown()) {
             $('#disconnected-toast-title')
                 .removeClass('text-danger')

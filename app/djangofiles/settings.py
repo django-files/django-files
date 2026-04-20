@@ -170,7 +170,7 @@ CHANNEL_LAYERS = {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [(config("CHANNELS_REDIS_HOST", "redis"), config("CHANNELS_REDIS_PORT", 6379, int))],
-            "group_expiry": 600,  # 10 minutes; default is 86400 (24h) which keeps dead channels from ws reconnect bugs alive far too long
+            "group_expiry": 86400,  # 24h default; stale channels from dropped connections expire naturally. The ws bug that caused accumulation is fixed.
         },
     },
 }
