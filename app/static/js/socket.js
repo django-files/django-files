@@ -16,7 +16,7 @@ async function wsConnect() {
     }
     const toast = bootstrap.Toast.getOrCreateInstance($('#disconnected-toast'))
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    socket = new WebSocket(`${protocol}//${window.location.host}/ws/home/`)
+    ws = socket = new WebSocket(`${protocol}//${window.location.host}/ws/home/`)
     socket.onopen = function (event) {
         console.log('WebSocket Connected.', event)
         disconnected = false

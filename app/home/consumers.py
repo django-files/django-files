@@ -416,8 +416,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self._stream_chat_group, self.channel_name)
         identity = self._get_chat_identity()
         display_name, avatar_url = await self._get_chat_display()
-        redis = get_redis_connection("default")
-        viewer_key = f"stream:{name}:chat_viewers"
         viewer_data = json.dumps(
             {
                 "user_id": identity["user_id"],
@@ -426,9 +424,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 "avatar_url": avatar_url,
             }
         )
-        redis.hset(viewer_key, identity["viewer_key"], viewer_data)
-        redis.expire(viewer_key, 300)
-        viewers = self._get_chat_viewers(redis, viewer_key)
+        viewers, recent = await sync_to_async(self._redis_join_chat)(name, identity["viewer_key"], viewer_data)
         await self.channel_layer.group_send(
             self._stream_chat_group,
             {
@@ -436,8 +432,17 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
             },
         )
-        recent = self._get_recent_messages(redis, name)
         return {"event": "chat-history", "name": name, "messages": recent}
+
+    @staticmethod
+    def _redis_join_chat(name: str, viewer_key_field: str, viewer_data: str):
+        redis = get_redis_connection("default")
+        viewer_key = f"stream:{name}:chat_viewers"
+        redis.hset(viewer_key, viewer_key_field, viewer_data)
+        redis.expire(viewer_key, 300)
+        viewers = HomeConsumer._get_chat_viewers(redis, viewer_key)
+        recent = HomeConsumer._get_recent_messages(redis, name)
+        return viewers, recent
 
     async def set_stream_live_chat(self, *, user_id: int = None, name: str = None, enabled: bool = None, **kwargs):
         if not name:
@@ -492,11 +497,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
         self._stream_chat_group = None
         name = group.replace("stream-chat-", "")
         identity = self._get_chat_identity()
-        redis = get_redis_connection("default")
-        viewer_key = f"stream:{name}:chat_viewers"
-        redis.hdel(viewer_key, identity["viewer_key"])
+        viewers = await sync_to_async(self._redis_leave_chat)(name, identity["viewer_key"])
         await self.channel_layer.group_discard(group, self.channel_name)
-        viewers = self._get_chat_viewers(redis, viewer_key)
         await self.channel_layer.group_send(
             group,
             {
@@ -504,6 +506,13 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
             },
         )
+
+    @staticmethod
+    def _redis_leave_chat(name: str, viewer_key_field: str):
+        redis = get_redis_connection("default")
+        viewer_key = f"stream:{name}:chat_viewers"
+        redis.hdel(viewer_key, viewer_key_field)
+        return HomeConsumer._get_chat_viewers(redis, viewer_key)
 
     async def send_chat_message(self, *, user_id: int = None, name: str = None, message: str = None, **kwargs):
         log.debug("send_chat_message")
@@ -532,11 +541,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             "message": message,
             "timestamp": time.time(),
         }
-        redis = get_redis_connection("default")
-        history_key = f"stream:{name}:chat_history"
-        redis.lpush(history_key, json.dumps(msg_data))
-        redis.ltrim(history_key, 0, 49)
-        redis.expire(history_key, 3600)
+        await sync_to_async(self._redis_store_message)(name, msg_data)
         broadcast = {"event": "chat-message", "name": name}
         broadcast.update(msg_data)
         await self.channel_layer.group_send(
@@ -546,6 +551,14 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 "text": json.dumps(broadcast),
             },
         )
+
+    @staticmethod
+    def _redis_store_message(name: str, msg_data: dict):
+        redis = get_redis_connection("default")
+        history_key = f"stream:{name}:chat_history"
+        redis.lpush(history_key, json.dumps(msg_data))
+        redis.ltrim(history_key, 0, 49)
+        redis.expire(history_key, 3600)
 
     @staticmethod
     def _get_chat_viewers(redis, viewer_key):
