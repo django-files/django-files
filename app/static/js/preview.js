@@ -36,7 +36,11 @@ function initPreviewImage() {
         if (skeleton) {
             skeleton.style.transition = 'opacity 0.3s'
             skeleton.style.opacity = '0'
-            skeleton.addEventListener('transitionend', () => skeleton.remove(), { once: true })
+            skeleton.addEventListener(
+                'transitionend',
+                () => skeleton.remove(),
+                { once: true }
+            )
         }
     }
 

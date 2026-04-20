@@ -83,7 +83,6 @@
 
 /* Skeleton glisten loading placeholder */
 .img-skeleton {
-    --skeleton-shine: rgba(255, 255, 255, 0.6);
     background-color: var(--bs-secondary-bg, #e9ecef);
     overflow: hidden;
 }
@@ -96,19 +95,28 @@
     background: linear-gradient(
         110deg,
         transparent 20%,
-        var(--skeleton-shine) 50%,
+        rgba(255, 255, 255, 0.6) 50%,
         transparent 80%
     );
     animation: glisten 1.5s linear infinite;
 }
 
-[data-bs-theme='dark'] .img-skeleton {
-    --skeleton-shine: rgba(255, 255, 255, 0.12);
+[data-bs-theme='dark'] .img-skeleton::after {
+    background: linear-gradient(
+        110deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.12) 50%,
+        transparent 80%
+    );
 }
 
 @keyframes glisten {
-    from { transform: translateX(-100%); }
-    to   { transform: translateX(200%); }
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(200%);
+    }
 }
 
 @supports (padding-top: env(safe-area-inset-top)) {
