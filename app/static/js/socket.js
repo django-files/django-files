@@ -5,6 +5,7 @@ let disconnected = false
 export let socket //NOSONAR
 let ws
 let heartbeatInterval
+const _initializedSockets = new WeakSet()
 
 console.log('Connecting to WebSocket...')
 wsConnect()
@@ -33,6 +34,7 @@ async function wsConnect() {
                 .text('Connected')
             toast.hide()
         }
+        document.dispatchEvent(new CustomEvent('wsConnected'))
     }
     // socket.onmessage = function (event) {
     //     console.log('socket.onmessage:', event)
@@ -69,6 +71,8 @@ async function wsConnect() {
 // File Events
 
 async function initListener() {
+    if (_initializedSockets.has(socket)) return
+    _initializedSockets.add(socket)
     socket?.addEventListener('message', function (event) {
         // console.log('socket.message: files.js:', event)
         let data = JSON.parse(event.data)
