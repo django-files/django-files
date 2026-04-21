@@ -414,10 +414,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         stream = await database_sync_to_async(Stream.objects.filter)(name=name)
         stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
-        if not stream:
-            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
-        if not stream.live_chat:
-            return self._error("Chat is not enabled for this stream.", **kwargs)
+        if not stream or not stream.live_chat:
+            return self._error("Chat is not available.", **kwargs)
         if self._stream_chat_group:
             await self._leave_chat_group()
         identity = self._get_chat_identity()
@@ -428,26 +426,27 @@ class HomeConsumer(AsyncWebsocketConsumer):
         display_name, avatar_url = await self._get_chat_display()
         redis = get_redis_connection("default")
         viewer_key = f"stream:{name}:chat_viewers"
-        viewer_data = json.dumps(
-            {
-                "user_id": identity["user_id"],
-                "username": identity["username"],
-                "display_name": display_name,
-                "avatar_url": avatar_url,
-            }
-        )
-        redis.hset(viewer_key, identity["viewer_key"], viewer_data)
+        viewer_data_dict = {
+            "viewer_id": identity["viewer_key"],
+            "user_id": identity["user_id"],
+            "username": identity["username"],
+            "display_name": display_name,
+            "avatar_url": avatar_url,
+        }
+        redis.hset(viewer_key, identity["viewer_key"], json.dumps(viewer_data_dict))
         redis.expire(viewer_key, 300)
-        viewers = self._get_chat_viewers(redis, viewer_key)
+        # Broadcast delta: new viewer joined
         await self.channel_layer.group_send(
             self._stream_chat_group,
             {
                 "type": _WS_SEND,
-                "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
+                "text": json.dumps({"event": "chat-viewer-joined", "name": name, "viewer": viewer_data_dict}),
             },
         )
+        # Send full viewer list + history only to the joining user
+        viewers = self._get_chat_viewers(redis, viewer_key)
         recent = self._get_recent_messages(redis, name)
-        return {"event": "chat-history", "name": name, "messages": recent}
+        return {"event": "chat-history", "name": name, "messages": recent, "viewers": viewers}
 
     async def set_stream_live_chat(self, *, user_id: int = None, name: str = None, enabled: bool = None, **kwargs):
         if not name:
@@ -457,7 +456,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if not stream:
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
-        if user_id and stream_user_id != user_id:
+        if not user_id or stream_user_id != user_id:
             return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
         stream.live_chat = bool(enabled)
         await database_sync_to_async(stream.save)()
@@ -480,7 +479,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if not stream:
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
-        if user_id and stream_user_id != user_id:
+        if not user_id or stream_user_id != user_id:
             return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
         stream.anonymous_chat = bool(enabled)
         await database_sync_to_async(stream.save)()
@@ -506,12 +505,11 @@ class HomeConsumer(AsyncWebsocketConsumer):
         viewer_key = f"stream:{name}:chat_viewers"
         redis.hdel(viewer_key, identity["viewer_key"])
         await self.channel_layer.group_discard(group, self.channel_name)
-        viewers = self._get_chat_viewers(redis, viewer_key)
         await self.channel_layer.group_send(
             group,
             {
                 "type": _WS_SEND,
-                "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
+                "text": json.dumps({"event": "chat-viewer-left", "name": name, "viewer_id": identity["viewer_key"]}),
             },
         )
 
@@ -523,6 +521,17 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if not message or not message.strip():
             return self._error("Empty message.", **kwargs)
         message = message.strip()[:500]
+        # Rate limit: max 3 messages per second per user
+        _identity_for_rate = self._get_chat_identity()
+        if _identity_for_rate:
+            rate_key = f"stream:{name}:rate:{_identity_for_rate['viewer_key']}"
+            redis_rate = get_redis_connection("default")
+            pipe = redis_rate.pipeline()
+            pipe.incr(rate_key)
+            pipe.expire(rate_key, 1)
+            count, _ = pipe.execute()
+            if count > 3:
+                return self._error("Slow down. Too many messages.", **kwargs)
         stream = await database_sync_to_async(Stream.objects.filter)(name=name)
         stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
         if not stream:
@@ -546,9 +555,11 @@ class HomeConsumer(AsyncWebsocketConsumer):
         }
         redis = get_redis_connection("default")
         history_key = f"stream:{name}:chat_history"
-        redis.lpush(history_key, json.dumps(msg_data))
-        redis.ltrim(history_key, 0, 49)
-        redis.expire(history_key, 3600)
+        pipe = redis.pipeline()
+        pipe.lpush(history_key, json.dumps(msg_data))
+        pipe.ltrim(history_key, 0, 49)
+        pipe.expire(history_key, 3600)
+        pipe.execute()
         broadcast = {"event": "chat-message", "name": name}
         broadcast.update(msg_data)
         await self.channel_layer.group_send(

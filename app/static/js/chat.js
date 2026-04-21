@@ -65,7 +65,47 @@ function initChat() {
 }
 
 function addSocketListener() {
+    socket?.removeEventListener('message', handleMessage)
     socket?.addEventListener('message', handleMessage)
+}
+
+const viewerMap = new Map()
+
+function updateViewers(viewers) {
+    viewerMap.clear()
+    viewers.forEach((v) =>
+        viewerMap.set(
+            v.viewer_id ?? (v.user_id != null ? String(v.user_id) : v.username),
+            v
+        )
+    )
+    renderViewers()
+}
+
+function renderViewers() {
+    chatViewerCount.textContent = viewerMap.size
+    const fragment = document.createDocumentFragment()
+    viewerMap.forEach((v) => {
+        const el = document.createElement('div')
+        el.className = 'd-flex align-items-center gap-1 mb-1'
+
+        const avatar = document.createElement('img')
+        avatar.src = v.avatar_url
+        avatar.className = 'rounded-circle'
+        avatar.width = 18
+        avatar.height = 18
+        avatar.alt = v.username
+
+        const name = document.createElement('small')
+        name.className = 'fw-semibold'
+        name.textContent = v.display_name
+
+        el.appendChild(avatar)
+        el.appendChild(name)
+        fragment.appendChild(el)
+    })
+    chatViewersPanel.innerHTML = ''
+    chatViewersPanel.appendChild(fragment)
 }
 
 function handleMessage(event) {
@@ -85,8 +125,20 @@ function handleMessage(event) {
             data.messages.forEach((msg) => appendMessage(msg))
             chatMessages.scrollTop = chatMessages.scrollHeight
         }
+        if (data.viewers) {
+            updateViewers(data.viewers)
+        }
     } else if (data.event === 'chat-viewers') {
         updateViewers(data.viewers)
+    } else if (data.event === 'chat-viewer-joined') {
+        const v = data.viewer
+        const key =
+            v.viewer_id ?? (v.user_id != null ? String(v.user_id) : v.username)
+        viewerMap.set(key, v)
+        renderViewers()
+    } else if (data.event === 'chat-viewer-left') {
+        viewerMap.delete(data.viewer_id)
+        renderViewers()
     } else if (data.event === 'chat-settings') {
         const wasEnabled = liveChatEnabled
         liveChatEnabled = data.live_chat
@@ -133,6 +185,10 @@ function applyChatSettings(data) {
 }
 
 initChat()
+document.addEventListener('wsConnected', () => {
+    addSocketListener()
+    if (liveChatEnabled) joinChat()
+})
 
 // Chat form submit
 if (chatForm && chatInput) {
@@ -234,28 +290,4 @@ function appendMessage(msg) {
     if (isNearBottom || msg.user_id === userInfo.user_id) {
         chatMessages.scrollTop = chatMessages.scrollHeight
     }
-}
-
-function updateViewers(viewers) {
-    chatViewerCount.textContent = viewers.length
-    chatViewersPanel.innerHTML = ''
-    viewers.forEach((v) => {
-        const el = document.createElement('div')
-        el.className = 'd-flex align-items-center gap-1 mb-1'
-
-        const avatar = document.createElement('img')
-        avatar.src = v.avatar_url
-        avatar.className = 'rounded-circle'
-        avatar.width = 18
-        avatar.height = 18
-        avatar.alt = v.username
-
-        const name = document.createElement('small')
-        name.className = 'fw-semibold'
-        name.textContent = v.display_name
-
-        el.appendChild(avatar)
-        el.appendChild(name)
-        chatViewersPanel.appendChild(el)
-    })
 }
