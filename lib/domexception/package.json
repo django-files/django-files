@@ -1,0 +1,7 @@
+{
+  "name": "domexception",
+  "version": "1.0.0",
+  "description": "Re-exports native DOMException (replaces deprecated node-domexception)",
+  "main": "index.js",
+  "license": "MIT"
+}

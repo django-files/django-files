@@ -36,8 +36,11 @@
     "qr-code-styling": "^1.9.2",
     "swagger-ui": "^5.27.0",
     "swiper": "^11.2.10",
-    "tsparticles": "3.8.1",
+    "tsparticles": "^3.9.1",
     "ua-parser-js": "^2.0.4"
+  },
+  "overrides": {
+    "node-domexception": "file:./lib/domexception"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
