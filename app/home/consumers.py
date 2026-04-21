@@ -47,6 +47,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         user = self.scope["user"]
         if hasattr(user, "id") and user.id:
             await self.channel_layer.group_discard(f"user-{user.id}", self.channel_name)
+        await super().websocket_disconnect(event)
 
     async def websocket_send(self, event):
         log.debug("websocket_send")
