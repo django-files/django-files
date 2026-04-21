@@ -48,7 +48,9 @@ function sendSocket(data) {
     return false
 }
 
+let joinChatRetries = 0
 function joinChat() {
+    joinChatRetries = 0
     sendSocket({ method: 'join-stream-chat', name: streamName })
 }
 
@@ -92,6 +94,8 @@ function handleMessage(event) {
         if (!wasEnabled && liveChatEnabled) {
             joinChat()
         }
+    } else if (data.event === 'chat-retry') {
+        if (joinChatRetries++ < 10) setTimeout(joinChat, 1500 * joinChatRetries)
     }
 }
 
