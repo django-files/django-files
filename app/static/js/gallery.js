@@ -364,6 +364,7 @@ function changeView(event) {
 }
 
 socket?.addEventListener('message', function (event) {
+    if (event.data === 'pong') return
     if (window.location.pathname.includes('gallery')) {
         let data = JSON.parse(event.data)
         if (data.event === 'file-delete') {

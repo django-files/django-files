@@ -175,6 +175,7 @@ $('#album-delete-confirm').on('click', function (event) {
 })
 
 socket?.addEventListener('message', function (event) {
+    if (event.data === 'pong') return
     let data = JSON.parse(event.data)
     if (data.event === 'album-delete') {
         $(`#album-${data.id}`).remove()
