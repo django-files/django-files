@@ -73,7 +73,12 @@ const viewerMap = new Map()
 
 function updateViewers(viewers) {
     viewerMap.clear()
-    viewers.forEach((v) => viewerMap.set(v.viewer_id ?? (v.user_id != null ? String(v.user_id) : v.username), v))
+    viewers.forEach((v) =>
+        viewerMap.set(
+            v.viewer_id ?? (v.user_id != null ? String(v.user_id) : v.username),
+            v
+        )
+    )
     renderViewers()
 }
 
@@ -127,7 +132,8 @@ function handleMessage(event) {
         updateViewers(data.viewers)
     } else if (data.event === 'chat-viewer-joined') {
         const v = data.viewer
-        const key = v.viewer_id ?? (v.user_id != null ? String(v.user_id) : v.username)
+        const key =
+            v.viewer_id ?? (v.user_id != null ? String(v.user_id) : v.username)
         viewerMap.set(key, v)
         renderViewers()
     } else if (data.event === 'chat-viewer-left') {
@@ -285,4 +291,3 @@ function appendMessage(msg) {
         chatMessages.scrollTop = chatMessages.scrollHeight
     }
 }
-
