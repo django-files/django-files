@@ -199,6 +199,31 @@ main {
     background-color: rgba(0 0 0 / 5%);
 }
 
+/* Chat command autocomplete */
+.chat-autocomplete {
+    flex-shrink: 0;
+    border-top: 1px solid var(--bs-border-color);
+    overflow: hidden;
+}
+
+.chat-autocomplete-item {
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-autocomplete-item:hover,
+.chat-autocomplete-item.active {
+    background: var(--bs-secondary-bg);
+}
+
+.chat-system-msg {
+    opacity: 0.75;
+}
+
 /* Live status glow animation */
 .text-glow {
     animation: glow-pulse 1.5s ease-in-out infinite;
