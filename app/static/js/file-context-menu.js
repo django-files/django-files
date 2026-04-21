@@ -376,6 +376,7 @@ function messageFileRename(data) {
 }
 
 socket?.addEventListener('message', function (event) {
+    if (event.data === 'pong') return
     let data = JSON.parse(event.data)
     // console.debug(event)
     if (data.event === 'set-file-name') {

@@ -37,6 +37,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         user = self.scope["user"]
         if hasattr(user, "id") and user.id:
             await self.channel_layer.group_add(f"user-{user.id}", self.channel_name)
+        session = self.scope.get("session")
+        if session and not session.session_key:
+            await database_sync_to_async(session.save)()
         await self.accept()
 
     async def websocket_disconnect(self, event):
@@ -47,6 +50,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         user = self.scope["user"]
         if hasattr(user, "id") and user.id:
             await self.channel_layer.group_discard(f"user-{user.id}", self.channel_name)
+        await super().websocket_disconnect(event)
 
     async def websocket_send(self, event):
         log.debug("websocket_send")
@@ -382,7 +386,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 "username": user.username,
             }
         session = self.scope.get("session")
-        session_key = session.session_key if session else self.channel_name
+        session_key = session.session_key if session else None
+        if not session_key:
+            return None
         return {
             "viewer_key": f"anon-{session_key}",
             "user_id": None,
@@ -396,7 +402,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
             display_name = await database_sync_to_async(user.get_name)()
             return display_name, avatar_url
         session = self.scope.get("session")
-        session_key = session.session_key if session else self.channel_name
+        session_key = session.session_key if session else None
+        if not session_key:
+            return None, None
         return self._anon_name(session_key), "/static/images/default_avatar.png"
 
     async def join_stream_chat(self, *, user_id: int = None, name: str = None, **kwargs):
@@ -412,9 +420,11 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error("Chat is not enabled for this stream.", **kwargs)
         if self._stream_chat_group:
             await self._leave_chat_group()
+        identity = self._get_chat_identity()
+        if identity is None:
+            return {"event": "chat-retry", "name": name}
         self._stream_chat_group = f"stream-chat-{name}"
         await self.channel_layer.group_add(self._stream_chat_group, self.channel_name)
-        identity = self._get_chat_identity()
         display_name, avatar_url = await self._get_chat_display()
         redis = get_redis_connection("default")
         viewer_key = f"stream:{name}:chat_viewers"
@@ -520,6 +530,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if not stream.live_chat:
             return self._error("Chat is not enabled for this stream.", **kwargs)
         identity = self._get_chat_identity()
+        if identity is None:
+            return self._error("Session not ready.", **kwargs)
         if not identity["user_id"] and not stream.anonymous_chat:
             return self._error("Anonymous chat is not enabled for this stream.", **kwargs)
         display_name, avatar_url = await self._get_chat_display()
