@@ -15,28 +15,36 @@ main {
 .live-container {
     height: 100%;
     position: relative;
+    transition: padding-right 0.5s ease;
 }
 
-/* Sidebar - properly integrated into flexbox layout */
+.live-container.sidebar-push-open {
+    padding-right: 350px;
+}
+
+/* Sidebar - overlays the video so internal content is never crushed */
 #preview-sidebar.sidebar {
-    position: relative !important;
-    width: 0;
-    min-width: 0;
+    position: absolute !important;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 350px;
+    min-width: 350px;
     overflow: hidden;
-    transition: all 0.5s ease;
+    transform: translateX(100%);
+    transition: transform 0.5s ease;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    border-top-right-radius: 9px;
-    border-bottom-right-radius: 9px;
+    border-top-left-radius: 9px;
+    border-bottom-left-radius: 9px;
     border-top: 1px ridge rgba(66 69 73 / 100%);
-    border-right: 1px ridge rgba(66 69 73 / 100%);
+    border-left: 1px ridge rgba(66 69 73 / 100%);
     border-bottom: 1px ridge rgba(66 69 73 / 100%);
 }
 
-/* Sidebar when open */
+/* Sidebar when open (overlay mode) */
 #preview-sidebar.sidebar.open {
-    width: 350px;
-    min-width: 350px;
+    transform: translateX(0);
 }
 
 /* Sidebar base styles */
@@ -70,9 +78,34 @@ main {
 .sidebar .closebtn {
     position: absolute;
     top: 0;
-    right: 25px;
-    font-size: 36px;
-    margin-left: 50px;
+    right: 5px;
+    font-size: 30px;
+    padding: 0 8px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+}
+
+.sidebar-mode-toggle {
+    position: absolute;
+    top: 0;
+    right: 45px;
+    font-size: 18px;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0 8px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+}
+
+.sidebar-mode-toggle:hover {
+    opacity: 1;
 }
 
 /* Button styles */
@@ -197,6 +230,31 @@ main {
 
 [data-bs-theme='light'] .chat-viewers-panel {
     background-color: rgba(0 0 0 / 5%);
+}
+
+/* Chat command autocomplete */
+.chat-autocomplete {
+    flex-shrink: 0;
+    border-top: 1px solid var(--bs-border-color);
+    overflow: hidden;
+}
+
+.chat-autocomplete-item {
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-autocomplete-item:hover,
+.chat-autocomplete-item.active {
+    background: var(--bs-secondary-bg);
+}
+
+.chat-system-msg {
+    opacity: 0.75;
 }
 
 /* Live status glow animation */

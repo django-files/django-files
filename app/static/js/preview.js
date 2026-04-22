@@ -8,7 +8,6 @@ window.addEventListener('resize', checkSize)
 
 const previewSidebar = $('#preview-sidebar')
 const contextPlacement = $('#contextPlacement')
-const sidebarCard = $('.sidebar-card')
 const openSidebarButton = $('#openSidebar')
 openSidebarButton.on('click', openSidebarCallback)
 $('#closeSidebar').on('click', closeSidebarCallback)
@@ -17,7 +16,63 @@ const sidebarMaxWidth = 768
 const noAutoClose = previewSidebar[0]?.dataset.noAutoClose === 'true'
 let sidebarOpen = false
 
+function getSidebarMode() {
+    return localStorage.getItem('sidebarMode') || 'overlay'
+}
+
+function getSidebarParent() {
+    return previewSidebar[0]?.parentElement
+}
+
+function applySidebarMode(mode) {
+    const el = previewSidebar[0]
+    if (!el) return
+    if (mode === 'overlay') {
+        getSidebarParent()?.classList.remove('sidebar-push-open')
+    }
+    updateModeToggleIcon(mode)
+    // Re-apply open/closed state for new mode
+    if (sidebarOpen) {
+        openSidebar()
+    } else {
+        closeSidebar()
+    }
+}
+
+function updateModeToggleIcon(mode) {
+    const btn = document.querySelector('.sidebar-mode-toggle')
+    if (!btn) return
+    const icon = btn.querySelector('i')
+    if (!icon) return
+    if (mode === 'push') {
+        icon.className = 'fa-solid fa-layer-group'
+        btn.title = 'Switch to overlay mode'
+    } else {
+        icon.className = 'fa-solid fa-table-columns'
+        btn.title = 'Switch to push mode'
+    }
+}
+
+function toggleSidebarMode() {
+    const current = getSidebarMode()
+    const next = current === 'overlay' ? 'push' : 'overlay'
+    localStorage.setItem('sidebarMode', next)
+    applySidebarMode(next)
+}
+
 function domLoaded() {
+    // Insert mode toggle button into sidebar
+    const closebtn = document.getElementById('closeSidebar')
+    if (closebtn) {
+        const toggleBtn = document.createElement('button')
+        toggleBtn.className = 'sidebar-mode-toggle'
+        toggleBtn.innerHTML = '<i class="fa-solid fa-table-columns"></i>'
+        toggleBtn.addEventListener('click', toggleSidebarMode)
+        closebtn.parentElement.insertBefore(toggleBtn, closebtn)
+    }
+
+    applySidebarMode(getSidebarMode())
+
     if (window.innerWidth >= sidebarMaxWidth) {
         if (!Cookies.get('previewSidebar')) {
             openSidebar()
@@ -96,24 +151,24 @@ function closeSidebarCallback() {
 
 function openSidebar() {
     sidebarOpen = true
-    previewSidebar.css('width', '360px')
-    previewSidebar.css('border-right', '1px ridge rgba(66 69 73 / 100%)')
+    previewSidebar.addClass('open')
+    if (getSidebarMode() === 'push') {
+        getSidebarParent()?.classList.add('sidebar-push-open')
+    }
     if (contextPlacement) {
         contextPlacement.css('right', '365px')
     }
     openSidebarButton.hide()
-    sidebarCard.fadeIn(300)
 }
 
 function closeSidebar() {
     sidebarOpen = false
-    previewSidebar.css('width', '0')
-    previewSidebar.css('border-right', '0px')
+    previewSidebar.removeClass('open')
+    getSidebarParent()?.classList.remove('sidebar-push-open')
     if (contextPlacement) {
         contextPlacement.css('right', '60px')
     }
     openSidebarButton.show()
-    sidebarCard.fadeOut(200)
 }
 
 window.openSidebar = openSidebar

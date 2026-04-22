@@ -120,6 +120,7 @@ function handleMessage(event) {
     if (data.event === 'chat-message') {
         appendMessage(data)
     } else if (data.event === 'chat-history') {
+        if (data.viewer_id) myViewerId = data.viewer_id
         chatMessages.innerHTML = ''
         if (data.messages) {
             data.messages.forEach((msg) => appendMessage(msg))
@@ -148,6 +149,22 @@ function handleMessage(event) {
         }
     } else if (data.event === 'chat-retry') {
         if (joinChatRetries++ < 10) setTimeout(joinChat, 1500 * joinChatRetries)
+    } else if (data.event === 'chat-name-set') {
+        appendSystemMessage(`Your name has been set to: ${data.display_name}`)
+    } else if (data.event === 'chat-message-cleanup') {
+        chatMessages.querySelectorAll('.chat-msg').forEach((el) => {
+            if (
+                el.dataset.username === data.username ||
+                (data.user_id != null &&
+                    el.dataset.userId === String(data.user_id))
+            ) {
+                el.remove()
+            }
+        })
+    } else if (data.event === 'chat-banned') {
+        if (!data.viewer_id || data.viewer_id === myViewerId) {
+            applyChatBanned()
+        }
     }
 }
 
@@ -187,7 +204,7 @@ function applyChatSettings(data) {
 initChat()
 document.addEventListener('wsConnected', () => {
     addSocketListener()
-    if (liveChatEnabled) joinChat()
+    if (liveChatEnabled && !chatManuallyDisconnected) joinChat()
 })
 
 // Chat form submit
@@ -196,12 +213,46 @@ if (chatForm && chatInput) {
         e.preventDefault()
         const message = chatInput.value.trim()
         if (!message) return
+        chatInput.value = ''
+        hideAutocomplete()
+        if (message.startsWith('/')) {
+            executeCommand(message)
+            return
+        }
+        if (chatManuallyDisconnected) {
+            appendSystemMessage('You are disconnected. Use /join to rejoin.')
+            return
+        }
         sendSocket({
             method: 'send-chat-message',
             name: streamName,
             message: message,
         })
-        chatInput.value = ''
+    })
+
+    chatInput.addEventListener('input', updateAutocomplete)
+
+    chatInput.addEventListener('keydown', (e) => {
+        const ac = getAutocomplete()
+        if (ac.style.display === 'none') return
+        if (e.key === 'Escape') {
+            hideAutocomplete()
+            e.preventDefault()
+        } else if (e.key === 'ArrowUp') {
+            navigateAutocomplete(-1)
+            e.preventDefault()
+        } else if (e.key === 'ArrowDown') {
+            navigateAutocomplete(1)
+            e.preventDefault()
+        } else if (e.key === 'Tab') {
+            e.preventDefault()
+            const typed = chatInput.value.split(' ')[0].toLowerCase()
+            const matches = visibleCommands().filter((c) =>
+                c.command.startsWith(typed)
+            )
+            const idx = Math.max(0, selectedAutocompleteIndex)
+            if (matches[idx]) applyAutocompleteItem(matches[idx])
+        }
     })
 }
 
@@ -210,6 +261,318 @@ if (toggleViewersBtn) {
     toggleViewersBtn.addEventListener('click', () => {
         chatViewersPanel.classList.toggle('d-none')
     })
+}
+
+// --- Command system ---
+
+let myViewerId = null
+let chatManuallyDisconnected = false
+
+const CHAT_COMMANDS = [
+    {
+        command: '/set-name',
+        args: '<name>',
+        description: 'Set your chat display name',
+    },
+    {
+        command: '/leave',
+        args: '',
+        description: 'Leave chat and hide messages',
+    },
+    {
+        command: '/join',
+        args: '',
+        description: 'Rejoin chat and resume messages',
+        condition: () => chatManuallyDisconnected,
+    },
+    {
+        command: '/title',
+        args: '<title>',
+        description: 'Set the stream title',
+        ownerOnly: true,
+    },
+    {
+        command: '/description',
+        args: '<description>',
+        description: 'Set the stream description',
+        ownerOnly: true,
+    },
+    {
+        command: '/ban',
+        args: '<display_name>',
+        description: 'Ban a user from chat',
+        ownerOnly: true,
+    },
+    {
+        command: '/ban-message-cleanup',
+        args: '<display_name>',
+        description: "Remove a banned user's messages",
+        ownerOnly: true,
+    },
+]
+
+let autocompleteEl = null
+let selectedAutocompleteIndex = -1
+
+function getAutocomplete() {
+    if (!autocompleteEl) {
+        autocompleteEl = document.createElement('div')
+        autocompleteEl.id = 'chat-autocomplete'
+        autocompleteEl.className = 'chat-autocomplete'
+        autocompleteEl.style.display = 'none'
+        const inputArea = document.getElementById('chat-input-area')
+        if (inputArea) inputArea.before(autocompleteEl)
+    }
+    return autocompleteEl
+}
+
+function hideAutocomplete() {
+    selectedAutocompleteIndex = -1
+    const ac = getAutocomplete()
+    ac.style.display = 'none'
+    ac.innerHTML = ''
+}
+
+function visibleCommands() {
+    return CHAT_COMMANDS.filter(
+        (c) => (!c.ownerOnly || isOwner) && (!c.condition || c.condition())
+    )
+}
+
+function updateAutocomplete() {
+    const ac = getAutocomplete()
+    const val = chatInput.value
+    if (!val.startsWith('/')) {
+        hideAutocomplete()
+        return
+    }
+    const typed = val.split(' ')[0].toLowerCase()
+    const matches = visibleCommands().filter((c) => c.command.startsWith(typed))
+    if (!matches.length) {
+        hideAutocomplete()
+        return
+    }
+    ac.style.display = ''
+    ac.innerHTML = ''
+    selectedAutocompleteIndex = Math.min(
+        selectedAutocompleteIndex,
+        matches.length - 1
+    )
+    matches.forEach((c, i) => {
+        const item = document.createElement('div')
+        item.className =
+            'chat-autocomplete-item' +
+            (i === selectedAutocompleteIndex ? ' active' : '')
+        item.dataset.index = i
+        item.title = `${c.command} ${c.args} — ${c.description}`.trim()
+
+        const cmd = document.createElement('strong')
+        cmd.className = 'me-1'
+        cmd.textContent = c.command
+
+        const args = document.createElement('span')
+        args.className = 'text-muted me-1'
+        args.textContent = c.args
+
+        const desc = document.createElement('span')
+        desc.className = 'text-secondary'
+        desc.textContent = '— ' + c.description
+
+        item.appendChild(cmd)
+        item.appendChild(args)
+        item.appendChild(desc)
+
+        item.addEventListener('mousedown', (e) => {
+            e.preventDefault()
+            applyAutocompleteItem(c)
+        })
+        ac.appendChild(item)
+    })
+}
+
+function applyAutocompleteItem(c) {
+    // If the user already typed args, keep them; otherwise set cursor after command
+    const parts = chatInput.value.split(' ')
+    if (parts.length > 1) {
+        chatInput.value = c.command + ' ' + parts.slice(1).join(' ')
+    } else {
+        chatInput.value = c.command + ' '
+    }
+    hideAutocomplete()
+    chatInput.focus()
+}
+
+function navigateAutocomplete(dir) {
+    const ac = getAutocomplete()
+    if (ac.style.display === 'none') return false
+    const items = ac.querySelectorAll('.chat-autocomplete-item')
+    if (!items.length) return false
+    selectedAutocompleteIndex = Math.max(
+        0,
+        Math.min(items.length - 1, selectedAutocompleteIndex + dir)
+    )
+    items.forEach((el, i) =>
+        el.classList.toggle('active', i === selectedAutocompleteIndex)
+    )
+    return true
+}
+
+function cmdSetName(args) {
+    const customName = args.join(' ').trim()
+    if (!customName) {
+        appendSystemMessage('Usage: /set-name <your name>')
+        return
+    }
+    if (customName.length > 32) {
+        appendSystemMessage('Name too long. Maximum 32 characters.')
+        return
+    }
+    sendSocket({
+        method: 'set-chat-name',
+        name: streamName,
+        custom_name: customName,
+    })
+}
+
+function cmdSetTitle(args) {
+    if (!isOwner) {
+        appendSystemMessage('You do not have permission to use this command.')
+        return
+    }
+    const title = args.join(' ').trim()
+    if (!title) {
+        appendSystemMessage('Usage: /title <title>')
+        return
+    }
+    sendSocket({ method: 'set-stream-title', name: streamName, title })
+}
+
+function cmdSetDescription(args) {
+    if (!isOwner) {
+        appendSystemMessage('You do not have permission to use this command.')
+        return
+    }
+    const description = args.join(' ').trim()
+    if (!description) {
+        appendSystemMessage('Usage: /description <description>')
+        return
+    }
+    sendSocket({
+        method: 'set-stream-description',
+        name: streamName,
+        description,
+    })
+}
+
+function cmdBan(args) {
+    if (!isOwner) {
+        appendSystemMessage('You do not have permission to use this command.')
+        return
+    }
+    const target = args.join(' ').trim()
+    if (!target) {
+        appendSystemMessage('Usage: /ban <display_name>')
+        return
+    }
+    sendSocket({ method: 'ban-chat-user', name: streamName, target })
+}
+
+function cmdBanMessageCleanup(args) {
+    if (!isOwner) {
+        appendSystemMessage('You do not have permission to use this command.')
+        return
+    }
+    const target = args.join(' ').trim()
+    if (!target) {
+        appendSystemMessage('Usage: /ban-message-cleanup <display_name>')
+        return
+    }
+    sendSocket({ method: 'ban-message-cleanup', name: streamName, target })
+}
+
+const COMMAND_DISPATCH = {
+    '/set-name': cmdSetName,
+    '/leave': () => chatDisconnect(),
+    '/join': () => chatReconnect(),
+    '/title': cmdSetTitle,
+    '/description': cmdSetDescription,
+    '/ban': cmdBan,
+    '/ban-message-cleanup': cmdBanMessageCleanup,
+}
+
+function executeCommand(input) {
+    const parts = input.trim().split(/\s+/)
+    const cmd = parts[0].toLowerCase()
+    const handler = COMMAND_DISPATCH[cmd]
+    if (handler) {
+        handler(parts.slice(1))
+    } else {
+        appendSystemMessage(
+            `Unknown command: ${cmd}. Type / to see available commands.`
+        )
+    }
+}
+
+function appendSystemMessage(text) {
+    const el = document.createElement('div')
+    el.className = 'chat-system-msg small text-secondary fst-italic px-1 py-0'
+    el.textContent = text
+    chatMessages.appendChild(el)
+    chatMessages.scrollTop = chatMessages.scrollHeight
+}
+
+function applyChatBanned() {
+    const inputArea = document.getElementById('chat-input-area')
+    const loginPrompt = document.getElementById('chat-login-prompt')
+    if (inputArea) inputArea.style.display = 'none'
+    if (loginPrompt) loginPrompt.style.display = 'none'
+    hideAutocomplete()
+    const existing = document.getElementById('chat-banned-notice')
+    if (existing) return
+    const notice = document.createElement('div')
+    notice.id = 'chat-banned-notice'
+    notice.className = 'chat-input-area px-3 py-2 border-top text-center'
+    notice.innerHTML =
+        '<small class="text-danger">You have been banned from this chat.</small>'
+    const liveChat = document.getElementById('live-chat')
+    if (liveChat) liveChat.appendChild(notice)
+}
+
+function chatDisconnect() {
+    if (chatManuallyDisconnected) {
+        appendSystemMessage('Already disconnected. Use /join to rejoin.')
+        return
+    }
+    chatManuallyDisconnected = true
+    socket?.removeEventListener('message', handleMessage)
+    sendSocket({ method: 'leave-stream-chat', name: streamName })
+    viewerMap.clear()
+    renderViewers()
+    chatMessages.innerHTML = ''
+    hideAutocomplete()
+    if (chatInput) chatInput.placeholder = 'Type /join to rejoin...'
+    const notice = document.createElement('div')
+    notice.id = 'chat-disconnected-notice'
+    notice.className =
+        'chat-system-msg small text-secondary fst-italic text-center py-3'
+    notice.textContent =
+        'You have disconnected from chat. Type /join to rejoin.'
+    chatMessages.appendChild(notice)
+}
+
+function chatReconnect() {
+    if (document.getElementById('chat-banned-notice')) {
+        appendSystemMessage('You are banned from this chat.')
+        return
+    }
+    if (!chatManuallyDisconnected) {
+        appendSystemMessage('Already connected.')
+        return
+    }
+    chatManuallyDisconnected = false
+    if (chatInput) chatInput.placeholder = 'Send a message...'
+    addSocketListener()
+    joinChat()
 }
 
 // Owner controls
@@ -241,6 +604,8 @@ if (isOwner) {
 function appendMessage(msg) {
     const el = document.createElement('div')
     el.className = 'chat-msg d-flex align-items-start gap-1 mb-1'
+    el.dataset.username = msg.username
+    if (msg.user_id != null) el.dataset.userId = msg.user_id
 
     const avatar = document.createElement('img')
     avatar.src = msg.avatar_url
