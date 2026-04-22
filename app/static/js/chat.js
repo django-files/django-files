@@ -321,8 +321,7 @@ function getAutocomplete() {
         autocompleteEl.className = 'chat-autocomplete'
         autocompleteEl.style.display = 'none'
         const inputArea = document.getElementById('chat-input-area')
-        if (inputArea)
-            inputArea.before(autocompleteEl)
+        if (inputArea) inputArea.before(autocompleteEl)
     }
     return autocompleteEl
 }
@@ -428,7 +427,11 @@ function cmdSetName(args) {
         appendSystemMessage('Name too long. Maximum 32 characters.')
         return
     }
-    sendSocket({ method: 'set-chat-name', name: streamName, custom_name: customName })
+    sendSocket({
+        method: 'set-chat-name',
+        name: streamName,
+        custom_name: customName,
+    })
 }
 
 function cmdSetTitle(args) {
@@ -454,7 +457,11 @@ function cmdSetDescription(args) {
         appendSystemMessage('Usage: /description <description>')
         return
     }
-    sendSocket({ method: 'set-stream-description', name: streamName, description })
+    sendSocket({
+        method: 'set-stream-description',
+        name: streamName,
+        description,
+    })
 }
 
 function cmdBan(args) {
@@ -500,7 +507,9 @@ function executeCommand(input) {
     if (handler) {
         handler(parts.slice(1))
     } else {
-        appendSystemMessage(`Unknown command: ${cmd}. Type / to see available commands.`)
+        appendSystemMessage(
+            `Unknown command: ${cmd}. Type / to see available commands.`
+        )
     }
 }
 

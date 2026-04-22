@@ -637,7 +637,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         stream = await self._fetch_stream(name)
         if not stream:
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
-        err = await self._check_stream_owner_permission(stream, user_id, "Only the stream owner can ban users.", **kwargs)
+        err = await self._check_stream_owner_permission(
+            stream, user_id, "Only the stream owner can ban users.", **kwargs
+        )
         if err:
             return err
         target = target.strip()
@@ -680,7 +682,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         stream = await self._fetch_stream(name)
         if not stream:
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
-        err = await self._check_stream_owner_permission(stream, user_id, "Only the stream owner can clean up messages.", **kwargs)
+        err = await self._check_stream_owner_permission(
+            stream, user_id, "Only the stream owner can clean up messages.", **kwargs
+        )
         if err:
             return err
         target = target.strip().lower()
