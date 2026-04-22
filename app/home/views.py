@@ -56,7 +56,7 @@ def live_view(request, key):
     stream = get_object_or_404(Stream, name=key)
     if not stream.public and not request.user.is_authenticated:
         return HttpResponseNotFound()
-    is_owner = request.user.is_authenticated and stream.user_id == request.user.id
+    is_owner = request.user.is_authenticated and (stream.user_id == request.user.id or request.user.is_superuser)
     chat_user_info = {}
     if request.user.is_authenticated:
         chat_user_info = {

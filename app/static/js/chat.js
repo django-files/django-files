@@ -151,6 +151,16 @@ function handleMessage(event) {
         if (joinChatRetries++ < 10) setTimeout(joinChat, 1500 * joinChatRetries)
     } else if (data.event === 'chat-name-set') {
         appendSystemMessage(`Your name has been set to: ${data.display_name}`)
+    } else if (data.event === 'chat-message-cleanup') {
+        chatMessages.querySelectorAll('.chat-msg').forEach((el) => {
+            if (
+                el.dataset.username === data.username ||
+                (data.user_id != null &&
+                    el.dataset.userId === String(data.user_id))
+            ) {
+                el.remove()
+            }
+        })
     } else if (data.event === 'chat-banned') {
         if (!data.viewer_id || data.viewer_id === myViewerId) {
             applyChatBanned()
@@ -237,8 +247,11 @@ if (chatForm && chatInput) {
         } else if (e.key === 'Tab') {
             e.preventDefault()
             const typed = chatInput.value.split(' ')[0].toLowerCase()
-            const matches = visibleCommands().filter((c) => c.command.startsWith(typed))
-            const idx = selectedAutocompleteIndex >= 0 ? selectedAutocompleteIndex : 0
+            const matches = visibleCommands().filter((c) =>
+                c.command.startsWith(typed)
+            )
+            const idx =
+                selectedAutocompleteIndex >= 0 ? selectedAutocompleteIndex : 0
             if (matches[idx]) applyAutocompleteItem(matches[idx])
         }
     })
@@ -257,10 +270,46 @@ let myViewerId = null
 let chatManuallyDisconnected = false
 
 const CHAT_COMMANDS = [
-    { command: '/set-name', args: '<name>', description: 'Set your chat display name' },
-    { command: '/leave', args: '', description: 'Leave chat and hide messages' },
-    { command: '/join', args: '', description: 'Rejoin chat and resume messages', condition: () => chatManuallyDisconnected },
-    { command: '/ban', args: '<display_name>', description: 'Ban a user from chat', ownerOnly: true },
+    {
+        command: '/set-name',
+        args: '<name>',
+        description: 'Set your chat display name',
+    },
+    {
+        command: '/leave',
+        args: '',
+        description: 'Leave chat and hide messages',
+    },
+    {
+        command: '/join',
+        args: '',
+        description: 'Rejoin chat and resume messages',
+        condition: () => chatManuallyDisconnected,
+    },
+    {
+        command: '/title',
+        args: '<title>',
+        description: 'Set the stream title',
+        ownerOnly: true,
+    },
+    {
+        command: '/description',
+        args: '<description>',
+        description: 'Set the stream description',
+        ownerOnly: true,
+    },
+    {
+        command: '/ban',
+        args: '<display_name>',
+        description: 'Ban a user from chat',
+        ownerOnly: true,
+    },
+    {
+        command: '/ban-message-cleanup',
+        args: '<display_name>',
+        description: "Remove a banned user's messages",
+        ownerOnly: true,
+    },
 ]
 
 let autocompleteEl = null
@@ -274,7 +323,8 @@ function getAutocomplete() {
         autocompleteEl.style.display = 'none'
         const liveChat = document.getElementById('live-chat')
         const inputArea = document.getElementById('chat-input-area')
-        if (liveChat && inputArea) liveChat.insertBefore(autocompleteEl, inputArea)
+        if (liveChat && inputArea)
+            liveChat.insertBefore(autocompleteEl, inputArea)
     }
     return autocompleteEl
 }
@@ -287,7 +337,9 @@ function hideAutocomplete() {
 }
 
 function visibleCommands() {
-    return CHAT_COMMANDS.filter((c) => (!c.ownerOnly || isOwner) && (!c.condition || c.condition()))
+    return CHAT_COMMANDS.filter(
+        (c) => (!c.ownerOnly || isOwner) && (!c.condition || c.condition())
+    )
 }
 
 function updateAutocomplete() {
@@ -305,10 +357,15 @@ function updateAutocomplete() {
     }
     ac.style.display = ''
     ac.innerHTML = ''
-    selectedAutocompleteIndex = Math.min(selectedAutocompleteIndex, matches.length - 1)
+    selectedAutocompleteIndex = Math.min(
+        selectedAutocompleteIndex,
+        matches.length - 1
+    )
     matches.forEach((c, i) => {
         const item = document.createElement('div')
-        item.className = 'chat-autocomplete-item' + (i === selectedAutocompleteIndex ? ' active' : '')
+        item.className =
+            'chat-autocomplete-item' +
+            (i === selectedAutocompleteIndex ? ' active' : '')
         item.dataset.index = i
 
         const cmd = document.createElement('strong')
@@ -352,8 +409,13 @@ function navigateAutocomplete(dir) {
     if (ac.style.display === 'none') return false
     const items = ac.querySelectorAll('.chat-autocomplete-item')
     if (!items.length) return false
-    selectedAutocompleteIndex = Math.max(0, Math.min(items.length - 1, selectedAutocompleteIndex + dir))
-    items.forEach((el, i) => el.classList.toggle('active', i === selectedAutocompleteIndex))
+    selectedAutocompleteIndex = Math.max(
+        0,
+        Math.min(items.length - 1, selectedAutocompleteIndex + dir)
+    )
+    items.forEach((el, i) =>
+        el.classList.toggle('active', i === selectedAutocompleteIndex)
+    )
     return true
 }
 
@@ -372,7 +434,11 @@ function executeCommand(input) {
             appendSystemMessage('Name too long. Maximum 32 characters.')
             return
         }
-        sendSocket({ method: 'set-chat-name', name: streamName, custom_name: customName })
+        sendSocket({
+            method: 'set-chat-name',
+            name: streamName,
+            custom_name: customName,
+        })
         return
     }
 
@@ -386,9 +452,47 @@ function executeCommand(input) {
         return
     }
 
+    if (cmd === '/title') {
+        if (!isOwner) {
+            appendSystemMessage(
+                'You do not have permission to use this command.'
+            )
+            return
+        }
+        const title = args.join(' ').trim()
+        if (!title) {
+            appendSystemMessage('Usage: /title <title>')
+            return
+        }
+        sendSocket({ method: 'set-stream-title', name: streamName, title })
+        return
+    }
+
+    if (cmd === '/description') {
+        if (!isOwner) {
+            appendSystemMessage(
+                'You do not have permission to use this command.'
+            )
+            return
+        }
+        const description = args.join(' ').trim()
+        if (!description) {
+            appendSystemMessage('Usage: /description <description>')
+            return
+        }
+        sendSocket({
+            method: 'set-stream-description',
+            name: streamName,
+            description,
+        })
+        return
+    }
+
     if (cmd === '/ban') {
         if (!isOwner) {
-            appendSystemMessage('You do not have permission to use this command.')
+            appendSystemMessage(
+                'You do not have permission to use this command.'
+            )
             return
         }
         const target = args.join(' ').trim()
@@ -400,7 +504,25 @@ function executeCommand(input) {
         return
     }
 
-    appendSystemMessage(`Unknown command: ${cmd}. Type / to see available commands.`)
+    if (cmd === '/ban-message-cleanup') {
+        if (!isOwner) {
+            appendSystemMessage(
+                'You do not have permission to use this command.'
+            )
+            return
+        }
+        const target = args.join(' ').trim()
+        if (!target) {
+            appendSystemMessage('Usage: /ban-message-cleanup <display_name>')
+            return
+        }
+        sendSocket({ method: 'ban-message-cleanup', name: streamName, target })
+        return
+    }
+
+    appendSystemMessage(
+        `Unknown command: ${cmd}. Type / to see available commands.`
+    )
 }
 
 function appendSystemMessage(text) {
@@ -422,7 +544,8 @@ function applyChatBanned() {
     const notice = document.createElement('div')
     notice.id = 'chat-banned-notice'
     notice.className = 'chat-input-area px-3 py-2 border-top text-center'
-    notice.innerHTML = '<small class="text-danger">You have been banned from this chat.</small>'
+    notice.innerHTML =
+        '<small class="text-danger">You have been banned from this chat.</small>'
     const liveChat = document.getElementById('live-chat')
     if (liveChat) liveChat.appendChild(notice)
 }
@@ -442,8 +565,10 @@ function chatDisconnect() {
     if (chatInput) chatInput.placeholder = 'Type /join to rejoin...'
     const notice = document.createElement('div')
     notice.id = 'chat-disconnected-notice'
-    notice.className = 'chat-system-msg small text-secondary fst-italic text-center py-3'
-    notice.textContent = 'You have disconnected from chat. Type /join to rejoin.'
+    notice.className =
+        'chat-system-msg small text-secondary fst-italic text-center py-3'
+    notice.textContent =
+        'You have disconnected from chat. Type /join to rejoin.'
     chatMessages.appendChild(notice)
 }
 
@@ -491,6 +616,8 @@ if (isOwner) {
 function appendMessage(msg) {
     const el = document.createElement('div')
     el.className = 'chat-msg d-flex align-items-start gap-1 mb-1'
+    el.dataset.username = msg.username
+    if (msg.user_id != null) el.dataset.userId = msg.user_id
 
     const avatar = document.createElement('img')
     avatar.src = msg.avatar_url

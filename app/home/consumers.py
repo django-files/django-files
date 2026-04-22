@@ -601,11 +601,16 @@ class HomeConsumer(AsyncWebsocketConsumer):
         custom_name = custom_name.strip()[:32].replace("#", "")
         if not custom_name:
             return self._error("Invalid name.", **kwargs)
+        rate_key = f"chat:name_change:{identity['viewer_key']}"
+        redis_rate = get_redis_connection("default")
+        ttl = redis_rate.ttl(rate_key)
+        if ttl > 0:
+            mins, secs = divmod(ttl, 60)
+            wait = f"{mins}m {secs}s" if mins else f"{secs}s"
+            return self._error(f"Name change on cooldown. Try again in {wait}.", **kwargs)
         # Block names that match any registered username or display name (first_name) to prevent impersonation.
         # Authenticated users have no # discriminator, so the full custom_name must not collide.
-        name_taken = await database_sync_to_async(
-            CustomUser.objects.filter(username__iexact=custom_name).exists
-        )()
+        name_taken = await database_sync_to_async(CustomUser.objects.filter(username__iexact=custom_name).exists)()
         if not name_taken:
             name_taken = await database_sync_to_async(
                 CustomUser.objects.filter(first_name__iexact=custom_name).exists
@@ -644,6 +649,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                     )
                 except (json.JSONDecodeError, TypeError):
                     pass
+        redis_rate.set(rate_key, 1, ex=300)
         return {"event": "chat-name-set", "name": name, "display_name": display_name}
 
     async def ban_chat_user(self, *, user_id: int = None, name: str = None, target: str = None, **kwargs):
@@ -697,6 +703,64 @@ class HomeConsumer(AsyncWebsocketConsumer):
             {
                 "type": _WS_SEND,
                 "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
+            },
+        )
+        return None
+
+    async def ban_message_cleanup(self, *, user_id: int = None, name: str = None, target: str = None, **kwargs):
+        log.debug("ban_message_cleanup: user_id=%s, name=%s, target=%s", user_id, name, target)
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        if not target or not target.strip():
+            return self._error("No target provided.", **kwargs)
+        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
+        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
+        requester = self.scope["user"]
+        is_superuser = await database_sync_to_async(lambda u: getattr(u, "is_superuser", False))(requester)
+        if not is_superuser and (not user_id or stream_user_id != user_id):
+            return self._error("Only the stream owner can clean up messages.", **kwargs)
+        target = target.strip().lower()
+        redis = get_redis_connection("default")
+        history_key = f"stream:{name}:chat_history"
+        raw_history = redis.lrange(history_key, 0, -1)
+        kept = []
+        target_username = None
+        target_user_id = None
+        for raw in raw_history:
+            try:
+                msg = json.loads(raw)
+            except (json.JSONDecodeError, TypeError):
+                kept.append(raw)
+                continue
+            if msg.get("display_name", "").lower() == target or msg.get("username", "").lower() == target:
+                target_username = target_username or msg.get("username")
+                target_user_id = target_user_id or msg.get("user_id")
+            else:
+                kept.append(raw)
+        if target_username is None:
+            return self._error(f"No messages found from '{target}'.", **kwargs)
+        pipe = redis.pipeline()
+        pipe.delete(history_key)
+        if kept:
+            pipe.rpush(history_key, *kept)
+            pipe.expire(history_key, 3600)
+        pipe.execute()
+        chat_group = f"stream-chat-{name}"
+        await self.channel_layer.group_send(
+            chat_group,
+            {
+                "type": _WS_SEND,
+                "text": json.dumps(
+                    {
+                        "event": "chat-message-cleanup",
+                        "name": name,
+                        "username": target_username,
+                        "user_id": target_user_id,
+                    }
+                ),
             },
         )
         return None
