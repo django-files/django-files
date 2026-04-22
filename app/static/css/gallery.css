@@ -132,13 +132,25 @@ div.dataTables_wrapper span.select-item {
     min-width: 0;
 }
 
-#files-table thead th:first-child {
-    vertical-align: middle;
+#files-table thead th div.dt-column-header {
+    flex-direction: row;
 }
 
-#files-table thead th:first-child input[type='checkbox'] {
-    position: relative;
-    top: -2px;
+#files-table thead th:first-child div.dt-column-header {
+    align-items: center;
+}
+
+#files-table thead th:first-child div.dt-column-header span.dt-column-order {
+    top: 3px;
+}
+
+#files-table thead th:first-child div.dt-column-header input {
+    order: -1;
+    margin-right: 3px;
+}
+
+#files-table thead th:first-child {
+    vertical-align: middle;
 }
 
 [id='files-table_wrapper'] .dt-layout-end {
