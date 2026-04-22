@@ -32,9 +32,34 @@
 .sidebar .closebtn {
     position: absolute;
     top: 0;
-    right: 25px;
-    font-size: 36px;
-    margin-left: 50px;
+    right: 5px;
+    font-size: 30px;
+    padding: 0 8px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+}
+
+.sidebar-mode-toggle {
+    position: absolute;
+    top: 0;
+    right: 45px;
+    font-size: 18px;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0 8px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+}
+
+.sidebar-mode-toggle:hover {
+    opacity: 1;
 }
 
 .openbtn {
@@ -109,6 +134,11 @@
     }
 }
 
+/* Sidebar when open (overlay mode) */
+.sidebar.open {
+    transform: translateX(0);
+}
+
 main {
     overflow: hidden;
 }
@@ -136,6 +166,11 @@ main {
     align-items: flex-start;
     /*overflow: hidden; */
     padding: 0 10px;
+    transition: padding-right 0.5s ease;
+}
+
+.card.sidebar-push-open {
+    padding-right: 370px;
 }
 
 .preview-wrapper {

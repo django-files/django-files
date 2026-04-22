@@ -15,6 +15,11 @@ main {
 .live-container {
     height: 100%;
     position: relative;
+    transition: padding-right 0.5s ease;
+}
+
+.live-container.sidebar-push-open {
+    padding-right: 350px;
 }
 
 /* Sidebar - overlays the video so internal content is never crushed */
@@ -37,7 +42,7 @@ main {
     border-bottom: 1px ridge rgba(66 69 73 / 100%);
 }
 
-/* Sidebar when open */
+/* Sidebar when open (overlay mode) */
 #preview-sidebar.sidebar.open {
     transform: translateX(0);
 }
@@ -73,9 +78,34 @@ main {
 .sidebar .closebtn {
     position: absolute;
     top: 0;
-    right: 25px;
-    font-size: 36px;
-    margin-left: 50px;
+    right: 5px;
+    font-size: 30px;
+    padding: 0 8px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+}
+
+.sidebar-mode-toggle {
+    position: absolute;
+    top: 0;
+    right: 45px;
+    font-size: 18px;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0 8px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+}
+
+.sidebar-mode-toggle:hover {
+    opacity: 1;
 }
 
 /* Button styles */
