@@ -8,10 +8,11 @@
 
 {% block head %}
     <link href="{% static 'dist/uppy/uppy.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/gallery.css' %}" />
 {% endblock %}
 
 {% block body %}
-<div class="container-fluid py-3 px-4">
+<div class="container-fluid pb-3 pt-2 px-4">
 
     <h1 class="">
         <i class="fa-solid fa-house-laptop me-2"></i> {{ site_settings.site_title }}
