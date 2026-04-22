@@ -119,6 +119,19 @@ div.dataTables_wrapper span.select-item {
     white-space: nowrap;
 }
 
+#files-table .dj-file-link {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+#files-table .dj-file-link-ref {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
 #files-table thead th:first-child {
     vertical-align: middle;
 }
