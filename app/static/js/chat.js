@@ -367,6 +367,7 @@ function updateAutocomplete() {
             'chat-autocomplete-item' +
             (i === selectedAutocompleteIndex ? ' active' : '')
         item.dataset.index = i
+        item.title = `${c.command} ${c.args} — ${c.description}`.trim()
 
         const cmd = document.createElement('strong')
         cmd.className = 'me-1'

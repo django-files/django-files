@@ -96,24 +96,20 @@ function closeSidebarCallback() {
 
 function openSidebar() {
     sidebarOpen = true
-    previewSidebar.css('width', '360px')
-    previewSidebar.css('border-right', '1px ridge rgba(66 69 73 / 100%)')
+    previewSidebar.css('transform', 'translateX(0)')
     if (contextPlacement) {
         contextPlacement.css('right', '365px')
     }
     openSidebarButton.hide()
-    sidebarCard.fadeIn(300)
 }
 
 function closeSidebar() {
     sidebarOpen = false
-    previewSidebar.css('width', '0')
-    previewSidebar.css('border-right', '0px')
+    previewSidebar.css('transform', 'translateX(100%)')
     if (contextPlacement) {
         contextPlacement.css('right', '60px')
     }
     openSidebarButton.show()
-    sidebarCard.fadeOut(200)
 }
 
 window.openSidebar = openSidebar
