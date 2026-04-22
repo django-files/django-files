@@ -250,8 +250,7 @@ if (chatForm && chatInput) {
             const matches = visibleCommands().filter((c) =>
                 c.command.startsWith(typed)
             )
-            const idx =
-                selectedAutocompleteIndex >= 0 ? selectedAutocompleteIndex : 0
+            const idx = Math.max(0, selectedAutocompleteIndex)
             if (matches[idx]) applyAutocompleteItem(matches[idx])
         }
     })
@@ -321,10 +320,9 @@ function getAutocomplete() {
         autocompleteEl.id = 'chat-autocomplete'
         autocompleteEl.className = 'chat-autocomplete'
         autocompleteEl.style.display = 'none'
-        const liveChat = document.getElementById('live-chat')
         const inputArea = document.getElementById('chat-input-area')
-        if (liveChat && inputArea)
-            liveChat.insertBefore(autocompleteEl, inputArea)
+        if (inputArea)
+            inputArea.before(autocompleteEl)
     }
     return autocompleteEl
 }
@@ -420,110 +418,90 @@ function navigateAutocomplete(dir) {
     return true
 }
 
+function cmdSetName(args) {
+    const customName = args.join(' ').trim()
+    if (!customName) {
+        appendSystemMessage('Usage: /set-name <your name>')
+        return
+    }
+    if (customName.length > 32) {
+        appendSystemMessage('Name too long. Maximum 32 characters.')
+        return
+    }
+    sendSocket({ method: 'set-chat-name', name: streamName, custom_name: customName })
+}
+
+function cmdSetTitle(args) {
+    if (!isOwner) {
+        appendSystemMessage('You do not have permission to use this command.')
+        return
+    }
+    const title = args.join(' ').trim()
+    if (!title) {
+        appendSystemMessage('Usage: /title <title>')
+        return
+    }
+    sendSocket({ method: 'set-stream-title', name: streamName, title })
+}
+
+function cmdSetDescription(args) {
+    if (!isOwner) {
+        appendSystemMessage('You do not have permission to use this command.')
+        return
+    }
+    const description = args.join(' ').trim()
+    if (!description) {
+        appendSystemMessage('Usage: /description <description>')
+        return
+    }
+    sendSocket({ method: 'set-stream-description', name: streamName, description })
+}
+
+function cmdBan(args) {
+    if (!isOwner) {
+        appendSystemMessage('You do not have permission to use this command.')
+        return
+    }
+    const target = args.join(' ').trim()
+    if (!target) {
+        appendSystemMessage('Usage: /ban <display_name>')
+        return
+    }
+    sendSocket({ method: 'ban-chat-user', name: streamName, target })
+}
+
+function cmdBanMessageCleanup(args) {
+    if (!isOwner) {
+        appendSystemMessage('You do not have permission to use this command.')
+        return
+    }
+    const target = args.join(' ').trim()
+    if (!target) {
+        appendSystemMessage('Usage: /ban-message-cleanup <display_name>')
+        return
+    }
+    sendSocket({ method: 'ban-message-cleanup', name: streamName, target })
+}
+
+const COMMAND_DISPATCH = {
+    '/set-name': cmdSetName,
+    '/leave': () => chatDisconnect(),
+    '/join': () => chatReconnect(),
+    '/title': cmdSetTitle,
+    '/description': cmdSetDescription,
+    '/ban': cmdBan,
+    '/ban-message-cleanup': cmdBanMessageCleanup,
+}
+
 function executeCommand(input) {
     const parts = input.trim().split(/\s+/)
     const cmd = parts[0].toLowerCase()
-    const args = parts.slice(1)
-
-    if (cmd === '/set-name') {
-        const customName = args.join(' ').trim()
-        if (!customName) {
-            appendSystemMessage('Usage: /set-name <your name>')
-            return
-        }
-        if (customName.length > 32) {
-            appendSystemMessage('Name too long. Maximum 32 characters.')
-            return
-        }
-        sendSocket({
-            method: 'set-chat-name',
-            name: streamName,
-            custom_name: customName,
-        })
-        return
+    const handler = COMMAND_DISPATCH[cmd]
+    if (handler) {
+        handler(parts.slice(1))
+    } else {
+        appendSystemMessage(`Unknown command: ${cmd}. Type / to see available commands.`)
     }
-
-    if (cmd === '/leave') {
-        chatDisconnect()
-        return
-    }
-
-    if (cmd === '/join') {
-        chatReconnect()
-        return
-    }
-
-    if (cmd === '/title') {
-        if (!isOwner) {
-            appendSystemMessage(
-                'You do not have permission to use this command.'
-            )
-            return
-        }
-        const title = args.join(' ').trim()
-        if (!title) {
-            appendSystemMessage('Usage: /title <title>')
-            return
-        }
-        sendSocket({ method: 'set-stream-title', name: streamName, title })
-        return
-    }
-
-    if (cmd === '/description') {
-        if (!isOwner) {
-            appendSystemMessage(
-                'You do not have permission to use this command.'
-            )
-            return
-        }
-        const description = args.join(' ').trim()
-        if (!description) {
-            appendSystemMessage('Usage: /description <description>')
-            return
-        }
-        sendSocket({
-            method: 'set-stream-description',
-            name: streamName,
-            description,
-        })
-        return
-    }
-
-    if (cmd === '/ban') {
-        if (!isOwner) {
-            appendSystemMessage(
-                'You do not have permission to use this command.'
-            )
-            return
-        }
-        const target = args.join(' ').trim()
-        if (!target) {
-            appendSystemMessage('Usage: /ban <display_name>')
-            return
-        }
-        sendSocket({ method: 'ban-chat-user', name: streamName, target })
-        return
-    }
-
-    if (cmd === '/ban-message-cleanup') {
-        if (!isOwner) {
-            appendSystemMessage(
-                'You do not have permission to use this command.'
-            )
-            return
-        }
-        const target = args.join(' ').trim()
-        if (!target) {
-            appendSystemMessage('Usage: /ban-message-cleanup <display_name>')
-            return
-        }
-        sendSocket({ method: 'ban-message-cleanup', name: streamName, target })
-        return
-    }
-
-    appendSystemMessage(
-        `Unknown command: ${cmd}. Type / to see available commands.`
-    )
 }
 
 function appendSystemMessage(text) {

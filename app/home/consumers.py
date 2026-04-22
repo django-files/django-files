@@ -24,6 +24,7 @@ log = logging.getLogger("app")
 _ERR_NO_STREAM_NAME = "No stream name provided."
 _ERR_STREAM_NOT_FOUND = "Stream not found."
 _ERR_STREAM_OWNED_BY_OTHER = "Stream owned by another user."
+_ERR_SESSION_NOT_READY = "Session not ready."
 _WS_SEND = "websocket.send"
 
 
@@ -555,7 +556,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error("Chat is not enabled for this stream.", **kwargs)
         identity = self._get_chat_identity()
         if identity is None:
-            return self._error("Session not ready.", **kwargs)
+            return self._error(_ERR_SESSION_NOT_READY, **kwargs)
         if not identity["user_id"] and not stream.anonymous_chat:
             return self._error("Anonymous chat is not enabled for this stream.", **kwargs)
         redis_ban = get_redis_connection("default")
@@ -595,7 +596,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         identity = self._get_chat_identity()
         if identity is None:
-            return self._error("Session not ready.", **kwargs)
+            return self._error(_ERR_SESSION_NOT_READY, **kwargs)
         if not custom_name or not custom_name.strip():
             return self._error("Name cannot be empty.", **kwargs)
         custom_name = custom_name.strip()[:32].replace("#", "")
@@ -610,45 +611,20 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error(f"Name change on cooldown. Try again in {wait}.", **kwargs)
         # Block names that match any registered username or display name (first_name) to prevent impersonation.
         # Authenticated users have no # discriminator, so the full custom_name must not collide.
-        name_taken = await database_sync_to_async(CustomUser.objects.filter(username__iexact=custom_name).exists)()
-        if not name_taken:
-            name_taken = await database_sync_to_async(
-                CustomUser.objects.filter(first_name__iexact=custom_name).exists
-            )()
-        if name_taken:
+        if await self._is_name_taken(custom_name):
             return self._error("That name is already used by a registered user.", **kwargs)
         session = self.scope.get("session")
-        is_authenticated = identity["user_id"] is not None
-        if is_authenticated:
-            display_name = custom_name
-        else:
-            session_key = session.session_key if session else None
-            if not session_key:
-                return self._error("Session not ready.", **kwargs)
-            number = int(hashlib.sha256(session_key.encode()).hexdigest(), 16) % 100000
-            display_name = f"{custom_name}#{number:05d}"
+        display_name = custom_name
+        if identity["user_id"] is None:
+            display_name, err = await self._build_anonymous_display_name(custom_name, session)
+            if err:
+                return self._error(err, **kwargs)
         if session:
             session["chat_custom_name"] = custom_name
             await database_sync_to_async(session.save)()
         if self._stream_chat_group:
             redis = get_redis_connection("default")
-            viewer_key = f"stream:{name}:chat_viewers"
-            existing_raw = redis.hget(viewer_key, identity["viewer_key"])
-            if existing_raw:
-                try:
-                    viewer_data = json.loads(existing_raw)
-                    viewer_data["display_name"] = display_name
-                    redis.hset(viewer_key, identity["viewer_key"], json.dumps(viewer_data))
-                    viewers = self._get_chat_viewers(redis, viewer_key)
-                    await self.channel_layer.group_send(
-                        self._stream_chat_group,
-                        {
-                            "type": _WS_SEND,
-                            "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
-                        },
-                    )
-                except (json.JSONDecodeError, TypeError):
-                    pass
+            await self._update_viewer_display_name(redis, name, identity, display_name)
         redis_rate.set(rate_key, 1, ex=300)
         return {"event": "chat-name-set", "name": name, "display_name": display_name}
 
@@ -658,33 +634,21 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         if not target or not target.strip():
             return self._error("No ban target provided.", **kwargs)
-        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
-        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        stream = await self._fetch_stream(name)
         if not stream:
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
-        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
-        requester = self.scope["user"]
-        is_superuser = await database_sync_to_async(lambda u: getattr(u, "is_superuser", False))(requester)
-        if not is_superuser and (not user_id or stream_user_id != user_id):
-            return self._error("Only the stream owner can ban users.", **kwargs)
+        err = await self._check_stream_owner_permission(stream, user_id, "Only the stream owner can ban users.", **kwargs)
+        if err:
+            return err
         target = target.strip()
         redis = get_redis_connection("default")
         viewer_key = f"stream:{name}:chat_viewers"
-        raw_viewers = redis.hgetall(viewer_key)
-        target_viewer_key = None
-        for vk, vraw in raw_viewers.items():
-            try:
-                v = json.loads(vraw)
-            except (json.JSONDecodeError, TypeError):
-                continue
-            vk_str = vk.decode() if isinstance(vk, bytes) else vk
-            display = v.get("display_name", "")
-            username = v.get("username", "")
-            if display.lower() == target.lower() or username.lower() == target.lower():
-                target_viewer_key = vk_str
-                break
+        target_viewer_key = self._find_viewer_by_name(redis, viewer_key, target.lower())
         if not target_viewer_key:
             return self._error(f"No viewer found matching '{target}'.", **kwargs)
+        identity = self._get_chat_identity()
+        if identity and target_viewer_key == identity["viewer_key"]:
+            return self._error("You cannot ban yourself.", **kwargs)
         ban_key = f"stream:{name}:chat_banned"
         redis.sadd(ban_key, target_viewer_key)
         redis.expire(ban_key, 86400)
@@ -713,33 +677,17 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         if not target or not target.strip():
             return self._error("No target provided.", **kwargs)
-        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
-        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        stream = await self._fetch_stream(name)
         if not stream:
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
-        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
-        requester = self.scope["user"]
-        is_superuser = await database_sync_to_async(lambda u: getattr(u, "is_superuser", False))(requester)
-        if not is_superuser and (not user_id or stream_user_id != user_id):
-            return self._error("Only the stream owner can clean up messages.", **kwargs)
+        err = await self._check_stream_owner_permission(stream, user_id, "Only the stream owner can clean up messages.", **kwargs)
+        if err:
+            return err
         target = target.strip().lower()
         redis = get_redis_connection("default")
         history_key = f"stream:{name}:chat_history"
         raw_history = redis.lrange(history_key, 0, -1)
-        kept = []
-        target_username = None
-        target_user_id = None
-        for raw in raw_history:
-            try:
-                msg = json.loads(raw)
-            except (json.JSONDecodeError, TypeError):
-                kept.append(raw)
-                continue
-            if msg.get("display_name", "").lower() == target or msg.get("username", "").lower() == target:
-                target_username = target_username or msg.get("username")
-                target_user_id = target_user_id or msg.get("user_id")
-            else:
-                kept.append(raw)
+        kept, target_username, target_user_id = self._filter_chat_history(raw_history, target)
         if target_username is None:
             return self._error(f"No messages found from '{target}'.", **kwargs)
         pipe = redis.pipeline()
@@ -764,6 +712,90 @@ class HomeConsumer(AsyncWebsocketConsumer):
             },
         )
         return None
+
+    async def _fetch_stream(self, name: str):
+        """Fetch a Stream by name, or return None."""
+        qs = await database_sync_to_async(Stream.objects.filter)(name=name)
+        return await database_sync_to_async(lambda q: q[0] if q else None)(qs)
+
+    async def _check_stream_owner_permission(self, stream, user_id: int, error_msg: str, **kwargs):
+        """Return an error dict if the caller is not a superuser or the stream owner, else None."""
+        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
+        requester = self.scope["user"]
+        is_superuser = await database_sync_to_async(lambda u: getattr(u, "is_superuser", False))(requester)
+        if not is_superuser and (not user_id or stream_user_id != user_id):
+            return self._error(error_msg, **kwargs)
+        return None
+
+    async def _is_name_taken(self, custom_name: str) -> bool:
+        """Return True if custom_name conflicts with any registered username or first name."""
+        if await database_sync_to_async(CustomUser.objects.filter(username__iexact=custom_name).exists)():
+            return True
+        return await database_sync_to_async(CustomUser.objects.filter(first_name__iexact=custom_name).exists)()
+
+    async def _build_anonymous_display_name(self, custom_name: str, session):
+        """Build a discriminated display name for an anonymous user. Returns (name, error) tuple."""
+        session_key = session.session_key if session else None
+        if not session_key:
+            return None, _ERR_SESSION_NOT_READY
+        number = int(hashlib.sha256(session_key.encode()).hexdigest(), 16) % 100000
+        return f"{custom_name}#{number:05d}", None
+
+    async def _update_viewer_display_name(self, redis, name: str, identity: dict, display_name: str):
+        """Update a viewer's display_name in Redis and broadcast the updated viewer list."""
+        viewer_key = f"stream:{name}:chat_viewers"
+        existing_raw = redis.hget(viewer_key, identity["viewer_key"])
+        if not existing_raw:
+            return
+        try:
+            viewer_data = json.loads(existing_raw)
+            viewer_data["display_name"] = display_name
+            redis.hset(viewer_key, identity["viewer_key"], json.dumps(viewer_data))
+            viewers = self._get_chat_viewers(redis, viewer_key)
+            await self.channel_layer.group_send(
+                self._stream_chat_group,
+                {
+                    "type": _WS_SEND,
+                    "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
+                },
+            )
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    @staticmethod
+    def _find_viewer_by_name(redis, viewer_key: str, target_lower: str) -> Optional[str]:
+        """Return the viewer key matching target display_name or username (case-insensitive), or None."""
+        raw_viewers = redis.hgetall(viewer_key)
+        for vk, vraw in raw_viewers.items():
+            try:
+                v = json.loads(vraw)
+            except (json.JSONDecodeError, TypeError):
+                continue
+            vk_str = vk.decode() if isinstance(vk, bytes) else vk
+            display = v.get("display_name", "")
+            username = v.get("username", "")
+            if display.lower() == target_lower or username.lower() == target_lower:
+                return vk_str
+        return None
+
+    @staticmethod
+    def _filter_chat_history(raw_history, target_lower: str):
+        """Filter history entries removing messages from target. Returns (kept, username, user_id)."""
+        kept = []
+        target_username = None
+        target_user_id = None
+        for raw in raw_history:
+            try:
+                msg = json.loads(raw)
+            except (json.JSONDecodeError, TypeError):
+                kept.append(raw)
+                continue
+            if msg.get("display_name", "").lower() == target_lower or msg.get("username", "").lower() == target_lower:
+                target_username = target_username or msg.get("username")
+                target_user_id = target_user_id or msg.get("user_id")
+            else:
+                kept.append(raw)
+        return kept, target_username, target_user_id
 
     @staticmethod
     def _get_chat_viewers(redis, viewer_key):
