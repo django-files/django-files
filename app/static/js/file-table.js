@@ -91,14 +91,16 @@ const dataTablesOptions = {
             targets: 4,
             defaultContent: '',
             responsivePriority: 9,
+            className: 'text-nowrap',
         },
         {
             name: 'date',
             targets: 5,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
-            responsivePriority: 8,
-            width: '500px',
+            responsivePriority: 9,
+            width: '165px',
+            className: 'text-nowrap',
         },
         {
             targets: 6,

@@ -112,6 +112,13 @@ div.dataTables_wrapper span.select-item {
     margin-left: 0.25em;
 }
 
+#files-table td {
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 #files-table thead th:first-child {
     vertical-align: middle;
 }
