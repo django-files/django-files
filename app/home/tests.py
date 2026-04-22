@@ -229,6 +229,8 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
 
             if view == "Albums":
                 print("=========== ALBUMS ===============")
+                page.get_by_role("button", name="New Album").click()
+                page.locator("#create-album-modal").wait_for(state="visible")
                 page.locator("#name").fill("My Cool Pictures")
                 page.get_by_role("button", name="Create").click()
                 flush_template_cache()

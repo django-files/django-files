@@ -45,7 +45,9 @@ const dataTablesOptions = {
             .find('.dt-layout-start')
             .first()
         startCell.append(
-            $('<button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#create-album-modal"><i class="fa-solid fa-images me-2"></i> New Album</button>')
+            $(
+                '<button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#create-album-modal"><i class="fa-solid fa-images me-2"></i> New Album</button>'
+            )
         )
     },
     columnDefs: [
