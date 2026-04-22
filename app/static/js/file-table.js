@@ -144,6 +144,25 @@ const dataTablesOptions = {
     language: {
         info: '',
     },
+    initComplete: function () {
+        const container = $(this.api().table().container())
+        const startCell = container.find('.dt-layout-start').first()
+        const endCell = container.find('.dt-layout-end').first()
+
+        const bulkWrapper = document.getElementById('dt-bulk-wrapper')
+        if (bulkWrapper) {
+            startCell.append(bulkWrapper)
+            bulkWrapper.classList.remove('d-none')
+        }
+
+        const userSelectWrapper = document.getElementById(
+            'dt-user-select-wrapper'
+        )
+        if (userSelectWrapper) {
+            endCell.prepend(userSelectWrapper)
+            userSelectWrapper.classList.remove('d-none')
+        }
+    },
 }
 
 export function initFilesTable(search = true, ordering = true, info = true) {

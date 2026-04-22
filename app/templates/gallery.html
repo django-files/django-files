@@ -28,8 +28,8 @@
 
 {% block body %}
 
-    <div class="container-fluid py-3 px-4">
-        <h1><i class="fa-regular fa-folder-open me-2"></i> {% if album %}{{ album.name }}{% else %}Files{% endif %}</h1>
+    <div class="container-fluid pb-3 pt-2 px-4">
+        {% if album %}<h3 class="mt-1"><i class="fa-regular fa-folder-open me-2"></i> {{ album.name }}</h3>{% endif %}
         <nav class="mb-2" aria-label="Files view">
             <a class="link-body-emphasis show-list" role="button" title="List" href="{% url 'home:files' %}">List</a> |
             <a class="link-body-emphasis show-gallery" role="button" title="Gallery" href={% url 'home:gallery' %}>Gallery</a> |
@@ -37,22 +37,21 @@
                 Slideshow</a>
         </nav>
         {% if request.user.is_superuser and not album %}
-                <div class="float-end">
-                    <select id="user" name="user" class="form-select" aria-label="Default select example">
-                        <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
-                        <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
-                        {% for user in users %}
-                            <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-        {% endif %}
-        {% if album %}
-        <div class=row>
-            <p class="col-md-10 mb-0">{% if album.info %}{{ album.info }}{% endif %}</p>
-            <p class="col-md-2 text-end">Views: <strong id="views-count">{{ album.view }}</strong></p>
+        <div id="dt-user-select-wrapper" class="d-none">
+            <select id="user" name="user" class="form-select form-select-sm" aria-label="Select user">
+                <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
+                <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
+                {% for user in users %}
+                    <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
+                {% endfor %}
+            </select>
         </div>
         {% endif %}
+        {% if album and album.info %}<p class="mb-1">{{ album.info }}</p>{% endif %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            {% if full_context %}<p class="mb-0">Total Files Displayed: <strong id="total-files-count">{{ files|length }}</strong></p>{% endif %}
+            {% if album %}<p class="mb-0 ms-auto">Views: <strong id="views-count">{{ album.view }}</strong></p>{% endif %}
+        </div>
         {% include 'files/bulk-menu.html' %}
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap" {% if 'gallery' in request.path %}{% else %} hidden{% endif%}></div>
         {% include 'files/table.html'%}

@@ -1,7 +1,6 @@
 {% if full_context %}
-<p class="mb-2">Total Files Displayed: <strong id="total-files-count">{{ files|length }}</strong></p>
-<div class="dropdown">
-    <button id="bulk-actions" class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+<div id="dt-bulk-wrapper" class="dropdown d-none">
+    <button id="bulk-actions" class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled>
       Bulk Actions
     </button>
     <ul class="dropdown-menu">

@@ -40,6 +40,14 @@ const dataTablesOptions = {
         { data: 'maxv' },
         { data: 'delete' },
     ],
+    initComplete: function () {
+        const startCell = $(this.api().table().container())
+            .find('.dt-layout-start')
+            .first()
+        startCell.append(
+            $('<button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#create-album-modal"><i class="fa-solid fa-images me-2"></i> New Album</button>')
+        )
+    },
     columnDefs: [
         { targets: 0, width: '30px', responsivePriority: 5 },
         {
@@ -151,9 +159,8 @@ $('#albumsForm').on('submit', function (event) {
         data: JSON.stringify(data),
         headers: { 'X-CSRFToken': csrftoken },
         success: function (data) {
-            // console.log('data:', data)
             form.trigger('reset')
-            // show_toast(`Album Created: ${data.url}`)
+            $('#create-album-modal').modal('hide')
         },
         error: messageErrorHandler,
         cache: false,

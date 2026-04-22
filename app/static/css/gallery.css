@@ -18,7 +18,7 @@
 }
 
 .dt-processing {
-    position: relative !important;
+    position: absolute !important;
     top: 100% !important;
 }
 
@@ -110,4 +110,24 @@ highlight a row and it fucks up our other stylings */
 div.dataTables_wrapper span.select-info,
 div.dataTables_wrapper span.select-item {
     margin-left: 0.25em;
+}
+
+#files-table thead th:first-child {
+    vertical-align: middle;
+}
+
+#files-table thead th:first-child input[type="checkbox"] {
+    position: relative;
+    top: -2px;
+}
+
+#files-table_wrapper .dt-layout-end {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+}
+
+#dt-user-select-wrapper select {
+    width: auto;
 }
