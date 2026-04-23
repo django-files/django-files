@@ -250,7 +250,9 @@ if (notificationSoundBtn) {
         const next = !isNotificationSoundEnabled()
         setNotificationSound(next)
         appendSystemMessage(
-            next ? 'Notification sound enabled.' : 'Notification sound disabled.'
+            next
+                ? 'Notification sound enabled.'
+                : 'Notification sound disabled.'
         )
     })
 }
@@ -551,7 +553,9 @@ const COMMAND_DISPATCH = {
         const next = !isNotificationSoundEnabled()
         setNotificationSound(next)
         appendSystemMessage(
-            next ? 'Notification sound enabled.' : 'Notification sound disabled.'
+            next
+                ? 'Notification sound enabled.'
+                : 'Notification sound disabled.'
         )
     },
 }
