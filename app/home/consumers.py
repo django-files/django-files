@@ -27,6 +27,36 @@ _ERR_STREAM_OWNED_BY_OTHER = "Stream owned by another user."
 _ERR_SESSION_NOT_READY = "Session not ready."
 _WS_SEND = "websocket.send"
 
+# Explicit allowlist of methods callable via WebSocket.
+# Any name not in this set is rejected before getattr is called.
+_ALLOWED_METHODS = frozenset(
+    {
+        "authorize",
+        "paste_text",
+        "delete_files",
+        "delete_album",
+        "toggle_private_file",
+        "private_files",
+        "set_expr_files",
+        "set_password_file",
+        "set_file_name",
+        "set_stream_title",
+        "set_stream_description",
+        "set_stream_live_chat",
+        "set_stream_anonymous_chat",
+        "join_stream_chat",
+        "leave_stream_chat",
+        "send_chat_message",
+        "set_chat_name",
+        "ban_chat_user",
+        "ban_message_cleanup",
+        "set_file_albums",
+        "remove_file_album",
+        "add_file_album",
+        "check_for_update",
+    }
+)
+
 
 class HomeConsumer(AsyncWebsocketConsumer):
     _stream_chat_group = None
@@ -75,8 +105,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 name = self._stream_chat_group.replace("stream-chat-", "")
                 identity = self._get_chat_identity()
                 if identity:
-                    redis = get_redis_connection("default")
-                    redis.set(f"stream:{name}:chat_presence:{identity['viewer_key']}", 1, ex=60)
+                    await sync_to_async(self._redis_ping_presence)(name, identity)
             return await self.send(text_data="pong")
 
         # handle json messages
@@ -95,16 +124,21 @@ class HomeConsumer(AsyncWebsocketConsumer):
         # require authenticated user
         if not self.scope["user"]:
             return self._error("Authentication Required!")
-        data = {"user_id": self.scope["user"].id}
-        log.debug("process_message: user_id: %s", data["user_id"])
-        log.debug(request)
-        data.update(request)
-        log.debug("data: %s", data)
-        method_name = data.pop("method").replace("-", "_")
-        log.debug("method_name: %s", method_name)
-        method = getattr(self, method_name, None)
-        if not method:
+
+        # Validate method against allowlist before calling getattr
+        method_name = request.get("method", "").replace("-", "_")
+        if method_name not in _ALLOWED_METHODS:
             return self._error("No Method Provided!")
+
+        # Merge client params, then overwrite user_id with the server-side value
+        # so the client cannot impersonate another user.
+        data = {k: v for k, v in request.items() if k != "method"}
+        data["user_id"] = self.scope["user"].id
+
+        log.debug("process_message: user_id: %s", data["user_id"])
+        log.debug(data)
+
+        method = getattr(self, method_name)
         if inspect.iscoroutinefunction(method):
             response = await method(**data)
         else:
@@ -316,69 +350,49 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 return response
         return self._error("File not found.", **kwargs)
 
+    # -------------------------------------------------------------------------
+    # Stream metadata — title & description
+    # -------------------------------------------------------------------------
+
     async def set_stream_title(self, *, user_id: int = None, name: str = None, title: str = None, **kwargs):
-        """
-        :param user_id: Integer - self.scope['user'].id - User ID
-        :param name: String - Stream Name
-        :param title: String - New Stream Title
-        :return: Dictionary - With Key: 'success': bool
-        """
-        log.debug("set_stream_title")
-        log.debug("user_id: %s", user_id)
-        log.debug("name: %s", name)
-        log.debug("title: %s", title)
+        log.debug("set_stream_title: user_id=%s, name=%s", user_id, name)
         if not name:
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         if not title:
             return self._error("No title provided.", **kwargs)
-        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
-        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        stream = await self._fetch_stream(name)
         if not stream:
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
-        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
-        if user_id and stream_user_id != user_id:
-            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        if err:
+            return err
         stream.title = title
         await database_sync_to_async(stream.save)()
-        data = {
-            "event": "set-stream-title",
-            "name": name,
-            "title": title,
-        }
+        data = {"event": "set-stream-title", "name": name, "title": title}
         await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
 
     async def set_stream_description(
         self, *, user_id: int = None, name: str = None, description: str = None, **kwargs
     ):
-        """
-        :param user_id: Integer - self.scope['user'].id - User ID
-        :param name: String - Stream Name
-        :param description: String - New Stream Description
-        :return: Dictionary - With Key: 'success': bool
-        """
-        log.debug("set_stream_description")
-        log.debug("user_id: %s", user_id)
-        log.debug("name: %s", name)
-        log.debug("description: %s", description)
+        log.debug("set_stream_description: user_id=%s, name=%s", user_id, name)
         if not name:
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         if description is None:
             return self._error("No description provided.", **kwargs)
-        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
-        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        stream = await self._fetch_stream(name)
         if not stream:
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
-        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
-        if user_id and stream_user_id != user_id:
-            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        if err:
+            return err
         stream.description = description
         await database_sync_to_async(stream.save)()
-        data = {
-            "event": "set-stream-description",
-            "name": name,
-            "description": description,
-        }
+        data = {"event": "set-stream-description", "name": name, "description": description}
         await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
+
+    # -------------------------------------------------------------------------
+    # Chat identity helpers (no I/O — safe to call in async context)
+    # -------------------------------------------------------------------------
 
     def _anon_name(self, session_key: str) -> str:
         number = int(hashlib.sha256(session_key.encode()).hexdigest(), 16) % 100000
@@ -420,13 +434,15 @@ class HomeConsumer(AsyncWebsocketConsumer):
             display_name = self._anon_name(session_key)
         return display_name, "/static/images/default_avatar.png"
 
+    # -------------------------------------------------------------------------
+    # Chat — join / leave
+    # -------------------------------------------------------------------------
+
     async def join_stream_chat(self, *, user_id: int = None, name: str = None, **kwargs):
-        log.debug("join_stream_chat")
-        log.debug("user_id: %s, name: %s", user_id, name)
+        log.debug("join_stream_chat: user_id=%s, name=%s", user_id, name)
         if not name:
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
-        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
-        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        stream = await self._fetch_stream(name)
         if not stream or not stream.live_chat:
             return self._error("Chat is not available.", **kwargs)
         identity = self._get_chat_identity()
@@ -434,20 +450,34 @@ class HomeConsumer(AsyncWebsocketConsumer):
             if self._stream_chat_group:
                 await self._leave_chat_group()
             return {"event": "chat-retry", "name": name}
-        redis = get_redis_connection("default")
-        ban_key = f"stream:{name}:chat_banned"
-        if redis.sismember(ban_key, identity["viewer_key"]):
+
+        display_name, avatar_url = await self._get_chat_display()
+        viewer_data_dict = {
+            "viewer_id": identity["viewer_key"],
+            "user_id": identity["user_id"],
+            "username": identity["username"],
+            "display_name": display_name,
+            "avatar_url": avatar_url,
+        }
+
+        # All Redis I/O in one sync call to avoid blocking the event loop
+        banned, reconnecting, stale, viewers, recent = await sync_to_async(self._redis_join_chat)(
+            name, identity, viewer_data_dict
+        )
+
+        if banned:
             if self._stream_chat_group:
                 await self._leave_chat_group()
             return {"event": "chat-banned", "name": name}
-        viewer_key = f"stream:{name}:chat_viewers"
-        presence_key = f"stream:{name}:chat_presence:{identity['viewer_key']}"
-        # Reconnecting = already in the hash with a live presence key (hasn't expired yet).
-        # Stale viewers are in the hash but their presence key expired — pruned below.
-        in_hash = redis.hexists(viewer_key, identity["viewer_key"])
-        reconnecting = in_hash and bool(redis.exists(presence_key))
-        # Prune stale viewers and broadcast their departure before processing this join.
-        stale = await self._prune_stale_viewers(redis, name, viewer_key)
+
+        if self._stream_chat_group:
+            if reconnecting:
+                old_group = self._stream_chat_group
+                self._stream_chat_group = None
+                await self.channel_layer.group_discard(old_group, self.channel_name)
+            else:
+                await self._leave_chat_group()
+
         if stale:
             chat_group = f"stream-chat-{name}"
             for stale_viewer_id in stale:
@@ -458,29 +488,11 @@ class HomeConsumer(AsyncWebsocketConsumer):
                         "text": json.dumps({"event": "chat-viewer-left", "name": name, "viewer_id": stale_viewer_id}),
                     },
                 )
-        if self._stream_chat_group:
-            if reconnecting:
-                old_group = self._stream_chat_group
-                self._stream_chat_group = None
-                await self.channel_layer.group_discard(old_group, self.channel_name)
-            else:
-                await self._leave_chat_group()
-        # Set/refresh presence with a 60s TTL (client pings every 30s, so two missed pings = gone).
-        redis.set(presence_key, 1, ex=60)
+
         self._stream_chat_group = f"stream-chat-{name}"
         await self.channel_layer.group_add(self._stream_chat_group, self.channel_name)
-        display_name, avatar_url = await self._get_chat_display()
-        viewer_data_dict = {
-            "viewer_id": identity["viewer_key"],
-            "user_id": identity["user_id"],
-            "username": identity["username"],
-            "display_name": display_name,
-            "avatar_url": avatar_url,
-        }
-        redis.hset(viewer_key, identity["viewer_key"], json.dumps(viewer_data_dict))
-        redis.expire(viewer_key, 300)
+
         if not reconnecting:
-            # Broadcast delta: new viewer joined
             await self.channel_layer.group_send(
                 self._stream_chat_group,
                 {
@@ -488,9 +500,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                     "text": json.dumps({"event": "chat-viewer-joined", "name": name, "viewer": viewer_data_dict}),
                 },
             )
-        # Send full viewer list + history only to the joining user
-        viewers = self._get_chat_viewers(redis, viewer_key)
-        recent = self._get_recent_messages(redis, name)
+
         return {
             "event": "chat-history",
             "name": name,
@@ -502,21 +512,19 @@ class HomeConsumer(AsyncWebsocketConsumer):
     async def set_stream_live_chat(self, *, user_id: int = None, name: str = None, enabled: bool = None, **kwargs):
         if not name:
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
-        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
-        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        stream = await self._fetch_stream(name)
         if not stream:
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
-        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
-        if not user_id or stream_user_id != user_id:
-            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        if err:
+            return err
         stream.live_chat = bool(enabled)
         await database_sync_to_async(stream.save)()
-        anonymous_chat = await database_sync_to_async(lambda s: s.anonymous_chat)(stream)
         data = {
             "event": "chat-settings",
             "name": name,
             "live_chat": stream.live_chat,
-            "anonymous_chat": anonymous_chat,
+            "anonymous_chat": stream.anonymous_chat,
         }
         await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
 
@@ -525,13 +533,12 @@ class HomeConsumer(AsyncWebsocketConsumer):
     ):
         if not name:
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
-        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
-        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+        stream = await self._fetch_stream(name)
         if not stream:
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
-        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
-        if not user_id or stream_user_id != user_id:
-            return self._error(_ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        if err:
+            return err
         stream.anonymous_chat = bool(enabled)
         await database_sync_to_async(stream.save)()
         data = {
@@ -552,58 +559,46 @@ class HomeConsumer(AsyncWebsocketConsumer):
         self._stream_chat_group = None
         name = group.replace("stream-chat-", "")
         identity = self._get_chat_identity()
-        redis = get_redis_connection("default")
-        viewer_key = f"stream:{name}:chat_viewers"
         await self.channel_layer.group_discard(group, self.channel_name)
-        if hard:
-            redis.hdel(viewer_key, identity["viewer_key"])
-            redis.delete(f"stream:{name}:chat_presence:{identity['viewer_key']}")
+        if hard and identity:
+            await sync_to_async(self._redis_leave_chat)(name, identity)
             await self.channel_layer.group_send(
                 group,
                 {
                     "type": _WS_SEND,
-                    "text": json.dumps({"event": "chat-viewer-left", "name": name, "viewer_id": identity["viewer_key"]}),
+                    "text": json.dumps(
+                        {"event": "chat-viewer-left", "name": name, "viewer_id": identity["viewer_key"]}
+                    ),
                 },
             )
         # Soft disconnect: just leave the channel group. The presence key expires on its
         # own TTL; _prune_stale_viewers cleans up the hash on the next join.
 
+    # -------------------------------------------------------------------------
+    # Chat — messaging
+    # -------------------------------------------------------------------------
+
     async def send_chat_message(self, *, user_id: int = None, name: str = None, message: str = None, **kwargs):
-        log.debug("send_chat_message")
-        log.debug("user_id: %s, name: %s, message: %s", user_id, name, message)
+        log.debug("send_chat_message: user_id=%s, name=%s", user_id, name)
         if not name:
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         if not message or not message.strip():
             return self._error("Empty message.", **kwargs)
         message = message.strip()[:500]
-        # Rate limit: max 3 messages per second per user
-        _identity_for_rate = self._get_chat_identity()
-        if _identity_for_rate:
-            rate_key = f"stream:{name}:rate:{_identity_for_rate['viewer_key']}"
-            redis_rate = get_redis_connection("default")
-            pipe = redis_rate.pipeline()
-            pipe.incr(rate_key)
-            pipe.expire(rate_key, 1)
-            count, _ = pipe.execute()
-            if count > 3:
-                return self._error("Slow down. Too many messages.", **kwargs)
-        stream = await database_sync_to_async(Stream.objects.filter)(name=name)
-        stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
+
+        stream = await self._fetch_stream(name)
         if not stream:
             return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
         if not stream.live_chat:
             return self._error("Chat is not enabled for this stream.", **kwargs)
+
         identity = self._get_chat_identity()
         if identity is None:
             return self._error(_ERR_SESSION_NOT_READY, **kwargs)
         if not identity["user_id"] and not stream.anonymous_chat:
             return self._error("Anonymous chat is not enabled for this stream.", **kwargs)
-        redis_ban = get_redis_connection("default")
-        ban_key = f"stream:{name}:chat_banned"
-        if redis_ban.sismember(ban_key, identity["viewer_key"]):
-            return self._error("You are banned from this chat.", **kwargs)
+
         display_name, avatar_url = await self._get_chat_display()
-        chat_group = f"stream-chat-{name}"
         msg_data = {
             "user_id": identity["user_id"],
             "username": identity["username"],
@@ -612,22 +607,24 @@ class HomeConsumer(AsyncWebsocketConsumer):
             "message": message,
             "timestamp": time.time(),
         }
-        redis = get_redis_connection("default")
-        history_key = f"stream:{name}:chat_history"
-        pipe = redis.pipeline()
-        pipe.lpush(history_key, json.dumps(msg_data))
-        pipe.ltrim(history_key, 0, 49)
-        pipe.expire(history_key, 3600)
-        pipe.execute()
+
+        # Rate limit, ban check, and history push in one sync call
+        error = await sync_to_async(self._redis_send_message)(name, identity, msg_data)
+        if error == "rate_limited":
+            return self._error("Slow down. Too many messages.", **kwargs)
+        if error == "banned":
+            return self._error("You are banned from this chat.", **kwargs)
+
         broadcast = {"event": "chat-message", "name": name}
         broadcast.update(msg_data)
         await self.channel_layer.group_send(
-            chat_group,
-            {
-                "type": _WS_SEND,
-                "text": json.dumps(broadcast),
-            },
+            f"stream-chat-{name}",
+            {"type": _WS_SEND, "text": json.dumps(broadcast)},
         )
+
+    # -------------------------------------------------------------------------
+    # Chat — name change
+    # -------------------------------------------------------------------------
 
     async def set_chat_name(self, *, user_id: int = None, name: str = None, custom_name: str = None, **kwargs):
         log.debug("set_chat_name: user_id=%s, name=%s, custom_name=%s", user_id, name, custom_name)
@@ -641,19 +638,19 @@ class HomeConsumer(AsyncWebsocketConsumer):
         custom_name = custom_name.strip()[:32].replace("#", "")
         if not custom_name:
             return self._error("Invalid name.", **kwargs)
+
         user = self.scope["user"]
         is_admin = getattr(user, "is_superuser", False)
+
         if not is_admin:
             rate_key = f"chat:name_change:{identity['viewer_key']}"
-            redis_rate = get_redis_connection("default")
-            ttl = redis_rate.ttl(rate_key)
+            ttl = await sync_to_async(self._redis_check_name_rate)(rate_key)
             if ttl > 0:
                 mins, secs = divmod(ttl, 60)
                 wait = f"{mins}m {secs}s" if mins else f"{secs}s"
                 return self._error(f"Name change on cooldown. Try again in {wait}.", **kwargs)
-        # Block names that match any registered username or display name (first_name) to prevent impersonation.
-        # Authenticated users have no # discriminator, so the full custom_name must not collide.
-        # Exception: an authenticated user may always set their name back to their own username or first name.
+
+        # Block names that match any registered username or display name to prevent impersonation.
         is_own_name = (
             identity["user_id"] is not None
             and hasattr(user, "username")
@@ -664,21 +661,31 @@ class HomeConsumer(AsyncWebsocketConsumer):
         )
         if not is_own_name and await self._is_name_taken(custom_name):
             return self._error("That name is already used by a registered user.", **kwargs)
+
         session = self.scope.get("session")
         display_name = custom_name
         if identity["user_id"] is None:
             display_name, err = await self._build_anonymous_display_name(custom_name, session)
             if err:
                 return self._error(err, **kwargs)
+
         if session:
             session["chat_custom_name"] = custom_name
             await database_sync_to_async(session.save)()
-        if self._stream_chat_group:
-            redis = get_redis_connection("default")
-            await self._update_viewer_display_name(redis, name, identity, display_name)
-        if not is_admin:
-            redis_rate.set(rate_key, 1, ex=300)
+
+        rate_key = f"chat:name_change:{identity['viewer_key']}" if not is_admin else None
+        viewers = await sync_to_async(self._redis_apply_name_change)(name, identity, display_name, rate_key)
+        if viewers is not None:
+            await self.channel_layer.group_send(
+                self._stream_chat_group,
+                {"type": _WS_SEND, "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers})},
+            )
+
         return {"event": "chat-name-set", "name": name, "display_name": display_name}
+
+    # -------------------------------------------------------------------------
+    # Chat — moderation
+    # -------------------------------------------------------------------------
 
     async def ban_chat_user(self, *, user_id: int = None, name: str = None, target: str = None, **kwargs):
         log.debug("ban_chat_user: user_id=%s, name=%s, target=%s", user_id, name, target)
@@ -694,21 +701,13 @@ class HomeConsumer(AsyncWebsocketConsumer):
         )
         if err:
             return err
-        target = target.strip()
-        redis = get_redis_connection("default")
-        viewer_key = f"stream:{name}:chat_viewers"
-        target_viewer_key = self._find_viewer_by_name(redis, viewer_key, target.lower())
-        if not target_viewer_key:
-            return self._error(f"No viewer found matching '{target}'.", **kwargs)
+
         identity = self._get_chat_identity()
-        if identity and target_viewer_key == identity["viewer_key"]:
-            return self._error("You cannot ban yourself.", **kwargs)
-        ban_key = f"stream:{name}:chat_banned"
-        redis.sadd(ban_key, target_viewer_key)
-        redis.expire(ban_key, 86400)
-        redis.hdel(viewer_key, target_viewer_key)
+        error, target_viewer_key, viewers = await sync_to_async(self._redis_ban_user)(name, identity, target.strip())
+        if error:
+            return self._error(error, **kwargs)
+
         chat_group = f"stream-chat-{name}"
-        viewers = self._get_chat_viewers(redis, viewer_key)
         await self.channel_layer.group_send(
             chat_group,
             {
@@ -739,22 +738,15 @@ class HomeConsumer(AsyncWebsocketConsumer):
         )
         if err:
             return err
-        target = target.strip().lower()
-        redis = get_redis_connection("default")
-        history_key = f"stream:{name}:chat_history"
-        raw_history = redis.lrange(history_key, 0, -1)
-        kept, target_username, target_user_id = self._filter_chat_history(raw_history, target)
+
+        target_username, target_user_id = await sync_to_async(self._redis_cleanup_history)(
+            name, target.strip().lower()
+        )
         if target_username is None:
-            return self._error(f"No messages found from '{target}'.", **kwargs)
-        pipe = redis.pipeline()
-        pipe.delete(history_key)
-        if kept:
-            pipe.rpush(history_key, *kept)
-            pipe.expire(history_key, 3600)
-        pipe.execute()
-        chat_group = f"stream-chat-{name}"
+            return self._error(f"No messages found from '{target.strip()}'.", **kwargs)
+
         await self.channel_layer.group_send(
-            chat_group,
+            f"stream-chat-{name}",
             {
                 "type": _WS_SEND,
                 "text": json.dumps(
@@ -769,10 +761,13 @@ class HomeConsumer(AsyncWebsocketConsumer):
         )
         return None
 
+    # -------------------------------------------------------------------------
+    # Async helper methods (DB access)
+    # -------------------------------------------------------------------------
+
     async def _fetch_stream(self, name: str):
         """Fetch a Stream by name, or return None."""
-        qs = await database_sync_to_async(Stream.objects.filter)(name=name)
-        return await database_sync_to_async(lambda q: q[0] if q else None)(qs)
+        return await Stream.objects.filter(name=name).afirst()
 
     async def _check_stream_owner_permission(self, stream, user_id: int, error_msg: str, **kwargs):
         """Return an error dict if the caller is not a superuser or the stream owner, else None."""
@@ -797,26 +792,191 @@ class HomeConsumer(AsyncWebsocketConsumer):
         number = int(hashlib.sha256(session_key.encode()).hexdigest(), 16) % 100000
         return f"{custom_name}#{number:05d}", None
 
-    async def _update_viewer_display_name(self, redis, name: str, identity: dict, display_name: str):
-        """Update a viewer's display_name in Redis and broadcast the updated viewer list."""
+    # -------------------------------------------------------------------------
+    # Sync Redis helpers — called via sync_to_async to avoid blocking the loop
+    # -------------------------------------------------------------------------
+
+    def _redis_ping_presence(self, name: str, identity: dict) -> None:
+        """Refresh presence key and extend the viewer hash TTL on each heartbeat ping."""
+        redis = get_redis_connection("default")
         viewer_key = f"stream:{name}:chat_viewers"
-        existing_raw = redis.hget(viewer_key, identity["viewer_key"])
-        if not existing_raw:
-            return
+        pipe = redis.pipeline()
+        pipe.set(f"stream:{name}:chat_presence:{identity['viewer_key']}", 1, ex=60)
+        pipe.expire(viewer_key, 3600)
+        pipe.execute()
+
+    def _redis_join_chat(self, name: str, identity: dict, viewer_data_dict: dict) -> tuple:
+        """
+        Ban check, presence detection, stale-viewer pruning, viewer registration,
+        and history + viewer-list fetch — all in one sync call.
+
+        Returns (banned, reconnecting, stale_ids, viewers, recent_messages).
+        """
+        redis = get_redis_connection("default")
+
+        ban_key = f"stream:{name}:chat_banned"
+        if redis.sismember(ban_key, identity["viewer_key"]):
+            return True, False, [], [], []
+
+        viewer_key = f"stream:{name}:chat_viewers"
+        presence_key = f"stream:{name}:chat_presence:{identity['viewer_key']}"
+
+        in_hash = redis.hexists(viewer_key, identity["viewer_key"])
+        # Reconnecting = already in hash AND presence key still alive
+        reconnecting = in_hash and bool(redis.exists(presence_key))
+
+        stale = self._prune_stale_viewers(redis, name, viewer_key)
+
+        # Register/refresh presence and viewer data in a single pipeline
+        pipe = redis.pipeline()
+        pipe.set(presence_key, 1, ex=60)
+        pipe.hset(viewer_key, identity["viewer_key"], json.dumps(viewer_data_dict))
+        pipe.expire(viewer_key, 3600)  # long TTL; refreshed on every ping
+        pipe.execute()
+
+        viewers = self._get_chat_viewers(redis, viewer_key)
+        recent = self._get_recent_messages(redis, name)
+        return False, reconnecting, stale, viewers, recent
+
+    def _redis_leave_chat(self, name: str, identity: dict) -> None:
+        """Hard-leave: remove viewer from hash and delete presence key atomically."""
+        redis = get_redis_connection("default")
+        pipe = redis.pipeline()
+        pipe.hdel(f"stream:{name}:chat_viewers", identity["viewer_key"])
+        pipe.delete(f"stream:{name}:chat_presence:{identity['viewer_key']}")
+        pipe.execute()
+
+    def _redis_send_message(self, name: str, identity: dict, msg_data: dict) -> Optional[str]:
+        """
+        Fixed-window rate limit (max 3 msgs/s), ban check, and history push.
+
+        Returns 'rate_limited', 'banned', or None on success.
+        The rate-limit window TTL is set only on window creation (SET NX EX),
+        so sending multiple messages does not reset the 1-second window.
+        """
+        redis = get_redis_connection("default")
+
+        rate_key = f"stream:{name}:rate:{identity['viewer_key']}"
+        pipe = redis.pipeline()
+        pipe.set(rate_key, 0, nx=True, ex=1)  # initialize window only if key is new
+        pipe.incr(rate_key)
+        _, count = pipe.execute()
+        if count > 3:
+            return "rate_limited"
+
+        ban_key = f"stream:{name}:chat_banned"
+        if redis.sismember(ban_key, identity["viewer_key"]):
+            return "banned"
+
+        history_key = f"stream:{name}:chat_history"
+        pipe = redis.pipeline()
+        pipe.lpush(history_key, json.dumps(msg_data))
+        pipe.ltrim(history_key, 0, 49)
+        pipe.expire(history_key, 3600)
+        pipe.execute()
+
+        return None
+
+    def _redis_check_name_rate(self, rate_key: str) -> int:
+        """Return the TTL (seconds) of the name-change rate-limit key, or -2 if unset."""
+        redis = get_redis_connection("default")
+        return redis.ttl(rate_key)
+
+    def _redis_apply_name_change(
+        self, name: str, identity: dict, display_name: str, rate_key: Optional[str]
+    ) -> Optional[list]:
+        """
+        Set the name-change rate limit (if rate_key given) and update the viewer's
+        display_name in the hash. Returns the refreshed viewer list, or None if
+        the viewer is not currently in the hash.
+        """
+        redis = get_redis_connection("default")
+        if rate_key:
+            redis.set(rate_key, 1, ex=300)
+        if not self._stream_chat_group:
+            return None
+        viewer_key = f"stream:{name}:chat_viewers"
+        raw = redis.hget(viewer_key, identity["viewer_key"])
+        if not raw:
+            return None
         try:
-            viewer_data = json.loads(existing_raw)
+            viewer_data = json.loads(raw)
             viewer_data["display_name"] = display_name
             redis.hset(viewer_key, identity["viewer_key"], json.dumps(viewer_data))
-            viewers = self._get_chat_viewers(redis, viewer_key)
-            await self.channel_layer.group_send(
-                self._stream_chat_group,
-                {
-                    "type": _WS_SEND,
-                    "text": json.dumps({"event": "chat-viewers", "name": name, "viewers": viewers}),
-                },
-            )
+            return self._get_chat_viewers(redis, viewer_key)
         except (json.JSONDecodeError, TypeError):
-            pass
+            return None
+
+    def _redis_ban_user(self, name: str, identity: Optional[dict], target: str) -> tuple:
+        """
+        Find target viewer by display name or username, add to the ban set,
+        and remove from the viewer hash.
+
+        Returns (error_str, target_viewer_key, viewers).
+        On failure error_str is set and the other two are None.
+        """
+        redis = get_redis_connection("default")
+        viewer_key = f"stream:{name}:chat_viewers"
+        target_viewer_key = self._find_viewer_by_name(redis, viewer_key, target.lower())
+        if not target_viewer_key:
+            return f"No viewer found matching '{target}'.", None, None
+        if identity and target_viewer_key == identity["viewer_key"]:
+            return "You cannot ban yourself.", None, None
+
+        ban_key = f"stream:{name}:chat_banned"
+        pipe = redis.pipeline()
+        pipe.sadd(ban_key, target_viewer_key)
+        pipe.expire(ban_key, 86400)
+        pipe.hdel(viewer_key, target_viewer_key)
+        pipe.execute()
+
+        viewers = self._get_chat_viewers(redis, viewer_key)
+        return None, target_viewer_key, viewers
+
+    def _redis_cleanup_history(self, name: str, target_lower: str) -> tuple:
+        """
+        Remove messages from target user from the history list.
+
+        Returns (target_username, target_user_id), or (None, None) if no messages found.
+        """
+        redis = get_redis_connection("default")
+        history_key = f"stream:{name}:chat_history"
+        raw_history = redis.lrange(history_key, 0, -1)
+        kept, target_username, target_user_id = self._filter_chat_history(raw_history, target_lower)
+        if target_username is None:
+            return None, None
+        pipe = redis.pipeline()
+        pipe.delete(history_key)
+        if kept:
+            pipe.rpush(history_key, *kept)
+            pipe.expire(history_key, 3600)
+        pipe.execute()
+        return target_username, target_user_id
+
+    # -------------------------------------------------------------------------
+    # Static Redis utility methods
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def _prune_stale_viewers(redis, name: str, viewer_key: str) -> list:
+        """
+        Remove viewers whose presence key has expired (closed browser / missed two
+        30s heartbeats). Uses a single pipelined batch of EXISTS calls instead of
+        one round-trip per viewer.
+
+        Returns list of pruned viewer_ids for leave broadcasts.
+        """
+        fields = [f.decode() if isinstance(f, bytes) else f for f in redis.hkeys(viewer_key)]
+        if not fields:
+            return []
+        pipe = redis.pipeline()
+        for field in fields:
+            pipe.exists(f"stream:{name}:chat_presence:{field}")
+        results = pipe.execute()
+        stale = [f for f, alive in zip(fields, results, strict=True) if not alive]
+        if stale:
+            redis.hdel(viewer_key, *stale)
+        return stale
 
     @staticmethod
     def _find_viewer_by_name(redis, viewer_key: str, target_lower: str) -> Optional[str]:
@@ -828,9 +988,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             except (json.JSONDecodeError, TypeError):
                 continue
             vk_str = vk.decode() if isinstance(vk, bytes) else vk
-            display = v.get("display_name", "")
-            username = v.get("username", "")
-            if display.lower() == target_lower or username.lower() == target_lower:
+            if v.get("display_name", "").lower() == target_lower or v.get("username", "").lower() == target_lower:
                 return vk_str
         return None
 
@@ -854,7 +1012,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         return kept, target_username, target_user_id
 
     @staticmethod
-    def _get_chat_viewers(redis, viewer_key):
+    def _get_chat_viewers(redis, viewer_key: str) -> list:
         raw = redis.hgetall(viewer_key)
         viewers = []
         for v in raw.values():
@@ -865,22 +1023,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         return viewers
 
     @staticmethod
-    async def _prune_stale_viewers(redis, name, viewer_key):
-        """
-        Remove viewers from the hash whose presence key has expired (closed browser,
-        missed two 30s heartbeats). Returns pruned viewer_ids for leave broadcasts.
-        """
-        raw = redis.hgetall(viewer_key)
-        stale = []
-        for field in raw:
-            field = field.decode() if isinstance(field, bytes) else field
-            if not redis.exists(f"stream:{name}:chat_presence:{field}"):
-                redis.hdel(viewer_key, field)
-                stale.append(field)
-        return stale
-
-    @staticmethod
-    def _get_recent_messages(redis, stream_name):
+    def _get_recent_messages(redis, stream_name: str) -> list:
         history_key = f"stream:{stream_name}:chat_history"
         raw = redis.lrange(history_key, 0, 49)
         messages = []
@@ -890,6 +1033,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
             except (json.JSONDecodeError, TypeError):
                 pass
         return messages
+
+    # -------------------------------------------------------------------------
+    # File / album management (unchanged)
+    # -------------------------------------------------------------------------
 
     def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = None, **kwargs) -> dict:
         """

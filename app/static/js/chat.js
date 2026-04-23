@@ -108,6 +108,60 @@ function renderViewers() {
     chatViewersPanel.appendChild(fragment)
 }
 
+// --- Message dispatch ---
+
+function handleHistory(data) {
+    if (data.viewer_id) myViewerId = data.viewer_id
+    chatMessages.innerHTML = ''
+    if (data.messages) {
+        data.messages.forEach((msg) => appendMessage(msg))
+        chatMessages.scrollTop = chatMessages.scrollHeight
+    }
+    if (data.viewers) updateViewers(data.viewers)
+}
+
+function handleViewerJoined(data) {
+    const v = data.viewer
+    const key = v.viewer_id ?? (v.user_id != null ? String(v.user_id) : v.username)
+    viewerMap.set(key, v)
+    renderViewers()
+}
+
+function handleChatSettings(data) {
+    const wasEnabled = liveChatEnabled
+    liveChatEnabled = data.live_chat
+    applyChatSettings(data)
+    if (!wasEnabled && liveChatEnabled) joinChat()
+}
+
+function handleMessageCleanup(data) {
+    chatMessages.querySelectorAll('.chat-msg').forEach((el) => {
+        if (
+            el.dataset.username === data.username ||
+            (data.user_id != null && el.dataset.userId === String(data.user_id))
+        ) {
+            el.remove()
+        }
+    })
+}
+
+function handleBanned(data) {
+    if (!data.viewer_id || data.viewer_id === myViewerId) applyChatBanned()
+}
+
+const MESSAGE_HANDLERS = {
+    'chat-message': (data) => appendMessage(data),
+    'chat-history': handleHistory,
+    'chat-viewers': (data) => updateViewers(data.viewers),
+    'chat-viewer-joined': handleViewerJoined,
+    'chat-viewer-left': (data) => { viewerMap.delete(data.viewer_id); renderViewers() },
+    'chat-settings': handleChatSettings,
+    'chat-retry': () => { if (joinChatRetries++ < 10) setTimeout(joinChat, 1500 * joinChatRetries) },
+    'chat-name-set': (data) => appendSystemMessage(`Your name has been set to: ${data.display_name}`),
+    'chat-message-cleanup': handleMessageCleanup,
+    'chat-banned': handleBanned,
+}
+
 function handleMessage(event) {
     let data
     try {
@@ -116,56 +170,7 @@ function handleMessage(event) {
         return
     }
     if (data.name !== streamName) return
-
-    if (data.event === 'chat-message') {
-        appendMessage(data)
-    } else if (data.event === 'chat-history') {
-        if (data.viewer_id) myViewerId = data.viewer_id
-        chatMessages.innerHTML = ''
-        if (data.messages) {
-            data.messages.forEach((msg) => appendMessage(msg))
-            chatMessages.scrollTop = chatMessages.scrollHeight
-        }
-        if (data.viewers) {
-            updateViewers(data.viewers)
-        }
-    } else if (data.event === 'chat-viewers') {
-        updateViewers(data.viewers)
-    } else if (data.event === 'chat-viewer-joined') {
-        const v = data.viewer
-        const key =
-            v.viewer_id ?? (v.user_id != null ? String(v.user_id) : v.username)
-        viewerMap.set(key, v)
-        renderViewers()
-    } else if (data.event === 'chat-viewer-left') {
-        viewerMap.delete(data.viewer_id)
-        renderViewers()
-    } else if (data.event === 'chat-settings') {
-        const wasEnabled = liveChatEnabled
-        liveChatEnabled = data.live_chat
-        applyChatSettings(data)
-        if (!wasEnabled && liveChatEnabled) {
-            joinChat()
-        }
-    } else if (data.event === 'chat-retry') {
-        if (joinChatRetries++ < 10) setTimeout(joinChat, 1500 * joinChatRetries)
-    } else if (data.event === 'chat-name-set') {
-        appendSystemMessage(`Your name has been set to: ${data.display_name}`)
-    } else if (data.event === 'chat-message-cleanup') {
-        chatMessages.querySelectorAll('.chat-msg').forEach((el) => {
-            if (
-                el.dataset.username === data.username ||
-                (data.user_id != null &&
-                    el.dataset.userId === String(data.user_id))
-            ) {
-                el.remove()
-            }
-        })
-    } else if (data.event === 'chat-banned') {
-        if (!data.viewer_id || data.viewer_id === myViewerId) {
-            applyChatBanned()
-        }
-    }
+    MESSAGE_HANDLERS[data.event]?.(data)
 }
 
 function updateAnonInput(anonymousChat) {
@@ -233,8 +238,7 @@ if (chatForm && chatInput) {
     chatInput.addEventListener('input', updateAutocomplete)
 
     chatInput.addEventListener('keydown', (e) => {
-        const ac = getAutocomplete()
-        if (ac.style.display === 'none') return
+        if (autocompleteEl.style.display === 'none') return
         if (e.key === 'Escape') {
             hideAutocomplete()
             e.preventDefault()
@@ -311,26 +315,20 @@ const CHAT_COMMANDS = [
     },
 ]
 
-let autocompleteEl = null
-let selectedAutocompleteIndex = -1
+// Autocomplete element created eagerly — no lazy-init needed
+const autocompleteEl = document.createElement('div')
+autocompleteEl.id = 'chat-autocomplete'
+autocompleteEl.className = 'chat-autocomplete'
+autocompleteEl.style.display = 'none'
+const inputArea = document.getElementById('chat-input-area')
+if (inputArea) inputArea.before(autocompleteEl)
 
-function getAutocomplete() {
-    if (!autocompleteEl) {
-        autocompleteEl = document.createElement('div')
-        autocompleteEl.id = 'chat-autocomplete'
-        autocompleteEl.className = 'chat-autocomplete'
-        autocompleteEl.style.display = 'none'
-        const inputArea = document.getElementById('chat-input-area')
-        if (inputArea) inputArea.before(autocompleteEl)
-    }
-    return autocompleteEl
-}
+let selectedAutocompleteIndex = -1
 
 function hideAutocomplete() {
     selectedAutocompleteIndex = -1
-    const ac = getAutocomplete()
-    ac.style.display = 'none'
-    ac.innerHTML = ''
+    autocompleteEl.style.display = 'none'
+    autocompleteEl.innerHTML = ''
 }
 
 function visibleCommands() {
@@ -340,7 +338,6 @@ function visibleCommands() {
 }
 
 function updateAutocomplete() {
-    const ac = getAutocomplete()
     const val = chatInput.value
     if (!val.startsWith('/')) {
         hideAutocomplete()
@@ -352,8 +349,8 @@ function updateAutocomplete() {
         hideAutocomplete()
         return
     }
-    ac.style.display = ''
-    ac.innerHTML = ''
+    autocompleteEl.style.display = ''
+    autocompleteEl.innerHTML = ''
     selectedAutocompleteIndex = Math.min(
         selectedAutocompleteIndex,
         matches.length - 1
@@ -386,7 +383,7 @@ function updateAutocomplete() {
             e.preventDefault()
             applyAutocompleteItem(c)
         })
-        ac.appendChild(item)
+        autocompleteEl.appendChild(item)
     })
 }
 
@@ -403,9 +400,8 @@ function applyAutocompleteItem(c) {
 }
 
 function navigateAutocomplete(dir) {
-    const ac = getAutocomplete()
-    if (ac.style.display === 'none') return false
-    const items = ac.querySelectorAll('.chat-autocomplete-item')
+    if (autocompleteEl.style.display === 'none') return false
+    const items = autocompleteEl.querySelectorAll('.chat-autocomplete-item')
     if (!items.length) return false
     selectedAutocompleteIndex = Math.max(
         0,
