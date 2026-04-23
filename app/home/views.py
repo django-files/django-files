@@ -1,5 +1,6 @@
 import logging
 from fractions import Fraction
+from urllib.parse import urlparse
 
 import markdown
 from api.views import auth_from_token, parse_expire, process_file_upload
@@ -72,6 +73,10 @@ def live_view(request, key):
         "is_owner": is_owner,
         "chat_user_info": chat_user_info,
     }
+    if is_owner:
+        site_settings = SiteSettings.objects.settings()
+        rtmp_host = urlparse(site_settings.site_url).hostname if site_settings.site_url else request.get_host().split(":")[0]
+        context["rtmp_host"] = rtmp_host
     return render(request, "live.html", context)
 
 
@@ -199,11 +204,13 @@ def streams_view(request):
     View  /streams/
     """
     log.debug("%s - streams_view: is_secure: %s", request.method, request.is_secure())
+    site_settings = SiteSettings.objects.settings()
+    rtmp_host = urlparse(site_settings.site_url).hostname if site_settings.site_url else request.get_host().split(":")[0]
     if request.user.is_superuser:
         users = CustomUser.objects.all()
-        context = {"users": users, "full_context": True}
+        context = {"users": users, "full_context": True, "rtmp_host": rtmp_host}
     else:
-        context = {"full_context": True}
+        context = {"full_context": True, "rtmp_host": rtmp_host}
     return render(request, "streams.html", context)
 
 
