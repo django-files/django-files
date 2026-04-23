@@ -59,9 +59,23 @@ rtmp://your-domain.com/live?token=YOUR_AUTH_TOKEN&title=My+Stream&description=Tu
 
 ## Resuming a Stream
 
-You can reuse any stream key to resume a previous stream. The stream record is updated with `is_live=true` and the start time is reset. Past stream history (viewer counts, recordings) is preserved.
+You can reuse any stream key to resume a previous stream.
 
 Note that having the title and description set in your URL will OVERWRITE any change made to the title and description in Django Files when a stream starts or restarts.
+
+## Network Setup
+
+RTMP uses **port 1935**. It must be reachable from the machine running OBS.
+
+**Docker** — port 1935 is not exposed by default. Add it to the nginx service in your `docker-compose.yaml`:
+
+```yaml
+ports:
+  - "80:80"
+  - "1935:1935"
+```
+
+**Home network** — if the server is behind a home router, forward TCP port 1935 to the server's local IP in your router's port forwarding settings. OBS should use your public IP or DDNS hostname if external, otherwise may use your django-files server's private ip.
 
 ## Finding Your Auth Token
 
