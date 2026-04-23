@@ -71,8 +71,8 @@ RTMP uses **port 1935**. It must be reachable from the machine running OBS.
 
 ```yaml
 ports:
-  - "80:80"
-  - "1935:1935"
+  - '80:80'
+  - '1935:1935'
 ```
 
 **Home network** — if the server is behind a home router, forward TCP port 1935 to the server's local IP in your router's port forwarding settings. OBS should use your public IP or DDNS hostname if external, otherwise may use your django-files server's private ip.
