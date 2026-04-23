@@ -653,7 +653,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         # Block names that match any registered username or display name to prevent impersonation.
         name_lower = custom_name.lower()
         user_name_matches = hasattr(user, "username") and user.username.lower() == name_lower
-        first_name_matches = bool(user.first_name) and user.first_name.lower() == name_lower
+        first_name_matches = (
+            hasattr(user, "first_name") and bool(user.first_name) and user.first_name.lower() == name_lower
+        )
         is_own_name = identity["user_id"] is not None and (user_name_matches or first_name_matches)
         if not is_own_name and await self._is_name_taken(custom_name):
             return self._error("That name is already used by a registered user.", **kwargs)
