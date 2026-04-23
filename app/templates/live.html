@@ -109,9 +109,14 @@
                     <div id="live-chat" class="d-flex flex-column flex-grow-1 overflow-hidden{% if not stream.live_chat %} chat-hidden{% endif %}">
                         <div class="chat-header d-flex align-items-center justify-content-between px-3 py-1 border-top border-bottom">
                             <strong class="small"><i class="fa-solid fa-comments me-1"></i>Live Chat</strong>
-                            <button class="btn btn-sm btn-outline-secondary" id="toggleViewers" title="Show viewers">
-                                <i class="fa-solid fa-users"></i> <span id="chat-viewer-count">0</span>
-                            </button>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-secondary" id="toggleNotificationSound" title="Toggle notification sound">
+                                    <i class="fa-solid fa-bell-slash"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" id="toggleViewers" title="Show viewers">
+                                    <i class="fa-solid fa-users"></i> <span id="chat-viewer-count">0</span>
+                                </button>
+                            </div>
                         </div>
                         <div id="chat-viewers-panel" class="chat-viewers-panel d-none px-3 py-2 border-bottom">
                         </div>
@@ -149,6 +154,7 @@
             isOwner: {{ is_owner|yesno:"true,false" }},
             ownerUserId: {{ stream.user.id }},
             userInfo: JSON.parse(document.getElementById('chat-user-info').textContent),
+            notificationSoundUrl: '{% static "audio/notification.mp3" %}',
         }
     </script>
     <script type="module" src="{% static 'js/chat.js' %}"></script>

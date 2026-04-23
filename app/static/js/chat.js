@@ -14,6 +14,34 @@ const isOwner = config.isOwner || false
 const ownerUserId = config.ownerUserId
 let liveChatEnabled = config.liveChatEnabled
 
+const NOTIFICATION_SOUND_KEY = 'chatNotificationSound'
+const notificationAudio = config.notificationSoundUrl
+    ? new Audio(config.notificationSoundUrl)
+    : null
+
+function isNotificationSoundEnabled() {
+    return localStorage.getItem(NOTIFICATION_SOUND_KEY) === 'true'
+}
+
+function setNotificationSound(enabled) {
+    localStorage.setItem(NOTIFICATION_SOUND_KEY, enabled ? 'true' : 'false')
+    updateNotificationSoundButton(enabled)
+}
+
+function updateNotificationSoundButton(enabled) {
+    const btn = document.getElementById('toggleNotificationSound')
+    if (!btn) return
+    const icon = btn.querySelector('i')
+    if (!icon) return
+    if (enabled) {
+        icon.className = 'fa-solid fa-bell'
+        btn.title = 'Notification sound on (click to disable)'
+    } else {
+        icon.className = 'fa-solid fa-bell-slash'
+        btn.title = 'Notification sound off (click to enable)'
+    }
+}
+
 const CHAT_COLORS = [
     '#dc3545', // red
     '#198754', // green
@@ -214,6 +242,19 @@ function applyChatSettings(data) {
 }
 
 initChat()
+updateNotificationSoundButton(isNotificationSoundEnabled())
+
+const notificationSoundBtn = document.getElementById('toggleNotificationSound')
+if (notificationSoundBtn) {
+    notificationSoundBtn.addEventListener('click', () => {
+        const next = !isNotificationSoundEnabled()
+        setNotificationSound(next)
+        appendSystemMessage(
+            next ? 'Notification sound enabled.' : 'Notification sound disabled.'
+        )
+    })
+}
+
 document.addEventListener('wsConnected', () => {
     addSocketListener()
     if (liveChatEnabled && !chatManuallyDisconnected) joinChat()
@@ -319,6 +360,11 @@ const CHAT_COMMANDS = [
         args: '<display_name>',
         description: "Remove a banned user's messages",
         ownerOnly: true,
+    },
+    {
+        command: '/notify',
+        args: '',
+        description: 'Toggle notification sound on/off',
     },
 ]
 
@@ -501,6 +547,13 @@ const COMMAND_DISPATCH = {
     '/description': cmdSetDescription,
     '/ban': cmdBan,
     '/ban-message-cleanup': cmdBanMessageCleanup,
+    '/notify': () => {
+        const next = !isNotificationSoundEnabled()
+        setNotificationSound(next)
+        appendSystemMessage(
+            next ? 'Notification sound enabled.' : 'Notification sound disabled.'
+        )
+    },
 }
 
 function executeCommand(input) {
@@ -657,5 +710,15 @@ function appendMessage(msg) {
         60
     if (isNearBottom || msg.user_id === userInfo.user_id) {
         chatMessages.scrollTop = chatMessages.scrollHeight
+    }
+
+    // Play notification sound for messages from others
+    if (
+        notificationAudio &&
+        isNotificationSoundEnabled() &&
+        msg.user_id !== userInfo.user_id
+    ) {
+        notificationAudio.currentTime = 0
+        notificationAudio.play().catch(() => {})
     }
 }
