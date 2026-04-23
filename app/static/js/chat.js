@@ -122,7 +122,8 @@ function handleHistory(data) {
 
 function handleViewerJoined(data) {
     const v = data.viewer
-    const key = v.viewer_id ?? (v.user_id != null ? String(v.user_id) : v.username)
+    const key =
+        v.viewer_id ?? (v.user_id != null ? String(v.user_id) : v.username)
     viewerMap.set(key, v)
     renderViewers()
 }
@@ -154,10 +155,16 @@ const MESSAGE_HANDLERS = {
     'chat-history': handleHistory,
     'chat-viewers': (data) => updateViewers(data.viewers),
     'chat-viewer-joined': handleViewerJoined,
-    'chat-viewer-left': (data) => { viewerMap.delete(data.viewer_id); renderViewers() },
+    'chat-viewer-left': (data) => {
+        viewerMap.delete(data.viewer_id)
+        renderViewers()
+    },
     'chat-settings': handleChatSettings,
-    'chat-retry': () => { if (joinChatRetries++ < 10) setTimeout(joinChat, 1500 * joinChatRetries) },
-    'chat-name-set': (data) => appendSystemMessage(`Your name has been set to: ${data.display_name}`),
+    'chat-retry': () => {
+        if (joinChatRetries++ < 10) setTimeout(joinChat, 1500 * joinChatRetries)
+    },
+    'chat-name-set': (data) =>
+        appendSystemMessage(`Your name has been set to: ${data.display_name}`),
     'chat-message-cleanup': handleMessageCleanup,
     'chat-banned': handleBanned,
 }
