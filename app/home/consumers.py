@@ -46,7 +46,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
     async def websocket_disconnect(self, event):
         log.debug("websocket_disconnect")
         if self._stream_chat_group:
-            await self._leave_chat_group()
+            await self._leave_chat_group(hard=False)
         await self.channel_layer.group_discard("home", self.channel_name)
         user = self.scope["user"]
         if hasattr(user, "id") and user.id:
@@ -423,19 +423,30 @@ class HomeConsumer(AsyncWebsocketConsumer):
         stream = await database_sync_to_async(lambda qs: qs[0] if qs else None)(stream)
         if not stream or not stream.live_chat:
             return self._error("Chat is not available.", **kwargs)
-        if self._stream_chat_group:
-            await self._leave_chat_group()
         identity = self._get_chat_identity()
         if identity is None:
+            if self._stream_chat_group:
+                await self._leave_chat_group()
             return {"event": "chat-retry", "name": name}
         redis = get_redis_connection("default")
         ban_key = f"stream:{name}:chat_banned"
         if redis.sismember(ban_key, identity["viewer_key"]):
+            if self._stream_chat_group:
+                await self._leave_chat_group()
             return {"event": "chat-banned", "name": name}
+        viewer_key = f"stream:{name}:chat_viewers"
+        reconnecting = redis.hexists(viewer_key, identity["viewer_key"])
+        if self._stream_chat_group:
+            if reconnecting:
+                # Silently re-add to the channel group without broadcasting leave/join
+                old_group = self._stream_chat_group
+                self._stream_chat_group = None
+                await self.channel_layer.group_discard(old_group, self.channel_name)
+            else:
+                await self._leave_chat_group()
         self._stream_chat_group = f"stream-chat-{name}"
         await self.channel_layer.group_add(self._stream_chat_group, self.channel_name)
         display_name, avatar_url = await self._get_chat_display()
-        viewer_key = f"stream:{name}:chat_viewers"
         viewer_data_dict = {
             "viewer_id": identity["viewer_key"],
             "user_id": identity["user_id"],
@@ -445,14 +456,15 @@ class HomeConsumer(AsyncWebsocketConsumer):
         }
         redis.hset(viewer_key, identity["viewer_key"], json.dumps(viewer_data_dict))
         redis.expire(viewer_key, 300)
-        # Broadcast delta: new viewer joined
-        await self.channel_layer.group_send(
-            self._stream_chat_group,
-            {
-                "type": _WS_SEND,
-                "text": json.dumps({"event": "chat-viewer-joined", "name": name, "viewer": viewer_data_dict}),
-            },
-        )
+        if not reconnecting:
+            # Broadcast delta: new viewer joined
+            await self.channel_layer.group_send(
+                self._stream_chat_group,
+                {
+                    "type": _WS_SEND,
+                    "text": json.dumps({"event": "chat-viewer-joined", "name": name, "viewer": viewer_data_dict}),
+                },
+            )
         # Send full viewer list + history only to the joining user
         viewers = self._get_chat_viewers(redis, viewer_key)
         recent = self._get_recent_messages(redis, name)
@@ -510,24 +522,25 @@ class HomeConsumer(AsyncWebsocketConsumer):
     async def leave_stream_chat(self, *, user_id: int = None, name: str = None, **kwargs):
         log.debug("leave_stream_chat")
         if self._stream_chat_group:
-            await self._leave_chat_group()
+            await self._leave_chat_group(hard=True)
 
-    async def _leave_chat_group(self):
+    async def _leave_chat_group(self, hard: bool = True):
         group = self._stream_chat_group
         self._stream_chat_group = None
         name = group.replace("stream-chat-", "")
         identity = self._get_chat_identity()
         redis = get_redis_connection("default")
         viewer_key = f"stream:{name}:chat_viewers"
-        redis.hdel(viewer_key, identity["viewer_key"])
         await self.channel_layer.group_discard(group, self.channel_name)
-        await self.channel_layer.group_send(
-            group,
-            {
-                "type": _WS_SEND,
-                "text": json.dumps({"event": "chat-viewer-left", "name": name, "viewer_id": identity["viewer_key"]}),
-            },
-        )
+        if hard:
+            redis.hdel(viewer_key, identity["viewer_key"])
+            await self.channel_layer.group_send(
+                group,
+                {
+                    "type": _WS_SEND,
+                    "text": json.dumps({"event": "chat-viewer-left", "name": name, "viewer_id": identity["viewer_key"]}),
+                },
+            )
 
     async def send_chat_message(self, *, user_id: int = None, name: str = None, message: str = None, **kwargs):
         log.debug("send_chat_message")
