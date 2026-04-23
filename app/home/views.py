@@ -2,6 +2,8 @@ import logging
 from fractions import Fraction
 from urllib.parse import urlparse
 
+from django.conf import settings as django_settings
+
 import markdown
 from api.views import auth_from_token, parse_expire, process_file_upload
 from django.contrib import messages
@@ -31,6 +33,30 @@ from settings.models import SiteSettings
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
+
+
+def get_rtmp_host(request, site_settings=None):
+    """Return (rtmp_host, is_custom) for RTMP URL generation.
+
+    Priority:
+      1. RTMP_HOST env var — explicit admin override (is_custom=True)
+      2. site_settings.site_url hostname
+      3. request.get_host() stripped of port
+    """
+    if django_settings.RTMP_HOST:
+        return django_settings.RTMP_HOST, True
+    if site_settings and site_settings.site_url:
+        return urlparse(site_settings.site_url).hostname, False
+    return request.get_host().split(":")[0], False
+
+
+def detect_cdn(request):
+    """Return CDN name if a known CDN proxy is detected via request headers, else None."""
+    if request.META.get("HTTP_CF_RAY"):
+        return "Cloudflare"
+    if request.META.get("HTTP_X_AMZ_CF_ID"):
+        return "CloudFront"
+    return None
 
 
 @cache_control(no_cache=True)
@@ -75,8 +101,10 @@ def live_view(request, key):
     }
     if is_owner:
         site_settings = SiteSettings.objects.settings()
-        rtmp_host = urlparse(site_settings.site_url).hostname if site_settings.site_url else request.get_host().split(":")[0]
+        rtmp_host, rtmp_host_is_custom = get_rtmp_host(request, site_settings)
         context["rtmp_host"] = rtmp_host
+        context["rtmp_host_is_custom"] = rtmp_host_is_custom
+        context["cdn_detected"] = None if rtmp_host_is_custom else detect_cdn(request)
     return render(request, "live.html", context)
 
 
@@ -205,12 +233,13 @@ def streams_view(request):
     """
     log.debug("%s - streams_view: is_secure: %s", request.method, request.is_secure())
     site_settings = SiteSettings.objects.settings()
-    rtmp_host = urlparse(site_settings.site_url).hostname if site_settings.site_url else request.get_host().split(":")[0]
+    rtmp_host, rtmp_host_is_custom = get_rtmp_host(request, site_settings)
+    cdn_detected = None if rtmp_host_is_custom else detect_cdn(request)
     if request.user.is_superuser:
         users = CustomUser.objects.all()
-        context = {"users": users, "full_context": True, "rtmp_host": rtmp_host}
+        context = {"users": users, "full_context": True, "rtmp_host": rtmp_host, "rtmp_host_is_custom": rtmp_host_is_custom, "cdn_detected": cdn_detected}
     else:
-        context = {"full_context": True, "rtmp_host": rtmp_host}
+        context = {"full_context": True, "rtmp_host": rtmp_host, "rtmp_host_is_custom": rtmp_host_is_custom, "cdn_detected": cdn_detected}
     return render(request, "streams.html", context)
 
 

@@ -137,6 +137,7 @@ const dataTablesOptions = {
             responsivePriority: 3,
             render: getContextMenu,
             defaultContent: '',
+            className: 'dt-ctx-menu-col',
         },
     ],
     select: {

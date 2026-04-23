@@ -87,6 +87,7 @@
         (function () {
             const rtmpHost = '{{ rtmp_host|escapejs }}'
             const userToken = '{{ request.user.authorization|escapejs }}'
+            const cdnDetected = '{{ cdn_detected|default:"" }}'
 
             function buildServerUrl() {
                 const title = document.getElementById('obsStreamTitle').value.trim()
@@ -112,6 +113,19 @@
                     })
                 })
             })
+
+            // CDN warning — value detected server-side on page load
+            if (cdnDetected) {
+                document.getElementById('obsSetupModal').addEventListener('show.bs.modal', function () {
+                    if (document.getElementById('cdn-warning')) return
+                    const warning = document.createElement('div')
+                    warning.id = 'cdn-warning'
+                    warning.className = 'alert alert-warning alert-dismissible fade show mb-3'
+                    warning.role = 'alert'
+                    warning.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i><strong>CDN detected (${cdnDetected}).</strong> RTMP port 1935 is not proxied — streaming may fail. Set <code>RTMP_HOST</code> in the server environment to a direct IP or hostname.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`
+                    document.querySelector('#obsSetupModal .modal-body').prepend(warning)
+                })
+            }
         })()
     </script>
     {% endif %}

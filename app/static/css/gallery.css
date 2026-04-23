@@ -119,6 +119,10 @@ div.dataTables_wrapper span.select-item {
     white-space: nowrap;
 }
 
+#files-table td.dt-ctx-menu-col {
+    overflow: visible;
+}
+
 #files-table .dj-file-link {
     display: flex;
     align-items: center;

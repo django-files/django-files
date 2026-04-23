@@ -162,6 +162,9 @@
                 btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Copied!'
                 setTimeout(() => { btn.innerHTML = orig }, 2000)
                 show_toast('Set OBS stream key to: {{ stream.name|escapejs }}', 'info', '6000')
+                {% if cdn_detected %}
+                show_toast('CDN detected ({{ cdn_detected|escapejs }}) — if streaming fails, set RTMP_HOST in the server environment to a direct IP or hostname.', 'warning', '10000')
+                {% endif %}
             })
         })
     </script>
