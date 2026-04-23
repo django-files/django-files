@@ -123,7 +123,7 @@ const dataTablesOptions = {
         url: '/api/streams/',
         dataSrc: 'streams',
     },
-    dom: "<'row'<'col-sm-12 col-md-6'><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end gap-2'<'user-filter-slot'>f>>rt<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+    dom: "<'row'<'col-sm-12 col-md-6 obs-button-slot'><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end gap-2'<'user-filter-slot'>f>>rt<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
 }
 
 function getStreamLink(data, type, row) {
@@ -234,6 +234,13 @@ $(document).ready(function () {
     const slot = document.querySelector('.user-filter-slot')
     if (userSelectContainer && slot) {
         slot.appendChild(userSelectContainer)
+    }
+
+    // Move OBS button into the left toolbar slot
+    const obsButtonContainer = document.getElementById('obs-button-container')
+    const obsSlot = document.querySelector('.obs-button-slot')
+    if (obsButtonContainer && obsSlot) {
+        obsSlot.appendChild(obsButtonContainer)
     }
 
     // Handle user filter for superusers

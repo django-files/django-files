@@ -15,6 +15,13 @@
 
     <div class="container-fluid pb-3 pt-2 px-4">
         <h1><i class="fa-solid fa-video me-2"></i> Streams</h1>
+        {% if request.user.is_authenticated %}
+        <div id="obs-button-container">
+            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#obsSetupModal" title="Get OBS setup instructions for a new stream">
+                <i class="fa-solid fa-satellite-dish me-1"></i> Stream with OBS
+            </button>
+        </div>
+        {% endif %}
         {% if request.user.is_superuser %}
                 <div id="user-select-container">
                     <select id="user" name="user" class="form-select" aria-label="Default select example">
@@ -28,6 +35,100 @@
         {% endif %}
         {% include 'streams/table.html'%}
     </div>
+
+    {% if request.user.is_authenticated %}
+    <!-- OBS Setup Modal -->
+    <div class="modal fade" id="obsSetupModal" tabindex="-1" aria-labelledby="obsSetupModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="obsSetupModalLabel"><i class="fa-solid fa-satellite-dish me-2"></i>Stream with OBS</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="obsStreamTitle" class="form-label fw-semibold">Title <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" class="form-control" id="obsStreamTitle" placeholder="My Stream Title" autocomplete="off">
+                    </div>
+                    <div class="mb-3">
+                        <label for="obsStreamDescription" class="form-label fw-semibold">Description <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" class="form-control" id="obsStreamDescription" placeholder="A short description..." autocomplete="off">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="obsServerUrl" class="form-label fw-semibold">Server URL</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace small" id="obsServerUrl" value="rtmp://{{ rtmp_host }}/live?token={{ request.user.authorization }}" readonly>
+                            <button class="btn btn-outline-secondary clip-btn" type="button" data-target="obsServerUrl" title="Copy server URL">
+                                <i class="fa-regular fa-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <p class="fw-semibold mb-2">How to set up in OBS</p>
+                    <ol class="mb-0" style="line-height: 2;">
+                        <li>Open OBS and go to <strong>Settings → Stream</strong></li>
+                        <li>Set <strong>Service</strong> to <strong>Custom...</strong></li>
+                        <li>Paste the <strong>Server URL</strong> above into the <strong>Server</strong> field</li>
+                        <li>Set <strong>Stream Key</strong> to any name you want for this stream <span class="text-muted">(e.g. <code>my-stream</code>)</span></li>
+                        <li>Click <strong>OK</strong>, then hit <strong>Start Streaming</strong></li>
+                    </ol>
+                    <p class="text-muted small mt-2 mb-0">The stream page will be live at <code>/live/&lt;your-stream-key&gt;/</code> once you connect. Reuse the same key to resume a previous stream.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const rtmpHost = '{{ rtmp_host|escapejs }}'
+            const userToken = '{{ request.user.authorization|escapejs }}'
+            const cdnDetected = '{{ cdn_detected|default:"" }}'
+
+            function buildServerUrl() {
+                const title = document.getElementById('obsStreamTitle').value.trim()
+                const desc = document.getElementById('obsStreamDescription').value.trim()
+                let server = `rtmp://${rtmpHost}/live?token=${userToken}`
+                if (title) server += `&title=${encodeURIComponent(title)}`
+                if (desc) server += `&description=${encodeURIComponent(desc)}`
+                document.getElementById('obsServerUrl').value = server
+            }
+
+            document.getElementById('obsStreamTitle').addEventListener('input', buildServerUrl)
+            document.getElementById('obsStreamDescription').addEventListener('input', buildServerUrl)
+
+            async function handleClipClick(btn) {
+                const text = document.getElementById(btn.dataset.target).value
+                if (!text) return
+                await navigator.clipboard.writeText(text)
+                const orig = btn.innerHTML
+                btn.innerHTML = '<i class="fa-solid fa-check"></i>'
+                setTimeout(() => { btn.innerHTML = orig }, 2000)
+            }
+
+            document.querySelectorAll('.clip-btn').forEach(function (btn) {
+                btn.addEventListener('click', () => handleClipClick(btn))
+            })
+
+            // CDN warning — value detected server-side on page load
+            if (cdnDetected) {
+                document.getElementById('obsSetupModal').addEventListener('show.bs.modal', function () {
+                    if (document.getElementById('cdn-warning')) return
+                    const warning = document.createElement('div')
+                    warning.id = 'cdn-warning'
+                    warning.className = 'alert alert-warning alert-dismissible fade show mb-3'
+                    warning.role = 'alert'
+                    warning.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i><strong>CDN detected (${cdnDetected}).</strong> RTMP port 1935 is not proxied — streaming may fail. Set <code>RTMP_HOST</code> in the server environment to a direct IP or hostname.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`
+                    document.querySelector('#obsSetupModal .modal-body').prepend(warning)
+                })
+            }
+        })()
+    </script>
+    {% endif %}
 
 {% endblock %}
 

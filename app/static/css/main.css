@@ -7,6 +7,18 @@
     z-index: 1005;
 }
 
+/* Toast notifications — frosted glass effect.
+   Use --bs-bg-opacity (not opacity) so backdrop-filter is not composited into
+   an offscreen layer, which breaks blur in most browsers.
+   --bs-bg-opacity makes text-bg-* colour backgrounds semi-transparent.
+   opacity-75 on toast-alert toasts is left alone intentionally. */
+.toast {
+    --bs-bg-opacity: 0.6;
+
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+
 /* Bring Menu Above Uppy Menu */
 .dropdown-menu {
     z-index: 1005;

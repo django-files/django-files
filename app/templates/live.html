@@ -103,15 +103,27 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row mt-2">
+                            <div class="col-sm">
+                                <button class="btn btn-sm btn-outline-secondary w-100" id="copyObsUrl" title="Copy OBS server URL (with auth token) to clipboard">
+                                    <i class="fa-solid fa-satellite-dish me-1"></i> Copy OBS Server URL
+                                </button>
+                            </div>
+                        </div>
                         {% endif %}
                     </div>
                     {% if stream.live_chat or is_owner %}
                     <div id="live-chat" class="d-flex flex-column flex-grow-1 overflow-hidden{% if not stream.live_chat %} chat-hidden{% endif %}">
                         <div class="chat-header d-flex align-items-center justify-content-between px-3 py-1 border-top border-bottom">
                             <strong class="small"><i class="fa-solid fa-comments me-1"></i>Live Chat</strong>
-                            <button class="btn btn-sm btn-outline-secondary" id="toggleViewers" title="Show viewers">
-                                <i class="fa-solid fa-users"></i> <span id="chat-viewer-count">0</span>
-                            </button>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-secondary" id="toggleNotificationSound" title="Toggle notification sound">
+                                    <i class="fa-solid fa-bell-slash"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" id="toggleViewers" title="Show viewers">
+                                    <i class="fa-solid fa-users"></i> <span id="chat-viewer-count">0</span>
+                                </button>
+                            </div>
                         </div>
                         <div id="chat-viewers-panel" class="chat-viewers-panel d-none px-3 py-2 border-bottom">
                         </div>
@@ -140,6 +152,23 @@
     <script type="text/javascript" src="{% static 'js/live.js' %}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
+    {% if is_owner %}
+    <script>
+        document.getElementById('copyObsUrl').addEventListener('click', function () {
+            const serverUrl = 'rtmp://{{ rtmp_host|escapejs }}/live?token={{ request.user.authorization|escapejs }}'
+            navigator.clipboard.writeText(serverUrl).then(() => {
+                const btn = document.getElementById('copyObsUrl')
+                const orig = btn.innerHTML
+                btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Copied!'
+                setTimeout(() => { btn.innerHTML = orig }, 2000)
+                show_toast('Set OBS stream key to: {{ stream.name|escapejs }}', 'info', '6000')
+                {% if cdn_detected %}
+                show_toast('CDN detected ({{ cdn_detected|escapejs }}) — if streaming fails, set RTMP_HOST in the server environment to a direct IP or hostname.', 'warning', '10000')
+                {% endif %}
+            })
+        })
+    </script>
+    {% endif %}
     {% if stream.live_chat or is_owner %}
     {{ chat_user_info|json_script:"chat-user-info" }}
     <script>
@@ -149,6 +178,7 @@
             isOwner: {{ is_owner|yesno:"true,false" }},
             ownerUserId: {{ stream.user.id }},
             userInfo: JSON.parse(document.getElementById('chat-user-info').textContent),
+            notificationSoundUrl: '{% static "audio/notification.mp3" %}',
         }
     </script>
     <script type="module" src="{% static 'js/chat.js' %}"></script>
