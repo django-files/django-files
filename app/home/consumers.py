@@ -71,6 +71,12 @@ class HomeConsumer(AsyncWebsocketConsumer):
         # handle text messages
         if "ping" == event["text"]:
             log.debug("ping->pong")
+            if self._stream_chat_group:
+                name = self._stream_chat_group.replace("stream-chat-", "")
+                identity = self._get_chat_identity()
+                if identity:
+                    redis = get_redis_connection("default")
+                    redis.set(f"stream:{name}:chat_presence:{identity['viewer_key']}", 1, ex=60)
             return await self.send(text_data="pong")
 
         # handle json messages
@@ -435,15 +441,32 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 await self._leave_chat_group()
             return {"event": "chat-banned", "name": name}
         viewer_key = f"stream:{name}:chat_viewers"
-        reconnecting = redis.hexists(viewer_key, identity["viewer_key"])
+        presence_key = f"stream:{name}:chat_presence:{identity['viewer_key']}"
+        # Reconnecting = already in the hash with a live presence key (hasn't expired yet).
+        # Stale viewers are in the hash but their presence key expired — pruned below.
+        in_hash = redis.hexists(viewer_key, identity["viewer_key"])
+        reconnecting = in_hash and bool(redis.exists(presence_key))
+        # Prune stale viewers and broadcast their departure before processing this join.
+        stale = await self._prune_stale_viewers(redis, name, viewer_key)
+        if stale:
+            chat_group = f"stream-chat-{name}"
+            for stale_viewer_id in stale:
+                await self.channel_layer.group_send(
+                    chat_group,
+                    {
+                        "type": _WS_SEND,
+                        "text": json.dumps({"event": "chat-viewer-left", "name": name, "viewer_id": stale_viewer_id}),
+                    },
+                )
         if self._stream_chat_group:
             if reconnecting:
-                # Silently re-add to the channel group without broadcasting leave/join
                 old_group = self._stream_chat_group
                 self._stream_chat_group = None
                 await self.channel_layer.group_discard(old_group, self.channel_name)
             else:
                 await self._leave_chat_group()
+        # Set/refresh presence with a 60s TTL (client pings every 30s, so two missed pings = gone).
+        redis.set(presence_key, 1, ex=60)
         self._stream_chat_group = f"stream-chat-{name}"
         await self.channel_layer.group_add(self._stream_chat_group, self.channel_name)
         display_name, avatar_url = await self._get_chat_display()
@@ -534,6 +557,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard(group, self.channel_name)
         if hard:
             redis.hdel(viewer_key, identity["viewer_key"])
+            redis.delete(f"stream:{name}:chat_presence:{identity['viewer_key']}")
             await self.channel_layer.group_send(
                 group,
                 {
@@ -541,6 +565,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
                     "text": json.dumps({"event": "chat-viewer-left", "name": name, "viewer_id": identity["viewer_key"]}),
                 },
             )
+        # Soft disconnect: just leave the channel group. The presence key expires on its
+        # own TTL; _prune_stale_viewers cleans up the hash on the next join.
 
     async def send_chat_message(self, *, user_id: int = None, name: str = None, message: str = None, **kwargs):
         log.debug("send_chat_message")
@@ -615,16 +641,28 @@ class HomeConsumer(AsyncWebsocketConsumer):
         custom_name = custom_name.strip()[:32].replace("#", "")
         if not custom_name:
             return self._error("Invalid name.", **kwargs)
-        rate_key = f"chat:name_change:{identity['viewer_key']}"
-        redis_rate = get_redis_connection("default")
-        ttl = redis_rate.ttl(rate_key)
-        if ttl > 0:
-            mins, secs = divmod(ttl, 60)
-            wait = f"{mins}m {secs}s" if mins else f"{secs}s"
-            return self._error(f"Name change on cooldown. Try again in {wait}.", **kwargs)
+        user = self.scope["user"]
+        is_admin = getattr(user, "is_superuser", False)
+        if not is_admin:
+            rate_key = f"chat:name_change:{identity['viewer_key']}"
+            redis_rate = get_redis_connection("default")
+            ttl = redis_rate.ttl(rate_key)
+            if ttl > 0:
+                mins, secs = divmod(ttl, 60)
+                wait = f"{mins}m {secs}s" if mins else f"{secs}s"
+                return self._error(f"Name change on cooldown. Try again in {wait}.", **kwargs)
         # Block names that match any registered username or display name (first_name) to prevent impersonation.
         # Authenticated users have no # discriminator, so the full custom_name must not collide.
-        if await self._is_name_taken(custom_name):
+        # Exception: an authenticated user may always set their name back to their own username or first name.
+        is_own_name = (
+            identity["user_id"] is not None
+            and hasattr(user, "username")
+            and (
+                user.username.lower() == custom_name.lower()
+                or (user.first_name and user.first_name.lower() == custom_name.lower())
+            )
+        )
+        if not is_own_name and await self._is_name_taken(custom_name):
             return self._error("That name is already used by a registered user.", **kwargs)
         session = self.scope.get("session")
         display_name = custom_name
@@ -638,7 +676,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if self._stream_chat_group:
             redis = get_redis_connection("default")
             await self._update_viewer_display_name(redis, name, identity, display_name)
-        redis_rate.set(rate_key, 1, ex=300)
+        if not is_admin:
+            redis_rate.set(rate_key, 1, ex=300)
         return {"event": "chat-name-set", "name": name, "display_name": display_name}
 
     async def ban_chat_user(self, *, user_id: int = None, name: str = None, target: str = None, **kwargs):
@@ -824,6 +863,21 @@ class HomeConsumer(AsyncWebsocketConsumer):
             except (json.JSONDecodeError, TypeError):
                 pass
         return viewers
+
+    @staticmethod
+    async def _prune_stale_viewers(redis, name, viewer_key):
+        """
+        Remove viewers from the hash whose presence key has expired (closed browser,
+        missed two 30s heartbeats). Returns pruned viewer_ids for leave broadcasts.
+        """
+        raw = redis.hgetall(viewer_key)
+        stale = []
+        for field in raw:
+            field = field.decode() if isinstance(field, bytes) else field
+            if not redis.exists(f"stream:{name}:chat_presence:{field}"):
+                redis.hdel(viewer_key, field)
+                stale.append(field)
+        return stale
 
     @staticmethod
     def _get_recent_messages(redis, stream_name):
