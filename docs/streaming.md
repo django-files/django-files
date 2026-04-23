@@ -17,6 +17,7 @@ This app accepts live streams over RTMP. Streams are created automatically the f
    ```text
    rtmp://your-domain.com/live?token=YOUR_AUTH_TOKEN
    ```
+
 4. Set **Stream Key** to:
 
    ```text

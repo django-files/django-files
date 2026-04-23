@@ -47,16 +47,16 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Title <span class="text-muted fw-normal">(optional)</span></label>
+                        <label for="obsStreamTitle" class="form-label fw-semibold">Title <span class="text-muted fw-normal">(optional)</span></label>
                         <input type="text" class="form-control" id="obsStreamTitle" placeholder="My Stream Title" autocomplete="off">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Description <span class="text-muted fw-normal">(optional)</span></label>
+                        <label for="obsStreamDescription" class="form-label fw-semibold">Description <span class="text-muted fw-normal">(optional)</span></label>
                         <input type="text" class="form-control" id="obsStreamDescription" placeholder="A short description..." autocomplete="off">
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Server URL</label>
+                        <label for="obsServerUrl" class="form-label fw-semibold">Server URL</label>
                         <div class="input-group">
                             <input type="text" class="form-control font-monospace small" id="obsServerUrl" value="rtmp://{{ rtmp_host }}/live?token={{ request.user.authorization }}" readonly>
                             <button class="btn btn-outline-secondary clip-btn" type="button" data-target="obsServerUrl" title="Copy server URL">
@@ -101,17 +101,17 @@
             document.getElementById('obsStreamTitle').addEventListener('input', buildServerUrl)
             document.getElementById('obsStreamDescription').addEventListener('input', buildServerUrl)
 
+            async function handleClipClick(btn) {
+                const text = document.getElementById(btn.dataset.target).value
+                if (!text) return
+                await navigator.clipboard.writeText(text)
+                const orig = btn.innerHTML
+                btn.innerHTML = '<i class="fa-solid fa-check"></i>'
+                setTimeout(() => { btn.innerHTML = orig }, 2000)
+            }
+
             document.querySelectorAll('.clip-btn').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    const targetId = btn.getAttribute('data-target')
-                    const text = document.getElementById(targetId).value
-                    if (!text) return
-                    navigator.clipboard.writeText(text).then(() => {
-                        const orig = btn.innerHTML
-                        btn.innerHTML = '<i class="fa-solid fa-check"></i>'
-                        setTimeout(() => { btn.innerHTML = orig }, 2000)
-                    })
-                })
+                btn.addEventListener('click', () => handleClipClick(btn))
             })
 
             // CDN warning — value detected server-side on page load
