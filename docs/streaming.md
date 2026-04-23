@@ -13,12 +13,13 @@ This app accepts live streams over RTMP. Streams are created automatically the f
 1. Open OBS and go to **Settings → Stream**
 2. Set **Service** to `Custom...`
 3. Set **Server** to:
-   ```
+
+   ```text
    rtmp://your-domain.com/live?token=YOUR_AUTH_TOKEN
    ```
 4. Set **Stream Key** to:
 
-   ```
+   ```text
    your-stream-name
    ```
 
@@ -32,7 +33,7 @@ The stream page will be available at `https://your-domain.com/live/your-stream-n
 
 Optional metadata is passed as query parameters on the **Server URL**. OBS sends the full server URL to the server on connect, so params there are available at stream start:
 
-```
+```text
 rtmp://your-domain.com/live?token=YOUR_AUTH_TOKEN&title=My+Stream+Title&description=Stream+description+here
 ```
 
@@ -51,7 +52,7 @@ All optional parameters are appended to the Server URL (after the token):
 
 Example with all options:
 
-```
+```text
 rtmp://your-domain.com/live?token=YOUR_AUTH_TOKEN&title=My+Stream&description=Tune+in&public=true&viewer_limit=100
 ```
 

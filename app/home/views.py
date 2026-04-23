@@ -2,10 +2,9 @@ import logging
 from fractions import Fraction
 from urllib.parse import urlparse
 
-from django.conf import settings as django_settings
-
 import markdown
 from api.views import auth_from_token, parse_expire, process_file_upload
+from django.conf import settings as django_settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -36,7 +35,8 @@ cache_seconds = 60 * 60 * 4
 
 
 def get_rtmp_host(request, site_settings=None):
-    """Return (rtmp_host, is_custom) for RTMP URL generation.
+    """
+    Return (rtmp_host, is_custom) for RTMP URL generation.
 
     Priority:
       1. RTMP_HOST env var — explicit admin override (is_custom=True)
@@ -237,9 +237,20 @@ def streams_view(request):
     cdn_detected = None if rtmp_host_is_custom else detect_cdn(request)
     if request.user.is_superuser:
         users = CustomUser.objects.all()
-        context = {"users": users, "full_context": True, "rtmp_host": rtmp_host, "rtmp_host_is_custom": rtmp_host_is_custom, "cdn_detected": cdn_detected}
+        context = {
+            "users": users,
+            "full_context": True,
+            "rtmp_host": rtmp_host,
+            "rtmp_host_is_custom": rtmp_host_is_custom,
+            "cdn_detected": cdn_detected,
+        }
     else:
-        context = {"full_context": True, "rtmp_host": rtmp_host, "rtmp_host_is_custom": rtmp_host_is_custom, "cdn_detected": cdn_detected}
+        context = {
+            "full_context": True,
+            "rtmp_host": rtmp_host,
+            "rtmp_host_is_custom": rtmp_host_is_custom,
+            "cdn_detected": cdn_detected,
+        }
     return render(request, "streams.html", context)
 
 
