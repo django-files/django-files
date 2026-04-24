@@ -242,6 +242,7 @@ function applyChatSettings(data) {
 }
 
 initChat()
+fetchChatCommands()
 updateNotificationSoundButton(isNotificationSoundEnabled())
 
 const notificationSoundBtn = document.getElementById('toggleNotificationSound')
@@ -322,53 +323,35 @@ if (toggleViewersBtn) {
 let myViewerId = null
 let chatManuallyDisconnected = false
 
-const CHAT_COMMANDS = [
-    {
-        command: '/set-name',
-        args: '<name>',
-        description: 'Set your chat display name',
-    },
-    {
-        command: '/leave',
-        args: '',
-        description: 'Leave chat and hide messages',
-    },
-    {
-        command: '/join',
-        args: '',
-        description: 'Rejoin chat and resume messages',
-        condition: () => chatManuallyDisconnected,
-    },
-    {
-        command: '/title',
-        args: '<title>',
-        description: 'Set the stream title',
-        ownerOnly: true,
-    },
-    {
-        command: '/description',
-        args: '<description>',
-        description: 'Set the stream description',
-        ownerOnly: true,
-    },
-    {
-        command: '/ban',
-        args: '<display_name>',
-        description: 'Ban a user from chat',
-        ownerOnly: true,
-    },
-    {
-        command: '/ban-message-cleanup',
-        args: '<display_name>',
-        description: "Remove a banned user's messages",
-        ownerOnly: true,
-    },
+// Client-only commands that are not returned by the server
+const CLIENT_ONLY_COMMANDS = [
     {
         command: '/notify',
         args: '',
         description: 'Toggle notification sound on/off',
     },
 ]
+
+// Start with client-only defaults; replaced after fetchChatCommands()
+let CHAT_COMMANDS = [...CLIENT_ONLY_COMMANDS]
+
+async function fetchChatCommands() {
+    try {
+        const resp = await fetch(`/api/stream/commands/${streamName}/`)
+        if (!resp.ok) return
+        const data = await resp.json()
+        const serverCommands = (data.commands || []).map((c) => {
+            // /join is only useful when manually disconnected
+            if (c.command === '/join') {
+                return { ...c, condition: () => chatManuallyDisconnected }
+            }
+            return c
+        })
+        CHAT_COMMANDS = [...serverCommands, ...CLIENT_ONLY_COMMANDS]
+    } catch {
+        // keep defaults on network error
+    }
+}
 
 // Autocomplete element created eagerly — no lazy-init needed
 const autocompleteEl = document.createElement('div')
