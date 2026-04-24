@@ -43,6 +43,7 @@ urlpatterns = [
     path("stream/done/", views.stream_done_view, name="stream-done"),
     path("stream/ping/<str:name>/", views.stream_ping_view, name="stream-ping"),
     path("stream/viewers/<str:name>/", views.stream_viewers_view, name="stream-viewers"),
+    path("stream/commands/<str:name>/", views.stream_commands_view, name="stream-commands"),
     # path("stream/update/", views.stream_update_view, name="stream-update"),
     # path("stream/play/", views.stream_update_view, name="stream-play"),
     # path("stream/play_done/", views.stream_update_view, name="stream-play_done"),

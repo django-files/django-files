@@ -931,6 +931,55 @@ def stream_viewers_view(request, name):
     return render(request, "stream/overlay/viewers.html", context)
 
 
+@csrf_exempt
+@require_http_methods(["GET"])
+@auth_from_token(no_fail=True)
+def stream_commands_view(request, name):
+    """
+    View /api/stream/commands/<name>/
+
+    Returns slash commands available to the requesting user for the given stream,
+    plus chat context (live_chat, anonymous_chat) so the client knows whether to
+    show the input bar.  Auth is optional.
+    """
+    log.debug("stream_commands_view: name=%s user=%s", name, request.user)
+    stream = Stream.objects.filter(name=name).first()
+    if not stream:
+        return JsonResponse({"error": "Stream not found."}, status=404)
+
+    user = request.user
+    is_authenticated = bool(getattr(user, "is_authenticated", False) and user.pk)
+    is_owner = is_authenticated and (user == stream.user or getattr(user, "is_superuser", False))
+
+    commands = []
+
+    if stream.live_chat:
+        commands += [
+            {"command": "/join",  "args": "",        "description": "Join the stream chat",            "category": "chat"},
+            {"command": "/leave", "args": "",        "description": "Leave the stream chat",           "category": "chat"},
+        ]
+        if is_authenticated or stream.anonymous_chat:
+            commands.append({"command": "/set-name", "args": "<name>", "description": "Set your chat display name", "category": "chat"})
+        if is_owner:
+            commands += [
+                {"command": "/title",               "args": "<title>",        "description": "Set the stream title",                    "category": "stream"},
+                {"command": "/description",         "args": "<description>",  "description": "Set the stream description",              "category": "stream"},
+                {"command": "/ban",                 "args": "<display_name>", "description": "Ban a user from chat",                    "category": "moderation"},
+                {"command": "/ban-message-cleanup", "args": "<display_name>", "description": "Remove all messages from a banned user",   "category": "moderation"},
+            ]
+
+    return JsonResponse({
+        "stream": name,
+        "title": stream.title or "",
+        "description": stream.description or "",
+        "is_live": stream.is_live,
+        "is_public": stream.public,  # model field is `public`
+        "live_chat": stream.live_chat,
+        "anonymous_chat": stream.anonymous_chat,
+        "commands": commands,
+    })
+
+
 def get_viewer_count(name):
     log.debug("stream_viewers_view - name: %s", name)
     key = f"stream:{name}:viewers"
