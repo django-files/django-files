@@ -33,14 +33,9 @@ let fileData = []
 let fetchLock = false
 let filesDataTable
 let selectedFileIds = []
+let skeletonObserver = null
 
 document.addEventListener('DOMContentLoaded', initGallery)
-document.addEventListener('scroll', debounce(scrollHandle))
-window.addEventListener('resize', debounce(scrollHandle))
-
-async function scrollHandle(event) {
-    await pageScroll(event, nextPage, addNodes)
-}
 
 async function initGallery() {
     console.log('Init Gallery')
@@ -54,7 +49,6 @@ async function initGallery() {
     }
     await addNodes()
     // fillInterval = setInterval(fillPage, 250)
-    window.dispatchEvent(new Event('resize'))
     filesDataTable.on('select', function (e, dt, type, indexes) {
         document.getElementById('bulk-actions').disabled = false
         console.log(`file-${dt.data().id}`)
@@ -82,6 +76,60 @@ $('#user').on('change', function (event) {
 })
 
 /**
+ * Append skeleton placeholders after the current view's content and observe
+ * the first one so a fetch is triggered before the user scrolls into them.
+ * @function showSkeletons
+ */
+function showSkeletons() {
+    if (!nextPage || !window.location.pathname.includes('gallery')) return
+
+    for (let i = 0; i < 8; i++) {
+        const card = document
+            .querySelector('.d-none .gallery-outer')
+            .cloneNode(false)
+        card.id = `gallery-skeleton-${i}`
+        card.classList.add(
+            'gallery-skeleton-card',
+            'm-1',
+            'rounded-1',
+            'border',
+            'border-3',
+            'border-secondary'
+        )
+        galleryContainer.appendChild(card)
+    }
+
+    const firstSkeleton = document.getElementById('gallery-skeleton-0')
+    if (firstSkeleton) {
+        skeletonObserver = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    skeletonObserver.disconnect()
+                    skeletonObserver = null
+                    addNodes()
+                }
+            },
+            { rootMargin: '300px' }
+        )
+        skeletonObserver.observe(firstSkeleton)
+    }
+}
+
+/**
+ * Remove all skeleton placeholders and disconnect the observer.
+ * @function hideSkeletons
+ */
+function hideSkeletons() {
+    if (skeletonObserver) {
+        skeletonObserver.disconnect()
+        skeletonObserver = null
+    }
+    document
+        .querySelectorAll('[id^="gallery-skeleton-"]')
+        .forEach((el) => el.remove())
+}
+
+/**
  * Add Next Page Nodes to Container
  * TODO: Move the CSS to gallery.css
  *       Use HTML Templates and .cloneNode
@@ -93,6 +141,7 @@ async function addNodes() {
         return console.warn('No Next Page:', nextPage)
     }
     if (!fetchLock) {
+        hideSkeletons()
         filesDataTable.processing(true)
         fetchLock = true
         const data = await fetchFiles(nextPage, 25, params.get('album'))
@@ -113,6 +162,7 @@ async function addNodes() {
         }
         filesDataTable.processing(false)
         fetchLock = false
+        showSkeletons()
     } else {
         console.debug('Another files fetch in progress waiting.')
     }
@@ -338,6 +388,7 @@ function mouseOut(event) {
 
 function changeView(event) {
     event.preventDefault()
+    hideSkeletons()
     if (event.srcElement.innerHTML === 'List') {
         while (galleryContainer.firstChild) {
             galleryContainer.removeChild(galleryContainer.lastChild)
@@ -355,11 +406,15 @@ function changeView(event) {
         })
         dtContainer.hidden = true
         window.history.replaceState({}, null, '/gallery/' + '?' + params)
+        while (galleryContainer.firstChild) {
+            galleryContainer.removeChild(galleryContainer.lastChild)
+        }
         fileData.forEach(function (item, index) {
             addGalleryImage(item)
         })
         showList.style.fontWeight = 'normal'
         showGallery.style.fontWeight = 'bold'
+        showSkeletons()
     }
 }
 

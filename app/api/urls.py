@@ -40,6 +40,7 @@ urlpatterns = [
     path("auth/application/", views.auth_application, name="auth-application"),
     path("session/<path:sessionid>", views.session_view, name="session"),
     path("stream/auth/", views.stream_auth_view, name="stream-auth"),
+    path("stream/ingest/", views.stream_ingest_view, name="stream-ingest"),
     path("stream/done/", views.stream_done_view, name="stream-done"),
     path("stream/ping/<str:name>/", views.stream_ping_view, name="stream-ping"),
     path("stream/viewers/<str:name>/", views.stream_viewers_view, name="stream-viewers"),

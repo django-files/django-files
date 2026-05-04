@@ -876,6 +876,21 @@ def stream_done_view(request):
     return HttpResponse()
 
 
+@login_required
+def stream_ingest_view(request):
+    """
+    View /stream/ingest/
+    Returns the RTMP ingest host for this server, derived the same way
+    the web UI does (RTMP_HOST env var → site_url hostname → request host).
+    The port is always 1935 server-side; clients may override it locally.
+    """
+    from home.views import get_rtmp_host
+    from home.models import SiteSettings
+    site_settings = SiteSettings.objects.settings()
+    rtmp_host, _ = get_rtmp_host(request, site_settings)
+    return JsonResponse({"rtmp_host": rtmp_host, "rtmp_port": 1935})
+
+
 # @csrf_exempt
 # def stream_update_view(request):
 #     """
