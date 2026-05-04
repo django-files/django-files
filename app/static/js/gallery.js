@@ -49,7 +49,7 @@ async function initGallery() {
     }
     await addNodes()
     // fillInterval = setInterval(fillPage, 250)
-    filesDataTable.on('select', function (e, dt, type, indexes) {
+    filesDataTable.on('select', function (_e, dt, _type, _indexes) {
         document.getElementById('bulk-actions').disabled = false
         console.log(`file-${dt.data().id}`)
         let checkbox = document.getElementById(`file-${dt.data().id}`)
@@ -57,7 +57,7 @@ async function initGallery() {
             checkbox.classList.remove('d-none')
         }
     })
-    filesDataTable.on('deselect', function (e, dt, type, indexes) {
+    filesDataTable.on('deselect', function (_e, _dt, _type, _indexes) {
         if (filesDataTable.rows({ selected: true }).count() === 0) {
             document.getElementById('bulk-actions').disabled = true
         }
@@ -65,7 +65,7 @@ async function initGallery() {
     filesDataTable?.columns.adjust().draw()
 }
 
-$('#user').on('change', function (event) {
+$('#user').on('change', function (_event) {
     let user = $(this).val()
     console.log(`user: ${user}`)
     if (user) {
@@ -81,7 +81,7 @@ $('#user').on('change', function (event) {
  * @function showSkeletons
  */
 function showSkeletons() {
-    if (!nextPage || !window.location.pathname.includes('gallery')) return
+    if (!nextPage || !globalThis.location.pathname.includes('gallery')) return
 
     for (let i = 0; i < 8; i++) {
         const card = document
@@ -390,8 +390,8 @@ function changeView(event) {
     event.preventDefault()
     hideSkeletons()
     if (event.srcElement.innerHTML === 'List') {
-        while (galleryContainer.firstChild) {
-            galleryContainer.removeChild(galleryContainer.lastChild)
+        while (galleryContainer.lastChild) {
+            galleryContainer.lastChild.remove()
         }
         dtContainer.hidden = false
         window.history.replaceState({}, null, '/files/' + '?' + params)
@@ -406,10 +406,10 @@ function changeView(event) {
         })
         dtContainer.hidden = true
         window.history.replaceState({}, null, '/gallery/' + '?' + params)
-        while (galleryContainer.firstChild) {
-            galleryContainer.removeChild(galleryContainer.lastChild)
+        while (galleryContainer.lastChild) {
+            galleryContainer.lastChild.remove()
         }
-        fileData.forEach(function (item, index) {
+        fileData.forEach(function (item, _index) {
             addGalleryImage(item)
         })
         showList.style.fontWeight = 'normal'

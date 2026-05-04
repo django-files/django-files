@@ -96,14 +96,14 @@ async function domContentLoaded() {
     window.dispatchEvent(new Event('resize'))
 }
 
-function renderDeleteBtn(data, type, row, meta) {
+function renderDeleteBtn(data, type, row, _meta) {
     let deleteBtn = deleteAlbumButton.cloneNode(true)
     deleteBtn.setAttribute('data-hook-id', row.id)
     deleteBtn.addEventListener('click', handleDeleteClick)
     return deleteBtn
 }
 
-function renderAlbumLink(data, type, row, meta) {
+function renderAlbumLink(data, type, row, _meta) {
     let max_name_length
     if (screen.width < 500) {
         max_name_length = 20
@@ -160,7 +160,7 @@ $('#albumsForm').on('submit', function (event) {
         url: form.attr('action'),
         data: JSON.stringify(data),
         headers: { 'X-CSRFToken': csrftoken },
-        success: function (data) {
+        success: function (_data) {
             form.trigger('reset')
             $('#create-album-modal').modal('hide')
         },
@@ -171,13 +171,13 @@ $('#albumsForm').on('submit', function (event) {
     })
 })
 
-function handleDeleteClick(event) {
+function handleDeleteClick(_event) {
     const pk = $(this).data('hook-id')
     $('#album-delete-confirm').data('pk', pk)
     deleteAlbumModal.modal('show')
 }
 
-$('#album-delete-confirm').on('click', function (event) {
+$('#album-delete-confirm').on('click', function (_event) {
     const pk = $(this).data('pk')
     socket.send(JSON.stringify({ method: 'delete-album', pk: pk }))
     deleteAlbumModal.modal('hide')

@@ -198,7 +198,7 @@ function messageStreamTitleUpdate(data) {
     show_toast(`Stream title updated to "${data.title}"`)
 }
 
-function messageStreamDescriptionUpdate(data) {
+function messageStreamDescriptionUpdate(_data) {
     show_toast(`Stream description updated.`)
 }
 

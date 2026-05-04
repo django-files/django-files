@@ -59,7 +59,7 @@ const swiperThumbs = document.getElementById('swiper-thumbs')
 //     },
 // })
 
-document.addEventListener('DOMContentLoaded', (event) => {
+document.addEventListener('DOMContentLoaded', () => {
     console.log(`%c DOMContentLoaded: slideshow.js`, 'color: Lime')
     // console.log('albumsDataTable:', albumsDataTable)
 })
@@ -74,6 +74,7 @@ let imagesSwiper = null
  * Full-size images are NOT loaded until the slideshow offcanvas is opened.
  * If the slideshow is already open, new slides are appended immediately.
  */
+// eslint-disable-next-line no-unused-vars
 function slideshowCallback(data) {
     console.log(`%c slideshowCallback: data:`, 'color: Yellow', data)
     for (const file of data.files) {

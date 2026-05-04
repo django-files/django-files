@@ -160,7 +160,7 @@ function getStreamTitle(data, type, row) {
     return data
 }
 
-function getLiveStatus(data, type, row) {
+function getLiveStatus(data, type, _row) {
     if (type === 'display') {
         if (data) {
             return '<span class="badge bg-danger"><i class="fa-solid fa-video me-1"></i>Live</span>'
@@ -171,7 +171,7 @@ function getLiveStatus(data, type, row) {
     return data
 }
 
-function getEndedAt(data, type, row) {
+function getEndedAt(data, type, _row) {
     if (type === 'display') {
         if (data) {
             return moment(data).format('DD MMM YYYY, kk:mm')
@@ -182,7 +182,7 @@ function getEndedAt(data, type, row) {
     return data
 }
 
-function getPasswordIcon(data, type, row) {
+function getPasswordIcon(data, type, _row) {
     if (type === 'display') {
         if (data) {
             return faKey.outerHTML
@@ -193,7 +193,7 @@ function getPasswordIcon(data, type, row) {
     return data
 }
 
-function getPublicIcon(data, type, row) {
+function getPublicIcon(data, type, _row) {
     if (type === 'display') {
         if (data) {
             return faGlobe.outerHTML

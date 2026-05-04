@@ -187,7 +187,7 @@ export function initFilesTable(search = true, ordering = true, info = true) {
 // ***************************
 // Custom DataTables Renderers
 
-function getFileLink(data, type, row, meta) {
+function getFileLink(data, type, row, _meta) {
     const fileLinkElem = fileLink.cloneNode(true)
     fileLinkElem.classList.add(`dj-file-link-${row.id}`)
     fileLinkElem
@@ -208,7 +208,7 @@ function getNameSize(width) {
     return Math.round(0.04 * width + 8)
 }
 
-function getPwIcon(data, type, row, meta) {
+function getPwIcon(data, type, row, _meta) {
     const pwIcon = faKey.cloneNode(true)
     pwIcon.classList.add('passwordStatus')
     if (!row.password) {
@@ -217,7 +217,7 @@ function getPwIcon(data, type, row, meta) {
     return pwIcon
 }
 
-function getPrivateIcon(data, type, row, meta) {
+function getPrivateIcon(data, type, row, _meta) {
     const privateIcon = faLock.cloneNode(true)
     privateIcon.classList.add('privateStatus')
     if (!row.private) {
@@ -346,7 +346,7 @@ export function bulkExpire(event) {
 // Start private expire actions
 $('.bulk-private').on('click', bulkPrivate)
 
-export function bulkPrivate(event) {
+export function bulkPrivate(_event) {
     let pks = []
     filesDataTable.rows('.selected').every(function () {
         pks.push(this.data().id)
@@ -359,7 +359,7 @@ export function bulkPrivate(event) {
 // Start public expire actions
 $('.bulk-public').on('click', bulkPublic)
 
-export function bulkPublic(event) {
+export function bulkPublic(_event) {
     let pks = []
     filesDataTable.rows('.selected').every(function () {
         pks.push(this.data().id)

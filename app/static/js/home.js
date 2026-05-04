@@ -39,10 +39,10 @@ async function initHome() {
         $('.files-truncation-warning').show()
     }
     addFileTableRows(await fetchFiles(1, 10))
-    filesDataTable.on('select', function (e, dt, type, indexes) {
+    filesDataTable.on('select', function (_e, _dt, _type, _indexes) {
         document.getElementById('bulk-actions').disabled = false
     })
-    filesDataTable.on('deselect', function (e, dt, type, indexes) {
+    filesDataTable.on('deselect', function (_e, _dt, _type, _indexes) {
         if (filesDataTable.rows({ selected: true }).count() === 0) {
             document.getElementById('bulk-actions').disabled = true
         }
