@@ -64,25 +64,57 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // console.log('albumsDataTable:', albumsDataTable)
 })
 
+let bufferedFiles = []
+let swiperInitialized = false
+let thumbsSwiper = null
+let imagesSwiper = null
+
+/**
+ * Buffer file data for the slideshow.
+ * Full-size images are NOT loaded until the slideshow offcanvas is opened.
+ * If the slideshow is already open, new slides are appended immediately.
+ */
 function slideshowCallback(data) {
     console.log(`%c slideshowCallback: data:`, 'color: Yellow', data)
     for (const file of data.files) {
-        console.log(`%c file:`, 'color: Lime', file)
-        const div = document.createElement('div')
-        div.classList.add('swiper-slide')
-        const img = document.createElement('img')
-
-        const url = new URL(file.raw)
-        url.searchParams.set('view', 'gallery')
-
-        img.src = url.toString()
-        img.alt = file.name
-        div.appendChild(img)
-        swiperImages.appendChild(div)
-        swiperThumbs.appendChild(div.cloneNode(true))
+        console.debug(`%c file:`, 'color: Lime', file)
     }
+    bufferedFiles.push(...data.files)
+    if (swiperInitialized) {
+        appendSlidesToSwiper(data.files)
+    }
+}
 
-    const thumbs = new Swiper('.thumbs', {
+function buildSlide(file) {
+    const div = document.createElement('div')
+    div.classList.add('swiper-slide')
+    const img = document.createElement('img')
+    const url = new URL(file.raw)
+    url.searchParams.set('view', 'gallery')
+    img.src = url.toString()
+    img.alt = file.name
+    div.appendChild(img)
+    return div
+}
+
+function appendSlidesToSwiper(files) {
+    for (const file of files) {
+        const slide = buildSlide(file)
+        swiperImages.appendChild(slide)
+        swiperThumbs.appendChild(slide.cloneNode(true))
+    }
+    if (thumbsSwiper) thumbsSwiper.update()
+    if (imagesSwiper) imagesSwiper.update()
+}
+
+function initSlideshow() {
+    if (swiperInitialized) return
+    swiperInitialized = true
+    console.log(`%c initSlideshow: building ${bufferedFiles.length} slides`, 'color: Lime')
+
+    appendSlidesToSwiper(bufferedFiles)
+
+    thumbsSwiper = new Swiper('.thumbs', {
         freeMode: true,
         grabCursor: true,
         loop: true,
@@ -92,7 +124,7 @@ function slideshowCallback(data) {
         watchSlidesProgress: true,
     })
 
-    const swiper = new Swiper('.images', {
+    imagesSwiper = new Swiper('.images', {
         grabCursor: true,
         effect: 'fade',
         loop: true,
@@ -111,12 +143,13 @@ function slideshowCallback(data) {
             type: 'fraction',
         },
         thumbs: {
-            swiper: thumbs,
+            swiper: thumbsSwiper,
         },
     })
 }
 
 const myOffcanvas = document.getElementById('offcanvas-bottom')
+myOffcanvas.addEventListener('show.bs.offcanvas', initSlideshow)
 myOffcanvas.addEventListener('hide.bs.offcanvas', () => {
     if (document.fullscreenElement) {
         console.log(`Close Button: %c EXIT`, 'color: Yellow')
