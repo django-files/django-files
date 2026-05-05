@@ -402,6 +402,17 @@ def delete_album_websocket(data: dict, user_id):
 
 # @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 1, "countdown": 300})
 @shared_task()
+def stream_status_websocket(stream_name: str, is_live: bool, ended_at: str = None):
+    log.debug("stream_status_websocket: stream_name=%s is_live=%s", stream_name, is_live)
+    data = {"event": "stream-status", "name": stream_name, "is_live": is_live}
+    if ended_at:
+        data["ended_at"] = ended_at
+    channel_layer = get_channel_layer()
+    event = {"type": "websocket.send", "text": json.dumps(data)}
+    async_to_sync(channel_layer.group_send)("home", event)
+
+
+@shared_task()
 def send_push_live(stream_name: str, delay: int = 10, ttl: int = 1800):
     # Send a Push Message for New Live Stream
     stream = Stream.objects.get(name=stream_name)

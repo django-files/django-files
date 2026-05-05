@@ -96,6 +96,8 @@ async function initListener() {
             messageDelete(data)
         } else if (data.event === 'set-file-name') {
             messageFileRename(data)
+        } else if (data.event === 'stream-status') {
+            messageStreamStatus(data)
         } else if (data.event === 'set-stream-title') {
             messageStreamTitleUpdate(data)
         } else if (data.event === 'set-stream-description') {
@@ -192,6 +194,33 @@ function messageAlbumNew(data) {
 
 function messageNewFile(data) {
     show_toast(`${truncateName(data.name)} added.`)
+}
+
+function messageStreamStatus(data) {
+    const badge = document.getElementById('stream-status-badge')
+    if (!badge) return
+    const streamNameEl = document.querySelector('[data-stream-name]')
+    if (streamNameEl && streamNameEl.dataset.streamName !== data.name) return
+    if (data.is_live) {
+        badge.className = 'm-0 text-danger fw-bold text-glow'
+        badge.textContent = 'Live'
+        document.getElementById('stream-ended-at')?.remove()
+    } else {
+        badge.className = 'm-0 text-secondary fw-bold'
+        badge.textContent = 'Offline'
+        if (data.ended_at && !document.getElementById('stream-ended-at')) {
+            const date = new Date(data.ended_at)
+            const formatted = date.toLocaleString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric',
+                hour: 'numeric', minute: '2-digit', hour12: true,
+            })
+            const p = document.createElement('p')
+            p.id = 'stream-ended-at'
+            p.className = 'm-0 m-1'
+            p.innerHTML = `<strong>Ended:</strong> ${formatted}`
+            badge.closest('.row')?.nextElementSibling?.querySelector('.col-sm')?.appendChild(p)
+        }
+    }
 }
 
 function messageStreamTitleUpdate(data) {

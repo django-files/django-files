@@ -35,7 +35,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from django_redis import get_redis_connection
 from home.models import Albums, Files, FileStats, ShortURLs, Stream
-from home.tasks import clear_files_cache, new_album_websocket, send_push_live
+from home.tasks import clear_files_cache, new_album_websocket, send_push_live, stream_status_websocket
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas
@@ -847,6 +847,7 @@ def stream_auth_view(request):
             stream.save()
         log.debug("title: %s", title)
         send_push_live.delay(stream.name)
+        stream_status_websocket.delay(stream.name, True)
 
         return HttpResponse()
     except Exception as error:
@@ -869,6 +870,7 @@ def stream_done_view(request):
         stream.ended_at = datetime.now()
         stream.is_live = False
         stream.save()
+        stream_status_websocket.delay(stream.name, False, stream.ended_at.isoformat())
 
     except Exception as error:
         log.debug("error: %s", error)
