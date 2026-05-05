@@ -111,7 +111,10 @@ function appendSlidesToSwiper(files) {
 function initSlideshow() {
     if (swiperInitialized) return
     swiperInitialized = true
-    console.log(`%c initSlideshow: building ${bufferedFiles.length} slides`, 'color: Lime')
+    console.log(
+        `%c initSlideshow: building ${bufferedFiles.length} slides`,
+        'color: Lime'
+    )
 
     appendSlidesToSwiper(bufferedFiles)
 

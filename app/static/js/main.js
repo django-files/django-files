@@ -1,7 +1,6 @@
 // JS included everywhere
 console.log(`Loaded: %cmain.js`, 'color: Lime')
 
-
 const isAndroid = typeof Android !== 'undefined'
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)

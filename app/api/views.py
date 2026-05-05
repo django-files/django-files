@@ -884,8 +884,8 @@ def stream_ingest_view(request):
     the web UI does (RTMP_HOST env var → site_url hostname → request host).
     The port is always 1935 server-side; clients may override it locally.
     """
-    from home.models import SiteSettings
     from home.views import get_rtmp_host
+
     site_settings = SiteSettings.objects.settings()
     rtmp_host, _ = get_rtmp_host(request, site_settings)
     return JsonResponse({"rtmp_host": rtmp_host, "rtmp_port": 1935})
@@ -970,29 +970,53 @@ def stream_commands_view(request, name):
 
     if stream.live_chat:
         commands += [
-            {"command": "/join",  "args": "",        "description": "Join the stream chat",            "category": "chat"},
-            {"command": "/leave", "args": "",        "description": "Leave the stream chat",           "category": "chat"},
+            {"command": "/join", "args": "", "description": "Join the stream chat", "category": "chat"},
+            {"command": "/leave", "args": "", "description": "Leave the stream chat", "category": "chat"},
         ]
         if is_authenticated or stream.anonymous_chat:
-            commands.append({"command": "/set-name", "args": "<name>", "description": "Set your chat display name", "category": "chat"})
+            commands.append(
+                {
+                    "command": "/set-name",
+                    "args": "<name>",
+                    "description": "Set your chat display name",
+                    "category": "chat",
+                }
+            )
         if is_owner:
             commands += [
-                {"command": "/title",               "args": "<title>",        "description": "Set the stream title",                    "category": "stream"},
-                {"command": "/description",         "args": "<description>",  "description": "Set the stream description",              "category": "stream"},
-                {"command": "/ban",                 "args": "<display_name>", "description": "Ban a user from chat",                    "category": "moderation"},
-                {"command": "/ban-message-cleanup", "args": "<display_name>", "description": "Remove all messages from a banned user",   "category": "moderation"},
+                {"command": "/title", "args": "<title>", "description": "Set the stream title", "category": "stream"},
+                {
+                    "command": "/description",
+                    "args": "<description>",
+                    "description": "Set the stream description",
+                    "category": "stream",
+                },
+                {
+                    "command": "/ban",
+                    "args": "<display_name>",
+                    "description": "Ban a user from chat",
+                    "category": "moderation",
+                },
+                {
+                    "command": "/ban-message-cleanup",
+                    "args": "<display_name>",
+                    "description": "Remove all messages from a banned user",
+                    "category": "moderation",
+                },
             ]
 
-    return JsonResponse({
-        "stream": name,
-        "title": stream.title or "",
-        "description": stream.description or "",
-        "is_live": stream.is_live,
-        "is_public": stream.public,  # model field is `public`
-        "live_chat": stream.live_chat,
-        "anonymous_chat": stream.anonymous_chat,
-        "commands": commands,
-    })
+    return JsonResponse(
+        {
+            "stream": name,
+            "title": stream.title or "",
+            "description": stream.description or "",
+            "is_live": stream.is_live,
+            "is_public": stream.public,  # model field is `public`
+            "live_chat": stream.live_chat,
+            "anonymous_chat": stream.anonymous_chat,
+            "commands": commands,
+        }
+    )
 
 
 def get_viewer_count(name):
