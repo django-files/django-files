@@ -152,7 +152,7 @@ async function addNodes() {
         for (const file of data.files) {
             // console.debug('file:', file)
             if (window.location.pathname.includes('gallery')) {
-                addGalleryImage(file)
+                addGalleryFile(file)
                 addFileTableRow(file)
             } else if (window.location.pathname.includes('files')) {
                 addFileTableRow(file)
@@ -165,6 +165,18 @@ async function addNodes() {
         showSkeletons()
     } else {
         console.debug('Another files fetch in progress waiting.')
+    }
+}
+
+/**
+ * Route a file to the appropriate gallery renderer.
+ * @function addGalleryFile
+ */
+function addGalleryFile(file, top = false) {
+    if (file.mime && file.mime.startsWith('video/')) {
+        addGalleryVideo(file, top)
+    } else {
+        addGalleryImage(file, top)
     }
 }
 
@@ -305,6 +317,200 @@ function addGalleryImage(file, top = false) {
 }
 
 /**
+ * Add a video file to the gallery. The raw video is NOT loaded until the card
+ * scrolls into view, at which point a single frame is extracted via Canvas and
+ * used as a thumbnail. Clicking the card opens the file preview page.
+ * @function addGalleryVideo
+ */
+function addGalleryVideo(file, top = false) {
+    const maxThumbSize = 256
+
+    // OUTER DIV
+    const outer = document
+        .querySelector('.d-none .gallery-outer')
+        .cloneNode(false)
+    outer.id = `gallery-image-${file.id}`
+    outer.addEventListener('mouseover', mouseOver)
+    outer.addEventListener('mouseout', mouseOut)
+
+    // INNER DIV
+    const inner = document
+        .querySelector('.d-none .gallery-inner')
+        .cloneNode(true)
+    inner.style.minWidth = `${maxThumbSize}px`
+    inner.style.minHeight = `${maxThumbSize}px`
+    outer.appendChild(inner)
+
+    // CANVAS (frame thumbnail)
+    const canvas = document.createElement('canvas')
+    canvas.width = maxThumbSize
+    canvas.height = maxThumbSize
+    canvas.style.width = '100%'
+    canvas.style.height = '100%'
+    canvas.style.display = 'block'
+
+    // LINK wraps canvas
+    const link = document.createElement('a')
+    link.classList.add('image-link')
+    link.href = file.url
+    link.title = file.name
+    link.target = '_blank'
+    link.appendChild(canvas)
+    inner.appendChild(link)
+
+    // SKELETON overlay — same fade-out pattern as images
+    const skeleton = document.createElement('div')
+    skeleton.classList.add('img-skeleton')
+    inner.appendChild(skeleton)
+
+    // PLAY BUTTON overlay
+    const playBtn = document.createElement('div')
+    playBtn.classList.add('video-play-overlay')
+    playBtn.innerHTML =
+        '<i class="fa-solid fa-circle-play fa-3x text-white"></i>'
+    inner.appendChild(playBtn)
+
+    // ICONS
+    const topLeft = document
+        .querySelector('.d-none .image-icons')
+        .cloneNode(true)
+    let privateStatus = faLock.cloneNode(true)
+    privateStatus.classList.add('privateStatus')
+    if (!file.private) privateStatus.style.visibility = 'hidden'
+    topLeft.appendChild(privateStatus)
+    let passwordIcon = faKey.cloneNode(true)
+    passwordIcon.classList.add('passwordStatus')
+    if (!file.password) passwordIcon.style.visibility = 'hidden'
+    topLeft.appendChild(passwordIcon)
+    let expireIcon = faHourglass.cloneNode(true)
+    if (!file.expr) {
+        expireIcon.style.visibility = 'hidden'
+    } else {
+        expireIcon.title = file.expr
+    }
+    topLeft.appendChild(expireIcon)
+    inner.appendChild(topLeft)
+
+    // TEXT LABELS
+    const bottomLeft = document
+        .querySelector('.d-none .image-labels')
+        .cloneNode(true)
+    buildImageLabels(file, bottomLeft)
+    inner.appendChild(bottomLeft)
+
+    // CTX MENU
+    const ctxMenu = document
+        .querySelector('.d-none .gallery-ctx')
+        .cloneNode(true)
+    const toggle = document
+        .querySelector('.d-none .gallery-ctx-toggle')
+        .cloneNode(true)
+    toggle.appendChild(faCaret.cloneNode(true))
+    ctxMenu.appendChild(toggle)
+    outer.appendChild(ctxMenu)
+    let menu = getCtxMenuContainer(file)
+    menu.style.zIndex = '1'
+    ctxMenu.appendChild(menu)
+
+    // CHECKBOX
+    inner.appendChild(buildGalleryCheckbox(file))
+
+    if (top) {
+        galleryContainer.insertBefore(outer, galleryContainer.firstChild)
+    } else {
+        galleryContainer.appendChild(outer)
+    }
+
+    // Lazy frame extraction — fires when card is about to scroll into view
+    const frameObserver = new IntersectionObserver(
+        (entries) => {
+            if (entries[0].isIntersecting) {
+                frameObserver.disconnect()
+                extractVideoFrame(file.raw, canvas, skeleton)
+            }
+        },
+        { rootMargin: '200px' }
+    )
+    frameObserver.observe(outer)
+}
+
+/**
+ * Extract the first frame of a video via Canvas and render it into the given
+ * canvas element. Uses preload="metadata" so only a small initial segment is
+ * fetched, not the full video. Fades out the skeleton when done.
+ * @function extractVideoFrame
+ * @param {String} src - raw video URL
+ * @param {HTMLCanvasElement} canvas
+ * @param {HTMLElement} skeleton
+ */
+function extractVideoFrame(src, canvas, skeleton) {
+    console.debug('extractVideoFrame:', src)
+    const video = document.createElement('video')
+    video.preload = 'metadata'
+    video.muted = true
+    video.playsInline = true
+    video.crossOrigin = 'anonymous'
+
+    video.addEventListener(
+        'loadeddata',
+        () => {
+            video.currentTime = 0
+        },
+        { once: true }
+    )
+
+    video.addEventListener(
+        'seeked',
+        () => {
+            try {
+                const ctx = canvas.getContext('2d')
+                // letterbox the frame inside the square canvas
+                const vw = video.videoWidth || canvas.width
+                const vh = video.videoHeight || canvas.height
+                const scale = Math.min(canvas.width / vw, canvas.height / vh)
+                const drawW = vw * scale
+                const drawH = vh * scale
+                const dx = (canvas.width - drawW) / 2
+                const dy = (canvas.height - drawH) / 2
+                ctx.fillStyle = '#000'
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+                ctx.drawImage(video, dx, dy, drawW, drawH)
+            } catch (err) {
+                console.warn('extractVideoFrame canvas error:', err)
+            }
+            // release video resources
+            video.src = ''
+            video.load()
+            // fade out skeleton
+            if (skeleton) {
+                skeleton.style.transition = 'opacity 0.3s'
+                skeleton.style.opacity = '0'
+                skeleton.addEventListener(
+                    'transitionend',
+                    () => skeleton.remove(),
+                    {
+                        once: true,
+                    }
+                )
+            }
+        },
+        { once: true }
+    )
+
+    video.addEventListener(
+        'error',
+        () => {
+            console.warn('extractVideoFrame load error:', src)
+            if (skeleton) skeleton.remove()
+        },
+        { once: true }
+    )
+
+    video.src = src
+    video.load()
+}
+
+/**
  * Generate Gallery Checkbox HTML Object
  * @function buildGalleryCheckbox
  * @returns checkbox
@@ -410,7 +616,7 @@ function changeView(event) {
             galleryContainer.lastChild.remove()
         }
         fileData.forEach(function (item, _index) {
-            addGalleryImage(item)
+            addGalleryFile(item)
         })
         showList.style.fontWeight = 'normal'
         showGallery.style.fontWeight = 'bold'
@@ -427,7 +633,7 @@ socket?.addEventListener('message', function (event) {
         } else if (data.event === 'file-new') {
             // file-table handles added file already so we just need to add to gallery if its the view
             if (window.location.pathname.includes('gallery')) {
-                addGalleryImage(data, true)
+                addGalleryFile(data, true)
             }
         } else if (data.event === 'set-password-file') {
             passwordStatusChange(data)
