@@ -876,7 +876,9 @@ def stream_done_view(request):
     return HttpResponse()
 
 
-@login_required
+@csrf_exempt
+@require_http_methods(["GET"])
+@auth_from_token
 def stream_ingest_view(request):
     """
     View /stream/ingest/
