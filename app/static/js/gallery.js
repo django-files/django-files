@@ -173,7 +173,7 @@ async function addNodes() {
  * @function addGalleryFile
  */
 function addGalleryFile(file, top = false) {
-    if (file.mime && file.mime.startsWith('video/')) {
+    if (file.mime?.startsWith('video/')) {
         addGalleryVideo(file, top)
     } else {
         addGalleryImage(file, top)
@@ -268,7 +268,7 @@ function addGalleryImage(file, top = false) {
     }
 
     const maxThumbSize = 256
-    const { outer: _outer, inner } = buildGalleryCard(file, top)
+    const { inner } = buildGalleryCard(file, top)
 
     // IMAGE AND LINK
     const link = document.createElement('a')
