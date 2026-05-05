@@ -35,7 +35,12 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from django_redis import get_redis_connection
 from home.models import Albums, Files, FileStats, ShortURLs, Stream
-from home.tasks import clear_files_cache, new_album_websocket, send_push_live, stream_status_websocket
+from home.tasks import (
+    clear_files_cache,
+    new_album_websocket,
+    send_push_live,
+    stream_status_websocket,
+)
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte
 from home.util.quota import process_storage_quotas

@@ -211,14 +211,21 @@ function messageStreamStatus(data) {
         if (data.ended_at && !document.getElementById('stream-ended-at')) {
             const date = new Date(data.ended_at)
             const formatted = date.toLocaleString('en-US', {
-                month: 'short', day: 'numeric', year: 'numeric',
-                hour: 'numeric', minute: '2-digit', hour12: true,
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
             })
             const p = document.createElement('p')
             p.id = 'stream-ended-at'
             p.className = 'm-0 m-1'
             p.innerHTML = `<strong>Ended:</strong> ${formatted}`
-            badge.closest('.row')?.nextElementSibling?.querySelector('.col-sm')?.appendChild(p)
+            badge
+                .closest('.row')
+                ?.nextElementSibling?.querySelector('.col-sm')
+                ?.appendChild(p)
         }
     }
 }
