@@ -432,7 +432,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
             display_name = f"{custom_name}#{number:05d}"
         else:
             display_name = self._anon_name(session_key)
-        return display_name, "/static/images/default_avatar.png"
+        site_settings = await database_sync_to_async(SiteSettings.objects.settings)()
+        base = site_settings.site_url.rstrip("/") if site_settings.site_url else ""
+        return display_name, f"{base}/static/images/default_avatar.png"
 
     # -------------------------------------------------------------------------
     # Chat — join / leave

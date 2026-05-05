@@ -92,6 +92,14 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         {% include 'files/ctx-menu.html' with file=file extraclass='dropdown-menu-end' %}
         <div id="preview-sidebar" class="sidebar h-100">
             <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
+            {% is_ios_browser request as ios %}
+            {% if ios and native_app_arg %}
+            <a href="{{ native_app_arg }}"
+               class="sidebar-app-btn"
+               title="Open in App">
+                <i class="fa-brands fa-apple"></i>
+            </a>
+            {% endif %}
             <div id="file-{{ file.id }}" class="card-body sidebar-card">
                 <h3 class="card-title mb-0 text-break">{{ file.name }}</h3>
                 <row>

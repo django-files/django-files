@@ -1,8 +1,6 @@
 // JS included everywhere
 console.log(`Loaded: %cmain.js`, 'color: Lime')
 
-let filesDataTable
-
 const isAndroid = typeof Android !== 'undefined'
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)
@@ -159,6 +157,7 @@ function show_toast(message, bsClass = 'success', delay = '6000') {
  * @function saveOptions
  * @param {InputEvent} event
  */
+// eslint-disable-next-line no-unused-vars
 function saveOptions(event) {
     const excludes = ['data-bs-theme-value']
     if (excludes.includes(event.target.id)) {
@@ -205,6 +204,7 @@ function saveOptions(event) {
  * Error Message responseJSON.error or jqXHR.statusText
  * @param {jQuery.jqXHR} jqXHR
  */
+// eslint-disable-next-line no-unused-vars
 function messageErrorHandler(jqXHR) {
     if (jqXHR.responseJSON?.error) {
         const message = `${jqXHR.status}: ${jqXHR.responseJSON.error}`
@@ -257,6 +257,7 @@ function debounce(fn, timeout = 250) {
  * @param {Number} buffer
  * @param {Function} callable (async)
  */
+// eslint-disable-next-line no-unused-vars
 async function pageScroll(event, nextPage, callable, buffer = 500) {
     // await sleep(200)
     const maxScrollY = document.body.scrollHeight - window.innerHeight

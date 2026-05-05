@@ -18,6 +18,10 @@ export default [
     rules: {
       'no-undef': 'off',
       'no-extra-semi': 'off',
+      'no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
 ]

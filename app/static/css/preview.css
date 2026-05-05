@@ -39,12 +39,13 @@
     display: inline-flex;
     align-items: center;
     height: 40px;
+    text-decoration: none;
 }
 
 .sidebar-mode-toggle {
     position: absolute;
     top: 0;
-    right: 45px;
+    right: 55px;
     font-size: 18px;
     background: none;
     border: none;
@@ -60,6 +61,27 @@
 
 .sidebar-mode-toggle:hover {
     opacity: 1;
+}
+
+.sidebar .sidebar-app-btn {
+    position: absolute;
+    top: 0;
+    right: 95px;
+    font-size: 18px;
+    padding: 0 8px;
+    margin: 0;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.sidebar .sidebar-app-btn:hover {
+    opacity: 1;
+    color: inherit;
 }
 
 .openbtn {
