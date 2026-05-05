@@ -180,18 +180,21 @@ function addGalleryFile(file, top = false) {
     }
 }
 
-function addGalleryImage(file, top = false) {
-    // console.log('addGalleryImage:', file)
-    const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp|jxl|avif)$/i
-    if (!file.name.match(imageExtensions)) {
-        console.debug(`Skipping non-image: ${file.name}`)
-        return
-    }
-
+/**
+ * Build the shared outer/inner card structure for a gallery item — outer div,
+ * inner div, status icons, text labels, context menu, checkbox — and append it
+ * to the gallery container. Returns { outer, inner } so callers can insert the
+ * media element (image or video canvas) before calling this.
+ * @function buildGalleryCard
+ * @param {Object} file
+ * @param {boolean} top
+ * @returns {{ outer: HTMLElement, inner: HTMLElement }}
+ */
+function buildGalleryCard(file, top = false) {
     // OUTER DIV
     const outer = document
         .querySelector('.d-none .gallery-outer')
-        .cloneNode(true)
+        .cloneNode(false)
     outer.id = `gallery-image-${file.id}`
     outer.addEventListener('mouseover', mouseOver)
     outer.addEventListener('mouseout', mouseOut)
@@ -202,6 +205,71 @@ function addGalleryImage(file, top = false) {
         .cloneNode(true)
     outer.appendChild(inner)
 
+    // ICONS
+    const topLeft = document
+        .querySelector('.d-none .image-icons')
+        .cloneNode(true)
+    const privateStatus = faLock.cloneNode(true)
+    privateStatus.classList.add('privateStatus')
+    if (!file.private) privateStatus.style.visibility = 'hidden'
+    topLeft.appendChild(privateStatus)
+    const passwordIcon = faKey.cloneNode(true)
+    passwordIcon.classList.add('passwordStatus')
+    if (!file.password) passwordIcon.style.visibility = 'hidden'
+    topLeft.appendChild(passwordIcon)
+    const expireIcon = faHourglass.cloneNode(true)
+    if (!file.expr) {
+        expireIcon.style.visibility = 'hidden'
+    } else {
+        expireIcon.title = file.expr
+    }
+    topLeft.appendChild(expireIcon)
+    inner.appendChild(topLeft)
+
+    // TEXT LABELS
+    const bottomLeft = document
+        .querySelector('.d-none .image-labels')
+        .cloneNode(true)
+    buildImageLabels(file, bottomLeft)
+    inner.appendChild(bottomLeft)
+
+    // CTX MENU
+    const ctxMenu = document
+        .querySelector('.d-none .gallery-ctx')
+        .cloneNode(true)
+    const toggle = document
+        .querySelector('.d-none .gallery-ctx-toggle')
+        .cloneNode(true)
+    toggle.appendChild(faCaret.cloneNode(true))
+    ctxMenu.appendChild(toggle)
+    outer.appendChild(ctxMenu)
+    const menu = getCtxMenuContainer(file)
+    menu.style.zIndex = '1'
+    ctxMenu.appendChild(menu)
+
+    // CHECKBOX
+    inner.appendChild(buildGalleryCheckbox(file))
+
+    if (top) {
+        galleryContainer.insertBefore(outer, galleryContainer.firstChild)
+    } else {
+        galleryContainer.appendChild(outer)
+    }
+
+    return { outer, inner }
+}
+
+function addGalleryImage(file, top = false) {
+    // console.log('addGalleryImage:', file)
+    const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp|jxl|avif)$/i
+    if (!file.name.match(imageExtensions)) {
+        console.debug(`Skipping non-image: ${file.name}`)
+        return
+    }
+
+    const maxThumbSize = 256
+    const { outer: _outer, inner } = buildGalleryCard(file, top)
+
     // IMAGE AND LINK
     const link = document.createElement('a')
     link.classList.add('image-link')
@@ -211,7 +279,6 @@ function addGalleryImage(file, top = false) {
     const img = imageNode.cloneNode(true)
 
     // Pre-size the image using known dimensions to prevent layout jumping
-    const maxThumbSize = 256
     if (file.meta?.PILImageWidth && file.meta?.PILImageHeight) {
         const scale = Math.min(
             maxThumbSize / file.meta.PILImageWidth,
@@ -257,63 +324,8 @@ function addGalleryImage(file, top = false) {
 
     img.src = file.thumb || file.raw
     link.appendChild(img)
-    inner.appendChild(skeleton)
-    inner.appendChild(link)
-
-    // ICONS
-    const topLeft = document
-        .querySelector('.d-none .image-icons')
-        .cloneNode(true)
-    let privateStatus = faLock.cloneNode(true)
-    privateStatus.classList.add('privateStatus')
-    if (!file.private) {
-        privateStatus.style.visibility = 'hidden'
-    }
-    topLeft.appendChild(privateStatus)
-    let passwordIcon = faKey.cloneNode(true)
-    passwordIcon.classList.add('passwordStatus')
-    if (!file.password) {
-        passwordIcon.style.visibility = 'hidden'
-    }
-    topLeft.appendChild(passwordIcon)
-    let expireIcon = faHourglass.cloneNode(true)
-    if (!file.expr) {
-        expireIcon.style.visibility = 'hidden'
-    } else {
-        expireIcon.title = file.expr
-    }
-    topLeft.appendChild(expireIcon)
-    inner.appendChild(topLeft)
-
-    // TEXT
-    const bottomLeft = document
-        .querySelector('.d-none .image-labels')
-        .cloneNode(true)
-    buildImageLabels(file, bottomLeft)
-    inner.appendChild(bottomLeft)
-
-    // CTX MENU
-    const ctxMenu = document
-        .querySelector('.d-none .gallery-ctx')
-        .cloneNode(true)
-    const toggle = document
-        .querySelector('.d-none .gallery-ctx-toggle')
-        .cloneNode(true)
-    toggle.appendChild(faCaret.cloneNode(true))
-    ctxMenu.appendChild(toggle)
-    outer.appendChild(ctxMenu)
-    let menu = getCtxMenuContainer(file)
-    menu.style.zIndex = '1'
-    ctxMenu.appendChild(menu)
-
-    // Checkbox
-    inner.appendChild(buildGalleryCheckbox(file))
-
-    if (top) {
-        galleryContainer.insertBefore(outer, galleryContainer.firstChild)
-    } else {
-        galleryContainer.appendChild(outer)
-    }
+    // Insert media before icons/labels (prepend to inner)
+    inner.prepend(skeleton, link)
 }
 
 /**
@@ -324,22 +336,10 @@ function addGalleryImage(file, top = false) {
  */
 function addGalleryVideo(file, top = false) {
     const maxThumbSize = 256
+    const { outer, inner } = buildGalleryCard(file, top)
 
-    // OUTER DIV
-    const outer = document
-        .querySelector('.d-none .gallery-outer')
-        .cloneNode(false)
-    outer.id = `gallery-image-${file.id}`
-    outer.addEventListener('mouseover', mouseOver)
-    outer.addEventListener('mouseout', mouseOut)
-
-    // INNER DIV
-    const inner = document
-        .querySelector('.d-none .gallery-inner')
-        .cloneNode(true)
     inner.style.minWidth = `${maxThumbSize}px`
     inner.style.minHeight = `${maxThumbSize}px`
-    outer.appendChild(inner)
 
     // CANVAS (frame thumbnail)
     const canvas = document.createElement('canvas')
@@ -356,70 +356,19 @@ function addGalleryVideo(file, top = false) {
     link.title = file.name
     link.target = '_blank'
     link.appendChild(canvas)
-    inner.appendChild(link)
 
-    // SKELETON overlay — same fade-out pattern as images
+    // SKELETON overlay — fades out after frame extraction
     const skeleton = document.createElement('div')
     skeleton.classList.add('img-skeleton')
-    inner.appendChild(skeleton)
 
     // PLAY BUTTON overlay
     const playBtn = document.createElement('div')
     playBtn.classList.add('video-play-overlay')
     playBtn.innerHTML =
         '<i class="fa-solid fa-circle-play fa-3x text-white"></i>'
-    inner.appendChild(playBtn)
 
-    // ICONS
-    const topLeft = document
-        .querySelector('.d-none .image-icons')
-        .cloneNode(true)
-    let privateStatus = faLock.cloneNode(true)
-    privateStatus.classList.add('privateStatus')
-    if (!file.private) privateStatus.style.visibility = 'hidden'
-    topLeft.appendChild(privateStatus)
-    let passwordIcon = faKey.cloneNode(true)
-    passwordIcon.classList.add('passwordStatus')
-    if (!file.password) passwordIcon.style.visibility = 'hidden'
-    topLeft.appendChild(passwordIcon)
-    let expireIcon = faHourglass.cloneNode(true)
-    if (!file.expr) {
-        expireIcon.style.visibility = 'hidden'
-    } else {
-        expireIcon.title = file.expr
-    }
-    topLeft.appendChild(expireIcon)
-    inner.appendChild(topLeft)
-
-    // TEXT LABELS
-    const bottomLeft = document
-        .querySelector('.d-none .image-labels')
-        .cloneNode(true)
-    buildImageLabels(file, bottomLeft)
-    inner.appendChild(bottomLeft)
-
-    // CTX MENU
-    const ctxMenu = document
-        .querySelector('.d-none .gallery-ctx')
-        .cloneNode(true)
-    const toggle = document
-        .querySelector('.d-none .gallery-ctx-toggle')
-        .cloneNode(true)
-    toggle.appendChild(faCaret.cloneNode(true))
-    ctxMenu.appendChild(toggle)
-    outer.appendChild(ctxMenu)
-    let menu = getCtxMenuContainer(file)
-    menu.style.zIndex = '1'
-    ctxMenu.appendChild(menu)
-
-    // CHECKBOX
-    inner.appendChild(buildGalleryCheckbox(file))
-
-    if (top) {
-        galleryContainer.insertBefore(outer, galleryContainer.firstChild)
-    } else {
-        galleryContainer.appendChild(outer)
-    }
+    // Insert media before icons/labels (prepend to inner)
+    inner.prepend(playBtn, skeleton, link)
 
     // Lazy frame extraction — fires when card is about to scroll into view
     const frameObserver = new IntersectionObserver(
