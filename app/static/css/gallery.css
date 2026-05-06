@@ -3,15 +3,15 @@
     .gallery-outer {
         width: calc(100% - 0.5rem);
     }
-    .gallery-inner {
+    .gallery-inner:not(input) {
         width: 100%;
         min-width: unset !important;
         min-height: unset !important;
-        aspect-ratio: 1 / 1;
     }
     .gallery-inner img {
         width: 100% !important;
         height: auto !important;
+        max-height: unset !important;
     }
 }
 
@@ -44,8 +44,6 @@
     background-color: #495057;
     background-size: 25px 25px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Crect width='13' height='13' fill='%23919191'/%3E%3Crect x='13' y='13' width='12' height='12' fill='%23919191'/%3E%3C/svg%3E");
-    content-visibility: auto;
-    contain-intrinsic-size: auto 256px;
 }
 
 .image-labels {

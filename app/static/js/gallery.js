@@ -4,7 +4,7 @@ import {
     faLock,
     faKey,
     faHourglass,
-    addFileTableRow,
+    addFileTableRowsBatch,
     formatBytes,
     faCaret,
 } from './file-table.js'
@@ -36,6 +36,21 @@ let selectedFileIds = []
 let skeletonObserver = null // early preemptive trigger
 let skeletonFallback = null // late safety-net trigger
 
+// Cache touch detection once — isTouchDevice() is called on every hover otherwise
+const isTouch =
+    'ontouchstart' in window ||
+    navigator.maxTouchPoints > 0 ||
+    navigator.msMaxTouchPoints > 0
+
+// Cache template element references — avoids repeated querySelector in tight loops
+const tmplOuter = document.querySelector('.d-none .gallery-outer')
+const tmplInner = document.querySelector('.d-none .gallery-inner')
+const tmplIcons = document.querySelector('.d-none .image-icons')
+const tmplLabels = document.querySelector('.d-none .image-labels')
+const tmplCtx = document.querySelector('.d-none .gallery-ctx')
+const tmplCtxToggle = document.querySelector('.d-none .gallery-ctx-toggle')
+const tmplCheckbox = document.querySelector('.d-none .gallery-checkbox')
+
 document.addEventListener('DOMContentLoaded', initGallery)
 
 async function initGallery() {
@@ -49,7 +64,6 @@ async function initGallery() {
         showList.style.fontWeight = 'bold'
     }
     await addNodes()
-    // fillInterval = setInterval(fillPage, 250)
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
         document.getElementById('bulk-actions').disabled = false
         console.log(`file-${dt.data().id}`)
@@ -114,16 +128,15 @@ function showSkeletons() {
         return
     }
 
+    const fragment = new DocumentFragment()
+    let firstSkeleton = null
+    let lastSkeleton = null
     for (let i = 0; i < 16; i++) {
-        const outer = document
-            .querySelector('.d-none .gallery-outer')
-            .cloneNode(false)
+        const outer = tmplOuter.cloneNode(false)
         outer.id = `gallery-skeleton-${i}`
         outer.classList.add('m-1')
 
-        const inner = document
-            .querySelector('.d-none .gallery-inner')
-            .cloneNode(false)
+        const inner = tmplInner.cloneNode(false)
         inner.style.minWidth = '256px'
         inner.style.minHeight = '256px'
 
@@ -132,16 +145,11 @@ function showSkeletons() {
 
         inner.appendChild(shimmer)
         outer.appendChild(inner)
-        galleryContainer.appendChild(outer)
+        fragment.appendChild(outer)
+        if (i === 0) firstSkeleton = outer
+        lastSkeleton = outer
     }
-
-    const firstSkeleton = document.getElementById('gallery-skeleton-0')
-    const lastIndex =
-        galleryContainer.querySelectorAll('[id^="gallery-skeleton-"]').length -
-        1
-    const lastSkeleton = document.getElementById(
-        `gallery-skeleton-${lastIndex}`
-    )
+    galleryContainer.appendChild(fragment)
 
     if (!firstSkeleton) return
 
@@ -239,17 +247,13 @@ async function addNodes() {
         fileData.push(...data.files)
         // Data is ready — remove skeletons and render real cards.
         hideSkeletons()
-        for (const file of data.files) {
-            // console.debug('file:', file)
-            if (window.location.pathname.includes('gallery')) {
-                addGalleryFile(file)
-                addFileTableRow(file)
-            } else if (window.location.pathname.includes('files')) {
-                addFileTableRow(file)
-            } else {
-                console.error('Unknown View')
-            }
+        if (window.location.pathname.includes('gallery')) {
+            data.files.forEach((file) => addGalleryFile(file))
+        } else if (!window.location.pathname.includes('files')) {
+            console.error('Unknown View')
         }
+        // Add all rows to DataTables in one batch and draw once
+        addFileTableRowsBatch(data.files)
         filesDataTable.processing(false)
         fetchLock = false
         showSkeletons()
@@ -282,23 +286,17 @@ function addGalleryFile(file, top = false) {
  */
 function buildGalleryCard(file, top = false) {
     // OUTER DIV
-    const outer = document
-        .querySelector('.d-none .gallery-outer')
-        .cloneNode(false)
+    const outer = tmplOuter.cloneNode(false)
     outer.id = `gallery-image-${file.id}`
     outer.addEventListener('mouseover', mouseOver)
     outer.addEventListener('mouseout', mouseOut)
 
     // INNER DIV
-    const inner = document
-        .querySelector('.d-none .gallery-inner')
-        .cloneNode(true)
+    const inner = tmplInner.cloneNode(true)
     outer.appendChild(inner)
 
     // ICONS
-    const topLeft = document
-        .querySelector('.d-none .image-icons')
-        .cloneNode(true)
+    const topLeft = tmplIcons.cloneNode(true)
     const privateStatus = faLock.cloneNode(true)
     privateStatus.classList.add('privateStatus')
     if (!file.private) privateStatus.style.visibility = 'hidden'
@@ -317,19 +315,13 @@ function buildGalleryCard(file, top = false) {
     inner.appendChild(topLeft)
 
     // TEXT LABELS
-    const bottomLeft = document
-        .querySelector('.d-none .image-labels')
-        .cloneNode(true)
+    const bottomLeft = tmplLabels.cloneNode(true)
     buildImageLabels(file, bottomLeft)
     inner.appendChild(bottomLeft)
 
     // CTX MENU
-    const ctxMenu = document
-        .querySelector('.d-none .gallery-ctx')
-        .cloneNode(true)
-    const toggle = document
-        .querySelector('.d-none .gallery-ctx-toggle')
-        .cloneNode(true)
+    const ctxMenu = tmplCtx.cloneNode(true)
+    const toggle = tmplCtxToggle.cloneNode(true)
     toggle.appendChild(faCaret.cloneNode(true))
     ctxMenu.appendChild(toggle)
     outer.appendChild(ctxMenu)
@@ -339,6 +331,9 @@ function buildGalleryCard(file, top = false) {
 
     // CHECKBOX
     inner.appendChild(buildGalleryCheckbox(file))
+
+    // Cache .gallery-mouse elements to avoid querySelectorAll on every hover
+    outer._mouseEls = [...outer.querySelectorAll('.gallery-mouse')]
 
     if (top) {
         galleryContainer.insertBefore(outer, galleryContainer.firstChild)
@@ -494,18 +489,14 @@ function addGalleryVideo(file, top = false) {
  * @returns checkbox
  */
 function buildGalleryCheckbox(file) {
-    const checkbox = document
-        .querySelector('.d-none .gallery-checkbox')
-        .cloneNode(true)
-    if (isTouchDevice()) {
+    const checkbox = tmplCheckbox.cloneNode(true)
+    if (isTouch) {
         checkbox.classList.remove('d-none')
     }
     checkbox.id = `checkbox-${file.id}`
     if (selectedFileIds.includes(file.id)) {
         checkbox.checked = true
-        checkbox.classList.remove('gallery-mouse')
-        checkbox.classList.remove('gallery-mouse')
-        checkbox.classList.remove('d-none')
+        checkbox.classList.remove('gallery-mouse', 'd-none')
     } else {
         checkbox.checked = false
     }
@@ -540,13 +531,10 @@ function addSpan(parent, textContent) {
  * @param {MouseEvent} event
  */
 function mouseOver(event) {
-    // console.debug('mouseOver:', event)
-    // console.debug('mouse: Show')
-    const closest = event.target.closest('div')
-    const divs = closest.querySelectorAll('.gallery-mouse')
-    if (!isTouchDevice()) {
-        divs.forEach((div) => div.classList.remove('d-none'))
-    }
+    if (isTouch) return
+    event.currentTarget._mouseEls?.forEach((el) =>
+        el.classList.remove('d-none')
+    )
 }
 
 /**
@@ -555,50 +543,57 @@ function mouseOver(event) {
  * @param {MouseEvent} event
  */
 function mouseOut(event) {
-    // console.debug('mouseOut:', event)
     // TODO: Fix mouse out detection when mousing over ctx menu
-    const link = event.target.closest('a')
-    // console.debug('link:', link)
-    if (link?.classList.contains('ctx-menu')) {
-        // console.debug('return on ctx-menu')
-        return
-    }
+    if (event.target.closest('a')?.classList.contains('ctx-menu')) return
+    event.currentTarget._mouseEls?.forEach((el) => el.classList.add('d-none'))
+}
 
-    // console.debug('mouse: Hide')
-    const closest = event.target.closest('div')
-    const divs = closest.querySelectorAll('.gallery-mouse')
-    divs.forEach((div) => div.classList.add('d-none'))
+/**
+ * Render an array of files into the gallery in chunks, yielding to the browser
+ * between each batch so it can paint incrementally instead of blocking.
+ * @function renderGalleryChunked
+ * @param {Array} files
+ * @param {number} chunkSize
+ * @param {Function} [onComplete]
+ */
+function renderGalleryChunked(files, chunkSize = 20, onComplete = null) {
+    let i = 0
+    function renderNext() {
+        const end = Math.min(i + chunkSize, files.length)
+        while (i < end) {
+            addGalleryFile(files[i++])
+        }
+        if (i < files.length) {
+            requestAnimationFrame(renderNext)
+        } else if (onComplete) {
+            onComplete()
+        }
+    }
+    requestAnimationFrame(renderNext)
 }
 
 function changeView(event) {
     event.preventDefault()
     hideSkeletons()
-    if (event.srcElement.innerHTML === 'List') {
-        while (galleryContainer.lastChild) {
-            galleryContainer.lastChild.remove()
-        }
+    if (event.currentTarget.innerHTML === 'List') {
+        galleryContainer.replaceChildren()
         dtContainer.hidden = false
         window.history.replaceState({}, null, '/files/' + '?' + params)
         showList.style.fontWeight = 'bold'
         showGallery.style.fontWeight = 'normal'
         filesDataTable.responsive.recalc()
     } else {
-        // any time we are about to iterate grab what files are selected to transfer to next view
+        // Capture selected IDs before switching so they survive the re-render
         selectedFileIds = []
         filesDataTable.rows('.selected').every(function () {
             selectedFileIds.push(this.data().id)
         })
         dtContainer.hidden = true
         window.history.replaceState({}, null, '/gallery/' + '?' + params)
-        while (galleryContainer.lastChild) {
-            galleryContainer.lastChild.remove()
-        }
-        fileData.forEach(function (item, _index) {
-            addGalleryFile(item)
-        })
+        galleryContainer.replaceChildren()
         showList.style.fontWeight = 'normal'
         showGallery.style.fontWeight = 'bold'
-        showSkeletons()
+        renderGalleryChunked(fileData, 20, showSkeletons)
     }
 }
 
@@ -635,8 +630,8 @@ function fileExpireChange(data) {
 
 function fileDeleteGallery(pk) {
     $(`#gallery-image-${pk}`).remove()
-    fileData.splice(fileData.findIndex((file) => file.id === pk))
-    console.log(fileData)
+    const idx = fileData.findIndex((file) => file.id === pk)
+    if (idx !== -1) fileData.splice(idx, 1)
 }
 
 function passwordStatusChange(data) {
@@ -677,12 +672,4 @@ function buildImageLabels(file, bottomLeft) {
     if (file.name) {
         addSpan(bottomLeft, file.name)
     }
-}
-
-function isTouchDevice() {
-    return (
-        'ontouchstart' in window ||
-        navigator.maxTouchPoints > 0 ||
-        navigator.msMaxTouchPoints > 0
-    )
 }

@@ -263,13 +263,12 @@ export function getCtxMenuContainer(file) {
         menu.querySelector("[name='current-file-expiration']").value = file.expr
         menu.querySelector("[name='current-file-name']").value = file.name
 
-        let ctxPrivateText = $(`#ctx-menu-${file.id} .privateText`)
-        let ctxPrivateIcon = $(`#ctx-menu-${file.id} .privateIcon`)
-
         // set private button
         if (file.private) {
-            ctxPrivateText.text('Make Public')
-            ctxPrivateIcon.removeClass('fa-lock').addClass('fa-lock-open')
+            menu.querySelector('.privateText').textContent = 'Make Public'
+            const icon = menu.querySelector('.privateIcon')
+            icon.classList.remove('fa-lock')
+            icon.classList.add('fa-lock-open')
         }
     }
     return menu
