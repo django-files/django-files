@@ -179,9 +179,7 @@ def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
             for chunk in file.file.chunks():
                 written += len(chunk)
                 if written > max_bytes:
-                    raise ValueError(
-                        f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download"
-                    )
+                    raise ValueError(f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download")
                 vf.write(chunk)
             tmp_video = vf.name
 
@@ -198,7 +196,9 @@ def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
             if w * h > MAX_VIDEO_PIXELS:
                 log.warning(
                     "video_thumbnail_processor: %s frame %dx%d exceeds 4K pixel limit",
-                    file.name, w, h,
+                    file.name,
+                    w,
+                    h,
                 )
                 return False
 
