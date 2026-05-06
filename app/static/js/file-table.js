@@ -28,7 +28,8 @@ window.addEventListener(
         if (filesDataTable) {
             filesDataTable.rows().invalidate('data').draw(false)
         }
-    }, 100)
+    }, 100),
+    { passive: true }
 )
 
 const dataTablesOptions = {
@@ -262,11 +263,18 @@ export function addFileTableRow(file) {
     }
 }
 
+export function addFileTableRowsBatch(files) {
+    // adds multiple file table entries with a single DataTables draw
+    if (!filesDataTable || !files.length) return
+    files.forEach((file) => {
+        file['DT_RowId'] = `file-${file.id}`
+    })
+    filesDataTable.rows.add(files).draw()
+}
+
 export function addFileTableRows(data) {
     // adds multiple file table entries
-    for (const file of data.files) {
-        addFileTableRow(file)
-    }
+    addFileTableRowsBatch(data.files)
 }
 
 export function removeFileTableRow(pk) {

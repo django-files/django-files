@@ -13,7 +13,7 @@ document
 
 const backToTop = document.getElementById('back-to-top')
 if (backToTop) {
-    window.addEventListener('scroll', debounce(onScroll))
+    window.addEventListener('scroll', debounce(onScroll), { passive: true })
     backToTop.addEventListener('click', () => {
         document.body.scrollTop = 0
         document.documentElement.scrollTop = 0
@@ -33,7 +33,7 @@ if (typeof ClipboardJS !== 'undefined') {
         setTimeout(function () {
             el.popover('hide')
         }, 2000)
-        $(document).on('click', function (e) {
+        $(document).one('click', function (e) {
             if (!el.is(e.target) && el.has(e.target).length === 0) {
                 el.popover('hide')
             }
@@ -65,18 +65,6 @@ function domContentLoaded() {
         if (Android.receiveAuthToken) {
             setTimeout(getAuthToken, 250)
         }
-        //if (Android.receiveStats) {
-        //    const statsForm = document.getElementById('stats-form')
-        //    if (statsForm) {
-        //        console.log('Android.receiveStats: ', statsForm)
-        //        Android.receiveStats(
-        //            statsForm.elements?.statFiles.value,
-        //            statsForm.elements?.statSize.value,
-        //            statsForm.elements?.statHuman.value,
-        //            statsForm.elements?.statShorts.value
-        //        )
-        //    }
-        //}
     }
 
     const parser = new UAParser()
