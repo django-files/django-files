@@ -138,7 +138,7 @@ def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
     """
     Extract a single keyframe at ~1 s from a video and save it as a thumbnail.
 
-    Uses PyAV. The video is first written to a local NamedTemporaryFile so PyAV 
+    Uses PyAV. The video is first written to a local NamedTemporaryFile so PyAV
     always gets a fully seekable path on disk.
     This is required for two reasons:
       1. Non-faststart MP4s have the moov atom at the end; PyAV must seek backward
