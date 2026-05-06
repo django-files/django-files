@@ -1,16 +1,17 @@
-.gallery-skeleton-card {
-    width: 256px;
-    height: 256px;
-    animation: gallery-skeleton-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes gallery-skeleton-pulse {
-    0%,
-    100% {
-        opacity: 0.35;
+/* Bootstrap breakpoint-down(sm): below 576px */
+@media (width <= 575.98px) {
+    .gallery-outer {
+        width: calc(100% - 0.5rem);
     }
-    50% {
-        opacity: 0.7;
+    .gallery-inner {
+        width: 100%;
+        min-width: unset !important;
+        min-height: unset !important;
+        aspect-ratio: 1 / 1;
+    }
+    .gallery-inner img {
+        width: 100% !important;
+        height: auto !important;
     }
 }
 
@@ -42,13 +43,9 @@
     position: relative;
     background-color: #495057;
     background-size: 25px 25px;
-    background-image:
-        linear-gradient(45deg, rgb(145 145 145) 25%, transparent 25%),
-        linear-gradient(135deg, rgb(145 145 145) 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, rgb(145 145 145) 75%),
-        linear-gradient(135deg, transparent 75%, rgb(145 145 145) 75%);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Crect width='13' height='13' fill='%23919191'/%3E%3Crect x='13' y='13' width='12' height='12' fill='%23919191'/%3E%3C/svg%3E");
     content-visibility: auto;
-    contain-intrinsic-size: 0 256px;
+    contain-intrinsic-size: auto 256px;
 }
 
 .image-labels {

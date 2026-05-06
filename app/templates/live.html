@@ -77,9 +77,9 @@
                         <div class="row">
                             <div class="col-md d-flex justify-content-between align-items-center">
                                 {% if stream.is_live %}
-                                <strong class="m-0 text-danger fw-bold text-glow">Live</strong>
+                                <strong id="stream-status-badge" class="m-0 text-danger fw-bold text-glow">Live</strong>
                                 {% else %}
-                                <strong class="m-0 text-secondary fw-bold">Offline</strong>
+                                <strong id="stream-status-badge" class="m-0 text-secondary fw-bold">Offline</strong>
                                 {% endif %}
                                 <strong class="m-0 text-info text-end"><span id="view-count">N/A</span> Viewers</strong>
                             </div>
@@ -90,7 +90,7 @@
                                     <strong>Started:</strong> {{ stream.started_at|date:"M j, Y g:i A T" }}
                                 </p>
                                 {% if not stream.is_live and stream.ended_at %}
-                                    <p class="m-0 m-1">
+                                    <p id="stream-ended-at" class="m-0 m-1">
                                         <strong>Ended:</strong> {{ stream.ended_at|date:"M j, Y g:i A T" }}
                                     </p>
                                 {% endif %}

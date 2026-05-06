@@ -18,7 +18,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django_celery_beat import models
 from home.models import Files, FileStats, ShortURLs, Stream
-from home.util.image import thumbnail_processor
+from home.util.image import thumbnail_processor, video_thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
 from home.util.storage import use_s3
 from oauth.models import CustomUser, DiscordWebhooks
@@ -65,9 +65,9 @@ def generate_thumbs(user_pk: int = None, only_missing: bool = True):
     log.info("Generating Thumbnails - only_missing: %s - user_pk: %s", only_missing, user_pk)
     users = CustomUser.objects.filter(pk=user_pk) if user_pk else CustomUser.objects.all()
     if only_missing:
-        files = Files.objects.filter(thumb=None, user__in=users, mime__startswith="image/")
+        files = Files.objects.filter(thumb__in=[None, ""], user__in=users, mime__startswith="image/")
     else:
-        files = Files.objects.filters(user__in=users, mime__startswith="image")
+        files = Files.objects.filter(user__in=users, mime__startswith="image")
     log.info("Processing thumbnails for %d objects: %s", len(files), files)
     for file in files:
         log.info("Generating thumbnail for: %s", file.name)
@@ -77,6 +77,48 @@ def generate_thumbs(user_pk: int = None, only_missing: bool = True):
             # if we hit a file that cannot be processed ignore and continue
             log.error("Unable to process thumbnail for %s", file.name)
             continue
+
+    # Queue a separate task per video so they run in parallel and each gets
+    # its own retry budget. Evaluate the queryset once to avoid a COUNT then
+    # SELECT double-query; generate_video_thumb checks for an existing thumb
+    # before doing any work so re-queuing in-flight files is safe.
+    if only_missing:
+        video_files = list(Files.objects.filter(thumb__in=[None, ""], user__in=users, mime__startswith="video/"))
+    else:
+        video_files = list(Files.objects.filter(user__in=users, mime__startswith="video/"))
+    log.info("Queueing video thumbnails for %d files", len(video_files))
+    for vfile in video_files:
+        generate_video_thumb.delay(vfile.pk)
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60})
+def generate_video_thumb(pk: int):
+    """
+    Generate a thumbnail for a single video file identified by primary key.
+
+    Skips files whose recorded size exceeds settings.VIDEO_THUMB_MAX_BYTES
+    to avoid filling /tmp with very large video downloads.
+    """
+    log.info("generate_video_thumb: pk=%s", pk)
+    max_bytes = settings.VIDEO_THUMB_MAX_BYTES
+    try:
+        file = Files.objects.get(pk=pk)
+    except Files.DoesNotExist:
+        log.warning("generate_video_thumb: pk=%s not found, skipping", pk)
+        return
+    if file.thumb:
+        log.info("generate_video_thumb: pk=%s already has thumbnail, skipping", pk)
+        return
+    if file.size and file.size > max_bytes:
+        log.warning(
+            "generate_video_thumb: pk=%s size %d bytes exceeds limit of %d bytes, skipping",
+            pk,
+            file.size,
+            max_bytes,
+        )
+        return
+    if not video_thumbnail_processor(file, max_bytes=max_bytes):
+        log.warning("generate_video_thumb: failed to generate thumbnail for pk=%s", pk)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 5})
@@ -126,6 +168,7 @@ def app_startup():
         os.mkdir(qrcode_dir)
     regenerate_all_storage_values()
     refresh_gallery_static_urls_cache()
+    generate_thumbs.delay(only_missing=True)
     return "app_startup - finished"
 
 
@@ -401,6 +444,17 @@ def delete_album_websocket(data: dict, user_id):
 
 
 # @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 1, "countdown": 300})
+@shared_task()
+def stream_status_websocket(stream_name: str, is_live: bool, ended_at: str = None):
+    log.debug("stream_status_websocket: stream_name=%s is_live=%s", stream_name, is_live)
+    data = {"event": "stream-status", "name": stream_name, "is_live": is_live}
+    if ended_at:
+        data["ended_at"] = ended_at
+    channel_layer = get_channel_layer()
+    event = {"type": "websocket.send", "text": json.dumps(data)}
+    async_to_sync(channel_layer.group_send)("home", event)
+
+
 @shared_task()
 def send_push_live(stream_name: str, delay: int = 10, ttl: int = 1800):
     # Send a Push Message for New Live Stream

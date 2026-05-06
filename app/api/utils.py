@@ -46,7 +46,7 @@ def extract_files(q: Files.objects):
         data["thumb"] = site_settings["site_url"] + file.thumb_path
         data["raw"] = site_settings["site_url"] + file.raw_path
         data["date"] = file.date
-        data["albums"] = [album.id for album in Albums.objects.filter(files__id=file.id)]
+        data["albums"] = [album.id for album in file.albums.all()]
         files.append(data)
     return files
 
