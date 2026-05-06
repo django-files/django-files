@@ -126,6 +126,16 @@ def thumbnail_processor(file: Files, file_bytes: bytes = None, extension: str = 
         image = ImageOps.exif_transpose(image)
         # TODO: check resolution is not already small, if it is don't bother generating a thumbnail
         image.thumbnail((512, 512))
+        # Palette-mode images (GIF, some PNGs) cannot be saved as JPEG.
+        # Convert P→RGBA (preserving transparency) or P→RGB before the JPEG
+        # format check below flattens any remaining alpha channel.
+        if image.mode == "P":
+            image = image.convert("RGBA" if image.info.get("transparency") is not None else "RGB")
+        # JPEG has no alpha channel — flatten RGBA/LA onto a white background.
+        if image.mode in ("RGBA", "LA"):
+            background = Image.new("RGB", image.size, (255, 255, 255))
+            background.paste(image, mask=image.split()[-1])
+            image = background
         image.save(tmp_file, format=extension)
     with open(tmp_file, "rb") as thumb:
         # we cannot call update, we must explicitly save, here since the hooks that upload the file will not happen
