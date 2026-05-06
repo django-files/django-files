@@ -456,13 +456,13 @@ def files_view(request, page, count=25):
         user = request.user.id
     log.debug("user: %s", user)
     if album := request.GET.get("album"):
-        q = Files.objects.filtered_request(request, albums__id=album).select_related("user")
+        q = Files.objects.filtered_request(request, albums__id=album).select_related("user").prefetch_related("albums")
     elif user:
         if user == "0":
             # this grabs files for ALL users, user parameter only is accepted for superusers
-            q = Files.objects.filtered_request(request).select_related("user")
+            q = Files.objects.filtered_request(request).select_related("user").prefetch_related("albums")
         else:
-            q = Files.objects.filtered_request(request, user_id=int(user)).select_related("user")
+            q = Files.objects.filtered_request(request, user_id=int(user)).select_related("user").prefetch_related("albums")
     else:
         return JsonResponse({"error": "Not Authenticated"}, status=401)
     paginator = Paginator(q, count)

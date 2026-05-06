@@ -33,7 +33,8 @@ let fileData = []
 let fetchLock = false
 let filesDataTable
 let selectedFileIds = []
-let skeletonObserver = null
+let skeletonObserver = null   // early preemptive trigger
+let skeletonFallback = null   // late safety-net trigger
 
 document.addEventListener('DOMContentLoaded', initGallery)
 
@@ -105,18 +106,45 @@ function showSkeletons() {
     }
 
     const firstSkeleton = document.getElementById('gallery-skeleton-0')
-    if (firstSkeleton) {
-        skeletonObserver = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting) {
-                    skeletonObserver.disconnect()
-                    skeletonObserver = null
-                    addNodes()
-                }
-            },
-            { rootMargin: '300px' }
+    const lastIndex = galleryContainer.querySelectorAll('[id^="gallery-skeleton-"]').length - 1
+    const lastSkeleton = document.getElementById(`gallery-skeleton-${lastIndex}`)
+
+    if (!firstSkeleton) return
+
+    // Single shared trigger — fetchLock inside addNodes() is the only
+    // anti-spam guard, so all paths funnel through it safely.
+    function triggerFetch() {
+        if (skeletonObserver) { skeletonObserver.disconnect(); skeletonObserver = null }
+        if (skeletonFallback) { skeletonFallback.disconnect(); skeletonFallback = null }
+        addNodes()
+    }
+
+    // Early observer: large rootMargin fires while the first skeleton is still
+    // off-screen, preemptively starting the fetch before the user sees any
+    // placeholder content.
+    skeletonObserver = new IntersectionObserver(
+        (entries) => { if (entries[0].isIntersecting) triggerFetch() },
+        { rootMargin: '800px' }
+    )
+    skeletonObserver.observe(firstSkeleton)
+
+    // Late fallback: watches the last skeleton at 0px margin. Fires only when
+    // the user has actually scrolled into the bottom of the placeholder batch —
+    // catches fast scrollers who passed the early trigger before it could fire.
+    if (lastSkeleton) {
+        skeletonFallback = new IntersectionObserver(
+            (entries) => { if (entries[0].isIntersecting) triggerFetch() },
+            { rootMargin: '0px' }
         )
-        skeletonObserver.observe(firstSkeleton)
+        skeletonFallback.observe(lastSkeleton)
+    }
+
+    // Sync fallback: if the user is already past the early trigger zone when
+    // showSkeletons() runs (e.g., arrived at the bottom mid-fetch), the async
+    // IO callback will never fire — call addNodes() directly.
+    const rect = firstSkeleton.getBoundingClientRect()
+    if (rect.top < window.innerHeight + 800) {
+        triggerFetch()
     }
 }
 
@@ -125,10 +153,8 @@ function showSkeletons() {
  * @function hideSkeletons
  */
 function hideSkeletons() {
-    if (skeletonObserver) {
-        skeletonObserver.disconnect()
-        skeletonObserver = null
-    }
+    if (skeletonObserver) { skeletonObserver.disconnect(); skeletonObserver = null }
+    if (skeletonFallback) { skeletonFallback.disconnect(); skeletonFallback = null }
     document
         .querySelectorAll('[id^="gallery-skeleton-"]')
         .forEach((el) => el.remove())
@@ -342,134 +368,68 @@ function addGalleryImage(file, top = false) {
 }
 
 /**
- * Add a video file to the gallery. The raw video is NOT loaded until the card
- * scrolls into view, at which point a single frame is extracted via Canvas and
- * used as a thumbnail. Clicking the card opens the file preview page.
+ * Add a video file to the gallery using its server-generated thumbnail image.
+ * If no thumbnail exists yet (still being generated), a static placeholder
+ * is shown instead. Clicking either state opens the file preview page.
  * @function addGalleryVideo
  */
 function addGalleryVideo(file, top = false) {
     const maxThumbSize = 256
-    const { outer, inner } = buildGalleryCard(file, top)
+    const { inner } = buildGalleryCard(file, top)
 
-    inner.style.minWidth = `${maxThumbSize}px`
-    inner.style.minHeight = `${maxThumbSize}px`
-
-    // CANVAS (frame thumbnail)
-    const canvas = document.createElement('canvas')
-    canvas.width = maxThumbSize
-    canvas.height = maxThumbSize
-    canvas.style.width = '100%'
-    canvas.style.height = '100%'
-    canvas.style.display = 'block'
-
-    // LINK wraps canvas
     const link = document.createElement('a')
     link.classList.add('image-link')
     link.href = file.url
     link.title = file.name
     link.target = '_blank'
-    link.appendChild(canvas)
 
-    // SKELETON overlay — fades out after frame extraction
-    const skeleton = document.createElement('div')
-    skeleton.classList.add('img-skeleton')
-
-    // PLAY BUTTON overlay
     const playBtn = document.createElement('div')
     playBtn.classList.add('video-play-overlay')
-    playBtn.innerHTML =
-        '<i class="fa-solid fa-circle-play fa-3x text-white"></i>'
+    playBtn.innerHTML = '<i class="fa-solid fa-circle-play fa-3x text-white"></i>'
 
-    // Insert media before icons/labels (prepend to inner)
-    inner.prepend(playBtn, skeleton, link)
+    if (file.thumb) {
+        const img = imageNode.cloneNode(true)
+        img.width = maxThumbSize
+        img.height = maxThumbSize
 
-    // Lazy frame extraction — fires when card is about to scroll into view
-    const frameObserver = new IntersectionObserver(
-        (entries) => {
-            if (entries[0].isIntersecting) {
-                frameObserver.disconnect()
-                extractVideoFrame(file.raw, canvas, skeleton)
-            }
-        },
-        { rootMargin: '200px' }
-    )
-    frameObserver.observe(outer)
-}
-
-/**
- * Extract the first frame of a video via Canvas and render it into the given
- * canvas element. Uses preload="metadata" so only a small initial segment is
- * fetched, not the full video. Fades out the skeleton when done.
- * @function extractVideoFrame
- * @param {String} src - raw video URL
- * @param {HTMLCanvasElement} canvas
- * @param {HTMLElement} skeleton
- */
-function extractVideoFrame(src, canvas, skeleton) {
-    console.debug('extractVideoFrame:', src)
-    const video = document.createElement('video')
-    video.preload = 'metadata'
-    video.muted = true
-    video.playsInline = true
-    video.crossOrigin = 'anonymous'
-
-    video.addEventListener(
-        'loadeddata',
-        () => {
-            video.currentTime = 0
-        },
-        { once: true }
-    )
-
-    video.addEventListener(
-        'seeked',
-        () => {
-            try {
-                const ctx = canvas.getContext('2d')
-                // letterbox the frame inside the square canvas
-                const vw = video.videoWidth || canvas.width
-                const vh = video.videoHeight || canvas.height
-                const scale = Math.min(canvas.width / vw, canvas.height / vh)
-                const drawW = vw * scale
-                const drawH = vh * scale
-                const dx = (canvas.width - drawW) / 2
-                const dy = (canvas.height - drawH) / 2
-                ctx.fillStyle = '#000'
-                ctx.fillRect(0, 0, canvas.width, canvas.height)
-                ctx.drawImage(video, dx, dy, drawW, drawH)
-            } catch (err) {
-                console.warn('extractVideoFrame canvas error:', err)
-            }
-            // release video resources
-            video.src = ''
-            video.load()
-            // fade out skeleton
-            if (skeleton) {
+        const skeleton = document.createElement('div')
+        skeleton.classList.add('img-skeleton')
+        img.addEventListener(
+            'load',
+            () => {
                 skeleton.style.transition = 'opacity 0.3s'
                 skeleton.style.opacity = '0'
-                skeleton.addEventListener(
-                    'transitionend',
-                    () => skeleton.remove(),
-                    {
-                        once: true,
-                    }
-                )
-            }
-        },
-        { once: true }
-    )
-
-    video.addEventListener(
-        'error',
-        () => {
-            console.warn('extractVideoFrame load error:', src)
-            if (skeleton) skeleton.remove()
-        },
-        { once: true }
-    )
-
-    video.src = src
-    video.load()
+                skeleton.addEventListener('transitionend', () => skeleton.remove(), { once: true })
+            },
+            { once: true }
+        )
+        img.addEventListener(
+            'error',
+            () => {
+                skeleton.remove()
+                img.style.display = 'none'
+                const placeholder = document.createElement('div')
+                placeholder.className = 'img-error-placeholder'
+                placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
+                inner.appendChild(placeholder)
+            },
+            { once: true }
+        )
+        img.src = file.thumb
+        link.appendChild(img)
+        // prepend order determines stacking: link(in-flow) at base,
+        // skeleton(abs) covers it while loading, playBtn(abs) surfaces after fade
+        inner.prepend(playBtn, skeleton, link)
+    } else {
+        // Thumbnail not yet generated — show a static placeholder
+        inner.style.minWidth = `${maxThumbSize}px`
+        inner.style.minHeight = `${maxThumbSize}px`
+        const placeholder = document.createElement('div')
+        placeholder.className = 'img-error-placeholder'
+        placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
+        link.appendChild(placeholder)
+        inner.prepend(playBtn, link)
+    }
 }
 
 /**

@@ -10,8 +10,9 @@ from typing import BinaryIO
 import magic
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
+from django.db import transaction
 from home.models import Albums, Files
-from home.tasks import new_file_websocket, send_discord_message
+from home.tasks import generate_video_thumb, new_file_websocket, send_discord_message
 from home.util.image import ImageProcessor, thumbnail_processor
 from home.util.misc import anytobool
 from home.util.quota import increment_storage_usage
@@ -122,6 +123,11 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
 
     if file_mime in ["image/jpe", "image/jpg", "image/jpeg", "image/webp"]:
         thumbnail_processor(file, f.read(), detected_extension)
+    if file_mime.startswith("video/"):
+        # on_commit ensures the row is visible to the Celery worker before the
+        # task is dispatched, preventing a DoesNotExist race on fast workers.
+        pk = file.pk
+        transaction.on_commit(lambda: generate_video_thumb.apply_async(args=[pk]))
     increment_storage_usage(file)
     new_file_websocket.apply_async(args=[file.pk], priority=0)
     send_discord_message.delay(file.pk)

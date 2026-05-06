@@ -70,47 +70,38 @@ async function wsConnect() {
 
 // File Events
 
-async function initListener() {
+const EVENT_HANDLERS = {
+    'file-new': messageNewFile,
+    'set-expr-file': messageExpire,
+    'toggle-private-file': messageTogglePrivate,
+    'set-password-file': messagePassword,
+    'file-delete': messageDelete,
+    'set-file-name': messageFileRename,
+    'stream-status': messageStreamStatus,
+    'set-stream-title': messageStreamTitleUpdate,
+    'set-stream-description': messageStreamDescriptionUpdate,
+    'album-delete': messageAlbumDelete,
+    'album-new': messageAlbumNew,
+    message: messageToast,
+}
+
+function initListener() {
     if (_initializedSockets.has(socket)) return
     _initializedSockets.add(socket)
-    socket?.addEventListener('message', function (event) {
-        // console.log('socket.message: files.js:', event)
+    socket.addEventListener('message', function (event) {
         if (event.data === 'pong') return
-        let data = JSON.parse(event.data)
-        console.log(event)
-        if (data.event === 'file-new') {
-            messageNewFile(data)
-        } else if (data.event === 'set-expr-file') {
-            messageExpire(data)
-        } else if (data.event === 'toggle-private-file') {
-            if ('objects' in data) {
-                data.objects.forEach((obj) => {
-                    messagePrivate(obj)
-                })
-            } else {
-                messagePrivate(data)
-            }
-        } else if (data.event === 'set-password-file') {
-            messagePassword(data)
-        } else if (data.event === 'file-delete') {
-            messageDelete(data)
-        } else if (data.event === 'set-file-name') {
-            messageFileRename(data)
-        } else if (data.event === 'stream-status') {
-            messageStreamStatus(data)
-        } else if (data.event === 'set-stream-title') {
-            messageStreamTitleUpdate(data)
-        } else if (data.event === 'set-stream-description') {
-            messageStreamDescriptionUpdate(data)
-        } else if (data.event === 'album-delete') {
-            messageAlbumDelete(data)
-        } else if (data.event === 'album-new') {
-            messageAlbumNew(data)
-        } else if (data.event === 'message') {
-            console.log(`data.message: ${data.message}`)
-            const bsClass = data.bsClass || 'info'
-            const delay = data.delay || '6000'
-            show_toast(data.message, bsClass, delay)
+        let data
+        try {
+            data = JSON.parse(event.data)
+        } catch (e) {
+            console.error('WebSocket: failed to parse message', event.data, e)
+            return
+        }
+        const handler = EVENT_HANDLERS[data.event]
+        if (handler) {
+            handler(data)
+        } else {
+            console.warn('WebSocket: unhandled event', data.event)
         }
     })
 }
@@ -194,6 +185,17 @@ function messageAlbumNew(data) {
 
 function messageNewFile(data) {
     show_toast(`${truncateName(data.name)} added.`)
+}
+
+function messageTogglePrivate(data) {
+    const objects = 'objects' in data ? data.objects : [data]
+    objects.forEach(messagePrivate)
+}
+
+function messageToast(data) {
+    const bsClass = data.bsClass || 'info'
+    const delay = data.delay || '6000'
+    show_toast(data.message, bsClass, delay)
 }
 
 function messageStreamStatus(data) {
