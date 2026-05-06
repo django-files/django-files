@@ -48,7 +48,7 @@ def files_post_save_signal(sender, instance, **kwargs):
         log.info("files_post_save_signal, %s, %s, %s", sender, instance, kwargs)
         # clear_files_cache.delay()
         data = model_to_dict(instance, exclude=["file", "info", "exif", "date", "edit", "meta", "thumb", "albums"])
-        update_fields = list(kwargs["update_fields"])
+        update_fields = list(kwargs["update_fields"]) if kwargs.get("update_fields") else []
         log.debug("update_fields: %s", update_fields)
         update_file_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
     except Exception as error:

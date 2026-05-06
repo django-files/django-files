@@ -64,10 +64,16 @@ def app_init():
 def generate_thumbs(user_pk: int = None, only_missing: bool = True):
     log.info("Generating Thumbnails - only_missing: %s - user_pk: %s", only_missing, user_pk)
     users = CustomUser.objects.filter(pk=user_pk) if user_pk else CustomUser.objects.all()
+    # MIME types that Pillow cannot reliably thumbnail (e.g. image/jxl has no
+    # stable decoder in the versions we ship).  Add to this list as needed.
+    thumb_exclude_mime = ["image/jxl"]
+
     if only_missing:
-        files = Files.objects.filter(thumb__in=[None, ""], user__in=users, mime__startswith="image/")
+        files = Files.objects.filter(thumb__in=[None, ""], user__in=users, mime__startswith="image/").exclude(
+            mime__in=thumb_exclude_mime
+        )
     else:
-        files = Files.objects.filter(user__in=users, mime__startswith="image")
+        files = Files.objects.filter(user__in=users, mime__startswith="image").exclude(mime__in=thumb_exclude_mime)
     log.info("Processing thumbnails for %d objects: %s", len(files), files)
     for file in files:
         log.info("Generating thumbnail for: %s", file.name)
