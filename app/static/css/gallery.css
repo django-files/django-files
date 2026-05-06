@@ -3,15 +3,15 @@
     .gallery-outer {
         width: calc(100% - 0.5rem);
     }
-    .gallery-inner {
+    .gallery-inner:not(input) {
         width: 100%;
         min-width: unset !important;
         min-height: unset !important;
-        aspect-ratio: 1 / 1;
     }
     .gallery-inner img {
         width: 100% !important;
         height: auto !important;
+        max-height: unset !important;
     }
 }
 
