@@ -33,8 +33,8 @@ let fileData = []
 let fetchLock = false
 let filesDataTable
 let selectedFileIds = []
-let skeletonObserver = null   // early preemptive trigger
-let skeletonFallback = null   // late safety-net trigger
+let skeletonObserver = null // early preemptive trigger
+let skeletonFallback = null // late safety-net trigger
 
 document.addEventListener('DOMContentLoaded', initGallery)
 
@@ -82,7 +82,37 @@ $('#user').on('change', function (_event) {
  * @function showSkeletons
  */
 function showSkeletons() {
-    if (!nextPage || !globalThis.location.pathname.includes('gallery')) return
+    if (!nextPage) return
+
+    if (!globalThis.location.pathname.includes('gallery')) {
+        // List view: use an invisible sentinel element instead of visual skeletons.
+        const sentinel = document.createElement('div')
+        sentinel.id = 'list-scroll-sentinel'
+        dtContainer.after(sentinel)
+
+        const triggerListFetch = () => {
+            if (skeletonObserver) {
+                skeletonObserver.disconnect()
+                skeletonObserver = null
+            }
+            addNodes()
+        }
+
+        skeletonObserver = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) triggerListFetch()
+            },
+            { rootMargin: '300px' }
+        )
+        skeletonObserver.observe(sentinel)
+
+        // Sync fallback: if we're already at the bottom, fire immediately.
+        const rect = sentinel.getBoundingClientRect()
+        if (rect.top < window.innerHeight + 300) {
+            triggerListFetch()
+        }
+        return
+    }
 
     for (let i = 0; i < 16; i++) {
         const outer = document
@@ -106,16 +136,26 @@ function showSkeletons() {
     }
 
     const firstSkeleton = document.getElementById('gallery-skeleton-0')
-    const lastIndex = galleryContainer.querySelectorAll('[id^="gallery-skeleton-"]').length - 1
-    const lastSkeleton = document.getElementById(`gallery-skeleton-${lastIndex}`)
+    const lastIndex =
+        galleryContainer.querySelectorAll('[id^="gallery-skeleton-"]').length -
+        1
+    const lastSkeleton = document.getElementById(
+        `gallery-skeleton-${lastIndex}`
+    )
 
     if (!firstSkeleton) return
 
     // Single shared trigger — fetchLock inside addNodes() is the only
     // anti-spam guard, so all paths funnel through it safely.
     function triggerFetch() {
-        if (skeletonObserver) { skeletonObserver.disconnect(); skeletonObserver = null }
-        if (skeletonFallback) { skeletonFallback.disconnect(); skeletonFallback = null }
+        if (skeletonObserver) {
+            skeletonObserver.disconnect()
+            skeletonObserver = null
+        }
+        if (skeletonFallback) {
+            skeletonFallback.disconnect()
+            skeletonFallback = null
+        }
         addNodes()
     }
 
@@ -123,7 +163,9 @@ function showSkeletons() {
     // off-screen, preemptively starting the fetch before the user sees any
     // placeholder content.
     skeletonObserver = new IntersectionObserver(
-        (entries) => { if (entries[0].isIntersecting) triggerFetch() },
+        (entries) => {
+            if (entries[0].isIntersecting) triggerFetch()
+        },
         { rootMargin: '800px' }
     )
     skeletonObserver.observe(firstSkeleton)
@@ -133,7 +175,9 @@ function showSkeletons() {
     // catches fast scrollers who passed the early trigger before it could fire.
     if (lastSkeleton) {
         skeletonFallback = new IntersectionObserver(
-            (entries) => { if (entries[0].isIntersecting) triggerFetch() },
+            (entries) => {
+                if (entries[0].isIntersecting) triggerFetch()
+            },
             { rootMargin: '0px' }
         )
         skeletonFallback.observe(lastSkeleton)
@@ -153,11 +197,18 @@ function showSkeletons() {
  * @function hideSkeletons
  */
 function hideSkeletons() {
-    if (skeletonObserver) { skeletonObserver.disconnect(); skeletonObserver = null }
-    if (skeletonFallback) { skeletonFallback.disconnect(); skeletonFallback = null }
+    if (skeletonObserver) {
+        skeletonObserver.disconnect()
+        skeletonObserver = null
+    }
+    if (skeletonFallback) {
+        skeletonFallback.disconnect()
+        skeletonFallback = null
+    }
     document
         .querySelectorAll('[id^="gallery-skeleton-"]')
         .forEach((el) => el.remove())
+    document.getElementById('list-scroll-sentinel')?.remove()
 }
 
 /**
@@ -385,7 +436,8 @@ function addGalleryVideo(file, top = false) {
 
     const playBtn = document.createElement('div')
     playBtn.classList.add('video-play-overlay')
-    playBtn.innerHTML = '<i class="fa-solid fa-circle-play fa-3x text-white"></i>'
+    playBtn.innerHTML =
+        '<i class="fa-solid fa-circle-play fa-3x text-white"></i>'
 
     if (file.thumb) {
         const img = imageNode.cloneNode(true)
@@ -399,7 +451,11 @@ function addGalleryVideo(file, top = false) {
             () => {
                 skeleton.style.transition = 'opacity 0.3s'
                 skeleton.style.opacity = '0'
-                skeleton.addEventListener('transitionend', () => skeleton.remove(), { once: true })
+                skeleton.addEventListener(
+                    'transitionend',
+                    () => skeleton.remove(),
+                    { once: true }
+                )
             },
             { once: true }
         )

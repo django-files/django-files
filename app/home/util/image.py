@@ -135,17 +135,15 @@ def thumbnail_processor(file: Files, file_bytes: bytes = None, extension: str = 
 
 
 def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
-    """Extract a single keyframe at ~1 s from a video and save it as a thumbnail.
+    """
+    Extract a single keyframe at ~1 s from a video and save it as a thumbnail.
 
-    Uses PyAV (FFmpeg bindings) — no subprocess. The video is first written to a
-    local NamedTemporaryFile so PyAV always gets a fully seekable path on disk.
+    Uses PyAV. The video is first written to a local NamedTemporaryFile so PyAV 
+    always gets a fully seekable path on disk.
     This is required for two reasons:
       1. Non-faststart MP4s have the moov atom at the end; PyAV must seek backward
          after reading the header, which is impossible on a forward-only S3 stream.
       2. S3-backed FieldFile objects do not support arbitrary backward seeks.
-
-    The output thumbnail fits within 512×512 with aspect ratio preserved
-    (e.g. a 1920×1080 frame becomes 512×288).
 
     max_bytes: Hard cap on how many bytes are written to the local temp file.
       Streaming is done via file.file.chunks() so memory usage stays low; if the

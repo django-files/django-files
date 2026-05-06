@@ -93,7 +93,8 @@ def generate_thumbs(user_pk: int = None, only_missing: bool = True):
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60})
 def generate_video_thumb(pk: int):
-    """Generate a thumbnail for a single video file identified by primary key.
+    """
+    Generate a thumbnail for a single video file identified by primary key.
 
     Skips files whose recorded size exceeds settings.VIDEO_THUMB_MAX_BYTES
     to avoid filling /tmp with very large video downloads.
