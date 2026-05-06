@@ -83,20 +83,25 @@ $('#user').on('change', function (_event) {
 function showSkeletons() {
     if (!nextPage || !globalThis.location.pathname.includes('gallery')) return
 
-    for (let i = 0; i < 8; i++) {
-        const card = document
+    for (let i = 0; i < 16; i++) {
+        const outer = document
             .querySelector('.d-none .gallery-outer')
             .cloneNode(false)
-        card.id = `gallery-skeleton-${i}`
-        card.classList.add(
-            'gallery-skeleton-card',
-            'm-1',
-            'rounded-1',
-            'border',
-            'border-3',
-            'border-secondary'
-        )
-        galleryContainer.appendChild(card)
+        outer.id = `gallery-skeleton-${i}`
+        outer.classList.add('m-1')
+
+        const inner = document
+            .querySelector('.d-none .gallery-inner')
+            .cloneNode(false)
+        inner.style.minWidth = '256px'
+        inner.style.minHeight = '256px'
+
+        const shimmer = document.createElement('div')
+        shimmer.classList.add('img-skeleton')
+
+        inner.appendChild(shimmer)
+        outer.appendChild(inner)
+        galleryContainer.appendChild(outer)
     }
 
     const firstSkeleton = document.getElementById('gallery-skeleton-0')
@@ -141,7 +146,13 @@ async function addNodes() {
         return console.warn('No Next Page:', nextPage)
     }
     if (!fetchLock) {
-        hideSkeletons()
+        // Disconnect the observer so it doesn't re-fire while fetching,
+        // but leave the skeleton cards in the DOM so the user can see
+        // there is more content coming while the request is in flight.
+        if (skeletonObserver) {
+            skeletonObserver.disconnect()
+            skeletonObserver = null
+        }
         filesDataTable.processing(true)
         fetchLock = true
         const data = await fetchFiles(nextPage, 25, params.get('album'))
@@ -149,6 +160,8 @@ async function addNodes() {
         slideshowCallback(data)
         nextPage = data.next
         fileData.push(...data.files)
+        // Data is ready — remove skeletons and render real cards.
+        hideSkeletons()
         for (const file of data.files) {
             // console.debug('file:', file)
             if (window.location.pathname.includes('gallery')) {
