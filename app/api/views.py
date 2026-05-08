@@ -858,7 +858,7 @@ def stream_auth_view(request):
             stream.save()
         log.debug("title: %s", title)
         send_push_live.delay(stream.name)
-        stream_status_websocket.delay(stream.name, True)
+        stream_status_websocket.delay(stream.name, True, started_at=stream.started_at.isoformat())
 
         return HttpResponse()
     except Exception as error:
