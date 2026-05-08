@@ -438,3 +438,71 @@ async function getAlbums() {
 
 // End Album Badges Section
 ////////////////////////////
+
+////////////////////////////
+// Leaflet Map Section
+const mapToggle = document.getElementById('mapToggle')
+const mapCollapse = document.getElementById('mapCollapse')
+const mapContainer = document.getElementById('previewMap')
+let leafletMap = null
+
+function openMap() {
+    mapCollapse.style.display = 'block'
+    mapToggle.setAttribute('aria-expanded', 'true')
+    mapToggle.querySelector('span').textContent = 'Hide Map'
+    Cookies.set('previewMap', 'open', { expires: 365 })
+    requestAnimationFrame(() => {
+        if (!leafletMap) {
+            initLeafletMap()
+        } else {
+            leafletMap.invalidateSize()
+        }
+    })
+}
+
+function closeMap() {
+    mapCollapse.style.display = 'none'
+    mapToggle.setAttribute('aria-expanded', 'false')
+    mapToggle.querySelector('span').textContent = 'Show on Map'
+    Cookies.remove('previewMap')
+}
+
+if (mapToggle && mapCollapse && mapContainer) {
+    mapToggle.addEventListener('click', () => {
+        if (mapToggle.getAttribute('aria-expanded') === 'true') {
+            closeMap()
+        } else {
+            openMap()
+        }
+    })
+
+    if (Cookies.get('previewMap') === 'open') {
+        openMap()
+    }
+}
+
+function initLeafletMap() {
+    const L = window.L
+    if (!L) {
+        console.error('Leaflet not loaded')
+        return
+    }
+    const lat = parseFloat(mapContainer.dataset.lat)
+    const lon = parseFloat(mapContainer.dataset.lon)
+    leafletMap = L.map('previewMap', {
+        zoomControl: false,
+        attributionControl: true,
+    }).setView([lat, lon], 7)
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution:
+            '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+    }).addTo(leafletMap)
+
+    L.marker([lat, lon]).addTo(leafletMap)
+    // Second invalidateSize in case one frame wasn't enough
+    requestAnimationFrame(() => leafletMap.invalidateSize())
+}
+// End Leaflet Map Section
+////////////////////////////

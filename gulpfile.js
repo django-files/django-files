@@ -71,6 +71,19 @@ gulp.task('js-cookie', () => {
         .pipe(gulp.dest('app/static/dist/js-cookie'))
 })
 
+gulp.task('leaflet', () => {
+    return gulp
+        .src(
+            [
+                'node_modules/leaflet/dist/leaflet.js',
+                'node_modules/leaflet/dist/leaflet.css',
+                'node_modules/leaflet/dist/images/**/*',
+            ],
+            { base: 'node_modules/leaflet/dist', encoding: false }
+        )
+        .pipe(gulp.dest('app/static/dist/leaflet'))
+})
+
 gulp.task('jquery', () => {
     return gulp
         .src('node_modules/jquery/dist/jquery.min.js')
@@ -148,6 +161,7 @@ gulp.task(
         'swagger-yaml',
         'swiper',
         'tsparticles',
+        'leaflet',
         'ua-parser-js',
         'uppy'
     )

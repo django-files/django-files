@@ -51,6 +51,9 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         {{ css|safe }}
     </style>
     <link rel="stylesheet" href="{% static 'css/preview.css' %}">
+    {% if gps_lat and gps_lon %}
+        <link rel="stylesheet" href="{% static 'dist/leaflet/leaflet.css' %}">
+    {% endif %}
 {% endblock %}
 
 {% block nav1color %}{{ file.user.nav_color_1 }}{% endblock %}
@@ -133,6 +136,20 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% if file.exif.DateTime %}<b>Captured On:</b> {{ file.exif.DateTimeOriginal|convert_str_date }}<br>{% endif %}
                         {% if file.meta.GPSArea %}<b>Location:</b> {{ file.meta.GPSArea }}<br>{% endif %}
                         {% if file.exif.GPSInfo.6 %}<b>Elevation:</b> {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
+                    {% if gps_lat and gps_lon %}
+                    <div class="map-section">
+                        <button class="map-toggle-btn" type="button" id="mapToggle" aria-expanded="false">
+                            <i class="fa-solid fa-map-location-dot me-1"></i>
+                            <span>Show on Map</span>
+                            <i class="fa-solid fa-chevron-down map-chevron"></i>
+                        </button>
+                        <div class="map-collapse" id="mapCollapse">
+                            <div id="previewMap" class="preview-map"
+                                 data-lat="{{ gps_lat }}"
+                                 data-lon="{{ gps_lon }}"></div>
+                        </div>
+                    </div>
+                    {% endif %}
                     <p class="card-text text-body-secondary me-auto">
                         {% if file.exif.Model %}<b>Camera:</b> {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}<br>{% endif %}
                         {% if file.exif.LensModel %}<b>Lens: </b>{{ file.exif.LensModel }}<br>{% endif %}
@@ -220,5 +237,8 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         <script src={% static 'dist/jquery-ui/jquery-ui.min.js' %}></script>
     {% endif %}
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
+    {% if gps_lat and gps_lon %}
+        <script src="{% static 'dist/leaflet/leaflet.js' %}"></script>
+    {% endif %}
     <script type="module" src="{% static 'js/preview.js' %}"></script>
 {% endblock %}
