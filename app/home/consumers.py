@@ -90,7 +90,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("user: %s", self.scope["user"])
         if self.scope["client"][1] is None:
             return log.debug("client 1 is None")
-        await self.send(text_data=event["text"])
+        try:
+            await self.send(text_data=event["text"])
+        except Exception:
+            log.debug("websocket_send: connection already closed, dropping message")
 
     async def websocket_receive(self, event):
         log.debug("websocket_receive")
@@ -1054,7 +1057,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if file := Files.objects.filter(pk=pk):
             if len(file) == 0:
                 return self._error("File not found.", **kwargs)
-            if user_id and file[0].user.id != user_id and not file[0].user.is_superuser:
+            if user_id and file[0].user.id != user_id and not self.scope["user"].is_superuser:
                 return self._error("File owned by another user.", **kwargs)
             file_albums = dict(Albums.objects.filter(files__id=pk).values_list("id", "name"))
         if not albums:
@@ -1096,7 +1099,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if file := Files.objects.filter(pk=pk):
             if len(file) == 0:
                 return self._error("File not found.", **kwargs)
-            if user_id and file[0].user.id != user_id and not file[0].user.is_superuser:
+            if user_id and file[0].user.id != user_id and not self.scope["user"].is_superuser:
                 return self._error("File owned by another user.", **kwargs)
         album = Albums.objects.get(id=album)
         file[0].albums.remove(album)
@@ -1130,7 +1133,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if file := Files.objects.filter(pk=pk):
             if len(file) == 0:
                 return self._error("File not found.", **kwargs)
-            if user_id and file[0].user.id != user_id and not file[0].user.is_superuser:
+            if user_id and file[0].user.id != user_id and not self.scope["user"].is_superuser:
                 return self._error("File owned by another user.", **kwargs)
         qalbum, selected_album = [], None
         if album:
