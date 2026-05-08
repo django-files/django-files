@@ -139,6 +139,7 @@ function showSkeletons() {
         const inner = tmplInner.cloneNode(false)
         inner.style.minWidth = '256px'
         inner.style.minHeight = '256px'
+        inner.style.aspectRatio = '1 / 1'
 
         const shimmer = document.createElement('div')
         shimmer.classList.add('img-skeleton')
