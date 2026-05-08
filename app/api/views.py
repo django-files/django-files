@@ -265,11 +265,13 @@ def album_view(request, album_id: int = None):
             return JsonResponse({"url": full_url}, safe=False)
         elif request.method == "DELETE":
             album = get_object_or_404(Albums, id=album_id)
+            if album.user != request.user and not request.user.is_superuser:
+                return HttpResponse(status=403)
             album.delete()
             return HttpResponse(status=204)
         else:
             album = get_object_or_404(Albums, id=album_id if album_id else request.GET.get("id"))
-            return JsonResponse(album)
+            return JsonResponse(extract_albums([album])[0])
     except Exception as error:
         log.error(error)
         return JsonResponse({"error": f"{error}"}, status=400)
@@ -411,7 +413,7 @@ def recent_view(request):
         # query = Files.objects.filtered_request(request).select_related("user")
         query = Files.objects.filter(user=request.user).select_related("user")
         if album := request.GET.get("album"):
-            query.filter(albums__id=album)
+            query = query.filter(albums__id=album)
 
         after = int(request.GET.get("after", 0))
         log.debug("after: %s", after)
@@ -680,7 +682,7 @@ def token_view(request):
     GET to fetch token value
     POST to refresh and fetch token value
     """
-    if not request.user:
+    if not request.user.is_authenticated:
         return HttpResponse(status=401)
     if request.method == "POST":
         user = request.user
@@ -856,7 +858,7 @@ def stream_auth_view(request):
             stream.save()
         log.debug("title: %s", title)
         send_push_live.delay(stream.name)
-        stream_status_websocket.delay(stream.name, True)
+        stream_status_websocket.delay(stream.name, True, started_at=stream.started_at.isoformat())
 
         return HttpResponse()
     except Exception as error:
@@ -868,14 +870,35 @@ def stream_auth_view(request):
 def stream_done_view(request):
     """
     View /stream/done/
+    Called by the RTMP server when a stream ends.  The request must carry the
+    same ?tcurl=...&token=<authorization_token> that stream_auth_view validates,
+    and the token must belong to the stream owner.
     """
     try:
         log.debug("stream_done_view: %s - %s", request.method, request.META["PATH_INFO"])
         log.debug("stream_done_view: %s", request.GET)
         name = request.GET.get("name")
         log.debug("name: %s", name)
+        if not name:
+            return HttpResponse(status=400)
+
+        url = urlparse(request.GET.get("tcurl", ""))
+        data = parse_qs(url.query)
+        token = data.get("token", [None])[0]
+        if not token:
+            log.debug("stream_done_view: no token provided")
+            return HttpResponse(status=401)
+        user = CustomUser.objects.filter(authorization=token).first()
+        if not user:
+            log.debug("stream_done_view: invalid token")
+            return HttpResponse(status=401)
+
         stream = Stream.objects.get(name=name)
         log.debug("stream: %s", stream)
+        if stream.user != user and not user.is_superuser:
+            log.debug("stream_done_view: token belongs to %s, not stream owner %s", user, stream.user)
+            return HttpResponse(status=403)
+
         stream.ended_at = datetime.now()
         stream.is_live = False
         stream.save()
@@ -902,23 +925,6 @@ def stream_ingest_view(request):
     site_settings = SiteSettings.objects.settings()
     rtmp_host, _ = get_rtmp_host(request, site_settings)
     return JsonResponse({"rtmp_host": rtmp_host, "rtmp_port": 1935})
-
-
-# @csrf_exempt
-# def stream_update_view(request):
-#     """
-#     View /stream/update/
-#     """
-#     try:
-#         log.debug("stream_update_view: %s - %s", request.method, request.META["PATH_INFO"])
-#         log.debug("stream_update_view: %s", request.GET)
-#         # name = request.GET.get("name")
-#         # log.debug("name: %s", name)
-#
-#     except Exception as error:
-#         log.debug("error: %s", error)
-#
-#     return HttpResponse()
 
 
 def stream_ping_view(request, name):
@@ -1172,7 +1178,7 @@ def shorts_view(request):
         before = int(request.GET.get("before", 0))
         log.debug("before: %s", before)
         if before:
-            shorts = query.filter(id__gt=before)
+            shorts = query.filter(id__lt=before)
             return JsonResponse([model_to_dict(short) for short in shorts], safe=False)
 
         amount = int(request.GET.get("amount", 10))
@@ -1181,7 +1187,7 @@ def shorts_view(request):
         after = int(request.GET.get("after", 0))
         log.debug("after: %s", after)
         if after:
-            shorts = query.filter(id__lt=after)[:amount]
+            shorts = query.filter(id__gt=after)[:amount]
             return JsonResponse([model_to_dict(short) for short in shorts], safe=False)
 
         start = int(request.GET.get("start", 0))
@@ -1269,8 +1275,11 @@ def user_view(request, user_id=None):
             if not data:
                 return JsonResponse({"error": json_error_message}, status=400)
 
+            if "password" in data:
+                target_user.set_password(data.pop("password"))
+
             if not request.user.is_superuser:
-                sensitive_fields = ["authorization", "is_superuser", "is_staff"]
+                sensitive_fields = ["authorization", "is_superuser", "is_staff", "password"]
                 for field in sensitive_fields:
                     data.pop(field, None)
 

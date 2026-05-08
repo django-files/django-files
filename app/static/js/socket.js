@@ -207,6 +207,21 @@ function messageStreamStatus(data) {
         badge.className = 'm-0 text-danger fw-bold text-glow'
         badge.textContent = 'Live'
         document.getElementById('stream-ended-at')?.remove()
+        if (data.started_at) {
+            const el = document.getElementById('stream-started-at')
+            if (el) {
+                const date = new Date(data.started_at)
+                const formatted = date.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true,
+                })
+                el.innerHTML = `<strong>Started:</strong> ${formatted}`
+            }
+        }
     } else {
         badge.className = 'm-0 text-secondary fw-bold'
         badge.textContent = 'Offline'

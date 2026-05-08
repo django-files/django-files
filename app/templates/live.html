@@ -86,7 +86,7 @@
                         </div>
                         <div class="row">
                             <div class="col-sm">
-                                <p class="m-0 m-1">
+                                <p id="stream-started-at" class="m-0 m-1">
                                     <strong>Started:</strong> {{ stream.started_at|date:"M j, Y g:i A T" }}
                                 </p>
                                 {% if not stream.is_live and stream.ended_at %}
