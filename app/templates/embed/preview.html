@@ -47,6 +47,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
 {% endblock %}
 
 {% block head %}
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <style>
         {{ css|safe }}
     </style>
@@ -137,7 +138,7 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% if file.meta.GPSArea %}<b>Location:</b> {{ file.meta.GPSArea }}<br>{% endif %}
                         {% if file.exif.GPSInfo.6 %}<b>Elevation:</b> {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
                     {% if gps_lat and gps_lon %}
-                    <div class="map-section">
+                    <div class="mt-1 mb-2">
                         <button class="map-toggle-btn" type="button" id="mapToggle" aria-expanded="false">
                             <i class="fa-solid fa-map-location-dot me-1"></i>
                             <span>Show on Map</span>

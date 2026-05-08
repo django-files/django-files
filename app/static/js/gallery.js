@@ -587,7 +587,9 @@ function renderGalleryChunked(files, chunkSize = 20, onComplete = null) {
 function changeView(event) {
     event.preventDefault()
     hideSkeletons()
-    const view = event.currentTarget.dataset.view || event.currentTarget.textContent.trim()
+    const view =
+        event.currentTarget.dataset.view ||
+        event.currentTarget.textContent.trim()
 
     // Reset all nav weights
     showList.style.fontWeight = 'normal'
@@ -726,9 +728,19 @@ function gpsToDecimal(gpsInfo) {
     const lonDms = gpsInfo['4'] ?? gpsInfo[4]
     const latRef = (gpsInfo['1'] ?? gpsInfo[1] ?? 'N').toString().toUpperCase()
     const lonRef = (gpsInfo['3'] ?? gpsInfo[3] ?? 'E').toString().toUpperCase()
-    if (!Array.isArray(latDms) || !Array.isArray(lonDms) || latDms.length < 3 || lonDms.length < 3) return null
-    const lat = (latDms[0] + latDms[1] / 60 + latDms[2] / 3600) * (latRef === 'S' ? -1 : 1)
-    const lon = (lonDms[0] + lonDms[1] / 60 + lonDms[2] / 3600) * (lonRef === 'W' ? -1 : 1)
+    if (
+        !Array.isArray(latDms) ||
+        !Array.isArray(lonDms) ||
+        latDms.length < 3 ||
+        lonDms.length < 3
+    )
+        return null
+    const lat =
+        (latDms[0] + latDms[1] / 60 + latDms[2] / 3600) *
+        (latRef === 'S' ? -1 : 1)
+    const lon =
+        (lonDms[0] + lonDms[1] / 60 + lonDms[2] / 3600) *
+        (lonRef === 'W' ? -1 : 1)
     if (!isFinite(lat) || !isFinite(lon)) return null
     return [lat, lon]
 }
@@ -740,7 +752,11 @@ function formatMapDate(dateVal) {
     if (!dateVal) return ''
     const d = new Date(dateVal)
     if (isNaN(d)) return String(dateVal)
-    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+    return d.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    })
 }
 
 function fitMapToViewport() {
@@ -762,9 +778,12 @@ function initMapView() {
     requestAnimationFrame(() => {
         if (!mapInitialised) {
             mapInitialised = true
-            galleryLeafletMap = L.map('map-container', { zoomControl: true }).setView([20, 0], 2)
+            galleryLeafletMap = L.map('map-container', {
+                zoomControl: true,
+            }).setView([20, 0], 2)
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                attribution:
+                    '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 maxZoom: 19,
             }).addTo(galleryLeafletMap)
 
@@ -772,11 +791,14 @@ function initMapView() {
             const FullscreenControl = L.Control.extend({
                 options: { position: 'topleft' },
                 onAdd() {
-                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control')
+                    const container = L.DomUtil.create(
+                        'div',
+                        'leaflet-bar leaflet-control'
+                    )
                     const btn = L.DomUtil.create('a', '', container)
                     btn.href = '#'
                     btn.title = 'Toggle fullscreen'
-                    btn.style.cssText = 'display:flex;align-items:center;justify-content:center;width:30px;height:30px;font-size:14px'
+                    btn.classList.add('map-fullscreen-btn')
                     btn.innerHTML = '<i class="fa-solid fa-expand"></i>'
                     L.DomEvent.on(btn, 'click', (e) => {
                         L.DomEvent.preventDefault(e)
@@ -788,9 +810,10 @@ function initMapView() {
                         }
                     })
                     document.addEventListener('fullscreenchange', () => {
-                        btn.innerHTML = document.fullscreenElement === mapContainer
-                            ? '<i class="fa-solid fa-compress"></i>'
-                            : '<i class="fa-solid fa-expand"></i>'
+                        btn.innerHTML =
+                            document.fullscreenElement === mapContainer
+                                ? '<i class="fa-solid fa-compress"></i>'
+                                : '<i class="fa-solid fa-expand"></i>'
                         galleryLeafletMap.invalidateSize()
                     })
                     return container
@@ -813,19 +836,19 @@ function buildMarkerTooltip(file, coords) {
     const [lat, lon] = coords
     const gpsLabel = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'E' : 'W'}`
     return `
-        <div style="min-width:150px;line-height:1.4">
-            <div style="position:relative;width:150px;height:100px;border-radius:4px;margin-bottom:5px;overflow:hidden">
-                <div class="placeholder-glow" style="position:absolute;inset:0">
-                    <span class="placeholder" style="display:block;width:100%;height:100%"></span>
+        <div class="map-tooltip">
+            <div class="map-tooltip-thumb-wrapper">
+                <div class="placeholder-glow position-absolute top-0 start-0 w-100 h-100">
+                    <span class="placeholder d-block w-100 h-100"></span>
                 </div>
                 <img data-file-id="${file.id}"
                      alt="${file.name}"
-                     style="display:block;width:150px;height:100px;object-fit:cover;opacity:0;transition:opacity 0.2s">
+                     class="map-tooltip-thumb">
             </div>
-            <strong style="display:block;margin-bottom:2px">${file.name}</strong>
-            <span style="opacity:0.7">${formatMapDate(file.date)}</span><br>
-            <span style="opacity:0.6;font-size:0.8em">${gpsLabel}</span><br>
-            <a href="${file.url}" style="font-size:0.85em">View file →</a>
+            <strong class="map-tooltip-name">${file.name}</strong>
+            <span class="map-tooltip-date">${formatMapDate(file.date)}</span><br>
+            <span class="map-tooltip-gps">${gpsLabel}</span><br>
+            <a href="${file.url}" class="map-tooltip-link">View file →</a>
         </div>`
 }
 
@@ -847,9 +870,10 @@ function resolveThumbSrc(file) {
 
     const promise = (async () => {
         const galleryImg = document.querySelector(`#gallery-image-${id} img`)
-        const fetchUrl = (galleryImg?.complete && galleryImg.naturalWidth > 0)
-            ? (galleryImg.currentSrc || galleryImg.src)
-            : file.thumb
+        const fetchUrl =
+            galleryImg?.complete && galleryImg.naturalWidth > 0
+                ? galleryImg.currentSrc || galleryImg.src
+                : file.thumb
         const response = await fetch(fetchUrl)
         const blob = await response.blob()
         return URL.createObjectURL(blob)
@@ -881,19 +905,32 @@ async function fetchAndPlotAllFiles(L) {
 
             L.marker(coords)
                 .addTo(galleryLeafletMap)
-                .bindTooltip(buildMarkerTooltip(file, coords), { direction: 'top', offset: [0, -8] })
-                .on('click', () => { window.location.href = file.url })
+                .bindTooltip(buildMarkerTooltip(file, coords), {
+                    direction: 'top',
+                    offset: [0, -8],
+                })
+                .on('click', () => {
+                    window.location.href = file.url
+                })
                 .on('tooltipopen', async (e) => {
-                    const img = e.tooltip.getElement()?.querySelector('img[data-file-id]')
+                    const img = e.tooltip
+                        .getElement()
+                        ?.querySelector('img[data-file-id]')
                     if (!img) return
                     const blobUrl = await resolveThumbSrc(file)
                     // Guard: tooltip may have closed before the blob resolved
                     if (!img.isConnected) return
                     img.src = blobUrl
-                    img.addEventListener('load', () => {
-                        img.style.opacity = '1'
-                        img.parentElement?.querySelector('.placeholder-glow')?.remove()
-                    }, { once: true })
+                    img.addEventListener(
+                        'load',
+                        () => {
+                            img.style.opacity = '1'
+                            img.parentElement
+                                ?.querySelector('.placeholder-glow')
+                                ?.remove()
+                        },
+                        { once: true }
+                    )
                 })
         }
     }

@@ -247,6 +247,16 @@ div.dataTables_wrapper span.select-item {
     color: var(--bs-body-color);
 }
 
+/* Fullscreen toggle button (Leaflet custom control) */
+.map-fullscreen-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    font-size: 0.875rem;
+}
+
 /* Zoom controls */
 #map-container .leaflet-bar a {
     background-color: var(--bs-secondary-bg);
@@ -282,4 +292,46 @@ div.dataTables_wrapper span.select-item {
 
 #map-container .leaflet-tooltip::before {
     border-top-color: var(--bs-border-color);
+}
+
+/* Marker tooltip content */
+.map-tooltip {
+    min-width: 150px;
+    line-height: 1.4;
+}
+
+.map-tooltip-thumb-wrapper {
+    position: relative;
+    width: 150px;
+    height: 100px;
+    border-radius: var(--bs-border-radius-sm);
+    margin-bottom: 0.3125rem;
+    overflow: hidden;
+}
+
+.map-tooltip-thumb {
+    display: block;
+    width: 150px;
+    height: 100px;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.map-tooltip-name {
+    display: block;
+    margin-bottom: 0.125rem;
+}
+
+.map-tooltip-date {
+    opacity: 0.7;
+}
+
+.map-tooltip-gps {
+    opacity: 0.6;
+    font-size: 0.8em;
+}
+
+.map-tooltip-link {
+    font-size: 0.85em;
 }

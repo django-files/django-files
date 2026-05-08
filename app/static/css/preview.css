@@ -241,11 +241,6 @@ main {
     min-height: 0;
 }
 
-.map-section {
-    margin-top: 0.25rem;
-    margin-bottom: 0.5rem;
-}
-
 .map-toggle-btn {
     display: flex;
     align-items: center;
