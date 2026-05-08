@@ -24,6 +24,8 @@ let showGallery = document.querySelector('.show-gallery')
 showGallery.onclick = changeView
 let showList = document.querySelector('.show-list')
 showList.onclick = changeView
+let showMap = document.querySelector('.show-map')
+showMap.onclick = changeView
 
 let params = new URL(document.location.toString()).searchParams
 
@@ -57,13 +59,22 @@ async function initGallery() {
     console.log('Init Gallery')
     filesDataTable = initFilesTable()
     dtContainer = document.querySelector('.dt-container')
-    if (window.location.pathname.includes('gallery')) {
+    if (params.get('view') === 'map') {
         dtContainer.hidden = true
+        galleryContainer.classList.add('d-none')
+        showMap.style.fontWeight = 'bold'
+        await addNodes()
+        initMapView()
+    } else if (window.location.pathname.includes('gallery')) {
+        dtContainer.hidden = true
+        galleryContainer.classList.remove('d-none')
         showGallery.style.fontWeight = 'bold'
+        await addNodes()
     } else {
+        galleryContainer.classList.add('d-none')
         showList.style.fontWeight = 'bold'
+        await addNodes()
     }
-    await addNodes()
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
         document.getElementById('bulk-actions').disabled = false
         console.log(`file-${dt.data().id}`)
@@ -576,23 +587,40 @@ function renderGalleryChunked(files, chunkSize = 20, onComplete = null) {
 function changeView(event) {
     event.preventDefault()
     hideSkeletons()
-    if (event.currentTarget.innerHTML === 'List') {
+    const view = event.currentTarget.dataset.view || event.currentTarget.textContent.trim()
+
+    // Reset all nav weights
+    showList.style.fontWeight = 'normal'
+    showGallery.style.fontWeight = 'normal'
+    showMap.style.fontWeight = 'normal'
+
+    // Hide all view containers
+    galleryContainer.classList.add('d-none')
+    mapContainer.classList.add('d-none')
+    dtContainer.hidden = true
+
+    if (view === 'List') {
+        params.delete('view')
         galleryContainer.replaceChildren()
         dtContainer.hidden = false
-        window.history.replaceState({}, null, '/files/' + '?' + params)
+        window.history.replaceState({}, null, '/files/?' + params)
         showList.style.fontWeight = 'bold'
-        showGallery.style.fontWeight = 'normal'
         filesDataTable.responsive.recalc()
+    } else if (view === 'Map') {
+        params.set('view', 'map')
+        window.history.replaceState({}, null, '/files/?' + params)
+        showMap.style.fontWeight = 'bold'
+        initMapView()
     } else {
-        // Capture selected IDs before switching so they survive the re-render
+        // Gallery
+        params.delete('view')
         selectedFileIds = []
         filesDataTable.rows('.selected').every(function () {
             selectedFileIds.push(this.data().id)
         })
-        dtContainer.hidden = true
-        window.history.replaceState({}, null, '/gallery/' + '?' + params)
+        galleryContainer.classList.remove('d-none')
+        window.history.replaceState({}, null, '/gallery/?' + params)
         galleryContainer.replaceChildren()
-        showList.style.fontWeight = 'normal'
         showGallery.style.fontWeight = 'bold'
         renderGalleryChunked(fileData, 20, showSkeletons)
     }
@@ -674,3 +702,178 @@ function buildImageLabels(file, bottomLeft) {
         addSpan(bottomLeft, file.name)
     }
 }
+
+////////////////////////////
+// Map View Section
+
+const mapContainer = document.getElementById('map-container')
+let galleryLeafletMap = null
+let mapInitialised = false
+
+// Module-level thumb cache: file id (string) → Promise<blobUrl>.
+// Storing the Promise itself deduplicates concurrent hovers on the same pin.
+// Blob URLs are local — setting img.src = blobUrl never touches the network.
+const markerThumbCache = new Map()
+
+/**
+ * Convert a GPS IFD dict (string or int keys, DMS arrays) to [lat, lon] decimal degrees.
+ * Returns null if data is missing or invalid.
+ */
+function gpsToDecimal(gpsInfo) {
+    if (!gpsInfo || typeof gpsInfo !== 'object') return null
+    const latDms = gpsInfo['2'] ?? gpsInfo[2]
+    const lonDms = gpsInfo['4'] ?? gpsInfo[4]
+    const latRef = (gpsInfo['1'] ?? gpsInfo[1] ?? 'N').toString().toUpperCase()
+    const lonRef = (gpsInfo['3'] ?? gpsInfo[3] ?? 'E').toString().toUpperCase()
+    if (!Array.isArray(latDms) || !Array.isArray(lonDms) || latDms.length < 3 || lonDms.length < 3) return null
+    const lat = (latDms[0] + latDms[1] / 60 + latDms[2] / 3600) * (latRef === 'S' ? -1 : 1)
+    const lon = (lonDms[0] + lonDms[1] / 60 + lonDms[2] / 3600) * (lonRef === 'W' ? -1 : 1)
+    if (!isFinite(lat) || !isFinite(lon)) return null
+    return [lat, lon]
+}
+
+/**
+ * Format a date value from the API (ISO string or Date) into a short readable string.
+ */
+function formatMapDate(dateVal) {
+    if (!dateVal) return ''
+    const d = new Date(dateVal)
+    if (isNaN(d)) return String(dateVal)
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+/**
+ * Set #map-container height to exactly fill the remaining viewport space below it.
+ * Called on init and on window resize so the map never causes page scroll.
+ */
+function fitMapToViewport() {
+    if (mapContainer.classList.contains('d-none')) return
+    // Collapse first so map height doesn't inflate measurements
+    mapContainer.style.height = '0px'
+    const top = mapContainer.getBoundingClientRect().top
+    const footer = document.querySelector('footer')
+    const footerHeight = footer ? footer.getBoundingClientRect().height : 0
+    // Subtract parent's paddingBottom — it sits between the map and the footer
+    const paddingBottom = parseFloat(window.getComputedStyle(mapContainer.parentElement).paddingBottom) || 0
+    mapContainer.style.height = Math.max(100, window.innerHeight - top - footerHeight - paddingBottom) + 'px'
+    if (galleryLeafletMap) galleryLeafletMap.invalidateSize()
+}
+
+window.addEventListener('resize', fitMapToViewport)
+
+/**
+ * Initialise the Leaflet map view: show container, create the map if needed,
+ * then stream all pages of files and plot those with GPS coordinates.
+ */
+function initMapView() {
+    const L = window.L
+    if (!L) return console.error('Leaflet not loaded')
+
+    mapContainer.classList.remove('d-none')
+    requestAnimationFrame(() => {
+        fitMapToViewport()
+        if (!mapInitialised) {
+            mapInitialised = true
+            galleryLeafletMap = L.map('map-container', { zoomControl: true }).setView([20, 0], 2)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19,
+            }).addTo(galleryLeafletMap)
+            fetchAndPlotAllFiles(L)
+        } else {
+            galleryLeafletMap.invalidateSize()
+        }
+    })
+}
+
+/**
+ * Build marker tooltip HTML.  The <img> is always present but src-less so
+ * the browser makes no request until we explicitly set it on first open.
+ */
+function buildMarkerTooltip(file, coords) {
+    const [lat, lon] = coords
+    const gpsLabel = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'E' : 'W'}`
+    return `
+        <div style="min-width:150px;line-height:1.4">
+            <img data-file-id="${file.id}"
+                 alt="${file.name}"
+                 style="display:block;width:150px;height:100px;object-fit:cover;border-radius:4px;margin-bottom:5px">
+            <strong style="display:block;margin-bottom:2px">${file.name}</strong>
+            <span style="opacity:0.7">${formatMapDate(file.date)}</span><br>
+            <span style="opacity:0.6;font-size:0.8em">${gpsLabel}</span><br>
+            <a href="${file.url}" style="font-size:0.85em">View file →</a>
+        </div>`
+}
+
+/**
+ * Resolve a blob URL for a file's thumbnail.  Result is a Promise so
+ * concurrent hovers on the same pin share one fetch rather than racing.
+ *
+ * Priority:
+ *   1. markerThumbCache hit  → return cached Promise (resolves instantly)
+ *   2. Gallery DOM image      → fetch its src (browser cache hit, no round-trip)
+ *   3. file.thumb URL         → first real network fetch for this file
+ *
+ * Blob URLs are local object references: setting img.src = blobUrl
+ * never triggers a network request on any subsequent hover.
+ */
+function resolveThumbSrc(file) {
+    const id = String(file.id)
+    if (markerThumbCache.has(id)) return markerThumbCache.get(id)
+
+    const promise = (async () => {
+        const galleryImg = document.querySelector(`#gallery-image-${id} img`)
+        const fetchUrl = (galleryImg?.complete && galleryImg.naturalWidth > 0)
+            ? (galleryImg.currentSrc || galleryImg.src)
+            : file.thumb
+        const response = await fetch(fetchUrl)
+        const blob = await response.blob()
+        return URL.createObjectURL(blob)
+    })()
+
+    markerThumbCache.set(id, promise)
+    return promise
+}
+
+/**
+ * Fetch every page of files (100 per request), extract those with GPS data,
+ * and add a marker + tooltip for each one.
+ * Runs page-by-page so markers appear progressively as data arrives.
+ */
+async function fetchAndPlotAllFiles(L) {
+    let page = 1
+    const album = params.get('album')
+    const allCoords = []
+
+    while (page) {
+        const data = await fetchFiles(page, 100, album)
+        page = data.next
+
+        for (const file of data.files) {
+            const coords = gpsToDecimal(file.exif?.GPSInfo)
+            if (!coords) continue
+
+            allCoords.push(coords)
+
+            L.marker(coords)
+                .addTo(galleryLeafletMap)
+                .bindTooltip(buildMarkerTooltip(file, coords), { direction: 'top', offset: [0, -8] })
+                .on('click', () => { window.location.href = file.url })
+                .on('tooltipopen', async (e) => {
+                    const img = e.tooltip.getElement()?.querySelector('img[data-file-id]')
+                    if (!img) return
+                    const blobUrl = await resolveThumbSrc(file)
+                    // Guard: tooltip may have closed before the blob resolved
+                    if (img.isConnected) img.src = blobUrl
+                })
+        }
+    }
+
+    if (allCoords.length === 1) {
+        galleryLeafletMap.setView(allCoords[0], 11)
+    } else if (allCoords.length > 1) {
+        galleryLeafletMap.fitBounds(allCoords, { padding: [40, 40] })
+    }
+}
+// End Map View Section
+////////////////////////////

@@ -296,6 +296,11 @@ main {
     background: var(--bs-secondary-bg);
 }
 
+/* Dark mode tile inversion — only tiles, not the marker */
+[data-bs-theme='dark'] .preview-map .leaflet-tile-pane {
+    filter: invert(90%) hue-rotate(190deg) brightness(100%) contrast(100%);
+}
+
 /* Attribution bar — #id beats Leaflet's .leaflet-container .leaflet-control-attribution */
 #previewMap .leaflet-control-attribution {
     font-size: 0.6rem;

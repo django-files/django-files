@@ -190,3 +190,71 @@ div.dataTables_wrapper span.select-item {
 #dt-user-select-wrapper select {
     width: auto;
 }
+
+/* ---- Map view ---- */
+
+#map-container {
+    width: 100%;
+    height: 400px; /* overridden by JS; fallback only */
+    border-radius: 6px;
+    border: 1px solid var(--bs-border-color);
+    overflow: hidden;
+}
+
+/* Tile-loading background */
+#map-container.leaflet-container {
+    background: var(--bs-secondary-bg);
+}
+
+/* Dark mode tile inversion — only tiles, not markers */
+[data-bs-theme='dark'] #map-container .leaflet-tile-pane {
+    filter: invert(90%) hue-rotate(190deg) brightness(100%) contrast(100%);
+}
+
+/* Attribution bar */
+#map-container .leaflet-control-attribution {
+    font-size: 0.7rem;
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
+}
+
+#map-container .leaflet-control-attribution a {
+    color: var(--bs-body-color);
+}
+
+/* Zoom controls */
+#map-container .leaflet-bar a {
+    background-color: var(--bs-secondary-bg);
+    border-bottom-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+
+#map-container .leaflet-bar a:hover,
+#map-container .leaflet-bar a:focus {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+}
+
+#map-container .leaflet-bar a.leaflet-disabled {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+}
+
+#map-container .leaflet-bar {
+    border: 1px solid var(--bs-border-color);
+    box-shadow: 0 1px 4px rgba(0 0 0 / 30%);
+}
+
+/* Tooltip / popup */
+#map-container .leaflet-tooltip {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+    box-shadow: 0 2px 8px rgba(0 0 0 / 20%);
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+#map-container .leaflet-tooltip::before {
+    border-top-color: var(--bs-border-color);
+}

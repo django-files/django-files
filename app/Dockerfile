@@ -1,3 +1,12 @@
+FROM node:20-bookworm-slim AS node
+
+ENV TZ=UTC
+ENV NODE_ENV=production
+WORKDIR /work
+COPY ["package.json", "package-lock.json", "gulpfile.js", "swagger.yaml", "/work/"]
+RUN npm install
+
+
 FROM python:3.12-alpine AS python
 
 ENV TZ=UTC
@@ -8,7 +17,7 @@ RUN apk add --update --no-cache alpine-sdk gcc libffi-dev musl-dev mysql-dev
 #RUN apt-get -y update && apt-get -y install build-essential libmariadb-dev-compat
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-COPY requirements.txt /
+COPY app/requirements.txt /
 RUN uv pip install --system --no-cache -r /requirements.txt
 
 
@@ -17,6 +26,7 @@ FROM python:3.12-alpine
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE=1
 
+COPY --from=node /work/app/static/dist/ /app/static/dist/
 COPY --from=python /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
 COPY --from=python /usr/local/bin/ /usr/local/bin/
 
@@ -41,6 +51,6 @@ ENV BUILD_SHA=${BUILD_SHA}
 RUN touch build_sha && echo "${BUILD_SHA}" > build_sha
 
 WORKDIR /app
-COPY --chown=app:app . .
+COPY --chown=app:app app/ .
 USER app
 ENTRYPOINT ["sh", "docker-entrypoint.sh"]
