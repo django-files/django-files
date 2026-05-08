@@ -709,6 +709,7 @@ function buildImageLabels(file, bottomLeft) {
 const mapContainer = document.getElementById('map-container')
 let galleryLeafletMap = null
 let mapInitialised = false
+let mapFooterObserver = null
 
 // Module-level thumb cache: file id (string) → Promise<blobUrl>.
 // Storing the Promise itself deduplicates concurrent hovers on the same pin.
@@ -742,20 +743,7 @@ function formatMapDate(dateVal) {
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-/**
- * Set #map-container height to exactly fill the remaining viewport space below it.
- * Called on init and on window resize so the map never causes page scroll.
- */
 function fitMapToViewport() {
-    if (mapContainer.classList.contains('d-none')) return
-    // Collapse first so map height doesn't inflate measurements
-    mapContainer.style.height = '0px'
-    const top = mapContainer.getBoundingClientRect().top
-    const footer = document.querySelector('footer')
-    const footerHeight = footer ? footer.getBoundingClientRect().height : 0
-    // Subtract parent's paddingBottom — it sits between the map and the footer
-    const paddingBottom = parseFloat(window.getComputedStyle(mapContainer.parentElement).paddingBottom) || 0
-    mapContainer.style.height = Math.max(100, window.innerHeight - top - footerHeight - paddingBottom) + 'px'
     if (galleryLeafletMap) galleryLeafletMap.invalidateSize()
 }
 
@@ -770,8 +758,8 @@ function initMapView() {
     if (!L) return console.error('Leaflet not loaded')
 
     mapContainer.classList.remove('d-none')
+    mapContainer.parentElement.classList.add('map-view-active')
     requestAnimationFrame(() => {
-        fitMapToViewport()
         if (!mapInitialised) {
             mapInitialised = true
             galleryLeafletMap = L.map('map-container', { zoomControl: true }).setView([20, 0], 2)
@@ -779,6 +767,37 @@ function initMapView() {
                 attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 maxZoom: 19,
             }).addTo(galleryLeafletMap)
+
+            // Fullscreen control
+            const FullscreenControl = L.Control.extend({
+                options: { position: 'topleft' },
+                onAdd() {
+                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control')
+                    const btn = L.DomUtil.create('a', '', container)
+                    btn.href = '#'
+                    btn.title = 'Toggle fullscreen'
+                    btn.style.cssText = 'display:flex;align-items:center;justify-content:center;width:30px;height:30px;font-size:14px'
+                    btn.innerHTML = '<i class="fa-solid fa-expand"></i>'
+                    L.DomEvent.on(btn, 'click', (e) => {
+                        L.DomEvent.preventDefault(e)
+                        L.DomEvent.stopPropagation(e)
+                        if (!document.fullscreenElement) {
+                            mapContainer.requestFullscreen()
+                        } else {
+                            document.exitFullscreen()
+                        }
+                    })
+                    document.addEventListener('fullscreenchange', () => {
+                        btn.innerHTML = document.fullscreenElement === mapContainer
+                            ? '<i class="fa-solid fa-compress"></i>'
+                            : '<i class="fa-solid fa-expand"></i>'
+                        galleryLeafletMap.invalidateSize()
+                    })
+                    return container
+                },
+            })
+            new FullscreenControl().addTo(galleryLeafletMap)
+
             fetchAndPlotAllFiles(L)
         } else {
             galleryLeafletMap.invalidateSize()
@@ -795,9 +814,14 @@ function buildMarkerTooltip(file, coords) {
     const gpsLabel = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'E' : 'W'}`
     return `
         <div style="min-width:150px;line-height:1.4">
-            <img data-file-id="${file.id}"
-                 alt="${file.name}"
-                 style="display:block;width:150px;height:100px;object-fit:cover;border-radius:4px;margin-bottom:5px">
+            <div style="position:relative;width:150px;height:100px;border-radius:4px;margin-bottom:5px;overflow:hidden">
+                <div class="placeholder-glow" style="position:absolute;inset:0">
+                    <span class="placeholder" style="display:block;width:100%;height:100%"></span>
+                </div>
+                <img data-file-id="${file.id}"
+                     alt="${file.name}"
+                     style="display:block;width:150px;height:100px;object-fit:cover;opacity:0;transition:opacity 0.2s">
+            </div>
             <strong style="display:block;margin-bottom:2px">${file.name}</strong>
             <span style="opacity:0.7">${formatMapDate(file.date)}</span><br>
             <span style="opacity:0.6;font-size:0.8em">${gpsLabel}</span><br>
@@ -864,7 +888,12 @@ async function fetchAndPlotAllFiles(L) {
                     if (!img) return
                     const blobUrl = await resolveThumbSrc(file)
                     // Guard: tooltip may have closed before the blob resolved
-                    if (img.isConnected) img.src = blobUrl
+                    if (!img.isConnected) return
+                    img.src = blobUrl
+                    img.addEventListener('load', () => {
+                        img.style.opacity = '1'
+                        img.parentElement?.querySelector('.placeholder-glow')?.remove()
+                    }, { once: true })
                 })
         }
     }
