@@ -597,6 +597,7 @@ function changeView(event) {
     // Hide all view containers
     galleryContainer.classList.add('d-none')
     mapContainer.classList.add('d-none')
+    mapContainer.parentElement.classList.remove('map-view-active')
     dtContainer.hidden = true
 
     if (view === 'List') {
@@ -709,7 +710,6 @@ function buildImageLabels(file, bottomLeft) {
 const mapContainer = document.getElementById('map-container')
 let galleryLeafletMap = null
 let mapInitialised = false
-let mapFooterObserver = null
 
 // Module-level thumb cache: file id (string) → Promise<blobUrl>.
 // Storing the Promise itself deduplicates concurrent hovers on the same pin.
