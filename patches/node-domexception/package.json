@@ -1,0 +1,6 @@
+{
+  "name": "node-domexception",
+  "version": "1.0.0",
+  "description": "Shim that re-exports the native DOMException (Node 16.7+)",
+  "main": "index.js"
+}

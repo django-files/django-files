@@ -32,7 +32,8 @@ services:
 
   app:
     build:
-      context: ./app
+      context: .
+      dockerfile: app/Dockerfile
       args:
         - BUILD_SHA=${COMMIT_SHA}
     image: djangofiles-app:${VERSION:-latest}
