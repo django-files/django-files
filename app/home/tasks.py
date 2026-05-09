@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import tempfile
 from time import sleep
 from typing import Optional
 
@@ -18,9 +19,10 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django_celery_beat import models
 from home.models import Files, FileStats, ShortURLs, Stream
-from home.util.image import thumbnail_processor, video_thumbnail_processor
+from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
 from home.util.storage import use_s3
+from home.util.video import video_metadata_processor, video_thumbnail_processor
 from oauth.models import CustomUser, DiscordWebhooks
 from packaging import version
 from PIL import UnidentifiedImageError
@@ -125,6 +127,68 @@ def generate_video_thumb(pk: int):
         return
     if not video_thumbnail_processor(file, max_bytes=max_bytes):
         log.warning("generate_video_thumb: failed to generate thumbnail for pk=%s", pk)
+
+
+@shared_task()
+def backfill_video_gps():
+    """
+    One-time backfill task: scan every eligible video file that has no stored
+    GPS data, download it to a local temp file (compatible with both S3 and
+    local filesystem storage), and attempt to extract GPS metadata.
+
+    Trigger from the Django shell or Flower:
+        from home.tasks import backfill_video_gps
+        backfill_video_gps.delay()
+
+    TODO: Remove this task in a future release.
+    """
+    max_bytes = settings.VIDEO_THUMB_MAX_BYTES
+    files = (
+        Files.objects.filter(mime__startswith="video/", user__remove_exif_geo=False)
+        .exclude(exif__has_key="GPSInfo")
+        .exclude(size__gt=max_bytes)
+        .select_related("user")
+    )
+    total = len(files)
+    log.info("backfill_video_gps: processing %d video file(s) without GPS", total)
+    updated = 0
+
+    for file in files:
+        suffix = os.path.splitext(os.path.basename(file.name.replace("\\", "/")))[1] or ".mp4"
+        tmp_video = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as vf:
+                written = 0
+                for chunk in file.file.chunks():
+                    written += len(chunk)
+                    if written > max_bytes:
+                        raise ValueError(f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download")
+                    vf.write(chunk)
+                tmp_video = vf.name
+
+            v_exif, v_meta = video_metadata_processor(tmp_video)
+            if not v_exif.get("GPSInfo"):
+                log.info("backfill_video_gps: pk=%s no GPS found", file.pk)
+                continue
+
+            file.exif = {**file.exif, **v_exif}
+            file.meta = {**file.meta, **v_meta}
+            file.save(update_fields=["exif", "meta"])
+            updated += 1
+            log.info("backfill_video_gps: pk=%s GPS saved", file.pk)
+
+        except Exception:
+            log.exception("backfill_video_gps: failed for pk=%s, continuing", file.pk)
+        finally:
+            if tmp_video:
+                try:
+                    os.remove(tmp_video)
+                except OSError:
+                    pass
+
+    result = f"backfill_video_gps: done — {updated}/{total} video(s) updated with GPS"
+    log.info(result)
+    return result
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 5})

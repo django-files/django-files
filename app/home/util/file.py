@@ -17,6 +17,7 @@ from home.util.image import ImageProcessor, thumbnail_processor
 from home.util.misc import anytobool
 from home.util.quota import increment_storage_usage
 from home.util.rand import rand_string
+from home.util.video import video_metadata_processor
 from oauth.models import CustomUser
 
 log = logging.getLogger("app")
@@ -91,6 +92,11 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
             processor.process_file()
             file.meta = processor.meta
             file.exif = processor.exif
+        elif file_mime.startswith("video/"):
+            strip_gps = ctx.get("strip_gps", user.remove_exif_geo)
+            v_exif, v_meta = video_metadata_processor(fp.name, strip_gps=strip_gps)
+            file.exif = v_exif
+            file.meta = v_meta
         file.file = File(fp, name=name)
         file.mime = file_mime
         log.debug("file.mime: %s", file.mime)

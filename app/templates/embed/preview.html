@@ -23,7 +23,9 @@ Elevation: {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}
 ISO Speed: {{ file.exif.ISOSpeedRatings }}{% endif %}{% if file.exif.ExposureTime %}
 Exposure Time: {{ file.exif.ExposureTime }} s{% endif %}
 {% endif %}{% if file.meta.PILImageWidth %}
-Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}
+Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}{% if file.meta.VideoCodec %}
+Codec: {{ file.meta.VideoCodec|upper }}{% endif %}{% if file.meta.FrameRate %}
+Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
 {{ file.mime }} uploaded by {{ file.user.get_name }} on {{ file.date|date:"D \t\h\e jS\, M Y \a\t f a T" }}">
 
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
@@ -158,7 +160,9 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% if file.exif.FNumber %}<b>Aperture:</b> 𝑓 {{ file.exif.FNumber }}<br>{% endif %}
                         {% if file.exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ file.exif.ISOSpeedRatings }}<br>{% endif %}
                         {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s<br>{% endif %}
-                        {% if software %}<b>Software:</b> {{ software }}{% endif %}</p>
+                        {% if software %}<b>Software:</b> {{ software }}<br>{% endif %}
+                        {% if file.meta.VideoCodec %}<b>Codec:</b> {{ file.meta.VideoCodec|upper }}<br>{% endif %}
+                        {% if file.meta.FrameRate %}<b>Frame Rate:</b> {{ file.meta.FrameRate }} fps<br>{% endif %}</p>
                 {% endif %}
                 {% if tags %}
                     <row class="">

@@ -431,6 +431,69 @@ function addGalleryImage(file, top = false) {
  * is shown instead. Clicking either state opens the file preview page.
  * @function addGalleryVideo
  */
+/**
+ * Poll a thumbnail URL with HEAD requests (headers only — no body download)
+ * until the server returns an image Content-Type, meaning the Celery thumb
+ * task has finished. Then set the visible img src and fade the skeleton out.
+ * Falls back to a static icon after exhausting retries.
+ */
+function pollVideoThumb(src, img, skeleton, inner, retries = 10, delay = 3000) {
+    fetch(src, { method: 'HEAD' })
+        .then((res) => {
+            if (
+                res.ok &&
+                res.headers.get('Content-Type')?.startsWith('image/')
+            ) {
+                img.onload = () => {
+                    img.style.visibility = ''
+                    skeleton.style.transition = 'opacity 0.3s'
+                    skeleton.style.opacity = '0'
+                    skeleton.addEventListener(
+                        'transitionend',
+                        () => skeleton.remove(),
+                        { once: true }
+                    )
+                }
+                img.src = src
+            } else if (retries > 0) {
+                setTimeout(
+                    () =>
+                        pollVideoThumb(
+                            src,
+                            img,
+                            skeleton,
+                            inner,
+                            retries - 1,
+                            delay
+                        ),
+                    delay
+                )
+            } else {
+                skeleton.remove()
+                const placeholder = document.createElement('div')
+                placeholder.className = 'img-error-placeholder'
+                placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
+                inner.appendChild(placeholder)
+            }
+        })
+        .catch(() => {
+            if (retries > 0) {
+                setTimeout(
+                    () =>
+                        pollVideoThumb(
+                            src,
+                            img,
+                            skeleton,
+                            inner,
+                            retries - 1,
+                            delay
+                        ),
+                    delay
+                )
+            }
+        })
+}
+
 function addGalleryVideo(file, top = false) {
     const maxThumbSize = 256
     const { inner } = buildGalleryCard(file, top)
@@ -446,52 +509,25 @@ function addGalleryVideo(file, top = false) {
     playBtn.innerHTML =
         '<i class="fa-solid fa-circle-play fa-3x text-white"></i>'
 
-    if (file.thumb) {
-        const img = imageNode.cloneNode(true)
-        img.width = maxThumbSize
-        img.height = maxThumbSize
+    // img with explicit dimensions is always the in-flow spacer that gives
+    // gallery-inner its height — same pattern as addGalleryImage.
+    // visibility:hidden keeps it transparent while the skeleton shimmer shows.
+    const img = imageNode.cloneNode(true)
+    img.width = maxThumbSize
+    img.height = maxThumbSize
+    img.style.visibility = 'hidden'
 
-        const skeleton = document.createElement('div')
-        skeleton.classList.add('img-skeleton')
-        img.addEventListener(
-            'load',
-            () => {
-                skeleton.style.transition = 'opacity 0.3s'
-                skeleton.style.opacity = '0'
-                skeleton.addEventListener(
-                    'transitionend',
-                    () => skeleton.remove(),
-                    { once: true }
-                )
-            },
-            { once: true }
-        )
-        img.addEventListener(
-            'error',
-            () => {
-                skeleton.remove()
-                img.style.display = 'none'
-                const placeholder = document.createElement('div')
-                placeholder.className = 'img-error-placeholder'
-                placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
-                inner.appendChild(placeholder)
-            },
-            { once: true }
-        )
-        img.src = file.thumb
-        link.appendChild(img)
-        // prepend order determines stacking: link(in-flow) at base,
-        // skeleton(abs) covers it while loading, playBtn(abs) surfaces after fade
-        inner.prepend(playBtn, skeleton, link)
-    } else {
-        // Thumbnail not yet generated — show a static placeholder
-        inner.style.minWidth = `${maxThumbSize}px`
-        inner.style.minHeight = `${maxThumbSize}px`
-        const placeholder = document.createElement('div')
-        placeholder.className = 'img-error-placeholder'
-        placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
-        link.appendChild(placeholder)
-        inner.prepend(playBtn, link)
+    const skeleton = document.createElement('div')
+    skeleton.classList.add('img-skeleton')
+
+    link.appendChild(img)
+    // prepend order: link(in-flow) at base, skeleton(abs) covers it, playBtn(abs) on top
+    inner.prepend(playBtn, skeleton, link)
+
+    if (file.thumb) {
+        // Thumb URL may still serve the raw video while the Celery task runs.
+        // HEAD-poll (no body downloaded) until Content-Type is an image.
+        pollVideoThumb(file.thumb, img, skeleton, inner)
     }
 }
 

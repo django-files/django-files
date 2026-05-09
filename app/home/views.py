@@ -516,7 +516,7 @@ def check_password_album_ajax(request, pk):
 
 
 @no_append_slash
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "HEAD"])
 @auth_from_token(no_fail=True)
 def raw_redirect_view(request, filename):
     """
