@@ -261,9 +261,15 @@ function showStreamsSkeletons(count = 10) {
             cell.className = 'dt-skeleton-cell'
             let width = w
             if (colIndex === 1)
-                width = _streamSkeletonNameWidths[i % _streamSkeletonNameWidths.length]
+                width =
+                    _streamSkeletonNameWidths[
+                        i % _streamSkeletonNameWidths.length
+                    ]
             else if (colIndex === 2)
-                width = _streamSkeletonTitleWidths[i % _streamSkeletonTitleWidths.length]
+                width =
+                    _streamSkeletonTitleWidths[
+                        i % _streamSkeletonTitleWidths.length
+                    ]
             cell.style.width = `${width}px`
             cell.style.height = `${h}px`
             td.appendChild(cell)
@@ -304,7 +310,9 @@ $(document).ready(function () {
     const section = document.getElementById('streams-table-section')
     if (section) {
         requestAnimationFrame(() =>
-            requestAnimationFrame(() => section.classList.add('dt-section-ready'))
+            requestAnimationFrame(() =>
+                section.classList.add('dt-section-ready')
+            )
         )
     }
 

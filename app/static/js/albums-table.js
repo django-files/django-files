@@ -189,7 +189,9 @@ function showAlbumsSkeletons(count = 10) {
             cell.className = 'dt-skeleton-cell'
             const width =
                 colIndex === 1
-                    ? _albumSkeletonNameWidths[i % _albumSkeletonNameWidths.length]
+                    ? _albumSkeletonNameWidths[
+                          i % _albumSkeletonNameWidths.length
+                      ]
                     : w
             cell.style.width = `${width}px`
             cell.style.height = `${h}px`
