@@ -32,6 +32,8 @@ from webpush import send_group_notification
 
 log = logging.getLogger("app")
 
+VIDEO_MIME_PREFIX = "video/"
+
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 10, "countdown": 1})
 def app_init():
@@ -91,9 +93,11 @@ def generate_thumbs(user_pk: int = None, only_missing: bool = True):
     # SELECT double-query; generate_video_thumb checks for an existing thumb
     # before doing any work so re-queuing in-flight files is safe.
     if only_missing:
-        video_files = list(Files.objects.filter(thumb__in=[None, ""], user__in=users, mime__startswith="video/"))
+        video_files = list(
+            Files.objects.filter(thumb__in=[None, ""], user__in=users, mime__startswith=VIDEO_MIME_PREFIX)
+        )
     else:
-        video_files = list(Files.objects.filter(user__in=users, mime__startswith="video/"))
+        video_files = list(Files.objects.filter(user__in=users, mime__startswith=VIDEO_MIME_PREFIX))
     log.info("Queueing video thumbnails for %d files", len(video_files))
     for vfile in video_files:
         generate_video_thumb.delay(vfile.pk)
@@ -129,6 +133,42 @@ def generate_video_thumb(pk: int):
         log.warning("generate_video_thumb: failed to generate thumbnail for pk=%s", pk)
 
 
+def _backfill_single_video(file, max_bytes: int) -> bool:
+    """Download one video, extract GPS metadata, and persist it. Returns True if GPS was saved."""
+    suffix = os.path.splitext(os.path.basename(file.name.replace("\\", "/")))[1] or ".mp4"
+    tmp_video = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as vf:
+            written = 0
+            for chunk in file.file.chunks():
+                written += len(chunk)
+                if written > max_bytes:
+                    raise ValueError(f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download")
+                vf.write(chunk)
+            tmp_video = vf.name
+
+        v_exif, v_meta = video_metadata_processor(tmp_video)
+        if not v_exif.get("GPSInfo"):
+            log.info("backfill_video_gps: pk=%s no GPS found", file.pk)
+            return False
+
+        file.exif = {**file.exif, **v_exif}
+        file.meta = {**file.meta, **v_meta}
+        file.save(update_fields=["exif", "meta"])
+        log.info("backfill_video_gps: pk=%s GPS saved", file.pk)
+        return True
+
+    except Exception:
+        log.exception("backfill_video_gps: failed for pk=%s, continuing", file.pk)
+        return False
+    finally:
+        if tmp_video:
+            try:
+                os.remove(tmp_video)
+            except OSError:
+                pass
+
+
 @shared_task()
 def backfill_video_gps():
     """
@@ -144,48 +184,14 @@ def backfill_video_gps():
     """
     max_bytes = settings.VIDEO_THUMB_MAX_BYTES
     files = (
-        Files.objects.filter(mime__startswith="video/", user__remove_exif_geo=False)
+        Files.objects.filter(mime__startswith=VIDEO_MIME_PREFIX, user__remove_exif_geo=False)
         .exclude(exif__has_key="GPSInfo")
         .exclude(size__gt=max_bytes)
         .select_related("user")
     )
     total = len(files)
     log.info("backfill_video_gps: processing %d video file(s) without GPS", total)
-    updated = 0
-
-    for file in files:
-        suffix = os.path.splitext(os.path.basename(file.name.replace("\\", "/")))[1] or ".mp4"
-        tmp_video = None
-        try:
-            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as vf:
-                written = 0
-                for chunk in file.file.chunks():
-                    written += len(chunk)
-                    if written > max_bytes:
-                        raise ValueError(f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download")
-                    vf.write(chunk)
-                tmp_video = vf.name
-
-            v_exif, v_meta = video_metadata_processor(tmp_video)
-            if not v_exif.get("GPSInfo"):
-                log.info("backfill_video_gps: pk=%s no GPS found", file.pk)
-                continue
-
-            file.exif = {**file.exif, **v_exif}
-            file.meta = {**file.meta, **v_meta}
-            file.save(update_fields=["exif", "meta"])
-            updated += 1
-            log.info("backfill_video_gps: pk=%s GPS saved", file.pk)
-
-        except Exception:
-            log.exception("backfill_video_gps: failed for pk=%s, continuing", file.pk)
-        finally:
-            if tmp_video:
-                try:
-                    os.remove(tmp_video)
-                except OSError:
-                    pass
-
+    updated = sum(_backfill_single_video(file, max_bytes) for file in files)
     result = f"backfill_video_gps: done — {updated}/{total} video(s) updated with GPS"
     log.info(result)
     return result

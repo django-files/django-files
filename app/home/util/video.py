@@ -86,6 +86,85 @@ def _normalize_dt(value: str) -> str:
     return value
 
 
+def _extract_container_info(cm: dict, exif: dict) -> None:
+    """Populate exif with device/camera fields from container metadata."""
+
+    def _pick(*keys):
+        return next((cm[k].strip() for k in keys if cm.get(k, "").strip()), "")
+
+    if make := _pick("com.apple.quicktime.make"):
+        exif["Make"] = make
+    if model := _pick("com.apple.quicktime.model"):
+        exif["Model"] = model
+    if software := _pick("com.apple.quicktime.software", "com.android.version", "firmware", "encoder", "software"):
+        exif["Software"] = software
+    if dt := _pick("com.apple.quicktime.creationdate", "creation_time"):
+        exif["DateTimeOriginal"] = _normalize_dt(dt)
+        exif["DateTime"] = exif["DateTimeOriginal"]
+
+
+def _extract_fps(vs, cm: dict):
+    """Return frame-rate as a rounded float, or None if unavailable."""
+    # Prefer declared capture FPS from container metadata (Android embeds this as
+    # com.android.capture.fps; stream average_rate can drift due to VFR encoding).
+    if raw_fps := cm.get("com.android.capture.fps", "").strip():
+        try:
+            return round(float(raw_fps), 3)
+        except ValueError:
+            pass
+    if avg_rate := vs.average_rate:
+        try:
+            return round(float(avg_rate), 3)
+        except (ValueError, ZeroDivisionError):
+            pass
+    return None
+
+
+def _extract_stream_meta(container, cm: dict, meta: dict) -> None:
+    """Populate meta with stream-level fields (dimensions, codec, FPS, duration)."""
+    video_streams = container.streams.video
+    if video_streams:
+        vs = video_streams[0]
+        w = getattr(vs.codec_context, "width", None)
+        h = getattr(vs.codec_context, "height", None)
+        if w and h:
+            meta["PILImageWidth"] = w
+            meta["PILImageHeight"] = h
+        if codec_name := getattr(vs.codec_context, "name", None):
+            meta["VideoCodec"] = codec_name
+        if fps := _extract_fps(vs, cm):
+            meta["FrameRate"] = fps
+    if container.duration and container.duration > 0:
+        meta["Duration"] = round(container.duration / 1_000_000, 3)
+
+
+def _extract_gps_meta(cm: dict, exif: dict, meta: dict, local_path: str) -> None:
+    """Populate exif/meta with GPS fields parsed from container location tags."""
+    raw_location = next(
+        filter(
+            None,
+            [
+                cm.get("com.apple.quicktime.location.ISO6709"),  # iPhone/iPad MOV
+                cm.get("location"),  # Android MP4, GoPro
+                cm.get("location-eng"),  # some ffmpeg-muxed files
+            ],
+        ),
+        "",
+    )
+    if not raw_location:
+        log.debug("video_metadata_processor: no location tag found in %s", local_path)
+        return
+    coords = _parse_iso6709(raw_location)
+    if not coords:
+        log.debug("video_metadata_processor: unparseable location tag %r in %s", raw_location, local_path)
+        return
+    lat, lon, alt = coords
+    exif["GPSInfo"] = _decimal_to_dms_ifd(lat, lon, alt)
+    if area := city_state_from_exif(exif["GPSInfo"]):
+        meta["GPSArea"] = area
+    log.info("video_metadata_processor: GPS %.6f, %.6f alt=%s from %s", lat, lon, alt, local_path)
+
+
 def video_metadata_processor(local_path: str, strip_gps: bool = False) -> tuple:
     """
     Extract metadata from a video file using PyAV and return (exif_dict, meta_dict)
@@ -118,87 +197,24 @@ def video_metadata_processor(local_path: str, strip_gps: bool = False) -> tuple:
         with av.open(local_path) as container:
             cm = dict(container.metadata)
             log.debug("video_metadata_processor: container metadata for %s: %s", local_path, list(cm))
-
-            # --- device / camera info ---
-            def _pick(*keys):
-                return next((cm[k].strip() for k in keys if cm.get(k, "").strip()), "")
-
-            if make := _pick("com.apple.quicktime.make"):
-                exif["Make"] = make
-            if model := _pick("com.apple.quicktime.model"):
-                exif["Model"] = model
-            if software := _pick(
-                "com.apple.quicktime.software", "com.android.version", "firmware", "encoder", "software"
-            ):
-                exif["Software"] = software
-            if dt := _pick("com.apple.quicktime.creationdate", "creation_time"):
-                exif["DateTimeOriginal"] = _normalize_dt(dt)
-                exif["DateTime"] = exif["DateTimeOriginal"]  # template checks DateTime to show the "Captured On" row
-
-            # --- stream-level metadata (works for every container format) ---
-            video_streams = container.streams.video
-            if video_streams:
-                vs = video_streams[0]
-                w = getattr(vs.codec_context, "width", None)
-                h = getattr(vs.codec_context, "height", None)
-                if w and h:
-                    meta["PILImageWidth"] = w
-                    meta["PILImageHeight"] = h
-                if codec_name := getattr(vs.codec_context, "name", None):
-                    meta["VideoCodec"] = codec_name
-                # Prefer the declared capture FPS from container metadata (Android embeds
-                # this as com.android.capture.fps; the stream average_rate can drift due
-                # to VFR encoding).  Fall back to average_rate for all other formats.
-                fps = None
-                if raw_fps := cm.get("com.android.capture.fps", "").strip():
-                    try:
-                        fps = round(float(raw_fps), 3)
-                    except ValueError:
-                        pass
-                if fps is None and (avg_rate := vs.average_rate):
-                    try:
-                        fps = round(float(avg_rate), 3)
-                    except (ValueError, ZeroDivisionError):
-                        pass
-                if fps:
-                    meta["FrameRate"] = fps
-
-            if container.duration and container.duration > 0:
-                meta["Duration"] = round(container.duration / 1_000_000, 3)
-
-            # --- GPS (honour strip_gps) ---
+            _extract_container_info(cm, exif)
+            _extract_stream_meta(container, cm, meta)
             if not strip_gps:
-                raw_location = next(
-                    filter(
-                        None,
-                        [
-                            cm.get("com.apple.quicktime.location.ISO6709"),  # iPhone/iPad MOV
-                            cm.get("location"),  # Android MP4, GoPro
-                            cm.get("location-eng"),  # some ffmpeg-muxed files
-                        ],
-                    ),
-                    "",
-                )
-                if raw_location:
-                    coords = _parse_iso6709(raw_location)
-                    if coords:
-                        lat, lon, alt = coords
-                        exif["GPSInfo"] = _decimal_to_dms_ifd(lat, lon, alt)
-                        if area := city_state_from_exif(exif["GPSInfo"]):
-                            meta["GPSArea"] = area
-                        log.info("video_metadata_processor: GPS %.6f, %.6f alt=%s from %s", lat, lon, alt, local_path)
-                    else:
-                        log.debug(
-                            "video_metadata_processor: unparseable location tag %r in %s",
-                            raw_location,
-                            local_path,
-                        )
-                else:
-                    log.debug("video_metadata_processor: no location tag found in %s", local_path)
-
+                _extract_gps_meta(cm, exif, meta, local_path)
     except Exception:
         log.debug("video_metadata_processor: failed for %s", local_path, exc_info=True)
     return exif, meta
+
+
+def _seek_container(container) -> None:
+    """Seek to 1 s; fall back to 0 for videos shorter than 1 s."""
+    try:
+        container.seek(1_000_000)
+    except av.AVError:
+        try:
+            container.seek(0)
+        except av.AVError:
+            pass
 
 
 def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
@@ -275,13 +291,7 @@ def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
             # returns that keyframe immediately rather than skipping forward to
             # the next one, which risks overshooting end-of-stream on large-GOP
             # or very short files.
-            try:
-                container.seek(1_000_000)
-            except av.AVError:
-                try:
-                    container.seek(0)
-                except av.AVError:
-                    pass
+            _seek_container(container)
 
             image = None
             for frame in container.decode(stream):

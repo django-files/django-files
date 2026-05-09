@@ -65,7 +65,7 @@ async function initGallery() {
         showMap.style.fontWeight = 'bold'
         await addNodes()
         initMapView()
-    } else if (window.location.pathname.includes('gallery')) {
+    } else if (globalThis.location.pathname.includes('gallery')) {
         dtContainer.hidden = true
         galleryContainer.classList.remove('d-none')
         showGallery.style.fontWeight = 'bold'
@@ -642,12 +642,12 @@ function changeView(event) {
         params.delete('view')
         galleryContainer.replaceChildren()
         dtContainer.hidden = false
-        window.history.replaceState({}, null, '/files/?' + params)
+        globalThis.history.replaceState({}, null, '/files/?' + params)
         showList.style.fontWeight = 'bold'
         filesDataTable.responsive.recalc()
     } else if (view === 'Map') {
         params.set('view', 'map')
-        window.history.replaceState({}, null, '/files/?' + params)
+        globalThis.history.replaceState({}, null, '/files/?' + params)
         showMap.style.fontWeight = 'bold'
         initMapView()
     } else {
@@ -658,7 +658,7 @@ function changeView(event) {
             selectedFileIds.push(this.data().id)
         })
         galleryContainer.classList.remove('d-none')
-        window.history.replaceState({}, null, '/gallery/?' + params)
+        globalThis.history.replaceState({}, null, '/gallery/?' + params)
         galleryContainer.replaceChildren()
         showGallery.style.fontWeight = 'bold'
         renderGalleryChunked(fileData, 20, showSkeletons)
