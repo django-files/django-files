@@ -75,7 +75,9 @@
     color: #fff;
     font-size: 1.75rem;
     cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
+    transition:
+        background 0.2s,
+        transform 0.2s;
     backdrop-filter: blur(2px);
     padding-left: 4px; /* optical center for play triangle */
 }
