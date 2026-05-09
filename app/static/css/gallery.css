@@ -39,6 +39,60 @@
     top: 100% !important;
 }
 
+/*
+ * Hide the entire file-list section from first paint so DataTables can finish
+ * inserting its toolbar and moving elements before anything is visible.
+ * JS adds .dt-section-ready (via double-rAF) once layout is settled.
+ */
+#files-table-section {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+#files-table-section.dt-section-ready {
+    opacity: 1;
+}
+
+/* Table skeleton rows — override the td overflow/max-width rules so cells show */
+.dt-skeleton-row td {
+    max-width: none;
+    overflow: visible;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    vertical-align: middle;
+}
+
+.dt-skeleton-cell {
+    border-radius: 4px;
+    position: relative;
+    background-color: var(--bs-secondary-bg, #e9ecef);
+    overflow: hidden;
+    height: 14px;
+}
+
+.dt-skeleton-cell::after {
+    content: '';
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        110deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.6) 50%,
+        transparent 80%
+    );
+    animation: glisten 1.5s linear infinite;
+}
+
+[data-bs-theme='dark'] .dt-skeleton-cell::after {
+    background: linear-gradient(
+        110deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.12) 50%,
+        transparent 80%
+    );
+}
+
 .gallery-outer {
     position: relative;
     background-color: #495057;
@@ -140,6 +194,10 @@ div.dataTables_wrapper span.select-item {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+#files-table td.dt-name-col {
+    min-width: 120px;
 }
 
 #files-table td.dt-ctx-menu-col {

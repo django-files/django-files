@@ -7,6 +7,8 @@ import {
     addFileTableRowsBatch,
     formatBytes,
     faCaret,
+    showTableSkeletons,
+    hideTableSkeletons,
 } from './file-table.js'
 
 import { fetchFiles } from './api-fetch.js'
@@ -77,6 +79,7 @@ async function initGallery() {
     } else {
         galleryContainer.classList.add('d-none')
         showList.style.fontWeight = 'bold'
+        showTableSkeletons()
         await addNodes()
     }
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
@@ -114,7 +117,9 @@ function showSkeletons() {
     if (!nextPage) return
 
     if (!globalThis.location.pathname.includes('gallery')) {
-        // List view: use an invisible sentinel element instead of visual skeletons.
+        // List view: show skeleton rows and use an invisible sentinel to
+        // trigger the next page fetch before the user reaches the bottom.
+        showTableSkeletons(20)
         const sentinel = document.createElement('div')
         sentinel.id = 'list-scroll-sentinel'
         dtContainer.after(sentinel)
@@ -233,6 +238,7 @@ function hideSkeletons() {
         .querySelectorAll('[id^="gallery-skeleton-"]')
         .forEach((el) => el.remove())
     document.getElementById('list-scroll-sentinel')?.remove()
+    hideTableSkeletons()
 }
 
 /**
@@ -254,9 +260,8 @@ async function addNodes() {
             skeletonObserver.disconnect()
             skeletonObserver = null
         }
-        filesDataTable.processing(true)
         fetchLock = true
-        const data = await fetchFiles(nextPage, 25, params.get('album'))
+        const data = await fetchFiles(nextPage, 50, params.get('album'))
         console.debug('data:', data)
         slideshowCallback(data)
         nextPage = data.next
@@ -270,7 +275,6 @@ async function addNodes() {
         }
         // Add all rows to DataTables in one batch and draw once
         addFileTableRowsBatch(data.files)
-        filesDataTable.processing(false)
         fetchLock = false
         showSkeletons()
     } else {

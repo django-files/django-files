@@ -38,7 +38,6 @@ const dataTablesOptions = {
     responsive: {
         details: false,
     },
-    processing: true,
     saveState: true,
     pageLength: -1,
     lengthMenu: [
@@ -70,28 +69,28 @@ const dataTablesOptions = {
         {
             targets: 1,
             width: '15px',
-            responsivePriority: 5,
+            responsivePriority: 8,
             defaultContent: '',
         },
         {
             target: 2,
-
             responsivePriority: 1,
             render: getFileLink,
             defaultContent: '',
             type: 'html',
+            className: 'dt-name-col',
         },
         {
             targets: 3,
             render: formatBytes,
             defaultContent: '',
-            responsivePriority: 4,
+            responsivePriority: 9,
             width: '150px',
         },
         {
             targets: 4,
             defaultContent: '',
-            responsivePriority: 9,
+            responsivePriority: 10,
             className: 'text-nowrap',
         },
         {
@@ -99,7 +98,7 @@ const dataTablesOptions = {
             targets: 5,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
-            responsivePriority: 9,
+            responsivePriority: 10,
             width: '165px',
             className: 'text-nowrap',
         },
@@ -108,19 +107,19 @@ const dataTablesOptions = {
             width: '15px',
             defaultContent: '',
             className: 'expire-value text-center',
-            responsivePriority: 7,
+            responsivePriority: 10,
         },
         {
             targets: 7,
             width: '15px',
             render: getPwIcon,
             defaultContent: '',
-            responsivePriority: 7,
+            responsivePriority: 4,
         },
         {
             targets: 8,
             width: '15px',
-            responsivePriority: 5,
+            responsivePriority: 4,
             render: getPrivateIcon,
             defaultContent: '',
         },
@@ -128,7 +127,7 @@ const dataTablesOptions = {
             targets: 9,
             width: '15px',
             defaultContent: '',
-            responsivePriority: 4,
+            responsivePriority: 8,
             className: 'text-center',
         },
         {
@@ -165,6 +164,19 @@ const dataTablesOptions = {
         if (userSelectWrapper) {
             endCell.prepend(userSelectWrapper)
             userSelectWrapper.classList.remove('d-none')
+        }
+
+        // Reveal the section after DataTables has finished all DOM mutations
+        // (toolbar insertion, element moves). Double-rAF guarantees the browser
+        // has committed the new layout before opacity transitions to 1, so the
+        // user sees the final state in one paint with no intermediate jitter.
+        const section = document.getElementById('files-table-section')
+        if (section) {
+            requestAnimationFrame(() =>
+                requestAnimationFrame(() =>
+                    section.classList.add('dt-section-ready')
+                )
+            )
         }
     },
 }
@@ -302,6 +314,67 @@ socket?.addEventListener('message', function (event) {
         renameFileRow(data)
     }
 })
+
+////////////////
+// Table Skeleton Loading
+////////////////
+
+// Varied name-column widths so rows look realistic rather than uniform
+const _skeletonNameWidths = [130, 165, 210, 145, 180, 195, 120, 155, 200, 140]
+
+/**
+ * Insert count skeleton placeholder rows into the files table tbody.
+ * DataTables will clear them automatically on the next .draw() call.
+ * @param {number} count
+ */
+export function showTableSkeletons(count = 10) {
+    const tbody = document.querySelector('#files-table tbody')
+    if (!tbody) return
+    const fragment = document.createDocumentFragment()
+    // Column widths [px] matching the 11 header columns:
+    // checkbox, id, name, size, mime, date, expire, pw, private, views, ctx
+    const specs = [
+        { w: 18, h: 18 },
+        { w: 24 },
+        { w: 0 }, // name — varied per row, set below
+        { w: 58 },
+        { w: 78 },
+        { w: 112 },
+        { w: 14 },
+        { w: 14 },
+        { w: 14 },
+        { w: 28 },
+        { w: 18 },
+    ]
+    for (let i = 0; i < count; i++) {
+        const tr = document.createElement('tr')
+        tr.className = 'dt-skeleton-row'
+        specs.forEach(({ w, h = 14 }, colIndex) => {
+            const td = document.createElement('td')
+            const cell = document.createElement('div')
+            cell.className = 'dt-skeleton-cell'
+            const width =
+                colIndex === 2
+                    ? _skeletonNameWidths[i % _skeletonNameWidths.length]
+                    : w
+            cell.style.width = `${width}px`
+            cell.style.height = `${h}px`
+            td.appendChild(cell)
+            tr.appendChild(td)
+        })
+        fragment.appendChild(tr)
+    }
+    tbody.appendChild(fragment)
+}
+
+/**
+ * Explicitly remove any skeleton rows still in the DOM.
+ * Usually unnecessary — DataTables .draw() clears them — but required
+ * when draw is skipped (e.g. empty result set).
+ */
+export function hideTableSkeletons() {
+    document.querySelectorAll('.dt-skeleton-row').forEach((el) => el.remove())
+}
 
 ////////////////
 // Bulk Actions

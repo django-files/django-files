@@ -1,6 +1,10 @@
 // JS for Home Page
 
-import { initFilesTable, addFileTableRows } from './file-table.js'
+import {
+    initFilesTable,
+    addFileTableRows,
+    showTableSkeletons,
+} from './file-table.js'
 
 import { fetchFiles } from './api-fetch.js'
 
@@ -34,11 +38,12 @@ $('#quick-short-form').on('submit', function (event) {
 
 async function initHome() {
     filesDataTable = initFilesTable(false, false, false)
-    let files = await fetchFiles(1, 10)
-    if (files.files.length >= 10) {
+    showTableSkeletons(20)
+    const files = await fetchFiles(1, 50)
+    if (files.files.length >= 50) {
         $('.files-truncation-warning').show()
     }
-    addFileTableRows(await fetchFiles(1, 10))
+    addFileTableRows(files)
     filesDataTable.on('select', function (_e, _dt, _type, _indexes) {
         document.getElementById('bulk-actions').disabled = false
     })
