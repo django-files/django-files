@@ -89,7 +89,8 @@ services:
 
   app:
     build:
-      context: app
+      context: .
+      dockerfile: app/Dockerfile
       args:
         - BUILD_SHA=${COMMIT_SHA}
     image: ghcr.io/django-files/django-files-app:${VERSION:-latest}

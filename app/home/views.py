@@ -516,7 +516,7 @@ def check_password_album_ajax(request, pk):
 
 
 @no_append_slash
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "HEAD"])
 @auth_from_token(no_fail=True)
 def raw_redirect_view(request, filename):
     """
@@ -579,6 +579,10 @@ def url_route_view(request, filename):
         request.session[f"view_{file.name}"] = False
     if lock := handle_lock(request, ctx=ctx):
         return lock
+    gps_info = file.exif.get("GPSInfo", {}) if isinstance(file.exif, dict) else {}
+    gps_lat, gps_lon = extract_gps_decimal(gps_info)
+    ctx["gps_lat"] = gps_lat
+    ctx["gps_lon"] = gps_lon
     log.debug("ctx: %s", ctx)
     if file.mime.startswith("image"):
         log.debug("IMAGE")
@@ -637,6 +641,28 @@ def handle_lock(request, ctx):
             if supplied_password is not None:
                 messages.warning(request, "Invalid Password!")
             return render(request, "embed/password.html", context=ctx, status=403)
+
+
+def extract_gps_decimal(gps_info: dict):
+    """Convert GPS IFD dict (string or int keys) to decimal degrees (lat, lon)."""
+    if not isinstance(gps_info, dict):
+        return None, None
+    try:
+        lat_dms = gps_info.get("2") or gps_info.get(2)
+        lon_dms = gps_info.get("4") or gps_info.get(4)
+        lat_ref = gps_info.get("1") or gps_info.get(1, "N")
+        lon_ref = gps_info.get("3") or gps_info.get(3, "E")
+        if not lat_dms or not lon_dms or len(lat_dms) < 3 or len(lon_dms) < 3:
+            return None, None
+        lat = lat_dms[0] + lat_dms[1] / 60 + lat_dms[2] / 3600
+        lon = lon_dms[0] + lon_dms[1] / 60 + lon_dms[2] / 3600
+        if str(lat_ref).upper() == "S":
+            lat = -lat
+        if str(lon_ref).upper() == "W":
+            lon = -lon
+        return round(lat, 6), round(lon, 6)
+    except Exception:
+        return None, None
 
 
 def handle_image_meta(exif: dict) -> dict:

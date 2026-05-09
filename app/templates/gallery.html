@@ -21,8 +21,10 @@
 {% endif %}
 
 {% block head %}
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
     <link rel="stylesheet" href="{% static 'dist/uppy/uppy.min.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/leaflet/leaflet.css' %}">
     <link rel="stylesheet" href="{% static 'css/gallery.css' %}" />
 {% endblock %}
 
@@ -33,6 +35,7 @@
         <nav class="mb-2" aria-label="Files view">
             <a class="link-body-emphasis show-list" role="button" title="List" href="{% url 'home:files' %}">List</a> |
             <a class="link-body-emphasis show-gallery" role="button" title="Gallery" href={% url 'home:gallery' %}>Gallery</a> |
+            <a class="link-body-emphasis show-map" role="button" title="Map" href="{% url 'home:files' %}?view=map">Map</a> |
             <a class="link-body-emphasis show-slideshow" role="button" title="Slideshow" href="#offcanvas-bottom" data-bs-toggle="offcanvas" aria-controls="offcanvas-bottom">
                 Slideshow</a>
         </nav>
@@ -54,6 +57,7 @@
         </div>
         {% include 'files/bulk-menu.html' %}
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap" {% if 'gallery' in request.path %}{% else %} hidden{% endif%}></div>
+        <div id="map-container" class="d-none"></div>
         {% include 'files/table.html'%}
     </div>
 
@@ -83,6 +87,7 @@
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.select.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.buttons.min.js' %}"></script>
     <script type="module" src="{% static 'js/file-context-menu.js' %}"></script>
+    <script src="{% static 'dist/leaflet/leaflet.js' %}"></script>
     <script type="module" src="{% static 'js/gallery.js' %}"></script>
     {% if full_context %}<script type="module" src="{% static 'js/uppy.js' %}"></script>{% endif %}
 {% endblock %}

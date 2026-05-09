@@ -190,3 +190,148 @@ div.dataTables_wrapper span.select-item {
 #dt-user-select-wrapper select {
     width: auto;
 }
+
+/* ---- Map view ---- */
+
+#map-container {
+    width: 100%;
+    height: 400px; /* fallback when not in map-view-active */
+    border-radius: 6px;
+    border: 1px solid var(--bs-border-color);
+    overflow: hidden;
+}
+
+#map-container:fullscreen {
+    border-radius: 0;
+    border: none;
+}
+
+/*
+ * When the map view is active the container-fluid stretches to fill main
+ * (which itself is flex-grow-1 inside the h-100 flex-column body).
+ * The map then takes all leftover space after nav/headings/padding.
+ * This is purely CSS — no JS height measurement needed, so reflows
+ * (font load, DataTables responsive, footer collapse) can't break it.
+ */
+.map-view-active {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.map-view-active #map-container {
+    flex: 1;
+    min-height: 200px;
+    height: auto;
+}
+
+/* Tile-loading background */
+#map-container.leaflet-container {
+    background: var(--bs-secondary-bg);
+}
+
+/* Dark mode tile inversion — only tiles, not markers */
+[data-bs-theme='dark'] #map-container .leaflet-tile-pane {
+    filter: invert(90%) hue-rotate(190deg) brightness(100%) contrast(100%);
+}
+
+/* Attribution bar */
+#map-container .leaflet-control-attribution {
+    font-size: 0.7rem;
+    background-color: var(--bs-secondary-bg);
+    color: var(--bs-secondary-color);
+}
+
+#map-container .leaflet-control-attribution a {
+    color: var(--bs-body-color);
+}
+
+/* Fullscreen toggle button (Leaflet custom control) */
+.map-fullscreen-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    font-size: 0.875rem;
+}
+
+/* Zoom controls */
+#map-container .leaflet-bar a {
+    background-color: var(--bs-secondary-bg);
+    border-bottom-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+
+#map-container .leaflet-bar a:hover,
+#map-container .leaflet-bar a:focus {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+}
+
+#map-container .leaflet-bar a.leaflet-disabled {
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+}
+
+#map-container .leaflet-bar {
+    border: 1px solid var(--bs-border-color);
+    box-shadow: 0 1px 4px rgba(0 0 0 / 30%);
+}
+
+/* Tooltip / popup */
+#map-container .leaflet-tooltip {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+    box-shadow: 0 2px 8px rgba(0 0 0 / 20%);
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+#map-container .leaflet-tooltip::before {
+    border-top-color: var(--bs-border-color);
+}
+
+/* Marker tooltip content */
+.map-tooltip {
+    min-width: 150px;
+    line-height: 1.4;
+}
+
+.map-tooltip-thumb-wrapper {
+    position: relative;
+    width: 150px;
+    height: 100px;
+    border-radius: var(--bs-border-radius-sm);
+    margin-bottom: 0.3125rem;
+    overflow: hidden;
+}
+
+.map-tooltip-thumb {
+    display: block;
+    width: 150px;
+    height: 100px;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.map-tooltip-name {
+    display: block;
+    margin-bottom: 0.125rem;
+}
+
+.map-tooltip-date {
+    opacity: 0.7;
+}
+
+.map-tooltip-gps {
+    opacity: 0.6;
+    font-size: 0.8em;
+}
+
+.map-tooltip-link {
+    font-size: 0.85em;
+}

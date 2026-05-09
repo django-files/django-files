@@ -24,6 +24,8 @@ let showGallery = document.querySelector('.show-gallery')
 showGallery.onclick = changeView
 let showList = document.querySelector('.show-list')
 showList.onclick = changeView
+let showMap = document.querySelector('.show-map')
+showMap.onclick = changeView
 
 let params = new URL(document.location.toString()).searchParams
 
@@ -57,13 +59,22 @@ async function initGallery() {
     console.log('Init Gallery')
     filesDataTable = initFilesTable()
     dtContainer = document.querySelector('.dt-container')
-    if (window.location.pathname.includes('gallery')) {
+    if (params.get('view') === 'map') {
         dtContainer.hidden = true
+        galleryContainer.classList.add('d-none')
+        showMap.style.fontWeight = 'bold'
+        await addNodes()
+        initMapView()
+    } else if (globalThis.location.pathname.includes('gallery')) {
+        dtContainer.hidden = true
+        galleryContainer.classList.remove('d-none')
         showGallery.style.fontWeight = 'bold'
+        await addNodes()
     } else {
+        galleryContainer.classList.add('d-none')
         showList.style.fontWeight = 'bold'
+        await addNodes()
     }
-    await addNodes()
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
         document.getElementById('bulk-actions').disabled = false
         console.log(`file-${dt.data().id}`)
@@ -420,6 +431,69 @@ function addGalleryImage(file, top = false) {
  * is shown instead. Clicking either state opens the file preview page.
  * @function addGalleryVideo
  */
+/**
+ * Poll a thumbnail URL with HEAD requests (headers only — no body download)
+ * until the server returns an image Content-Type, meaning the Celery thumb
+ * task has finished. Then set the visible img src and fade the skeleton out.
+ * Falls back to a static icon after exhausting retries.
+ */
+function pollVideoThumb(src, img, skeleton, inner, retries = 10, delay = 3000) {
+    fetch(src, { method: 'HEAD' })
+        .then((res) => {
+            if (
+                res.ok &&
+                res.headers.get('Content-Type')?.startsWith('image/')
+            ) {
+                img.onload = () => {
+                    img.style.visibility = ''
+                    skeleton.style.transition = 'opacity 0.3s'
+                    skeleton.style.opacity = '0'
+                    skeleton.addEventListener(
+                        'transitionend',
+                        () => skeleton.remove(),
+                        { once: true }
+                    )
+                }
+                img.src = src
+            } else if (retries > 0) {
+                setTimeout(
+                    () =>
+                        pollVideoThumb(
+                            src,
+                            img,
+                            skeleton,
+                            inner,
+                            retries - 1,
+                            delay
+                        ),
+                    delay
+                )
+            } else {
+                skeleton.remove()
+                const placeholder = document.createElement('div')
+                placeholder.className = 'img-error-placeholder'
+                placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
+                inner.appendChild(placeholder)
+            }
+        })
+        .catch(() => {
+            if (retries > 0) {
+                setTimeout(
+                    () =>
+                        pollVideoThumb(
+                            src,
+                            img,
+                            skeleton,
+                            inner,
+                            retries - 1,
+                            delay
+                        ),
+                    delay
+                )
+            }
+        })
+}
+
 function addGalleryVideo(file, top = false) {
     const maxThumbSize = 256
     const { inner } = buildGalleryCard(file, top)
@@ -435,52 +509,25 @@ function addGalleryVideo(file, top = false) {
     playBtn.innerHTML =
         '<i class="fa-solid fa-circle-play fa-3x text-white"></i>'
 
-    if (file.thumb) {
-        const img = imageNode.cloneNode(true)
-        img.width = maxThumbSize
-        img.height = maxThumbSize
+    // img with explicit dimensions is always the in-flow spacer that gives
+    // gallery-inner its height — same pattern as addGalleryImage.
+    // visibility:hidden keeps it transparent while the skeleton shimmer shows.
+    const img = imageNode.cloneNode(true)
+    img.width = maxThumbSize
+    img.height = maxThumbSize
+    img.style.visibility = 'hidden'
 
-        const skeleton = document.createElement('div')
-        skeleton.classList.add('img-skeleton')
-        img.addEventListener(
-            'load',
-            () => {
-                skeleton.style.transition = 'opacity 0.3s'
-                skeleton.style.opacity = '0'
-                skeleton.addEventListener(
-                    'transitionend',
-                    () => skeleton.remove(),
-                    { once: true }
-                )
-            },
-            { once: true }
-        )
-        img.addEventListener(
-            'error',
-            () => {
-                skeleton.remove()
-                img.style.display = 'none'
-                const placeholder = document.createElement('div')
-                placeholder.className = 'img-error-placeholder'
-                placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
-                inner.appendChild(placeholder)
-            },
-            { once: true }
-        )
-        img.src = file.thumb
-        link.appendChild(img)
-        // prepend order determines stacking: link(in-flow) at base,
-        // skeleton(abs) covers it while loading, playBtn(abs) surfaces after fade
-        inner.prepend(playBtn, skeleton, link)
-    } else {
-        // Thumbnail not yet generated — show a static placeholder
-        inner.style.minWidth = `${maxThumbSize}px`
-        inner.style.minHeight = `${maxThumbSize}px`
-        const placeholder = document.createElement('div')
-        placeholder.className = 'img-error-placeholder'
-        placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
-        link.appendChild(placeholder)
-        inner.prepend(playBtn, link)
+    const skeleton = document.createElement('div')
+    skeleton.classList.add('img-skeleton')
+
+    link.appendChild(img)
+    // prepend order: link(in-flow) at base, skeleton(abs) covers it, playBtn(abs) on top
+    inner.prepend(playBtn, skeleton, link)
+
+    if (file.thumb) {
+        // Thumb URL may still serve the raw video while the Celery task runs.
+        // HEAD-poll (no body downloaded) until Content-Type is an image.
+        pollVideoThumb(file.thumb, img, skeleton, inner)
     }
 }
 
@@ -576,23 +623,43 @@ function renderGalleryChunked(files, chunkSize = 20, onComplete = null) {
 function changeView(event) {
     event.preventDefault()
     hideSkeletons()
-    if (event.currentTarget.innerHTML === 'List') {
+    const view =
+        event.currentTarget.dataset.view ||
+        event.currentTarget.textContent.trim()
+
+    // Reset all nav weights
+    showList.style.fontWeight = 'normal'
+    showGallery.style.fontWeight = 'normal'
+    showMap.style.fontWeight = 'normal'
+
+    // Hide all view containers
+    galleryContainer.classList.add('d-none')
+    mapContainer.classList.add('d-none')
+    mapContainer.parentElement.classList.remove('map-view-active')
+    dtContainer.hidden = true
+
+    if (view === 'List') {
+        params.delete('view')
         galleryContainer.replaceChildren()
         dtContainer.hidden = false
-        window.history.replaceState({}, null, '/files/' + '?' + params)
+        globalThis.history.replaceState({}, null, '/files/?' + params)
         showList.style.fontWeight = 'bold'
-        showGallery.style.fontWeight = 'normal'
         filesDataTable.responsive.recalc()
+    } else if (view === 'Map') {
+        params.set('view', 'map')
+        globalThis.history.replaceState({}, null, '/files/?' + params)
+        showMap.style.fontWeight = 'bold'
+        initMapView()
     } else {
-        // Capture selected IDs before switching so they survive the re-render
+        // Gallery
+        params.delete('view')
         selectedFileIds = []
         filesDataTable.rows('.selected').every(function () {
             selectedFileIds.push(this.data().id)
         })
-        dtContainer.hidden = true
-        window.history.replaceState({}, null, '/gallery/' + '?' + params)
+        galleryContainer.classList.remove('d-none')
+        globalThis.history.replaceState({}, null, '/gallery/?' + params)
         galleryContainer.replaceChildren()
-        showList.style.fontWeight = 'normal'
         showGallery.style.fontWeight = 'bold'
         renderGalleryChunked(fileData, 20, showSkeletons)
     }
@@ -674,3 +741,241 @@ function buildImageLabels(file, bottomLeft) {
         addSpan(bottomLeft, file.name)
     }
 }
+
+////////////////////////////
+// Map View Section
+
+const mapContainer = document.getElementById('map-container')
+let galleryLeafletMap = null
+let mapInitialised = false
+
+// Module-level thumb cache: file id (string) → Promise<blobUrl>.
+// Storing the Promise itself deduplicates concurrent hovers on the same pin.
+// Blob URLs are local — setting img.src = blobUrl never touches the network.
+const markerThumbCache = new Map()
+
+/**
+ * Convert a GPS IFD dict (string or int keys, DMS arrays) to [lat, lon] decimal degrees.
+ * Returns null if data is missing or invalid.
+ */
+function gpsToDecimal(gpsInfo) {
+    if (!gpsInfo || typeof gpsInfo !== 'object') return null
+    const latDms = gpsInfo['2'] ?? gpsInfo[2]
+    const lonDms = gpsInfo['4'] ?? gpsInfo[4]
+    const latRef = (gpsInfo['1'] ?? gpsInfo[1] ?? 'N').toString().toUpperCase()
+    const lonRef = (gpsInfo['3'] ?? gpsInfo[3] ?? 'E').toString().toUpperCase()
+    if (
+        !Array.isArray(latDms) ||
+        !Array.isArray(lonDms) ||
+        latDms.length < 3 ||
+        lonDms.length < 3
+    )
+        return null
+    const lat =
+        (latDms[0] + latDms[1] / 60 + latDms[2] / 3600) *
+        (latRef === 'S' ? -1 : 1)
+    const lon =
+        (lonDms[0] + lonDms[1] / 60 + lonDms[2] / 3600) *
+        (lonRef === 'W' ? -1 : 1)
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
+    return [lat, lon]
+}
+
+/**
+ * Format a date value from the API (ISO string or Date) into a short readable string.
+ */
+function formatMapDate(dateVal) {
+    if (!dateVal) return ''
+    const d = new Date(dateVal)
+    if (Number.isNaN(d)) return String(dateVal)
+    return d.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    })
+}
+
+function fitMapToViewport() {
+    if (galleryLeafletMap) galleryLeafletMap.invalidateSize()
+}
+
+window.addEventListener('resize', fitMapToViewport)
+
+/**
+ * Initialise the Leaflet map view: show container, create the map if needed,
+ * then stream all pages of files and plot those with GPS coordinates.
+ */
+function initMapView() {
+    const L = globalThis.L
+    if (!L) return console.error('Leaflet not loaded')
+
+    mapContainer.classList.remove('d-none')
+    mapContainer.parentElement.classList.add('map-view-active')
+    requestAnimationFrame(() => {
+        if (mapInitialised) {
+            galleryLeafletMap.invalidateSize()
+        } else {
+            mapInitialised = true
+            galleryLeafletMap = L.map('map-container', {
+                zoomControl: true,
+            }).setView([20, 0], 2)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution:
+                    '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19,
+            }).addTo(galleryLeafletMap)
+
+            // Fullscreen control
+            const FullscreenControl = L.Control.extend({
+                options: { position: 'topleft' },
+                onAdd() {
+                    const container = L.DomUtil.create(
+                        'div',
+                        'leaflet-bar leaflet-control'
+                    )
+                    const btn = L.DomUtil.create('a', '', container)
+                    btn.href = '#'
+                    btn.title = 'Toggle fullscreen'
+                    btn.classList.add('map-fullscreen-btn')
+                    btn.innerHTML = '<i class="fa-solid fa-expand"></i>'
+                    L.DomEvent.on(btn, 'click', (e) => {
+                        L.DomEvent.preventDefault(e)
+                        L.DomEvent.stopPropagation(e)
+                        if (document.fullscreenElement) {
+                            document.exitFullscreen()
+                        } else {
+                            mapContainer.requestFullscreen()
+                        }
+                    })
+                    document.addEventListener('fullscreenchange', () => {
+                        btn.innerHTML =
+                            document.fullscreenElement === mapContainer
+                                ? '<i class="fa-solid fa-compress"></i>'
+                                : '<i class="fa-solid fa-expand"></i>'
+                        galleryLeafletMap.invalidateSize()
+                    })
+                    return container
+                },
+            })
+            new FullscreenControl().addTo(galleryLeafletMap)
+
+            fetchAndPlotAllFiles(L)
+        }
+    })
+}
+
+/**
+ * Build marker tooltip HTML.  The <img> is always present but src-less so
+ * the browser makes no request until we explicitly set it on first open.
+ */
+function buildMarkerTooltip(file, coords) {
+    const [lat, lon] = coords
+    const gpsLabel = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'E' : 'W'}`
+    return `
+        <div class="map-tooltip">
+            <div class="map-tooltip-thumb-wrapper">
+                <div class="placeholder-glow position-absolute top-0 start-0 w-100 h-100">
+                    <span class="placeholder d-block w-100 h-100"></span>
+                </div>
+                <img data-file-id="${file.id}"
+                     alt="${file.name}"
+                     class="map-tooltip-thumb">
+            </div>
+            <strong class="map-tooltip-name">${file.name}</strong>
+            <span class="map-tooltip-date">${formatMapDate(file.date)}</span><br>
+            <span class="map-tooltip-gps">${gpsLabel}</span><br>
+            <a href="${file.url}" class="map-tooltip-link">View file →</a>
+        </div>`
+}
+
+/**
+ * Resolve a blob URL for a file's thumbnail.  Result is a Promise so
+ * concurrent hovers on the same pin share one fetch rather than racing.
+ *
+ * Priority:
+ *   1. markerThumbCache hit  → return cached Promise (resolves instantly)
+ *   2. Gallery DOM image      → fetch its src (browser cache hit, no round-trip)
+ *   3. file.thumb URL         → first real network fetch for this file
+ *
+ * Blob URLs are local object references: setting img.src = blobUrl
+ * never triggers a network request on any subsequent hover.
+ */
+function resolveThumbSrc(file) {
+    const id = String(file.id)
+    if (markerThumbCache.has(id)) return markerThumbCache.get(id)
+
+    const promise = (async () => {
+        const galleryImg = document.querySelector(`#gallery-image-${id} img`)
+        const fetchUrl =
+            galleryImg?.complete && galleryImg.naturalWidth > 0
+                ? galleryImg.currentSrc || galleryImg.src
+                : file.thumb
+        const response = await fetch(fetchUrl)
+        const blob = await response.blob()
+        return URL.createObjectURL(blob)
+    })()
+
+    markerThumbCache.set(id, promise)
+    return promise
+}
+
+/**
+ * Fetch every page of files (100 per request), extract those with GPS data,
+ * and add a marker + tooltip for each one.
+ * Runs page-by-page so markers appear progressively as data arrives.
+ */
+async function fetchAndPlotAllFiles(L) {
+    let page = 1
+    const album = params.get('album')
+    const allCoords = []
+
+    while (page) {
+        const data = await fetchFiles(page, 100, album)
+        page = data.next
+
+        for (const file of data.files) {
+            const coords = gpsToDecimal(file.exif?.GPSInfo)
+            if (!coords) continue
+
+            allCoords.push(coords)
+
+            L.marker(coords)
+                .addTo(galleryLeafletMap)
+                .bindTooltip(buildMarkerTooltip(file, coords), {
+                    direction: 'top',
+                    offset: [0, -8],
+                })
+                .on('click', () => {
+                    globalThis.location.href = file.url
+                })
+                .on('tooltipopen', async (e) => {
+                    const img = e.tooltip
+                        .getElement()
+                        ?.querySelector('img[data-file-id]')
+                    if (!img) return
+                    const blobUrl = await resolveThumbSrc(file)
+                    // Guard: tooltip may have closed before the blob resolved
+                    if (!img.isConnected) return
+                    img.src = blobUrl
+                    img.addEventListener(
+                        'load',
+                        () => {
+                            img.style.opacity = '1'
+                            img.parentElement
+                                ?.querySelector('.placeholder-glow')
+                                ?.remove()
+                        },
+                        { once: true }
+                    )
+                })
+        }
+    }
+
+    if (allCoords.length === 1) {
+        galleryLeafletMap.setView(allCoords[0], 11)
+    } else if (allCoords.length > 1) {
+        galleryLeafletMap.fitBounds(allCoords, { padding: [40, 40] })
+    }
+}
+// End Map View Section
+////////////////////////////

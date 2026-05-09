@@ -23,7 +23,9 @@ Elevation: {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}
 ISO Speed: {{ file.exif.ISOSpeedRatings }}{% endif %}{% if file.exif.ExposureTime %}
 Exposure Time: {{ file.exif.ExposureTime }} s{% endif %}
 {% endif %}{% if file.meta.PILImageWidth %}
-Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}
+Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}{% if file.meta.VideoCodec %}
+Codec: {{ file.meta.VideoCodec|upper }}{% endif %}{% if file.meta.FrameRate %}
+Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
 {{ file.mime }} uploaded by {{ file.user.get_name }} on {{ file.date|date:"D \t\h\e jS\, M Y \a\t f a T" }}">
 
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
@@ -47,10 +49,14 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
 {% endblock %}
 
 {% block head %}
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <style>
         {{ css|safe }}
     </style>
     <link rel="stylesheet" href="{% static 'css/preview.css' %}">
+    {% if gps_lat and gps_lon %}
+        <link rel="stylesheet" href="{% static 'dist/leaflet/leaflet.css' %}">
+    {% endif %}
 {% endblock %}
 
 {% block nav1color %}{{ file.user.nav_color_1 }}{% endblock %}
@@ -133,6 +139,20 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% if file.exif.DateTime %}<b>Captured On:</b> {{ file.exif.DateTimeOriginal|convert_str_date }}<br>{% endif %}
                         {% if file.meta.GPSArea %}<b>Location:</b> {{ file.meta.GPSArea }}<br>{% endif %}
                         {% if file.exif.GPSInfo.6 %}<b>Elevation:</b> {{ file.exif.GPSInfo.6|floatformat:1 }} m{% endif %}</p>
+                    {% if gps_lat and gps_lon %}
+                    <div class="mt-1 mb-2">
+                        <button class="map-toggle-btn" type="button" id="mapToggle" aria-expanded="false">
+                            <i class="fa-solid fa-map-location-dot me-1"></i>
+                            <span>Show on Map</span>
+                            <i class="fa-solid fa-chevron-down map-chevron"></i>
+                        </button>
+                        <div class="map-collapse" id="mapCollapse">
+                            <div id="preview-map" class="preview-map"
+                                 data-lat="{{ gps_lat }}"
+                                 data-lon="{{ gps_lon }}"></div>
+                        </div>
+                    </div>
+                    {% endif %}
                     <p class="card-text text-body-secondary me-auto">
                         {% if file.exif.Model %}<b>Camera:</b> {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}<br>{% endif %}
                         {% if file.exif.LensModel %}<b>Lens: </b>{{ file.exif.LensModel }}<br>{% endif %}
@@ -140,7 +160,9 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
                         {% if file.exif.FNumber %}<b>Aperture:</b> 𝑓 {{ file.exif.FNumber }}<br>{% endif %}
                         {% if file.exif.ISOSpeedRatings %}<b>ISO Speed:</b> {{ file.exif.ISOSpeedRatings }}<br>{% endif %}
                         {% if file.exif.ExposureTime %}<b>Exposure Time:</b> {{ file.exif.ExposureTime }} s<br>{% endif %}
-                        {% if software %}<b>Software:</b> {{ software }}{% endif %}</p>
+                        {% if software %}<b>Software:</b> {{ software }}<br>{% endif %}
+                        {% if file.meta.VideoCodec %}<b>Codec:</b> {{ file.meta.VideoCodec|upper }}<br>{% endif %}
+                        {% if file.meta.FrameRate %}<b>Frame Rate:</b> {{ file.meta.FrameRate }} fps<br>{% endif %}</p>
                 {% endif %}
                 {% if tags %}
                     <row class="">
@@ -220,5 +242,8 @@ Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% end
         <script src={% static 'dist/jquery-ui/jquery-ui.min.js' %}></script>
     {% endif %}
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
+    {% if gps_lat and gps_lon %}
+        <script src="{% static 'dist/leaflet/leaflet.js' %}"></script>
+    {% endif %}
     <script type="module" src="{% static 'js/preview.js' %}"></script>
 {% endblock %}
