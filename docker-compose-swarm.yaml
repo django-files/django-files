@@ -163,7 +163,7 @@ services:
       - net-internal
 
   redis:
-    image: redis:6-alpine
+    image: redis:7-alpine
     command: "redis-server --appendonly yes"
     deploy:
       replicas: 1
