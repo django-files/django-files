@@ -267,7 +267,10 @@ async function addNodes() {
         slideshowCallback(data)
         nextPage = data.next
         fileData.push(...data.files)
-        if (globalThis.location.pathname.includes('gallery') && mapFileCountValue) {
+        if (
+            globalThis.location.pathname.includes('gallery') &&
+            mapFileCountValue
+        ) {
             mapFileCountValue.textContent = fileData.length
         }
         // Data is ready — remove skeletons and render real cards.
