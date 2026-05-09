@@ -777,7 +777,7 @@ function gpsToDecimal(gpsInfo) {
     const lon =
         (lonDms[0] + lonDms[1] / 60 + lonDms[2] / 3600) *
         (lonRef === 'W' ? -1 : 1)
-    if (!isFinite(lat) || !isFinite(lon)) return null
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null
     return [lat, lon]
 }
 
@@ -787,7 +787,7 @@ function gpsToDecimal(gpsInfo) {
 function formatMapDate(dateVal) {
     if (!dateVal) return ''
     const d = new Date(dateVal)
-    if (isNaN(d)) return String(dateVal)
+    if (Number.isNaN(d)) return String(dateVal)
     return d.toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'short',
@@ -806,13 +806,15 @@ window.addEventListener('resize', fitMapToViewport)
  * then stream all pages of files and plot those with GPS coordinates.
  */
 function initMapView() {
-    const L = window.L
+    const L = globalThis.L
     if (!L) return console.error('Leaflet not loaded')
 
     mapContainer.classList.remove('d-none')
     mapContainer.parentElement.classList.add('map-view-active')
     requestAnimationFrame(() => {
-        if (!mapInitialised) {
+        if (mapInitialised) {
+            galleryLeafletMap.invalidateSize()
+        } else {
             mapInitialised = true
             galleryLeafletMap = L.map('map-container', {
                 zoomControl: true,
@@ -839,10 +841,10 @@ function initMapView() {
                     L.DomEvent.on(btn, 'click', (e) => {
                         L.DomEvent.preventDefault(e)
                         L.DomEvent.stopPropagation(e)
-                        if (!document.fullscreenElement) {
-                            mapContainer.requestFullscreen()
-                        } else {
+                        if (document.fullscreenElement) {
                             document.exitFullscreen()
+                        } else {
+                            mapContainer.requestFullscreen()
                         }
                     })
                     document.addEventListener('fullscreenchange', () => {
@@ -858,8 +860,6 @@ function initMapView() {
             new FullscreenControl().addTo(galleryLeafletMap)
 
             fetchAndPlotAllFiles(L)
-        } else {
-            galleryLeafletMap.invalidateSize()
         }
     })
 }
@@ -946,7 +946,7 @@ async function fetchAndPlotAllFiles(L) {
                     offset: [0, -8],
                 })
                 .on('click', () => {
-                    window.location.href = file.url
+                    globalThis.location.href = file.url
                 })
                 .on('tooltipopen', async (e) => {
                     const img = e.tooltip

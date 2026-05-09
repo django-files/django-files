@@ -297,13 +297,13 @@ main {
 }
 
 /* Attribution bar — #id beats Leaflet's .leaflet-container .leaflet-control-attribution */
-#previewMap .leaflet-control-attribution {
+#preview-map .leaflet-control-attribution {
     font-size: 0.6rem;
     background-color: var(--bs-secondary-bg);
     color: var(--bs-secondary-color);
 }
 
-#previewMap .leaflet-control-attribution a {
+#preview-map .leaflet-control-attribution a {
     color: var(--bs-body-color);
 }
 

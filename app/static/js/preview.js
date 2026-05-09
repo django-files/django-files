@@ -443,7 +443,7 @@ async function getAlbums() {
 // Leaflet Map Section
 const mapToggle = document.getElementById('mapToggle')
 const mapCollapse = document.getElementById('mapCollapse')
-const mapContainer = document.getElementById('previewMap')
+const mapContainer = document.getElementById('preview-map')
 let leafletMap = null
 
 function openMap() {
@@ -452,10 +452,10 @@ function openMap() {
     mapToggle.querySelector('span').textContent = 'Hide Map'
     Cookies.set('previewMap', 'open', { expires: 365 })
     requestAnimationFrame(() => {
-        if (!leafletMap) {
-            initLeafletMap()
-        } else {
+        if (leafletMap) {
             leafletMap.invalidateSize()
+        } else {
+            initLeafletMap()
         }
     })
 }
@@ -482,14 +482,14 @@ if (mapToggle && mapCollapse && mapContainer) {
 }
 
 function initLeafletMap() {
-    const L = window.L
+    const L = globalThis.L
     if (!L) {
         console.error('Leaflet not loaded')
         return
     }
-    const lat = parseFloat(mapContainer.dataset.lat)
-    const lon = parseFloat(mapContainer.dataset.lon)
-    leafletMap = L.map('previewMap', {
+    const lat = Number.parseFloat(mapContainer.dataset.lat)
+    const lon = Number.parseFloat(mapContainer.dataset.lon)
+    leafletMap = L.map('preview-map', {
         zoomControl: false,
         attributionControl: true,
     }).setView([lat, lon], 7)

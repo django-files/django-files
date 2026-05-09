@@ -168,11 +168,16 @@ def video_metadata_processor(local_path: str, strip_gps: bool = False) -> tuple:
 
             # --- GPS (honour strip_gps) ---
             if not strip_gps:
-                raw_location = (
-                    cm.get("com.apple.quicktime.location.ISO6709")  # iPhone/iPad MOV
-                    or cm.get("location")  # Android MP4, GoPro
-                    or cm.get("location-eng")  # some ffmpeg-muxed files
-                    or ""
+                raw_location = next(
+                    filter(
+                        None,
+                        [
+                            cm.get("com.apple.quicktime.location.ISO6709"),  # iPhone/iPad MOV
+                            cm.get("location"),  # Android MP4, GoPro
+                            cm.get("location-eng"),  # some ffmpeg-muxed files
+                        ],
+                    ),
+                    "",
                 )
                 if raw_location:
                     coords = _parse_iso6709(raw_location)
