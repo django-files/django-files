@@ -77,12 +77,15 @@ let imagesSwiper = null
 // eslint-disable-next-line no-unused-vars
 function slideshowCallback(data) {
     console.log(`%c slideshowCallback: data:`, 'color: Yellow', data)
-    for (const file of data.files) {
+    const mediaFiles = data.files.filter(
+        (f) => f.mime?.startsWith('image/') || f.mime?.startsWith('video/')
+    )
+    for (const file of mediaFiles) {
         console.debug(`%c file:`, 'color: Lime', file)
     }
-    bufferedFiles.push(...data.files)
+    bufferedFiles.push(...mediaFiles)
     if (swiperInitialized) {
-        appendSlidesToSwiper(data.files)
+        appendSlidesToSwiper(mediaFiles)
     }
 }
 
