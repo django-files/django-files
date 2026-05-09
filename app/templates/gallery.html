@@ -31,7 +31,18 @@
 {% block body %}
 
     <div class="container-fluid pb-3 pt-2 px-4">
-        {% if album %}<h3 class="mt-1"><i class="fa-regular fa-folder-open me-2"></i> {{ album.name }}</h3>{% endif %}
+        {% if album %}
+        <div class="d-flex align-items-center mt-1">
+            <h3 class="mb-0"><i class="fa-regular fa-images me-2"></i> {{ album.name }}</h3>
+            {% is_mobile_browser request as mobile_browser %}
+            {% if mobile_browser %}
+            <a href="djangofiles://album/?url={{ site_settings.site_url }}&album_id={{ album.id }}"
+               class="ms-auto link-body-emphasis" title="Open in App">
+                <i class="fa-solid fa-mobile-screen-button fs-4"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
         <nav class="mb-2 d-flex align-items-center gap-2" aria-label="Files view">
             <span>
                 <a class="link-body-emphasis show-list" role="button" title="List" href="{% url 'home:files' %}">List</a> |
