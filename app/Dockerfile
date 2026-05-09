@@ -51,6 +51,6 @@ ENV BUILD_SHA=${BUILD_SHA}
 RUN touch build_sha && echo "${BUILD_SHA}" > build_sha
 
 WORKDIR /app
-COPY --chmod=755 --chown=app:app app/ .
+COPY --chmod=555 --chown=app:app app/ .
 USER app
 ENTRYPOINT ["sh", "docker-entrypoint.sh"]
