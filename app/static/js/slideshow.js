@@ -89,20 +89,70 @@ function slideshowCallback(data) {
 function buildSlide(file) {
     const div = document.createElement('div')
     div.classList.add('swiper-slide')
-    const img = document.createElement('img')
-    const url = new URL(file.raw)
-    url.searchParams.set('view', 'gallery')
-    img.src = url.toString()
-    img.alt = file.name
-    div.appendChild(img)
+    if (file.mime?.startsWith('video/')) {
+        const poster = document.createElement('div')
+        poster.className = 'slideshow-video-poster'
+        if (file.thumb) {
+            const img = document.createElement('img')
+            img.src = file.thumb
+            img.alt = file.name
+            poster.appendChild(img)
+        }
+        const playBtn = document.createElement('button')
+        playBtn.className = 'slideshow-play-btn'
+        playBtn.setAttribute('aria-label', 'Play video')
+        playBtn.innerHTML = '<i class="fa-solid fa-play"></i>'
+        poster.appendChild(playBtn)
+        poster.addEventListener('click', () => {
+            const video = document.createElement('video')
+            video.src = file.raw
+            video.controls = true
+            video.autoplay = true
+            div.innerHTML = ''
+            div.appendChild(video)
+        })
+        div.appendChild(poster)
+    } else {
+        const img = document.createElement('img')
+        const url = new URL(file.raw)
+        url.searchParams.set('view', 'gallery')
+        img.src = url.toString()
+        img.alt = file.name
+        div.appendChild(img)
+    }
+    return div
+}
+
+function buildThumbSlide(file) {
+    const div = document.createElement('div')
+    div.classList.add('swiper-slide')
+    if (file.mime?.startsWith('video/') && file.thumb) {
+        // Use the server-generated thumbnail image for the strip
+        const img = document.createElement('img')
+        img.src = file.thumb
+        img.alt = file.name
+        div.appendChild(img)
+    } else if (file.mime?.startsWith('video/')) {
+        // No thumbnail yet — show a film icon placeholder
+        const icon = document.createElement('div')
+        icon.className = 'slideshow-video-thumb'
+        icon.innerHTML = '<i class="fa-solid fa-film"></i>'
+        div.appendChild(icon)
+    } else {
+        const img = document.createElement('img')
+        const url = new URL(file.raw)
+        url.searchParams.set('view', 'gallery')
+        img.src = url.toString()
+        img.alt = file.name
+        div.appendChild(img)
+    }
     return div
 }
 
 function appendSlidesToSwiper(files) {
     for (const file of files) {
-        const slide = buildSlide(file)
-        swiperImages.appendChild(slide)
-        swiperThumbs.appendChild(slide.cloneNode(true))
+        swiperImages.appendChild(buildSlide(file))
+        swiperThumbs.appendChild(buildThumbSlide(file))
     }
     if (thumbsSwiper) thumbsSwiper.update()
     if (imagesSwiper) imagesSwiper.update()
@@ -148,6 +198,13 @@ function initSlideshow() {
         },
         thumbs: {
             swiper: thumbsSwiper,
+        },
+        on: {
+            slideChange() {
+                swiperImages.querySelectorAll('video').forEach((v) => {
+                    v.pause()
+                })
+            },
         },
     })
 }

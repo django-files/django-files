@@ -1,6 +1,7 @@
 {% load home_tags %}
 {% load static %}
 
+<div id="streams-table-section" class="dt-section">
 <p class="d-xl-none text-muted mb-0"><em>Some columns hidden due to narrow viewport.</em></p>
 <table class="display responsive nowrap table table-hover table-responsive mb-0 dt-select-no-highlight" id="streams-table" style="width:100%">
     <caption class="visually-hidden">List of Streams</caption>
@@ -20,6 +21,7 @@
     </tr>
     </thead>
 </table>
+</div><!-- /#streams-table-section -->
 
 <div class="d-none">
     <input type="hidden" value="{{ site_settings.site_url }}" id="site_url">

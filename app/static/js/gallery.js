@@ -75,6 +75,7 @@ async function initGallery() {
         if (narrowViewportMsg) narrowViewportMsg.hidden = true
         galleryContainer.classList.remove('d-none')
         showGallery.style.fontWeight = 'bold'
+        if (mapFileCount) mapFileCount.classList.remove('d-none')
         await addNodes()
     } else {
         galleryContainer.classList.add('d-none')
@@ -266,6 +267,9 @@ async function addNodes() {
         slideshowCallback(data)
         nextPage = data.next
         fileData.push(...data.files)
+        if (window.location.pathname.includes('gallery') && mapFileCountValue) {
+            mapFileCountValue.textContent = fileData.length
+        }
         // Data is ready — remove skeletons and render real cards.
         hideSkeletons()
         if (window.location.pathname.includes('gallery')) {
@@ -644,6 +648,7 @@ function changeView(event) {
     galleryContainer.classList.add('d-none')
     mapContainer.classList.add('d-none')
     mapContainer.parentElement.classList.remove('map-view-active')
+    if (mapFileCount) mapFileCount.classList.add('d-none')
     dtContainer.hidden = true
     if (narrowViewportMsg) narrowViewportMsg.hidden = true
 
@@ -671,6 +676,8 @@ function changeView(event) {
         globalThis.history.replaceState({}, null, '/gallery/?' + params)
         galleryContainer.replaceChildren()
         showGallery.style.fontWeight = 'bold'
+        if (mapFileCount) mapFileCount.classList.remove('d-none')
+        if (mapFileCountValue) mapFileCountValue.textContent = fileData.length
         renderGalleryChunked(fileData, 20, showSkeletons)
     }
 }
@@ -756,6 +763,8 @@ function buildImageLabels(file, bottomLeft) {
 // Map View Section
 
 const mapContainer = document.getElementById('map-container')
+const mapFileCount = document.getElementById('map-file-count')
+const mapFileCountValue = document.getElementById('map-file-count-value')
 let galleryLeafletMap = null
 let mapInitialised = false
 
@@ -821,6 +830,7 @@ function initMapView() {
 
     mapContainer.classList.remove('d-none')
     mapContainer.parentElement.classList.add('map-view-active')
+    if (mapFileCount) mapFileCount.classList.remove('d-none')
     requestAnimationFrame(() => {
         if (mapInitialised) {
             galleryLeafletMap.invalidateSize()
@@ -938,10 +948,13 @@ async function fetchAndPlotAllFiles(L) {
     let page = 1
     const album = params.get('album')
     const allCoords = []
+    let totalLoaded = 0
 
     while (page) {
         const data = await fetchFiles(page, 100, album)
         page = data.next
+        totalLoaded += data.files.length
+        if (mapFileCountValue) mapFileCountValue.textContent = totalLoaded
 
         for (const file of data.files) {
             const coords = gpsToDecimal(file.exif?.GPSInfo)

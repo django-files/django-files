@@ -158,12 +158,22 @@ const dataTablesOptions = {
             bulkWrapper.classList.remove('d-none')
         }
 
+        // Prepend in reverse visual order — each prepend goes to position 0,
+        // so the last prepended element ends up leftmost in the flex end cell.
         const userSelectWrapper = document.getElementById(
             'dt-user-select-wrapper'
         )
         if (userSelectWrapper) {
             endCell.prepend(userSelectWrapper)
             userSelectWrapper.classList.remove('d-none')
+        }
+
+        const fileCountWrapper = document.getElementById(
+            'dt-file-count-wrapper'
+        )
+        if (fileCountWrapper) {
+            endCell.prepend(fileCountWrapper)
+            fileCountWrapper.classList.remove('d-none')
         }
 
         // Reveal the section after DataTables has finished all DOM mutations

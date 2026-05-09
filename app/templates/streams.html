@@ -16,14 +16,14 @@
     <div class="container-fluid pb-3 pt-2 px-4">
         <h1><i class="fa-solid fa-video me-2"></i> Streams</h1>
         {% if request.user.is_authenticated %}
-        <div id="obs-button-container">
+        <div id="obs-button-container" class="d-none">
             <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#obsSetupModal" title="Get OBS setup instructions for a new stream">
                 <i class="fa-solid fa-satellite-dish me-1"></i> Stream with OBS
             </button>
         </div>
         {% endif %}
         {% if request.user.is_superuser %}
-                <div id="user-select-container">
+                <div id="user-select-container" class="d-none">
                     <select id="user" name="user" class="form-select" aria-label="Default select example">
                         <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
                         <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>

@@ -40,16 +40,16 @@
 }
 
 /*
- * Hide the entire file-list section from first paint so DataTables can finish
+ * Hide any DT-managed section from first paint so DataTables can finish
  * inserting its toolbar and moving elements before anything is visible.
  * JS adds .dt-section-ready (via double-rAF) once layout is settled.
  */
-#files-table-section {
+.dt-section {
     opacity: 0;
     transition: opacity 0.15s ease;
 }
 
-#files-table-section.dt-section-ready {
+.dt-section.dt-section-ready {
     opacity: 1;
 }
 

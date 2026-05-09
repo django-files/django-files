@@ -17,7 +17,6 @@ const dataTablesOptions = {
     responsive: {
         details: false,
     },
-    processing: true,
     saveState: true,
     pageLength: -1,
     lengthMenu: [
@@ -225,14 +224,69 @@ function getActions(data, type, row) {
     return data
 }
 
+// Varied widths for name and title columns so skeleton rows look realistic
+const _streamSkeletonNameWidths = [110, 140, 95, 155, 120, 145]
+const _streamSkeletonTitleWidths = [160, 200, 130, 185, 150, 175]
+
+/**
+ * Insert count skeleton placeholder rows into the streams table tbody.
+ * DataTables clears them automatically on the next .draw() call.
+ * @param {number} count
+ */
+function showStreamsSkeletons(count = 10) {
+    const tbody = document.querySelector('#streams-table tbody')
+    if (!tbody) return
+    const fragment = document.createDocumentFragment()
+    // Column widths [px] matching the 11 header columns:
+    // checkbox, name, title, owner, status, started, ended, views, pw, public, actions
+    const specs = [
+        { w: 18, h: 18 },
+        { w: 0 }, // name — varied per row
+        { w: 0 }, // title — varied per row
+        { w: 80 },
+        { w: 58 },
+        { w: 112 },
+        { w: 112 },
+        { w: 28 },
+        { w: 14 },
+        { w: 14 },
+        { w: 38 },
+    ]
+    for (let i = 0; i < count; i++) {
+        const tr = document.createElement('tr')
+        tr.className = 'dt-skeleton-row'
+        specs.forEach(({ w, h = 14 }, colIndex) => {
+            const td = document.createElement('td')
+            const cell = document.createElement('div')
+            cell.className = 'dt-skeleton-cell'
+            let width = w
+            if (colIndex === 1)
+                width = _streamSkeletonNameWidths[i % _streamSkeletonNameWidths.length]
+            else if (colIndex === 2)
+                width = _streamSkeletonTitleWidths[i % _streamSkeletonTitleWidths.length]
+            cell.style.width = `${width}px`
+            cell.style.height = `${h}px`
+            td.appendChild(cell)
+            tr.appendChild(td)
+        })
+        fragment.appendChild(tr)
+    }
+    tbody.appendChild(fragment)
+}
+
 // Initialize DataTable
 $(document).ready(function () {
     streamsDataTable = streamsTable.DataTable(dataTablesOptions)
+
+    // Show skeleton rows while the AJAX fetch is in-flight.
+    // DataTables' draw() on AJAX completion clears them automatically.
+    showStreamsSkeletons()
 
     // Move user select into the slot DataTables rendered alongside the search input
     const userSelectContainer = document.getElementById('user-select-container')
     const slot = document.querySelector('.user-filter-slot')
     if (userSelectContainer && slot) {
+        userSelectContainer.classList.remove('d-none')
         slot.appendChild(userSelectContainer)
     }
 
@@ -240,7 +294,18 @@ $(document).ready(function () {
     const obsButtonContainer = document.getElementById('obs-button-container')
     const obsSlot = document.querySelector('.obs-button-slot')
     if (obsButtonContainer && obsSlot) {
+        obsButtonContainer.classList.remove('d-none')
         obsSlot.appendChild(obsButtonContainer)
+    }
+
+    // Reveal the section after all DOM mutations are done.
+    // Double-rAF ensures the browser commits the toolbar layout before
+    // opacity transitions to 1, eliminating the toolbar-insertion jitter.
+    const section = document.getElementById('streams-table-section')
+    if (section) {
+        requestAnimationFrame(() =>
+            requestAnimationFrame(() => section.classList.add('dt-section-ready'))
+        )
     }
 
     // Handle user filter for superusers
