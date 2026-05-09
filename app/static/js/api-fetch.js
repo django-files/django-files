@@ -12,7 +12,9 @@ export async function fetchFiles(page, count = 25, album = null) {
         console.warn('no page', page)
         return {}
     }
-    let url = new URL(`${globalThis.location.origin}/api/files/${page}/${count}/`)
+    let url = new URL(
+        `${globalThis.location.origin}/api/files/${page}/${count}/`
+    )
     let user = pageURL.searchParams.get('user')
     if (album) {
         url.searchParams.append('album', album)
@@ -30,7 +32,9 @@ export async function fetchAlbums(page, count = 100) {
         console.warn('no page', page)
         return {}
     }
-    let url = new URL(`${globalThis.location.origin}/api/albums/${page}/${count}/`)
+    let url = new URL(
+        `${globalThis.location.origin}/api/albums/${page}/${count}/`
+    )
     let user = pageURL.searchParams.get('user')
     if (user) {
         url.searchParams.append('user', user)
