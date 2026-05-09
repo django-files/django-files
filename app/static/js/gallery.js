@@ -30,6 +30,7 @@ showMap.onclick = changeView
 let params = new URL(document.location.toString()).searchParams
 
 let dtContainer
+let narrowViewportMsg
 let nextPage = 1
 let fileData = []
 let fetchLock = false
@@ -59,14 +60,17 @@ async function initGallery() {
     console.log('Init Gallery')
     filesDataTable = initFilesTable()
     dtContainer = document.querySelector('.dt-container')
+    narrowViewportMsg = document.querySelector('.files-table-narrow-msg')
     if (params.get('view') === 'map') {
         dtContainer.hidden = true
+        if (narrowViewportMsg) narrowViewportMsg.hidden = true
         galleryContainer.classList.add('d-none')
         showMap.style.fontWeight = 'bold'
         await addNodes()
         initMapView()
     } else if (globalThis.location.pathname.includes('gallery')) {
         dtContainer.hidden = true
+        if (narrowViewportMsg) narrowViewportMsg.hidden = true
         galleryContainer.classList.remove('d-none')
         showGallery.style.fontWeight = 'bold'
         await addNodes()
@@ -637,11 +641,13 @@ function changeView(event) {
     mapContainer.classList.add('d-none')
     mapContainer.parentElement.classList.remove('map-view-active')
     dtContainer.hidden = true
+    if (narrowViewportMsg) narrowViewportMsg.hidden = true
 
     if (view === 'List') {
         params.delete('view')
         galleryContainer.replaceChildren()
         dtContainer.hidden = false
+        if (narrowViewportMsg) narrowViewportMsg.hidden = false
         globalThis.history.replaceState({}, null, '/files/?' + params)
         showList.style.fontWeight = 'bold'
         filesDataTable.responsive.recalc()
