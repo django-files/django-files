@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: "Debug event.json"
         if: ${{ !cancelled() }}
@@ -29,12 +29,12 @@ jobs:
           cat "${GITHUB_EVENT_PATH}"
 
       - name: "Setup Python 3.12"
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: "3.12"
 
       - name: "Setup uv"
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
       - name: "Install"
         id: install
@@ -48,7 +48,7 @@ jobs:
 
       - name: "Ruff"
         if: ${{ !cancelled() }}
-        uses: astral-sh/ruff-action@v3
+        uses: astral-sh/ruff-action@0ce1b0bf8b818ef400413f810f8a11cdbda0034b # v4.0.0
         with:
           version: latest
 
@@ -58,7 +58,7 @@ jobs:
 
       - name: "Isort"
         if: ${{ !cancelled() }}
-        uses: isort/isort-action@v1
+        uses: isort/isort-action@24d8a7a51d33ca7f36c3f23598dafa33f7071326 # v1.1.1
 
       #- name: "Mypy"
       #  if: ${{ !cancelled() }}
@@ -80,7 +80,7 @@ jobs:
 
       - name: "Hadolint"
         if: ${{ !cancelled() }}
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5 # v3.3.0
         with:
           dockerfile: Dockerfile
           recursive: true
