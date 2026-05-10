@@ -197,7 +197,7 @@ div.dataTables_wrapper span.select-item {
 }
 
 #files-table td.dt-name-col {
-    min-width: 120px;
+    min-width: 200px;
 }
 
 #files-table td.dt-ctx-menu-col {
@@ -238,11 +238,30 @@ div.dataTables_wrapper span.select-item {
     vertical-align: middle;
 }
 
+/* Allow the toolbar row to wrap onto a second row on narrow viewports */
+[id='files-table_wrapper'] .dt-layout-row {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+}
+
+/* Shared flex baseline for both toolbar cells */
+[id='files-table_wrapper'] .dt-layout-start,
 [id='files-table_wrapper'] .dt-layout-end {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    flex-wrap: nowrap;
+}
+
+/* Start cell: grows to fill row 1; bulk stays left, file count pushed right via ms-auto */
+[id='files-table_wrapper'] .dt-layout-start {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* End cell: wraps onto row 2 when row is narrow, items right-aligned */
+[id='files-table_wrapper'] .dt-layout-end {
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 #dt-user-select-wrapper select {

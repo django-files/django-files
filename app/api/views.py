@@ -47,6 +47,7 @@ from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
 from oauth.models import CustomUser, UserInvites
+from webpush.models import PushInformation
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
@@ -963,6 +964,16 @@ def stream_viewers_view(request, name):
     }
     log.debug("stream_viewers_view - context: %s", context)
     return render(request, "stream/overlay/viewers.html", context)
+
+
+@require_http_methods(["GET"])
+def stream_subscribers_view(request, name):
+    """
+    View /stream/subscribers/:name/
+    """
+    log.debug("stream_subscribers_view - name: %s", name)
+    count = PushInformation.objects.filter(group__name=name).count()
+    return JsonResponse({"count": count})
 
 
 @csrf_exempt

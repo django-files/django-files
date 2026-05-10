@@ -7,7 +7,8 @@ var isPushEnabled = false,
 window.addEventListener('load', function () {
     subBtn = document.getElementById('webpush-subscribe-button')
 
-    subBtn.textContent = gettext('Subscribe to Push Messaging')
+    subBtn.innerHTML = '<i class="fa-solid fa-bell"></i>'
+    subBtn.title = gettext('Subscribe to Push Messaging')
 
     subBtn.addEventListener('click', function () {
         subBtn.disabled = true
@@ -79,9 +80,8 @@ window.addEventListener('load', function () {
                         // Check the information is saved successfully into server
                         if (response.status === 201) {
                             // Show unsubscribe button instead
-                            subBtn.textContent = gettext(
-                                'Unsubscribe from Push Messaging'
-                            )
+                            subBtn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>'
+                            subBtn.title = gettext('Unsubscribe from Push Messaging')
                             subBtn.disabled = false
                             isPushEnabled = true
                             showMessage(
@@ -136,9 +136,8 @@ function subscribe(reg) {
                         // Check the information is saved successfully into server
                         if (response.status === 201) {
                             // Show unsubscribe button instead
-                            subBtn.textContent = gettext(
-                                'Unsubscribe from Push Messaging'
-                            )
+                            subBtn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>'
+                            subBtn.title = gettext('Unsubscribe from Push Messaging')
                             subBtn.disabled = false
                             isPushEnabled = true
                             showMessage(
@@ -193,9 +192,8 @@ function unsubscribe(reg) {
                 subscription
                     .unsubscribe()
                     .then(function (successful) {
-                        subBtn.textContent = gettext(
-                            'Subscribe to Push Messaging'
-                        )
+                        subBtn.innerHTML = '<i class="fa-solid fa-bell"></i>'
+                        subBtn.title = gettext('Subscribe to Push Messaging')
                         showMessage(
                             gettext(
                                 'Successfully unsubscribed from push notifications.'
@@ -205,9 +203,8 @@ function unsubscribe(reg) {
                         subBtn.disabled = false
                     })
                     .catch(function (error) {
-                        subBtn.textContent = gettext(
-                            'Unsubscribe from Push Messaging'
-                        )
+                        subBtn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>'
+                        subBtn.title = gettext('Unsubscribe from Push Messaging')
                         showMessage(
                             gettext(
                                 'Error while unsubscribing from push notifications.'

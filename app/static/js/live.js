@@ -1,11 +1,20 @@
 // JS for live.html
 
 const viewCountText = document.getElementById('view-count')
+const subscriberCountText = document.getElementById('subscriber-count')
 const streamName = window.location.pathname.split('/')[2]
 
 let checkInterval
 let pingInterval
 let player
+let lastSubscriberCount = null
+
+const SUBSCRIBER_POLL_BASE_MS = 5 * 60 * 1000   // 5 minutes
+const SUBSCRIBER_POLL_JITTER_MS = 60 * 1000      // ± 1 minute
+
+function subscriberPollDelay() {
+    return SUBSCRIBER_POLL_BASE_MS + Math.round((Math.random() * 2 - 1) * SUBSCRIBER_POLL_JITTER_MS)
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log(`DOMContentLoaded: live.js - ${streamName}`)
@@ -26,6 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
         checkStream()
         checkInterval = setInterval(checkStream, 1000 * 60)
     }
+    checkSubscribers()
+    scheduleSubscriberCheck()
     player.on('play', () => {
         console.log('%c player.on: play', 'color: Lime')
         // noinspection JSIgnoredPromiseFromCall
@@ -58,9 +69,8 @@ async function pingServer() {
 
 async function checkStream() {
     console.log(`checkStream: ${streamName}:`, player)
-    const url = `/api/stream/viewers/${streamName}/`
     const options = { headers: { Accept: 'application/json' } }
-    fetch(url, options).then((response) => {
+    fetch(`/api/stream/viewers/${streamName}/`, options).then((response) => {
         console.log('response:', response)
         if (response.ok) {
             response.json().then((data) => {
@@ -69,5 +79,27 @@ async function checkStream() {
             })
         }
     })
-    // .catch((e) => console.log('checkStream: catch:', e))
+}
+
+function checkSubscribers() {
+    const options = { headers: { Accept: 'application/json' } }
+    fetch(`/api/stream/subscribers/${streamName}/`, options).then((response) => {
+        if (response.ok) {
+            response.json().then((data) => {
+                if (data.count !== lastSubscriberCount) {
+                    lastSubscriberCount = data.count
+                    if (subscriberCountText) subscriberCountText.textContent = data.count
+                }
+            })
+        }
+    })
+}
+
+function scheduleSubscriberCheck() {
+    const delay = subscriberPollDelay()
+    console.log(`scheduleSubscriberCheck: next check in ${(delay / 1000).toFixed(0)}s`)
+    setTimeout(() => {
+        checkSubscribers()
+        scheduleSubscriberCheck()
+    }, delay)
 }

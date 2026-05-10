@@ -50,7 +50,7 @@
                 <a class="link-body-emphasis show-map" role="button" title="Map" href="{% url 'home:files' %}?view=map">Map</a> |
                 <a class="link-body-emphasis show-slideshow" role="button" title="Slideshow" href="#offcanvas-bottom" data-bs-toggle="offcanvas" aria-controls="offcanvas-bottom">Slideshow</a>
             </span>
-            <span id="map-file-count" class="d-none ms-auto text-muted small text-nowrap">Total Files Displayed: <strong id="map-file-count-value">0</strong></span>
+            <span id="map-file-count" class="d-none ms-auto text-muted small text-nowrap">Files Displayed: <strong id="map-file-count-value">0</strong></span>
         </nav>
         {% if request.user.is_superuser and not album %}
         <div id="dt-user-select-wrapper" class="d-none">
@@ -66,8 +66,8 @@
         {% if album and album.info %}<p class="mb-1">{{ album.info }}</p>{% endif %}
         {% if album %}<p class="mb-1">Views: <strong id="views-count">{{ album.view }}</strong></p>{% endif %}
         {% if full_context %}
-        <div id="dt-file-count-wrapper" class="d-none">
-            <span class="text-muted text-nowrap small">Total Files Displayed: <strong id="total-files-count">0</strong></span>
+        <div id="dt-file-count-wrapper" class="d-none ms-auto">
+            <span class="text-muted text-nowrap small">Files Displayed: <strong id="total-files-count">0</strong></span>
         </div>
         {% endif %}
         {% include 'files/bulk-menu.html' %}

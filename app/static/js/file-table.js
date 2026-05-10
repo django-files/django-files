@@ -172,7 +172,7 @@ const dataTablesOptions = {
             'dt-file-count-wrapper'
         )
         if (fileCountWrapper) {
-            endCell.prepend(fileCountWrapper)
+            startCell.append(fileCountWrapper)
             fileCountWrapper.classList.remove('d-none')
         }
 
@@ -235,7 +235,7 @@ function getPwIcon(data, type, row, _meta) {
     const pwIcon = faKey.cloneNode(true)
     pwIcon.classList.add('passwordStatus')
     if (!row.password) {
-        pwIcon.style.display = 'none'
+        pwIcon.classList.add('d-none')
     }
     return pwIcon
 }
@@ -244,7 +244,7 @@ function getPrivateIcon(data, type, row, _meta) {
     const privateIcon = faLock.cloneNode(true)
     privateIcon.classList.add('privateStatus')
     if (!row.private) {
-        privateIcon.style.display = 'none'
+        privateIcon.classList.add('d-none')
     }
     return privateIcon
 }

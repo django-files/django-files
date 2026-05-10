@@ -22,6 +22,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from home.models import Albums, Files, FileStats, ShortURLs, Stream
+from webpush.models import PushInformation
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
@@ -98,6 +99,7 @@ def live_view(request, key):
         "stream": stream,
         "is_owner": is_owner,
         "chat_user_info": chat_user_info,
+        "subscriber_count": PushInformation.objects.filter(group__name=key).count(),
     }
     if is_owner:
         site_settings = SiteSettings.objects.settings()
