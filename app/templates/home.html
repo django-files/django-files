@@ -57,7 +57,7 @@
     <h2 id="files">Recent Files</h2>
         {% include 'files/bulk-menu.html' %}
         {% include 'files/table.html' %}
-        <p class="mt-0 files-truncation-warning">
+        <p class="mt-0 files-truncation-warning d-none">
             <em>This list is truncated to 10 files.</em>
             <span class="d-inline-block"><a href="{% url 'home:files' %}">View All Files</a></span>
         </p>

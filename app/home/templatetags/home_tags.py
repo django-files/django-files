@@ -7,8 +7,6 @@ from django import template
 from django.conf import settings
 from django.http import HttpRequest
 
-# from django.templatetags.static import static
-
 logger = logging.getLogger("app")
 register = template.Library()
 
@@ -74,14 +72,17 @@ def is_ios_browser(request: HttpRequest) -> bool:
     return False
 
 
-# @register.filter(name='avatar_url')
-# def avatar_url(user):
-#     # return discord avatar url from user model
-#     if user.avatar_hash:
-#         return f'https://cdn.discordapp.com/avatars/' \
-#                f'{ user.username }/{ user.avatar_hash }.png'
-#     else:
-#         return static('images/assets/default.png')
+@register.simple_tag(name="is_mobile_browser")
+def is_mobile_browser(request: HttpRequest) -> bool:
+    """
+    Returns True if the request is from a mobile web browser (iOS or Android)
+    :param request: HttpRequest: request
+    :return: bool
+    """
+    if request and isinstance(request.META, dict):
+        ua = request.META.get("HTTP_USER_AGENT", "").lower()
+        return any(x in ua for x in ["iphone", "ipad", "android"])
+    return False
 
 
 @register.filter(name="single_type")

@@ -29,6 +29,7 @@ from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
+from webpush.models import PushInformation
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
@@ -98,6 +99,7 @@ def live_view(request, key):
         "stream": stream,
         "is_owner": is_owner,
         "chat_user_info": chat_user_info,
+        "subscriber_count": PushInformation.objects.filter(group__name=key).count(),
     }
     if is_owner:
         site_settings = SiteSettings.objects.settings()

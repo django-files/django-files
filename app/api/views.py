@@ -56,6 +56,7 @@ from packaging.version import InvalidVersion
 from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
+from webpush.models import PushInformation
 
 signer = TimestampSigner()
 
@@ -963,6 +964,16 @@ def stream_viewers_view(request, name):
     }
     log.debug("stream_viewers_view - context: %s", context)
     return render(request, "stream/overlay/viewers.html", context)
+
+
+@require_http_methods(["GET"])
+def stream_subscribers_view(request, name):
+    """
+    View /stream/subscribers/:name/
+    """
+    log.debug("stream_subscribers_view - name: %s", name)
+    count = PushInformation.objects.filter(group__name=name).count()
+    return JsonResponse({"count": count})
 
 
 @csrf_exempt

@@ -98,12 +98,12 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
         {% include 'files/ctx-menu.html' with file=file extraclass='dropdown-menu-end' %}
         <div id="preview-sidebar" class="sidebar h-100">
             <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
-            {% is_ios_browser request as ios %}
-            {% if ios and native_app_arg %}
+            {% is_mobile_browser request as mobile_browser %}
+            {% if mobile_browser and native_app_arg %}
             <a href="{{ native_app_arg }}"
                class="sidebar-app-btn"
                title="Open in App">
-                <i class="fa-brands fa-apple"></i>
+                <i class="fa-solid fa-mobile-screen-button"></i>
             </a>
             {% endif %}
             <div id="file-{{ file.id }}" class="card-body sidebar-card">

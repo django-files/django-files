@@ -7,6 +7,8 @@ import {
     addFileTableRowsBatch,
     formatBytes,
     faCaret,
+    showTableSkeletons,
+    hideTableSkeletons,
 } from './file-table.js'
 
 import { fetchFiles } from './api-fetch.js'
@@ -30,6 +32,7 @@ showMap.onclick = changeView
 let params = new URL(document.location.toString()).searchParams
 
 let dtContainer
+let narrowViewportMsg
 let nextPage = 1
 let fileData = []
 let fetchLock = false
@@ -59,20 +62,25 @@ async function initGallery() {
     console.log('Init Gallery')
     filesDataTable = initFilesTable()
     dtContainer = document.querySelector('.dt-container')
+    narrowViewportMsg = document.querySelector('.files-table-narrow-msg')
     if (params.get('view') === 'map') {
         dtContainer.hidden = true
+        if (narrowViewportMsg) narrowViewportMsg.hidden = true
         galleryContainer.classList.add('d-none')
         showMap.style.fontWeight = 'bold'
         await addNodes()
         initMapView()
     } else if (globalThis.location.pathname.includes('gallery')) {
         dtContainer.hidden = true
+        if (narrowViewportMsg) narrowViewportMsg.hidden = true
         galleryContainer.classList.remove('d-none')
         showGallery.style.fontWeight = 'bold'
+        if (mapFileCount) mapFileCount.classList.remove('d-none')
         await addNodes()
     } else {
         galleryContainer.classList.add('d-none')
         showList.style.fontWeight = 'bold'
+        showTableSkeletons()
         await addNodes()
     }
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
@@ -110,7 +118,9 @@ function showSkeletons() {
     if (!nextPage) return
 
     if (!globalThis.location.pathname.includes('gallery')) {
-        // List view: use an invisible sentinel element instead of visual skeletons.
+        // List view: show skeleton rows and use an invisible sentinel to
+        // trigger the next page fetch before the user reaches the bottom.
+        showTableSkeletons(20)
         const sentinel = document.createElement('div')
         sentinel.id = 'list-scroll-sentinel'
         dtContainer.after(sentinel)
@@ -229,6 +239,7 @@ function hideSkeletons() {
         .querySelectorAll('[id^="gallery-skeleton-"]')
         .forEach((el) => el.remove())
     document.getElementById('list-scroll-sentinel')?.remove()
+    hideTableSkeletons()
 }
 
 /**
@@ -250,13 +261,18 @@ async function addNodes() {
             skeletonObserver.disconnect()
             skeletonObserver = null
         }
-        filesDataTable.processing(true)
         fetchLock = true
-        const data = await fetchFiles(nextPage, 25, params.get('album'))
+        const data = await fetchFiles(nextPage, 50, params.get('album'))
         console.debug('data:', data)
         slideshowCallback(data)
         nextPage = data.next
         fileData.push(...data.files)
+        if (
+            globalThis.location.pathname.includes('gallery') &&
+            mapFileCountValue
+        ) {
+            mapFileCountValue.textContent = fileData.length
+        }
         // Data is ready — remove skeletons and render real cards.
         hideSkeletons()
         if (window.location.pathname.includes('gallery')) {
@@ -266,7 +282,6 @@ async function addNodes() {
         }
         // Add all rows to DataTables in one batch and draw once
         addFileTableRowsBatch(data.files)
-        filesDataTable.processing(false)
         fetchLock = false
         showSkeletons()
     } else {
@@ -636,12 +651,15 @@ function changeView(event) {
     galleryContainer.classList.add('d-none')
     mapContainer.classList.add('d-none')
     mapContainer.parentElement.classList.remove('map-view-active')
+    if (mapFileCount) mapFileCount.classList.add('d-none')
     dtContainer.hidden = true
+    if (narrowViewportMsg) narrowViewportMsg.hidden = true
 
     if (view === 'List') {
         params.delete('view')
         galleryContainer.replaceChildren()
         dtContainer.hidden = false
+        if (narrowViewportMsg) narrowViewportMsg.hidden = false
         globalThis.history.replaceState({}, null, '/files/?' + params)
         showList.style.fontWeight = 'bold'
         filesDataTable.responsive.recalc()
@@ -661,6 +679,8 @@ function changeView(event) {
         globalThis.history.replaceState({}, null, '/gallery/?' + params)
         galleryContainer.replaceChildren()
         showGallery.style.fontWeight = 'bold'
+        if (mapFileCount) mapFileCount.classList.remove('d-none')
+        if (mapFileCountValue) mapFileCountValue.textContent = fileData.length
         renderGalleryChunked(fileData, 20, showSkeletons)
     }
 }
@@ -746,6 +766,8 @@ function buildImageLabels(file, bottomLeft) {
 // Map View Section
 
 const mapContainer = document.getElementById('map-container')
+const mapFileCount = document.getElementById('map-file-count')
+const mapFileCountValue = document.getElementById('map-file-count-value')
 let galleryLeafletMap = null
 let mapInitialised = false
 
@@ -811,6 +833,7 @@ function initMapView() {
 
     mapContainer.classList.remove('d-none')
     mapContainer.parentElement.classList.add('map-view-active')
+    if (mapFileCount) mapFileCount.classList.remove('d-none')
     requestAnimationFrame(() => {
         if (mapInitialised) {
             galleryLeafletMap.invalidateSize()
@@ -928,10 +951,13 @@ async function fetchAndPlotAllFiles(L) {
     let page = 1
     const album = params.get('album')
     const allCoords = []
+    let totalLoaded = 0
 
     while (page) {
         const data = await fetchFiles(page, 100, album)
         page = data.next
+        totalLoaded += data.files.length
+        if (mapFileCountValue) mapFileCountValue.textContent = totalLoaded
 
         for (const file of data.files) {
             const coords = gpsToDecimal(file.exif?.GPSInfo)

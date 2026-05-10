@@ -39,6 +39,60 @@
     top: 100% !important;
 }
 
+/*
+ * Hide any DT-managed section from first paint so DataTables can finish
+ * inserting its toolbar and moving elements before anything is visible.
+ * JS adds .dt-section-ready (via double-rAF) once layout is settled.
+ */
+.dt-section {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.dt-section.dt-section-ready {
+    opacity: 1;
+}
+
+/* Table skeleton rows — override the td overflow/max-width rules so cells show */
+.dt-skeleton-row td {
+    max-width: none;
+    overflow: visible;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    vertical-align: middle;
+}
+
+.dt-skeleton-cell {
+    border-radius: 4px;
+    position: relative;
+    background-color: var(--bs-secondary-bg, #e9ecef);
+    overflow: hidden;
+    height: 14px;
+}
+
+.dt-skeleton-cell::after {
+    content: '';
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        110deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.6) 50%,
+        transparent 80%
+    );
+    animation: glisten 1.5s linear infinite;
+}
+
+[data-bs-theme='dark'] .dt-skeleton-cell::after {
+    background: linear-gradient(
+        110deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.12) 50%,
+        transparent 80%
+    );
+}
+
 .gallery-outer {
     position: relative;
     background-color: #495057;
@@ -142,6 +196,10 @@ div.dataTables_wrapper span.select-item {
     white-space: nowrap;
 }
 
+#files-table td.dt-name-col {
+    min-width: 200px;
+}
+
 #files-table td.dt-ctx-menu-col {
     overflow: visible;
 }
@@ -180,11 +238,30 @@ div.dataTables_wrapper span.select-item {
     vertical-align: middle;
 }
 
+/* Allow the toolbar row to wrap onto a second row on narrow viewports */
+[id='files-table_wrapper'] .dt-layout-row {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+}
+
+/* Shared flex baseline for both toolbar cells */
+[id='files-table_wrapper'] .dt-layout-start,
 [id='files-table_wrapper'] .dt-layout-end {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    flex-wrap: nowrap;
+}
+
+/* Start cell: grows to fill row 1; bulk stays left, file count pushed right via ms-auto */
+[id='files-table_wrapper'] .dt-layout-start {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* End cell: wraps onto row 2 when row is narrow, items right-aligned */
+[id='files-table_wrapper'] .dt-layout-end {
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 #dt-user-select-wrapper select {

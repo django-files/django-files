@@ -4,6 +4,7 @@ from django.forms.models import model_to_dict
 from home.models import Albums, Files, Stream
 from oauth.models import CustomUser
 from settings.context_processors import site_settings_processor
+from webpush.models import PushInformation
 
 
 def serialize_user(user: CustomUser) -> Dict[str, Any]:
@@ -73,5 +74,6 @@ def extract_streams(q: Stream.objects, user_id: int = None):
         data["ended_at"] = stream.ended_at
         data["url"] = site_settings["site_url"] + f"/live/{stream.name}/"
         data["is_owner"] = user_id is not None and stream.user_id == user_id
+        data["subscriber_count"] = PushInformation.objects.filter(group__name=stream.name).count()
         streams.append(data)
     return streams

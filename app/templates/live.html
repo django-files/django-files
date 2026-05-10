@@ -71,7 +71,7 @@
                                     <img src="{{ stream.user.get_avatar_url }}" class="rounded-circle" height="50" width="50" alt="P">
                                     <span class="fw-semibold">{{ stream.user.get_name }}</span>
                                 </div>
-                                {% webpush_button with_class="btn btn-outline-info btn-sm" %}
+                                {% webpush_button with_class="btn btn-outline-info btn-sm px-2" %}
                             </div>
                         </div>
                         <div class="row">
@@ -81,7 +81,11 @@
                                 {% else %}
                                 <strong id="stream-status-badge" class="m-0 text-secondary fw-bold">Offline</strong>
                                 {% endif %}
-                                <strong class="m-0 text-info text-end"><span id="view-count">N/A</span> Viewers</strong>
+                                <strong class="m-0 text-info text-end">
+                                    <span id="subscriber-count">{{ subscriber_count }}</span> <i class="fa-solid fa-bell" title="Notification subscribers"></i>
+                                    &nbsp;
+                                    <span id="view-count">N/A</span> Viewers
+                                </strong>
                             </div>
                         </div>
                         <div class="row">

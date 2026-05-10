@@ -1,6 +1,6 @@
 {% if user.is_authenticated or group %}
-  <button id="webpush-subscribe-button" {% if class %}class="{{ class }}"{% endif %} {% if group %}data-group="{{ group }}"{% endif %} data-url="{{ webpush_save_url }}">
-    Get Notified when Live
+  <button id="webpush-subscribe-button" {% if class %}class="{{ class }}"{% endif %} {% if group %}data-group="{{ group }}"{% endif %} data-url="{{ webpush_save_url }}" title="Get notified when live">
+    <i class="fa-solid fa-bell"></i>
   </button>
   <div id="webpush-message" hidden></div>
 {% endif %}
