@@ -49,7 +49,9 @@ async function initHome() {
     const hasMore = files.files?.length > MAX_HOME_FILES
     if (hasMore) {
         files.files = files.files.slice(0, MAX_HOME_FILES)
-        document.querySelector('.files-truncation-warning').classList.remove('d-none')
+        document
+            .querySelector('.files-truncation-warning')
+            .classList.remove('d-none')
     }
     addFileTableRows(files)
     filesDataTable.on('select', function (_e, _dt, _type, _indexes) {
@@ -72,12 +74,14 @@ socket?.addEventListener('message', function (event) {
     if (data.event !== 'file-new' || !filesDataTable) return
     const count = filesDataTable.rows().count()
     if (count > MAX_HOME_FILES) {
-        const lastIdx = filesDataTable
-            .rows({ order: 'applied' })
-            .indexes()[MAX_HOME_FILES]
+        const lastIdx = filesDataTable.rows({ order: 'applied' }).indexes()[
+            MAX_HOME_FILES
+        ]
         if (lastIdx !== undefined) {
             filesDataTable.row(lastIdx).remove().draw(false)
         }
     }
-    document.querySelector('.files-truncation-warning').classList.remove('d-none')
+    document
+        .querySelector('.files-truncation-warning')
+        .classList.remove('d-none')
 })
