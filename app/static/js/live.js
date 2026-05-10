@@ -9,11 +9,14 @@ let pingInterval
 let player
 let lastSubscriberCount = null
 
-const SUBSCRIBER_POLL_BASE_MS = 5 * 60 * 1000   // 5 minutes
-const SUBSCRIBER_POLL_JITTER_MS = 60 * 1000      // ± 1 minute
+const SUBSCRIBER_POLL_BASE_MS = 5 * 60 * 1000 // 5 minutes
+const SUBSCRIBER_POLL_JITTER_MS = 60 * 1000 // ± 1 minute
 
 function subscriberPollDelay() {
-    return SUBSCRIBER_POLL_BASE_MS + Math.round((Math.random() * 2 - 1) * SUBSCRIBER_POLL_JITTER_MS)
+    return (
+        SUBSCRIBER_POLL_BASE_MS +
+        Math.round((Math.random() * 2 - 1) * SUBSCRIBER_POLL_JITTER_MS)
+    )
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -83,21 +86,26 @@ async function checkStream() {
 
 function checkSubscribers() {
     const options = { headers: { Accept: 'application/json' } }
-    fetch(`/api/stream/subscribers/${streamName}/`, options).then((response) => {
-        if (response.ok) {
-            response.json().then((data) => {
-                if (data.count !== lastSubscriberCount) {
-                    lastSubscriberCount = data.count
-                    if (subscriberCountText) subscriberCountText.textContent = data.count
-                }
-            })
+    fetch(`/api/stream/subscribers/${streamName}/`, options).then(
+        (response) => {
+            if (response.ok) {
+                response.json().then((data) => {
+                    if (data.count !== lastSubscriberCount) {
+                        lastSubscriberCount = data.count
+                        if (subscriberCountText)
+                            subscriberCountText.textContent = data.count
+                    }
+                })
+            }
         }
-    })
+    )
 }
 
 function scheduleSubscriberCheck() {
     const delay = subscriberPollDelay()
-    console.log(`scheduleSubscriberCheck: next check in ${(delay / 1000).toFixed(0)}s`)
+    console.log(
+        `scheduleSubscriberCheck: next check in ${(delay / 1000).toFixed(0)}s`
+    )
     setTimeout(() => {
         checkSubscribers()
         scheduleSubscriberCheck()

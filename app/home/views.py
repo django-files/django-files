@@ -22,7 +22,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from home.models import Albums, Files, FileStats, ShortURLs, Stream
-from webpush.models import PushInformation
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
@@ -30,6 +29,7 @@ from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
+from webpush.models import PushInformation
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4

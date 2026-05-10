@@ -3,8 +3,8 @@ from typing import Any, Dict, List
 from django.forms.models import model_to_dict
 from home.models import Albums, Files, Stream
 from oauth.models import CustomUser
-from webpush.models import PushInformation
 from settings.context_processors import site_settings_processor
+from webpush.models import PushInformation
 
 
 def serialize_user(user: CustomUser) -> Dict[str, Any]:

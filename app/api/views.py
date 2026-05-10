@@ -47,7 +47,6 @@ from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
 from oauth.models import CustomUser, UserInvites
-from webpush.models import PushInformation
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
@@ -57,6 +56,7 @@ from packaging.version import InvalidVersion
 from pytimeparse2 import parse
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
+from webpush.models import PushInformation
 
 signer = TimestampSigner()
 
