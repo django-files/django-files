@@ -254,6 +254,11 @@ async function addNodes() {
         return console.warn('No Next Page:', nextPage)
     }
     if (!fetchLock) {
+        // Preserve scroll state so fast scrollers don't get stuck at the bottom.
+        const preHeight = document.body.scrollHeight
+        const preScroll = window.scrollY
+        const userNearBottom = preScroll + window.innerHeight >= preHeight - 100
+
         // Disconnect the observer so it doesn't re-fire while fetching,
         // but leave the skeleton cards in the DOM so the user can see
         // there is more content coming while the request is in flight.
@@ -283,7 +288,19 @@ async function addNodes() {
         // Add all rows to DataTables in one batch and draw once
         addFileTableRowsBatch(data.files)
         fetchLock = false
-        showSkeletons()
+
+        // After the DOM has been updated, adjust the scroll so the viewport
+        // remains anchored where the user was (prevents getting stuck at bottom).
+        requestAnimationFrame(() => {
+            const postHeight = document.body.scrollHeight
+            if (userNearBottom) {
+                const delta = postHeight - preHeight
+                if (delta) {
+                    window.scrollTo({ top: preScroll + delta })
+                }
+            }
+            showSkeletons()
+        })
     } else {
         console.debug('Another files fetch in progress waiting.')
     }
