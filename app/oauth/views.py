@@ -110,7 +110,7 @@ def oauth_google(request):
     return GoogleOauth.redirect_login(request, settings)
 
 
-def _maybe_native_redirect(request, url):
+def _maybe_native_redirect(url):
     if url.startswith("djangofiles://"):
         return CustomSchemeRedirect(url)
     return HttpResponseRedirect(url)
@@ -150,7 +150,7 @@ def oauth_callback(request, oauth_provider: str = ""):
             webhook = oauth.add_webhook(request)
             messages.info(request, f"Webhook successfully added: {webhook.id}")
             url = get_login_redirect_url(request, native_auth=native_auth)
-            return _maybe_native_redirect(request, url)
+            return _maybe_native_redirect(url)
 
         user = get_or_create_user(request, oauth.id, oauth.username, provider, first_name=oauth.first_name)
         log.debug("user: %s", user)
@@ -158,7 +158,7 @@ def oauth_callback(request, oauth_provider: str = ""):
             message = "User Not Found or Already Taken."
             messages.error(request, message)
             url = get_login_redirect_url(request, native_auth=native_auth, native_client_error=message)
-            return _maybe_native_redirect(request, url)
+            return _maybe_native_redirect(url)
 
         oauth.update_profile(user)
         if response := pre_login(request, user, site_settings):
@@ -176,11 +176,10 @@ def oauth_callback(request, oauth_provider: str = ""):
             session_key=request.session.session_key,
         )
         log.debug("url: %s", url)
-        return _maybe_native_redirect(request, url)
+        return _maybe_native_redirect(url)
 
-    except Exception as error:
-        log.exception(error)
-        messages.error(request, f"Exception during login: {error}")
+    except Exception:
+        logging.exception("Exception during login")
         return HttpResponseRedirect(get_login_redirect_url(request))
 
 
