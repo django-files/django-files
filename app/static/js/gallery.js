@@ -218,7 +218,13 @@ async function addNodes() {
             // If content plus skeletons still doesn't fill the viewport,
             // fetch the next page immediately. This handles fast scrolling
             // where the viewport stays in place while new content loads below.
-            if (nextPage && document.body.scrollHeight - window.innerHeight - window.scrollY <= 0) {
+            if (
+                nextPage &&
+                document.body.scrollHeight -
+                    window.innerHeight -
+                    window.scrollY <=
+                    0
+            ) {
                 setTimeout(() => addNodes(), 0)
             }
         }, 0)
@@ -622,7 +628,13 @@ function changeView(event) {
         renderGalleryChunked(fileData, 20, () => {
             showSkeletons()
             scrollYAtLastFetch = window.scrollY
-            if (nextPage && document.body.scrollHeight - window.innerHeight - window.scrollY <= 0) {
+            if (
+                nextPage &&
+                document.body.scrollHeight -
+                    window.innerHeight -
+                    window.scrollY <=
+                    0
+            ) {
                 setTimeout(() => addNodes(), 0)
             }
         })
