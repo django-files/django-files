@@ -346,8 +346,8 @@ def refresh_gallery_static_urls_cache():
                     file.get_gallery_url()
                     file_count += 1
             log.info("----- COMPLETE gallery cache refresh -----")
-        except Exception as err:
-            log.error(f"Error populating gallery cache: {err}")
+        except Exception:
+            logging.exception("Error populating gallery cache")
         finally:
             release_lock(lock_key)
     else:
