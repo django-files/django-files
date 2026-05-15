@@ -110,6 +110,12 @@ def oauth_google(request):
     return GoogleOauth.redirect_login(request, settings)
 
 
+def _maybe_native_redirect(request, url):
+    if url.startswith("djangofiles://"):
+        return CustomSchemeRedirect(url)
+    return HttpResponseRedirect(url)
+
+
 def oauth_callback(request, oauth_provider: str = ""):
     """
     View  /oauth/callback/
@@ -143,16 +149,16 @@ def oauth_callback(request, oauth_provider: str = ""):
             del request.session["webhook"]
             webhook = oauth.add_webhook(request)
             messages.info(request, f"Webhook successfully added: {webhook.id}")
-            return CustomSchemeRedirect(get_login_redirect_url(request, native_auth=native_auth))
+            url = get_login_redirect_url(request, native_auth=native_auth)
+            return _maybe_native_redirect(request, url)
 
         user = get_or_create_user(request, oauth.id, oauth.username, provider, first_name=oauth.first_name)
         log.debug("user: %s", user)
         if not user:
             message = "User Not Found or Already Taken."
             messages.error(request, message)
-            return CustomSchemeRedirect(
-                get_login_redirect_url(request, native_auth=native_auth, native_client_error=message)
-            )
+            url = get_login_redirect_url(request, native_auth=native_auth, native_client_error=message)
+            return _maybe_native_redirect(request, url)
 
         oauth.update_profile(user)
         if response := pre_login(request, user, site_settings):
@@ -170,7 +176,7 @@ def oauth_callback(request, oauth_provider: str = ""):
             session_key=request.session.session_key,
         )
         log.debug("url: %s", url)
-        return CustomSchemeRedirect(url)
+        return _maybe_native_redirect(request, url)
 
     except Exception as error:
         log.exception(error)
