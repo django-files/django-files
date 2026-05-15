@@ -38,8 +38,8 @@ let fileData = []
 let fetchLock = false
 let filesDataTable
 let selectedFileIds = []
-let skeletonObserver = null // early preemptive trigger
-let skeletonFallback = null // late safety-net trigger
+let scrollYAtLastFetch = -1 // guards re-fetch when user hasn't scrolled; -1 = initial load
+let scrollCheckScheduled = false
 
 // Cache touch detection once — isTouchDevice() is called on every hover otherwise
 const isTouch =
@@ -56,10 +56,26 @@ const tmplCtx = document.querySelector('.d-none .gallery-ctx')
 const tmplCtxToggle = document.querySelector('.d-none .gallery-ctx-toggle')
 const tmplCheckbox = document.querySelector('.d-none .gallery-checkbox')
 
+function onScrollCheck() {
+    if (scrollCheckScheduled) return
+    scrollCheckScheduled = true
+    requestAnimationFrame(() => {
+        scrollCheckScheduled = false
+        if (!nextPage || fetchLock) return
+        if (window.scrollY <= scrollYAtLastFetch) return
+        const spaceBelow =
+            document.body.scrollHeight - window.innerHeight - window.scrollY
+        if (spaceBelow <= window.innerHeight * 1.5) {
+            addNodes()
+        }
+    })
+}
+
 document.addEventListener('DOMContentLoaded', initGallery)
 
 async function initGallery() {
     console.log('Init Gallery')
+    window.addEventListener('scroll', onScrollCheck, { passive: true })
     filesDataTable = initFilesTable()
     dtContainer = document.querySelector('.dt-container')
     narrowViewportMsg = document.querySelector('.files-table-narrow-msg')
@@ -109,50 +125,16 @@ $('#user').on('change', function (_event) {
     }
 })
 
-/**
- * Append skeleton placeholders after the current view's content and observe
- * the first one so a fetch is triggered before the user scrolls into them.
- * @function showSkeletons
- */
 function showSkeletons() {
     if (!nextPage) return
 
     if (!globalThis.location.pathname.includes('gallery')) {
-        // List view: show skeleton rows and use an invisible sentinel to
-        // trigger the next page fetch before the user reaches the bottom.
-        showTableSkeletons(20)
-        const sentinel = document.createElement('div')
-        sentinel.id = 'list-scroll-sentinel'
-        dtContainer.after(sentinel)
-
-        const triggerListFetch = () => {
-            if (skeletonObserver) {
-                skeletonObserver.disconnect()
-                skeletonObserver = null
-            }
-            addNodes()
-        }
-
-        skeletonObserver = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting) triggerListFetch()
-            },
-            { rootMargin: '300px' }
-        )
-        skeletonObserver.observe(sentinel)
-
-        // Sync fallback: if we're already at the bottom, fire immediately.
-        const rect = sentinel.getBoundingClientRect()
-        if (rect.top < window.innerHeight + 300) {
-            triggerListFetch()
-        }
+        showTableSkeletons(40)
         return
     }
 
     const fragment = new DocumentFragment()
-    let firstSkeleton = null
-    let lastSkeleton = null
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 32; i++) {
         const outer = tmplOuter.cloneNode(false)
         outer.id = `gallery-skeleton-${i}`
         outer.classList.add('m-1')
@@ -168,58 +150,8 @@ function showSkeletons() {
         inner.appendChild(shimmer)
         outer.appendChild(inner)
         fragment.appendChild(outer)
-        if (i === 0) firstSkeleton = outer
-        lastSkeleton = outer
     }
     galleryContainer.appendChild(fragment)
-
-    if (!firstSkeleton) return
-
-    // Single shared trigger — fetchLock inside addNodes() is the only
-    // anti-spam guard, so all paths funnel through it safely.
-    function triggerFetch() {
-        if (skeletonObserver) {
-            skeletonObserver.disconnect()
-            skeletonObserver = null
-        }
-        if (skeletonFallback) {
-            skeletonFallback.disconnect()
-            skeletonFallback = null
-        }
-        addNodes()
-    }
-
-    // Early observer: large rootMargin fires while the first skeleton is still
-    // off-screen, preemptively starting the fetch before the user sees any
-    // placeholder content.
-    skeletonObserver = new IntersectionObserver(
-        (entries) => {
-            if (entries[0].isIntersecting) triggerFetch()
-        },
-        { rootMargin: '800px' }
-    )
-    skeletonObserver.observe(firstSkeleton)
-
-    // Late fallback: watches the last skeleton at 0px margin. Fires only when
-    // the user has actually scrolled into the bottom of the placeholder batch —
-    // catches fast scrollers who passed the early trigger before it could fire.
-    if (lastSkeleton) {
-        skeletonFallback = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting) triggerFetch()
-            },
-            { rootMargin: '0px' }
-        )
-        skeletonFallback.observe(lastSkeleton)
-    }
-
-    // Sync fallback: if the user is already past the early trigger zone when
-    // showSkeletons() runs (e.g., arrived at the bottom mid-fetch), the async
-    // IO callback will never fire — call addNodes() directly.
-    const rect = firstSkeleton.getBoundingClientRect()
-    if (rect.top < window.innerHeight + 800) {
-        triggerFetch()
-    }
 }
 
 /**
@@ -227,14 +159,6 @@ function showSkeletons() {
  * @function hideSkeletons
  */
 function hideSkeletons() {
-    if (skeletonObserver) {
-        skeletonObserver.disconnect()
-        skeletonObserver = null
-    }
-    if (skeletonFallback) {
-        skeletonFallback.disconnect()
-        skeletonFallback = null
-    }
     document
         .querySelectorAll('[id^="gallery-skeleton-"]')
         .forEach((el) => el.remove())
@@ -254,18 +178,17 @@ async function addNodes() {
         return console.warn('No Next Page:', nextPage)
     }
     if (!fetchLock) {
-        // Preserve scroll state so fast scrollers don't get stuck at the bottom.
-        const preHeight = document.body.scrollHeight
-        const preScroll = window.scrollY
-        const userNearBottom = preScroll + window.innerHeight >= preHeight - 100
-
-        // Disconnect the observer so it doesn't re-fire while fetching,
-        // but leave the skeleton cards in the DOM so the user can see
-        // there is more content coming while the request is in flight.
-        if (skeletonObserver) {
-            skeletonObserver.disconnect()
-            skeletonObserver = null
+        // Guard: skip the fetch when content already extends below the
+        // viewport and the user hasn't scrolled.  Lets the observer stay
+        // active so it fires again on the next genuine scroll.
+        if (
+            scrollYAtLastFetch >= 0 &&
+            window.scrollY <= scrollYAtLastFetch &&
+            document.body.scrollHeight - window.innerHeight - window.scrollY > 0
+        ) {
+            return
         }
+
         fetchLock = true
         const data = await fetchFiles(nextPage, 50, params.get('album'))
         console.debug('data:', data)
@@ -288,19 +211,17 @@ async function addNodes() {
         // Add all rows to DataTables in one batch and draw once
         addFileTableRowsBatch(data.files)
         fetchLock = false
+        scrollYAtLastFetch = window.scrollY
 
-        // After the DOM has been updated, adjust the scroll so the viewport
-        // remains anchored where the user was (prevents getting stuck at bottom).
-        requestAnimationFrame(() => {
-            const postHeight = document.body.scrollHeight
-            if (userNearBottom) {
-                const delta = postHeight - preHeight
-                if (delta) {
-                    window.scrollTo({ top: preScroll + delta })
-                }
-            }
+        setTimeout(() => {
             showSkeletons()
-        })
+            // If content plus skeletons still doesn't fill the viewport,
+            // fetch the next page immediately. This handles fast scrolling
+            // where the viewport stays in place while new content loads below.
+            if (nextPage && document.body.scrollHeight - window.innerHeight - window.scrollY <= 0) {
+                setTimeout(() => addNodes(), 0)
+            }
+        }, 0)
     } else {
         console.debug('Another files fetch in progress waiting.')
     }
@@ -698,7 +619,13 @@ function changeView(event) {
         showGallery.style.fontWeight = 'bold'
         if (mapFileCount) mapFileCount.classList.remove('d-none')
         if (mapFileCountValue) mapFileCountValue.textContent = fileData.length
-        renderGalleryChunked(fileData, 20, showSkeletons)
+        renderGalleryChunked(fileData, 20, () => {
+            showSkeletons()
+            scrollYAtLastFetch = window.scrollY
+            if (nextPage && document.body.scrollHeight - window.innerHeight - window.scrollY <= 0) {
+                setTimeout(() => addNodes(), 0)
+            }
+        })
     }
 }
 
