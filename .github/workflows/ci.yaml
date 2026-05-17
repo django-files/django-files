@@ -72,6 +72,7 @@ jobs:
           set: |
             app.tags=ghcr.io/${{ github.repository }}-app:${{ github.ref_name }}
             nginx.tags=ghcr.io/${{ github.repository }}-nginx:${{ github.ref_name }}
+            app.args.BUILD_SHA=${{ github.sha }}
             *.platform=linux/amd64,linux/arm64
             *.cache-from=type=gha
             *.cache-to=type=gha,mode=max
