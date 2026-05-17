@@ -218,6 +218,7 @@ function messageStreamStatus(data) {
                     hour: 'numeric',
                     minute: '2-digit',
                     hour12: true,
+                    timeZoneName: 'short',
                 })
                 el.innerHTML = `<strong>Started:</strong> ${formatted}`
             }
@@ -234,6 +235,7 @@ function messageStreamStatus(data) {
                 hour: 'numeric',
                 minute: '2-digit',
                 hour12: true,
+                timeZoneName: 'short',
             })
             const p = document.createElement('p')
             p.id = 'stream-ended-at'

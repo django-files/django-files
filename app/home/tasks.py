@@ -14,6 +14,7 @@ from channels.layers import get_channel_layer
 from decouple import config
 from django.conf import settings
 from django.core.cache import cache
+from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -68,16 +69,16 @@ def app_init():
 def generate_thumbs(user_pk: int = None, only_missing: bool = True):
     log.info("Generating Thumbnails - only_missing: %s - user_pk: %s", only_missing, user_pk)
     users = CustomUser.objects.filter(pk=user_pk) if user_pk else CustomUser.objects.all()
-    # MIME types that Pillow cannot reliably thumbnail (e.g. image/jxl has no
-    # stable decoder in the versions we ship).  Add to this list as needed.
-    thumb_exclude_mime = ["image/jxl"]
+    # Formats Pillow cannot reliably thumbnail. DNG is TIFF-based so libmagic
+    # may report image/tiff; exclude by extension as well to catch that case.
+    thumb_exclude = Q(mime__in=["image/jxl", "image/x-adobe-dng"]) | Q(name__iendswith=".dng")
 
     if only_missing:
         files = Files.objects.filter(thumb__in=[None, ""], user__in=users, mime__startswith="image/").exclude(
-            mime__in=thumb_exclude_mime
+            thumb_exclude
         )
     else:
-        files = Files.objects.filter(user__in=users, mime__startswith="image").exclude(mime__in=thumb_exclude_mime)
+        files = Files.objects.filter(user__in=users, mime__startswith="image").exclude(thumb_exclude)
     log.info("Processing thumbnails for %d objects: %s", len(files), files)
     for file in files:
         log.info("Generating thumbnail for: %s", file.name)
@@ -345,8 +346,8 @@ def refresh_gallery_static_urls_cache():
                     file.get_gallery_url()
                     file_count += 1
             log.info("----- COMPLETE gallery cache refresh -----")
-        except Exception as err:
-            log.error(f"Error populating gallery cache: {err}")
+        except Exception:
+            logging.exception("Error populating gallery cache")
         finally:
             release_lock(lock_key)
     else:

@@ -294,7 +294,9 @@ def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
             _seek_container(container)
 
             image = None
+            rotation = 0
             for frame in container.decode(stream):
+                rotation = frame.rotation or 0
                 image = frame.to_image()
                 break  # one frame is all we need
 
@@ -302,6 +304,12 @@ def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
         if image is None:
             log.warning("video_thumbnail_processor: no frame decoded for %s", file.name)
             return False
+
+        # frame.rotation is the display matrix rotation PyAV reads from the container.
+        # Applying it directly (same direction, expand=True) corrects the orientation
+        # so portrait videos stored as landscape frames get the right aspect ratio.
+        if rotation:
+            image = image.rotate(rotation, expand=True)
 
         # Resize to fit within 512×512 while preserving aspect ratio.
         # A 1920×1080 frame becomes 512×288; a 1080×1920 becomes 288×512.
