@@ -80,7 +80,6 @@ services:
         - "traefik.http.services.${STACK_NAME}.loadbalancer.server.scheme=http"
     volumes:
       - static_dir:/data/static
-      - logs_dir:/logs
       - media_dir:/data/media
     depends_on:
       - app
@@ -135,7 +134,6 @@ services:
           cpus: "0.5"
     volumes:
       - media_dir:/data/media
-      - logs_dir:/logs
     depends_on:
       - app
       - redis
@@ -189,9 +187,14 @@ networks:
 volumes:
   static_dir:
   redis_data:
-  logs_dir:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/docker/${STACK_NAME}_django-files/redis
   media_dir:
-#    driver_opts:
-#      type: none
-#      o: bind
-#      device: /data/docker/STACK_NAME
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/docker/${STACK_NAME}_django-files/media
