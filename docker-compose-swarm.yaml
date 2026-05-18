@@ -191,10 +191,10 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /data/docker/${STACK_NAME}_django-files/redis
+      device: /data/docker/${STACK_NAME}/redis
   media_dir:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /data/docker/${STACK_NAME}_django-files/media
+      device: /data/docker/${STACK_NAME}/media
