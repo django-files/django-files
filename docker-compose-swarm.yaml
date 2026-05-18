@@ -80,7 +80,7 @@ services:
         - "traefik.http.services.${STACK_NAME}.loadbalancer.server.scheme=http"
     volumes:
       - static_dir:/data/static
-      - media_dir:/data/media
+      - /data/docker/${STACK_NAME}/media:/data/media
     depends_on:
       - app
     networks:
@@ -113,7 +113,7 @@ services:
           cpus: "0.5"
     volumes:
       - static_dir:/data/static
-      - media_dir:/data/media
+      - /data/docker/${STACK_NAME}/media:/data/media
     depends_on:
       - redis
     networks:
@@ -133,7 +133,7 @@ services:
           memory: 1G
           cpus: "0.5"
     volumes:
-      - media_dir:/data/media
+      - /data/docker/${STACK_NAME}/media:/data/media
     depends_on:
       - app
       - redis
@@ -174,7 +174,7 @@ services:
           memory: 256M
           cpus: "0.25"
     volumes:
-      - redis_data:/data
+      - /data/docker/${STACK_NAME}/redis:/data
     networks:
       - net-internal
 
