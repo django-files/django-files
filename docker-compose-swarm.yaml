@@ -154,7 +154,7 @@ services:
           memory: 128M
           cpus: "0.25"
     volumes:
-      - media_dir:/data/media
+      - /data/docker/${STACK_NAME}:/data/media
     depends_on:
       - app
       - redis
@@ -186,15 +186,3 @@ networks:
 
 volumes:
   static_dir:
-  redis_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /data/docker/${STACK_NAME}/redis
-  media_dir:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /data/docker/${STACK_NAME}/media
