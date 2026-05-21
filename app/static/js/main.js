@@ -20,6 +20,20 @@ if (backToTop) {
     })
 }
 
+document.addEventListener('click', function (e) {
+    const clipBtn = e.target.closest('.clip[data-clipboard-text]')
+    if (!clipBtn) return
+    const text = clipBtn.getAttribute('data-clipboard-text')
+    if (!text) return
+    navigator.clipboard.writeText(text).then(() => {
+        const original = clipBtn.innerHTML
+        clipBtn.innerHTML = '<i class="fa-solid fa-check"></i>'
+        setTimeout(() => {
+            clipBtn.innerHTML = original
+        }, 1000)
+    })
+})
+
 if (typeof ClipboardJS !== 'undefined') {
     new ClipboardJS('.clip')
     $('.clip').on('click', function () {

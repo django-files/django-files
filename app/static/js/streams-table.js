@@ -299,7 +299,9 @@ $(document).ready(function () {
     showStreamsSkeletons()
 
     // Move user select into the slot DataTables rendered alongside the search input
-    const userSelectContainer = document.getElementById('user-select-container')
+    const userSelectContainer = document.getElementById(
+        'dt-user-select-wrapper'
+    )
     const slot = document.querySelector('.user-filter-slot')
     if (userSelectContainer && slot) {
         userSelectContainer.classList.remove('d-none')
@@ -339,26 +341,6 @@ $(document).ready(function () {
             streamsDataTable.ajax.url(url).load()
         })
     }
-
-    // Handle clipboard functionality
-    document.addEventListener('click', function (e) {
-        if (e.target.closest('.clip')) {
-            const text = e.target
-                .closest('.clip')
-                .getAttribute('data-clipboard-text')
-            if (text) {
-                navigator.clipboard.writeText(text).then(() => {
-                    // Show success feedback
-                    const originalText = e.target.closest('.clip').innerHTML
-                    e.target.closest('.clip').innerHTML =
-                        '<i class="fa-solid fa-check"></i>'
-                    setTimeout(() => {
-                        e.target.closest('.clip').innerHTML = originalText
-                    }, 1000)
-                })
-            }
-        }
-    })
 
     // Handle stream title editing
     streamsTable.on('focus', '.stream-editable', function () {
