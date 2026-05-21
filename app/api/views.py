@@ -860,7 +860,7 @@ def stream_auth_view(request):
             stream.ended_at = None
             stream.save()
         log.debug("title: %s", title)
-        send_push_live.delay(stream.name)
+        send_push_live.apply_async(args=[stream.name], countdown=10)
         stream_status_websocket.delay(stream.name, True, started_at=stream.started_at.isoformat())
 
         return HttpResponse()

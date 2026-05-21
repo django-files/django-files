@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import tempfile
-from time import sleep
 from typing import Optional
 
 import httpx
@@ -14,11 +13,11 @@ from channels.layers import get_channel_layer
 from decouple import config
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
-from home.models import Files, FileStats, ShortURLs, Stream
+from home.models import Files, FileStats, Stream
 from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
 from home.util.storage import use_s3
@@ -37,31 +36,14 @@ VIDEO_MIME_PREFIX = "video/"
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 10, "countdown": 1})
 def app_init():
-    # App Init Task - Only Runs on First Startup, then is Disabled
     log.info("app_init")
-
-    # site_settings = SiteSettings.objects.settings()
-    # if settings.SITE_URL:
-    #     log.info('site_settings.site_url updated')
-    #     site_settings.site_url = settings.SITE_URL
-    #     site_settings.save()
-
     username = config("USERNAME", "admin")
     password = config("PASSWORD", "12345")
-    local = bool(username and password)
     oauth = bool(config("OAUTH_REDIRECT_URL", None))
-    if not oauth or local:
+    if not oauth or (username and password):
         CustomUser.objects.create_superuser(username=username, password=password)
-        log.info("Initial User Created")
-        log.info(f"Username: {username}")
-        log.info(f"Password: {password}")
+        log.info("Initial User Created: %s", username)
     return "app_init - finished"
-
-    # public_user, created = CustomUser.objects.get_or_create(username='public')
-    # if created:
-    #     log.info('public_user created: public')
-    # else:
-    #     log.warning('public_user already created: public')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60, "default_retry_delay": 180})
@@ -200,17 +182,12 @@ def backfill_video_gps():
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 5})
 def app_startup():
     log.info("app_startup")
-    # Ensure SiteSettings model
     site_settings = SiteSettings.objects.settings()
-    # Queue Version Check
     version_check.apply_async(countdown=5)
-    # Flush template cache
     cache.delete_pattern("*.decorators.cache.*")
     log.info("Flushed Template Cache")
-    # Warm site_settings cache
     cache.set("site_settings", model_to_dict(site_settings))
     log.info("Created Cache: site_settings")
-    # Ensure oauth values set in DB if in settings
     if oauth_redirect_url := config("OAUTH_REDIRECT_URL", ""):
         site_settings.oauth_redirect_url = oauth_redirect_url
     if discord_client_id := config("DISCORD_CLIENT_ID", ""):
@@ -225,25 +202,21 @@ def app_startup():
     if local_auth := config("LOCAL_AUTH", ""):
         site_settings.local_auth = bool(local_auth)
     site_settings.save()
-    # Ensure USERNAME and PASSWORD are set when local auth enabled and env vars set
-    if site_settings.get_local_auth() and bool(config("USERNAME", "") and config("PASSWORD", "")):
-        users = CustomUser.objects.all()
-        if user := users.filter(username=config("USERNAME")):
-            user[0].set_password(config("PASSWORD"))
-            log.info("Password Ensured for user: %s", user[0].username)
+    username = config("USERNAME", "")
+    password = config("PASSWORD", "")
+    if site_settings.get_local_auth() and username and password:
+        user = CustomUser.objects.filter(username=username).first()
+        if user:
+            user.set_password(password)
+            user.save()
+            log.info("Password Ensured for user: %s", user.username)
         else:
-            user = CustomUser.objects.create_superuser(
-                username=config("USERNAME"),
-                password=config("PASSWORD"),
-            )
+            user = CustomUser.objects.create_superuser(username=username, password=password)
             log.info("Custom User Created: %s", user.username)
     CustomUser.objects.get_or_create(username="anonymous", first_name="Anonymous")
-    qrcode_dir = f"{settings.MEDIA_ROOT}/qr"
-    if not os.path.isdir(qrcode_dir):
-        log.info("Creating QR Code Directory: %s", qrcode_dir)
-        os.mkdir(qrcode_dir)
+    os.makedirs(f"{settings.MEDIA_ROOT}/qr", exist_ok=True)
     regenerate_all_storage_values()
-    refresh_gallery_static_urls_cache()
+    refresh_gallery_static_urls_cache.delay()
     generate_thumbs.delay(only_missing=True)
     return "app_startup - finished"
 
@@ -278,12 +251,11 @@ def version_check():
                 return f"App Updated. Clearing latest_version: {latest_version}"
             return f"No Update Available. Current Version: {app_version}"
     except Exception as error:
-        log.debug("Exception parsing version: %s", error)
+        log.warning("Exception checking version: %s", error)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 300})
 def app_cleanup():
-    # App Cleanup Task
     log.info("app_cleanup")
     with open(settings.NGINX_ACCESS_LOGS, "a") as f:
         f.truncate(0)
@@ -291,44 +263,32 @@ def app_cleanup():
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 10})
 def flush_template_cache():
-    # Flush all template cache on request
     log.info("flush_template_cache")
     return cache.delete_pattern("*.decorators.cache.*")
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 10})
 def clear_files_cache():
-    # Clear Files cache
     log.info("clear_files_cache")
     return cache.delete_pattern("*.files.*")
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 10})
 def clear_albums_cache():
-    # Clear Files cache
     log.info("clear_albums_cache")
     return cache.delete_pattern("*.albums.*")
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 10})
 def clear_shorts_cache():
-    # Clear Shorts cache
     log.info("clear_shorts_cache")
     return cache.delete_pattern("*.shorts.*")
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 10})
 def clear_stats_cache():
-    # Clear Stats cache
     log.info("clear_stats_cache")
     return cache.delete_pattern("*.stats.*")
-
-
-# @shared_task(autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
-# def clear_settings_cache():
-#     # Clear Settings cache
-#     log.info('clear_settings_cache')
-#     return cache.delete_pattern('*.settings.*')
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 10})
@@ -356,24 +316,21 @@ def refresh_gallery_static_urls_cache():
 
 @shared_task()
 def delete_expired_files():
-    # Delete Expired Files
     log.info("delete_expired_files")
-    files = Files.objects.all()
     now = timezone.now()
-    i = 0
+    files = Files.objects.exclude(expr="")
+    deleted = 0
     for file in files:
-        if parse(file.expr):
-            delta = now - file.date
-            if delta.seconds > parse(file.expr):
-                log.info("Deleting expired file: %s", file.file.name)
-                file.delete()
-                i += 1
-    return f"Deleted/Processed: {i}/{len(files)}"
+        duration = parse(file.expr)
+        if duration and (now - file.date).total_seconds() > duration:
+            log.info("Deleting expired file: %s", file.file.name)
+            file.delete()
+            deleted += 1
+    return f"Deleted: {deleted}"
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 2, "countdown": 30})
 def process_stats():
-    # Process file stats
     log.info("----- START process_stats -----")
     now = timezone.now()
     files = Files.objects.all()
@@ -382,52 +339,30 @@ def process_stats():
         if file.user_id not in data:
             data[file.user_id] = {"types": {}, "size": 0, "count": 0, "shorts": 0}
 
-        data["_totals"]["count"] += 1
-        data[file.user_id]["count"] += 1
+        for bucket in (data["_totals"], data[file.user_id]):
+            bucket["count"] += 1
+            bucket["size"] += file.size
+            mime_bucket = bucket["types"].setdefault(file.mime, {"size": 0, "count": 0})
+            mime_bucket["count"] += 1
+            mime_bucket["size"] += file.size
 
-        data["_totals"]["size"] += file.size
-        data[file.user_id]["size"] += file.size
-
-        if file.mime in data["_totals"]["types"]:
-            data["_totals"]["types"][file.mime]["count"] += 1
-            data["_totals"]["types"][file.mime]["size"] += file.size
-        else:
-            data["_totals"]["types"][file.mime] = {"size": file.size, "count": 1}
-
-        if file.mime in data[file.user_id]["types"]:
-            data[file.user_id]["types"][file.mime]["count"] += 1
-            data[file.user_id]["types"][file.mime]["size"] += file.size
-        else:
-            data[file.user_id]["types"][file.mime] = {"size": file.size, "count": 1}
-
-    shorts = ShortURLs.objects.all()
-    users = CustomUser.objects.all()
-    for user in users:
-        s = shorts.filter(user=user)
+    for user in CustomUser.objects.annotate(shorts_count=Count("shorturls")):
         if user.id not in data:
-            data[user.id] = {"types": {}, "size": 0, "count": 0, "shorts": len(s)}
+            data[user.id] = {"types": {}, "size": 0, "count": 0, "shorts": user.shorts_count}
         else:
-            data[user.id]["shorts"] = len(s)
+            data[user.id]["shorts"] = user.shorts_count
 
     for user_id, _data in data.items():
-        # TODO: Look into type warning on next line
         _data["human_size"] = Files.get_size_of(_data["size"])
-        log.info("user_id: %s", user_id)
-        user_id = None if str(user_id) == "_totals" else user_id
-        log.info("user_id: %s", user_id)
-        log.info("_data: %s", _data)
-        stats = FileStats.objects.filter(user_id=user_id, created_at__date=now)
+        real_user_id = None if str(user_id) == "_totals" else user_id
+        log.info("user_id: %s data: %s", real_user_id, _data)
+        stats = FileStats.objects.filter(user_id=real_user_id, created_at__date=now).first()
         if stats:
-            stats = stats[0]
             stats.stats = _data
             stats.save()
         else:
-            stats = FileStats.objects.create(
-                user_id=user_id,
-                stats=_data,
-            )
+            stats = FileStats.objects.create(user_id=real_user_id, stats=_data)
         log.info("stats.pk: %s", stats.pk)
-    log.info(data)
     log.info("----- END process_stats -----")
 
 
@@ -534,12 +469,10 @@ def stream_status_websocket(stream_name: str, is_live: bool, ended_at: str = Non
 
 
 @shared_task()
-def send_push_live(stream_name: str, delay: int = 10, ttl: int = 1800):
-    # Send a Push Message for New Live Stream
+def send_push_live(stream_name: str, ttl: int = 1800):
     stream = Stream.objects.get(name=stream_name)
-    log.info("send_push_live: delay: %s - name: %s - user: %s", delay, stream.name, stream.user.username)
+    log.info("send_push_live: name: %s - user: %s", stream.name, stream.user.username)
     site_settings = SiteSettings.objects.settings()
-    sleep(delay)
     payload = {
         "head": f"{stream.user.username} went Live!",
         "body": stream.title,
@@ -552,13 +485,11 @@ def send_push_live(stream_name: str, delay: int = 10, ttl: int = 1800):
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 6, "countdown": 30})
 def send_discord_message(pk):
-    # Send a Discord message for a new file
     log.info("send_discord_message: pk: %s", pk)
-    file = Files.objects.filter(pk=pk)
+    file = Files.objects.filter(pk=pk).first()
     if not file:
         log.warning("send_discord_message: 404 File Not Found - pk: %s", pk)
         return f"404 File Not Found - pk: {pk}"
-    file = file[0]
     webhooks = DiscordWebhooks.objects.filter(owner=file.user)
     context = {"file": file}
     message = render_to_string("message/new-file.html", context)
@@ -569,7 +500,6 @@ def send_discord_message(pk):
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 6, "countdown": 30})
 def send_success_message(hook_pk):
-    # Send a success message for new webhook
     site_settings = SiteSettings.objects.settings()
     log.info("send_success_message: %s", hook_pk)
     context = {"site_url": site_settings.site_url}
@@ -583,7 +513,7 @@ def send_discord(hook_pk, message):
     try:
         webhook = DiscordWebhooks.objects.get(pk=hook_pk)
         body = {"content": message}
-        log.info(body)
+        log.debug("send_discord body: %s", body)
         r = httpx.post(webhook.url, json=body, timeout=30)
         if r.status_code == 404:
             log.warning("Hook %s removed by owner %s", webhook.hook_id, webhook.owner.username)
@@ -599,21 +529,19 @@ def send_discord(hook_pk, message):
 
 
 def acquire_lock(key, timeout=900):
-    log.debug(f"Checking lock for {key}")
+    log.debug("Checking lock for %s", key)
     if cache.get(key):
         log.debug("Found Lock")
         return False
-    log.debug(f"setting lock for {key}")
+    log.debug("Setting lock for %s", key)
     return cache.add(key, "1", timeout)
 
 
 def release_lock(key):
-    log.debug(f"Lock cleared on {key}")
+    log.debug("Lock cleared on %s", key)
     cache.delete(key)
 
 
 @worker_shutdown.connect
 def on_worker_shutdown(**kwargs):
-    # Perform custom shutdown actions, such as resource cleanup or notifications
-    # ensure gallery refresh lock is cleaned up on graceful termination
     release_lock("gallery_refresh")
