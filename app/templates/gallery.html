@@ -54,15 +54,7 @@
             <span id="map-file-count" class="d-none ms-auto text-muted small text-nowrap">Files Displayed: <strong id="map-file-count-value">0</strong></span>
         </nav>
         {% if request.user.is_superuser and not album %}
-        <div id="dt-user-select-wrapper" class="d-none">
-            <select id="user" name="user" class="form-select form-select-sm" aria-label="Select user">
-                <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
-                <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
-                {% for user in users %}
-                    <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
-                {% endfor %}
-            </select>
-        </div>
+        {% include 'include/user_select.html' %}
         {% endif %}
         {% if album and album.info %}<p class="mb-1">{{ album.info }}</p>{% endif %}
         {% if album %}<p class="mb-1">Views: <strong id="views-count">{{ album.view }}</strong></p>{% endif %}

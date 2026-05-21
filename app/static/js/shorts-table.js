@@ -118,9 +118,11 @@ async function domContentLoaded() {
     shortsDataTable = shortsTable.DataTable(dataTablesOptions)
     showShortsSkeletons()
     await addShortRows()
-    const lang = shortsDataTable.settings()[0].oLanguage
-    lang.sEmptyTable = 'No short URLs available'
-    lang.sZeroRecords = 'No matching short URLs found'
+    initDtLang(
+        shortsDataTable,
+        'No short URLs available',
+        'No matching short URLs found'
+    )
     if (shortsDataTable.rows().count() === 0) shortsDataTable.draw()
     window.dispatchEvent(new Event('resize'))
 }

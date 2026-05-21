@@ -129,9 +129,7 @@ const dataTablesOptions = {
     },
     initComplete: function () {
         const dt = this.api()
-        const lang = dt.settings()[0].oLanguage
-        lang.sEmptyTable = 'No streams available'
-        lang.sZeroRecords = 'No matching streams found'
+        initDtLang(dt, 'No streams available', 'No matching streams found')
         if (dt.rows().count() === 0) dt.draw()
     },
     dom: "<'row'<'col-sm-12 col-md-6 obs-button-slot'><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end gap-2'<'user-filter-slot'>f>>rt<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",

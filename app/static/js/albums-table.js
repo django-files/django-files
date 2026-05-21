@@ -110,9 +110,11 @@ async function domContentLoaded() {
     albumsDataTable = albumsTable.DataTable(dataTablesOptions)
     showAlbumsSkeletons()
     await addAlbumRows()
-    const lang = albumsDataTable.settings()[0].oLanguage
-    lang.sEmptyTable = 'No albums available'
-    lang.sZeroRecords = 'No matching albums found'
+    initDtLang(
+        albumsDataTable,
+        'No albums available',
+        'No matching albums found'
+    )
     if (albumsDataTable.rows().count() === 0) albumsDataTable.draw()
     window.dispatchEvent(new Event('resize'))
 }

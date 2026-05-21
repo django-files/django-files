@@ -190,9 +190,7 @@ const dataTablesOptions = {
 
         // Restore empty-state messages. No explicit draw needed — the caller's
         // data-load draw (or columns.adjust().draw()) will use these strings.
-        const lang = this.api().settings()[0].oLanguage
-        lang.sEmptyTable = 'No files available'
-        lang.sZeroRecords = 'No matching files found'
+        initDtLang(this.api(), 'No files available', 'No matching files found')
     },
 }
 

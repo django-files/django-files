@@ -246,6 +246,13 @@ function debounce(fn, timeout = 250) {
  * @param {Function} callable (async)
  */
 // eslint-disable-next-line no-unused-vars
+function initDtLang(dt, emptyMsg, zeroMsg) {
+    const lang = dt.settings()[0].oLanguage
+    lang.sEmptyTable = emptyMsg
+    lang.sZeroRecords = zeroMsg
+}
+
+// eslint-disable-next-line no-unused-vars
 async function pageScroll(event, nextPage, callable, buffer = 500) {
     // await sleep(200)
     const maxScrollY = document.body.scrollHeight - window.innerHeight

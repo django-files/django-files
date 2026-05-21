@@ -1172,6 +1172,15 @@ def id_or_name(id_name: Union[str, int], name="name") -> dict:
         return {name: id_name}
 
 
+def _build_shorts_data(shorts, site_url):
+    result = []
+    for short in shorts:
+        short_dict = model_to_dict(short)
+        short_dict["full_url"] = site_url + reverse("home:short", kwargs={"short": short.short})
+        result.append(short_dict)
+    return result
+
+
 @csrf_exempt
 @require_http_methods(["OPTIONS", "GET"])
 @auth_from_token
@@ -1209,12 +1218,7 @@ def shorts_view(request):
 
         # TODO: Determine why this data only gets modified at this stage
         site_settings = site_settings_processor(None)["site_settings"]
-        shorts_data = []
-        for short in shorts:
-            short_dict = model_to_dict(short)
-            short_dict["full_url"] = site_settings["site_url"] + reverse("home:short", kwargs={"short": short.short})
-            shorts_data.append(short_dict)
-        return JsonResponse(shorts_data, safe=False)
+        return JsonResponse(_build_shorts_data(shorts, site_settings["site_url"]), safe=False)
 
     except ValueError as error:
         log.debug(error)
@@ -1245,11 +1249,7 @@ def shorts_paginated_view(request, page=1, count=100):
         paginator = Paginator(query, count)
         page_obj = paginator.get_page(page)
         site_settings = site_settings_processor(None)["site_settings"]
-        shorts_data = []
-        for short in page_obj.object_list:
-            short_dict = model_to_dict(short)
-            short_dict["full_url"] = site_settings["site_url"] + reverse("home:short", kwargs={"short": short.short})
-            shorts_data.append(short_dict)
+        shorts_data = _build_shorts_data(page_obj.object_list, site_settings["site_url"])
         _next = page_obj.next_page_number() if page_obj.has_next() else None
         return JsonResponse({"shorts": shorts_data, "next": _next, "count": count}, status=200)
     except ValueError as error:
