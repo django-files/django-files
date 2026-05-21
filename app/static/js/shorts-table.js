@@ -52,7 +52,9 @@ const dataTablesOptions = {
             )
         )
 
-        const userSelectWrapper = document.getElementById('dt-user-select-wrapper')
+        const userSelectWrapper = document.getElementById(
+            'dt-user-select-wrapper'
+        )
         if (userSelectWrapper) {
             endCell.prepend(userSelectWrapper)
             userSelectWrapper.classList.remove('d-none')
@@ -187,7 +189,9 @@ function showShortsSkeletons(count = 8) {
             cell.className = 'dt-skeleton-cell'
             const width =
                 colIndex === 1
-                    ? _shortSkeletonUrlWidths[i % _shortSkeletonUrlWidths.length]
+                    ? _shortSkeletonUrlWidths[
+                          i % _shortSkeletonUrlWidths.length
+                      ]
                     : w
             cell.style.width = `${width}px`
             cell.style.height = `${h}px`
@@ -239,7 +243,10 @@ $('#short-delete-confirm').on('click', function () {
             deleteShortModal.modal('hide')
             const row = shortsDataTable.row(`#short-${pendingDeleteId}`)
             if (row.node()) row.remove().draw(false)
-            show_toast(`Short URL ${pendingDeleteId} Successfully Removed.`, 'success')
+            show_toast(
+                `Short URL ${pendingDeleteId} Successfully Removed.`,
+                'success'
+            )
         },
         error: function (jqXHR) {
             deleteShortModal.modal('hide')

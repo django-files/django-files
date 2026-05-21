@@ -49,7 +49,9 @@ export async function fetchShorts(page, count = 100) {
         console.warn('no page', page)
         return {}
     }
-    let url = new URL(`${globalThis.location.origin}/api/shorts/${page}/${count}/`)
+    let url = new URL(
+        `${globalThis.location.origin}/api/shorts/${page}/${count}/`
+    )
     let user = pageURL.searchParams.get('user')
     if (user) {
         url.searchParams.append('user', user)
