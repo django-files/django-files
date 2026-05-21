@@ -533,7 +533,13 @@ function changeView(event) {
         if (mapFileCount) mapFileCount.classList.remove('d-none')
         if (mapFileCountValue) mapFileCountValue.textContent = fileData.length
         renderGalleryChunked(fileData, 20, () => {
-            if (nextPage && document.body.scrollHeight - window.innerHeight - window.scrollY <= 0) {
+            if (
+                nextPage &&
+                document.body.scrollHeight -
+                    window.innerHeight -
+                    window.scrollY <=
+                    0
+            ) {
                 addNodes()
             }
         })
