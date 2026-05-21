@@ -1221,6 +1221,42 @@ def shorts_view(request):
         return JsonResponse({"error": f"{error}"}, status=400)
 
 
+@auth_from_token
+@cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix="shorts")
+@vary_on_headers("Authorization")
+@vary_on_cookie
+def shorts_paginated_view(request, page=1, count=100):
+    """
+    View  /api/shorts/<page>/<count>/
+    """
+    log.debug("shorts_paginated_view: page=%s count=%s", page, count)
+    try:
+        if request.user.is_superuser:
+            user = request.GET.get("user")
+            if user == "0":
+                query = ShortURLs.objects.all()
+            elif user:
+                query = ShortURLs.objects.filter(user_id=int(user))
+            else:
+                query = ShortURLs.objects.get_request(request)
+        else:
+            query = ShortURLs.objects.get_request(request)
+        paginator = Paginator(query, count)
+        page_obj = paginator.get_page(page)
+        site_settings = site_settings_processor(None)["site_settings"]
+        shorts_data = []
+        for short in page_obj.object_list:
+            short_dict = model_to_dict(short)
+            short_dict["full_url"] = site_settings["site_url"] + reverse("home:short", kwargs={"short": short.short})
+            shorts_data.append(short_dict)
+        _next = page_obj.next_page_number() if page_obj.has_next() else None
+        return JsonResponse({"shorts": shorts_data, "next": _next, "count": count}, status=200)
+    except ValueError as error:
+        log.debug(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
+
+
 @csrf_exempt
 @require_http_methods(["OPTIONS", "GET"])
 @auth_from_token

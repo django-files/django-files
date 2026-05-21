@@ -207,9 +207,10 @@ def app_startup():
     if site_settings.get_local_auth() and username and password:
         user = CustomUser.objects.filter(username=username).first()
         if user:
-            user.set_password(password)
-            user.save()
-            log.info("Password Ensured for user: %s", user.username)
+            if not user.check_password(password):
+                user.set_password(password)
+                user.save()
+                log.info("Password Ensured for user: %s", user.username)
         else:
             user = CustomUser.objects.create_superuser(username=username, password=password)
             log.info("Custom User Created: %s", user.username)

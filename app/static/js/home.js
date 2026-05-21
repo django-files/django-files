@@ -54,6 +54,7 @@ async function initHome() {
             .classList.remove('d-none')
     }
     addFileTableRows(files)
+    document.getElementById('home-files-section')?.classList.add('dt-data-loaded')
     filesDataTable.on('select', function (_e, _dt, _type, _indexes) {
         document.getElementById('bulk-actions').disabled = false
     })

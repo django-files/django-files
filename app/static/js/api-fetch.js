@@ -43,6 +43,21 @@ export async function fetchAlbums(page, count = 100) {
     return await response.json()
 }
 
+export async function fetchShorts(page, count = 100) {
+    let pageURL = new URL(location.href)
+    if (!page) {
+        console.warn('no page', page)
+        return {}
+    }
+    let url = new URL(`${globalThis.location.origin}/api/shorts/${page}/${count}/`)
+    let user = pageURL.searchParams.get('user')
+    if (user) {
+        url.searchParams.append('user', user)
+    }
+    const response = await fetch(url)
+    return await response.json()
+}
+
 export async function fetchFile(id) {
     let url = `${globalThis.location.origin}/api/file/${id}`
     const response = await fetch(url)

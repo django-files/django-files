@@ -1,13 +1,12 @@
 {% extends "main.html" %}
 {% load static %}
-{% load tz %}
 {% load home_tags %}
-{% load cache %}
 {% block shorts_active %}active{% endblock %}
 {% block title %}Shorts{% endblock %}
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/table.css' %}" />
 {% endblock %}
 
 {% block body %}
@@ -15,33 +14,85 @@
 
     <h1><i class="fa-solid fa-link me-2"></i> Shorts</h1>
 
-    <form id="shortsForm" method="post" action="{% url 'home:shorten' %}">
-        <div class="row g-3">
-            <div class="col-12">
-                <input type="text" class="form-control" placeholder="Reeeaaalllyyy Long URL" aria-label="URL"
-                       id="url" name="url" required>
-            </div>
-            <div class="col-sm-6">
-                <input type="text" class="form-control" placeholder="Vanity Name" aria-label="Vanity"
-                       id="vanity" name="vanity">
-            </div>
-            <div class="col-sm-3">
-                <input type="text" class="form-control" placeholder="Max Views" aria-label="Max-Views"
-                       id="max-views" name="max-views">
-            </div>
-            <div class="col-sm-3 d-grid">
-                <button class="btn btn-outline-success" type="submit"><i class="fa-solid fa-hammer me-2"></i> Create</button>
-            </div>
-        </div>
-    </form>
-
-    {% if not shorts %}
-        <p class="text-muted mb-0">Short URLs will show up here once created...</p>
-    {% else %}
-        <p class="mt-2 mb-2">Total Shorts: <strong>{{ shorts|length }}</strong></p>
-        {% include 'include/shorts-table.html' with shorts=shorts  %}
+    {% if request.user.is_superuser %}
+    <div id="dt-user-select-wrapper" class="d-none">
+        <select id="user" name="user" class="form-select form-select-sm" aria-label="Select user">
+            <option value="" {% if not request.GET.user %}selected{% endif %}>Select a User</option>
+            <option value="0" {% if request.GET.user == "0" %}selected{% endif %}>All Users</option>
+            {% for user in users %}
+                <option value="{{ user.id }}" {% if user.id|stringformat:"i" == request.GET.user %}selected{% endif %}>{{ user.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
     {% endif %}
 
+    <div id="shorts-table-section" class="dt-section">
+        <table class="display responsive nowrap table table-hover table-responsive mb-0" id="shorts-table" style="width:100%">
+            <caption class="visually-hidden">List of Short URLs</caption>
+            <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Short</th>
+                    <th scope="col">URL</th>
+                    <th scope="col"><i class="fa-solid fa-eye"></i></th>
+                    <th scope="col"><i class="fa-solid fa-bomb"></i></th>
+                    <th scope="col" class="text-center"><i class="fa-solid fa-gears"></i></th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div><!-- /#shorts-table-section -->
+
+</div><!-- /.container-fluid -->
+
+<div class="modal fade" id="create-short-modal" tabindex="-1" aria-labelledby="create-short-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="create-short-label"><i class="fa-solid fa-link me-2"></i> New Short URL</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="shortsForm" method="post" action="{% url 'home:shorten' %}">
+                <div class="modal-body">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <input type="text" class="form-control" placeholder="Destination URL" aria-label="URL"
+                                   id="url" name="url" required>
+                        </div>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" placeholder="Vanity Name (optional)" aria-label="Vanity"
+                                   id="vanity" name="vanity">
+                        </div>
+                        <div class="col-sm-4">
+                            <input type="number" class="form-control" placeholder="Max Views" aria-label="Max Views"
+                                   id="max-views" name="max-views" min="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-success" type="submit"><i class="fa-solid fa-hammer me-2"></i> Create</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="delete-short-modal" tabindex="-1" aria-labelledby="delete-short-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="delete-short-label">Delete Short URL</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">Are you sure you want to delete this short url?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="short-delete-confirm">Delete
+                    <i class="fa-regular fa-trash-can ms-1"></i></button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -49,5 +100,5 @@
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/shorts.js' %}"></script>
+    <script type="module" src="{% static 'js/shorts-table.js' %}"></script>
 {% endblock %}

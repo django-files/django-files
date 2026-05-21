@@ -145,6 +145,9 @@ const dataTablesOptions = {
     },
     language: {
         info: '',
+        emptyTable: '',
+        loadingRecords: '',
+        zeroRecords: '',
     },
     initComplete: function () {
         const container = $(this.api().table().container())
@@ -184,6 +187,12 @@ const dataTablesOptions = {
                 )
             )
         }
+
+        // Restore empty-state messages. No explicit draw needed — the caller's
+        // data-load draw (or columns.adjust().draw()) will use these strings.
+        const lang = this.api().settings()[0].oLanguage
+        lang.sEmptyTable = 'No files available'
+        lang.sZeroRecords = 'No matching files found'
     },
 }
 
@@ -306,6 +315,7 @@ const skeletonNameWidths = [130, 165, 210, 145, 180, 195, 120, 155, 200, 140]
 export function showTableSkeletons(count = 10) {
     const tbody = document.querySelector('#files-table tbody')
     if (!tbody) return
+    tbody.querySelector('.dataTables_empty')?.closest('tr')?.remove()
     const fragment = document.createDocumentFragment()
     const specs = [
         { w: 18, h: 18 },
