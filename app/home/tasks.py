@@ -18,7 +18,6 @@ from django.db.models import Q
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django_celery_beat import models
 from home.models import Files, FileStats, ShortURLs, Stream
 from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
@@ -347,7 +346,7 @@ def refresh_gallery_static_urls_cache():
                     file_count += 1
             log.info("----- COMPLETE gallery cache refresh -----")
         except Exception:
-            logging.exception("Error populating gallery cache")
+            log.exception("Error populating gallery cache")
         finally:
             release_lock(lock_key)
     else:
@@ -576,13 +575,6 @@ def send_success_message(hook_pk):
     context = {"site_url": site_settings.site_url}
     message = render_to_string("message/welcome.html", context)
     send_discord.delay(hook_pk, message)
-
-
-@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 6, "countdown": 30})
-def cleanup_vector_tasks():
-    q = models.PeriodicTask.objects.filter(name="process_vector_stats")
-    if q:
-        q[0].delete()
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 5, "countdown": 60}, rate_limit="10/m")
