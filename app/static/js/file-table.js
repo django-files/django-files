@@ -20,7 +20,6 @@ const fileDeleteModal = $('#fileDeleteModal')
 let filesDataTable
 let fileNameLength = getNameSize(window.innerWidth)
 
-// Add window resize handler to update name length and redraw table
 window.addEventListener(
     'resize',
     debounce(function () {
@@ -176,10 +175,7 @@ const dataTablesOptions = {
             fileCountWrapper.classList.remove('d-none')
         }
 
-        // Reveal the section after DataTables has finished all DOM mutations
-        // (toolbar insertion, element moves). Double-rAF guarantees the browser
-        // has committed the new layout before opacity transitions to 1, so the
-        // user sees the final state in one paint with no intermediate jitter.
+        // Double-rAF ensures the browser commits layout before the opacity transition starts
         const section = document.getElementById('files-table-section')
         if (section) {
             requestAnimationFrame(() =>
@@ -195,20 +191,10 @@ export function initFilesTable(search = true, ordering = true, info = true) {
     dataTablesOptions.searching = search
     dataTablesOptions.ordering = ordering
     dataTablesOptions.info = info
-    // TODO: Disabling select boxes causes a bunch issues, we should address for cases we dont want select
-    // if (!select) {
-    //     delete dataTablesOptions.select
-    //     dataTablesOptions.columnDefs.splice(0, 1)
-    //     dataTablesOptions.columns.splice(0, 1)
-    //     document.getElementById('files-table').rows[0].deleteCell(0)
-    // }
     filesDataTable = filesTable.DataTable(dataTablesOptions)
     filesDataTable.on('draw.dt', debounce(dtDraw, 150))
     return filesDataTable
 }
-
-// ***************************
-// Custom DataTables Renderers
 
 function getFileLink(data, type, row, _meta) {
     const fileLinkElem = fileLink.cloneNode(true)
@@ -249,15 +235,6 @@ function getPrivateIcon(data, type, row, _meta) {
     return privateIcon
 }
 
-// END Custom DataTables Renderers
-// *******************************
-
-/**
- * Convert Bytes to Human Readable Bytes
- * @function formatBytes
- * @param {Number} bytes
- * @return {String}
- */
 export function formatBytes(bytes) {
     const decimals = 2
     if (bytes === 0) {
@@ -278,7 +255,6 @@ function dtDraw(event) {
 }
 
 export function addFileTableRow(file) {
-    // adds a single file table entry with proper ID
     if (filesDataTable) {
         file['DT_RowId'] = `file-${file.id}`
         filesDataTable.row.add(file).draw()
@@ -286,16 +262,15 @@ export function addFileTableRow(file) {
 }
 
 export function addFileTableRowsBatch(files) {
-    // adds multiple file table entries with a single DataTables draw
     if (!filesDataTable || !files.length) return
     files.forEach((file) => {
         file['DT_RowId'] = `file-${file.id}`
     })
-    filesDataTable.rows.add(files).draw()
+    // draw(false) avoids DataTables scroll-reset on incremental loads
+    filesDataTable.rows.add(files).draw(false)
 }
 
 export function addFileTableRows(data) {
-    // adds multiple file table entries
     addFileTableRowsBatch(data.files)
 }
 
@@ -325,24 +300,13 @@ socket?.addEventListener('message', function (event) {
     }
 })
 
-////////////////
-// Table Skeleton Loading
-////////////////
-
 // Varied name-column widths so rows look realistic rather than uniform
-const _skeletonNameWidths = [130, 165, 210, 145, 180, 195, 120, 155, 200, 140]
+const skeletonNameWidths = [130, 165, 210, 145, 180, 195, 120, 155, 200, 140]
 
-/**
- * Insert count skeleton placeholder rows into the files table tbody.
- * DataTables will clear them automatically on the next .draw() call.
- * @param {number} count
- */
 export function showTableSkeletons(count = 10) {
     const tbody = document.querySelector('#files-table tbody')
     if (!tbody) return
     const fragment = document.createDocumentFragment()
-    // Column widths [px] matching the 11 header columns:
-    // checkbox, id, name, size, mime, date, expire, pw, private, views, ctx
     const specs = [
         { w: 18, h: 18 },
         { w: 24 },
@@ -365,7 +329,7 @@ export function showTableSkeletons(count = 10) {
             cell.className = 'dt-skeleton-cell'
             const width =
                 colIndex === 2
-                    ? _skeletonNameWidths[i % _skeletonNameWidths.length]
+                    ? skeletonNameWidths[i % skeletonNameWidths.length]
                     : w
             cell.style.width = `${width}px`
             cell.style.height = `${h}px`
@@ -377,21 +341,11 @@ export function showTableSkeletons(count = 10) {
     tbody.appendChild(fragment)
 }
 
-/**
- * Explicitly remove any skeleton rows still in the DOM.
- * Usually unnecessary — DataTables .draw() clears them — but required
- * when draw is skipped (e.g. empty result set).
- */
+// Usually unnecessary — DataTables .draw() clears these — but needed when draw is skipped (empty result set)
 export function hideTableSkeletons() {
     document.querySelectorAll('.dt-skeleton-row').forEach((el) => el.remove())
 }
 
-////////////////
-// Bulk Actions
-////////////////
-// Todo: find a better place for these
-
-// bulk delete actions
 $('.bulk-delete').on('click', bulkDelete)
 
 export function bulkDelete(event) {
@@ -412,7 +366,6 @@ export function bulkDelete(event) {
     fileDeleteModal.modal('show')
 }
 
-// bulk expire actions
 $('.bulk-expire').on('click', bulkExpire)
 
 export function bulkExpire(event) {
@@ -434,7 +387,6 @@ export function bulkExpire(event) {
     fileExpireModal.modal('show')
 }
 
-// Start private expire actions
 $('.bulk-private').on('click', bulkPrivate)
 
 export function bulkPrivate(_event) {
@@ -447,7 +399,6 @@ export function bulkPrivate(_event) {
     )
 }
 
-// Start public expire actions
 $('.bulk-public').on('click', bulkPublic)
 
 export function bulkPublic(_event) {
