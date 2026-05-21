@@ -16,8 +16,6 @@ import { fetchFiles } from './api-fetch.js'
 import { socket } from './socket.js'
 import { getCtxMenuContainer } from './file-context-menu.js'
 
-console.debug('LOADING: gallery.js')
-
 const galleryContainer = document.getElementById('gallery-container')
 
 const imageNode = document.querySelector('div.d-none > img')
@@ -38,8 +36,7 @@ let fileData = []
 let fetchLock = false
 let filesDataTable
 let selectedFileIds = []
-let scrollYAtLastFetch = -1 // guards re-fetch when user hasn't scrolled; -1 = initial load
-let scrollCheckScheduled = false
+let scrollObserver = null
 
 // Cache touch detection once — isTouchDevice() is called on every hover otherwise
 const isTouch =
@@ -56,26 +53,34 @@ const tmplCtx = document.querySelector('.d-none .gallery-ctx')
 const tmplCtxToggle = document.querySelector('.d-none .gallery-ctx-toggle')
 const tmplCheckbox = document.querySelector('.d-none .gallery-checkbox')
 
-function onScrollCheck() {
-    if (scrollCheckScheduled) return
-    scrollCheckScheduled = true
-    requestAnimationFrame(() => {
-        scrollCheckScheduled = false
-        if (!nextPage || fetchLock) return
-        if (window.scrollY <= scrollYAtLastFetch) return
-        const spaceBelow =
-            document.body.scrollHeight - window.innerHeight - window.scrollY
-        if (spaceBelow <= window.innerHeight * 1.5) {
-            addNodes()
-        }
-    })
+function setupScrollObserver() {
+    scrollObserver?.disconnect()
+    let sentinel = document.getElementById('load-sentinel')
+    if (!sentinel) {
+        sentinel = document.createElement('div')
+        sentinel.id = 'load-sentinel'
+        document.body.appendChild(sentinel)
+    }
+    // rootMargin = scrollSpace/4 fires early without triggering immediately; recalculate on each call as content grows
+    const scrollSpace = Math.max(
+        0,
+        document.body.scrollHeight - window.innerHeight - window.scrollY
+    )
+    scrollObserver = new IntersectionObserver(
+        ([entry]) => {
+            if (entry.isIntersecting && nextPage && !fetchLock) {
+                addNodes()
+            }
+        },
+        { rootMargin: `0px 0px ${Math.round(scrollSpace / 4)}px 0px` }
+    )
+    scrollObserver.observe(sentinel)
 }
 
 document.addEventListener('DOMContentLoaded', initGallery)
 
 async function initGallery() {
-    console.log('Init Gallery')
-    window.addEventListener('scroll', onScrollCheck, { passive: true })
+    history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
     dtContainer = document.querySelector('.dt-container')
     narrowViewportMsg = document.querySelector('.files-table-narrow-msg')
@@ -96,12 +101,11 @@ async function initGallery() {
     } else {
         galleryContainer.classList.add('d-none')
         showList.style.fontWeight = 'bold'
-        showTableSkeletons()
         await addNodes()
     }
+    setupScrollObserver()
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
         document.getElementById('bulk-actions').disabled = false
-        console.log(`file-${dt.data().id}`)
         let checkbox = document.getElementById(`file-${dt.data().id}`)
         if (checkbox) {
             checkbox.classList.remove('d-none')
@@ -117,7 +121,6 @@ async function initGallery() {
 
 $('#user').on('change', function (_event) {
     let user = $(this).val()
-    console.log(`user: ${user}`)
     if (user) {
         let url = new URL(location.href)
         url.searchParams.set('user', user)
@@ -154,89 +157,49 @@ function showSkeletons() {
     galleryContainer.appendChild(fragment)
 }
 
-/**
- * Remove all skeleton placeholders and disconnect the observer.
- * @function hideSkeletons
- */
 function hideSkeletons() {
     document
         .querySelectorAll('[id^="gallery-skeleton-"]')
         .forEach((el) => el.remove())
-    document.getElementById('list-scroll-sentinel')?.remove()
     hideTableSkeletons()
 }
 
-/**
- * Add Next Page Nodes to Container
- * TODO: Move the CSS to gallery.css
- *       Use HTML Templates and .cloneNode
- * @function addNodes
- */
 async function addNodes() {
-    console.debug('addNodes:', nextPage)
-    if (!nextPage) {
-        return console.warn('No Next Page:', nextPage)
-    }
-    if (!fetchLock) {
-        // Guard: skip the fetch when content already extends below the
-        // viewport and the user hasn't scrolled.  Lets the observer stay
-        // active so it fires again on the next genuine scroll.
-        if (
-            scrollYAtLastFetch >= 0 &&
-            window.scrollY <= scrollYAtLastFetch &&
-            document.body.scrollHeight - window.innerHeight - window.scrollY > 0
-        ) {
-            return
-        }
+    if (!nextPage || fetchLock) return
 
-        fetchLock = true
-        const data = await fetchFiles(nextPage, 50, params.get('album'))
-        console.debug('data:', data)
-        slideshowCallback(data)
-        nextPage = data.next
-        fileData.push(...data.files)
-        if (
-            globalThis.location.pathname.includes('gallery') &&
-            mapFileCountValue
-        ) {
-            mapFileCountValue.textContent = fileData.length
-        }
-        // Data is ready — remove skeletons and render real cards.
-        hideSkeletons()
-        if (window.location.pathname.includes('gallery')) {
-            data.files.forEach((file) => addGalleryFile(file))
-        } else if (!window.location.pathname.includes('files')) {
-            console.error('Unknown View')
-        }
-        // Add all rows to DataTables in one batch and draw once
-        addFileTableRowsBatch(data.files)
-        fetchLock = false
-        scrollYAtLastFetch = window.scrollY
+    const atBottom =
+        document.body.scrollHeight > window.innerHeight &&
+        window.scrollY >= document.body.scrollHeight - window.innerHeight - 5
 
-        setTimeout(() => {
-            showSkeletons()
-            // If content plus skeletons still doesn't fill the viewport,
-            // fetch the next page immediately. This handles fast scrolling
-            // where the viewport stays in place while new content loads below.
-            if (
-                nextPage &&
-                document.body.scrollHeight -
-                    window.innerHeight -
-                    window.scrollY <=
-                    0
-            ) {
-                setTimeout(() => addNodes(), 0)
-            }
-        }, 0)
-    } else {
-        console.debug('Another files fetch in progress waiting.')
+    fetchLock = true
+    showSkeletons()
+
+    const data = await fetchFiles(nextPage, 50, params.get('album'))
+    console.debug('addNodes data:', data)
+    slideshowCallback(data)
+    nextPage = data.next
+    fileData.push(...data.files)
+    if (globalThis.location.pathname.includes('gallery') && mapFileCountValue) {
+        mapFileCountValue.textContent = fileData.length
     }
+    hideSkeletons()
+    if (window.location.pathname.includes('gallery')) {
+        data.files.forEach((file) => addGalleryFile(file))
+    } else if (!window.location.pathname.includes('files')) {
+        console.error('Unknown View')
+    }
+    addFileTableRowsBatch(data.files)
+    fetchLock = false
+
+    if (atBottom && nextPage) {
+        window.scrollTo({
+            top: document.body.scrollHeight - window.innerHeight,
+            behavior: 'instant',
+        })
+    }
+    if (nextPage) setupScrollObserver()
 }
 
-/**
- * Route a file to the appropriate gallery renderer.
- * @function addGalleryFile
- */
 function addGalleryFile(file, top = false) {
     if (file.mime?.startsWith('video/')) {
         addGalleryVideo(file, top)
@@ -245,28 +208,15 @@ function addGalleryFile(file, top = false) {
     }
 }
 
-/**
- * Build the shared outer/inner card structure for a gallery item — outer div,
- * inner div, status icons, text labels, context menu, checkbox — and append it
- * to the gallery container. Returns { outer, inner } so callers can insert the
- * media element (image or video canvas) before calling this.
- * @function buildGalleryCard
- * @param {Object} file
- * @param {boolean} top
- * @returns {{ outer: HTMLElement, inner: HTMLElement }}
- */
 function buildGalleryCard(file, top = false) {
-    // OUTER DIV
     const outer = tmplOuter.cloneNode(false)
     outer.id = `gallery-image-${file.id}`
     outer.addEventListener('mouseover', mouseOver)
     outer.addEventListener('mouseout', mouseOut)
 
-    // INNER DIV
     const inner = tmplInner.cloneNode(true)
     outer.appendChild(inner)
 
-    // ICONS
     const topLeft = tmplIcons.cloneNode(true)
     const privateStatus = faLock.cloneNode(true)
     privateStatus.classList.add('privateStatus')
@@ -285,12 +235,10 @@ function buildGalleryCard(file, top = false) {
     topLeft.appendChild(expireIcon)
     inner.appendChild(topLeft)
 
-    // TEXT LABELS
     const bottomLeft = tmplLabels.cloneNode(true)
     buildImageLabels(file, bottomLeft)
     inner.appendChild(bottomLeft)
 
-    // CTX MENU
     const ctxMenu = tmplCtx.cloneNode(true)
     const toggle = tmplCtxToggle.cloneNode(true)
     toggle.appendChild(faCaret.cloneNode(true))
@@ -300,7 +248,6 @@ function buildGalleryCard(file, top = false) {
     menu.style.zIndex = '1'
     ctxMenu.appendChild(menu)
 
-    // CHECKBOX
     inner.appendChild(buildGalleryCheckbox(file))
 
     // Cache .gallery-mouse elements to avoid querySelectorAll on every hover
@@ -316,7 +263,6 @@ function buildGalleryCard(file, top = false) {
 }
 
 function addGalleryImage(file, top = false) {
-    // console.log('addGalleryImage:', file)
     const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp|jxl|avif)$/i
     if (!file.name.match(imageExtensions)) {
         console.debug(`Skipping non-image: ${file.name}`)
@@ -334,7 +280,6 @@ function addGalleryImage(file, top = false) {
     link.target = '_blank'
     const img = imageNode.cloneNode(true)
 
-    // Pre-size the image using known dimensions to prevent layout jumping
     if (file.meta?.PILImageWidth && file.meta?.PILImageHeight) {
         const scale = Math.min(
             maxThumbSize / file.meta.PILImageWidth,
@@ -347,7 +292,6 @@ function addGalleryImage(file, top = false) {
         img.height = maxThumbSize
     }
 
-    // Skeleton overlay — fades out when image finishes loading
     const skeleton = document.createElement('div')
     skeleton.classList.add('img-skeleton')
     img.addEventListener(
@@ -380,16 +324,9 @@ function addGalleryImage(file, top = false) {
 
     img.src = file.thumb || file.raw
     link.appendChild(img)
-    // Insert media before icons/labels (prepend to inner)
     inner.prepend(skeleton, link)
 }
 
-/**
- * Add a video file to the gallery using its server-generated thumbnail image.
- * If no thumbnail exists yet (still being generated), a static placeholder
- * is shown instead. Clicking either state opens the file preview page.
- * @function addGalleryVideo
- */
 /**
  * Poll a thumbnail URL with HEAD requests (headers only — no body download)
  * until the server returns an image Content-Type, meaning the Celery thumb
@@ -468,9 +405,7 @@ function addGalleryVideo(file, top = false) {
     playBtn.innerHTML =
         '<i class="fa-solid fa-circle-play fa-3x text-white"></i>'
 
-    // img with explicit dimensions is always the in-flow spacer that gives
-    // gallery-inner its height — same pattern as addGalleryImage.
-    // visibility:hidden keeps it transparent while the skeleton shimmer shows.
+    // hidden img is the in-flow spacer giving gallery-inner its height; skeleton shimmer sits above it
     const img = imageNode.cloneNode(true)
     img.width = maxThumbSize
     img.height = maxThumbSize
@@ -490,11 +425,6 @@ function addGalleryVideo(file, top = false) {
     }
 }
 
-/**
- * Generate Gallery Checkbox HTML Object
- * @function buildGalleryCheckbox
- * @returns checkbox
- */
 function buildGalleryCheckbox(file) {
     const checkbox = tmplCheckbox.cloneNode(true)
     if (isTouch) {
@@ -519,12 +449,6 @@ function buildGalleryCheckbox(file) {
     return checkbox
 }
 
-/**
- * Add Text Span and BR to Parent Element
- * @function addSpan
- * @param {HTMLElement} parent
- * @param {String} textContent
- */
 function addSpan(parent, textContent) {
     let span = document.createElement('span')
     span.textContent = textContent
@@ -532,11 +456,6 @@ function addSpan(parent, textContent) {
     parent.appendChild(document.createElement('br'))
 }
 
-/**
- * Mouse Over Event Handler
- * @function mouseOver
- * @param {MouseEvent} event
- */
 function mouseOver(event) {
     if (isTouch) return
     event.currentTarget._mouseEls?.forEach((el) =>
@@ -544,25 +463,13 @@ function mouseOver(event) {
     )
 }
 
-/**
- * Mouse Out Event Handler
- * @function mouseOut
- * @param {MouseEvent} event
- */
 function mouseOut(event) {
     // TODO: Fix mouse out detection when mousing over ctx menu
     if (event.target.closest('a')?.classList.contains('ctx-menu')) return
     event.currentTarget._mouseEls?.forEach((el) => el.classList.add('d-none'))
 }
 
-/**
- * Render an array of files into the gallery in chunks, yielding to the browser
- * between each batch so it can paint incrementally instead of blocking.
- * @function renderGalleryChunked
- * @param {Array} files
- * @param {number} chunkSize
- * @param {Function} [onComplete]
- */
+// Yields to the browser between batches so painting is incremental rather than a single blocking call
 function renderGalleryChunked(files, chunkSize = 20, onComplete = null) {
     let i = 0
     function renderNext() {
@@ -626,8 +533,6 @@ function changeView(event) {
         if (mapFileCount) mapFileCount.classList.remove('d-none')
         if (mapFileCountValue) mapFileCountValue.textContent = fileData.length
         renderGalleryChunked(fileData, 20, () => {
-            showSkeletons()
-            scrollYAtLastFetch = window.scrollY
             if (
                 nextPage &&
                 document.body.scrollHeight -
@@ -635,7 +540,7 @@ function changeView(event) {
                     window.scrollY <=
                     0
             ) {
-                setTimeout(() => addNodes(), 0)
+                addNodes()
             }
         })
     }
@@ -648,10 +553,7 @@ socket?.addEventListener('message', function (event) {
         if (data.event === 'file-delete') {
             fileDeleteGallery(data.id)
         } else if (data.event === 'file-new') {
-            // file-table handles added file already so we just need to add to gallery if its the view
-            if (window.location.pathname.includes('gallery')) {
-                addGalleryFile(data, true)
-            }
+            addGalleryFile(data, true)
         } else if (data.event === 'set-password-file') {
             passwordStatusChange(data)
         } else if (data.event === 'toggle-private-file') {
@@ -705,7 +607,6 @@ function fileRename(data) {
 }
 
 function buildImageLabels(file, bottomLeft) {
-    bottomLeft.classList.add('lh-sm')
     if (file.size) {
         addSpan(bottomLeft, formatBytes(file.size))
     }
@@ -718,24 +619,16 @@ function buildImageLabels(file, bottomLeft) {
     }
 }
 
-////////////////////////////
-// Map View Section
-
 const mapContainer = document.getElementById('map-container')
 const mapFileCount = document.getElementById('map-file-count')
 const mapFileCountValue = document.getElementById('map-file-count-value')
 let galleryLeafletMap = null
 let mapInitialised = false
 
-// Module-level thumb cache: file id (string) → Promise<blobUrl>.
-// Storing the Promise itself deduplicates concurrent hovers on the same pin.
-// Blob URLs are local — setting img.src = blobUrl never touches the network.
+// Promise-valued cache deduplicates concurrent hovers on the same pin
 const markerThumbCache = new Map()
 
-/**
- * Convert a GPS IFD dict (string or int keys, DMS arrays) to [lat, lon] decimal degrees.
- * Returns null if data is missing or invalid.
- */
+// GPS IFD dict has string or int keys; values are DMS arrays
 function gpsToDecimal(gpsInfo) {
     if (!gpsInfo || typeof gpsInfo !== 'object') return null
     const latDms = gpsInfo['2'] ?? gpsInfo[2]
@@ -759,9 +652,6 @@ function gpsToDecimal(gpsInfo) {
     return [lat, lon]
 }
 
-/**
- * Format a date value from the API (ISO string or Date) into a short readable string.
- */
 function formatMapDate(dateVal) {
     if (!dateVal) return ''
     const d = new Date(dateVal)
@@ -779,10 +669,6 @@ function fitMapToViewport() {
 
 window.addEventListener('resize', fitMapToViewport)
 
-/**
- * Initialise the Leaflet map view: show container, create the map if needed,
- * then stream all pages of files and plot those with GPS coordinates.
- */
 function initMapView() {
     const L = globalThis.L
     if (!L) return console.error('Leaflet not loaded')
@@ -804,7 +690,6 @@ function initMapView() {
                 maxZoom: 19,
             }).addTo(galleryLeafletMap)
 
-            // Fullscreen control
             const FullscreenControl = L.Control.extend({
                 options: { position: 'topleft' },
                 onAdd() {
@@ -843,10 +728,7 @@ function initMapView() {
     })
 }
 
-/**
- * Build marker tooltip HTML.  The <img> is always present but src-less so
- * the browser makes no request until we explicitly set it on first open.
- */
+// img is src-less on creation; browser makes no request until first tooltip open
 function buildMarkerTooltip(file, coords) {
     const [lat, lon] = coords
     const gpsLabel = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'E' : 'W'}`
@@ -867,18 +749,7 @@ function buildMarkerTooltip(file, coords) {
         </div>`
 }
 
-/**
- * Resolve a blob URL for a file's thumbnail.  Result is a Promise so
- * concurrent hovers on the same pin share one fetch rather than racing.
- *
- * Priority:
- *   1. markerThumbCache hit  → return cached Promise (resolves instantly)
- *   2. Gallery DOM image      → fetch its src (browser cache hit, no round-trip)
- *   3. file.thumb URL         → first real network fetch for this file
- *
- * Blob URLs are local object references: setting img.src = blobUrl
- * never triggers a network request on any subsequent hover.
- */
+// Returns a Promise so concurrent hovers on the same pin share one fetch; prefers gallery DOM image → file.thumb
 function resolveThumbSrc(file) {
     const id = String(file.id)
     if (markerThumbCache.has(id)) return markerThumbCache.get(id)
@@ -898,11 +769,6 @@ function resolveThumbSrc(file) {
     return promise
 }
 
-/**
- * Fetch every page of files (100 per request), extract those with GPS data,
- * and add a marker + tooltip for each one.
- * Runs page-by-page so markers appear progressively as data arrives.
- */
 async function fetchAndPlotAllFiles(L) {
     let page = 1
     const album = params.get('album')
@@ -959,5 +825,3 @@ async function fetchAndPlotAllFiles(L) {
         galleryLeafletMap.fitBounds(allCoords, { padding: [40, 40] })
     }
 }
-// End Map View Section
-////////////////////////////

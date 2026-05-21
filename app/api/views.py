@@ -472,6 +472,8 @@ def files_view(request, page, count=25):
             )
     else:
         return JsonResponse({"error": "Not Authenticated"}, status=401)
+    if mime := request.GET.get("mime"):
+        q = q.filter(mime__startswith=mime)
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
