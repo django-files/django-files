@@ -20,38 +20,15 @@ if (backToTop) {
     })
 }
 
-document.addEventListener('click', function (e) {
-    const clipBtn = e.target.closest('.clip[data-clipboard-text]')
-    if (!clipBtn) return
-    const text = clipBtn.getAttribute('data-clipboard-text')
-    if (!text) return
-    navigator.clipboard.writeText(text).then(() => {
-        const original = clipBtn.innerHTML
-        clipBtn.innerHTML = '<i class="fa-solid fa-check"></i>'
-        setTimeout(() => {
-            clipBtn.innerHTML = original
-        }, 1000)
-    })
-})
-
 if (typeof ClipboardJS !== 'undefined') {
-    new ClipboardJS('.clip')
-    $('.clip').on('click', function () {
-        const el = $(this)
-        el.popover({
-            content: 'Copied',
-            placement: 'bottom',
-            trigger: 'manual',
-        })
-        el.popover('show')
-        setTimeout(function () {
-            el.popover('hide')
-        }, 2000)
-        $(document).one('click', function (e) {
-            if (!el.is(e.target) && el.has(e.target).length === 0) {
-                el.popover('hide')
-            }
-        })
+    const clipboard = new ClipboardJS('.clip')
+    clipboard.on('success', function (e) {
+        const el = e.trigger
+        const original = el.innerHTML
+        el.innerHTML = '<i class="fa-solid fa-check"></i>'
+        setTimeout(() => {
+            el.innerHTML = original
+        }, 1000)
     })
 }
 
@@ -259,6 +236,15 @@ function debounce(fn, timeout = 250) {
  * @param {Number} buffer
  * @param {Function} callable (async)
  */
+// eslint-disable-next-line no-unused-vars
+async function initDataTable(dt, skeletonFn, fetchFn, emptyMsg, zeroMsg) {
+    skeletonFn()
+    await fetchFn()
+    initDtLang(dt, emptyMsg, zeroMsg)
+    if (!dt.rows().count()) dt.draw()
+    window.dispatchEvent(new Event('resize'))
+}
+
 // eslint-disable-next-line no-unused-vars
 function initDtLang(dt, emptyMsg, zeroMsg) {
     const lang = dt.settings()[0].oLanguage

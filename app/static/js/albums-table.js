@@ -108,15 +108,13 @@ const dataTablesOptions = {
 
 async function domContentLoaded() {
     albumsDataTable = albumsTable.DataTable(dataTablesOptions)
-    showAlbumsSkeletons()
-    await addAlbumRows()
-    initDtLang(
+    await initDataTable(
         albumsDataTable,
+        showAlbumsSkeletons,
+        addAlbumRows,
         'No albums available',
         'No matching albums found'
     )
-    if (albumsDataTable.rows().count() === 0) albumsDataTable.draw()
-    window.dispatchEvent(new Event('resize'))
 }
 
 function renderDeleteBtn(data, type, row, _meta) {

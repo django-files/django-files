@@ -116,15 +116,13 @@ const dataTablesOptions = {
 
 async function domContentLoaded() {
     shortsDataTable = shortsTable.DataTable(dataTablesOptions)
-    showShortsSkeletons()
-    await addShortRows()
-    initDtLang(
+    await initDataTable(
         shortsDataTable,
+        showShortsSkeletons,
+        addShortRows,
         'No short URLs available',
         'No matching short URLs found'
     )
-    if (shortsDataTable.rows().count() === 0) shortsDataTable.draw()
-    window.dispatchEvent(new Event('resize'))
 }
 
 function renderShortLink(data, type, row) {
