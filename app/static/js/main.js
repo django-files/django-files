@@ -120,7 +120,9 @@ function show_toast(message, bsClass = 'success', delay = '6000') {
     // console.debug(`show_toast: ${message}`)
     if (isAndroid && Android.showToast) {
         console.log('Android Toast')
-        Android.showToast(typeof message === 'string' ? message : message.text())
+        Android.showToast(
+            typeof message === 'string' ? message : message.text()
+        )
         return
     }
 

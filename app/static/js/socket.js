@@ -184,8 +184,14 @@ function messageAlbumNew(data) {
 }
 
 function messageNewFile(data) {
-    const link = $('<a>', { href: data.url, class: 'link-light fw-semibold', text: truncateName(data.name) })
-    const msg = $('<span>').append(link).append(document.createTextNode(` uploaded by ${data.user_name}.`))
+    const link = $('<a>', {
+        href: data.url,
+        class: 'link-light fw-semibold',
+        text: truncateName(data.name),
+    })
+    const msg = $('<span>')
+        .append(link)
+        .append(document.createTextNode(` uploaded by ${data.user_name}.`))
     show_toast(msg)
 }
 
