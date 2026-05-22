@@ -14,16 +14,15 @@
 {% block body %}
 
     <div class="container-fluid pb-3 pt-2 px-4">
-        <h1><i class="fa-solid fa-video me-2"></i> Streams</h1>
         {% if request.user.is_authenticated %}
         <div id="obs-button-container" class="d-none">
-            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#obsSetupModal" title="Get OBS setup instructions for a new stream">
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#obsSetupModal" title="Get OBS setup instructions for a new stream">
                 <i class="fa-solid fa-satellite-dish me-1"></i> Stream with OBS
             </button>
         </div>
         {% endif %}
         {% if request.user.is_superuser %}
-                {% include 'include/user_select.html' %}
+        {% include 'include/user-select.html' %}
         {% endif %}
         {% include 'streams/table.html'%}
     </div>
@@ -60,7 +59,7 @@
                     <hr>
 
                     <p class="fw-semibold mb-2">How to set up in OBS</p>
-                    <ol class="mb-0" style="line-height: 2;">
+                    <ol class="mb-0 lh-lg">
                         <li>Open OBS and go to <strong>Settings → Stream</strong></li>
                         <li>Set <strong>Service</strong> to <strong>Custom...</strong></li>
                         <li>Paste the <strong>Server URL</strong> above into the <strong>Server</strong> field</li>
@@ -126,6 +125,6 @@
 
 
 {% block tail %}
-    {% include 'include/datatables_scripts.html' %}
+    {% include 'include/datatables-scripts.html' %}
     <script type="module" src="{% static 'js/streams-table.js' %}"></script>
 {% endblock %}

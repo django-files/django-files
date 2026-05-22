@@ -5,7 +5,7 @@ from celery.signals import worker_ready
 from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from django.forms.models import model_to_dict
-from home.models import Albums, Files, FileStats, ShortURLs
+from home.models import Albums, Files, FileStats, ShortURLs, Stream
 from home.tasks import (
     app_startup,
     clear_albums_cache,
@@ -14,6 +14,7 @@ from home.tasks import (
     clear_stats_cache,
     delete_album_websocket,
     delete_file_websocket,
+    delete_stream_websocket,
     send_success_message,
     update_file_websocket,
 )
@@ -72,6 +73,11 @@ def clear_albums_cache_signal(sender, instance, **kwargs):
 def albums_delete_signal(sender, instance, **kwargs):
     data = model_to_dict(instance)
     delete_album_websocket.apply_async(args=[data, instance.user.id], priority=0)
+
+
+@receiver(pre_delete, sender=Stream)
+def streams_delete_signal(sender, instance, **kwargs):
+    delete_stream_websocket.apply_async(args=[instance.name, instance.user_id], priority=0)
 
 
 @receiver(post_save, sender=ShortURLs)

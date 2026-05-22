@@ -64,7 +64,7 @@
         </p>
     </div><!-- /#home-files-section -->
 
-    <h2 id="shorts mt-5 pt-5">Shorts</h2>
+    <h2 id="shorts" class="mt-5 pt-5">Shorts</h2>
     <form id="quick-short-form" action="{% url 'home:shorten' %}">
         <div class="input-group my-2">
             <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
@@ -95,13 +95,7 @@
 
 
 {% block tail %}
-    <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.select.min.js' %}"></script>
+    {% include 'include/datatables-scripts.html' %}
     <script type="module" src="{% static 'js/home.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/stats.js' %}"></script>
     <script type="module" src="{% static 'js/file-context-menu.js' %}"></script>

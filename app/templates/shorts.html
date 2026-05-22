@@ -12,14 +12,12 @@
 {% block body %}
 <div class="container-fluid pb-3 pt-2 px-4">
 
-    <h1><i class="fa-solid fa-link me-2"></i> Shorts</h1>
-
-    {% if request.user.is_superuser %}
-    {% include 'include/user_select.html' %}
+{% if request.user.is_superuser %}
+    {% include 'include/user-select.html' %}
     {% endif %}
 
     <div id="shorts-table-section" class="dt-section">
-        <table class="display responsive nowrap table table-hover table-responsive mb-0" id="shorts-table" style="width:100%">
+        <table class="display responsive nowrap table table-hover table-responsive mb-0 w-100" id="shorts-table">
             <caption class="visually-hidden">List of Short URLs</caption>
             <thead>
                 <tr>
@@ -89,8 +87,6 @@
 {% endblock %}
 
 {% block tail %}
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
+    {% include 'include/datatables-scripts.html' %}
     <script type="module" src="{% static 'js/shorts-table.js' %}"></script>
 {% endblock %}

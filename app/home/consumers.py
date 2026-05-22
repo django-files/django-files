@@ -40,6 +40,7 @@ _ALLOWED_METHODS = frozenset(
         "set_expr_files",
         "set_password_file",
         "set_file_name",
+        "delete_stream",
         "set_stream_title",
         "set_stream_description",
         "set_stream_live_chat",
@@ -352,6 +353,22 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 )
                 return response
         return self._error("File not found.", **kwargs)
+
+    # -------------------------------------------------------------------------
+    # Stream CRUD
+    # -------------------------------------------------------------------------
+
+    async def delete_stream(self, *, user_id: int = None, name: str = None, **kwargs):
+        log.debug("delete_stream: user_id=%s, name=%s", user_id, name)
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        stream = await self._fetch_stream(name)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        if err:
+            return err
+        await database_sync_to_async(stream.delete)()
 
     # -------------------------------------------------------------------------
     # Stream metadata — title & description
