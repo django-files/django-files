@@ -9,6 +9,7 @@ from typing import List, Optional
 from asgiref.sync import async_to_sync, sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.db.models import Q
 from django.forms.models import model_to_dict
 from django_redis import get_redis_connection
 from home.models import Albums, Files, Stream
@@ -263,15 +264,16 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("private_files")
         log.debug("user_id: %s", user_id)
         log.info("pks: %s", pks)
-        files = Files.objects.filter(**filter_kwargs(pks, user_id))
-        files.update(private=private)
-        if len(files) > 0:
-            response = {"objects": []}
-            for file in files:
-                response["objects"].append(model_to_dict(file, exclude=["file", "thumb", "albums"]))
-            response.update({"event": "toggle-private-file"})
-            return response
-        return self._error("File(s) not found.", **kwargs)
+        files = list(Files.objects.filter(**filter_kwargs(pks, user_id)))
+        if not files:
+            return self._error("File(s) not found.", **kwargs)
+        for f in files:
+            f.private = private
+        Files.objects.bulk_update(files, ["private"])
+        return {
+            "objects": [model_to_dict(f, exclude=["file", "thumb", "albums"]) for f in files],
+            "event": "toggle-private-file",
+        }
 
     def set_expr_files(self, *, user_id: int = None, pks: List[int] = None, expr: str = None, **kwargs) -> dict:
         """
@@ -287,18 +289,18 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("kwargs: %s", kwargs)
         if expr and not parse(expr):
             return self._error(f"Invalid Expire: {expr}", **kwargs)
-        files = Files.objects.filter(**filter_kwargs(pks, user_id))
-        for file in files:
-            file.expr = expr or ""
+        files = list(Files.objects.filter(**filter_kwargs(pks, user_id)))
+        if not files:
+            return self._error("File(s) not found.", **kwargs)
+        for f in files:
+            f.expr = expr or ""
         Files.objects.bulk_update(files, ["expr"])
-        if len(files) > 0:
-            response = {"objects": []}
-            for file in files:
-                response["objects"].append(model_to_dict(file, exclude=["file", "thumb", "albums"]))
-            response.update({"event": "set-expr-file"})
-            log.debug("response: %s", response)
-            return response
-        return self._error("File(s) not found.", **kwargs)
+        response = {
+            "objects": [model_to_dict(f, exclude=["file", "thumb", "albums"]) for f in files],
+            "event": "set-expr-file",
+        }
+        log.debug("response: %s", response)
+        return response
 
     def set_password_file(self, *, user_id: int = None, pk: int = None, password: str = None, **kwargs) -> dict:
         """
@@ -414,9 +416,12 @@ class HomeConsumer(AsyncWebsocketConsumer):
     # Chat identity helpers (no I/O — safe to call in async context)
     # -------------------------------------------------------------------------
 
+    @staticmethod
+    def _anon_number(session_key: str) -> int:
+        return int(hashlib.sha256(session_key.encode()).hexdigest(), 16) % 100000
+
     def _anon_name(self, session_key: str) -> str:
-        number = int(hashlib.sha256(session_key.encode()).hexdigest(), 16) % 100000
-        return f"Anonymous#{number:05d}"
+        return f"Anonymous#{self._anon_number(session_key):05d}"
 
     def _get_chat_identity(self):
         user = self.scope["user"]
@@ -448,8 +453,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if not session_key:
             return None, None
         if custom_name:
-            number = int(hashlib.sha256(session_key.encode()).hexdigest(), 16) % 100000
-            display_name = f"{custom_name}#{number:05d}"
+            display_name = f"{custom_name}#{self._anon_number(session_key):05d}"
         else:
             display_name = self._anon_name(session_key)
         site_settings = await database_sync_to_async(SiteSettings.objects.settings)()
@@ -532,27 +536,14 @@ class HomeConsumer(AsyncWebsocketConsumer):
         }
 
     async def set_stream_live_chat(self, *, user_id: int = None, name: str = None, enabled: bool = None, **kwargs):
-        if not name:
-            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
-        stream = await self._fetch_stream(name)
-        if not stream:
-            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
-        err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
-        if err:
-            return err
-        stream.live_chat = bool(enabled)
-        await database_sync_to_async(stream.save)()
-        data = {
-            "event": "chat-settings",
-            "name": name,
-            "live_chat": stream.live_chat,
-            "anonymous_chat": stream.anonymous_chat,
-        }
-        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
+        return await self._set_stream_chat_flag("live_chat", name, user_id, enabled, **kwargs)
 
     async def set_stream_anonymous_chat(
         self, *, user_id: int = None, name: str = None, enabled: bool = None, **kwargs
     ):
+        return await self._set_stream_chat_flag("anonymous_chat", name, user_id, enabled, **kwargs)
+
+    async def _set_stream_chat_flag(self, field: str, name, user_id, enabled, **kwargs):
         if not name:
             return self._error(_ERR_NO_STREAM_NAME, **kwargs)
         stream = await self._fetch_stream(name)
@@ -561,7 +552,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
         if err:
             return err
-        stream.anonymous_chat = bool(enabled)
+        setattr(stream, field, bool(enabled))
         await database_sync_to_async(stream.save)()
         data = {
             "event": "chat-settings",
@@ -791,26 +782,27 @@ class HomeConsumer(AsyncWebsocketConsumer):
 
     async def _check_stream_owner_permission(self, stream, user_id: int, error_msg: str, **kwargs):
         """Return an error dict if the caller is not a superuser or the stream owner, else None."""
-        stream_user_id = await database_sync_to_async(lambda s: s.user.id)(stream)
         requester = self.scope["user"]
-        is_superuser = await database_sync_to_async(lambda u: getattr(u, "is_superuser", False))(requester)
+
+        def _check(s, u):
+            return s.user.id, getattr(u, "is_superuser", False)
+
+        stream_user_id, is_superuser = await database_sync_to_async(_check)(stream, requester)
         if not is_superuser and (not user_id or stream_user_id != user_id):
             return self._error(error_msg, **kwargs)
         return None
 
     async def _is_name_taken(self, custom_name: str) -> bool:
         """Return True if custom_name conflicts with any registered username or first name."""
-        if await database_sync_to_async(CustomUser.objects.filter(username__iexact=custom_name).exists)():
-            return True
-        return await database_sync_to_async(CustomUser.objects.filter(first_name__iexact=custom_name).exists)()
+        qs = CustomUser.objects.filter(Q(username__iexact=custom_name) | Q(first_name__iexact=custom_name))
+        return await database_sync_to_async(qs.exists)()
 
     async def _build_anonymous_display_name(self, custom_name: str, session):
         """Build a discriminated display name for an anonymous user. Returns (name, error) tuple."""
         session_key = session.session_key if session else None
         if not session_key:
             return None, _ERR_SESSION_NOT_READY
-        number = int(hashlib.sha256(session_key.encode()).hexdigest(), 16) % 100000
-        return f"{custom_name}#{number:05d}", None
+        return f"{custom_name}#{self._anon_number(session_key):05d}", None
 
     # -------------------------------------------------------------------------
     # Sync Redis helpers — called via sync_to_async to avoid blocking the loop
@@ -1055,8 +1047,17 @@ class HomeConsumer(AsyncWebsocketConsumer):
         return messages
 
     # -------------------------------------------------------------------------
-    # File / album management (unchanged)
+    # File / album management
     # -------------------------------------------------------------------------
+
+    def _check_file_permission(self, pk: int, user_id: int, **kwargs):
+        """Return (file_instance, error_dict). Exactly one will be non-None."""
+        file = Files.objects.filter(pk=pk).first()
+        if file is None:
+            return None, self._error("File not found.", **kwargs)
+        if user_id and file.user.id != user_id and not self.scope["user"].is_superuser:
+            return None, self._error("File owned by another user.", **kwargs)
+        return file, None
 
     def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = None, **kwargs) -> dict:
         """
@@ -1069,14 +1070,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("user_id: %s", user_id)
         log.debug("pk: %s", pk)
         log.debug("albums: %s", albums)
-        added = {}
-        file_albums = {}
-        if file := Files.objects.filter(pk=pk):
-            if len(file) == 0:
-                return self._error("File not found.", **kwargs)
-            if user_id and file[0].user.id != user_id and not self.scope["user"].is_superuser:
-                return self._error("File owned by another user.", **kwargs)
-            file_albums = dict(Albums.objects.filter(files__id=pk).values_list("id", "name"))
+        file, err = self._check_file_permission(pk, user_id, **kwargs)
+        if err:
+            return err
+        file_albums = dict(Albums.objects.filter(files__id=pk).values_list("id", "name"))
         if not albums:
             albums = []
         if not isinstance(albums, list):
@@ -1084,21 +1081,19 @@ class HomeConsumer(AsyncWebsocketConsumer):
         albums = [int(album) for album in albums]
         log.debug(f"Sent albums: {albums}")
         log.debug(f"Current Albums: {file_albums}")
-        for album in albums:
-            if album not in file_albums.keys():
-                # if the file is not linked to an album in the list, link it
-                album = Albums.objects.filter(id=album)[0]
-                file[0].albums.add(album)
+        added = {}
+        for album_id in albums:
+            if album_id not in file_albums:
+                album = Albums.objects.filter(id=album_id)[0]
+                file.albums.add(album)
                 added[album.id] = album.name
                 log.debug(f"Adding file {pk} to album {album.name}")
             else:
-                # if the album is linked and still in the new album list, remove it from our list
-                del file_albums[album]
-                log.debug(f"Keeping file {pk} in album {album}")
-        for album in file_albums.keys():
-            # if a file was linked to an album that we removed unlink it
-            log.debug(f"removing {pk} from {album}")
-            file[0].albums.remove(Albums.objects.get(id=album))
+                del file_albums[album_id]
+                log.debug(f"Keeping file {pk} in album {album_id}")
+        for album_id in file_albums:
+            log.debug(f"removing {pk} from {album_id}")
+            file.albums.remove(Albums.objects.get(id=album_id))
         return {"event": "set-file-albums", "file_id": pk, "added_to": added, "removed_from": file_albums}
 
     def remove_file_album(self, *, user_id: int = None, pk: int = None, album: int = None, **kwargs) -> dict:
@@ -1113,13 +1108,11 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("pk: %s", pk)
         if not album:
             return self._error("No album specified.", **kwargs)
-        if file := Files.objects.filter(pk=pk):
-            if len(file) == 0:
-                return self._error("File not found.", **kwargs)
-            if user_id and file[0].user.id != user_id and not self.scope["user"].is_superuser:
-                return self._error("File owned by another user.", **kwargs)
+        file, err = self._check_file_permission(pk, user_id, **kwargs)
+        if err:
+            return err
         album = Albums.objects.get(id=album)
-        file[0].albums.remove(album)
+        file.albums.remove(album)
         return {"event": "set-file-albums", "file_id": pk, "removed_from": {album.id: album.name}}
 
     def add_file_album(
@@ -1140,32 +1133,27 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param create_if_absent: Bool = Bool if to create album if cannot find matching album with name.
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("remove_file_album")
+        log.debug("add_file_album")
         log.debug("user_id: %s", user_id)
         log.debug("pk: %s", pk)
         log.debug("name: %s", album_name)
         log.debug("create: %s", create_if_absent)
         if not album and not album_name:
             return self._error("No album specified.", **kwargs)
-        if file := Files.objects.filter(pk=pk):
-            if len(file) == 0:
-                return self._error("File not found.", **kwargs)
-            if user_id and file[0].user.id != user_id and not self.scope["user"].is_superuser:
-                return self._error("File owned by another user.", **kwargs)
-        qalbum, selected_album = [], None
+        file, err = self._check_file_permission(pk, user_id, **kwargs)
+        if err:
+            return err
         if album:
-            # find by album id
             qalbum = Albums.objects.filter(pk=album, user_id=user_id)
-        elif album_name:
-            # find by album name
+        else:
             qalbum = Albums.objects.filter(name=album_name, user_id=user_id)
-        if len(qalbum) > 0:
+        if qalbum:
             selected_album = qalbum[0]
         elif create_if_absent and album_name:
             selected_album = Albums.objects.create(user_id=user_id, name=album_name)
         else:
             return self._error("Album not found.", **kwargs)
-        file[0].albums.add(selected_album)
+        file.albums.add(selected_album)
         return {"event": "set-file-albums", "file_id": pk, "added_to": {selected_album.id: selected_album.name}}
 
     async def check_for_update(self, *args, **kwargs) -> dict:
