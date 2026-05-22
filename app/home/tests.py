@@ -209,6 +209,8 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 # self.screenshot(page, f'{view}-delete-deleted')
 
             if view == "Shorts":
+                page.get_by_role("button", name="New Short").click()
+                page.locator("#create-short-modal").wait_for(state="visible")
                 page.locator("#url").fill("https://github.com/django-files/django-files/pkgs/container/django-files")
                 page.get_by_role("button", name="Create").click()
                 print("--- Testing: flush_template_cache")

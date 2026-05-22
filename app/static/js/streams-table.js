@@ -122,6 +122,16 @@ const dataTablesOptions = {
         url: '/api/streams/',
         dataSrc: 'streams',
     },
+    language: {
+        emptyTable: '',
+        loadingRecords: '',
+        zeroRecords: '',
+    },
+    initComplete: function () {
+        const dt = this.api()
+        initDtLang(dt, 'No streams available', 'No matching streams found')
+        if (dt.rows().count() === 0) dt.draw()
+    },
     dom: "<'row'<'col-sm-12 col-md-6 obs-button-slot'><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end gap-2'<'user-filter-slot'>f>>rt<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
 }
 
@@ -228,56 +238,29 @@ function getActions(data, type, row) {
 const _streamSkeletonNameWidths = [110, 140, 95, 155, 120, 145]
 const _streamSkeletonTitleWidths = [160, 200, 130, 185, 150, 175]
 
-/**
- * Insert count skeleton placeholder rows into the streams table tbody.
- * DataTables clears them automatically on the next .draw() call.
- * @param {number} count
- */
+// Column widths [px] matching the 11 header columns:
+// checkbox, name, title, owner, status, started, ended, views, pw, public, actions
+const _streamSkeletonSpecs = [
+    { w: 18, h: 18 },
+    { w: 0 }, // name — varied per row
+    { w: 0 }, // title — varied per row
+    { w: 80 },
+    { w: 58 },
+    { w: 112 },
+    { w: 112 },
+    { w: 28 },
+    { w: 14 },
+    { w: 14 },
+    { w: 38 },
+]
+
 function showStreamsSkeletons(count = 10) {
     const tbody = document.querySelector('#streams-table tbody')
     if (!tbody) return
-    const fragment = document.createDocumentFragment()
-    // Column widths [px] matching the 11 header columns:
-    // checkbox, name, title, owner, status, started, ended, views, pw, public, actions
-    const specs = [
-        { w: 18, h: 18 },
-        { w: 0 }, // name — varied per row
-        { w: 0 }, // title — varied per row
-        { w: 80 },
-        { w: 58 },
-        { w: 112 },
-        { w: 112 },
-        { w: 28 },
-        { w: 14 },
-        { w: 14 },
-        { w: 38 },
-    ]
-    for (let i = 0; i < count; i++) {
-        const tr = document.createElement('tr')
-        tr.className = 'dt-skeleton-row'
-        specs.forEach(({ w, h = 14 }, colIndex) => {
-            const td = document.createElement('td')
-            const cell = document.createElement('div')
-            cell.className = 'dt-skeleton-cell'
-            let width = w
-            if (colIndex === 1)
-                width =
-                    _streamSkeletonNameWidths[
-                        i % _streamSkeletonNameWidths.length
-                    ]
-            else if (colIndex === 2)
-                width =
-                    _streamSkeletonTitleWidths[
-                        i % _streamSkeletonTitleWidths.length
-                    ]
-            cell.style.width = `${width}px`
-            cell.style.height = `${h}px`
-            td.appendChild(cell)
-            tr.appendChild(td)
-        })
-        fragment.appendChild(tr)
-    }
-    tbody.appendChild(fragment)
+    buildSkeletonRows(tbody, count, _streamSkeletonSpecs, {
+        1: _streamSkeletonNameWidths,
+        2: _streamSkeletonTitleWidths,
+    })
 }
 
 // Initialize DataTable
@@ -289,7 +272,9 @@ $(document).ready(function () {
     showStreamsSkeletons()
 
     // Move user select into the slot DataTables rendered alongside the search input
-    const userSelectContainer = document.getElementById('user-select-container')
+    const userSelectContainer = document.getElementById(
+        'dt-user-select-wrapper'
+    )
     const slot = document.querySelector('.user-filter-slot')
     if (userSelectContainer && slot) {
         userSelectContainer.classList.remove('d-none')
@@ -329,26 +314,6 @@ $(document).ready(function () {
             streamsDataTable.ajax.url(url).load()
         })
     }
-
-    // Handle clipboard functionality
-    document.addEventListener('click', function (e) {
-        if (e.target.closest('.clip')) {
-            const text = e.target
-                .closest('.clip')
-                .getAttribute('data-clipboard-text')
-            if (text) {
-                navigator.clipboard.writeText(text).then(() => {
-                    // Show success feedback
-                    const originalText = e.target.closest('.clip').innerHTML
-                    e.target.closest('.clip').innerHTML =
-                        '<i class="fa-solid fa-check"></i>'
-                    setTimeout(() => {
-                        e.target.closest('.clip').innerHTML = originalText
-                    }, 1000)
-                })
-            }
-        }
-    })
 
     // Handle stream title editing
     streamsTable.on('focus', '.stream-editable', function () {

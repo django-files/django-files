@@ -145,6 +145,9 @@ const dataTablesOptions = {
     },
     language: {
         info: '',
+        emptyTable: '',
+        loadingRecords: '',
+        zeroRecords: '',
     },
     initComplete: function () {
         const container = $(this.api().table().container())
@@ -184,6 +187,10 @@ const dataTablesOptions = {
                 )
             )
         }
+
+        // Restore empty-state messages. No explicit draw needed — the caller's
+        // data-load draw (or columns.adjust().draw()) will use these strings.
+        initDtLang(this.api(), 'No files available', 'No matching files found')
     },
 }
 
@@ -303,42 +310,27 @@ socket?.addEventListener('message', function (event) {
 // Varied name-column widths so rows look realistic rather than uniform
 const skeletonNameWidths = [130, 165, 210, 145, 180, 195, 120, 155, 200, 140]
 
+const _fileSkeletonSpecs = [
+    { w: 18, h: 18 },
+    { w: 24 },
+    { w: 0 }, // name — varied per row
+    { w: 58 },
+    { w: 78 },
+    { w: 112 },
+    { w: 14 },
+    { w: 14 },
+    { w: 14 },
+    { w: 28 },
+    { w: 18 },
+]
+
 export function showTableSkeletons(count = 10) {
     const tbody = document.querySelector('#files-table tbody')
     if (!tbody) return
-    const fragment = document.createDocumentFragment()
-    const specs = [
-        { w: 18, h: 18 },
-        { w: 24 },
-        { w: 0 }, // name — varied per row, set below
-        { w: 58 },
-        { w: 78 },
-        { w: 112 },
-        { w: 14 },
-        { w: 14 },
-        { w: 14 },
-        { w: 28 },
-        { w: 18 },
-    ]
-    for (let i = 0; i < count; i++) {
-        const tr = document.createElement('tr')
-        tr.className = 'dt-skeleton-row'
-        specs.forEach(({ w, h = 14 }, colIndex) => {
-            const td = document.createElement('td')
-            const cell = document.createElement('div')
-            cell.className = 'dt-skeleton-cell'
-            const width =
-                colIndex === 2
-                    ? skeletonNameWidths[i % skeletonNameWidths.length]
-                    : w
-            cell.style.width = `${width}px`
-            cell.style.height = `${h}px`
-            td.appendChild(cell)
-            tr.appendChild(td)
-        })
-        fragment.appendChild(tr)
-    }
-    tbody.appendChild(fragment)
+    tbody.querySelector('.dataTables_empty')?.closest('tr')?.remove()
+    buildSkeletonRows(tbody, count, _fileSkeletonSpecs, {
+        2: skeletonNameWidths,
+    })
 }
 
 // Usually unnecessary — DataTables .draw() clears these — but needed when draw is skipped (empty result set)

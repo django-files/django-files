@@ -8,7 +8,7 @@
 
 {% block head %}
     <link href="{% static 'dist/uppy/uppy.min.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/gallery.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/table.css' %}" />
 {% endblock %}
 
 {% block body %}
@@ -55,12 +55,14 @@
     {% endif %}
 
     <h2 id="files">Recent Files</h2>
+    <div id="home-files-section">
         {% include 'files/bulk-menu.html' %}
         {% include 'files/table.html' %}
         <p class="mt-0 files-truncation-warning d-none">
             <em>This list is truncated to 10 files.</em>
             <span class="d-inline-block"><a href="{% url 'home:files' %}">View All Files</a></span>
         </p>
+    </div><!-- /#home-files-section -->
 
     <h2 id="shorts mt-5 pt-5">Shorts</h2>
     <form id="quick-short-form" action="{% url 'home:shorten' %}">

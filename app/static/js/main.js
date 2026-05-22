@@ -13,7 +13,7 @@ document
 
 const backToTop = document.getElementById('back-to-top')
 if (backToTop) {
-    window.addEventListener('scroll', debounce(onScroll), { passive: true })
+    globalThis.addEventListener('scroll', debounce(onScroll), { passive: true })
     backToTop.addEventListener('click', () => {
         document.body.scrollTop = 0
         document.documentElement.scrollTop = 0
@@ -21,23 +21,14 @@ if (backToTop) {
 }
 
 if (typeof ClipboardJS !== 'undefined') {
-    new ClipboardJS('.clip')
-    $('.clip').on('click', function () {
-        const el = $(this)
-        el.popover({
-            content: 'Copied',
-            placement: 'bottom',
-            trigger: 'manual',
-        })
-        el.popover('show')
-        setTimeout(function () {
-            el.popover('hide')
-        }, 2000)
-        $(document).one('click', function (e) {
-            if (!el.is(e.target) && el.has(e.target).length === 0) {
-                el.popover('hide')
-            }
-        })
+    const clipboard = new ClipboardJS('.clip')
+    clipboard.on('success', function (e) {
+        const el = e.trigger
+        const original = el.innerHTML
+        el.innerHTML = '<i class="fa-solid fa-check"></i>'
+        setTimeout(() => {
+            el.innerHTML = original
+        }, 1000)
     })
 }
 
@@ -87,7 +78,7 @@ async function processAuth(event) {
     event.preventDefault()
     const data = await getSignature()
     console.log('window.location.href:', data.url)
-    window.location.href = data.url
+    globalThis.location.href = data.url
 }
 
 async function getSignature() {
@@ -157,7 +148,7 @@ function saveOptions(event) {
     // console.debug('data:', data)
     $.ajax({
         type: 'post',
-        url: window.location.pathname,
+        url: globalThis.location.pathname,
         data: data,
         headers: { 'X-CSRFToken': csrftoken },
         success: success,
@@ -192,7 +183,6 @@ function saveOptions(event) {
  * Error Message responseJSON.error or jqXHR.statusText
  * @param {jQuery.jqXHR} jqXHR
  */
-// eslint-disable-next-line no-unused-vars
 function messageErrorHandler(jqXHR) {
     if (jqXHR.responseJSON?.error) {
         const message = `${jqXHR.status}: ${jqXHR.responseJSON.error}`
@@ -246,14 +236,80 @@ function debounce(fn, timeout = 250) {
  * @param {Function} callable (async)
  */
 // eslint-disable-next-line no-unused-vars
+async function initDataTable(dt, skeletonFn, fetchFn, emptyMsg, zeroMsg) {
+    skeletonFn()
+    await fetchFn()
+    initDtLang(dt, emptyMsg, zeroMsg)
+    if (!dt.rows().count()) dt.draw()
+    globalThis.dispatchEvent(new Event('resize'))
+}
+
+function initDtLang(dt, emptyMsg, zeroMsg) {
+    const lang = dt.settings()[0].oLanguage
+    lang.sEmptyTable = emptyMsg
+    lang.sZeroRecords = zeroMsg
+}
+
+/**
+ * Build skeleton placeholder rows into a DataTable tbody.
+ * @param {HTMLElement} tbody
+ * @param {number} count
+ * @param {Array<{w: number, h?: number}>} specs - per-column width/height
+ * @param {Object<number, number[]>} varWidths - colIndex -> array of widths cycled per row
+ */
+// eslint-disable-next-line no-unused-vars
+function buildSkeletonRows(tbody, count, specs, varWidths = {}) {
+    const fragment = document.createDocumentFragment()
+    for (let i = 0; i < count; i++) {
+        const tr = document.createElement('tr')
+        tr.className = 'dt-skeleton-row'
+        specs.forEach(({ w, h = 14 }, colIndex) => {
+            const td = document.createElement('td')
+            const cell = document.createElement('div')
+            cell.className = 'dt-skeleton-cell'
+            const widths = varWidths[colIndex]
+            const width = widths ? widths[i % widths.length] : w
+            cell.style.width = `${width}px`
+            cell.style.height = `${h}px`
+            td.appendChild(cell)
+            tr.appendChild(td)
+        })
+        fragment.appendChild(tr)
+    }
+    tbody.appendChild(fragment)
+}
+
+/**
+ * Submit a modal form as JSON via jQuery AJAX.
+ * @param {jQuery} form
+ * @param {Function} onSuccess
+ */
+// eslint-disable-next-line no-unused-vars
+function submitJsonForm(form, onSuccess) {
+    const data = new FormData(form[0])
+    data.forEach((value, key) => (data[key] = value))
+    $.ajax({
+        type: form.attr('method'),
+        url: form.attr('action'),
+        data: JSON.stringify(data),
+        headers: { 'X-CSRFToken': csrftoken },
+        success: onSuccess,
+        error: messageErrorHandler,
+        cache: false,
+        contentType: false,
+        processData: false,
+    })
+}
+
+// eslint-disable-next-line no-unused-vars
 async function pageScroll(event, nextPage, callable, buffer = 500) {
     // await sleep(200)
-    const maxScrollY = document.body.scrollHeight - window.innerHeight
+    const maxScrollY = document.body.scrollHeight - globalThis.innerHeight
     console.debug(
-        `pageScroll: ${window.scrollY} > ${maxScrollY - buffer}`,
-        window.scrollY > maxScrollY - buffer
+        `pageScroll: ${globalThis.scrollY} > ${maxScrollY - buffer}`,
+        globalThis.scrollY > maxScrollY - buffer
     )
-    if (nextPage && (!maxScrollY || window.scrollY > maxScrollY - buffer)) {
+    if (nextPage && (!maxScrollY || globalThis.scrollY > maxScrollY - buffer)) {
         console.debug('End of Scroll')
         await callable()
     }

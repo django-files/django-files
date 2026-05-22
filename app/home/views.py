@@ -206,8 +206,9 @@ def shorts_view(request):
     View  /shorts/
     """
     log.debug("%s - shorts_view: is_secure: %s", request.method, request.is_secure())
-    shorts = ShortURLs.objects.get_request(request)
-    context = {"shorts": shorts}
+    context = {}
+    if request.user.is_superuser:
+        context["users"] = CustomUser.objects.all()
     return render(request, "shorts.html", context)
 
 
