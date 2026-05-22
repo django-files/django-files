@@ -1,4 +1,5 @@
 import { fetchShorts } from './api-fetch.js'
+import { paginatedTableDefaults } from './table-defaults.js'
 
 const shortsTable = $('#shorts-table')
 const deleteShortModal = $('#delete-short-modal')
@@ -18,21 +19,7 @@ async function scrollHandle(event) {
 }
 
 const dataTablesOptions = {
-    paging: false,
-    order: [0, 'desc'],
-    responsive: true,
-    saveState: true,
-    searching: true,
-    pageLength: -1,
-    language: {
-        emptyTable: '',
-        loadingRecords: '',
-        zeroRecords: '',
-    },
-    lengthMenu: [
-        [10, 25, 50, 100, 250, -1],
-        [10, 25, 50, 100, 250, 'All'],
-    ],
+    ...paginatedTableDefaults,
     columns: [
         { data: 'id' },
         { data: 'short' },
