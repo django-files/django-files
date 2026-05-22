@@ -120,13 +120,20 @@ function show_toast(message, bsClass = 'success', delay = '6000') {
     // console.debug(`show_toast: ${message}`)
     if (isAndroid && Android.showToast) {
         console.log('Android Toast')
-        Android.showToast(message)
+        Android.showToast(
+            typeof message === 'string' ? message : message.text()
+        )
         return
     }
 
     let element = $('#toast').clone()
     element.removeAttr('id').addClass(`text-bg-${bsClass}`)
-    element.find('.toast-body').text(message)
+    const body = element.find('.toast-body')
+    if (typeof message === 'string') {
+        body.text(message)
+    } else {
+        body.append(message)
+    }
     element.toast({ delay: parseInt(delay) })
     element.appendTo('.toast-container').toast('show')
 }

@@ -1,6 +1,8 @@
 import { socket } from './socket.js'
 
 const streamsTable = $('#streams-table')
+const deleteStreamModal = $('#delete-stream-modal')
+let pendingDeleteName
 
 export const faKey = document.querySelector('div.d-none > .fa-key')
 export const faGlobe = document.querySelector('div.d-none > .fa-globe')
@@ -23,10 +25,12 @@ const dataTablesOptions = {
         [1, 10, 25, 45, 100, 250, -1],
         [1, 10, 25, 45, 100, 250, 'All'],
     ],
+    select: {
+        style: 'multi',
+        selector: 'td:first-child',
+    },
     columns: [
-        {
-            data: null,
-        },
+        { data: null },
         { data: 'name' },
         { data: 'title' },
         { data: 'user_name' },
@@ -36,6 +40,7 @@ const dataTablesOptions = {
         { data: 'unique_views' },
         { data: 'password' },
         { data: 'public' },
+        { data: null },
     ],
     columnDefs: [
         {
@@ -112,6 +117,7 @@ const dataTablesOptions = {
         },
         {
             targets: 10,
+            orderable: false,
             responsivePriority: 9,
             render: getActions,
             defaultContent: '',
@@ -131,8 +137,35 @@ const dataTablesOptions = {
         const dt = this.api()
         initDtLang(dt, 'No streams available', 'No matching streams found')
         if (dt.rows().count() === 0) dt.draw()
+
+        const container = $(dt.table().container())
+        const startCell = container.find('.dt-layout-start').first()
+        const endCell = container.find('.dt-layout-end').first()
+
+        const obsButtonContainer = document.getElementById(
+            'obs-button-container'
+        )
+        if (obsButtonContainer) {
+            startCell.append(obsButtonContainer)
+            obsButtonContainer.classList.remove('d-none')
+        }
+
+        const userSelectContainer = document.getElementById(
+            'dt-user-select-wrapper'
+        )
+        if (userSelectContainer) {
+            endCell.prepend(userSelectContainer)
+            userSelectContainer.classList.remove('d-none')
+        }
+
+        requestAnimationFrame(() =>
+            requestAnimationFrame(() =>
+                document
+                    .getElementById('streams-table-section')
+                    ?.classList.add('dt-section-ready')
+            )
+        )
     },
-    dom: "<'row'<'col-sm-12 col-md-6 obs-button-slot'><'col-sm-12 col-md-6 d-flex align-items-center justify-content-end gap-2'<'user-filter-slot'>f>>rt<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
 }
 
 function getStreamLink(data, type, row) {
@@ -221,11 +254,8 @@ function getActions(data, type, row) {
                     <i class="fa-solid fa-ellipsis-vertical"></i>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="${row.url}" target="_blank">
-                        <i class="fa-solid fa-external-link-alt me-2"></i>View
-                    </a></li>
-                    <li><a class="dropdown-item" href="${row.url}" target="_blank">
-                        <i class="fa-solid fa-cog me-2"></i>Settings
+                    <li><a class="dropdown-item stream-delete-btn link-danger" role="button" data-stream-name="${row.name}">
+                        <i class="fa-regular fa-trash-can me-2"></i>Delete
                     </a></li>
                 </ul>
             </div>
@@ -263,59 +293,23 @@ function showStreamsSkeletons(count = 10) {
     })
 }
 
-// Initialize DataTable
-$(document).ready(function () {
-    streamsDataTable = streamsTable.DataTable(dataTablesOptions)
+document.addEventListener('DOMContentLoaded', domContentLoaded)
 
-    // Show skeleton rows while the AJAX fetch is in-flight.
-    // DataTables' draw() on AJAX completion clears them automatically.
+function domContentLoaded() {
+    streamsDataTable = streamsTable.DataTable(dataTablesOptions)
     showStreamsSkeletons()
 
-    // Move user select into the slot DataTables rendered alongside the search input
-    const userSelectContainer = document.getElementById(
-        'dt-user-select-wrapper'
-    )
-    const slot = document.querySelector('.user-filter-slot')
-    if (userSelectContainer && slot) {
-        userSelectContainer.classList.remove('d-none')
-        slot.appendChild(userSelectContainer)
-    }
-
-    // Move OBS button into the left toolbar slot
-    const obsButtonContainer = document.getElementById('obs-button-container')
-    const obsSlot = document.querySelector('.obs-button-slot')
-    if (obsButtonContainer && obsSlot) {
-        obsButtonContainer.classList.remove('d-none')
-        obsSlot.appendChild(obsButtonContainer)
-    }
-
-    // Reveal the section after all DOM mutations are done.
-    // Double-rAF ensures the browser commits the toolbar layout before
-    // opacity transitions to 1, eliminating the toolbar-insertion jitter.
-    const section = document.getElementById('streams-table-section')
-    if (section) {
-        requestAnimationFrame(() =>
-            requestAnimationFrame(() =>
-                section.classList.add('dt-section-ready')
-            )
-        )
-    }
-
-    // Handle user filter for superusers
     if (document.getElementById('user')) {
         $('#user').on('change', function () {
             const userId = $(this).val()
             let url = '/api/streams/'
-
             if (userId && userId !== '0') {
                 url += `?user=${userId}`
             }
-
             streamsDataTable.ajax.url(url).load()
         })
     }
 
-    // Handle stream title editing
     streamsTable.on('focus', '.stream-editable', function () {
         $(this).data('original-title', $(this).text().trim())
     })
@@ -347,4 +341,31 @@ $(document).ready(function () {
             $(this).blur()
         }
     })
+
+    streamsTable.on('click', '.stream-delete-btn', function () {
+        pendingDeleteName = $(this).data('stream-name')
+        deleteStreamModal.modal('show')
+    })
+
+    $('#stream-delete-confirm').on('click', function () {
+        if (!pendingDeleteName) return
+        socket.send(
+            JSON.stringify({ method: 'delete-stream', name: pendingDeleteName })
+        )
+        deleteStreamModal.modal('hide')
+        pendingDeleteName = null
+    })
+}
+
+socket?.addEventListener('message', function (event) {
+    if (event.data === 'pong') return
+    const data = JSON.parse(event.data)
+    if (data.event === 'stream-delete') {
+        streamsDataTable
+            ?.row(function (_idx, rowData) {
+                return rowData.name === data.name
+            })
+            .remove()
+            .draw()
+    }
 })

@@ -14,19 +14,14 @@
 {% block body %}
 <div class="container-fluid pb-3 pt-2 px-4">
 
-    {% include 'include/albums-table.html' %}
+    {% include 'albums/table.html' %}
 
 </div> <!-- container-fluid -->
 
-{% include 'include/album-create-modal.html' %}
+{% include 'albums/create-modal.html' %}
 {% endblock %}
 
 {% block tail %}
-    <script type="text/javascript" src="{% static 'dist/moment/moment.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.bootstrap5.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.dateTime.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/dataTables.responsive.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/datatables/datetime.min.js' %}"></script>
+    {% include 'include/datatables-scripts.html' %}
     <script type="module" src="{% static 'js/albums-table.js' %}"></script>
 {% endblock %}
