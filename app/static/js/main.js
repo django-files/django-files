@@ -13,7 +13,7 @@ document
 
 const backToTop = document.getElementById('back-to-top')
 if (backToTop) {
-    window.addEventListener('scroll', debounce(onScroll), { passive: true })
+    globalThis.addEventListener('scroll', debounce(onScroll), { passive: true })
     backToTop.addEventListener('click', () => {
         document.body.scrollTop = 0
         document.documentElement.scrollTop = 0
@@ -78,7 +78,7 @@ async function processAuth(event) {
     event.preventDefault()
     const data = await getSignature()
     console.log('window.location.href:', data.url)
-    window.location.href = data.url
+    globalThis.location.href = data.url
 }
 
 async function getSignature() {
@@ -148,7 +148,7 @@ function saveOptions(event) {
     // console.debug('data:', data)
     $.ajax({
         type: 'post',
-        url: window.location.pathname,
+        url: globalThis.location.pathname,
         data: data,
         headers: { 'X-CSRFToken': csrftoken },
         success: success,
@@ -241,7 +241,7 @@ async function initDataTable(dt, skeletonFn, fetchFn, emptyMsg, zeroMsg) {
     await fetchFn()
     initDtLang(dt, emptyMsg, zeroMsg)
     if (!dt.rows().count()) dt.draw()
-    window.dispatchEvent(new Event('resize'))
+    globalThis.dispatchEvent(new Event('resize'))
 }
 
 function initDtLang(dt, emptyMsg, zeroMsg) {
@@ -304,12 +304,12 @@ function submitJsonForm(form, onSuccess) {
 // eslint-disable-next-line no-unused-vars
 async function pageScroll(event, nextPage, callable, buffer = 500) {
     // await sleep(200)
-    const maxScrollY = document.body.scrollHeight - window.innerHeight
+    const maxScrollY = document.body.scrollHeight - globalThis.innerHeight
     console.debug(
-        `pageScroll: ${window.scrollY} > ${maxScrollY - buffer}`,
-        window.scrollY > maxScrollY - buffer
+        `pageScroll: ${globalThis.scrollY} > ${maxScrollY - buffer}`,
+        globalThis.scrollY > maxScrollY - buffer
     )
-    if (nextPage && (!maxScrollY || window.scrollY > maxScrollY - buffer)) {
+    if (nextPage && (!maxScrollY || globalThis.scrollY > maxScrollY - buffer)) {
         console.debug('End of Scroll')
         await callable()
     }

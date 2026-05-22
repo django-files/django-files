@@ -328,7 +328,9 @@ export function showTableSkeletons(count = 10) {
     const tbody = document.querySelector('#files-table tbody')
     if (!tbody) return
     tbody.querySelector('.dataTables_empty')?.closest('tr')?.remove()
-    buildSkeletonRows(tbody, count, _fileSkeletonSpecs, { 2: skeletonNameWidths })
+    buildSkeletonRows(tbody, count, _fileSkeletonSpecs, {
+        2: skeletonNameWidths,
+    })
 }
 
 // Usually unnecessary — DataTables .draw() clears these — but needed when draw is skipped (empty result set)
