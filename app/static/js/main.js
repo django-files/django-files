@@ -183,7 +183,6 @@ function saveOptions(event) {
  * Error Message responseJSON.error or jqXHR.statusText
  * @param {jQuery.jqXHR} jqXHR
  */
-// eslint-disable-next-line no-unused-vars
 function messageErrorHandler(jqXHR) {
     if (jqXHR.responseJSON?.error) {
         const message = `${jqXHR.status}: ${jqXHR.responseJSON.error}`
@@ -245,11 +244,61 @@ async function initDataTable(dt, skeletonFn, fetchFn, emptyMsg, zeroMsg) {
     window.dispatchEvent(new Event('resize'))
 }
 
-// eslint-disable-next-line no-unused-vars
 function initDtLang(dt, emptyMsg, zeroMsg) {
     const lang = dt.settings()[0].oLanguage
     lang.sEmptyTable = emptyMsg
     lang.sZeroRecords = zeroMsg
+}
+
+/**
+ * Build skeleton placeholder rows into a DataTable tbody.
+ * @param {HTMLElement} tbody
+ * @param {number} count
+ * @param {Array<{w: number, h?: number}>} specs - per-column width/height
+ * @param {Object<number, number[]>} varWidths - colIndex -> array of widths cycled per row
+ */
+// eslint-disable-next-line no-unused-vars
+function buildSkeletonRows(tbody, count, specs, varWidths = {}) {
+    const fragment = document.createDocumentFragment()
+    for (let i = 0; i < count; i++) {
+        const tr = document.createElement('tr')
+        tr.className = 'dt-skeleton-row'
+        specs.forEach(({ w, h = 14 }, colIndex) => {
+            const td = document.createElement('td')
+            const cell = document.createElement('div')
+            cell.className = 'dt-skeleton-cell'
+            const widths = varWidths[colIndex]
+            const width = widths ? widths[i % widths.length] : w
+            cell.style.width = `${width}px`
+            cell.style.height = `${h}px`
+            td.appendChild(cell)
+            tr.appendChild(td)
+        })
+        fragment.appendChild(tr)
+    }
+    tbody.appendChild(fragment)
+}
+
+/**
+ * Submit a modal form as JSON via jQuery AJAX.
+ * @param {jQuery} form
+ * @param {Function} onSuccess
+ */
+// eslint-disable-next-line no-unused-vars
+function submitJsonForm(form, onSuccess) {
+    const data = new FormData(form[0])
+    data.forEach((value, key) => (data[key] = value))
+    $.ajax({
+        type: form.attr('method'),
+        url: form.attr('action'),
+        data: JSON.stringify(data),
+        headers: { 'X-CSRFToken': csrftoken },
+        success: onSuccess,
+        error: messageErrorHandler,
+        cache: false,
+        contentType: false,
+        processData: false,
+    })
 }
 
 // eslint-disable-next-line no-unused-vars

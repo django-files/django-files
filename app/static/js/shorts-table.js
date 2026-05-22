@@ -168,64 +168,34 @@ function addShortRow(row) {
 
 const _shortSkeletonUrlWidths = [180, 220, 150, 240, 170, 200]
 
+// Visible columns: short, url, views, max, actions (id is hidden col 0)
+const _shortSkeletonSpecs = [
+    { w: 60 },
+    { w: 0 }, // url — varied per row
+    { w: 24 },
+    { w: 24 },
+    { w: 50 },
+]
+
 function showShortsSkeletons(count = 8) {
     const tbody = document.querySelector('#shorts-table tbody')
     if (!tbody) return
-    const fragment = document.createDocumentFragment()
-    // Visible columns: short, url, views, max, actions (id is hidden col 0)
-    const specs = [
-        { w: 60 },
-        { w: 0 }, // url — varied per row
-        { w: 24 },
-        { w: 24 },
-        { w: 50 },
-    ]
-    for (let i = 0; i < count; i++) {
-        const tr = document.createElement('tr')
-        tr.className = 'dt-skeleton-row'
-        specs.forEach(({ w, h = 14 }, colIndex) => {
-            const td = document.createElement('td')
-            const cell = document.createElement('div')
-            cell.className = 'dt-skeleton-cell'
-            const width =
-                colIndex === 1
-                    ? _shortSkeletonUrlWidths[
-                          i % _shortSkeletonUrlWidths.length
-                      ]
-                    : w
-            cell.style.width = `${width}px`
-            cell.style.height = `${h}px`
-            td.appendChild(cell)
-            tr.appendChild(td)
-        })
-        fragment.appendChild(tr)
-    }
-    tbody.appendChild(fragment)
+    buildSkeletonRows(tbody, count, _shortSkeletonSpecs, {
+        1: _shortSkeletonUrlWidths,
+    })
 }
 
 $('#shortsForm').on('submit', function (event) {
     event.preventDefault()
     const form = $(this)
-    const data = new FormData(this)
-    data.forEach((value, key) => (data[key] = value))
-    $.ajax({
-        type: form.attr('method'),
-        url: form.attr('action'),
-        data: JSON.stringify(data),
-        headers: { 'X-CSRFToken': csrftoken },
-        success: function (resp) {
-            form.trigger('reset')
-            $('#create-short-modal').modal('hide')
-            show_toast(`Short Created: ${resp.url}`, 'success')
-            shortsDataTable.clear().draw()
-            nextPage = 1
-            fetchLock = false
-            addShortRows()
-        },
-        error: messageErrorHandler,
-        cache: false,
-        contentType: false,
-        processData: false,
+    submitJsonForm(form, function (resp) {
+        form.trigger('reset')
+        $('#create-short-modal').modal('hide')
+        show_toast(`Short Created: ${resp.url}`, 'success')
+        shortsDataTable.clear().draw()
+        nextPage = 1
+        fetchLock = false
+        addShortRows()
     })
 })
 

@@ -169,70 +169,32 @@ function addAlbumRow(row) {
 // Varied name-column widths so skeleton rows look realistic
 const _albumSkeletonNameWidths = [140, 175, 110, 195, 130, 160, 105, 155]
 
-/**
- * Insert count skeleton placeholder rows into the albums table tbody.
- * DataTables clears them automatically on the next .draw() call.
- * @param {number} count
- */
+// Column widths [px] matching the 7 header columns:
+// id, name, date, expire, views, maxviews, delete
+const _albumSkeletonSpecs = [
+    { w: 24 },
+    { w: 0 }, // name — varied per row
+    { w: 128 },
+    { w: 14 },
+    { w: 20 },
+    { w: 20 },
+    { w: 20 },
+]
+
 function showAlbumsSkeletons(count = 10) {
     const tbody = document.querySelector('#albums-table tbody')
     if (!tbody) return
-    const fragment = document.createDocumentFragment()
-    // Column widths [px] matching the 7 header columns:
-    // id, name, date, expire, views, maxviews, delete
-    const specs = [
-        { w: 24 },
-        { w: 0 }, // name — varied per row, set below
-        { w: 128 },
-        { w: 14 },
-        { w: 20 },
-        { w: 20 },
-        { w: 20 },
-    ]
-    for (let i = 0; i < count; i++) {
-        const tr = document.createElement('tr')
-        tr.className = 'dt-skeleton-row'
-        specs.forEach(({ w, h = 14 }, colIndex) => {
-            const td = document.createElement('td')
-            const cell = document.createElement('div')
-            cell.className = 'dt-skeleton-cell'
-            const width =
-                colIndex === 1
-                    ? _albumSkeletonNameWidths[
-                          i % _albumSkeletonNameWidths.length
-                      ]
-                    : w
-            cell.style.width = `${width}px`
-            cell.style.height = `${h}px`
-            td.appendChild(cell)
-            tr.appendChild(td)
-        })
-        fragment.appendChild(tr)
-    }
-    tbody.appendChild(fragment)
+    buildSkeletonRows(tbody, count, _albumSkeletonSpecs, {
+        1: _albumSkeletonNameWidths,
+    })
 }
 
-// Handle Album FORM Submit
 $('#albumsForm').on('submit', function (event) {
-    // console.log('#albumsForm submit', event)
     event.preventDefault()
     const form = $(this)
-    // console.log('form:', form)
-    const data = new FormData(this)
-    data.forEach((value, key) => (data[key] = value))
-    $.ajax({
-        type: form.attr('method'),
-        url: form.attr('action'),
-        data: JSON.stringify(data),
-        headers: { 'X-CSRFToken': csrftoken },
-        success: function (_data) {
-            form.trigger('reset')
-            $('#create-album-modal').modal('hide')
-        },
-        error: messageErrorHandler,
-        cache: false,
-        contentType: false,
-        processData: false,
+    submitJsonForm(form, function () {
+        form.trigger('reset')
+        $('#create-album-modal').modal('hide')
     })
 })
 

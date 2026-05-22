@@ -238,56 +238,29 @@ function getActions(data, type, row) {
 const _streamSkeletonNameWidths = [110, 140, 95, 155, 120, 145]
 const _streamSkeletonTitleWidths = [160, 200, 130, 185, 150, 175]
 
-/**
- * Insert count skeleton placeholder rows into the streams table tbody.
- * DataTables clears them automatically on the next .draw() call.
- * @param {number} count
- */
+// Column widths [px] matching the 11 header columns:
+// checkbox, name, title, owner, status, started, ended, views, pw, public, actions
+const _streamSkeletonSpecs = [
+    { w: 18, h: 18 },
+    { w: 0 }, // name — varied per row
+    { w: 0 }, // title — varied per row
+    { w: 80 },
+    { w: 58 },
+    { w: 112 },
+    { w: 112 },
+    { w: 28 },
+    { w: 14 },
+    { w: 14 },
+    { w: 38 },
+]
+
 function showStreamsSkeletons(count = 10) {
     const tbody = document.querySelector('#streams-table tbody')
     if (!tbody) return
-    const fragment = document.createDocumentFragment()
-    // Column widths [px] matching the 11 header columns:
-    // checkbox, name, title, owner, status, started, ended, views, pw, public, actions
-    const specs = [
-        { w: 18, h: 18 },
-        { w: 0 }, // name — varied per row
-        { w: 0 }, // title — varied per row
-        { w: 80 },
-        { w: 58 },
-        { w: 112 },
-        { w: 112 },
-        { w: 28 },
-        { w: 14 },
-        { w: 14 },
-        { w: 38 },
-    ]
-    for (let i = 0; i < count; i++) {
-        const tr = document.createElement('tr')
-        tr.className = 'dt-skeleton-row'
-        specs.forEach(({ w, h = 14 }, colIndex) => {
-            const td = document.createElement('td')
-            const cell = document.createElement('div')
-            cell.className = 'dt-skeleton-cell'
-            let width = w
-            if (colIndex === 1)
-                width =
-                    _streamSkeletonNameWidths[
-                        i % _streamSkeletonNameWidths.length
-                    ]
-            else if (colIndex === 2)
-                width =
-                    _streamSkeletonTitleWidths[
-                        i % _streamSkeletonTitleWidths.length
-                    ]
-            cell.style.width = `${width}px`
-            cell.style.height = `${h}px`
-            td.appendChild(cell)
-            tr.appendChild(td)
-        })
-        fragment.appendChild(tr)
-    }
-    tbody.appendChild(fragment)
+    buildSkeletonRows(tbody, count, _streamSkeletonSpecs, {
+        1: _streamSkeletonNameWidths,
+        2: _streamSkeletonTitleWidths,
+    })
 }
 
 // Initialize DataTable

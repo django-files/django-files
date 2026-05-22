@@ -1,3 +1,17 @@
+async function fetchPaginated(path, page, count, extraParams = {}) {
+    if (!page) {
+        console.warn('no page', page)
+        return {}
+    }
+    const url = new URL(`${globalThis.location.origin}${path}${page}/${count}/`)
+    const user = new URL(location.href).searchParams.get('user')
+    if (user) url.searchParams.append('user', user)
+    for (const [k, v] of Object.entries(extraParams)) {
+        if (v) url.searchParams.append(k, v)
+    }
+    return (await fetch(url)).json()
+}
+
 /**
  * Fetch Files Paginated
  * @function fetchFiles
@@ -7,57 +21,15 @@
  * @return {Promise<Object>} JSON Response Object
  */
 export async function fetchFiles(page, count = 25, album = null) {
-    let pageURL = new URL(location.href)
-    if (!page) {
-        console.warn('no page', page)
-        return {}
-    }
-    let url = new URL(
-        `${globalThis.location.origin}/api/files/${page}/${count}/`
-    )
-    let user = pageURL.searchParams.get('user')
-    if (album) {
-        url.searchParams.append('album', album)
-    }
-    if (user) {
-        url.searchParams.append('user', user)
-    }
-    const response = await fetch(url)
-    return await response.json()
+    return fetchPaginated('/api/files/', page, count, { album })
 }
 
 export async function fetchAlbums(page, count = 100) {
-    let pageURL = new URL(location.href)
-    if (!page) {
-        console.warn('no page', page)
-        return {}
-    }
-    let url = new URL(
-        `${globalThis.location.origin}/api/albums/${page}/${count}/`
-    )
-    let user = pageURL.searchParams.get('user')
-    if (user) {
-        url.searchParams.append('user', user)
-    }
-    const response = await fetch(url)
-    return await response.json()
+    return fetchPaginated('/api/albums/', page, count)
 }
 
 export async function fetchShorts(page, count = 100) {
-    let pageURL = new URL(location.href)
-    if (!page) {
-        console.warn('no page', page)
-        return {}
-    }
-    let url = new URL(
-        `${globalThis.location.origin}/api/shorts/${page}/${count}/`
-    )
-    let user = pageURL.searchParams.get('user')
-    if (user) {
-        url.searchParams.append('user', user)
-    }
-    const response = await fetch(url)
-    return await response.json()
+    return fetchPaginated('/api/shorts/', page, count)
 }
 
 export async function fetchFile(id) {
