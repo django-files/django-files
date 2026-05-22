@@ -142,13 +142,17 @@ const dataTablesOptions = {
         const startCell = container.find('.dt-layout-start').first()
         const endCell = container.find('.dt-layout-end').first()
 
-        const obsButtonContainer = document.getElementById('obs-button-container')
+        const obsButtonContainer = document.getElementById(
+            'obs-button-container'
+        )
         if (obsButtonContainer) {
             startCell.append(obsButtonContainer)
             obsButtonContainer.classList.remove('d-none')
         }
 
-        const userSelectContainer = document.getElementById('dt-user-select-wrapper')
+        const userSelectContainer = document.getElementById(
+            'dt-user-select-wrapper'
+        )
         if (userSelectContainer) {
             endCell.prepend(userSelectContainer)
             userSelectContainer.classList.remove('d-none')
@@ -156,7 +160,9 @@ const dataTablesOptions = {
 
         requestAnimationFrame(() =>
             requestAnimationFrame(() =>
-                document.getElementById('streams-table-section')?.classList.add('dt-section-ready')
+                document
+                    .getElementById('streams-table-section')
+                    ?.classList.add('dt-section-ready')
             )
         )
     },
@@ -343,7 +349,9 @@ function domContentLoaded() {
 
     $('#stream-delete-confirm').on('click', function () {
         if (!pendingDeleteName) return
-        socket.send(JSON.stringify({ method: 'delete-stream', name: pendingDeleteName }))
+        socket.send(
+            JSON.stringify({ method: 'delete-stream', name: pendingDeleteName })
+        )
         deleteStreamModal.modal('hide')
         pendingDeleteName = null
     })
