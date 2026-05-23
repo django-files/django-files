@@ -103,8 +103,7 @@ def live_view(request, key):
         "subscriber_count": PushInformation.objects.filter(group__name=key).count(),
         "native_app_arg": (
             f"djangofiles://stream/?url={site_url}"
-            f"&name={quote(stream.name)}"
-            + (f"&password={quote(stream.password)}" if stream.password else "")
+            f"&name={quote(stream.name)}" + (f"&password={quote(stream.password)}" if stream.password else "")
         ),
     }
     if is_owner:
@@ -183,13 +182,13 @@ def files_view(request):
             ctx.update({"full_context": True})
         ctx.update({"album": album})
         site_url = site_settings_processor(request)["site_settings"]["site_url"]
-        ctx.update({
-            "native_app_arg": (
-                f"djangofiles://album/?url={site_url}"
-                f"&album_id={album.id}"
-                f"&album_name={quote(album.name)}"
-            )
-        })
+        ctx.update(
+            {
+                "native_app_arg": (
+                    f"djangofiles://album/?url={site_url}" f"&album_id={album.id}" f"&album_name={quote(album.name)}"
+                )
+            }
+        )
         if lock := handle_lock(request, ctx):
             return lock
         session_view = request.session.get(f"view_album_{album.id}", True)
