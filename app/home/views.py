@@ -1,6 +1,6 @@
 import logging
 from fractions import Fraction
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import markdown
 from api.views import auth_from_token, parse_expire, process_file_upload
@@ -93,6 +93,7 @@ def live_view(request, key):
             "display_name": request.user.get_name(),
             "avatar_url": request.user.get_avatar_url(),
         }
+    site_url = site_settings_processor(request)["site_settings"]["site_url"]
     context = {
         "key": key,
         "webpush": {"group": key},
@@ -100,6 +101,10 @@ def live_view(request, key):
         "is_owner": is_owner,
         "chat_user_info": chat_user_info,
         "subscriber_count": PushInformation.objects.filter(group__name=key).count(),
+        "native_app_arg": (
+            f"djangofiles://stream/?url={site_url}"
+            f"&name={quote(stream.name)}" + (f"&password={quote(stream.password)}" if stream.password else "")
+        ),
     }
     if is_owner:
         site_settings = SiteSettings.objects.settings()
@@ -176,6 +181,14 @@ def files_view(request):
         if (request.user.is_authenticated and request.user == album.user) or request.user.is_superuser:
             ctx.update({"full_context": True})
         ctx.update({"album": album})
+        site_url = site_settings_processor(request)["site_settings"]["site_url"]
+        ctx.update(
+            {
+                "native_app_arg": (
+                    f"djangofiles://album/?url={site_url}" f"&album_id={album.id}" f"&album_name={quote(album.name)}"
+                )
+            }
+        )
         if lock := handle_lock(request, ctx):
             return lock
         session_view = request.session.get(f"view_album_{album.id}", True)
@@ -554,7 +567,7 @@ def url_route_view(request, filename):
     View  /u/<path:filename>
     """
     # TODO: Fix Type Hinting on file.exif ?
-    site_settings = SiteSettings.objects.settings()
+    site_url = site_settings_processor(request)["site_settings"]["site_url"]
     code_mimes = [
         "application/json",
         "application/x-perl",
@@ -573,9 +586,9 @@ def url_route_view(request, filename):
         "file_avatar_url": file.user.get_avatar_url(),
         "full_context": request.user.is_authenticated and request.user == file.user,
         "native_app_arg": (
-            f"djangofiles://preview/?url={site_settings.site_url}"
-            f"&file_name={file.name}&file_id={file.id}"
-            f"&file_password={file.password}"
+            f"djangofiles://preview/?url={site_url}"
+            f"&file_name={quote(file.name)}&file_id={file.id}"
+            f"&file_password={quote(file.password)}"
         ),
     }
     if session_view:

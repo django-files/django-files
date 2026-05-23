@@ -14,6 +14,7 @@ urlpatterns = [
     path("shorts/", views.shorts_view, name="shorts"),
     path("shorts/<int:page>/", views.shorts_paginated_view, name="shorts-page"),
     path("shorts/<int:page>/<int:count>/", views.shorts_paginated_view, name="shorts-amount"),
+    path("shorts/delete/", views.shorts_delete_view, name="shorts-delete"),
     path("users/", views.users_view, name="users"),
     path("user/", views.user_view, name="current-user"),
     path("user/<int:user_id>/", views.user_view, name="user"),

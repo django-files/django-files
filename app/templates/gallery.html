@@ -37,7 +37,7 @@
             <h3 class="mb-0"><i class="fa-regular fa-images me-2"></i> {{ album.name }}</h3>
             {% is_mobile_browser request as mobile_browser %}
             {% if mobile_browser %}
-            <a href="djangofiles://album/?url={{ site_settings.site_url }}&album_id={{ album.id }}"
+            <a href="djangofiles://album/?url={{ site_settings.site_url }}&album_id={{ album.id }}&album_name={{ album.name|urlencode }}"
                class="ms-auto link-body-emphasis" title="Open in App">
                 <i class="fa-solid fa-mobile-screen-button fs-4"></i>
             </a>
