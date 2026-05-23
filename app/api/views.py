@@ -37,6 +37,7 @@ from django_redis import get_redis_connection
 from home.models import Albums, Files, FileStats, ShortURLs, Stream
 from home.tasks import (
     clear_files_cache,
+    clear_shorts_cache,
     new_album_websocket,
     send_push_live,
     stream_status_websocket,
@@ -1255,6 +1256,30 @@ def shorts_paginated_view(request, page=1, count=100):
     except ValueError as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["OPTIONS", "DELETE"])
+@auth_from_token
+def shorts_delete_view(request):
+    """
+    View  /api/shorts/delete/
+    """
+    try:
+        data = get_json_body(request)
+        ids = data.get("ids", [])
+        if not ids:
+            return JsonResponse({"error": "No IDs provided"}, status=400)
+        queryset = ShortURLs.objects.filter(id__in=ids)
+        if not request.user.is_superuser:
+            queryset = queryset.filter(user=request.user)
+        count, _ = queryset.delete()
+        if count:
+            clear_shorts_cache.delay()
+        return HttpResponse(count)
+    except Exception as error:
+        log.debug(error)
+        return JsonResponse({"error": f"{error}"}, status=500)
 
 
 @csrf_exempt
