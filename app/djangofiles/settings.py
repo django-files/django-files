@@ -166,11 +166,13 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [{
-                "host": config("CHANNELS_REDIS_HOST", "redis"),
-                "port": config("CHANNELS_REDIS_PORT", 6379, int),
-                "socket_timeout": None,
-            }],
+            "hosts": [
+                {
+                    "host": config("CHANNELS_REDIS_HOST", "redis"),
+                    "port": config("CHANNELS_REDIS_PORT", 6379, int),
+                    "socket_timeout": None,
+                }
+            ],
         },
     },
 }
