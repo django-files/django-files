@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@v6
 
       - name: "Debug event.json"
         if: ${{ !cancelled() }}
@@ -41,7 +41,7 @@ jobs:
           cat "${GITHUB_EVENT_PATH}"
 
       - name: "Setup Python 3.12"
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -60,8 +60,8 @@ jobs:
         run: |
           uv pip freeze
 
-      - name: "Setup Node 24"
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - name: "Setup Node"
+        uses: actions/setup-node@v6
         with:
           node-version: 24
 

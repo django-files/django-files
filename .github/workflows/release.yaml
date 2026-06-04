@@ -16,7 +16,7 @@ jobs:
       - name: "Update Tags"
         id: tags
         continue-on-error: true
-        uses: cssnr/update-version-tags-action@v1
+        uses: cssnr/update-version-tags-action@v2
         with:
           dry_run: true
           tags: latest
@@ -34,7 +34,7 @@ jobs:
 
       - name: "Package Changelog Action"
         continue-on-error: true
-        uses: cssnr/package-changelog-action@v1
+        uses: cssnr/package-changelog-action@v2
 
       - name: "Send Failure Notification"
         if: ${{ failure() }}
