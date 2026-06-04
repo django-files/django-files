@@ -23,15 +23,21 @@ jobs:
         uses: actions/checkout@v6
 
       - name: "Debug event.json"
-        if: ${{ !cancelled() }}
         continue-on-error: true
-        run: |
-          cat "${GITHUB_EVENT_PATH}"
+        run: cat "${GITHUB_EVENT_PATH}"
+      - name: "Debug CTX github"
+        continue-on-error: true
+        env:
+          GITHUB_CTX: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CTX"
+      - name: "Debug Environment"
+        continue-on-error: true
+        run: env
 
-      - name: "Setup Python 3.12"
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
+      #- name: "Setup Python 3.12"
+      #  uses: actions/setup-python@v6
+      #  with:
+      #    python-version: "3.12"
 
       - name: "Install UV"
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
@@ -47,6 +53,7 @@ jobs:
           uv pip install -r app/requirements-dev.txt
 
       - name: "Debug UV"
+        if: ${{ !cancelled() }}
         continue-on-error: true
         run: |
           uv python dir
@@ -94,6 +101,11 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           uv run bandit -c pyproject.toml -r app
+
+      - name: "tombi"
+        if: ${{ !cancelled() }}
+        run: |
+          uv run tombi lint
 
       - name: "prettier"
         if: ${{ !cancelled() }}

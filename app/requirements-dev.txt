@@ -26,6 +26,7 @@ python-magic
 pytimeparse2
 qrcode[pil]
 sentry-sdk
+tombi
 ua-parser
 uvicorn[standard]
 validators
