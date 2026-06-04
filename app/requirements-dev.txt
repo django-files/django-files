@@ -26,7 +26,6 @@ python-magic
 pytimeparse2
 qrcode[pil]
 sentry-sdk
-tombi
 ua-parser
 uvicorn[standard]
 validators
@@ -49,3 +48,5 @@ flake8
 pytest-playwright
 mypy
 ruff
+tombi
+ty

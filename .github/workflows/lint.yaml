@@ -34,11 +34,6 @@ jobs:
         continue-on-error: true
         run: env
 
-      #- name: "Setup Python 3.12"
-      #  uses: actions/setup-python@v6
-      #  with:
-      #    python-version: "3.12"
-
       - name: "Install UV"
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
 
@@ -49,7 +44,6 @@ jobs:
       - name: "Install Project"
         run: |
           uv sync --locked --all-extras --dev
-          #uv pip install --system -r app/requirements-dev.txt
           uv pip install -r app/requirements-dev.txt
 
       - name: "Debug UV"
