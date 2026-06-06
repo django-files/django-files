@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@v6
 
       - name: "Debug"
         run: |
@@ -41,7 +41,7 @@ jobs:
           cat ${{ inputs.COMPOSE_FILE }}
 
       - name: "Checkout Service Configs"
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@v6
         with:
           repository: "hosted-domains/service-configs"
           ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
@@ -57,7 +57,7 @@ jobs:
           echo "STACK_NAME=${{ inputs.STACK_NAME }}" | tee -a "service-configs/${{ inputs.CONFIG_FILE }}"
 
       - name: "Portainer Deploy"
-        uses: cssnr/portainer-stack-deploy-action@v1
+        uses: cssnr/portainer-stack-deploy-action@v2
         with:
           url: ${{ secrets.PORTAINER_URL }}
           token: ${{ secrets.PORTAINER_TOKEN }}

@@ -48,3 +48,5 @@ validators
 #pytest-playwright
 #mypy
 #ruff
+#tombi
+#ty

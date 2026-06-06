@@ -1,4 +1,9 @@
-#Bandit
+[project]
+name = "django-files"
+version = "0.0.0"
+requires-python = ">=3.12"
+
+# Bandit
 # https://bandit.readthedocs.io/en/latest/config.html
 [tool.bandit]
 exclude_dirs = ["venv", "app/home/tests.py"]
