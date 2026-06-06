@@ -396,6 +396,9 @@ function addGalleryVideo(file, top = false) {
 
     // hidden img is the in-flow spacer giving gallery-inner its height; skeleton shimmer sits above it
     const img = imageNode.cloneNode(true)
+    // CORS mode so img and pollVideoThumb's fetch share one HTTP cache entry,
+    // avoiding a second download when img.src is set after the poll succeeds.
+    img.crossOrigin = 'anonymous'
     img.width = maxThumbSize
     img.height = maxThumbSize
     img.style.visibility = 'hidden'
@@ -408,8 +411,6 @@ function addGalleryVideo(file, top = false) {
     inner.prepend(playBtn, skeleton, link)
 
     if (file.thumb) {
-        // Thumb URL may still serve the raw video while the Celery task runs.
-        // HEAD-poll (no body downloaded) until Content-Type is an image.
         pollVideoThumb(file.thumb, img, skeleton, inner)
     }
 }
