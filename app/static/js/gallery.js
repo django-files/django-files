@@ -328,66 +328,55 @@ function addGalleryImage(file, top = false) {
 }
 
 /**
- * Poll a thumbnail URL with HEAD requests (headers only — no body download)
- * until the server returns an image Content-Type, meaning the Celery thumb
- * task has finished. Then set the visible img src and fade the skeleton out.
- * Falls back to a static icon after exhausting retries.
+ * Poll a thumbnail URL until the server returns an image Content-Type,
+ * meaning the Celery thumb task has finished. Then set the visible img src
+ * and fade the skeleton out. Falls back to a static icon after exhausting
+ * retries.
  */
-function pollVideoThumb(src, img, skeleton, inner, retries = 10, delay = 3000) {
-    fetch(src, { method: 'HEAD' })
-        .then((res) => {
-            if (
-                res.ok &&
-                res.headers.get('Content-Type')?.startsWith('image/')
-            ) {
-                img.onload = () => {
-                    img.style.visibility = ''
-                    skeleton.style.transition = 'opacity 0.3s'
-                    skeleton.style.opacity = '0'
-                    skeleton.addEventListener(
-                        'transitionend',
-                        () => skeleton.remove(),
-                        { once: true }
-                    )
+function pollVideoThumb(src, img, skeleton, inner, retries = 10, delay = 1000) {
+    const maxDelay = 30000
+    const retry = () => {
+        if (retries > 0) {
+            pollVideoThumb(
+                src,
+                img,
+                skeleton,
+                inner,
+                retries - 1,
+                Math.min(delay * 2, maxDelay)
+            )
+        } else {
+            skeleton.remove()
+            const placeholder = document.createElement('div')
+            placeholder.className = 'img-error-placeholder'
+            placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
+            inner.appendChild(placeholder)
+        }
+    }
+    setTimeout(() => {
+        fetch(src, { method: 'GET' })
+            .then((res) => {
+                if (
+                    res.ok &&
+                    res.headers.get('Content-Type')?.startsWith('image/')
+                ) {
+                    img.onload = () => {
+                        img.style.visibility = ''
+                        skeleton.style.transition = 'opacity 0.3s'
+                        skeleton.style.opacity = '0'
+                        skeleton.addEventListener(
+                            'transitionend',
+                            () => skeleton.remove(),
+                            { once: true }
+                        )
+                    }
+                    img.src = src
+                } else {
+                    retry()
                 }
-                img.src = src
-            } else if (retries > 0) {
-                setTimeout(
-                    () =>
-                        pollVideoThumb(
-                            src,
-                            img,
-                            skeleton,
-                            inner,
-                            retries - 1,
-                            delay
-                        ),
-                    delay
-                )
-            } else {
-                skeleton.remove()
-                const placeholder = document.createElement('div')
-                placeholder.className = 'img-error-placeholder'
-                placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
-                inner.appendChild(placeholder)
-            }
-        })
-        .catch(() => {
-            if (retries > 0) {
-                setTimeout(
-                    () =>
-                        pollVideoThumb(
-                            src,
-                            img,
-                            skeleton,
-                            inner,
-                            retries - 1,
-                            delay
-                        ),
-                    delay
-                )
-            }
-        })
+            })
+            .catch(retry)
+    }, delay)
 }
 
 function addGalleryVideo(file, top = false) {
