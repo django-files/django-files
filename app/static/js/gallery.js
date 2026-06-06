@@ -354,7 +354,7 @@ function pollVideoThumb(src, img, skeleton, inner, retries = 10, delay = 1000) {
         }
     }
     setTimeout(() => {
-        fetch(src, { method: 'GET' })
+        fetch(src, { method: 'GET', credentials: 'omit' })
             .then((res) => {
                 if (
                     res.ok &&
