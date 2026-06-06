@@ -327,6 +327,30 @@ function addGalleryImage(file, top = false) {
     inner.prepend(skeleton, link)
 }
 
+function fadeOutSkeleton(skeleton) {
+    skeleton.style.transition = 'opacity 0.3s'
+    skeleton.style.opacity = '0'
+    skeleton.addEventListener('transitionend', () => skeleton.remove(), {
+        once: true,
+    })
+}
+
+function revealVideoThumb(src, img, skeleton) {
+    img.onload = () => {
+        img.style.visibility = ''
+        fadeOutSkeleton(skeleton)
+    }
+    img.src = src
+}
+
+function showVideoThumbError(skeleton, inner) {
+    skeleton.remove()
+    const placeholder = document.createElement('div')
+    placeholder.className = 'img-error-placeholder'
+    placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
+    inner.appendChild(placeholder)
+}
+
 /**
  * Poll a thumbnail URL until the server returns an image Content-Type,
  * meaning the Celery thumb task has finished. Then set the visible img src
@@ -346,35 +370,28 @@ function pollVideoThumb(src, img, skeleton, inner, retries = 10, delay = 1000) {
                 Math.min(delay * 2, maxDelay)
             )
         } else {
-            skeleton.remove()
-            const placeholder = document.createElement('div')
-            placeholder.className = 'img-error-placeholder'
-            placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
-            inner.appendChild(placeholder)
+            showVideoThumbError(skeleton, inner)
+        }
+    }
+    const handleResponse = (res) => {
+        if (res.ok && res.headers.get('Content-Type')?.startsWith('image/')) {
+            revealVideoThumb(src, img, skeleton)
+        } else {
+            retry()
         }
     }
     setTimeout(() => {
-        fetch(src, { method: 'GET', credentials: 'omit' })
-            .then((res) => {
-                if (
-                    res.ok &&
-                    res.headers.get('Content-Type')?.startsWith('image/')
-                ) {
-                    img.onload = () => {
-                        img.style.visibility = ''
-                        skeleton.style.transition = 'opacity 0.3s'
-                        skeleton.style.opacity = '0'
-                        skeleton.addEventListener(
-                            'transitionend',
-                            () => skeleton.remove(),
-                            { once: true }
-                        )
-                    }
-                    img.src = src
-                } else {
-                    retry()
-                }
-            })
+        // Accept header is set to match what an <img> element sends, so the
+        // browser's cache treats this fetch and the subsequent img.src as the
+        // same entry (some caches/CDNs vary on Accept).
+        fetch(src, {
+            method: 'GET',
+            credentials: 'omit',
+            headers: {
+                Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+            },
+        })
+            .then(handleResponse)
             .catch(retry)
     }, delay)
 }
