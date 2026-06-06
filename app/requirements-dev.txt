@@ -48,3 +48,5 @@ flake8
 pytest-playwright
 mypy
 ruff
+tombi
+ty

@@ -17,52 +17,53 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: "Checkout"
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@v6 # v6.0.2
 
       - name: "NPM Outdated Action"
         continue-on-error: true
-        uses: cssnr/npm-outdated-action@master
+        uses: cssnr/npm-outdated-action@v2
         with:
+          update: false
           exclude: "tsparticles"
 
-  chat-gpt:
-    name: "Chat GPT"
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: "Get Commit Action"
-        id: commit
-        continue-on-error: true
-        uses: cssnr/get-commit-action@master
-        with:
-          sha: ${{ github.event.pull_request.head.sha }}
-          selector: "commit.message"
-
-      - name: "Debug Commit Message"
-        continue-on-error: true
-        env:
-          COMMIT_MESSAGE: ${{ steps.commit.outputs.result }}
-        run: |
-          echo "COMMIT_MESSAGE: ${COMMIT_MESSAGE}"
-          echo "${COMMIT_MESSAGE}" | od -c
-
-      - name: "ChatGPT CodeReview"
-        if: ${{ contains(steps.commit.outputs.result, '#gpt') }}
-        continue-on-error: true
-        uses: anc95/ChatGPT-CodeReview@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          LANGUAGE: English
-          OPENAI_API_ENDPOINT: https://api.openai.com/v1
-          MODEL: gpt-4o-mini
-          PROMPT: >-
-            Check the following code diff for errors and/or improvements. Please
-            focus on simple, quality responses. Only provide suggestions for things
-            that are fully understood and do not make recommendations based on assumptions!
-          top_p: 1
-          temperature: 1
-          max_tokens: 10000
-          MAX_PATCH_LENGTH: 10000
-          IGNORE_PATTERNS: "/app/static/dist/**,**/migrations/**"
-          #INCLUDE_PATTERNS: "**/*.py,**/*.js,**/*.css,*.yaml"
+  #chat-gpt:
+  #  name: "Chat GPT"
+  #  runs-on: ubuntu-latest
+  #  timeout-minutes: 5
+  #  steps:
+  #    - name: "Get Commit Action"
+  #      id: commit
+  #      continue-on-error: true
+  #      uses: cssnr/get-commit-action@master
+  #      with:
+  #        sha: ${{ github.event.pull_request.head.sha }}
+  #        selector: "commit.message"
+  #
+  #    - name: "Debug Commit Message"
+  #      continue-on-error: true
+  #      env:
+  #        COMMIT_MESSAGE: ${{ steps.commit.outputs.result }}
+  #      run: |
+  #        echo "COMMIT_MESSAGE: ${COMMIT_MESSAGE}"
+  #        echo "${COMMIT_MESSAGE}" | od -c
+  #
+  #    - name: "ChatGPT CodeReview"
+  #      if: ${{ contains(steps.commit.outputs.result, '#gpt') }}
+  #      continue-on-error: true
+  #      uses: anc95/ChatGPT-CodeReview@main
+  #      env:
+  #        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  #        LANGUAGE: English
+  #        OPENAI_API_ENDPOINT: https://api.openai.com/v1
+  #        MODEL: gpt-4o-mini
+  #        PROMPT: >-
+  #          Check the following code diff for errors and/or improvements. Please
+  #          focus on simple, quality responses. Only provide suggestions for things
+  #          that are fully understood and do not make recommendations based on assumptions!
+  #        top_p: 1
+  #        temperature: 1
+  #        max_tokens: 10000
+  #        MAX_PATCH_LENGTH: 10000
+  #        IGNORE_PATTERNS: "/app/static/dist/**,**/migrations/**"
+  #        #INCLUDE_PATTERNS: "**/*.py,**/*.js,**/*.css,*.yaml"

@@ -48,3 +48,5 @@ Werkzeug
 # pytest-playwright
 #mypy
 #ruff
+#tombi
+#ty
