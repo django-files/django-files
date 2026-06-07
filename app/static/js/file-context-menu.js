@@ -39,7 +39,9 @@ $('#modal-expire-form').on('submit', function (event) {
     socket.send(JSON.stringify(data))
     fileExpireModal.modal('hide')
     data.pks.forEach((pk) => {
-        $(`.ctx-menu[data-id="${pk}"] input[name=current-file-expiration]`).val(data.expr)
+        $(`.ctx-menu[data-id="${pk}"] input[name=current-file-expiration]`).val(
+            data.expr
+        )
     })
 })
 
@@ -94,7 +96,9 @@ $('#modal-rename-form').on('submit', function (event) {
     console.debug('data:', data)
     socket.send(JSON.stringify(data))
     fileRenameModal.modal('hide')
-    $(`.ctx-menu[data-id="${data.pk}"] input[name=current-file-name]`).val(data.name)
+    $(`.ctx-menu[data-id="${data.pk}"] input[name=current-file-name]`).val(
+        data.name
+    )
 })
 
 // albums Form
@@ -117,7 +121,9 @@ export function ctxSetExpire(event) {
     const pks = [pk]
     console.debug(`ctxSetExpire: pks: ${pks}`, event)
     fileExpireModal.find('input[name=pks]').val(pks)
-    const expire = $(`.ctx-menu[data-id="${pk}"] input[name=current-file-expiration]`)
+    const expire = $(
+        `.ctx-menu[data-id="${pk}"] input[name=current-file-expiration]`
+    )
     const expireValue = expire.val().toString().trim()
     console.debug(`expireInput: ${expireValue}`)
     $('#expr').val(expireValue)
@@ -138,7 +144,9 @@ export function ctxSetPassword(event) {
     const pk = getPrimaryKey(event)
     console.debug(`ctxSetPassword: pk: ${pk}`, event)
     filePasswordModal.find('input[name=pk]').val(pk)
-    const input = $(`.ctx-menu[data-id="${pk}"] input[name=current-file-password]`)
+    const input = $(
+        `.ctx-menu[data-id="${pk}"] input[name=current-file-password]`
+    )
     const password = input.val().toString().trim()
     console.debug(`password: ${password}`)
     filePasswordModal.find('input[name=password]').val(password)
@@ -343,7 +351,9 @@ function genData(form, method) {
  */
 function messageFileRename(data) {
     // update hidden name value
-    $(`.ctx-menu[data-id="${data.id}"] input[name=current-file-name]`).val(data.name)
+    $(`.ctx-menu[data-id="${data.id}"] input[name=current-file-name]`).val(
+        data.name
+    )
     // handle fixing clipboard copy link text
     let shareLink = document.querySelector(
         `.ctx-menu[data-id="${data.id}"] .copy-share-link`
@@ -368,7 +378,9 @@ function messageFileRename(data) {
     downloadLink.href = downloadFileURL
     downloadLink.setAttribute('download', data.name)
     //handle view Raw
-    let rawLink = document.querySelector(`.ctx-menu[data-id="${data.id}"] .open-raw`)
+    let rawLink = document.querySelector(
+        `.ctx-menu[data-id="${data.id}"] .open-raw`
+    )
     let rawURL = new URL(rawLink.href)
     rawURL.pathname = data.raw_uri
     rawLink.href = rawURL

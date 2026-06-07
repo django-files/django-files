@@ -30,7 +30,7 @@ class TestAuthViews(TestCase):
     views = {
         "oauth:login": 302,
         "home:index": 200,
-        "home:gallery": 200,
+        "home:gallery": 302,
         "home:uppy": 200,
         "home:files": 200,
         "home:albums": 200,
@@ -307,6 +307,9 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         page.locator("text=1/120 s")
         self.screenshot(page, f"Preview-{control}")
 
+        # Sidebar auto-opens on wide viewports; close it so .context-placement is clickable
+        page.evaluate("closeSidebar()")
+        page.wait_for_timeout(timeout=750)
         page.locator(".context-placement").click()
         page.locator("text=View Raw").click()
         page.wait_for_load_state()

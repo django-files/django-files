@@ -182,7 +182,9 @@
     color: var(--bs-emphasis-color);
     text-decoration: none;
     line-height: 1;
-    transition: background 0.15s, color 0.15s;
+    transition:
+        background 0.15s,
+        color 0.15s;
     opacity: 0.75;
 }
 
