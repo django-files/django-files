@@ -122,16 +122,163 @@
 }
 
 /*
- * dt-toolbar-only: applied to the container-fluid wrapper in gallery / map
- * views. Keeps the DataTables top toolbar (bulk actions, file count, user
- * select) visible so it can be reused above the gallery grid or map, but
- * hides the table itself, its narrow-viewport message, the auto-generated
- * search input, and any bottom info/paging row.
+ * The unified .files-toolbar replaces the DataTables top toolbar. Hide every
+ * layout row that isn't the table itself (dt-layout-table is the row that
+ * contains <table>), plus the narrow-viewport hint and the DT search (belt
+ * and braces — the layout-row rule should already cover it).
  */
-.dt-toolbar-only .files-table-narrow-msg,
-.dt-toolbar-only .dt-container > .dt-layout-row:not(:first-child),
-.dt-toolbar-only .dt-container .dt-search {
+#files-table-section .files-table-narrow-msg,
+#files-table-section .dt-container > .dt-layout-row:not(.dt-layout-table),
+#files-table-section .dt-search,
+#files-table-section .dt-info,
+#files-table-section .dt-paging {
     display: none !important;
+}
+
+/* Gallery and map views show the unified toolbar but hide the table itself. */
+[data-files-view='gallery'] #files-table-section,
+[data-files-view='map'] #files-table-section {
+    display: none !important;
+}
+
+/* ---- Unified files toolbar (list / gallery / map) ---- */
+
+.files-toolbar {
+    position: fixed;
+    top: calc(56px + env(safe-area-inset-top, 0px));
+    left: 0;
+    right: 0;
+    z-index: 1020;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.65rem 1rem 0.5rem;
+    margin: 0;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.18);
+    border-bottom: 1px ridge rgba(66 69 73 / 100%);
+}
+
+/* Push list/gallery content past the floating toolbar. Map peeks through. */
+.container-fluid[data-files-view='list'],
+.container-fluid[data-files-view='gallery'] {
+    padding-top: var(--files-toolbar-h, 48px) !important;
+}
+
+.files-toolbar-views {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.files-toolbar-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    color: var(--bs-emphasis-color);
+    text-decoration: none;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+    opacity: 0.75;
+}
+
+.files-toolbar-view:hover,
+.files-toolbar-view:focus-visible {
+    background: rgba(var(--bs-emphasis-color-rgb), 0.08);
+    opacity: 1;
+}
+
+.files-toolbar-view.view-active {
+    background: rgba(var(--bs-primary-rgb), 0.18);
+    color: var(--bs-emphasis-color);
+    opacity: 1;
+    font-weight: 600;
+}
+
+/* Hide labels on narrow screens — icons only */
+@media (width <= 575.98px) {
+    .files-toolbar-view-label {
+        display: none;
+    }
+}
+
+.files-toolbar-search {
+    position: relative;
+    flex: 1 1 14rem;
+    min-width: 8rem;
+    max-width: 22rem;
+}
+
+.files-toolbar-search input[type='search'] {
+    padding-left: 2rem;
+    background: rgba(var(--bs-body-bg-rgb), 0.5);
+}
+
+.files-toolbar-search input[type='search']:focus {
+    background: var(--bs-body-bg);
+}
+
+.files-toolbar-search-icon {
+    position: absolute;
+    left: 0.65rem;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.files-toolbar-filters {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.files-toolbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.files-toolbar-count strong {
+    color: var(--bs-emphasis-color);
+}
+
+/* Slim version chip used on the map view. Floats bottom-left over the map,
+ * leaving the right side free for Leaflet's attribution control. Matches
+ * the toolbar's translucent style. */
+.files-version-strip {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 1020;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.8rem;
+    background: rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-top: 1px ridge rgba(66 69 73 / 100%);
+    border-right: 1px ridge rgba(66 69 73 / 100%);
+}
+
+.files-version-strip a {
+    color: var(--bs-emphasis-color);
+    text-decoration: none;
+    opacity: 0.75;
+}
+
+.files-version-strip a:hover {
+    opacity: 1;
+}
+
+/* Push Leaflet's top controls (zoom, fullscreen) below the floating toolbar
+ * so they aren't clipped. --files-toolbar-h is set by gallery.js. */
+#map-container .leaflet-top {
+    top: var(--files-toolbar-h, 48px);
 }
 
 /*

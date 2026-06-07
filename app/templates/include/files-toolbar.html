@@ -1,0 +1,41 @@
+{% load home_tags %}
+{# Unified toolbar for /files/ — list, gallery, and map views share this chrome. #}
+{# Translucent overlay matches the preview-page chrome (backdrop-blur, glass-feel). #}
+<div class="files-toolbar" id="files-toolbar" data-view="{{ view_mode }}" aria-label="Files toolbar">
+    <nav class="files-toolbar-views" aria-label="Files view">
+        <a class="files-toolbar-view show-list" role="button" data-view="list" title="List" href="{% url 'home:files' %}">
+            <i class="fa-solid fa-list" aria-hidden="true"></i><span class="files-toolbar-view-label">List</span>
+        </a>
+        <a class="files-toolbar-view show-gallery" role="button" data-view="gallery" title="Gallery" href="{% url 'home:files' %}?view=gallery">
+            <i class="fa-regular fa-images" aria-hidden="true"></i><span class="files-toolbar-view-label">Gallery</span>
+        </a>
+        <a class="files-toolbar-view show-map" role="button" data-view="map" title="Map" href="{% url 'home:files' %}?view=map">
+            <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span class="files-toolbar-view-label">Map</span>
+        </a>
+        <a class="files-toolbar-view show-slideshow" role="button" title="Slideshow" href="#offcanvas-bottom" data-bs-toggle="offcanvas" aria-controls="offcanvas-bottom">
+            <i class="fa-solid fa-play" aria-hidden="true"></i><span class="files-toolbar-view-label">Slideshow</span>
+        </a>
+    </nav>
+
+    <div class="files-toolbar-search">
+        <label class="visually-hidden" for="files-toolbar-search-input">Search files</label>
+        <i class="fa-solid fa-magnifying-glass files-toolbar-search-icon" aria-hidden="true"></i>
+        <input type="search" id="files-toolbar-search-input" class="form-control form-control-sm"
+               placeholder="Search files…" autocomplete="off">
+    </div>
+
+    {# Filter slot — additional filters can be appended here without touching layout. #}
+    <div class="files-toolbar-filters" id="files-toolbar-filters">
+        {% if request.user.is_superuser and not album %}
+            {% include 'include/user-select.html' %}
+        {% endif %}
+    </div>
+
+    <div class="files-toolbar-actions">
+        <span class="files-toolbar-count text-body-secondary small text-nowrap" id="dt-file-count-wrapper">
+            <span class="files-toolbar-count-label">Showing</span>
+            <strong id="total-files-count">0</strong>
+        </span>
+        {% include 'files/bulk-menu.html' %}
+    </div>
+</div>

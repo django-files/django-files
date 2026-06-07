@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', domLoaded)
 window.addEventListener('resize', checkSize)
 
 const previewSidebar = $('#preview-sidebar')
-const contextPlacement = $('#contextPlacement')
 const openSidebarButton = $('#openSidebar')
 openSidebarButton.on('click', openSidebarCallback)
 $('#closeSidebar').on('click', closeSidebarCallback)
@@ -152,18 +151,18 @@ function closeSidebarCallback() {
 function openSidebar() {
     sidebarOpen = true
     previewSidebar.addClass('open')
+    getSidebarParent()?.classList.add('sidebar-open')
     if (getSidebarMode() === 'push') {
         getSidebarParent()?.classList.add('sidebar-push-open')
     }
-    contextPlacement.hide()
     openSidebarButton.hide()
 }
 
 function closeSidebar() {
     sidebarOpen = false
     previewSidebar.removeClass('open')
+    getSidebarParent()?.classList.remove('sidebar-open')
     getSidebarParent()?.classList.remove('sidebar-push-open')
-    contextPlacement.show()
     openSidebarButton.show()
 }
 

@@ -97,7 +97,7 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
         </div>
         {% include 'files/ctx-menu.html' with file=file extraclass='dropdown-menu-end' %}
         <div id="preview-sidebar" class="sidebar h-100">
-            <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
+            <a role="button" class="closebtn" id="closeSidebar" title="Hide sidebar"><i class="fa-solid fa-square-caret-right"></i></a>
             <button class="sidebar-context-btn" id="sidebarContext" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="More options">
                 <i class="fa-solid fa-ellipsis"></i>
             </button>

@@ -29,7 +29,6 @@ if (showMap) showMap.onclick = changeView
 
 let params = new URL(document.location.toString()).searchParams
 
-let dtContainer
 let nextPage = 1
 let fileData = []
 let fetchLock = false
@@ -91,26 +90,24 @@ function applyView(view) {
         console.error('gallery.js: no container parent')
         return
     }
-    container.classList.remove('dt-toolbar-only', 'map-view-active')
-    galleryContainer.classList.add('d-none')
-    mapContainer.classList.add('d-none')
-    if (dtContainer) dtContainer.hidden = false
+    // data-files-view drives the CSS that hides the table in gallery/map and
+    // stretches the map container; keep map-view-active for the legacy flex sizing.
+    container.dataset.filesView = view
+    container.classList.toggle('map-view-active', view === 'map')
+    galleryContainer.classList.toggle('d-none', view !== 'gallery')
+    mapContainer.classList.toggle('d-none', view !== 'map')
 
-    showList.style.fontWeight = 'normal'
-    showGallery.style.fontWeight = 'normal'
-    showMap.style.fontWeight = 'normal'
+    const defaultFooter = document.getElementById('files-footer-default')
+    const mapFooter = document.getElementById('files-footer-map')
+    defaultFooter?.classList.toggle('d-none', view === 'map')
+    mapFooter?.classList.toggle('d-none', view !== 'map')
 
-    if (view === 'map') {
-        container.classList.add('dt-toolbar-only', 'map-view-active')
-        mapContainer.classList.remove('d-none')
-        showMap.style.fontWeight = 'bold'
-    } else if (view === 'gallery') {
-        container.classList.add('dt-toolbar-only')
-        galleryContainer.classList.remove('d-none')
-        showGallery.style.fontWeight = 'bold'
-    } else {
-        showList.style.fontWeight = 'bold'
+    for (const link of [showList, showGallery, showMap]) {
+        if (link) link.classList.remove('view-active')
     }
+    const active =
+        view === 'map' ? showMap : view === 'gallery' ? showGallery : showList
+    active?.classList.add('view-active')
 }
 
 function detectInitialView() {
@@ -120,10 +117,38 @@ function detectInitialView() {
     return 'list'
 }
 
+function wireToolbarSearch() {
+    const input = document.getElementById('files-toolbar-search-input')
+    if (!input || !filesDataTable) return
+    let timer
+    input.addEventListener('input', () => {
+        clearTimeout(timer)
+        timer = setTimeout(() => {
+            filesDataTable.search(input.value).draw()
+        }, 200)
+    })
+}
+
+// Keep --files-toolbar-h in sync with the rendered toolbar height so
+// list/gallery padding tracks wraps to two rows on narrow viewports.
+function observeToolbarHeight() {
+    const toolbar = document.getElementById('files-toolbar')
+    const container = toolbar?.parentElement
+    if (!toolbar || !container) return
+    const sync = () =>
+        container.style.setProperty(
+            '--files-toolbar-h',
+            `${toolbar.offsetHeight}px`
+        )
+    sync()
+    new ResizeObserver(sync).observe(toolbar)
+}
+
 async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
-    dtContainer = document.querySelector('.dt-container')
+    wireToolbarSearch()
+    observeToolbarHeight()
 
     const view = detectInitialView()
     applyView(view)

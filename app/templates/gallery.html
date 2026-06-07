@@ -31,9 +31,10 @@
 
 {% block body %}
 
-    <div class="container-fluid pb-3 pt-2 px-4">
+    <div class="container-fluid pb-3 pt-2 px-4" data-files-view="{{ view_mode }}">
+        {% include 'include/files-toolbar.html' %}
         {% if album %}
-        <div class="d-flex align-items-center mt-1">
+        <div class="d-flex align-items-center mt-1 mb-2">
             <h3 class="mb-0"><i class="fa-regular fa-images me-2"></i> {{ album.name }}</h3>
             {% is_mobile_browser request as mobile_browser %}
             {% if mobile_browser %}
@@ -44,21 +45,8 @@
             {% endif %}
         </div>
         {% endif %}
-        <nav class="mb-2" aria-label="Files view">
-            <a class="link-body-emphasis show-list" role="button" title="List" data-view="list" href="{% url 'home:files' %}">List</a> |
-            <a class="link-body-emphasis show-gallery" role="button" title="Gallery" data-view="gallery" href="{% url 'home:files' %}?view=gallery">Gallery</a> |
-            <a class="link-body-emphasis show-map" role="button" title="Map" data-view="map" href="{% url 'home:files' %}?view=map">Map</a> |
-            <a class="link-body-emphasis show-slideshow" role="button" title="Slideshow" href="#offcanvas-bottom" data-bs-toggle="offcanvas" aria-controls="offcanvas-bottom">Slideshow</a>
-        </nav>
-        {% if request.user.is_superuser and not album %}
-        {% include 'include/user-select.html' %}
-        {% endif %}
         {% if album and album.info %}<p class="mb-1">{{ album.info }}</p>{% endif %}
         {% if album %}<p class="mb-1">Views: <strong id="views-count">{{ album.view }}</strong></p>{% endif %}
-        <div id="dt-file-count-wrapper" class="d-none ms-auto">
-            <span class="text-muted text-nowrap small">Files Displayed: <strong id="total-files-count">0</strong></span>
-        </div>
-        {% include 'files/bulk-menu.html' %}
         {% include 'files/table.html'%}
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap{% if view_mode != 'gallery' %} d-none{% endif %}"></div>
         <div id="map-container" class="d-none"></div>
@@ -77,6 +65,19 @@
         <input class="d-none form-check-input gallery-inner gallery-checkbox gallery-mouse" type="checkbox"></input> <!-- //NOSONAR -->
     </div>
     {% include 'include/albums-slideshow.html' %}
+{% endblock %}
+
+{# Both footers render; gallery.js toggles d-none in applyView so SPA view switches update too. #}
+{% block footer %}
+    <div id="files-footer-default" class="{% if view_mode == 'map' %}d-none{% endif %}">
+        {{ block.super }}
+    </div>
+    <div id="files-footer-map" class="files-version-strip {% if view_mode != 'map' %}d-none{% endif %}" role="contentinfo">
+        <a href="https://github.com/django-files/django-files" target="_blank" rel="noopener">
+            <i class="fab fa-github me-1"></i>Django Files
+            <span class="text-body-secondary ms-1">v{{ 'APP_VERSION'|get_config }}</span>
+        </a>
+    </div>
 {% endblock %}
 
 
