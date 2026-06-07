@@ -311,7 +311,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         page.evaluate("closeSidebar()")
         page.wait_for_timeout(timeout=750)
         page.locator(".context-placement").click()
-        page.locator("text=View Raw").click()
+        page.locator("a.open-raw").first.click()
         page.wait_for_load_state()
         self.screenshot(page, f"Raw-{control}")
 
