@@ -315,7 +315,15 @@ const _fileSkeletonSpecs = [
 export function showTableSkeletons(count = 10) {
     const tbody = document.querySelector('#files-table tbody')
     if (!tbody) return
-    tbody.querySelector('.dataTables_empty')?.closest('tr')?.remove()
+
+    // Remove the default DataTables empty placeholder row, plus any stale
+    // skeleton rows from a previous load cycle, so only the current shimmer
+    // rows remain while new rows are fetched.
+    tbody.querySelectorAll('td.dataTables_empty').forEach((cell) => {
+        cell.closest('tr')?.remove()
+    })
+    tbody.querySelectorAll('.dt-skeleton-row').forEach((el) => el.remove())
+
     buildSkeletonRows(tbody, count, _fileSkeletonSpecs, {
         2: skeletonNameWidths,
     })

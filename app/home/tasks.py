@@ -135,7 +135,9 @@ def _extract_video_metadata(file: Files, strip_gps: bool) -> bool:
                 for chunk in source.chunks():
                     written += len(chunk)
                     if written > settings.VIDEO_THUMB_MAX_BYTES:
-                        raise ValueError(f"Video exceeds {settings.VIDEO_THUMB_MAX_BYTES // (1024 * 1024)} MB size limit during download")
+                        raise ValueError(
+                            f"Video exceeds {settings.VIDEO_THUMB_MAX_BYTES // (1024 * 1024)} MB size limit during download"
+                        )
                     vf.write(chunk)
             tmp_video = vf.name
 

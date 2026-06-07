@@ -134,9 +134,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
         # task is dispatched, preventing a DoesNotExist race on fast workers.
         strip_gps = ctx.get("strip_gps", user.remove_exif_geo)
         pk = file.pk
-        transaction.on_commit(
-            lambda: generate_video_thumb.apply_async(args=[pk], kwargs={"strip_gps": strip_gps})
-        )
+        transaction.on_commit(lambda: generate_video_thumb.apply_async(args=[pk], kwargs={"strip_gps": strip_gps}))
     increment_storage_usage(file)
     new_file_websocket.apply_async(args=[file.pk], priority=0)
     send_discord_message.delay(file.pk)
