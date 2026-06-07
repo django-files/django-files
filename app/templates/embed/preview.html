@@ -60,8 +60,8 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
     {% endif %}
 {% endblock %}
 
-{% block nav1color %}{{ file.user.nav_color_1 }}{% endblock %}
-{% block nav2color %}{{ file.user.nav_color_2 }}{% endblock %}
+{% block nav1color %}{{ file.user.nav_color_1|default:"#130e36" }}{% endblock %}
+{% block nav2color %}{{ file.user.nav_color_2|default:"#1e1c21" }}{% endblock %}
 
 {% block body %}
     <div class="card h-100 border-0 rounded-0">

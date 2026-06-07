@@ -145,7 +145,7 @@
 
 .files-toolbar {
     position: fixed;
-    top: calc(56px + env(safe-area-inset-top, 0px));
+    top: calc(var(--navbar-h, 52px) + env(safe-area-inset-top, 0px));
     left: 0;
     right: 0;
     z-index: 1020;

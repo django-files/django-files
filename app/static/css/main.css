@@ -132,13 +132,34 @@
     }
 }
 
+:root {
+    --navbar-h: 52px;
+}
+
+.navbar {
+    --bs-navbar-padding-y: 0.35rem;
+    background-image: linear-gradient(15deg,
+        var(--nav-color-1, #130e36) 0%,
+        var(--nav-color-2, #1e1c21) 100%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+@supports (background-color: color-mix(in srgb, red 50%, blue)) {
+    .navbar {
+        background-image: linear-gradient(15deg,
+            color-mix(in srgb, var(--nav-color-1, #130e36) 88%, transparent) 0%,
+            color-mix(in srgb, var(--nav-color-2, #1e1c21) 88%, transparent) 100%);
+    }
+}
+
 @supports (padding-top: env(safe-area-inset-top)) {
     body {
-        padding-top: calc(61px + env(safe-area-inset-top));
+        padding-top: calc(var(--navbar-h) + env(safe-area-inset-top));
     }
 
     .navbar {
-        padding-top: max(env(safe-area-inset-top, 0px), 8px);
+        padding-top: max(env(safe-area-inset-top, 0px), 6px);
     }
 
     @media (max-width: 992px) {
