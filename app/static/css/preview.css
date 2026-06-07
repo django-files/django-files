@@ -5,33 +5,28 @@
     width: 360px;
     min-width: 360px;
     height: 100%;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
     overflow: hidden;
-    transition: right 0.5s ease;
+    transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     padding-top: 60px;
     border-top-left-radius: 9px;
     border-bottom-left-radius: 9px;
-    border-top: 1px ridge rgba(66 69 73 / 100%);
-    border-left: 1px ridge rgba(66 69 73 / 100%);
-    border-bottom: 1px ridge rgba(66 69 73 / 100%);
     z-index: 1;
     display: flex;
     flex-direction: column;
-    /* Drop shadow on text for readability over busy preview content,
-     * works in both dark and light themes since sidebar bg stays dark. */
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+    contain: layout style paint;
+    will-change: right;
 }
 
 .sidebar > a {
     padding: 8px 8px 8px 32px;
-    color: #818181;
-    transition: 0.3s;
+    color: var(--bs-secondary-color);
+    transition: color 0.2s ease;
 }
 
 .sidebar > a:hover {
-    color: #f1f1f1;
+    color: var(--bs-body-color);
 }
 
 /* Sidebar header buttons — close, mode toggle, app, context trigger.
@@ -52,18 +47,17 @@
     margin: 0;
     font-size: 18px;
     line-height: 1;
-    color: white;
+    color: currentColor;
     cursor: pointer;
     text-decoration: none;
-    background: rgba(0, 0, 0, 0.18);
+    background: var(--preview-chrome-bg);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    border: 1px ridge rgba(66 69 73 / 100%);
+    border: 1px solid var(--preview-border-color);
     border-radius: 999px;
     opacity: 0.7;
-    transition:
-        opacity 0.2s,
-        background-color 0.2s;
+    transition: all 0.2s ease;
+    will-change: background-color, opacity;
 }
 
 .sidebar .closebtn {
@@ -89,8 +83,8 @@
 .sidebar .sidebar-context-btn:hover,
 .sidebar .sidebar-context-btn[aria-expanded='true'] {
     opacity: 1;
-    color: white;
-    background: rgba(0, 0, 0, 0.32);
+    color: var(--bs-body-color);
+    background: var(--preview-chrome-bg-hover);
 }
 
 /* Floating chrome — both share the toolbar's translucent palette (dark
@@ -105,16 +99,15 @@
     justify-content: center;
     font-size: 18px;
     line-height: 1;
-    color: white;
+    color: currentColor;
     cursor: pointer;
-    background: rgba(0, 0, 0, 0.18);
+    background: var(--preview-chrome-bg);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    border: 1px ridge rgba(66 69 73 / 100%);
+    border: 1px solid var(--preview-border-color);
     opacity: 0.7;
-    transition:
-        opacity 0.2s,
-        background-color 0.2s;
+    transition: all 0.2s ease;
+    will-change: opacity, background-color;
 }
 
 .context-placement {
@@ -157,7 +150,7 @@
 .context-placement:hover,
 .context-placement[aria-expanded='true'] {
     opacity: 1;
-    background: rgba(0, 0, 0, 0.32);
+    background: var(--preview-chrome-bg-hover);
 }
 
 /* Match the sidebar's translucent palette on the file-context dropdown menus
@@ -165,33 +158,31 @@
  * theme-keyed rgba(0 0 0 / 70%) from main.css for the preview chrome only. */
 .file-context-dropdown-menu,
 .fileContextDropdown .dropdown-menu {
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--preview-chrome-bg);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
+    border-color: var(--preview-border-color);
 }
 
 /* The in-sidebar copy sits inside the sidebar's stacking context, so its
  * own backdrop-filter can only see the sidebar bg (not the preview behind).
- * Bump the bg alpha and add a ridge border so it visually matches the
- * blurred look without relying on a filter that won't actually fire. */
+ * Use the sidebar's own background for consistency. */
 .sidebar .file-context-dropdown-menu,
 .sidebar .fileContextDropdown .dropdown-menu {
-    background: rgba(0, 0, 0, 0.65);
-    border: 1px ridge rgba(66 69 73 / 100%);
+    background: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
 }
 
 /* Album badges inside the sidebar — match the chrome palette but keep a
  * touch more opacity so they still read as discrete chips. */
 .sidebar .badge.file-album-active {
-    background: rgba(0, 0, 0, 0.55) !important;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border: 1px ridge rgba(66 69 73 / 100%);
-    color: white;
+    background: var(--bs-secondary-bg) !important;
+    border: 1px solid var(--bs-border-color);
+    color: var(--bs-body-color);
 }
 
 .sidebar .badge.file-album-active a {
-    color: white;
+    color: var(--bs-body-color);
 }
 
 /* Sidebar when open (overlay mode) */
@@ -199,30 +190,15 @@
     right: 0;
 }
 
-.video-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-}
-
-.video-wrapper {
-    position: relative;
-    transition: 0.5s;
-}
-
-.video-js {
-    width: 100%;
-    height: 100%;
-    transition: 0.5s;
-}
-
 .card {
+    position: relative;
     flex: 1 1 auto;
     display: flex;
     align-items: flex-start;
-    /*overflow: hidden; */
     padding: 0;
-    transition: padding-right 0.5s ease;
+    transition: padding-right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: padding-right;
+    contain: layout style paint;
 }
 
 .card.sidebar-push-open {
@@ -236,8 +212,8 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 200px;
     overflow: hidden;
+    contain: layout style paint;
 }
 
 .preview-wrapper .preview {
@@ -250,15 +226,18 @@
 }
 
 .preview {
-    max-height: 100%; /* Adjusted height for the image */
+    max-height: 100%;
     max-width: 100%;
-    object-fit: contain; /* Adjusted to 'contain' */
+    object-fit: contain;
 }
 
 .img-skeleton {
     position: absolute;
     inset: 0;
-    border-radius: 6px;
+    background: var(--bs-tertiary-bg);
+    border-radius: 0;
+    transition: opacity 0.25s ease-out;
+    opacity: 1;
 }
 
 .preview-wrapper .img-error-placeholder {
@@ -269,17 +248,12 @@
     font-size: 8rem;
 }
 
-.link-unstyled,
-.link-unstyled:link,
-.link-unstyled:hover {
-    color: inherit;
-    text-decoration: inherit;
-}
-
 .sidebar-card {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     min-height: 0;
+    contain: layout style;
 }
 
 .map-toggle-btn {
