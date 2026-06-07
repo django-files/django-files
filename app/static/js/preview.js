@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', domLoaded)
 window.addEventListener('resize', checkSize)
 
 const previewSidebar = $('#preview-sidebar')
-const contextPlacement = $('#contextPlacement')
 const openSidebarButton = $('#openSidebar')
 openSidebarButton.on('click', openSidebarCallback)
 $('#closeSidebar').on('click', closeSidebarCallback)
@@ -152,11 +151,9 @@ function closeSidebarCallback() {
 function openSidebar() {
     sidebarOpen = true
     previewSidebar.addClass('open')
+    getSidebarParent()?.classList.add('sidebar-open')
     if (getSidebarMode() === 'push') {
         getSidebarParent()?.classList.add('sidebar-push-open')
-    }
-    if (contextPlacement) {
-        contextPlacement.css('right', '365px')
     }
     openSidebarButton.hide()
 }
@@ -164,10 +161,8 @@ function openSidebar() {
 function closeSidebar() {
     sidebarOpen = false
     previewSidebar.removeClass('open')
+    getSidebarParent()?.classList.remove('sidebar-open')
     getSidebarParent()?.classList.remove('sidebar-push-open')
-    if (contextPlacement) {
-        contextPlacement.css('right', '60px')
-    }
     openSidebarButton.show()
 }
 
@@ -311,7 +306,7 @@ function handleAlbumBadges(data) {
             button.id = `remove-album-${key}`
             button.onclick = removeAlbumPress
             let label = badge.querySelector('.album-badge-label')
-            label.href = `/gallery?album=${key}`
+            label.href = `/files/?view=gallery&album=${key}`
             label.innerHTML = value
             badge.classList.remove('d-none')
             container.appendChild(badge)

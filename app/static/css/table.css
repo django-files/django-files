@@ -106,6 +106,34 @@ div.dataTables_wrapper span.select-item {
     overflow: visible;
 }
 
+/* Table row context menu trigger — round pill matching the preview-page chrome
+ * (translucent bg, border, same transition cadence) scaled for inline use. */
+.dt-ctx-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 14px;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid var(--bs-border-color);
+    color: var(--bs-body-color);
+    cursor: pointer;
+    opacity: 0.6;
+    transition:
+        opacity 0.2s,
+        background-color 0.2s;
+}
+
+.dt-ctx-btn:hover,
+.dt-ctx-btn[aria-expanded='true'] {
+    opacity: 1;
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+}
+
 #files-table .dj-file-link {
     display: flex;
     align-items: center;
@@ -140,10 +168,9 @@ div.dataTables_wrapper span.select-item {
     vertical-align: middle;
 }
 
-/* Allow the toolbar row to wrap onto a second row on narrow viewports */
-[id='files-table_wrapper'] .dt-layout-row {
-    flex-wrap: wrap;
-    row-gap: 0.5rem;
+/* Remove Bootstrap's mt-2 that DT Bootstrap5 integration bakes into the table row class. */
+[id='files-table_wrapper'] .dt-layout-table {
+    margin-top: 0 !important;
 }
 
 /* Shared flex baseline for both toolbar cells */

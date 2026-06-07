@@ -33,6 +33,12 @@ window.addEventListener(
 
 const dataTablesOptions = {
     paging: false,
+    layout: {
+        topStart: null,
+        topEnd: null,
+        bottomStart: null,
+        bottomEnd: null,
+    },
     order: [1, 'desc'],
     responsive: {
         details: false,
@@ -132,7 +138,7 @@ const dataTablesOptions = {
         {
             targets: 10,
             orderable: false,
-            width: '30px',
+            width: '50px',
             responsivePriority: 3,
             render: getContextMenu,
             defaultContent: '',
@@ -150,31 +156,13 @@ const dataTablesOptions = {
         zeroRecords: '',
     },
     initComplete: function () {
-        const container = $(this.api().table().container())
-        const startCell = container.find('.dt-layout-start').first()
-        const endCell = container.find('.dt-layout-end').first()
-
-        const bulkWrapper = document.getElementById('dt-bulk-wrapper')
-        if (bulkWrapper) {
-            startCell.append(bulkWrapper)
-            bulkWrapper.classList.remove('d-none')
-        }
-
-        // Prepend in reverse visual order — each prepend goes to position 0,
-        // so the last prepended element ends up leftmost in the flex end cell.
-        const userSelectWrapper = document.getElementById(
-            'dt-user-select-wrapper'
-        )
-        if (userSelectWrapper) {
-            endCell.prepend(userSelectWrapper)
-            userSelectWrapper.classList.remove('d-none')
-        }
-
+        // Reveal the file-count badge — the unified files-toolbar owns the bulk
+        // menu, user filter, search, and view toggles directly, so nothing needs
+        // to be relocated into DT's built-in layout (it's hidden via CSS).
         const fileCountWrapper = document.getElementById(
             'dt-file-count-wrapper'
         )
         if (fileCountWrapper) {
-            startCell.append(fileCountWrapper)
             fileCountWrapper.classList.remove('d-none')
         }
 

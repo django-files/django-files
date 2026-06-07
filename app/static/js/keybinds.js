@@ -4,7 +4,7 @@ const keyLocations = {
     KeyA: '/uppy/',
     KeyD: '/settings/site/',
     KeyF: '/files/',
-    KeyG: '/gallery/',
+    KeyG: '/files/?view=gallery',
     KeyH: '/',
     KeyR: '/shorts/',
     KeyS: '/settings/user/',

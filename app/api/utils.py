@@ -1,10 +1,49 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Mapping
 
+from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from home.models import Albums, Files, Stream
 from oauth.models import CustomUser
 from settings.context_processors import site_settings_processor
 from webpush.models import PushInformation
+
+
+def _parse_ordering(spec: str, allowed: Mapping[str, str]) -> list:
+    out = []
+    for raw in spec.split(","):
+        raw = raw.strip()
+        if not raw:
+            continue
+        desc = raw.startswith("-")
+        key = raw[1:] if desc else raw
+        if key not in allowed:
+            continue
+        field = allowed[key]
+        out.append(f"-{field}" if desc else field)
+    return out
+
+
+def apply_ordering(
+    queryset: QuerySet,
+    request,
+    allowed: Mapping[str, str],
+    default: str,
+    tiebreaker: str = "-pk",
+) -> QuerySet:
+    """
+    Order a queryset from ?ordering= (DRF's OrderingFilter convention).
+
+    `allowed` maps public ordering keys to model field names (or annotation
+    aliases). `ordering` accepts a comma-separated list; each key may be
+    prefixed with `-` for descending (Django's order_by convention).
+    Unknown keys are dropped; if nothing valid remains, `default` is used.
+    A stable tiebreaker is always appended so pagination is deterministic.
+    """
+    ordering_param = (request.GET.get("ordering") or "").strip()
+    fields = _parse_ordering(ordering_param, allowed) or _parse_ordering(default, allowed)
+    if tiebreaker and tiebreaker not in fields and tiebreaker.lstrip("-") not in fields:
+        fields.append(tiebreaker)
+    return queryset.order_by(*fields)
 
 
 def serialize_user(user: CustomUser) -> Dict[str, Any]:
@@ -58,7 +97,7 @@ def extract_albums(q: Albums.objects):
     for album in q:
         data = model_to_dict(album)
         data["date"] = album.date
-        data["url"] = site_settings["site_url"] + "/gallery?album=" + str(album.id)
+        data["url"] = site_settings["site_url"] + "/files/?view=gallery&album=" + str(album.id)
         albums.append(data)
     return albums
 

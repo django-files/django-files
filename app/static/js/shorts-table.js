@@ -224,6 +224,10 @@ if (document.getElementById('user')) {
         } else {
             url.searchParams.delete('user')
         }
-        location.href = url.href
+        globalThis.history.replaceState({}, null, url.href)
+        shortsDataTable.clear().draw()
+        nextPage = 1
+        fetchLock = false
+        addShortRows()
     })
 }

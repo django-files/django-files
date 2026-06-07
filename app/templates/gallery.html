@@ -27,13 +27,15 @@
     <link rel="stylesheet" href="{% static 'dist/leaflet/leaflet.css' %}">
     <link rel="stylesheet" href="{% static 'css/table.css' %}" />
     <link rel="stylesheet" href="{% static 'css/gallery.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/file-preview-panel.css' %}" />
 {% endblock %}
 
 {% block body %}
 
-    <div class="container-fluid pb-3 pt-2 px-4">
+    <div class="container-fluid pb-3 pt-2" data-files-view="{{ view_mode }}">
+        {% include 'include/files-toolbar.html' %}
         {% if album %}
-        <div class="d-flex align-items-center mt-1">
+        <div class="d-flex align-items-center mt-1 mb-2 px-4">
             <h3 class="mb-0"><i class="fa-regular fa-images me-2"></i> {{ album.name }}</h3>
             {% is_mobile_browser request as mobile_browser %}
             {% if mobile_browser %}
@@ -44,29 +46,11 @@
             {% endif %}
         </div>
         {% endif %}
-        <nav class="mb-2 d-flex align-items-center gap-2" aria-label="Files view">
-            <span>
-                <a class="link-body-emphasis show-list" role="button" title="List" href="{% url 'home:files' %}">List</a> |
-                <a class="link-body-emphasis show-gallery" role="button" title="Gallery" href={% url 'home:gallery' %}>Gallery</a> |
-                <a class="link-body-emphasis show-map" role="button" title="Map" href="{% url 'home:files' %}?view=map">Map</a> |
-                <a class="link-body-emphasis show-slideshow" role="button" title="Slideshow" href="#offcanvas-bottom" data-bs-toggle="offcanvas" aria-controls="offcanvas-bottom">Slideshow</a>
-            </span>
-            <span id="map-file-count" class="d-none ms-auto text-muted small text-nowrap">Files Displayed: <strong id="map-file-count-value">0</strong></span>
-        </nav>
-        {% if request.user.is_superuser and not album %}
-        {% include 'include/user-select.html' %}
-        {% endif %}
-        {% if album and album.info %}<p class="mb-1">{{ album.info }}</p>{% endif %}
-        {% if album %}<p class="mb-1">Views: <strong id="views-count">{{ album.view }}</strong></p>{% endif %}
-        {% if full_context %}
-        <div id="dt-file-count-wrapper" class="d-none ms-auto">
-            <span class="text-muted text-nowrap small">Files Displayed: <strong id="total-files-count">0</strong></span>
-        </div>
-        {% endif %}
-        {% include 'files/bulk-menu.html' %}
-        <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap" {% if 'gallery' in request.path %}{% else %} hidden{% endif%}></div>
-        <div id="map-container" class="d-none"></div>
+        {% if album and album.info %}<p class="mb-1 px-4">{{ album.info }}</p>{% endif %}
+        {% if album %}<p class="mb-1 px-4">Views: <strong id="views-count">{{ album.view }}</strong></p>{% endif %}
         {% include 'files/table.html'%}
+        <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap{% if view_mode != 'gallery' %} d-none{% endif %}"></div>
+        <div id="map-container" class="d-none"></div>
     </div>
 
     {% include 'files/file-upload-modal.html' %}
@@ -82,6 +66,31 @@
         <input class="d-none form-check-input gallery-inner gallery-checkbox gallery-mouse" type="checkbox"></input> <!-- //NOSONAR -->
     </div>
     {% include 'include/albums-slideshow.html' %}
+
+    <div id="file-preview-panel" class="file-preview-panel" aria-hidden="true" role="dialog" aria-modal="true" aria-label="File preview">
+        <button class="file-preview-panel-close" id="previewPanelClose" aria-label="Close preview">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="file-preview-panel-content" id="previewPanelContent">
+            <div class="file-preview-panel-loading">
+                <i class="fa-solid fa-spinner fa-pulse"></i>
+            </div>
+        </div>
+    </div>
+    <div class="file-preview-panel-backdrop" id="previewPanelBackdrop"></div>
+{% endblock %}
+
+{# Both footers render; gallery.js toggles d-none in applyView so SPA view switches update too. #}
+{% block footer %}
+    <div id="files-footer-default" class="{% if view_mode == 'map' %}d-none{% endif %}">
+        {{ block.super }}
+    </div>
+    <div id="files-footer-map" class="files-version-strip {% if view_mode != 'map' %}d-none{% endif %}" role="contentinfo">
+        <a href="https://github.com/django-files/django-files" target="_blank" rel="noopener">
+            <i class="fab fa-github me-1"></i>Django Files
+            <span class="text-body-secondary ms-1">v{{ 'APP_VERSION'|get_config }}</span>
+        </a>
+    </div>
 {% endblock %}
 
 
@@ -90,5 +99,6 @@
     <script type="module" src="{% static 'js/file-context-menu.js' %}"></script>
     <script src="{% static 'dist/leaflet/leaflet.js' %}"></script>
     <script type="module" src="{% static 'js/gallery.js' %}"></script>
+    <script type="module" src="{% static 'js/file-preview-panel.js' %}"></script>
     {% if full_context %}<script type="module" src="{% static 'js/uppy.js' %}"></script>{% endif %}
 {% endblock %}

@@ -1,17 +1,26 @@
 import sys
 
 from api.views import shorten_view, upload_view
-from django.urls import path, re_path
+from django.shortcuts import redirect
+from django.urls import path, re_path, reverse
 from home import views
 
 app_name = "home"
+
+
+def gallery_redirect(request):
+    url = reverse("home:files")
+    params = request.GET.copy()
+    params["view"] = "gallery"
+    return redirect(f"{url}?{params.urlencode()}")
+
 
 urlpatterns = [
     path("", views.home_view, name="index"),
     path("live/<str:key>/", views.live_view, name="live"),
     path("live/<str:key>/manifest.json", views.live_manifest_view, name="live-manifest"),
     path("files/", views.files_view, name="files"),
-    path("gallery/", views.files_view, name="gallery"),
+    path("gallery/", gallery_redirect, name="gallery"),
     path("uppy/", views.uppy_view, name="uppy"),
     path("paste/", views.paste_view, name="paste"),
     path("shorts/", views.shorts_view, name="shorts"),

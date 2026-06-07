@@ -15,22 +15,21 @@ import { fetchFiles } from './api-fetch.js'
 
 import { socket } from './socket.js'
 import { getCtxMenuContainer } from './file-context-menu.js'
+import { openPanel } from './file-preview-panel.js'
 
 const galleryContainer = document.getElementById('gallery-container')
 
 const imageNode = document.querySelector('div.d-none > img')
 
 let showGallery = document.querySelector('.show-gallery')
-showGallery.onclick = changeView
+if (showGallery) showGallery.onclick = changeView
 let showList = document.querySelector('.show-list')
-showList.onclick = changeView
+if (showList) showList.onclick = changeView
 let showMap = document.querySelector('.show-map')
-showMap.onclick = changeView
+if (showMap) showMap.onclick = changeView
 
 let params = new URL(document.location.toString()).searchParams
 
-let dtContainer
-let narrowViewportMsg
 let nextPage = 1
 let fileData = []
 let fetchLock = false
@@ -54,6 +53,13 @@ const tmplCtxToggle = document.querySelector('.d-none .gallery-ctx-toggle')
 const tmplCheckbox = document.querySelector('.d-none .gallery-checkbox')
 
 function setupScrollObserver() {
+    // Map mode has its own dedicated all-pages fetch (fetchAndPlotAllFiles);
+    // the table is hidden, so the sentinel sits in-viewport and would loop infinitely.
+    if (params.get('view') === 'map') {
+        scrollObserver?.disconnect()
+        scrollObserver = null
+        return
+    }
     scrollObserver?.disconnect()
     let sentinel = document.getElementById('load-sentinel')
     if (!sentinel) {
@@ -77,32 +83,114 @@ function setupScrollObserver() {
     scrollObserver.observe(sentinel)
 }
 
+// Intercept gallery card and table link clicks to open the preview panel
+document.addEventListener('click', (e) => {
+    // Gallery view: .image-link anchors
+    const galleryLink = e.target.closest('.image-link')
+    if (galleryLink?.href) {
+        e.preventDefault()
+        openPanel(galleryLink.href)
+        return
+    }
+
+    // List view: .dj-file-link-ref anchors inside the files table
+    const tableLink = e.target.closest('.dj-file-link-ref')
+    if (tableLink?.href && tableLink.closest('#files-table')) {
+        e.preventDefault()
+        openPanel(tableLink.href)
+    }
+})
+
 document.addEventListener('DOMContentLoaded', initGallery)
+
+function applyView(view) {
+    const container = mapContainer.parentElement
+    if (!container) {
+        console.error('gallery.js: no container parent')
+        return
+    }
+    // data-files-view drives the CSS that hides the table in gallery/map and
+    // stretches the map container; keep map-view-active for the legacy flex sizing.
+    container.dataset.filesView = view
+    container.classList.toggle('map-view-active', view === 'map')
+    galleryContainer.classList.toggle('d-none', view !== 'gallery')
+    mapContainer.classList.toggle('d-none', view !== 'map')
+
+    const defaultFooter = document.getElementById('files-footer-default')
+    const mapFooter = document.getElementById('files-footer-map')
+    defaultFooter?.classList.toggle('d-none', view === 'map')
+    mapFooter?.classList.toggle('d-none', view !== 'map')
+
+    for (const link of [showList, showGallery, showMap]) {
+        if (link) link.classList.remove('view-active')
+    }
+    let active
+    if (view === 'map') active = showMap
+    else if (view === 'gallery') active = showGallery
+    else active = showList
+    active?.classList.add('view-active')
+}
+
+function detectInitialView() {
+    const v = params.get('view')
+    if (v === 'map') return 'map'
+    if (v === 'gallery') return 'gallery'
+    return 'list'
+}
+
+function wireToolbarSearch() {
+    const input = document.getElementById('files-toolbar-search-input')
+    if (!input || !filesDataTable) return
+    let timer
+    input.addEventListener('input', () => {
+        clearTimeout(timer)
+        timer = setTimeout(() => {
+            filesDataTable.search(input.value).draw()
+        }, 200)
+    })
+}
+
+// Keep --navbar-h in sync with the real navbar height so the files-toolbar
+// sits flush below it with no gap (hardcoded 52px in CSS is just a fallback).
+function syncNavbarHeight() {
+    const navbar = document.querySelector('.navbar')
+    if (!navbar) return
+    const sync = () =>
+        document.documentElement.style.setProperty(
+            '--navbar-h',
+            `${navbar.offsetHeight}px`
+        )
+    sync()
+    new ResizeObserver(sync).observe(navbar)
+}
+
+// Keep --files-toolbar-h in sync with the rendered toolbar height so
+// list/gallery padding tracks wraps to two rows on narrow viewports.
+function observeToolbarHeight() {
+    const toolbar = document.getElementById('files-toolbar')
+    const container = toolbar?.parentElement
+    if (!toolbar || !container) return
+    const sync = () =>
+        container.style.setProperty(
+            '--files-toolbar-h',
+            `${toolbar.offsetHeight}px`
+        )
+    sync()
+    new ResizeObserver(sync).observe(toolbar)
+}
 
 async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
-    dtContainer = document.querySelector('.dt-container')
-    narrowViewportMsg = document.querySelector('.files-table-narrow-msg')
-    if (params.get('view') === 'map') {
-        dtContainer.hidden = true
-        if (narrowViewportMsg) narrowViewportMsg.hidden = true
-        galleryContainer.classList.add('d-none')
-        showMap.style.fontWeight = 'bold'
-        await addNodes()
-        initMapView()
-    } else if (globalThis.location.pathname.includes('gallery')) {
-        dtContainer.hidden = true
-        if (narrowViewportMsg) narrowViewportMsg.hidden = true
-        galleryContainer.classList.remove('d-none')
-        showGallery.style.fontWeight = 'bold'
-        if (mapFileCount) mapFileCount.classList.remove('d-none')
-        await addNodes()
-    } else {
-        galleryContainer.classList.add('d-none')
-        showList.style.fontWeight = 'bold'
-        await addNodes()
-    }
+    wireToolbarSearch()
+    syncNavbarHeight()
+    observeToolbarHeight()
+
+    const view = detectInitialView()
+    applyView(view)
+    await addNodes()
+    if (view === 'map') initMapView()
+
     setupScrollObserver()
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
         document.getElementById('bulk-actions').disabled = false
@@ -119,19 +207,43 @@ async function initGallery() {
     filesDataTable?.columns.adjust().draw()
 }
 
-$('#user').on('change', function (_event) {
-    let user = $(this).val()
-    if (user) {
-        let url = new URL(location.href)
-        url.searchParams.set('user', user)
-        location.href = url.href
+$('#user').on('change', async function (_event) {
+    const userId = $(this).val()
+    if (userId) {
+        params.set('user', userId)
+    } else {
+        params.delete('user')
+    }
+    const newPath = '/files/?' + params
+    globalThis.history.replaceState({}, null, newPath)
+
+    fileData = []
+    nextPage = 1
+    fetchLock = false
+    scrollObserver?.disconnect()
+    hideSkeletons()
+    if (typeof resetSlideshow === 'function') resetSlideshow()
+    galleryContainer.replaceChildren()
+    if (filesDataTable) filesDataTable.clear().draw()
+
+    const view = params.get('view') || 'list'
+    if (view === 'map') {
+        if (galleryLeafletMap) {
+            galleryLeafletMap.remove()
+            galleryLeafletMap = null
+            mapInitialised = false
+        }
+        document.getElementById('map-container').innerHTML = ''
+        initMapView()
+    } else {
+        await addNodes()
     }
 })
 
 function showSkeletons() {
     if (!nextPage) return
 
-    if (!globalThis.location.pathname.includes('gallery')) {
+    if (params.get('view') !== 'gallery') {
         showTableSkeletons(40)
         return
     }
@@ -175,18 +287,12 @@ async function addNodes() {
     showSkeletons()
 
     const data = await fetchFiles(nextPage, 50, params.get('album'))
-    console.debug('addNodes data:', data)
     slideshowCallback(data)
     nextPage = data.next
     fileData.push(...data.files)
-    if (globalThis.location.pathname.includes('gallery') && mapFileCountValue) {
-        mapFileCountValue.textContent = fileData.length
-    }
     hideSkeletons()
-    if (window.location.pathname.includes('gallery')) {
+    if (params.get('view') === 'gallery') {
         data.files.forEach((file) => addGalleryFile(file))
-    } else if (!window.location.pathname.includes('files')) {
-        console.error('Unknown View')
     }
     addFileTableRowsBatch(data.files)
     fetchLock = false
@@ -474,7 +580,10 @@ function mouseOver(event) {
 function mouseOut(event) {
     // TODO: Fix mouse out detection when mousing over ctx menu
     if (event.target.closest('a')?.classList.contains('ctx-menu')) return
-    event.currentTarget._mouseEls?.forEach((el) => el.classList.add('d-none'))
+    event.currentTarget._mouseEls?.forEach((el) => {
+        if (el.classList.contains('gallery-checkbox') && el.checked) return
+        el.classList.add('d-none')
+    })
 }
 
 // Yields to the browser between batches so painting is incremental rather than a single blocking call
@@ -497,49 +606,32 @@ function renderGalleryChunked(files, chunkSize = 20, onComplete = null) {
 function changeView(event) {
     event.preventDefault()
     hideSkeletons()
-    const view =
-        event.currentTarget.dataset.view ||
-        event.currentTarget.textContent.trim()
+    const view = event.currentTarget.dataset.view || 'list'
 
-    // Reset all nav weights
-    showList.style.fontWeight = 'normal'
-    showGallery.style.fontWeight = 'normal'
-    showMap.style.fontWeight = 'normal'
-
-    // Hide all view containers
-    galleryContainer.classList.add('d-none')
-    mapContainer.classList.add('d-none')
-    mapContainer.parentElement.classList.remove('map-view-active')
-    if (mapFileCount) mapFileCount.classList.add('d-none')
-    dtContainer.hidden = true
-    if (narrowViewportMsg) narrowViewportMsg.hidden = true
-
-    if (view === 'List') {
+    if (view === 'list') {
         params.delete('view')
-        galleryContainer.replaceChildren()
-        dtContainer.hidden = false
-        if (narrowViewportMsg) narrowViewportMsg.hidden = false
-        globalThis.history.replaceState({}, null, '/files/?' + params)
-        showList.style.fontWeight = 'bold'
-        filesDataTable.responsive.recalc()
-    } else if (view === 'Map') {
-        params.set('view', 'map')
-        globalThis.history.replaceState({}, null, '/files/?' + params)
-        showMap.style.fontWeight = 'bold'
-        initMapView()
-    } else {
-        // Gallery
-        params.delete('view')
+    } else if (view === 'gallery') {
+        params.set('view', 'gallery')
+        // Capture selection so the gallery rebuild preserves checked boxes
         selectedFileIds = []
         filesDataTable.rows('.selected').every(function () {
             selectedFileIds.push(this.data().id)
         })
-        galleryContainer.classList.remove('d-none')
-        globalThis.history.replaceState({}, null, '/gallery/?' + params)
+    } else {
+        params.set('view', view)
+    }
+    const newPath = '/files/?' + params
+
+    applyView(view)
+    globalThis.history.replaceState({}, null, newPath)
+
+    if (view === 'list') {
         galleryContainer.replaceChildren()
-        showGallery.style.fontWeight = 'bold'
-        if (mapFileCount) mapFileCount.classList.remove('d-none')
-        if (mapFileCountValue) mapFileCountValue.textContent = fileData.length
+        filesDataTable.responsive.recalc()
+    } else if (view === 'map') {
+        initMapView()
+    } else {
+        galleryContainer.replaceChildren()
         renderGalleryChunked(fileData, 20, () => {
             if (
                 nextPage &&
@@ -556,7 +648,7 @@ function changeView(event) {
 
 socket?.addEventListener('message', function (event) {
     if (event.data === 'pong') return
-    if (window.location.pathname.includes('gallery')) {
+    if (params.get('view') === 'gallery') {
         let data = JSON.parse(event.data)
         if (data.event === 'file-delete') {
             fileDeleteGallery(data.id)
@@ -628,8 +720,6 @@ function buildImageLabels(file, bottomLeft) {
 }
 
 const mapContainer = document.getElementById('map-container')
-const mapFileCount = document.getElementById('map-file-count')
-const mapFileCountValue = document.getElementById('map-file-count-value')
 let galleryLeafletMap = null
 let mapInitialised = false
 
@@ -681,9 +771,6 @@ function initMapView() {
     const L = globalThis.L
     if (!L) return console.error('Leaflet not loaded')
 
-    mapContainer.classList.remove('d-none')
-    mapContainer.parentElement.classList.add('map-view-active')
-    if (mapFileCount) mapFileCount.classList.remove('d-none')
     requestAnimationFrame(() => {
         if (mapInitialised) {
             galleryLeafletMap.invalidateSize()
@@ -752,8 +839,7 @@ function buildMarkerTooltip(file, coords) {
             </div>
             <strong class="map-tooltip-name">${file.name}</strong>
             <span class="map-tooltip-date">${formatMapDate(file.date)}</span><br>
-            <span class="map-tooltip-gps">${gpsLabel}</span><br>
-            <a href="${file.url}" class="map-tooltip-link">View file →</a>
+            <span class="map-tooltip-gps">${gpsLabel}</span>
         </div>`
 }
 
@@ -781,13 +867,10 @@ async function fetchAndPlotAllFiles(L) {
     let page = 1
     const album = params.get('album')
     const allCoords = []
-    let totalLoaded = 0
 
     while (page) {
         const data = await fetchFiles(page, 100, album)
         page = data.next
-        totalLoaded += data.files.length
-        if (mapFileCountValue) mapFileCountValue.textContent = totalLoaded
 
         for (const file of data.files) {
             const coords = gpsToDecimal(file.exif?.GPSInfo)
@@ -799,15 +882,21 @@ async function fetchAndPlotAllFiles(L) {
                 .addTo(galleryLeafletMap)
                 .bindTooltip(buildMarkerTooltip(file, coords), {
                     direction: 'top',
-                    offset: [0, -8],
+                    offset: [-15, -13],
                 })
                 .on('click', () => {
-                    globalThis.location.href = file.url
+                    openPanel(file.url)
                 })
                 .on('tooltipopen', async (e) => {
-                    const img = e.tooltip
-                        .getElement()
-                        ?.querySelector('img[data-file-id]')
+                    const el = e.tooltip.getElement()
+                    if (!el) return
+                    L.DomEvent.disableClickPropagation(el)
+                    el.style.cursor = 'pointer'
+                    L.DomEvent.on(el, 'click', (e) => {
+                        L.DomEvent.stopPropagation(e)
+                        openPanel(file.url)
+                    })
+                    const img = el.querySelector('img[data-file-id]')
                     if (!img) return
                     const blobUrl = await resolveThumbSrc(file)
                     // Guard: tooltip may have closed before the blob resolved

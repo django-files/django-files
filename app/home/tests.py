@@ -30,7 +30,7 @@ class TestAuthViews(TestCase):
     views = {
         "oauth:login": 302,
         "home:index": 200,
-        "home:gallery": 200,
+        "home:gallery": 302,
         "home:uppy": 200,
         "home:files": 200,
         "home:albums": 200,
@@ -171,7 +171,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 if view == "Gallery":
                     log.debug("GALLERY")
                     page.locator('a[href="/files/"]').first.click()
-                    page.locator('a[href="/gallery/"]').first.click()
+                    page.locator('a[href="/files/?view=gallery"]').first.click()
                 elif view == "Stats":
                     log.debug("STATS")
                     page.locator("#navbarDropdown").first.click()
@@ -307,8 +307,11 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         page.locator("text=1/120 s")
         self.screenshot(page, f"Preview-{control}")
 
+        # Sidebar auto-opens on wide viewports; close it so .context-placement is clickable
+        page.evaluate("closeSidebar()")
+        page.wait_for_timeout(timeout=750)
         page.locator(".context-placement").click()
-        page.locator("text=View Raw").click()
+        page.locator("a.open-raw").first.click()
         page.wait_for_load_state()
         self.screenshot(page, f"Raw-{control}")
 
@@ -379,7 +382,7 @@ class FilesTestCase(TestCase):
         if os.path.isdir(settings.MEDIA_ROOT):
             log.info("Removing: %s", settings.MEDIA_ROOT)
             shutil.rmtree(settings.MEDIA_ROOT)
-        os.mkdir(settings.MEDIA_ROOT)
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 
     def tearDown(self):
         pass

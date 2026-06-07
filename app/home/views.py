@@ -165,7 +165,10 @@ def files_view(request):
     View  /files/ or /gallery/
     """
     album = request.GET.get("album")
-    ctx = {"full_context": False}
+    view_mode = request.GET.get("view", "list")
+    if view_mode not in {"list", "gallery", "map"}:
+        view_mode = "list"
+    ctx = {"full_context": False, "view_mode": view_mode}
     if album:
         try:
             album = int(album)
@@ -568,6 +571,7 @@ def url_route_view(request, filename):
     """
     # TODO: Fix Type Hinting on file.exif ?
     site_url = site_settings_processor(request)["site_settings"]["site_url"]
+    is_panel = bool(request.GET.get("panel"))
     code_mimes = [
         "application/json",
         "application/x-perl",
@@ -600,10 +604,11 @@ def url_route_view(request, filename):
     ctx["gps_lat"] = gps_lat
     ctx["gps_lon"] = gps_lon
     log.debug("ctx: %s", ctx)
+    embed_template = "embed/preview_panel.html" if is_panel else "embed/preview.html"
     if file.mime.startswith("image"):
         log.debug("IMAGE")
         ctx = {**ctx, **handle_image_meta(file.exif)}
-        return render(request, "embed/preview.html", context=ctx)
+        return render(request, embed_template, context=ctx)
     elif file.mime == "text/markdown":
         log.debug("MARKDOWN")
         if use_s3():
@@ -612,14 +617,17 @@ def url_route_view(request, filename):
             with open(file.file.path, "r") as f:
                 md_text = f.read()
         ctx["markdown"] = markdown.markdown(md_text, extensions=["extra", "toc"])
+        if is_panel:
+            ctx["render"] = "markdown"
+            return render(request, embed_template, context=ctx)
         return render(request, "embed/markdown.html", context=ctx)
     elif file.mime.startswith("text/") or file.mime in code_mimes or file.mime in ["application/javascript"]:
         log.debug("CODE")
         ctx["render"] = "code"
-        return render(request, "embed/preview.html", context=ctx)
+        return render(request, embed_template, context=ctx)
     else:
         log.debug("UNKNOWN")
-        return render(request, "embed/preview.html", context=ctx)
+        return render(request, embed_template, context=ctx)
 
 
 @require_http_methods(["GET"])
