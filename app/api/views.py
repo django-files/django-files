@@ -1306,8 +1306,6 @@ def shorts_delete_view(request):
 @csrf_exempt
 @require_http_methods(["OPTIONS", "GET"])
 @auth_from_token
-@cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix="users")
 def users_view(request):
     """
     View  /api/users/

@@ -382,7 +382,7 @@ class FilesTestCase(TestCase):
         if os.path.isdir(settings.MEDIA_ROOT):
             log.info("Removing: %s", settings.MEDIA_ROOT)
             shutil.rmtree(settings.MEDIA_ROOT)
-        os.mkdir(settings.MEDIA_ROOT)
+        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 
     def tearDown(self):
         pass
