@@ -145,9 +145,13 @@ function initPanelImage(container) {
         if (skeleton) {
             skeleton.style.transition = 'opacity 0.3s'
             skeleton.style.opacity = '0'
-            skeleton.addEventListener('transitionend', () => skeleton.remove(), {
-                once: true,
-            })
+            skeleton.addEventListener(
+                'transitionend',
+                () => skeleton.remove(),
+                {
+                    once: true,
+                }
+            )
         }
     }
 
@@ -193,7 +197,8 @@ function initPanelSidebar(container) {
         sidebarOpen = true
         sidebar.classList.add('open')
         card?.classList.add('sidebar-open')
-        if (getSidebarMode() === 'push') card?.classList.add('sidebar-push-open')
+        if (getSidebarMode() === 'push')
+            card?.classList.add('sidebar-push-open')
         if (openBtn) openBtn.style.display = 'none'
     }
 
@@ -226,7 +231,8 @@ function initPanelSidebar(container) {
                 toggleBtn.title = 'Switch to overlay mode'
                 if (sidebarOpen) card?.classList.add('sidebar-push-open')
             } else {
-                toggleBtn.innerHTML = '<i class="fa-solid fa-table-columns"></i>'
+                toggleBtn.innerHTML =
+                    '<i class="fa-solid fa-table-columns"></i>'
                 toggleBtn.title = 'Switch to push mode'
                 card?.classList.remove('sidebar-push-open')
             }
@@ -246,7 +252,10 @@ function initPanelSidebar(container) {
     })
 
     // Auto-open on wider screens unless user explicitly closed it
-    if (window.innerWidth >= 768 && !localStorage.getItem('panelSidebarClosed')) {
+    if (
+        window.innerWidth >= 768 &&
+        !localStorage.getItem('panelSidebarClosed')
+    ) {
         openSidebar()
     }
 }
@@ -266,7 +275,8 @@ async function initCodePreview(root) {
         const existingScript = document.querySelector(
             'script[src*="highlight.min.js"]'
         )
-        const scriptSrc = existingScript?.src || '/static/highlightjs/highlight.min.js'
+        const scriptSrc =
+            existingScript?.src || '/static/highlightjs/highlight.min.js'
         await new Promise((resolve, reject) => {
             const s = document.createElement('script')
             s.src = scriptSrc
