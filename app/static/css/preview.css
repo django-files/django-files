@@ -150,10 +150,7 @@
     height: 38px;
     padding: 0 16px 0 18px;
     border-right: none;
-    border-top-left-radius: 999px;
-    border-bottom-left-radius: 999px;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    border-radius: 999px 0 0 999px;
 }
 
 .openbtn:hover,
