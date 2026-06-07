@@ -335,12 +335,13 @@ function fadeOutSkeleton(skeleton) {
     })
 }
 
-function revealVideoThumb(src, img, skeleton) {
+function revealVideoThumb(objectUrl, img, skeleton) {
     img.onload = () => {
+        URL.revokeObjectURL(objectUrl)
         img.style.visibility = ''
         fadeOutSkeleton(skeleton)
     }
-    img.src = src
+    img.src = objectUrl
 }
 
 function showVideoThumbError(skeleton, inner) {
@@ -373,24 +374,21 @@ function pollVideoThumb(src, img, skeleton, inner, retries = 10, delay = 1000) {
             showVideoThumbError(skeleton, inner)
         }
     }
+    // Use the fetched body as the image source via createObjectURL so the
+    // thumb is rendered from the single fetch — no second network request
+    // when img.src is set, and no dependence on HTTP cache behavior, Vary
+    // headers, or DevTools "Disable cache".
     const handleResponse = (res) => {
-        if (res.ok && res.headers.get('Content-Type')?.startsWith('image/')) {
-            revealVideoThumb(src, img, skeleton)
-        } else {
+        if (!res.ok || !res.headers.get('Content-Type')?.startsWith('image/')) {
             retry()
+            return null
         }
+        return res.blob().then((blob) => {
+            revealVideoThumb(URL.createObjectURL(blob), img, skeleton)
+        })
     }
     setTimeout(() => {
-        // Accept header is set to match what an <img> element sends, so the
-        // browser's cache treats this fetch and the subsequent img.src as the
-        // same entry (some caches/CDNs vary on Accept).
-        fetch(src, {
-            method: 'GET',
-            credentials: 'omit',
-            headers: {
-                Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-            },
-        })
+        fetch(src, { method: 'GET', credentials: 'omit' })
             .then(handleResponse)
             .catch(retry)
     }, delay)
@@ -413,9 +411,6 @@ function addGalleryVideo(file, top = false) {
 
     // hidden img is the in-flow spacer giving gallery-inner its height; skeleton shimmer sits above it
     const img = imageNode.cloneNode(true)
-    // CORS mode so img and pollVideoThumb's fetch share one HTTP cache entry,
-    // avoiding a second download when img.src is set after the poll succeeds.
-    img.crossOrigin = 'anonymous'
     img.width = maxThumbSize
     img.height = maxThumbSize
     img.style.visibility = 'hidden'
