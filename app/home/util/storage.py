@@ -1,7 +1,6 @@
 import logging
 import os
 
-import boto3
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.core.cache import cache
@@ -41,7 +40,7 @@ def file_rename(file, new_file_name: str):
     if file.thumb:
         file.thumb.name = "thumbs/" + new_file_name
     if use_s3():
-        s3 = boto3.resource("s3")
+        s3 = S3Bucket().connection
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_file_name).copy_from(
             CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/{current_file_name}"
         )
@@ -75,7 +74,7 @@ def file_rename(file, new_file_name: str):
 def fetch_file(file):
     # fetches the byte contents for the file, this is only currently used in test
     if use_s3():
-        s3 = boto3.client("s3")
+        s3 = S3Bucket().connection.meta.client
         response = s3.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=file.name)
         file_content = response["Body"].read()
         return file_content

@@ -20,7 +20,6 @@ from django.utils import timezone
 from home.models import Files, FileStats, Stream
 from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
-from home.util.storage import use_s3
 from home.util.video import video_metadata_processor, video_thumbnail_processor
 from oauth.models import CustomUser, DiscordWebhooks
 from packaging import version
@@ -300,11 +299,11 @@ def refresh_gallery_static_urls_cache():
     if acquire_lock(lock_key, 1000):
         try:
             log.info("----- START gallery cache refresh -----")
-            if use_s3:
-                files = Files.objects.filter(mime__in=["image/jpe", "image/jpg", "image/jpeg", "image/webp"])
-                for file in files:
-                    file.get_gallery_url()
-                    file_count += 1
+            # any file that renders in a gallery: an image, or a file with a generated thumb (video/audio)
+            files = Files.objects.filter(Q(mime__startswith="image/") | ~Q(thumb=""))
+            for file in files:
+                file.get_gallery_url()
+                file_count += 1
             log.info("----- COMPLETE gallery cache refresh -----")
         except Exception:
             log.exception("Error populating gallery cache")

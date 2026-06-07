@@ -77,11 +77,10 @@ class Files(models.Model):
         verbose_name = "File"
         verbose_name_plural = "Files"
 
-    def get_url(self, view: bool = False, download: bool = False, expire: int = None, abs_url: str = "") -> str:
+    def get_url(self, view: bool = False, download: bool = False, abs_url: str = "") -> str:
         """Gets a static url to a file object.
         view counts url retrieval as a view
         download makes the static url force download
-        expire overrides the signing expire time for cloud storage urls
         """
         if view:
             Files.objects.filter(pk=self.pk).update(view=F("view") + 1)
@@ -89,38 +88,32 @@ class Files(models.Model):
         if download:
             # check if download url cached, if not serve new one
             if use_s3():
-                if (
-                    download_url := cache.get(
-                        f"file.urlcache.download.{self.pk}",
-                    )
-                ) is None:
+                if (download_url := cache.get(f"file.urlcache.download.{self.pk}")) is None:
                     # TODO: access protected member, look into how to better handle this
                     download_url = self.file.file._storage.url(
                         self.file.file.name,
                         parameters={"ResponseContentDisposition": f"attachment; filename={self.file.file.name}"},
+                        expire=settings.SIGNED_DOWNLOAD_URL_TTL_SECONDS,
                     )
                     cache.set(
-                        f"file.urlcache.download.{self.pk}", download_url, (settings.STATIC_QUERYSTRING_EXPIRE - 60)
+                        f"file.urlcache.download.{self.pk}",
+                        download_url,
+                        settings.SIGNED_DOWNLOAD_URL_TTL_SECONDS - 60,
                     )
                 return download_url
-                # skip cache behavior for local file storage
+            # local file storage: skip cache, signed url is cheap
             url = self.file.url + "?download=true"
             return abs_url + url + self._sign_nginx_url(self.file.url).replace("?", "&")
-        # ######## Custom Expire Generic Static URL (cloud only) ########
-        if expire is not None:
-            # we cant cache this since it will be a custom value
-            # if expire is overridden set expire via url method
-            return self.file.file._storage.url(self.file.file.name, expire=86400)
         # ######## Generic Static URL ########
         if use_s3():
-            # check if generic static url is cached if not generate and cache, honors AWS settings sign expire time
-            if (
-                url := cache.get(
+            if (url := cache.get(f"file.urlcache.raw.{self.pk}")) is None:
+                # TODO: access protected member, look into how to better handle this
+                url = self.file.file._storage.url(self.file.file.name, expire=settings.SIGNED_URL_TTL_SECONDS)
+                cache.set(
                     f"file.urlcache.raw.{self.pk}",
+                    url,
+                    int(settings.SIGNED_URL_TTL_SECONDS * settings.SIGNED_URL_REFRESH_RATIO),
                 )
-            ) is None:
-                url = self.file.url
-                cache.set(f"file.urlcache.raw.{self.pk}", url, (settings.STATIC_QUERYSTRING_EXPIRE - 60))
             return url
         return abs_url + self.file.url + self._sign_nginx_url(self.file.url)
 
@@ -133,29 +126,39 @@ class Files(models.Model):
             if (meta_static_url := cache.get(f"file.urlcache.meta_static.{self.pk}")) is None:
                 # TODO: access protected member, look into how to better handle this
                 try:
-                    meta_static_url = self.file.file._storage.url(self.file.file.name, expire=86400)
+                    meta_static_url = self.file.file._storage.url(
+                        self.file.file.name, expire=settings.SIGNED_META_URL_TTL_SECONDS
+                    )
                 except FileNotFoundError:
                     return ""
-                cache.set(f"file.urlcache.meta_static.{self.pk}", meta_static_url, 10800)
+                cache.set(
+                    f"file.urlcache.meta_static.{self.pk}",
+                    meta_static_url,
+                    int(settings.SIGNED_META_URL_TTL_SECONDS * settings.SIGNED_URL_REFRESH_RATIO),
+                )
             return meta_static_url
         return self.get_url(False)
 
     def get_gallery_url(self, abs_url: str = "") -> str:
         """Generates a static url for use on a gallery page."""
         use = self.thumb if self.thumb else self.file
-        if use_s3():
-            # only want cache for s3
-            # override signing expire on gallery urls to avoid cached gallery pages from failing to load
-            # TODO: access protected member, look into how to better handle this
-            if (gallery_url := cache.get(f"file.urlcache.gallery.{self.pk}")) is None:
-                try:
-                    gallery_url = self.file.file._storage.url(use.file.name, expire=86400)
-                except FileNotFoundError:
-                    return ""
-                # intentionally expire cache before gallery url signing expires
-                cache.set(f"file.urlcache.gallery.{self.pk}", gallery_url, 72000)
-            return gallery_url
-        return abs_url + use.url + self._sign_nginx_url(use.url)
+        # cache the signed url so the browser cache key stays stable across renders;
+        # intentionally expire before the signature does so urls don't 403 mid-page
+        if (gallery_url := cache.get(f"file.urlcache.gallery.{self.pk}")) is None:
+            try:
+                if use_s3():
+                    # TODO: access protected member, look into how to better handle this
+                    gallery_url = self.file.file._storage.url(use.file.name, expire=settings.SIGNED_URL_TTL_SECONDS)
+                else:
+                    gallery_url = use.url + self._sign_nginx_url(use.url)
+            except FileNotFoundError:
+                return ""
+            cache.set(
+                f"file.urlcache.gallery.{self.pk}",
+                gallery_url,
+                int(settings.SIGNED_URL_TTL_SECONDS * settings.SIGNED_URL_REFRESH_RATIO),
+            )
+        return gallery_url if use_s3() else abs_url + gallery_url
 
     def _sign_nginx_url(self, uri: str) -> str:
         if use_s3():
