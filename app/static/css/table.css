@@ -104,6 +104,7 @@ div.dataTables_wrapper span.select-item {
 
 #files-table td.dt-ctx-menu-col {
     overflow: visible;
+    text-align: center;
 }
 
 /* Table row context menu trigger — round pill matching the preview-page chrome

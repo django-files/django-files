@@ -2,6 +2,22 @@
  * File Preview Panel — slide-in overlay for the gallery page
  * ============================================================ */
 
+:root {
+    /* Theme-aware colors for preview chrome */
+    --preview-chrome-bg: rgba(0, 0, 0, 0.12);
+    --preview-chrome-bg-hover: rgba(0, 0, 0, 0.2);
+    --preview-text-color: currentcolor;
+    --preview-border-color: rgba(66, 69, 73, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --preview-chrome-bg: rgba(255, 255, 255, 0.08);
+        --preview-chrome-bg-hover: rgba(255, 255, 255, 0.15);
+        --preview-border-color: rgba(200, 200, 200, 0.2);
+    }
+}
+
 /* ---- Backdrop ---- */
 
 .file-preview-panel-backdrop {
@@ -12,6 +28,7 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
+    contain: paint;
 }
 
 .file-preview-panel-backdrop.active {
@@ -30,8 +47,10 @@
     flex-direction: column;
     overflow: hidden;
     transform: translateY(100%);
-    transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.4);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.25);
+    will-change: transform;
+    contain: layout style paint;
 }
 
 .file-preview-panel.open {
@@ -51,25 +70,25 @@
     margin: 0;
     font-size: 18px;
     line-height: 1;
-    color: white;
+    color: currentcolor;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.18);
+    background: var(--preview-chrome-bg);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    border: 1px ridge rgba(66 69 73 / 100%);
+    border: 1px solid var(--preview-border-color);
     border-radius: 999px;
     opacity: 0.7;
-    transition:
-        opacity 0.2s,
-        background-color 0.2s;
+    transition: all 0.2s ease;
+    will-change: background-color, opacity;
 }
 
-.file-preview-panel-close:hover {
+.file-preview-panel-close:hover,
+.file-preview-panel-close:focus-visible {
     opacity: 1;
-    background: rgba(0, 0, 0, 0.32);
+    background: var(--preview-chrome-bg-hover);
 }
 
 /* ---- Loading / error state ---- */
@@ -83,6 +102,7 @@
     font-size: 2.5rem;
     color: var(--bs-secondary-color);
     gap: 1rem;
+    contain: layout style;
 }
 
 .file-preview-panel-loading p {
@@ -99,6 +119,7 @@
     /* Establish a stacking context so preview-panel children (sidebar, buttons)
        are contained and don't bleed onto the gallery page. */
     isolation: isolate;
+    contain: layout style;
 }
 
 /* ---- Scoped preview styles ---- */
@@ -106,4 +127,5 @@
 .file-preview-panel .card {
     height: 100%;
     overflow: hidden;
+    contain: layout style paint;
 }

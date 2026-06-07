@@ -71,7 +71,7 @@ def home_view(request):
     log.debug("%s - home_view: is_secure: %s", request.method, request.is_secure())
     stats = FileStats.objects.get_request(request)
     shorts = ShortURLs.objects.get_request(request)
-    context = {"stats": stats, "shorts": shorts, "full_context": True}
+    context = {"stats": stats, "shorts": shorts, "full_context": True, "use_simple_bulk_btn": True}
     return render(request, "home.html", context)
 
 

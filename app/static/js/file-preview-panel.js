@@ -23,30 +23,37 @@ export function openPanel(fileUrl) {
     currentFileUrl = fileUrl
     const panelUrl = `${fileUrl}${fileUrl.includes('?') ? '&' : '?'}panel=1`
 
-    panelContent.innerHTML = loadingHtml
+    // 1. Show panel with skeleton immediately (no layout jank)
+    panelContent.innerHTML = `<div class="file-preview-panel-loading" role="status" aria-live="polite"><i class="fa-solid fa-spinner fa-pulse"></i></div>`
     panel.classList.add('open')
     panel.removeAttribute('aria-hidden')
     backdrop.classList.add('active')
     isOpen = true
 
-    // Push preview URL to history so the browser back button closes the panel
+    // 2. Push preview URL to history so the browser back button closes the panel
     const returnUrl = location.href
     history.pushState({ panelOpen: true, returnUrl }, '', fileUrl)
 
+    // 3. Fetch and render main content
     fetch(panelUrl)
         .then((r) => {
             if (!r.ok) throw new Error(`HTTP ${r.status}`)
             return r.text()
         })
         .then((html) => {
+            // Guard: user closed panel or navigated away before fetch completed
             if (!isOpen || currentFileUrl !== fileUrl) return
+
             panelContent.innerHTML = html
             initPanelContent(panelContent)
         })
         .catch((err) => {
             console.error('Preview panel fetch error:', err)
+            // Guard: user closed panel before error state renders
+            if (!isOpen || currentFileUrl !== fileUrl) return
+
             panelContent.innerHTML = `
-                <div class="file-preview-panel-loading text-danger">
+                <div class="file-preview-panel-loading text-danger" role="status">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <p>Failed to load preview.</p>
                     <a href="${fileUrl}" class="btn btn-sm btn-outline-secondary mt-2">Open full page</a>
@@ -119,18 +126,45 @@ function initPanelContent(container) {
 
     const render = root.dataset.render
 
+    // Initialize main content immediately (blocking)
     initPanelImage(container)
-    initPanelSidebar(container)
 
-    if (render === 'text' || render === 'code') {
-        initCodePreview(root)
+    // Initialize secondary features non-blocking (use requestIdleCallback)
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(
+            () => {
+                if (!isOpen) return
+                initPanelSidebar(container)
+
+                if (render === 'text' || render === 'code') {
+                    initCodePreview(root)
+                }
+
+                if (root.dataset.gpsLat && root.dataset.gpsLon) {
+                    initPanelMapToggle(root)
+                }
+
+                initPanelSocket(root)
+            },
+            { timeout: 1000 }
+        )
+    } else {
+        // Fallback for browsers without requestIdleCallback
+        setTimeout(() => {
+            if (!isOpen) return
+            initPanelSidebar(container)
+
+            if (render === 'text' || render === 'code') {
+                initCodePreview(root)
+            }
+
+            if (root.dataset.gpsLat && root.dataset.gpsLon) {
+                initPanelMapToggle(root)
+            }
+
+            initPanelSocket(root)
+        }, 0)
     }
-
-    if (root.dataset.gpsLat && root.dataset.gpsLon) {
-        initPanelMapToggle(root)
-    }
-
-    initPanelSocket(root)
 }
 
 // ---- Image loading ----
@@ -140,18 +174,25 @@ function initPanelImage(container) {
     if (!img) return
     const skeleton = container.querySelector('#img-skeleton')
 
+    // Set image to be invisible initially to prevent layout shift
+    img.style.opacity = '0'
+    img.style.transition = 'opacity 0.25s ease-in-out'
+
     const onLoad = () => {
-        img.style.opacity = '1'
+        // Single unified fade: skeleton fades out, image fades in together
         if (skeleton) {
-            skeleton.style.transition = 'opacity 0.3s'
             skeleton.style.opacity = '0'
-            skeleton.addEventListener(
-                'transitionend',
-                () => skeleton.remove(),
-                {
-                    once: true,
-                }
-            )
+        }
+
+        requestAnimationFrame(() => {
+            img.style.opacity = '1'
+        })
+
+        // Clean up skeleton after transition
+        if (skeleton) {
+            setTimeout(() => {
+                skeleton?.remove()
+            }, 250)
         }
     }
 
