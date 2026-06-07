@@ -51,6 +51,7 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
 {% block head %}
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <style>
+        html, body, main { overflow: hidden; }
         {{ css|safe }}
     </style>
     <link rel="stylesheet" href="{% static 'css/preview.css' %}">

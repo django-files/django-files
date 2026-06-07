@@ -1,0 +1,109 @@
+/* ============================================================
+ * File Preview Panel — slide-in overlay for the gallery page
+ * ============================================================ */
+
+/* ---- Backdrop ---- */
+
+.file-preview-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1039;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.file-preview-panel-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ---- Panel ---- */
+
+.file-preview-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: var(--bs-body-bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(100%);
+    transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.4);
+}
+
+.file-preview-panel.open {
+    transform: translateY(0);
+}
+
+/* ---- Close button (top-left, matching preview chrome style) ---- */
+
+.file-preview-panel-close {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 10;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    margin: 0;
+    font-size: 18px;
+    line-height: 1;
+    color: white;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px ridge rgba(66 69 73 / 100%);
+    border-radius: 999px;
+    opacity: 0.7;
+    transition:
+        opacity 0.2s,
+        background-color 0.2s;
+}
+
+.file-preview-panel-close:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.32);
+}
+
+/* ---- Loading / error state ---- */
+
+.file-preview-panel-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 2.5rem;
+    color: var(--bs-secondary-color);
+    gap: 1rem;
+}
+
+.file-preview-panel-loading p {
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* ---- Content area ---- */
+
+.file-preview-panel-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    /* Establish a stacking context so preview-panel children (sidebar, buttons)
+       are contained and don't bleed onto the gallery page. */
+    isolation: isolate;
+}
+
+/* ---- Scoped preview styles ---- */
+
+.file-preview-panel .card {
+    height: 100%;
+    overflow: hidden;
+}

@@ -199,17 +199,6 @@
     right: 0;
 }
 
-/* Prevent the ~1px subpixel overflow that the nested h-100 chain
-   (html → body → main → .card) can produce on the preview page. Mirrors
-   the body/html overflow clip used by live.css. */
-html,
-body {
-    overflow: hidden;
-}
-
-main {
-    overflow: hidden;
-}
 
 .video-container {
     width: 100%;

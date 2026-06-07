@@ -15,6 +15,7 @@ import { fetchFiles } from './api-fetch.js'
 
 import { socket } from './socket.js'
 import { getCtxMenuContainer } from './file-context-menu.js'
+import { openPanel } from './file-preview-panel.js'
 
 const galleryContainer = document.getElementById('gallery-container')
 
@@ -81,6 +82,24 @@ function setupScrollObserver() {
     )
     scrollObserver.observe(sentinel)
 }
+
+// Intercept gallery card and table link clicks to open the preview panel
+document.addEventListener('click', (e) => {
+    // Gallery view: .image-link anchors
+    const galleryLink = e.target.closest('.image-link')
+    if (galleryLink && galleryLink.href) {
+        e.preventDefault()
+        openPanel(galleryLink.href)
+        return
+    }
+
+    // List view: .dj-file-link-ref anchors inside the files table
+    const tableLink = e.target.closest('.dj-file-link-ref')
+    if (tableLink && tableLink.href && tableLink.closest('#files-table')) {
+        e.preventDefault()
+        openPanel(tableLink.href)
+    }
+})
 
 document.addEventListener('DOMContentLoaded', initGallery)
 
@@ -841,7 +860,7 @@ async function fetchAndPlotAllFiles(L) {
                     offset: [-15, -13],
                 })
                 .on('click', () => {
-                    globalThis.location.href = file.url
+                    openPanel(file.url)
                 })
                 .on('tooltipopen', async (e) => {
                     const el = e.tooltip.getElement()
@@ -850,7 +869,7 @@ async function fetchAndPlotAllFiles(L) {
                     el.style.cursor = 'pointer'
                     L.DomEvent.on(el, 'click', (e) => {
                         L.DomEvent.stopPropagation(e)
-                        globalThis.location.href = file.url
+                        openPanel(file.url)
                     })
                     const img = el.querySelector('img[data-file-id]')
                     if (!img) return
