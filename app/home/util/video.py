@@ -257,11 +257,12 @@ def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
             # unexpectedly large file (e.g. the size field is stale or missing)
             # cannot exhaust /tmp on the worker.
             written = 0
-            for chunk in file.file.chunks():
-                written += len(chunk)
-                if written > max_bytes:
-                    raise ValueError(f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download")
-                vf.write(chunk)
+            with file.file.open("rb") as source:
+                for chunk in source.chunks():
+                    written += len(chunk)
+                    if written > max_bytes:
+                        raise ValueError(f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download")
+                    vf.write(chunk)
             tmp_video = vf.name
 
         with av.open(tmp_video) as container:
