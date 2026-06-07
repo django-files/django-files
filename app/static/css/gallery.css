@@ -128,11 +128,17 @@
  * and braces — the layout-row rule should already cover it).
  */
 #files-table-section .files-table-narrow-msg,
-#files-table-section .dt-container > .dt-layout-row:not(.dt-layout-table),
+#files-table-section .dt-container > *:not(.dt-layout-table),
 #files-table-section .dt-search,
 #files-table-section .dt-info,
-#files-table-section .dt-paging {
+#files-table-section .dt-paging,
+#files-table-section .dt-length {
     display: none !important;
+}
+
+#files-table-section .dt-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 }
 
 /* Gallery and map views show the unified toolbar but hide the table itself. */

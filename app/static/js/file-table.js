@@ -33,6 +33,12 @@ window.addEventListener(
 
 const dataTablesOptions = {
     paging: false,
+    layout: {
+        topStart: null,
+        topEnd: null,
+        bottomStart: null,
+        bottomEnd: null,
+    },
     order: [1, 'desc'],
     responsive: {
         details: false,

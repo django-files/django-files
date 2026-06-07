@@ -168,10 +168,9 @@ div.dataTables_wrapper span.select-item {
     vertical-align: middle;
 }
 
-/* Allow the toolbar row to wrap onto a second row on narrow viewports */
-[id='files-table_wrapper'] .dt-layout-row {
-    flex-wrap: wrap;
-    row-gap: 0.5rem;
+/* Remove Bootstrap's mt-2 that DT Bootstrap5 integration bakes into the table row class. */
+[id='files-table_wrapper'] .dt-layout-table {
+    margin-top: 0 !important;
 }
 
 /* Shared flex baseline for both toolbar cells */
