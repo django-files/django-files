@@ -282,7 +282,7 @@ async function initCodePreview(root) {
         const text = await response.text()
         codeEl.textContent = text
 
-        const theme = document.documentElement.getAttribute('data-bs-theme')
+        const theme = document.documentElement.dataset.bsTheme
         const darkLink = document.querySelector('#panel-code-dark')
         const lightLink = document.querySelector('#panel-code-light')
         if (theme !== 'dark' && darkLink && lightLink) {
@@ -318,8 +318,8 @@ function initPanelMapToggle(root) {
             if (panelLeafletMap) {
                 panelLeafletMap.invalidateSize()
             } else {
-                const lat = parseFloat(mapContainer.dataset.lat)
-                const lon = parseFloat(mapContainer.dataset.lon)
+                const lat = Number.parseFloat(mapContainer.dataset.lat)
+                const lon = Number.parseFloat(mapContainer.dataset.lon)
                 panelLeafletMap = L.map(mapContainer, {
                     zoomControl: false,
                     attributionControl: true,

@@ -8,6 +8,21 @@ from settings.context_processors import site_settings_processor
 from webpush.models import PushInformation
 
 
+def _parse_ordering(spec: str, allowed: Mapping[str, str]) -> list:
+    out = []
+    for raw in spec.split(","):
+        raw = raw.strip()
+        if not raw:
+            continue
+        desc = raw.startswith("-")
+        key = raw[1:] if desc else raw
+        if key not in allowed:
+            continue
+        field = allowed[key]
+        out.append(f"-{field}" if desc else field)
+    return out
+
+
 def apply_ordering(
     queryset: QuerySet,
     request,
@@ -25,22 +40,7 @@ def apply_ordering(
     A stable tiebreaker is always appended so pagination is deterministic.
     """
     ordering_param = (request.GET.get("ordering") or "").strip()
-
-    def parse(spec: str) -> list:
-        out = []
-        for raw in spec.split(","):
-            raw = raw.strip()
-            if not raw:
-                continue
-            desc = raw.startswith("-")
-            key = raw[1:] if desc else raw
-            if key not in allowed:
-                continue
-            field = allowed[key]
-            out.append(f"-{field}" if desc else field)
-        return out
-
-    fields = parse(ordering_param) or parse(default)
+    fields = _parse_ordering(ordering_param, allowed) or _parse_ordering(default, allowed)
     if tiebreaker and tiebreaker not in fields and tiebreaker.lstrip("-") not in fields:
         fields.append(tiebreaker)
     return queryset.order_by(*fields)

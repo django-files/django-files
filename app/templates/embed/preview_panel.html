@@ -23,6 +23,7 @@
     {% elif render == 'video' %}
         <video class="mw-100 ps-2 pe-2 preview" controls>
             <source src="{{ static_url }}" type="video/mp4">
+            <track kind="captions" src="" default>
             Your browser does not support the video tag.
         </video>
     {% elif render == 'audio' %}
@@ -50,7 +51,7 @@
 </div>
 
 <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1 d-none album-badge" id="">
-    <a class="text-reset text-decoration-none p-0 album-badge-label" href=""></a>
+    <a class="text-reset text-decoration-none p-0 album-badge-label" href="" aria-label="Album"></a>
     <button id="remove-album-" class="btn p-0 mt-0 remove-album">
         <i class="fa-solid fa-xmark text-small remove-album"></i>
     </button>

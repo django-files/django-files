@@ -74,6 +74,7 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
         {% elif render == 'video' %}
             <video class="mw-100 ps-2 pe-2 preview" controls>
                 <source src="{{ static_url }}" type="video/mp4">
+                <track kind="captions" src="" default>
                 Your browser does not support the video tag.
             </video>
         {% elif render == 'audio' %}

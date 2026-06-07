@@ -87,7 +87,7 @@ function setupScrollObserver() {
 document.addEventListener('click', (e) => {
     // Gallery view: .image-link anchors
     const galleryLink = e.target.closest('.image-link')
-    if (galleryLink && galleryLink.href) {
+    if (galleryLink?.href) {
         e.preventDefault()
         openPanel(galleryLink.href)
         return
@@ -95,7 +95,7 @@ document.addEventListener('click', (e) => {
 
     // List view: .dj-file-link-ref anchors inside the files table
     const tableLink = e.target.closest('.dj-file-link-ref')
-    if (tableLink && tableLink.href && tableLink.closest('#files-table')) {
+    if (tableLink?.href && tableLink.closest('#files-table')) {
         e.preventDefault()
         openPanel(tableLink.href)
     }
@@ -124,8 +124,10 @@ function applyView(view) {
     for (const link of [showList, showGallery, showMap]) {
         if (link) link.classList.remove('view-active')
     }
-    const active =
-        view === 'map' ? showMap : view === 'gallery' ? showGallery : showList
+    let active
+    if (view === 'map') active = showMap
+    else if (view === 'gallery') active = showGallery
+    else active = showList
     active?.classList.add('view-active')
 }
 
