@@ -1,14 +1,14 @@
 import base64
-import calendar
-import datetime
 import hashlib
+import time
 
 from django.conf import settings
 
 
 def sign_nginx_urls(uri: str) -> str:
-    future = datetime.datetime.now() + datetime.timedelta(seconds=settings.STATIC_QUERYSTRING_EXPIRE)
-    expiry = calendar.timegm(future.timetuple())
+    # nginx interprets $secure_link_expires as a Unix epoch (UTC); use time.time()
+    # so signing matches regardless of the Django process timezone.
+    expiry = int(time.time()) + settings.SIGNED_URL_TTL_SECONDS
     secure_link = "{uri}{expiry} {key}".format(uri=uri, expiry=expiry, key=settings.SECRET_KEY).encode(
         encoding="utf-8"
     )

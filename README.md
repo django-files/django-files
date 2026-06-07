@@ -288,7 +288,10 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 | AWS_ACCESS_KEY_ID         | AWS IAM User Key   | `AKIEAKADFGASDFASGSDAFSDF`                           |
 | AWS_SECRET_ACCESS_KEY     | AWS IAM Secret     | `eVJsrhftrv2fcwyYcy323Sfhe5svy5436r557`              |
 | AWS_STORAGE_BUCKET_NAME   | Name of s3 bucket  | `my-s3-bucket`                                       |
-| STATIC_QUERYSTRING_EXPIRE | static link expire | `300`                                                |
+| SIGNED_URL_TTL_SECONDS          | Gallery/static signed URL TTL (s)   | `14400` |
+| SIGNED_DOWNLOAD_URL_TTL_SECONDS | One-shot download signed URL TTL    | `900`   |
+| SIGNED_META_URL_TTL_SECONDS     | OG/meta signed URL TTL              | `86400` |
+| SIGNED_URL_REFRESH_RATIO        | Cache TTL fraction of signing TTL   | `0.5`   |
 | AWS_S3_CDN_URL            | proxy or cdn url   | `https://examples3cdndomain.com`                     |
 | DUO_API_HOST              | DUO API Host       | `api-abc123.duosecurity.com`                         |
 | DUO_CLIENT_ID             | DUO Client ID      | `nmoNmuLM72WB3RsNkwuv`                               |
