@@ -1,10 +1,49 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Mapping
 
+from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from home.models import Albums, Files, Stream
 from oauth.models import CustomUser
 from settings.context_processors import site_settings_processor
 from webpush.models import PushInformation
+
+
+def apply_ordering(
+    queryset: QuerySet,
+    request,
+    allowed: Mapping[str, str],
+    default: str,
+    tiebreaker: str = "-pk",
+) -> QuerySet:
+    """
+    Order a queryset from ?ordering= (DRF's OrderingFilter convention).
+
+    `allowed` maps public ordering keys to model field names (or annotation
+    aliases). `ordering` accepts a comma-separated list; each key may be
+    prefixed with `-` for descending (Django's order_by convention).
+    Unknown keys are dropped; if nothing valid remains, `default` is used.
+    A stable tiebreaker is always appended so pagination is deterministic.
+    """
+    ordering_param = (request.GET.get("ordering") or "").strip()
+
+    def parse(spec: str) -> list:
+        out = []
+        for raw in spec.split(","):
+            raw = raw.strip()
+            if not raw:
+                continue
+            desc = raw.startswith("-")
+            key = raw[1:] if desc else raw
+            if key not in allowed:
+                continue
+            field = allowed[key]
+            out.append(f"-{field}" if desc else field)
+        return out
+
+    fields = parse(ordering_param) or parse(default)
+    if tiebreaker and tiebreaker not in fields and tiebreaker.lstrip("-") not in fields:
+        fields.append(tiebreaker)
+    return queryset.order_by(*fields)
 
 
 def serialize_user(user: CustomUser) -> Dict[str, Any]:

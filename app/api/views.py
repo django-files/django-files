@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 import validators
 from api.utils import (
+    apply_ordering,
     extract_albums,
     extract_files,
     extract_streams,
@@ -24,7 +25,7 @@ from django.core import serializers
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.signing import TimestampSigner
-from django.db.models import QuerySet
+from django.db.models import Count, QuerySet
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
@@ -475,6 +476,12 @@ def files_view(request, page, count=25):
         return JsonResponse({"error": "Not Authenticated"}, status=401)
     if mime := request.GET.get("mime"):
         q = q.filter(mime__startswith=mime)
+    q = apply_ordering(
+        q,
+        request,
+        allowed={"created": "date", "size": "size", "name": "name"},
+        default="-created",
+    )
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     files = extract_files(page_obj.object_list)
@@ -629,6 +636,14 @@ def albums_view(request, page=None, count=100):
         q = Albums.objects.filtered_request(request)
     else:
         q = Albums.objects.filtered_request(request, user_id=int(user))
+    if (request.GET.get("ordering") or "").lstrip("-") == "files":
+        q = q.annotate(_file_count=Count("files"))
+    q = apply_ordering(
+        q,
+        request,
+        allowed={"created": "date", "name": "name", "files": "_file_count"},
+        default="-created",
+    )
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     albums = extract_albums(page_obj.object_list)
@@ -1247,6 +1262,12 @@ def shorts_paginated_view(request, page=1, count=100):
                 query = ShortURLs.objects.get_request(request)
         else:
             query = ShortURLs.objects.get_request(request)
+        query = apply_ordering(
+            query,
+            request,
+            allowed={"created": "created_at", "name": "short", "views": "views"},
+            default="-created",
+        )
         paginator = Paginator(query, count)
         page_obj = paginator.get_page(page)
         site_settings = site_settings_processor(None)["site_settings"]
@@ -1391,6 +1412,12 @@ def streams_view(request, page=None, count=100):
         q = Stream.objects.all()
     else:
         q = Stream.objects.filter(user_id=int(user))
+    q = apply_ordering(
+        q,
+        request,
+        allowed={"created": "started_at", "name": "name", "views": "unique_views"},
+        default="-created",
+    )
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
     streams = extract_streams(page_obj.object_list, request.user.id)

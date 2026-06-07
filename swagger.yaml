@@ -305,6 +305,22 @@ paths:
           required: true
           schema:
             type: integer
+        - name: ordering
+          in: query
+          description: |
+            Field to order results by. Prefix with `-` for descending.
+            Comma-separate multiple keys for tiebreaking.
+            Defaults to `-created` (newest first).
+          required: false
+          schema:
+            type: string
+            enum:
+              - created
+              - -created
+              - size
+              - -size
+              - name
+              - -name
 
       responses:
         "200":
