@@ -106,6 +106,34 @@ div.dataTables_wrapper span.select-item {
     overflow: visible;
 }
 
+/* Table row context menu trigger — round pill matching the preview-page chrome
+ * (translucent bg, border, same transition cadence) scaled for inline use. */
+.dt-ctx-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 14px;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid var(--bs-border-color);
+    color: var(--bs-body-color);
+    cursor: pointer;
+    opacity: 0.6;
+    transition:
+        opacity 0.2s,
+        background-color 0.2s;
+}
+
+.dt-ctx-btn:hover,
+.dt-ctx-btn[aria-expanded='true'] {
+    opacity: 1;
+    background: var(--bs-secondary-bg);
+    color: var(--bs-body-color);
+}
+
 #files-table .dj-file-link {
     display: flex;
     align-items: center;

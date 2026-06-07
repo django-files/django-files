@@ -150,6 +150,20 @@ function wireToolbarSearch() {
     })
 }
 
+// Keep --navbar-h in sync with the real navbar height so the files-toolbar
+// sits flush below it with no gap (hardcoded 52px in CSS is just a fallback).
+function syncNavbarHeight() {
+    const navbar = document.querySelector('.navbar')
+    if (!navbar) return
+    const sync = () =>
+        document.documentElement.style.setProperty(
+            '--navbar-h',
+            `${navbar.offsetHeight}px`
+        )
+    sync()
+    new ResizeObserver(sync).observe(navbar)
+}
+
 // Keep --files-toolbar-h in sync with the rendered toolbar height so
 // list/gallery padding tracks wraps to two rows on narrow viewports.
 function observeToolbarHeight() {
@@ -169,6 +183,7 @@ async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
     wireToolbarSearch()
+    syncNavbarHeight()
     observeToolbarHeight()
 
     const view = detectInitialView()

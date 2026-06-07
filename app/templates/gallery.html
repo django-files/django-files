@@ -32,10 +32,10 @@
 
 {% block body %}
 
-    <div class="container-fluid pb-3 pt-2 px-4" data-files-view="{{ view_mode }}">
+    <div class="container-fluid pb-3 pt-2" data-files-view="{{ view_mode }}">
         {% include 'include/files-toolbar.html' %}
         {% if album %}
-        <div class="d-flex align-items-center mt-1 mb-2">
+        <div class="d-flex align-items-center mt-1 mb-2 px-4">
             <h3 class="mb-0"><i class="fa-regular fa-images me-2"></i> {{ album.name }}</h3>
             {% is_mobile_browser request as mobile_browser %}
             {% if mobile_browser %}
@@ -46,8 +46,8 @@
             {% endif %}
         </div>
         {% endif %}
-        {% if album and album.info %}<p class="mb-1">{{ album.info }}</p>{% endif %}
-        {% if album %}<p class="mb-1">Views: <strong id="views-count">{{ album.view }}</strong></p>{% endif %}
+        {% if album and album.info %}<p class="mb-1 px-4">{{ album.info }}</p>{% endif %}
+        {% if album %}<p class="mb-1 px-4">Views: <strong id="views-count">{{ album.view }}</strong></p>{% endif %}
         {% include 'files/table.html'%}
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap{% if view_mode != 'gallery' %} d-none{% endif %}"></div>
         <div id="map-container" class="d-none"></div>

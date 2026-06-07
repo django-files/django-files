@@ -285,17 +285,15 @@ export function getCtxMenuContainer(file) {
 export function getContextMenu(data, type, row) {
     // This is only called by Datatables to render the context menu, it uses getCtxMenuContainer
     const ctxMenu = document.createElement('div')
-    const toggle = document.createElement('a')
+    const toggle = document.createElement('button')
     ctxMenu.classList.add('ctx-menu')
-    toggle.classList.add('link-body-emphasis')
-    toggle.setAttribute('role', 'button')
+    toggle.type = 'button'
     toggle.dataset.bsToggle = 'dropdown'
+    toggle.dataset.bsStrategy = 'fixed'
     toggle.setAttribute('aria-expanded', 'false')
-    toggle.setAttribute(
-        'class',
-        'btn btn-secondary file-context-dropdown my-0 py-0'
-    )
-    toggle.innerHTML = '<i class="fa-regular fa-square-caret-down"></i>'
+    toggle.setAttribute('aria-label', 'More options')
+    toggle.className = 'dt-ctx-btn file-context-dropdown'
+    toggle.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>'
     ctxMenu.appendChild(toggle)
 
     const menu = getCtxMenuContainer(row)

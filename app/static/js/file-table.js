@@ -132,7 +132,7 @@ const dataTablesOptions = {
         {
             targets: 10,
             orderable: false,
-            width: '30px',
+            width: '50px',
             responsivePriority: 3,
             render: getContextMenu,
             defaultContent: '',

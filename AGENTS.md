@@ -98,6 +98,7 @@
   - `isort --check .`
   - `bandit -c pyproject.toml -r app`
   - `npm run lint`
+  - ALWAYS RUN FOR CSS AND JS CHANGES: `npx prettier --write app/static/js app/static/css`
 
 ## Test coverage reality
 
