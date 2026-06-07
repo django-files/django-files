@@ -70,6 +70,26 @@ let thumbsSwiper = null
 let imagesSwiper = null
 
 /**
+ * Reset the slideshow buffer and destroy active swiper instances.
+ * Call when the underlying dataset changes (e.g. user filter).
+ */
+// eslint-disable-next-line no-unused-vars
+function resetSlideshow() {
+    bufferedFiles = []
+    if (thumbsSwiper) {
+        thumbsSwiper.destroy(true, true)
+        thumbsSwiper = null
+    }
+    if (imagesSwiper) {
+        imagesSwiper.destroy(true, true)
+        imagesSwiper = null
+    }
+    swiperInitialized = false
+    swiperImages.replaceChildren()
+    swiperThumbs.replaceChildren()
+}
+
+/**
  * Buffer file data for the slideshow.
  * Full-size images are NOT loaded until the slideshow offcanvas is opened.
  * If the slideshow is already open, new slides are appended immediately.

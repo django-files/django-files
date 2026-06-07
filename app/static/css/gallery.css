@@ -385,6 +385,7 @@
 /* Marker tooltip content */
 .map-tooltip {
     min-width: 150px;
+    max-width: 150px;
     line-height: 1.4;
 }
 
@@ -408,6 +409,9 @@
 
 .map-tooltip-name {
     display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     margin-bottom: 0.125rem;
 }
 
@@ -420,6 +424,4 @@
     font-size: 0.8em;
 }
 
-.map-tooltip-link {
-    font-size: 0.85em;
-}
+

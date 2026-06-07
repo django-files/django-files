@@ -171,12 +171,36 @@ async function initGallery() {
     filesDataTable?.columns.adjust().draw()
 }
 
-$('#user').on('change', function (_event) {
-    let user = $(this).val()
-    if (user) {
-        let url = new URL(location.href)
-        url.searchParams.set('user', user)
-        location.href = url.href
+$('#user').on('change', async function (_event) {
+    const userId = $(this).val()
+    if (userId) {
+        params.set('user', userId)
+    } else {
+        params.delete('user')
+    }
+    const newPath = '/files/?' + params
+    globalThis.history.replaceState({}, null, newPath)
+
+    fileData = []
+    nextPage = 1
+    fetchLock = false
+    scrollObserver?.disconnect()
+    hideSkeletons()
+    if (typeof resetSlideshow === 'function') resetSlideshow()
+    galleryContainer.replaceChildren()
+    if (filesDataTable) filesDataTable.clear().draw()
+
+    const view = params.get('view') || 'list'
+    if (view === 'map') {
+        if (galleryLeafletMap) {
+            galleryLeafletMap.remove()
+            galleryLeafletMap = null
+            mapInitialised = false
+        }
+        document.getElementById('map-container').innerHTML = ''
+        initMapView()
+    } else {
+        await addNodes()
     }
 })
 
@@ -512,7 +536,10 @@ function mouseOver(event) {
 function mouseOut(event) {
     // TODO: Fix mouse out detection when mousing over ctx menu
     if (event.target.closest('a')?.classList.contains('ctx-menu')) return
-    event.currentTarget._mouseEls?.forEach((el) => el.classList.add('d-none'))
+    event.currentTarget._mouseEls?.forEach((el) => {
+        if (el.classList.contains('gallery-checkbox') && el.checked) return
+        el.classList.add('d-none')
+    })
 }
 
 // Yields to the browser between batches so painting is incremental rather than a single blocking call
@@ -768,8 +795,7 @@ function buildMarkerTooltip(file, coords) {
             </div>
             <strong class="map-tooltip-name">${file.name}</strong>
             <span class="map-tooltip-date">${formatMapDate(file.date)}</span><br>
-            <span class="map-tooltip-gps">${gpsLabel}</span><br>
-            <a href="${file.url}" class="map-tooltip-link">View file →</a>
+            <span class="map-tooltip-gps">${gpsLabel}</span>
         </div>`
 }
 
@@ -812,15 +838,21 @@ async function fetchAndPlotAllFiles(L) {
                 .addTo(galleryLeafletMap)
                 .bindTooltip(buildMarkerTooltip(file, coords), {
                     direction: 'top',
-                    offset: [0, -8],
+                    offset: [-15, -13],
                 })
                 .on('click', () => {
                     globalThis.location.href = file.url
                 })
                 .on('tooltipopen', async (e) => {
-                    const img = e.tooltip
-                        .getElement()
-                        ?.querySelector('img[data-file-id]')
+                    const el = e.tooltip.getElement()
+                    if (!el) return
+                    L.DomEvent.disableClickPropagation(el)
+                    el.style.cursor = 'pointer'
+                    L.DomEvent.on(el, 'click', (e) => {
+                        L.DomEvent.stopPropagation(e)
+                        globalThis.location.href = file.url
+                    })
+                    const img = el.querySelector('img[data-file-id]')
                     if (!img) return
                     const blobUrl = await resolveThumbSrc(file)
                     // Guard: tooltip may have closed before the blob resolved
