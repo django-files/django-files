@@ -72,11 +72,13 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
                      style="opacity: 0; transition: opacity 0.3s ease;">
             </div>
         {% elif render == 'video' %}
-            <video class="mw-100 ps-2 pe-2 preview" controls>
-                <source src="{{ static_url }}" type="video/mp4">
-                <track kind="captions" src="" default>
-                Your browser does not support the video tag.
-            </video>
+            <div class="preview-wrapper">
+                <video class="preview" controls>
+                    <source src="{{ static_url }}" type="video/mp4">
+                    <track kind="captions" src="" default>
+                    Your browser does not support the video tag.
+                </video>
+            </div>
         {% elif render == 'audio' %}
             <audio class="w-100 pt-3 mt-5" controls>
                 <source src="{{ static_url }}" type="{{ file.mime }}">

@@ -85,7 +85,7 @@ def generate_thumbs(user_pk: int = None, only_missing: bool = True):
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60})
-def generate_video_thumb(pk: int):
+def generate_video_thumb(pk: int, strip_gps: bool = None):
     """
     Generate a thumbnail for a single video file identified by primary key.
 
@@ -99,8 +99,12 @@ def generate_video_thumb(pk: int):
     except Files.DoesNotExist:
         log.warning("generate_video_thumb: pk=%s not found, skipping", pk)
         return
-    if file.thumb:
-        log.info("generate_video_thumb: pk=%s already has thumbnail, skipping", pk)
+
+    if strip_gps is None:
+        strip_gps = bool(getattr(file.user, "remove_exif_geo", False))
+
+    if file.thumb and file.exif and file.meta:
+        log.info("generate_video_thumb: pk=%s already has thumbnail and metadata, skipping", pk)
         return
     if file.size and file.size > max_bytes:
         log.warning(
@@ -110,8 +114,48 @@ def generate_video_thumb(pk: int):
             max_bytes,
         )
         return
-    if not video_thumbnail_processor(file, max_bytes=max_bytes):
-        log.warning("generate_video_thumb: failed to generate thumbnail for pk=%s", pk)
+
+    if not file.thumb:
+        if not video_thumbnail_processor(file, max_bytes=max_bytes):
+            log.warning("generate_video_thumb: failed to generate thumbnail for pk=%s", pk)
+            return
+
+    if not file.exif or not file.meta:
+        _extract_video_metadata(file, strip_gps)
+
+
+def _extract_video_metadata(file: Files, strip_gps: bool) -> bool:
+    """Download the video and extract metadata into the Files record."""
+    suffix = os.path.splitext(os.path.basename(file.name.replace("\\", "/")))[1] or ".mp4"
+    tmp_video = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as vf:
+            written = 0
+            with file.file.open("rb") as source:
+                for chunk in source.chunks():
+                    written += len(chunk)
+                    if written > settings.VIDEO_THUMB_MAX_BYTES:
+                        raise ValueError(
+                            f"Video exceeds {settings.VIDEO_THUMB_MAX_BYTES // (1024 * 1024)} MB size limit during download"
+                        )
+                    vf.write(chunk)
+            tmp_video = vf.name
+
+        exif, meta = video_metadata_processor(tmp_video, strip_gps=strip_gps)
+        file.exif = exif
+        file.meta = meta
+        file.save(update_fields=["exif", "meta"])
+        log.info("_extract_video_metadata: saved metadata for %s", file.name)
+        return True
+    except Exception:
+        log.exception("_extract_video_metadata: failed for %s", file.name)
+        return False
+    finally:
+        if tmp_video:
+            try:
+                os.remove(tmp_video)
+            except OSError:
+                pass
 
 
 def _backfill_single_video(file, max_bytes: int) -> bool:
@@ -121,11 +165,12 @@ def _backfill_single_video(file, max_bytes: int) -> bool:
     try:
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as vf:
             written = 0
-            for chunk in file.file.chunks():
-                written += len(chunk)
-                if written > max_bytes:
-                    raise ValueError(f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download")
-                vf.write(chunk)
+            with file.file.open("rb") as source:
+                for chunk in source.chunks():
+                    written += len(chunk)
+                    if written > max_bytes:
+                        raise ValueError(f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download")
+                    vf.write(chunk)
             tmp_video = vf.name
 
         v_exif, v_meta = video_metadata_processor(tmp_video)
