@@ -138,18 +138,24 @@
 
 .navbar {
     --bs-navbar-padding-y: 0.35rem;
-    background-image: linear-gradient(15deg,
+
+    background-image: linear-gradient(
+        15deg,
         var(--nav-color-1, #130e36) 0%,
-        var(--nav-color-2, #1e1c21) 100%);
+        var(--nav-color-2, #1e1c21) 100%
+    );
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
 }
 
 @supports (background-color: color-mix(in srgb, red 50%, blue)) {
     .navbar {
-        background-image: linear-gradient(15deg,
+        background-image: linear-gradient(
+            15deg,
             color-mix(in srgb, var(--nav-color-1, #130e36) 88%, transparent) 0%,
-            color-mix(in srgb, var(--nav-color-2, #1e1c21) 88%, transparent) 100%);
+            color-mix(in srgb, var(--nav-color-2, #1e1c21) 88%, transparent)
+                100%
+        );
     }
 }
 
