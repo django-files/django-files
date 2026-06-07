@@ -6,7 +6,7 @@
     /* Theme-aware colors for preview chrome */
     --preview-chrome-bg: rgba(0, 0, 0, 0.12);
     --preview-chrome-bg-hover: rgba(0, 0, 0, 0.2);
-    --preview-text-color: currentColor;
+    --preview-text-color: currentcolor;
     --preview-border-color: rgba(66, 69, 73, 0.3);
 }
 
@@ -70,7 +70,7 @@
     margin: 0;
     font-size: 18px;
     line-height: 1;
-    color: currentColor;
+    color: currentcolor;
     cursor: pointer;
     display: inline-flex;
     align-items: center;

@@ -47,7 +47,7 @@
     margin: 0;
     font-size: 18px;
     line-height: 1;
-    color: currentColor;
+    color: currentcolor;
     cursor: pointer;
     text-decoration: none;
     background: var(--preview-chrome-bg);
@@ -99,7 +99,7 @@
     justify-content: center;
     font-size: 18px;
     line-height: 1;
-    color: currentColor;
+    color: currentcolor;
     cursor: pointer;
     background: var(--preview-chrome-bg);
     backdrop-filter: blur(6px);

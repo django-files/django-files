@@ -191,9 +191,7 @@ function initPanelImage(container) {
         // Clean up skeleton after transition
         if (skeleton) {
             setTimeout(() => {
-                if (skeleton && skeleton.parentElement) {
-                    skeleton.remove()
-                }
+                skeleton?.remove()
             }, 250)
         }
     }
