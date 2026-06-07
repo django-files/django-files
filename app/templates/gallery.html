@@ -44,29 +44,24 @@
             {% endif %}
         </div>
         {% endif %}
-        <nav class="mb-2 d-flex align-items-center gap-2" aria-label="Files view">
-            <span>
-                <a class="link-body-emphasis show-list" role="button" title="List" href="{% url 'home:files' %}">List</a> |
-                <a class="link-body-emphasis show-gallery" role="button" title="Gallery" href={% url 'home:gallery' %}>Gallery</a> |
-                <a class="link-body-emphasis show-map" role="button" title="Map" href="{% url 'home:files' %}?view=map">Map</a> |
-                <a class="link-body-emphasis show-slideshow" role="button" title="Slideshow" href="#offcanvas-bottom" data-bs-toggle="offcanvas" aria-controls="offcanvas-bottom">Slideshow</a>
-            </span>
-            <span id="map-file-count" class="d-none ms-auto text-muted small text-nowrap">Files Displayed: <strong id="map-file-count-value">0</strong></span>
+        <nav class="mb-2" aria-label="Files view">
+            <a class="link-body-emphasis show-list" role="button" title="List" data-view="list" href="{% url 'home:files' %}">List</a> |
+            <a class="link-body-emphasis show-gallery" role="button" title="Gallery" data-view="gallery" href="{% url 'home:files' %}?view=gallery">Gallery</a> |
+            <a class="link-body-emphasis show-map" role="button" title="Map" data-view="map" href="{% url 'home:files' %}?view=map">Map</a> |
+            <a class="link-body-emphasis show-slideshow" role="button" title="Slideshow" href="#offcanvas-bottom" data-bs-toggle="offcanvas" aria-controls="offcanvas-bottom">Slideshow</a>
         </nav>
         {% if request.user.is_superuser and not album %}
         {% include 'include/user-select.html' %}
         {% endif %}
         {% if album and album.info %}<p class="mb-1">{{ album.info }}</p>{% endif %}
         {% if album %}<p class="mb-1">Views: <strong id="views-count">{{ album.view }}</strong></p>{% endif %}
-        {% if full_context %}
         <div id="dt-file-count-wrapper" class="d-none ms-auto">
             <span class="text-muted text-nowrap small">Files Displayed: <strong id="total-files-count">0</strong></span>
         </div>
-        {% endif %}
         {% include 'files/bulk-menu.html' %}
-        <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap" {% if 'gallery' in request.path %}{% else %} hidden{% endif%}></div>
-        <div id="map-container" class="d-none"></div>
         {% include 'files/table.html'%}
+        <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap{% if view_mode != 'gallery' %} d-none{% endif %}"></div>
+        <div id="map-container" class="d-none"></div>
     </div>
 
     {% include 'files/file-upload-modal.html' %}

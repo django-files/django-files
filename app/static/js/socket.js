@@ -142,8 +142,8 @@ function messagePrivate(data) {
     console.log('messagePrivate:', data)
     const privateStatus = $(`#file-${data.id} .privateStatus`)
     const previewIcon = $(`#previewIcon`)
-    const ctxPrivateText = $(`#ctx-menu-${data.id} .privateText`)
-    const ctxPrivateIcon = $(`#ctx-menu-${data.id} .privateIcon`)
+    const ctxPrivateText = $(`.ctx-menu[data-id="${data.id}"] .privateText`)
+    const ctxPrivateIcon = $(`.ctx-menu[data-id="${data.id}"] .privateIcon`)
     if (data.private) {
         privateStatus.show()
         previewIcon.show()

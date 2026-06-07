@@ -21,16 +21,15 @@ const galleryContainer = document.getElementById('gallery-container')
 const imageNode = document.querySelector('div.d-none > img')
 
 let showGallery = document.querySelector('.show-gallery')
-showGallery.onclick = changeView
+if (showGallery) showGallery.onclick = changeView
 let showList = document.querySelector('.show-list')
-showList.onclick = changeView
+if (showList) showList.onclick = changeView
 let showMap = document.querySelector('.show-map')
-showMap.onclick = changeView
+if (showMap) showMap.onclick = changeView
 
 let params = new URL(document.location.toString()).searchParams
 
 let dtContainer
-let narrowViewportMsg
 let nextPage = 1
 let fileData = []
 let fetchLock = false
@@ -54,6 +53,13 @@ const tmplCtxToggle = document.querySelector('.d-none .gallery-ctx-toggle')
 const tmplCheckbox = document.querySelector('.d-none .gallery-checkbox')
 
 function setupScrollObserver() {
+    // Map mode has its own dedicated all-pages fetch (fetchAndPlotAllFiles);
+    // the table is hidden, so the sentinel sits in-viewport and would loop infinitely.
+    if (params.get('view') === 'map') {
+        scrollObserver?.disconnect()
+        scrollObserver = null
+        return
+    }
     scrollObserver?.disconnect()
     let sentinel = document.getElementById('load-sentinel')
     if (!sentinel) {
@@ -79,30 +85,51 @@ function setupScrollObserver() {
 
 document.addEventListener('DOMContentLoaded', initGallery)
 
+function applyView(view) {
+    const container = mapContainer.parentElement
+    if (!container) {
+        console.error('gallery.js: no container parent')
+        return
+    }
+    container.classList.remove('dt-toolbar-only', 'map-view-active')
+    galleryContainer.classList.add('d-none')
+    mapContainer.classList.add('d-none')
+    if (dtContainer) dtContainer.hidden = false
+
+    showList.style.fontWeight = 'normal'
+    showGallery.style.fontWeight = 'normal'
+    showMap.style.fontWeight = 'normal'
+
+    if (view === 'map') {
+        container.classList.add('dt-toolbar-only', 'map-view-active')
+        mapContainer.classList.remove('d-none')
+        showMap.style.fontWeight = 'bold'
+    } else if (view === 'gallery') {
+        container.classList.add('dt-toolbar-only')
+        galleryContainer.classList.remove('d-none')
+        showGallery.style.fontWeight = 'bold'
+    } else {
+        showList.style.fontWeight = 'bold'
+    }
+}
+
+function detectInitialView() {
+    const v = params.get('view')
+    if (v === 'map') return 'map'
+    if (v === 'gallery') return 'gallery'
+    return 'list'
+}
+
 async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
     dtContainer = document.querySelector('.dt-container')
-    narrowViewportMsg = document.querySelector('.files-table-narrow-msg')
-    if (params.get('view') === 'map') {
-        dtContainer.hidden = true
-        if (narrowViewportMsg) narrowViewportMsg.hidden = true
-        galleryContainer.classList.add('d-none')
-        showMap.style.fontWeight = 'bold'
-        await addNodes()
-        initMapView()
-    } else if (globalThis.location.pathname.includes('gallery')) {
-        dtContainer.hidden = true
-        if (narrowViewportMsg) narrowViewportMsg.hidden = true
-        galleryContainer.classList.remove('d-none')
-        showGallery.style.fontWeight = 'bold'
-        if (mapFileCount) mapFileCount.classList.remove('d-none')
-        await addNodes()
-    } else {
-        galleryContainer.classList.add('d-none')
-        showList.style.fontWeight = 'bold'
-        await addNodes()
-    }
+
+    const view = detectInitialView()
+    applyView(view)
+    await addNodes()
+    if (view === 'map') initMapView()
+
     setupScrollObserver()
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
         document.getElementById('bulk-actions').disabled = false
@@ -131,7 +158,7 @@ $('#user').on('change', function (_event) {
 function showSkeletons() {
     if (!nextPage) return
 
-    if (!globalThis.location.pathname.includes('gallery')) {
+    if (params.get('view') !== 'gallery') {
         showTableSkeletons(40)
         return
     }
@@ -175,18 +202,12 @@ async function addNodes() {
     showSkeletons()
 
     const data = await fetchFiles(nextPage, 50, params.get('album'))
-    console.debug('addNodes data:', data)
     slideshowCallback(data)
     nextPage = data.next
     fileData.push(...data.files)
-    if (globalThis.location.pathname.includes('gallery') && mapFileCountValue) {
-        mapFileCountValue.textContent = fileData.length
-    }
     hideSkeletons()
-    if (window.location.pathname.includes('gallery')) {
+    if (params.get('view') === 'gallery') {
         data.files.forEach((file) => addGalleryFile(file))
-    } else if (!window.location.pathname.includes('files')) {
-        console.error('Unknown View')
     }
     addFileTableRowsBatch(data.files)
     fetchLock = false
@@ -489,49 +510,32 @@ function renderGalleryChunked(files, chunkSize = 20, onComplete = null) {
 function changeView(event) {
     event.preventDefault()
     hideSkeletons()
-    const view =
-        event.currentTarget.dataset.view ||
-        event.currentTarget.textContent.trim()
+    const view = event.currentTarget.dataset.view || 'list'
 
-    // Reset all nav weights
-    showList.style.fontWeight = 'normal'
-    showGallery.style.fontWeight = 'normal'
-    showMap.style.fontWeight = 'normal'
-
-    // Hide all view containers
-    galleryContainer.classList.add('d-none')
-    mapContainer.classList.add('d-none')
-    mapContainer.parentElement.classList.remove('map-view-active')
-    if (mapFileCount) mapFileCount.classList.add('d-none')
-    dtContainer.hidden = true
-    if (narrowViewportMsg) narrowViewportMsg.hidden = true
-
-    if (view === 'List') {
+    if (view === 'list') {
         params.delete('view')
-        galleryContainer.replaceChildren()
-        dtContainer.hidden = false
-        if (narrowViewportMsg) narrowViewportMsg.hidden = false
-        globalThis.history.replaceState({}, null, '/files/?' + params)
-        showList.style.fontWeight = 'bold'
-        filesDataTable.responsive.recalc()
-    } else if (view === 'Map') {
-        params.set('view', 'map')
-        globalThis.history.replaceState({}, null, '/files/?' + params)
-        showMap.style.fontWeight = 'bold'
-        initMapView()
-    } else {
-        // Gallery
-        params.delete('view')
+    } else if (view === 'gallery') {
+        params.set('view', 'gallery')
+        // Capture selection so the gallery rebuild preserves checked boxes
         selectedFileIds = []
         filesDataTable.rows('.selected').every(function () {
             selectedFileIds.push(this.data().id)
         })
-        galleryContainer.classList.remove('d-none')
-        globalThis.history.replaceState({}, null, '/gallery/?' + params)
+    } else {
+        params.set('view', view)
+    }
+    const newPath = '/files/?' + params
+
+    applyView(view)
+    globalThis.history.replaceState({}, null, newPath)
+
+    if (view === 'list') {
         galleryContainer.replaceChildren()
-        showGallery.style.fontWeight = 'bold'
-        if (mapFileCount) mapFileCount.classList.remove('d-none')
-        if (mapFileCountValue) mapFileCountValue.textContent = fileData.length
+        filesDataTable.responsive.recalc()
+    } else if (view === 'map') {
+        initMapView()
+    } else {
+        galleryContainer.replaceChildren()
         renderGalleryChunked(fileData, 20, () => {
             if (
                 nextPage &&
@@ -548,7 +552,7 @@ function changeView(event) {
 
 socket?.addEventListener('message', function (event) {
     if (event.data === 'pong') return
-    if (window.location.pathname.includes('gallery')) {
+    if (params.get('view') === 'gallery') {
         let data = JSON.parse(event.data)
         if (data.event === 'file-delete') {
             fileDeleteGallery(data.id)
@@ -620,8 +624,6 @@ function buildImageLabels(file, bottomLeft) {
 }
 
 const mapContainer = document.getElementById('map-container')
-const mapFileCount = document.getElementById('map-file-count')
-const mapFileCountValue = document.getElementById('map-file-count-value')
 let galleryLeafletMap = null
 let mapInitialised = false
 
@@ -673,9 +675,6 @@ function initMapView() {
     const L = globalThis.L
     if (!L) return console.error('Leaflet not loaded')
 
-    mapContainer.classList.remove('d-none')
-    mapContainer.parentElement.classList.add('map-view-active')
-    if (mapFileCount) mapFileCount.classList.remove('d-none')
     requestAnimationFrame(() => {
         if (mapInitialised) {
             galleryLeafletMap.invalidateSize()
@@ -773,13 +772,10 @@ async function fetchAndPlotAllFiles(L) {
     let page = 1
     const album = params.get('album')
     const allCoords = []
-    let totalLoaded = 0
 
     while (page) {
         const data = await fetchFiles(page, 100, album)
         page = data.next
-        totalLoaded += data.files.length
-        if (mapFileCountValue) mapFileCountValue.textContent = totalLoaded
 
         for (const file of data.files) {
             const coords = gpsToDecimal(file.exif?.GPSInfo)

@@ -63,7 +63,7 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
 {% block nav2color %}{{ file.user.nav_color_2 }}{% endblock %}
 
 {% block body %}
-    <div class="card h-100">
+    <div class="card h-100 border-0 rounded-0">
         {% if render == 'image' %}
             <div class="preview-wrapper">
                 <div class="img-skeleton" id="img-skeleton"></div>
@@ -71,7 +71,7 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
                      style="opacity: 0; transition: opacity 0.3s ease;">
             </div>
         {% elif render == 'video' %}
-            <video class="mw-100 pt-2 ps-2 pe-2 preview" controls>
+            <video class="mw-100 ps-2 pe-2 preview" controls>
                 <source src="{{ static_url }}" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
@@ -91,13 +91,17 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
             <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
         {% endif %}
         <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
-        <div class="context-placement" data-bs-toggle="dropdown" id="contextPlacement">
-            <i class="fa-regular fa-square-caret-down"></i>
+        <div class="context-placement" data-bs-toggle="dropdown" id="contextPlacement" title="More options">
+            <i class="fa-solid fa-ellipsis"></i>
             <button class="file-context-dropdown my-0 py-0" type="button" aria-expanded="false" hidden></button>
         </div>
         {% include 'files/ctx-menu.html' with file=file extraclass='dropdown-menu-end' %}
         <div id="preview-sidebar" class="sidebar h-100">
             <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
+            <button class="sidebar-context-btn" id="sidebarContext" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="More options">
+                <i class="fa-solid fa-ellipsis"></i>
+            </button>
+            {% include 'files/ctx-menu.html' with file=file id_suffix='sidebar' %}
             {% is_mobile_browser request as mobile_browser %}
             {% if mobile_browser and native_app_arg %}
             <a href="{{ native_app_arg }}"
@@ -176,7 +180,7 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
                     <div class="album-container" id="albums-file-{{ file.id }}">
                         {% for album in file.albums.all %}
                             <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1" id="album-{{ album.id }}">
-                                <a class="text-reset text-decoration-none p-0" href="/gallery?album={{album.id}}">{{ album.name }} </a>
+                                <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album={{album.id}}">{{ album.name }} </a>
                                 <button id="remove-album-{{ album.id }}" class="btn p-0 mt-0 remove-album">
                                     <i class="fa-solid fa-xmark text-small remove-album"></i>
                                 </button>
@@ -207,6 +211,8 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
 
     {% include 'files/ctx-modals.html' %}
 {% endblock %}
+
+{% block footer %}{% endblock %}
 
 {% block tail %}
     {% if render in 'text,code' %}

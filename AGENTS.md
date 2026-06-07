@@ -80,6 +80,10 @@
 
 ## Validation defaults
 
+- Python environment: activate the repo venv before running any `python`/`manage.py`/lint command — `source .venv/bin/activate` (at the repo root). All examples below assume the venv is active.
+- Redis is required for tests and local runs (cache, sessions, channels layer, Celery broker/backend). Start a generic Redis container listening on `localhost:6379` before invoking tests:
+  - `docker run -d --rm --name df-redis -p 6379:6379 redis:7-alpine`
+  - The default config in `app/djangofiles/settings.py` points at hostname `redis:6379`; override with `CACHE_LOCATION=redis://localhost:6379/0`, `CELERY_BROKER_URL=redis://localhost:6379/1`, `CELERY_RESULT_BACKEND=redis://localhost:6379/1`, `CHANNELS_REDIS_HOST=localhost` in your shell or `app/test.env` / `app/settings.env` when running outside the docker-compose stack.
 - Python deps: `uv pip install --system -r app/requirements-dev.txt`
 - Node deps: `npm install`
 - Static/vendor asset sync: `npx gulp`

@@ -165,7 +165,10 @@ def files_view(request):
     View  /files/ or /gallery/
     """
     album = request.GET.get("album")
-    ctx = {"full_context": False}
+    view_mode = request.GET.get("view", "list")
+    if view_mode not in {"list", "gallery", "map"}:
+        view_mode = "list"
+    ctx = {"full_context": False, "view_mode": view_mode}
     if album:
         try:
             album = int(album)

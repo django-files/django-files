@@ -171,7 +171,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 if view == "Gallery":
                     log.debug("GALLERY")
                     page.locator('a[href="/files/"]').first.click()
-                    page.locator('a[href="/gallery/"]').first.click()
+                    page.locator('a[href="/files/?view=gallery"]').first.click()
                 elif view == "Stats":
                     log.debug("STATS")
                     page.locator("#navbarDropdown").first.click()

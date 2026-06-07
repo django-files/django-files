@@ -122,6 +122,19 @@
 }
 
 /*
+ * dt-toolbar-only: applied to the container-fluid wrapper in gallery / map
+ * views. Keeps the DataTables top toolbar (bulk actions, file count, user
+ * select) visible so it can be reused above the gallery grid or map, but
+ * hides the table itself, its narrow-viewport message, the auto-generated
+ * search input, and any bottom info/paging row.
+ */
+.dt-toolbar-only .files-table-narrow-msg,
+.dt-toolbar-only .dt-container > .dt-layout-row:not(:first-child),
+.dt-toolbar-only .dt-container .dt-search {
+    display: none !important;
+}
+
+/*
  * When the map view is active the container-fluid stretches to fill main
  * (which itself is flex-grow-1 inside the h-100 flex-column body).
  * The map then takes all leftover space after nav/headings/padding.
@@ -133,12 +146,23 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }
 
+/* Negative margins break the map out of the container-fluid's px-4 padding
+ * (1.5rem each side) so the map runs flush to the viewport edges.
+ * width: auto allows flex stretch + negative margins to expand past the
+ * content box — width: 100% would pin it inside the content area. */
 .map-view-active #map-container {
     flex: 1;
     min-height: 200px;
     height: auto;
+    width: auto;
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+    border: none;
+    border-radius: 0;
 }
 
 /* Tile-loading background */

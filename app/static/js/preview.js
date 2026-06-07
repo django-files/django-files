@@ -155,9 +155,7 @@ function openSidebar() {
     if (getSidebarMode() === 'push') {
         getSidebarParent()?.classList.add('sidebar-push-open')
     }
-    if (contextPlacement) {
-        contextPlacement.css('right', '365px')
-    }
+    contextPlacement.hide()
     openSidebarButton.hide()
 }
 
@@ -165,9 +163,7 @@ function closeSidebar() {
     sidebarOpen = false
     previewSidebar.removeClass('open')
     getSidebarParent()?.classList.remove('sidebar-push-open')
-    if (contextPlacement) {
-        contextPlacement.css('right', '60px')
-    }
+    contextPlacement.show()
     openSidebarButton.show()
 }
 
@@ -311,7 +307,7 @@ function handleAlbumBadges(data) {
             button.id = `remove-album-${key}`
             button.onclick = removeAlbumPress
             let label = badge.querySelector('.album-badge-label')
-            label.href = `/gallery?album=${key}`
+            label.href = `/files/?view=gallery&album=${key}`
             label.innerHTML = value
             badge.classList.remove('d-none')
             container.appendChild(badge)
