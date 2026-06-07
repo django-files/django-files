@@ -92,7 +92,15 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
 AWS_S3_FILE_OVERWRITE = config("AWS_S3_FILE_OVERWRITE", False, bool)
-STATIC_QUERYSTRING_EXPIRE = config("STATIC_QUERYSTRING_EXPIRE", 14400, int)
+# Signing TTLs (seconds). Split by URL purpose so we can keep gallery views fresh,
+# limit blast radius on download links, and keep OG/social-card URLs alive long
+# enough for scrapers (Discord, Slack, etc.) that cache them for hours.
+SIGNED_URL_TTL_SECONDS = config("SIGNED_URL_TTL_SECONDS", 14400, int)
+SIGNED_DOWNLOAD_URL_TTL_SECONDS = config("SIGNED_DOWNLOAD_URL_TTL_SECONDS", 900, int)
+SIGNED_META_URL_TTL_SECONDS = config("SIGNED_META_URL_TTL_SECONDS", 86400, int)
+# Fraction of the signing TTL we keep a generated URL in the server-side cache,
+# so any cached URL we serve still has >= (1 - ratio) of its signing window left.
+SIGNED_URL_REFRESH_RATIO = config("SIGNED_URL_REFRESH_RATIO", 0.5, float)
 AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME", None)
 AWS_S3_REGION_NAME = config("AWS_REGION_NAME", None)
 AWS_S3_CDN_URL = config("AWS_S3_CDN_URL", None)

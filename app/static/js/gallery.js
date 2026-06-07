@@ -373,6 +373,7 @@ function pollVideoThumb(src, img, skeleton, inner, retries = 10, delay = 1000) {
             showVideoThumbError(skeleton, inner)
         }
     }
+
     const handleResponse = (res) => {
         if (res.ok && res.headers.get('Content-Type')?.startsWith('image/')) {
             revealVideoThumb(src, img, skeleton)
