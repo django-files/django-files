@@ -59,7 +59,9 @@ function formatBytes(bytes) {
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+    return (
+        Number.parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+    )
 }
 
 function renderStorage(data, type, row) {
@@ -71,7 +73,9 @@ function renderStorage(data, type, row) {
         100,
         Math.round((row.storage_usage / row.storage_quota) * 100)
     )
-    const cls = pct > 95 ? 'bg-danger' : pct > 85 ? 'bg-warning' : ''
+    let cls = ''
+    if (pct > 95) cls = 'bg-danger'
+    else if (pct > 85) cls = 'bg-warning'
     return `<div class="small">${used} / ${total} (${pct}%)</div>
             <div class="progress mt-1" style="height:5px;">
                 <div class="progress-bar ${cls}" style="width:${pct}%;"></div>

@@ -114,7 +114,7 @@ if (albumPrivateToggle) {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken':
-                        document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? '',
+                        /csrftoken=([^;]+)/.exec(document.cookie)?.[1] ?? '',
                 },
             })
             if (!resp.ok) throw new Error(resp.status)
