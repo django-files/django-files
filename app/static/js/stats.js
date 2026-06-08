@@ -1,6 +1,6 @@
 // JS for Stats
 
-$('#updateStatsBtn').on('click', function () {
+$(document).on('click', '.updateStatsBtn', function () {
     $.ajax({
         type: 'POST',
         url: $(this).attr('data-target-url'),

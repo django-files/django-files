@@ -396,6 +396,7 @@ def process_stats():
             data[user.id] = {"types": {}, "size": 0, "count": 0, "shorts": user.shorts_count}
         else:
             data[user.id]["shorts"] = user.shorts_count
+        data["_totals"]["shorts"] += user.shorts_count
 
     for user_id, _data in data.items():
         _data["human_size"] = Files.get_size_of(_data["size"])

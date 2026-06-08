@@ -71,7 +71,39 @@ def home_view(request):
     log.debug("%s - home_view: is_secure: %s", request.method, request.is_secure())
     stats = FileStats.objects.get_request(request)
     shorts = ShortURLs.objects.get_request(request)
-    context = {"stats": stats, "shorts": shorts, "full_context": True, "use_simple_bulk_btn": True}
+
+    def build_chart_data(qs):
+        days, chart_files, chart_size, chart_shorts = [], [], [], []
+        for stat in reversed(qs):
+            days.append(f"{stat.created_at.month}/{stat.created_at.day}")
+            chart_files.append(stat.stats["count"])
+            chart_size.append(stat.stats["size"])
+            chart_shorts.append(stat.stats["shorts"])
+        return days, chart_files, chart_size, chart_shorts
+
+    days, chart_files, chart_size, chart_shorts = build_chart_data(stats)
+    context = {
+        "stats": stats,
+        "shorts": shorts,
+        "full_context": True,
+        "use_simple_bulk_btn": True,
+        "days": days,
+        "chart_files": chart_files,
+        "chart_size": chart_size,
+        "chart_shorts": chart_shorts,
+    }
+
+    if request.user.is_superuser:
+        stats_server = FileStats.objects.filter(user=None).order_by("-created_at")
+        server_days, server_chart_files, server_chart_size, server_chart_shorts = build_chart_data(stats_server)
+        context.update({
+            "stats_server": stats_server,
+            "server_days": server_days,
+            "server_chart_files": server_chart_files,
+            "server_chart_size": server_chart_size,
+            "server_chart_shorts": server_chart_shorts,
+        })
+
     return render(request, "home.html", context)
 
 
