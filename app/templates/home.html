@@ -9,82 +9,533 @@
 {% block head %}
     <link href="{% static 'dist/uppy/uppy.min.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/table.css' %}" />
+    <script src="{% static 'dist/echarts/echarts.min.js' %}"></script>
+    <style>
+        .dash-stat-card {
+            border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);
+            border-radius: 0.75rem;
+            padding: 1.25rem 1.5rem;
+            background: var(--bs-body-bg);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .dash-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+        .dash-stat-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .dash-stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+        .dash-stat-label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            opacity: 0.6;
+            font-weight: 500;
+        }
+        .dash-card {
+            border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);
+            border-radius: 0.75rem;
+            background: var(--bs-body-bg);
+        }
+        .dash-card-header {
+            padding: 1rem 1.25rem 0.75rem;
+            border-bottom: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .dash-card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            opacity: 0.85;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .dash-card-body {
+            padding: 1rem 1.25rem;
+        }
+        .dash-welcome {
+            font-size: 1.35rem;
+            font-weight: 600;
+        }
+        .dash-welcome-sub {
+            font-size: 0.9rem;
+            opacity: 0.55;
+        }
+        .quota-bar-wrap {
+            border-radius: 0.75rem;
+            border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);
+            padding: 1rem 1.25rem;
+            background: var(--bs-body-bg);
+        }
+        /* Keep the files card from growing a scroll region — let DataTables
+           responsive drop columns instead. The min-height skeleton reservation
+           in table.css still works; overflow:hidden just clips any overflow. */
+        #home-files-card {
+            overflow: hidden;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
-<div class="container-fluid pb-3 pt-2 px-4">
+<div class="container-fluid pb-5 pt-3 px-4">
 
-    <h1 class="">
-        <i class="fa-solid fa-house-laptop me-2"></i> {{ site_settings.site_title }}
-    </h1>
-
-    {% if not stats %}
-        <p class="text-muted mb-0">Stats will show up here after files are uploaded and stats are generated...</p>
-    {% else %}
-        {% with stats=stats|first  %}
-            <div class="row">
-                {% include 'include/stats-card.html' with title="Total Files" data=stats.stats.count %}
-                {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
-                {% include 'include/stats-card.html' with title="Total Shorts" data=stats.stats.shorts %}
+    {# ── Welcome row ── #}
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <div class="dash-welcome">
+                <i class="fa-solid fa-house-laptop me-2 opacity-75"></i>
+                Welcome back, {% firstof user.first_name user.username %}
             </div>
-            {% include 'include/stats-table.html' with stats=stats count=6 %}
-            <p>
-                <a class="btn btn-sm btn-outline-warning me-2" role="button" id="updateStatsBtn" data-target-url="{% url 'home:update-stats' %}">
-                    <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>
-                <a class="btn btn-sm btn-outline-light me-2" role="button" href="{% url 'home:stats' %}">
-                    <i class="fa-solid fa-chart-bar"></i> View Stats</a>
-                {% if stats %}
-                    <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>
-                {% endif %}
-            </p>
-        {% endwith %}
-    {% endif %}
+            <div class="dash-welcome-sub">{{ site_settings.site_title }} dashboard</div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-primary btn-sm" href="{% url 'home:uppy' %}">
+                <i class="fa-solid fa-upload me-1"></i> Upload Files</a>
+            <a class="btn btn-outline-secondary btn-sm" href="{% url 'home:paste' %}">
+                <i class="fa-regular fa-file-lines me-1"></i> Upload Text</a>
+            <a class="btn btn-outline-secondary btn-sm" href="{% url 'home:shorts' %}">
+                <i class="fa-solid fa-link me-1"></i> Short URLs</a>
+        </div>
+    </div>
 
-    {% if user.storage_quota %}
-    <div class="row mt-1 mb-4">
-        <div class="col-md-12">
-            <label for="storage_quota" class="form-label">{% firstof user.first_name user.username %}'s Storage Quota Usage</label>
-            <div class="progress" role="progressbar" id="storage_quota" name="storage_quota" aria-label="User Storage Quota"
-                 aria-valuenow="{{ user.get_storage_usage_pct }}" aria-valuemin="0" aria-valuemax="100" style="height: 35px; font-size: large">
-                <div class="progress-bar overflow-visible {% if user.get_storage_usage_pct > 95 %}bg-danger{% elif user.get_storage_usage_pct > 85 %}bg-warning{% endif %}" style="width: {{ user.get_storage_usage_pct }}%">
-                    <b>({{ user.get_storage_used_human_read }}/{{ user.get_storage_quota_human_read }}) {{ user.get_storage_usage_pct }}%</b>
+    {# ── Stat cards ── #}
+
+    {# Personal stats row — always shown when user has stats #}
+    {% if stats %}
+    {% with s=stats|first %}
+    <div class="row g-3 mb-2" id="stat-cards-mine">
+        <div class="col-sm-6 col-xl-3">
+            <div class="dash-stat-card d-flex align-items-center gap-3">
+                <div class="dash-stat-icon text-bg-primary"><i class="fa-regular fa-folder-open"></i></div>
+                <div>
+                    <div class="dash-stat-value">{{ s.stats.count }}</div>
+                    <div class="dash-stat-label">My Files</div>
                 </div>
             </div>
         </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="dash-stat-card d-flex align-items-center gap-3">
+                <div class="dash-stat-icon text-bg-info"><i class="fa-solid fa-database"></i></div>
+                <div>
+                    <div class="dash-stat-value">{{ s.stats.human_size }}</div>
+                    <div class="dash-stat-label">My Storage Used</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="dash-stat-card d-flex align-items-center gap-3">
+                <div class="dash-stat-icon text-bg-success"><i class="fa-solid fa-link"></i></div>
+                <div>
+                    <div class="dash-stat-value">{{ s.stats.shorts }}</div>
+                    <div class="dash-stat-label">My Shorts</div>
+                </div>
+            </div>
+        </div>
+        {# User quota — visible to any user with a personal quota set #}
+        {% if user.storage_quota %}
+        <div class="col-sm-6 col-xl-3">
+            <div class="dash-stat-card d-flex align-items-center gap-3">
+                <div class="dash-stat-icon {% if user.get_storage_usage_pct > 95 %}text-bg-danger{% elif user.get_storage_usage_pct > 85 %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
+                    <i class="fa-solid fa-hard-drive"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="dash-stat-value">{{ user.get_storage_usage_pct }}%</div>
+                    <div class="dash-stat-label">My Quota &mdash; {{ user.get_storage_used_human_read }} / {{ user.get_storage_quota_human_read }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endwith %}
+    {% endif %}
+
+    {# Server stats row — superuser only, hidden until toggled #}
+    {% if user.is_superuser and stats_server %}
+    {% with ss=stats_server|first %}
+    <div class="row g-3 mb-2 d-none" id="stat-cards-server">
+        <div class="col-sm-6 col-xl-3">
+            <div class="dash-stat-card d-flex align-items-center gap-3">
+                <div class="dash-stat-icon text-bg-primary"><i class="fa-regular fa-folder-open"></i></div>
+                <div>
+                    <div class="dash-stat-value">{{ ss.stats.count }}</div>
+                    <div class="dash-stat-label">Server Files</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="dash-stat-card d-flex align-items-center gap-3">
+                <div class="dash-stat-icon text-bg-info"><i class="fa-solid fa-database"></i></div>
+                <div>
+                    <div class="dash-stat-value">{{ ss.stats.human_size }}</div>
+                    <div class="dash-stat-label">Server Storage Used</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="dash-stat-card d-flex align-items-center gap-3">
+                <div class="dash-stat-icon text-bg-success"><i class="fa-solid fa-link"></i></div>
+                <div>
+                    <div class="dash-stat-value">{{ ss.stats.shorts }}</div>
+                    <div class="dash-stat-label">Server Shorts</div>
+                </div>
+            </div>
+        </div>
+        {# System quota — only shown when a global quota is configured #}
+        {% if site_settings.global_storage_quota %}
+        <div class="col-sm-6 col-xl-3">
+            <div class="dash-stat-card d-flex align-items-center gap-3">
+                <div class="dash-stat-icon {% if site_settings.get_global_storage_quota_usage_pct > 95 %}text-bg-danger{% elif site_settings.get_global_storage_quota_usage_pct > 85 %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
+                    <i class="fa-solid fa-server"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                    <div class="dash-stat-value">{{ site_settings.get_global_storage_quota_usage_pct }}%</div>
+                    <div class="dash-stat-label">System Quota &mdash; {{ site_settings.get_global_storage_usage_human_read }} / {{ site_settings.get_global_storage_quota_human_read }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endwith %}
+    {% endif %}
+
+    {% if not stats %}
+    <div class="alert alert-secondary mb-4">
+        <i class="fa-solid fa-circle-info me-2"></i>
+        Stats will appear here after files are uploaded and stats are generated.
+        <a class="btn btn-sm btn-outline-warning ms-3 updateStatsBtn" role="button" data-target-url="{% url 'home:update-stats' %}">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Process Stats</a>
     </div>
     {% endif %}
 
-    <h2 id="files">Recent Files</h2>
-    <div id="home-files-section">
-        {% include 'files/bulk-menu.html' %}
-        {% include 'files/table.html' %}
-        <p class="mt-0 files-truncation-warning d-none">
-            <em>This list is truncated to 10 files.</em>
-            <span class="d-inline-block"><a href="{% url 'home:files' %}">View All Files</a></span>
-        </p>
-    </div><!-- /#home-files-section -->
+    {# ── Chart + Quick actions row ── #}
+    <div class="row g-3 mb-4 mt-1">
 
-    <h2 id="shorts" class="mt-5 pt-5">Shorts</h2>
-    <form id="quick-short-form" action="{% url 'home:shorten' %}">
-        <div class="input-group my-2">
-            <input type="text" class="form-control" id="long-url" name="long-url" placeholder="Reeeaaalllyyy Long URL..."
-                   aria-label="Recipient's username" aria-describedby="create-short-btn" required>
-            <button class="btn btn-outline-success" type="submit" id="create-short-btn"
-                    data-target-url="{% url 'home:shorten' %}"><i class="fa-solid fa-hammer me-2"></i> Shorten</button>
+        {# Activity chart #}
+        <div class="col-lg-8">
+            <div class="dash-card h-100">
+                <div class="dash-card-header">
+                    <span class="dash-card-title" id="home-chart-title">
+                        <i class="fa-solid fa-chart-line opacity-60"></i> My Upload Activity
+                    </span>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        {% if user.is_superuser and stats_server %}
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Chart scope" id="home-scope-toggle">
+                            <button type="button" class="btn btn-secondary active" data-scope="mine">Mine</button>
+                            <button type="button" class="btn btn-outline-secondary" data-scope="server">Server</button>
+                        </div>
+                        {% endif %}
+                        {% if days or server_days %}
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Chart metric" id="home-chart-toggle">
+                            <button type="button" class="btn btn-secondary active" data-metric="files">Files</button>
+                            <button type="button" class="btn btn-outline-secondary" data-metric="size">Size</button>
+                            <button type="button" class="btn btn-outline-secondary" data-metric="shorts">Shorts</button>
+                        </div>
+                        {% endif %}
+                        {% if stats %}
+                        {% with stats=stats|first %}
+                        <span class="text-muted" style="font-size:0.78rem;">Updated: {{ stats.updated_at|localtime }}</span>
+                        {% endwith %}
+                        {% endif %}
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'home:stats' %}">
+                            View All <i class="fa-solid fa-arrow-right ms-1"></i></a>
+                    </div>
+                </div>
+                <div class="dash-card-body">
+                    {% if days %}
+                        <div id="home-chart" style="height: 260px; width: 100%;"></div>
+                        {{ days|json_script:"home-chart-days" }}
+                        {{ chart_files|json_script:"home-chart-files" }}
+                        {{ chart_size|json_script:"home-chart-size" }}
+                        {{ chart_shorts|json_script:"home-chart-shorts" }}
+                        {% if user.is_superuser %}
+                        {{ server_days|json_script:"home-chart-server-days" }}
+                        {{ server_chart_files|json_script:"home-chart-server-files" }}
+                        {{ server_chart_size|json_script:"home-chart-server-size" }}
+                        {{ server_chart_shorts|json_script:"home-chart-server-shorts" }}
+                        {% endif %}
+                        <script>
+                            (function() {
+                                const scopes = {
+                                    mine: {
+                                        label: 'My',
+                                        days:   JSON.parse(document.getElementById('home-chart-days').textContent),
+                                        files:  JSON.parse(document.getElementById('home-chart-files').textContent),
+                                        size:   JSON.parse(document.getElementById('home-chart-size').textContent),
+                                        shorts: JSON.parse(document.getElementById('home-chart-shorts').textContent),
+                                    },
+                                };
+                                {% if user.is_superuser %}
+                                // Smooth deltas then reintegrate so the trend is smooth but
+                                // the cumulative total stays grounded (doesn't undercount reality).
+                                function smoothDeltas(data, win) {
+                                    if (data.length < 2) return data.slice();
+                                    const w = Math.min(win, Math.max(1, Math.floor(data.length / 4)));
+                                    // compute daily net change
+                                    const deltas = data.map((v, i) => i === 0 ? 0 : v - data[i - 1]);
+                                    // trailing rolling average of deltas (causal — no future lookahead)
+                                    const smoothed = deltas.map((_, i) => {
+                                        const lo = Math.max(0, i - w + 1);
+                                        const slice = deltas.slice(lo, i + 1);
+                                        return slice.reduce((a, b) => a + b, 0) / slice.length;
+                                    });
+                                    // reintegrate from the first actual value
+                                    const out = [data[0]];
+                                    for (let i = 1; i < data.length; i++) {
+                                        out.push(Math.round(out[i - 1] + smoothed[i]));
+                                    }
+                                    return out;
+                                }
+                                const rawServerFiles  = JSON.parse(document.getElementById('home-chart-server-files').textContent);
+                                const rawServerSize   = JSON.parse(document.getElementById('home-chart-server-size').textContent);
+                                const rawServerShorts = JSON.parse(document.getElementById('home-chart-server-shorts').textContent);
+                                scopes.server = {
+                                    label: 'Server',
+                                    days:   JSON.parse(document.getElementById('home-chart-server-days').textContent),
+                                    files:  smoothDeltas(rawServerFiles, 7),
+                                    size:   smoothDeltas(rawServerSize, 7),
+                                    shorts: smoothDeltas(rawServerShorts, 7),
+                                };
+                                {% endif %}
+
+                                const isDark = document.documentElement.getAttribute('data-bs-theme') !== 'light';
+                                const textColor = isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.55)';
+                                const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+                                const chart = echarts.init(document.getElementById('home-chart'), isDark ? 'dark' : null);
+
+                                function bytesHuman(bytes) {
+                                    if (bytes === 0) return '0 B';
+                                    const units = ['B','KB','MB','GB','TB'];
+                                    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                                    return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i];
+                                }
+
+                                const metricCfg = {
+                                    files:  { label: 'Files',  color: '#0d6efd', leftPad: 40, formatter: undefined },
+                                    size:   { label: 'Size',   color: '#0dcaf0', leftPad: 64, formatter: bytesHuman },
+                                    shorts: { label: 'Shorts', color: '#198754', leftPad: 40, formatter: undefined },
+                                };
+
+                                let currentScope  = 'mine';
+                                let currentMetric = 'files';
+
+                                function buildOption(scope, metric) {
+                                    const s = scopes[scope];
+                                    const m = metricCfg[metric];
+                                    return {
+                                        backgroundColor: 'transparent',
+                                        grid: { top: 16, bottom: 30, left: m.leftPad, right: 16 },
+                                        tooltip: {
+                                            trigger: 'axis',
+                                            formatter: m.formatter
+                                                ? (p) => p[0].name + '<br/>' + p[0].marker + ' ' + m.label + ': ' + m.formatter(p[0].value)
+                                                : undefined,
+                                        },
+                                        xAxis: {
+                                            type: 'category',
+                                            data: s.days,
+                                            axisLine: { lineStyle: { color: gridColor } },
+                                            axisLabel: { color: textColor, fontSize: 11 },
+                                            axisTick: { show: false },
+                                        },
+                                        yAxis: {
+                                            type: 'value',
+                                            splitLine: { lineStyle: { color: gridColor } },
+                                            axisLabel: { color: textColor, fontSize: 11, formatter: m.formatter },
+                                        },
+                                        series: [{
+                                            name: m.label,
+                                            type: 'line',
+                                            data: s[metric],
+                                            smooth: true,
+                                            symbol: 'circle',
+                                            symbolSize: 5,
+                                            lineStyle: { width: 2 },
+                                            areaStyle: { opacity: 0.12 },
+                                            itemStyle: { color: m.color },
+                                        }],
+                                    };
+                                }
+
+                                function setActiveBtn(group, key, attr) {
+                                    group.querySelectorAll('[' + attr + ']').forEach((b) => {
+                                        const active = b.dataset[attr.replace('data-', '')] === key;
+                                        b.classList.toggle('active', active);
+                                        b.classList.toggle('btn-secondary', active);
+                                        b.classList.toggle('btn-outline-secondary', !active);
+                                    });
+                                }
+
+                                function updateChartTitle() {
+                                    const scopeLabel = scopes[currentScope].label;
+                                    const smoothNote = currentScope === 'server'
+                                        ? ' <small class="text-muted fw-normal" style="font-size:0.72rem;">7-day avg</small>'
+                                        : '';
+                                    document.getElementById('home-chart-title').innerHTML =
+                                        '<i class="fa-solid fa-chart-line opacity-60"></i> ' + scopeLabel + ' Upload Activity' + smoothNote;
+                                }
+
+                                function updateStatCards() {
+                                    document.getElementById('stat-cards-mine')?.classList.toggle('d-none', currentScope === 'server');
+                                    document.getElementById('stat-cards-server')?.classList.toggle('d-none', currentScope === 'mine');
+                                }
+
+                                chart.setOption(buildOption(currentScope, currentMetric));
+                                window.addEventListener('resize', () => chart.resize());
+
+                                const scopeToggle = document.getElementById('home-scope-toggle');
+                                if (scopeToggle) {
+                                    scopeToggle.addEventListener('click', (e) => {
+                                        const btn = e.target.closest('[data-scope]');
+                                        if (!btn) return;
+                                        currentScope = btn.dataset.scope;
+                                        setActiveBtn(scopeToggle, currentScope, 'data-scope');
+                                        updateChartTitle();
+                                        updateStatCards();
+                                        chart.setOption(buildOption(currentScope, currentMetric));
+                                    });
+                                }
+
+                                document.getElementById('home-chart-toggle').addEventListener('click', (e) => {
+                                    const btn = e.target.closest('[data-metric]');
+                                    if (!btn) return;
+                                    currentMetric = btn.dataset.metric;
+                                    setActiveBtn(document.getElementById('home-chart-toggle'), currentMetric, 'data-metric');
+                                    chart.setOption(buildOption(currentScope, currentMetric));
+                                });
+                            })();
+                        </script>
+                    {% else %}
+                        <div class="d-flex align-items-center justify-content-center text-muted" style="height:260px;">
+                            <div class="text-center">
+                                <i class="fa-solid fa-chart-line fa-2x mb-2 opacity-25"></i>
+                                <p class="mb-0 small">No chart data yet.</p>
+                                <a class="btn btn-sm btn-outline-warning mt-2 updateStatsBtn" role="button" data-target-url="{% url 'home:update-stats' %}">
+                                    <i class="fa-solid fa-arrows-rotate me-1"></i> Process Stats</a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-    </form>
-    <p><em><a href="{% url 'home:shorts' %}">More Short Options</a></em></p>
-    {% if not shorts %}
-        <p class="text-muted mb-0">Short URLs will show up here once created...</p>
-    {% else %}
-        {% include 'include/shorts-table.html' with shorts=shorts|slice:":10"  %}
-        {% if shorts|length > 10 %}
-            <p class="mt-0">
-                <em>This list is truncated to 10 shorts.</em>
-                <span class="d-inline-block"><a href="{% url 'home:shorts' %}">View All Shorts</a></span>
+
+        {# Quick actions #}
+        <div class="col-lg-4">
+            <div class="dash-card h-100">
+                <div class="dash-card-header">
+                    <span class="dash-card-title">
+                        <i class="fa-solid fa-bolt opacity-60"></i> Quick Actions
+                    </span>
+                </div>
+                <div class="dash-card-body d-flex flex-column gap-3">
+
+                    {# Shorten URL #}
+                    <div>
+                        <label for="long-url" class="form-label small fw-semibold opacity-75 mb-1">
+                            <i class="fa-solid fa-link me-1"></i> Shorten a URL
+                        </label>
+                        <form id="quick-short-form" action="{% url 'home:shorten' %}">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="long-url" name="long-url"
+                                       placeholder="https://very-long-url.example.com/..." required>
+                                <button class="btn btn-outline-success" type="submit" id="create-short-btn"
+                                        data-target-url="{% url 'home:shorten' %}">
+                                    <i class="fa-solid fa-hammer me-1"></i> Shorten</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <hr class="my-0 opacity-10">
+
+                    {# Upload shortcuts #}
+                    <div>
+                        <div class="small fw-semibold opacity-75 mb-2">
+                            <i class="fa-solid fa-upload me-1"></i> Upload
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a class="btn btn-sm btn-outline-primary" href="{% url 'home:uppy' %}">
+                                <i class="fa-solid fa-file-arrow-up me-2"></i> Upload Files</a>
+                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'home:paste' %}">
+                                <i class="fa-regular fa-file-lines me-2"></i> Paste / Upload Text</a>
+                        </div>
+                    </div>
+
+                    <hr class="my-0 opacity-10">
+
+                    {# Stats update #}
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <a class="btn btn-sm btn-outline-warning updateStatsBtn" role="button" data-target-url="{% url 'home:update-stats' %}">
+                            <i class="fa-solid fa-arrows-rotate me-1"></i> Process Stats</a>
+                        <a class="btn btn-sm btn-outline-light" href="{% url 'home:stats' %}">
+                            <i class="fa-solid fa-chart-bar me-1"></i> Full Stats</a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {# ── Recent Files ── #}
+    <div class="dash-card mb-4" id="home-files-card">
+        <div class="dash-card-header">
+            <span class="dash-card-title">
+                <i class="fa-regular fa-folder-open opacity-60"></i> Recent Files
+            </span>
+            <div class="d-flex align-items-center gap-2">
+                {% include 'files/bulk-menu.html' %}
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'home:files' %}">
+                    View All <i class="fa-solid fa-arrow-right ms-1"></i></a>
+            </div>
+        </div>
+        <div id="home-files-section">
+            <div class="px-2 pt-1">
+                {% include 'files/table.html' %}
+            </div>
+            <p class="mt-0 px-3 pb-2 files-truncation-warning d-none small text-muted">
+                <em>List truncated to 10 files.</em>
+                <a href="{% url 'home:files' %}">View All Files</a>
             </p>
-        {% endif %}
-    {% endif %}
+        </div>
+    </div>
+
+    {# ── Recent Shorts ── #}
+    <div class="dash-card mb-4">
+        <div class="dash-card-header">
+            <span class="dash-card-title">
+                <i class="fa-solid fa-link opacity-60"></i> Recent Short URLs
+            </span>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'home:shorts' %}">
+                View All <i class="fa-solid fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="dash-card-body">
+            {% if not shorts %}
+                <p class="text-muted mb-0 small">Short URLs will appear here once created.</p>
+            {% else %}
+                {% include 'include/shorts-table.html' with shorts=shorts|slice:":10" home_mode=True %}
+                {% if shorts|length > 10 %}
+                    <p class="mt-1 mb-0 small text-muted">
+                        <em>Truncated to 10.</em>
+                        <a href="{% url 'home:shorts' %}">View All</a>
+                    </p>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
 
     {% include 'files/file-upload-modal.html' %}
     {% include 'files/ctx-menu.html' %}

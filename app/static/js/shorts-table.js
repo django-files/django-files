@@ -8,6 +8,7 @@ let shortsDataTable
 let nextPage = 1
 let fetchLock = false
 let pendingDeleteId
+const totalShortsCount = document.getElementById('total-shorts-count')
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)
 document.addEventListener('scroll', debounce(scrollHandle))
@@ -29,24 +30,6 @@ const dataTablesOptions = {
         { data: null },
     ],
     initComplete: function () {
-        const container = $(this.api().table().container())
-        const startCell = container.find('.dt-layout-start').first()
-        const endCell = container.find('.dt-layout-end').first()
-
-        startCell.append(
-            $(
-                '<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#create-short-modal"><i class="fa-solid fa-link me-2"></i> New Short</button>'
-            )
-        )
-
-        const userSelectWrapper = document.getElementById(
-            'dt-user-select-wrapper'
-        )
-        if (userSelectWrapper) {
-            endCell.prepend(userSelectWrapper)
-            userSelectWrapper.classList.remove('d-none')
-        }
-
         const section = document.getElementById('shorts-table-section')
         if (section) {
             requestAnimationFrame(() =>
@@ -103,6 +86,13 @@ const dataTablesOptions = {
 
 async function domContentLoaded() {
     shortsDataTable = shortsTable.DataTable(dataTablesOptions)
+    wireToolbarSearch('shorts-toolbar-search-input', shortsDataTable)
+    initCollapsibleSearch(
+        'shorts-toolbar-search',
+        'shorts-toolbar-search-input'
+    )
+    syncNavbarHeight()
+    observeToolbarHeight('shorts-toolbar', '--shorts-toolbar-h')
     await initDataTable(
         shortsDataTable,
         showShortsSkeletons,
@@ -151,6 +141,8 @@ async function addShortRows() {
 function addShortRow(row) {
     row['DT_RowId'] = `short-${row.id}`
     shortsDataTable.row.add(row).draw(false)
+    if (totalShortsCount)
+        totalShortsCount.textContent = shortsDataTable.rows().count()
 }
 
 const _shortSkeletonUrlWidths = [180, 220, 150, 240, 170, 200]
@@ -215,19 +207,19 @@ $('#short-delete-confirm').on('click', function () {
     })
 })
 
-if (document.getElementById('user')) {
-    $('#user').on('change', function () {
-        const userId = $(this).val()
-        const url = new URL(location.href)
-        if (userId) {
-            url.searchParams.set('user', userId)
-        } else {
-            url.searchParams.delete('user')
-        }
-        globalThis.history.replaceState({}, null, url.href)
-        shortsDataTable.clear().draw()
-        nextPage = 1
-        fetchLock = false
-        addShortRows()
-    })
-}
+$('#user').on('change', async function () {
+    const userId = $(this).val()
+    const url = new URL(location.href)
+    if (userId) {
+        url.searchParams.set('user', userId)
+    } else {
+        url.searchParams.delete('user')
+    }
+    globalThis.history.replaceState({}, null, url.href)
+    nextPage = 1
+    fetchLock = false
+    shortsDataTable.clear().draw()
+    showShortsSkeletons()
+    await addShortRows()
+    if (!shortsDataTable.rows().count()) shortsDataTable.draw()
+})

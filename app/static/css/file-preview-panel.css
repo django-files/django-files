@@ -10,8 +10,14 @@
     --preview-border-color: rgba(66, 69, 73, 0.3);
 }
 
+[data-bs-theme='dark'] {
+    --preview-chrome-bg: rgba(255, 255, 255, 0.08);
+    --preview-chrome-bg-hover: rgba(255, 255, 255, 0.15);
+    --preview-border-color: rgba(200, 200, 200, 0.2);
+}
+
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-bs-theme='light']) {
         --preview-chrome-bg: rgba(255, 255, 255, 0.08);
         --preview-chrome-bg-hover: rgba(255, 255, 255, 0.15);
         --preview-border-color: rgba(200, 200, 200, 0.2);

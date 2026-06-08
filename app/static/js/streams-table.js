@@ -138,26 +138,6 @@ const dataTablesOptions = {
         initDtLang(dt, 'No streams available', 'No matching streams found')
         if (dt.rows().count() === 0) dt.draw()
 
-        const container = $(dt.table().container())
-        const startCell = container.find('.dt-layout-start').first()
-        const endCell = container.find('.dt-layout-end').first()
-
-        const obsButtonContainer = document.getElementById(
-            'obs-button-container'
-        )
-        if (obsButtonContainer) {
-            startCell.append(obsButtonContainer)
-            obsButtonContainer.classList.remove('d-none')
-        }
-
-        const userSelectContainer = document.getElementById(
-            'dt-user-select-wrapper'
-        )
-        if (userSelectContainer) {
-            endCell.prepend(userSelectContainer)
-            userSelectContainer.classList.remove('d-none')
-        }
-
         requestAnimationFrame(() =>
             requestAnimationFrame(() =>
                 document
@@ -298,17 +278,31 @@ document.addEventListener('DOMContentLoaded', domContentLoaded)
 function domContentLoaded() {
     streamsDataTable = streamsTable.DataTable(dataTablesOptions)
     showStreamsSkeletons()
+    wireToolbarSearch('streams-toolbar-search-input', streamsDataTable)
+    initCollapsibleSearch(
+        'streams-toolbar-search',
+        'streams-toolbar-search-input'
+    )
+    syncNavbarHeight()
+    observeToolbarHeight('streams-toolbar', '--streams-toolbar-h')
 
-    if (document.getElementById('user')) {
-        $('#user').on('change', function () {
-            const userId = $(this).val()
-            let url = '/api/streams/'
-            if (userId && userId !== '0') {
-                url += `?user=${userId}`
-            }
-            streamsDataTable.ajax.url(url).load()
+    const totalStreamsCount = document.getElementById('total-streams-count')
+    if (totalStreamsCount) {
+        streamsDataTable.on('draw', function () {
+            totalStreamsCount.textContent = streamsDataTable
+                .rows({ search: 'applied' })
+                .count()
         })
     }
+
+    $('#user').on('change', function () {
+        const userId = $(this).val()
+        let url = '/api/streams/'
+        if (userId && userId !== '0') {
+            url += `?user=${userId}`
+        }
+        streamsDataTable.ajax.url(url).load()
+    })
 
     streamsTable.on('focus', '.stream-editable', function () {
         $(this).data('original-title', $(this).text().trim())

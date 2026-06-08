@@ -28,6 +28,7 @@ export function openPanel(fileUrl) {
     panel.classList.add('open')
     panel.removeAttribute('aria-hidden')
     backdrop.classList.add('active')
+    document.body.style.overflow = 'hidden'
     isOpen = true
 
     // 2. Push preview URL to history so the browser back button closes the panel
@@ -76,6 +77,7 @@ function closePanelInternal() {
     panel.classList.remove('open')
     panel.setAttribute('aria-hidden', 'true')
     backdrop.classList.remove('active')
+    document.body.style.overflow = ''
 
     // Restore the gallery URL without triggering a popstate
     if (history.state?.panelOpen && history.state?.returnUrl) {

@@ -235,13 +235,69 @@ function debounce(fn, timeout = 250) {
     }
 }
 
-/**
- * Paginated onScroll Callback
- * @function pageScroll
- * @param {Event} event
- * @param {Number} buffer
- * @param {Function} callable (async)
- */
+// eslint-disable-next-line no-unused-vars
+function syncNavbarHeight() {
+    const navbar = document.querySelector('.navbar')
+    if (!navbar) return
+    const sync = () =>
+        document.documentElement.style.setProperty(
+            '--navbar-h',
+            `${navbar.offsetHeight}px`
+        )
+    new ResizeObserver(sync).observe(navbar)
+}
+
+// eslint-disable-next-line no-unused-vars
+function observeToolbarHeight(toolbarId, cssVar) {
+    const toolbar = document.getElementById(toolbarId)
+    const container = toolbar?.parentElement
+    if (!toolbar || !container) return
+    const sync = () =>
+        container.style.setProperty(cssVar, `${toolbar.offsetHeight}px`)
+    sync()
+    new ResizeObserver(sync).observe(toolbar)
+}
+
+// eslint-disable-next-line no-unused-vars
+function wireToolbarSearch(inputId, dt) {
+    const input = document.getElementById(inputId)
+    if (!input || !dt) return
+    let timer
+    input.addEventListener('input', () => {
+        clearTimeout(timer)
+        timer = setTimeout(() => dt.search(input.value).draw(), 200)
+    })
+}
+
+// eslint-disable-next-line no-unused-vars
+function initCollapsibleSearch(wrapperId, inputId) {
+    const wrapper = document.getElementById(wrapperId)
+    const input = document.getElementById(inputId)
+    if (!wrapper || !input) return
+
+    const expand = () => {
+        wrapper.classList.add('files-toolbar-search--expanded')
+        input.focus()
+    }
+    const collapse = () => {
+        if (!input.value)
+            wrapper.classList.remove('files-toolbar-search--expanded')
+    }
+
+    wrapper.addEventListener('click', (e) => {
+        if (!wrapper.classList.contains('files-toolbar-search--expanded')) {
+            e.stopPropagation()
+            expand()
+        }
+    })
+    input.addEventListener('blur', collapse)
+}
+
+// eslint-disable-next-line no-unused-vars
+function clearSkeletonRows() {
+    document.querySelectorAll('.dt-skeleton-row').forEach((el) => el.remove())
+}
+
 // eslint-disable-next-line no-unused-vars
 async function initDataTable(dt, skeletonFn, fetchFn, emptyMsg, zeroMsg) {
     skeletonFn()

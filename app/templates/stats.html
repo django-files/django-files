@@ -7,7 +7,7 @@
 {% block title %}Stats{% endblock %}
 
 {% block head %}
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.js"></script>
+    <script src="{% static 'dist/echarts/echarts.min.js' %}"></script>
 {% endblock %}
 
 {% block body %}
@@ -31,7 +31,7 @@
 
     {% endif %}
 
-    <p><a class="btn btn-sm btn-outline-warning me-2" role="button" id="updateStatsBtn"
+    <p><a class="btn btn-sm btn-outline-warning me-2 updateStatsBtn" role="button"
           data-target-url="{% url 'home:update-stats' %}">
         <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>{% if stats %}
         <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>{% endif %}</p>

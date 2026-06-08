@@ -71,7 +71,41 @@ def home_view(request):
     log.debug("%s - home_view: is_secure: %s", request.method, request.is_secure())
     stats = FileStats.objects.get_request(request)
     shorts = ShortURLs.objects.get_request(request)
-    context = {"stats": stats, "shorts": shorts, "full_context": True, "use_simple_bulk_btn": True}
+
+    def build_chart_data(qs):
+        days, chart_files, chart_size, chart_shorts = [], [], [], []
+        for stat in reversed(qs):
+            days.append(f"{stat.created_at.month}/{stat.created_at.day}")
+            chart_files.append(stat.stats["count"])
+            chart_size.append(stat.stats["size"])
+            chart_shorts.append(stat.stats["shorts"])
+        return days, chart_files, chart_size, chart_shorts
+
+    days, chart_files, chart_size, chart_shorts = build_chart_data(stats)
+    context = {
+        "stats": stats,
+        "shorts": shorts,
+        "full_context": True,
+        "use_simple_bulk_btn": True,
+        "days": days,
+        "chart_files": chart_files,
+        "chart_size": chart_size,
+        "chart_shorts": chart_shorts,
+    }
+
+    if request.user.is_superuser:
+        stats_server = FileStats.objects.filter(user=None).order_by("-created_at")
+        server_days, server_chart_files, server_chart_size, server_chart_shorts = build_chart_data(stats_server)
+        context.update(
+            {
+                "stats_server": stats_server,
+                "server_days": server_days,
+                "server_chart_files": server_chart_files,
+                "server_chart_size": server_chart_size,
+                "server_chart_shorts": server_chart_shorts,
+            }
+        )
+
     return render(request, "home.html", context)
 
 
@@ -183,7 +217,7 @@ def files_view(request):
             return HttpResponseNotFound()
         if (request.user.is_authenticated and request.user == album.user) or request.user.is_superuser:
             ctx.update({"full_context": True})
-        ctx.update({"album": album})
+        ctx.update({"album": album, "album_file_count": album.files_set.count()})
         site_url = site_settings_processor(request)["site_settings"]["site_url"]
         ctx.update(
             {
@@ -239,6 +273,8 @@ def albums_view(request):
     log.debug("%s - albums_view: is_secure: %s", request.method, request.is_secure())
     albums = Albums.objects.get_request(request)
     context = {"albums": albums}
+    if request.user.is_superuser:
+        context["users"] = CustomUser.objects.all()
     return render(request, "albums.html", context)
 
 
@@ -475,6 +511,22 @@ def toggle_private_file_ajax(request, pk):
         file.private = True
     file.save()
     return HttpResponse(file.private, status=200)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def toggle_private_album_ajax(request, pk):
+    """
+    View  /ajax/toggle_private/album/<int:pk>/
+    """
+    log.debug("toggle_private_album_ajax: %s", pk)
+    album = get_object_or_404(Albums, pk=pk)
+    if album.user != request.user and not request.user.is_superuser:
+        return HttpResponse(status=401)
+    album.private = not album.private
+    album.save()
+    return HttpResponse(album.private, status=200)
 
 
 @login_required

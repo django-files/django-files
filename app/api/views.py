@@ -1342,6 +1342,30 @@ def users_view(request):
 
 
 @csrf_exempt
+@require_http_methods(["OPTIONS", "GET"])
+@auth_from_token
+def users_paginated_view(request, page=1, count=50):
+    """
+    View  /api/users/<page>/<count>/
+    """
+    log.debug("users_paginated_view: page=%s count=%s", page, count)
+    if not request.user.is_superuser:
+        return JsonResponse({"error": "Superuser required"}, status=403)
+    try:
+        query = CustomUser.objects.all().order_by("id")
+        paginator = Paginator(query, count)
+        page_obj = paginator.get_page(page)
+        users_data = serialize_users(page_obj.object_list)
+        for user_dict in users_data:
+            user_dict["name"] = user_dict.get("first_name") or user_dict.get("username", "")
+        _next = page_obj.next_page_number() if page_obj.has_next() else None
+        return JsonResponse({"users": users_data, "next": _next, "count": count}, status=200)
+    except ValueError as error:
+        log.debug(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
+
+
+@csrf_exempt
 @require_http_methods(["OPTIONS", "GET", "PATCH"])
 @auth_from_token
 @cache_control(no_cache=True)

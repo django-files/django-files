@@ -1,7 +1,7 @@
 {% load home_tags %}
 {# Unified toolbar for /files/ — list, gallery, and map views share this chrome. #}
 {# Translucent overlay matches the preview-page chrome (backdrop-blur, glass-feel). #}
-<div class="files-toolbar" id="files-toolbar" data-view="{{ view_mode }}" aria-label="Files toolbar">
+<div class="files-toolbar{% if album %} files-toolbar--album{% endif %}" id="files-toolbar" data-view="{{ view_mode }}" aria-label="Files toolbar">
     <nav class="files-toolbar-views" aria-label="Files view">
         <a class="files-toolbar-view show-list" role="button" data-view="list" title="List" href="{% url 'home:files' %}">
             <i class="fa-solid fa-list" aria-hidden="true"></i><span class="files-toolbar-view-label">List</span>
@@ -17,7 +17,7 @@
         </a>
     </nav>
 
-    <div class="files-toolbar-search">
+    <div class="files-toolbar-search" id="files-toolbar-search">
         <label class="visually-hidden" for="files-toolbar-search-input">Search files</label>
         <i class="fa-solid fa-magnifying-glass files-toolbar-search-icon" aria-hidden="true"></i>
         <input type="search" id="files-toolbar-search-input" class="form-control form-control-sm"
@@ -38,4 +38,46 @@
         </span>
         {% include 'files/bulk-menu.html' %}
     </div>
+
+    {% if album %}
+    {% is_mobile_browser request as mobile_browser %}
+    <div class="files-toolbar-album-row">
+        <span class="files-toolbar-album-title">
+            <i class="fa-regular fa-images me-2" aria-hidden="true"></i>{{ album.name }}
+        </span>
+        <span class="files-toolbar-album-owner">
+            {% with album.user.get_avatar_url as avatar_url %}
+            {% if avatar_url %}<img src="{{ avatar_url }}" class="rounded-circle" height="22" width="22" alt="{{ album.user.get_name }}">{% endif %}
+            {% endwith %}
+            <span class="fw-semibold">{{ album.user.get_name }}</span>
+        </span>
+        {% if album.info %}
+        <span class="files-toolbar-album-info text-body-secondary">{{ album.info }}</span>
+        {% endif %}
+        <span class="files-toolbar-album-meta text-body-secondary small">
+            <i class="fa-regular fa-eye me-1" aria-hidden="true"></i><strong id="views-count">{{ album.view }}</strong> views
+            <span class="mx-1 opacity-50">&bull;</span>
+            <i class="fa-solid fa-file me-1" aria-hidden="true"></i><strong>{{ album_file_count }}</strong> files
+        </span>
+        {% if full_context %}
+        <button id="album-private-toggle"
+                class="files-toolbar-btn ms-auto{% if album.private %} files-toolbar-btn--private{% endif %}"
+                data-album-id="{{ album.id }}"
+                data-private="{{ album.private|yesno:'true,false' }}"
+                data-url="{% url 'home:toggle-private-album' album.id %}"
+                title="{% if album.private %}Private — click to make public{% else %}Public — click to make private{% endif %}">
+            <i class="fa-solid {% if album.private %}fa-lock{% else %}fa-lock-open{% endif %}" aria-hidden="true"></i><span>{% if album.private %}Private{% else %}Public{% endif %}</span>
+        </button>
+        {% if mobile_browser %}
+        <a href="{{ native_app_arg }}" class="link-body-emphasis files-toolbar-album-app-link" title="Open in App">
+            <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
+        </a>
+        {% endif %}
+        {% elif mobile_browser %}
+        <a href="{{ native_app_arg }}" class="ms-auto link-body-emphasis files-toolbar-album-app-link" title="Open in App">
+            <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>

@@ -24,6 +24,12 @@ gulp.task('clipboard', () => {
         .pipe(gulp.dest('app/static/dist/clipboard'))
 })
 
+gulp.task('echarts', () => {
+    return gulp
+        .src('node_modules/echarts/dist/echarts.min.js')
+        .pipe(gulp.dest('app/static/dist/echarts'))
+})
+
 gulp.task('datatables', () => {
     return gulp
         .src([
@@ -151,6 +157,7 @@ gulp.task(
         'bootstrap',
         'clipboard',
         'datatables',
+        'echarts',
         'fontawesome',
         'js-cookie',
         'jquery',

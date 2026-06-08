@@ -36,6 +36,7 @@ let fetchLock = false
 let filesDataTable
 let selectedFileIds = []
 let scrollObserver = null
+let gallerySearchTerm = ''
 
 // Cache touch detection once — isTouchDevice() is called on every hover otherwise
 const isTouch =
@@ -103,6 +104,43 @@ document.addEventListener('click', (e) => {
 
 document.addEventListener('DOMContentLoaded', initGallery)
 
+const albumPrivateToggle = document.getElementById('album-private-toggle')
+if (albumPrivateToggle) {
+    albumPrivateToggle.addEventListener('click', async () => {
+        const btn = albumPrivateToggle
+        btn.disabled = true
+        try {
+            const resp = await fetch(btn.dataset.url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken':
+                        /csrftoken=([^;]+)/.exec(document.cookie)?.[1] ?? '',
+                },
+            })
+            if (!resp.ok) throw new Error(resp.status)
+            const isPrivate = (await resp.text()).trim() === 'True'
+            btn.dataset.private = isPrivate ? 'true' : 'false'
+            const icon = btn.querySelector('i')
+            const label = btn.querySelector('span')
+            if (isPrivate) {
+                btn.classList.add('files-toolbar-btn--private')
+                icon.classList.replace('fa-lock-open', 'fa-lock')
+                if (label) label.textContent = 'Private'
+                btn.title = 'Private — click to make public'
+            } else {
+                btn.classList.remove('files-toolbar-btn--private')
+                icon.classList.replace('fa-lock', 'fa-lock-open')
+                if (label) label.textContent = 'Public'
+                btn.title = 'Public — click to make private'
+            }
+        } catch (e) {
+            console.error('Failed to toggle album privacy', e)
+        } finally {
+            btn.disabled = false
+        }
+    })
+}
+
 function applyView(view) {
     const container = mapContainer.parentElement
     if (!container) {
@@ -138,53 +176,36 @@ function detectInitialView() {
     return 'list'
 }
 
-function wireToolbarSearch() {
-    const input = document.getElementById('files-toolbar-search-input')
-    if (!input || !filesDataTable) return
-    let timer
-    input.addEventListener('input', () => {
-        clearTimeout(timer)
-        timer = setTimeout(() => {
-            filesDataTable.search(input.value).draw()
-        }, 200)
-    })
-}
-
-// Keep --navbar-h in sync with the real navbar height so the files-toolbar
-// sits flush below it with no gap (hardcoded 52px in CSS is just a fallback).
-function syncNavbarHeight() {
-    const navbar = document.querySelector('.navbar')
-    if (!navbar) return
-    const sync = () =>
-        document.documentElement.style.setProperty(
-            '--navbar-h',
-            `${navbar.offsetHeight}px`
-        )
-    sync()
-    new ResizeObserver(sync).observe(navbar)
-}
-
-// Keep --files-toolbar-h in sync with the rendered toolbar height so
-// list/gallery padding tracks wraps to two rows on narrow viewports.
-function observeToolbarHeight() {
-    const toolbar = document.getElementById('files-toolbar')
-    const container = toolbar?.parentElement
-    if (!toolbar || !container) return
-    const sync = () =>
-        container.style.setProperty(
-            '--files-toolbar-h',
-            `${toolbar.offsetHeight}px`
-        )
-    sync()
-    new ResizeObserver(sync).observe(toolbar)
+function filterGallery() {
+    const term = gallerySearchTerm.trim().toLowerCase()
+    for (const file of fileData) {
+        const card = document.getElementById(`gallery-image-${file.id}`)
+        if (!card) continue
+        card.style.display =
+            !term || file.name.toLowerCase().includes(term) ? '' : 'none'
+    }
 }
 
 async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
-    wireToolbarSearch()
+    wireToolbarSearch('files-toolbar-search-input', filesDataTable)
+    initCollapsibleSearch('files-toolbar-search', 'files-toolbar-search-input')
+
+    const searchInput = document.getElementById('files-toolbar-search-input')
+    if (searchInput) {
+        let filterTimer
+        searchInput.addEventListener('input', () => {
+            gallerySearchTerm = searchInput.value
+            if (params.get('view') === 'gallery') {
+                clearTimeout(filterTimer)
+                filterTimer = setTimeout(filterGallery, 200)
+            }
+        })
+    }
+
     syncNavbarHeight()
-    observeToolbarHeight()
+    observeToolbarHeight('files-toolbar', '--files-toolbar-h')
 
     const view = detectInitialView()
     applyView(view)
@@ -293,6 +314,7 @@ async function addNodes() {
     hideSkeletons()
     if (params.get('view') === 'gallery') {
         data.files.forEach((file) => addGalleryFile(file))
+        filterGallery()
     }
     addFileTableRowsBatch(data.files)
     fetchLock = false
@@ -633,6 +655,7 @@ function changeView(event) {
     } else {
         galleryContainer.replaceChildren()
         renderGalleryChunked(fileData, 20, () => {
+            filterGallery()
             if (
                 nextPage &&
                 document.body.scrollHeight -

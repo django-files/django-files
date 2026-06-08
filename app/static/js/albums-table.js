@@ -6,14 +6,32 @@ const albumsTable = $('#albums-table')
 const deleteAlbumModal = $('#delete-album-modal')
 const deleteAlbumButton = document.querySelector('.delete-album-btn')
 const albumLink = document.querySelector('div.d-none > .dj-album-link')
+const totalAlbumsCount = document.getElementById('total-albums-count')
 
 let albumsDataTable
 let nextPage = 1
 let fetchLock = false
+let params = new URL(document.location.toString()).searchParams
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)
 document.addEventListener('scroll', debounce(scrollHandle))
 window.addEventListener('resize', debounce(scrollHandle))
+
+$('#user').on('change', async function () {
+    const userId = $(this).val()
+    if (userId) {
+        params.set('user', userId)
+    } else {
+        params.delete('user')
+    }
+    globalThis.history.replaceState({}, null, '/albums/?' + params)
+    nextPage = 1
+    fetchLock = false
+    if (albumsDataTable) albumsDataTable.clear().draw()
+    showAlbumsSkeletons()
+    await addAlbumRows()
+    if (!albumsDataTable.rows().count()) albumsDataTable.draw()
+})
 
 async function scrollHandle(event) {
     await pageScroll(event, nextPage, addAlbumRows)
@@ -32,15 +50,6 @@ const dataTablesOptions = {
         { data: 'delete' },
     ],
     initComplete: function () {
-        const startCell = $(this.api().table().container())
-            .find('.dt-layout-start')
-            .first()
-        startCell.append(
-            $(
-                '<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#create-album-modal"><i class="fa-solid fa-images me-2"></i> New Album</button>'
-            )
-        )
-
         // Reveal the section after DataTables has finished all DOM mutations.
         // Double-rAF ensures the browser commits the new layout before
         // opacity transitions to 1, eliminating toolbar-insertion jitter.
@@ -95,6 +104,13 @@ const dataTablesOptions = {
 
 async function domContentLoaded() {
     albumsDataTable = albumsTable.DataTable(dataTablesOptions)
+    wireToolbarSearch('albums-toolbar-search-input', albumsDataTable)
+    initCollapsibleSearch(
+        'albums-toolbar-search',
+        'albums-toolbar-search-input'
+    )
+    syncNavbarHeight()
+    observeToolbarHeight('albums-toolbar', '--albums-toolbar-h')
     await initDataTable(
         albumsDataTable,
         showAlbumsSkeletons,
@@ -151,6 +167,8 @@ async function addAlbumRows() {
 function addAlbumRow(row) {
     row['DT_RowId'] = `album-${row.id}`
     albumsDataTable.row.add(row).draw()
+    if (totalAlbumsCount)
+        totalAlbumsCount.textContent = albumsDataTable.rows().count()
 }
 
 // Varied name-column widths so skeleton rows look realistic
@@ -202,6 +220,8 @@ socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)
     if (data.event === 'album-delete') {
         $(`#album-${data.id}`).remove()
+        if (totalAlbumsCount)
+            totalAlbumsCount.textContent = albumsDataTable.rows().count()
     } else if (data.event === 'album-new') {
         addAlbumRow(data)
     }

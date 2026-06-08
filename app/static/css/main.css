@@ -136,6 +136,10 @@
     --navbar-h: 52px;
 }
 
+/* backdrop-filter on the nav itself would create a CSS containing block for
+   position:fixed children (the offcanvas), trapping it inside the navbar.
+   The blur lives on ::before instead; position:fixed on the navbar already
+   establishes a containing block for the pseudo-element. */
 .navbar {
     --bs-navbar-padding-y: 0.35rem;
 
@@ -144,8 +148,16 @@
         var(--nav-color-1, #130e36) 0%,
         var(--nav-color-2, #1e1c21) 100%
     );
+}
+
+.navbar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    pointer-events: none;
+    z-index: -1;
 }
 
 @supports (background-color: color-mix(in srgb, red 50%, blue)) {
@@ -173,4 +185,259 @@
             padding-top: env(safe-area-inset-top);
         }
     }
+}
+
+/* ---- Floating page toolbar ---- */
+/* Shared chrome for any page toolbar (files list/gallery/map, albums, etc.).
+ * Sits flush below the navbar; pages opt in by rendering a .files-toolbar element. */
+
+.files-toolbar {
+    position: fixed;
+    top: calc(var(--navbar-h, 52px) + env(safe-area-inset-top, 0px));
+    left: 0;
+    right: 0;
+    z-index: 1020;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.65rem 1rem 0.5rem;
+    margin: 0;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.18);
+    border-bottom: 1px ridge rgba(66 69 73 / 100%);
+}
+
+.files-toolbar-title {
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0.9;
+}
+
+.files-toolbar-views {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.files-toolbar-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    color: var(--bs-emphasis-color);
+    text-decoration: none;
+    line-height: 1;
+    transition:
+        background 0.15s,
+        color 0.15s;
+    opacity: 0.75;
+}
+
+.files-toolbar-view:hover,
+.files-toolbar-view:focus-visible {
+    background: rgba(var(--bs-emphasis-color-rgb), 0.08);
+    opacity: 1;
+}
+
+.files-toolbar-view.view-active {
+    background: rgba(var(--bs-primary-rgb), 0.18);
+    color: var(--bs-emphasis-color);
+    opacity: 1;
+    font-weight: 600;
+}
+
+/* Hide labels on narrow screens — icons only */
+@media (width <= 575.98px) {
+    .files-toolbar-view-label {
+        display: none;
+    }
+}
+
+.files-toolbar-search {
+    position: relative;
+    flex: 0 0 2rem;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.2);
+    cursor: pointer;
+    transition:
+        flex-basis 0.4s ease,
+        border-color 0.3s ease,
+        border-radius 0.3s ease;
+}
+
+.files-toolbar-search--expanded {
+    flex: 1 1 14rem;
+    max-width: 22rem;
+    border-color: transparent;
+    border-radius: 0.375rem;
+    cursor: default;
+}
+
+.files-toolbar-search input[type='search'] {
+    padding-left: 2rem;
+    background: rgba(var(--bs-body-bg-rgb), 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s 0.08s;
+}
+
+.files-toolbar-search--expanded input[type='search'] {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.15s;
+}
+
+.files-toolbar-search--expanded input[type='search']:focus {
+    background: var(--bs-body-bg);
+}
+
+.files-toolbar-search-icon {
+    position: absolute;
+    left: 0.65rem;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.files-toolbar-filters {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.files-toolbar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.files-toolbar-count strong {
+    color: var(--bs-emphasis-color);
+}
+
+.files-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--bs-border-color);
+    background: transparent;
+    color: var(--bs-emphasis-color);
+    font-size: 0.875rem;
+    line-height: 1;
+    opacity: 0.75;
+    cursor: pointer;
+    transition:
+        background 0.15s,
+        opacity 0.15s;
+}
+
+.files-toolbar-btn:hover,
+.files-toolbar-btn:focus-visible,
+.files-toolbar-btn[aria-expanded='true'] {
+    background: rgba(var(--bs-emphasis-color-rgb), 0.08);
+    opacity: 1;
+    color: var(--bs-emphasis-color);
+}
+
+.files-toolbar-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.files-toolbar-btn--private {
+    color: var(--bs-warning-text-emphasis);
+    border-color: var(--bs-warning-border-subtle);
+    opacity: 1;
+}
+
+.files-toolbar-btn--private:hover,
+.files-toolbar-btn--private:focus-visible {
+    background: rgba(var(--bs-warning-rgb), 0.15);
+}
+
+/* ---- Album info row (second toolbar row, album detail view only) ---- */
+
+.files-toolbar-album-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 0 0 100%;
+    border-top: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.08);
+    padding-top: 0.4rem;
+    min-width: 0;
+}
+
+.files-toolbar-album-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.files-toolbar-album-owner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    opacity: 0.85;
+    font-size: 0.875rem;
+}
+
+.files-toolbar-album-info {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.files-toolbar-album-meta {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.files-toolbar-album-app-link {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    opacity: 0.75;
+    transition: opacity 0.15s;
+}
+
+.files-toolbar-album-app-link:hover {
+    opacity: 1;
+}
+
+/* Slim version chip used on the map view. Floats bottom-left over the map. */
+.files-version-strip {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 1020;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.8rem;
+    background: rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-top: 1px ridge rgba(66 69 73 / 100%);
+    border-right: 1px ridge rgba(66 69 73 / 100%);
+}
+
+.files-version-strip a {
+    color: var(--bs-emphasis-color);
+    text-decoration: none;
+    opacity: 0.75;
+}
+
+.files-version-strip a:hover {
+    opacity: 1;
 }
