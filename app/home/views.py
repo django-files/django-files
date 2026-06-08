@@ -239,6 +239,8 @@ def albums_view(request):
     log.debug("%s - albums_view: is_secure: %s", request.method, request.is_secure())
     albums = Albums.objects.get_request(request)
     context = {"albums": albums}
+    if request.user.is_superuser:
+        context["users"] = CustomUser.objects.all()
     return render(request, "albums.html", context)
 
 
@@ -475,6 +477,22 @@ def toggle_private_file_ajax(request, pk):
         file.private = True
     file.save()
     return HttpResponse(file.private, status=200)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def toggle_private_album_ajax(request, pk):
+    """
+    View  /ajax/toggle_private/album/<int:pk>/
+    """
+    log.debug("toggle_private_album_ajax: %s", pk)
+    album = get_object_or_404(Albums, pk=pk)
+    if album.user != request.user and not request.user.is_superuser:
+        return HttpResponse(status=401)
+    album.private = not album.private
+    album.save()
+    return HttpResponse(album.private, status=200)
 
 
 @login_required

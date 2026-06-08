@@ -197,3 +197,122 @@ div.dataTables_wrapper span.select-item {
 #dt-user-select-wrapper select {
     width: auto;
 }
+
+/* ---- Toolbar-integrated table sections ---- */
+/* Pages that use a floating .files-toolbar suppress DataTables' own chrome
+ * and remove horizontal padding so tables run edge-to-edge. */
+
+/*
+ * Hide every DT layout row that isn't the table itself, plus the DT search,
+ * info, paging, and length controls (belt-and-braces alongside the row rule).
+ */
+#files-table-section .files-table-narrow-msg,
+#files-table-section .dt-container > *:not(.dt-layout-table),
+#files-table-section .dt-search,
+#files-table-section .dt-info,
+#files-table-section .dt-paging,
+#files-table-section .dt-length {
+    display: none !important;
+}
+
+#files-table-section .dt-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Gallery and map views show the unified toolbar but hide the table itself. */
+[data-files-view='gallery'] #files-table-section,
+[data-files-view='map'] #files-table-section {
+    display: none !important;
+}
+
+/* Nudge the first column right so the checkbox isn't flush with the viewport
+ * edge while table borders remain edge-to-edge. */
+[data-files-view='list'] #files-table thead th:first-child,
+[data-files-view='list'] #files-table tbody td:first-child {
+    padding-left: 0.75rem;
+}
+
+/* Push list/gallery content past the floating toolbar. Map peeks through.
+ * clip (not hidden) prevents scroll without creating a scroll container, so
+ * position:fixed dropdowns still escape the boundary. */
+.container-fluid[data-files-view='list'],
+.container-fluid[data-files-view='gallery'] {
+    padding-top: var(--files-toolbar-h, 48px) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow-x: clip;
+}
+
+#albums-table-section .dt-container > *:not(.dt-layout-table),
+#albums-table-section .dt-search,
+#albums-table-section .dt-info,
+#albums-table-section .dt-paging,
+#albums-table-section .dt-length {
+    display: none !important;
+}
+
+#albums-table-section .dt-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+[id='albums-table_wrapper'] .dt-layout-table {
+    margin-top: 0 !important;
+}
+
+.container-fluid[data-albums-view='list'] {
+    padding-top: var(--albums-toolbar-h, 48px) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow-x: clip;
+}
+
+#streams-table-section .streams-table-narrow-msg,
+#streams-table-section .dt-container > *:not(.dt-layout-table),
+#streams-table-section .dt-search,
+#streams-table-section .dt-info,
+#streams-table-section .dt-paging,
+#streams-table-section .dt-length {
+    display: none !important;
+}
+
+#streams-table-section .dt-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+[id='streams-table_wrapper'] .dt-layout-table {
+    margin-top: 0 !important;
+}
+
+.container-fluid[data-streams-view='list'] {
+    padding-top: var(--streams-toolbar-h, 48px) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow-x: clip;
+}
+
+#shorts-table-section .dt-container > *:not(.dt-layout-table),
+#shorts-table-section .dt-search,
+#shorts-table-section .dt-info,
+#shorts-table-section .dt-paging,
+#shorts-table-section .dt-length {
+    display: none !important;
+}
+
+#shorts-table-section .dt-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+[id='shorts-table_wrapper'] .dt-layout-table {
+    margin-top: 0 !important;
+}
+
+.container-fluid[data-shorts-view='list'] {
+    padding-top: var(--shorts-toolbar-h, 48px) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow-x: clip;
+}

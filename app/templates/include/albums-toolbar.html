@@ -1,0 +1,29 @@
+{# Unified toolbar for /albums/ — mirrors the files-toolbar chrome. #}
+<div class="files-toolbar" id="albums-toolbar" aria-label="Albums toolbar">
+    <span class="files-toolbar-title">
+        <i class="fa-solid fa-images me-2" aria-hidden="true"></i>Albums
+    </span>
+
+    <div class="files-toolbar-search" id="albums-toolbar-search">
+        <label class="visually-hidden" for="albums-toolbar-search-input">Search albums</label>
+        <i class="fa-solid fa-magnifying-glass files-toolbar-search-icon" aria-hidden="true"></i>
+        <input type="search" id="albums-toolbar-search-input" class="form-control form-control-sm"
+               placeholder="Search albums…" autocomplete="off">
+    </div>
+
+    <div class="files-toolbar-filters" id="albums-toolbar-filters">
+        {% if request.user.is_superuser %}
+            {% include 'include/user-select.html' %}
+        {% endif %}
+    </div>
+
+    <div class="files-toolbar-actions">
+        <span class="files-toolbar-count text-body-secondary small text-nowrap" id="dt-album-count-wrapper">
+            <span class="files-toolbar-count-label">Showing</span>
+            <strong id="total-albums-count">0</strong>
+        </span>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#create-album-modal">
+            <i class="fa-solid fa-images me-2" aria-hidden="true"></i>New Album
+        </button>
+    </div>
+</div>

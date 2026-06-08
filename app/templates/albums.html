@@ -12,11 +12,10 @@
 {% endblock %}
 
 {% block body %}
-<div class="container-fluid pb-3 pt-2 px-4">
-
+<div class="container-fluid pb-3 pt-2" data-albums-view="list">
+    {% include 'include/albums-toolbar.html' %}
     {% include 'albums/table.html' %}
-
-</div> <!-- container-fluid -->
+</div><!-- /.container-fluid -->
 
 {% include 'albums/create-modal.html' %}
 {% endblock %}

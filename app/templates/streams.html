@@ -13,17 +13,8 @@
 
 {% block body %}
 
-    <div class="container-fluid pb-3 pt-2 px-4">
-        {% if request.user.is_authenticated %}
-        <div id="obs-button-container" class="d-none">
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#obsSetupModal" title="Get OBS setup instructions for a new stream">
-                <i class="fa-solid fa-satellite-dish me-1"></i> Stream with OBS
-            </button>
-        </div>
-        {% endif %}
-        {% if request.user.is_superuser %}
-        {% include 'include/user-select.html' %}
-        {% endif %}
+    <div class="container-fluid pb-3 pt-2" data-streams-view="list">
+        {% include 'include/streams-toolbar.html' %}
         {% include 'streams/table.html'%}
     </div>
 
