@@ -32,6 +32,10 @@ export async function fetchShorts(page, count = 100) {
     return fetchPaginated('/api/shorts/', page, count)
 }
 
+export async function fetchUsers(page, count = 50) {
+    return fetchPaginated('/api/users/', page, count)
+}
+
 export async function fetchFile(id) {
     let url = `${globalThis.location.origin}/api/file/${id}`
     const response = await fetch(url)

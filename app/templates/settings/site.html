@@ -9,6 +9,7 @@
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'css/site.css' %}">
+    <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}">
 {% endblock %}
 
 {% block main %}
@@ -315,6 +316,29 @@
 
     <hr>
 
+    <section id="users">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <h3 class="mb-0">Users</h3>
+        <div class="input-group input-group-sm" style="max-width: 220px;">
+            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
+            <input type="search" id="users-search-input" class="form-control" placeholder="Search users…" autocomplete="off" aria-label="Search users">
+        </div>
+    </div>
+    <table class="display responsive nowrap table table-hover w-100" id="users-table">
+        <caption class="visually-hidden">User List</caption>
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">User</th>
+                <th scope="col">Storage</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    </section>
+
+    <hr>
+
     <section id="sessions">
     <h3>Sessions</h3>
         <button type="button" class="btn btn-outline-danger my-2" data-bs-toggle="modal" data-bs-target="#delete-sessions-modal">
@@ -374,6 +398,8 @@
 {% endblock %}
 
 {% block tail %}
+    {% include 'include/datatables-scripts.html' %}
     <script type="module" src="{% static 'js/settings.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/settings-site.js' %}"></script>
+    <script type="module" src="{% static 'js/settings-site-users.js' %}"></script>
 {% endblock %}
