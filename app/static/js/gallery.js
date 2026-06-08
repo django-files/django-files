@@ -151,7 +151,8 @@ function wireToolbarSearch() {
 }
 
 // Keep --navbar-h in sync with the real navbar height so the files-toolbar
-// sits flush below it with no gap (hardcoded 52px in CSS is just a fallback).
+// sits flush below it. ResizeObserver fires before the first paint, so the
+// CSS default of 52px is only used if JS never runs.
 function syncNavbarHeight() {
     const navbar = document.querySelector('.navbar')
     if (!navbar) return
@@ -160,7 +161,6 @@ function syncNavbarHeight() {
             '--navbar-h',
             `${navbar.offsetHeight}px`
         )
-    sync()
     new ResizeObserver(sync).observe(navbar)
 }
 

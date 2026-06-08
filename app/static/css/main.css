@@ -136,6 +136,10 @@
     --navbar-h: 52px;
 }
 
+/* backdrop-filter on the nav itself would create a CSS containing block for
+   position:fixed children (the offcanvas), trapping it inside the navbar.
+   The blur lives on ::before instead; position:fixed on the navbar already
+   establishes a containing block for the pseudo-element. */
 .navbar {
     --bs-navbar-padding-y: 0.35rem;
 
@@ -144,8 +148,16 @@
         var(--nav-color-1, #130e36) 0%,
         var(--nav-color-2, #1e1c21) 100%
     );
+}
+
+.navbar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    pointer-events: none;
+    z-index: -1;
 }
 
 @supports (background-color: color-mix(in srgb, red 50%, blue)) {

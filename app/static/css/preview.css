@@ -1,3 +1,25 @@
+/* CSS vars needed for standalone pages that don't load file-preview-panel.css.
+ * Duplicated there too; last-write wins, values are identical. */
+:root {
+    --preview-chrome-bg: rgba(0, 0, 0, 0.12);
+    --preview-chrome-bg-hover: rgba(0, 0, 0, 0.2);
+    --preview-border-color: rgba(66, 69, 73, 0.3);
+    --preview-dropdown-bg: rgba(235, 235, 240, 0.92);
+}
+
+[data-bs-theme='dark'] {
+    --preview-chrome-bg: rgba(255, 255, 255, 0.08);
+    --preview-chrome-bg-hover: rgba(255, 255, 255, 0.15);
+    --preview-border-color: rgba(200, 200, 200, 0.2);
+    --preview-dropdown-bg: rgba(22, 22, 28, 0.92);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-bs-theme='light']) {
+        --preview-dropdown-bg: rgba(22, 22, 28, 0.92);
+    }
+}
+
 .sidebar {
     position: absolute;
     top: 0;
@@ -5,8 +27,11 @@
     width: 360px;
     min-width: 360px;
     height: 100%;
-    background: var(--bs-body-bg);
-    border: 1px solid var(--bs-border-color);
+    background: rgba(220, 220, 225, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid var(--preview-border-color);
+    border-right: none;
     overflow: hidden;
     transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     padding-top: 60px;
@@ -15,8 +40,21 @@
     z-index: 1;
     display: flex;
     flex-direction: column;
-    contain: layout style paint;
     will-change: right;
+}
+
+[data-bs-theme='dark'] .sidebar {
+    background: rgba(0, 0, 0, 0.65);
+}
+
+[data-bs-theme='light'] .sidebar {
+    background: rgba(220, 220, 225, 0.72);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-bs-theme='light']) .sidebar {
+        background: rgba(0, 0, 0, 0.65);
+    }
 }
 
 .sidebar > a {
@@ -119,9 +157,9 @@
     border-radius: 999px;
     /* Above .sidebar (z-index: 1) so it stays visible when docked in. */
     z-index: 2;
-    /* Default = fade IN with delay matching the sidebar's 0.5s retract. */
+    /* Fade in after the sidebar has mostly retracted (0.35s transition). */
     transition:
-        opacity 0.2s 0.5s,
+        opacity 0.2s 0.2s,
         background-color 0.2s;
 }
 
@@ -153,24 +191,13 @@
     background: var(--preview-chrome-bg-hover);
 }
 
-/* Match the sidebar's translucent palette on the file-context dropdown menus
- * triggered by .context-placement and .sidebar-context-btn. Overrides the
- * theme-keyed rgba(0 0 0 / 70%) from main.css for the preview chrome only. */
+/* Glass dropdown for all preview context menus — themed dark/light. */
 .file-context-dropdown-menu,
 .fileContextDropdown .dropdown-menu {
-    background: var(--preview-chrome-bg);
+    background: var(--preview-dropdown-bg);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border-color: var(--preview-border-color);
-}
-
-/* The in-sidebar copy sits inside the sidebar's stacking context, so its
- * own backdrop-filter can only see the sidebar bg (not the preview behind).
- * Use the sidebar's own background for consistency. */
-.sidebar .file-context-dropdown-menu,
-.sidebar .fileContextDropdown .dropdown-menu {
-    background: var(--bs-secondary-bg);
-    border-color: var(--bs-border-color);
 }
 
 /* Album badges inside the sidebar — match the chrome palette but keep a
@@ -214,6 +241,17 @@
     width: 100%;
     overflow: hidden;
     contain: layout style paint;
+    background: #fff;
+}
+
+[data-bs-theme='dark'] .preview-wrapper {
+    background: #000;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-bs-theme='light']) .preview-wrapper {
+        background: #000;
+    }
 }
 
 .preview-wrapper .preview {
