@@ -9,7 +9,7 @@
 {% block head %}
     <link href="{% static 'dist/uppy/uppy.min.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/table.css' %}" />
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.js"></script>
+    <script src="{% static 'dist/echarts/echarts.min.js' %}"></script>
     <style>
         .dash-stat-card {
             border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);

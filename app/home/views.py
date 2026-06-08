@@ -96,13 +96,15 @@ def home_view(request):
     if request.user.is_superuser:
         stats_server = FileStats.objects.filter(user=None).order_by("-created_at")
         server_days, server_chart_files, server_chart_size, server_chart_shorts = build_chart_data(stats_server)
-        context.update({
-            "stats_server": stats_server,
-            "server_days": server_days,
-            "server_chart_files": server_chart_files,
-            "server_chart_size": server_chart_size,
-            "server_chart_shorts": server_chart_shorts,
-        })
+        context.update(
+            {
+                "stats_server": stats_server,
+                "server_days": server_days,
+                "server_chart_files": server_chart_files,
+                "server_chart_size": server_chart_size,
+                "server_chart_shorts": server_chart_shorts,
+            }
+        )
 
     return render(request, "home.html", context)
 
