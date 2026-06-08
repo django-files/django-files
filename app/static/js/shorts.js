@@ -69,18 +69,26 @@ $('#short-delete-confirm').on('click', function () {
 })
 
 document.addEventListener('DOMContentLoaded', function () {
+    const isHome = $('#shorts-table').data('home')
     shortsDataTable = $('#shorts-table').DataTable({
         order: [],
         processing: true,
-        responsive: {
-            details: false,
-        },
-        saveState: true,
+        responsive: { details: false },
+        saveState: !isHome,
+        paging: false,
         pageLength: -1,
         lengthMenu: [
             [10, 25, 50, 100, -1],
             [10, 25, 50, 100, 'All'],
         ],
+        layout: isHome
+            ? {
+                  topStart: null,
+                  topEnd: null,
+                  bottomStart: null,
+                  bottomEnd: null,
+              }
+            : undefined,
         scrollX: false,
         columnDefs: [
             { targets: [0], responsivePriority: 1 },

@@ -82,13 +82,11 @@
             padding: 1rem 1.25rem;
             background: var(--bs-body-bg);
         }
-        /* Prevent the DataTables wrapper from causing horizontal scroll inside the card */
-        #home-files-section .dt-layout-table {
-            overflow-x: hidden;
-        }
-        #home-files-section .dt-scroll-body,
-        #home-files-section .dataTables_scrollBody {
-            overflow-x: hidden !important;
+        /* Keep the files card from growing a scroll region — let DataTables
+           responsive drop columns instead. The min-height skeleton reservation
+           in table.css still works; overflow:hidden just clips any overflow. */
+        #home-files-card {
+            overflow: hidden;
         }
     </style>
 {% endblock %}
@@ -493,7 +491,7 @@
     </div>
 
     {# ── Recent Files ── #}
-    <div class="dash-card mb-4">
+    <div class="dash-card mb-4" id="home-files-card">
         <div class="dash-card-header">
             <span class="dash-card-title">
                 <i class="fa-regular fa-folder-open opacity-60"></i> Recent Files
@@ -528,7 +526,7 @@
             {% if not shorts %}
                 <p class="text-muted mb-0 small">Short URLs will appear here once created.</p>
             {% else %}
-                {% include 'include/shorts-table.html' with shorts=shorts|slice:":10" %}
+                {% include 'include/shorts-table.html' with shorts=shorts|slice:":10" home_mode=True %}
                 {% if shorts|length > 10 %}
                     <p class="mt-1 mb-0 small text-muted">
                         <em>Truncated to 10.</em>
