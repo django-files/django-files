@@ -301,6 +301,50 @@
     pointer-events: none;
 }
 
+/* ---- Album info row (second toolbar row, album view only) ---- */
+
+.files-toolbar-album-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 0 0 100%;
+    border-top: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.08);
+    padding-top: 0.4rem;
+    min-width: 0;
+}
+
+.files-toolbar-album-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.files-toolbar-album-info {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.files-toolbar-album-meta {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.files-toolbar-album-app-link {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    opacity: 0.75;
+    transition: opacity 0.15s;
+}
+
+.files-toolbar-album-app-link:hover {
+    opacity: 1;
+}
+
 /* Slim version chip used on the map view. Floats bottom-left over the map,
  * leaving the right side free for Leaflet's attribution control. Matches
  * the toolbar's translucent style. */

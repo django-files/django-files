@@ -183,7 +183,7 @@ def files_view(request):
             return HttpResponseNotFound()
         if (request.user.is_authenticated and request.user == album.user) or request.user.is_superuser:
             ctx.update({"full_context": True})
-        ctx.update({"album": album})
+        ctx.update({"album": album, "album_file_count": album.files_set.count()})
         site_url = site_settings_processor(request)["site_settings"]["site_url"]
         ctx.update(
             {

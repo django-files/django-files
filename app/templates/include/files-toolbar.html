@@ -1,7 +1,7 @@
 {% load home_tags %}
 {# Unified toolbar for /files/ — list, gallery, and map views share this chrome. #}
 {# Translucent overlay matches the preview-page chrome (backdrop-blur, glass-feel). #}
-<div class="files-toolbar" id="files-toolbar" data-view="{{ view_mode }}" aria-label="Files toolbar">
+<div class="files-toolbar{% if album %} files-toolbar--album{% endif %}" id="files-toolbar" data-view="{{ view_mode }}" aria-label="Files toolbar">
     <nav class="files-toolbar-views" aria-label="Files view">
         <a class="files-toolbar-view show-list" role="button" data-view="list" title="List" href="{% url 'home:files' %}">
             <i class="fa-solid fa-list" aria-hidden="true"></i><span class="files-toolbar-view-label">List</span>
@@ -38,4 +38,26 @@
         </span>
         {% include 'files/bulk-menu.html' %}
     </div>
+
+    {% if album %}
+    <div class="files-toolbar-album-row">
+        <span class="files-toolbar-album-title">
+            <i class="fa-regular fa-images me-2" aria-hidden="true"></i>{{ album.name }}
+        </span>
+        {% if album.info %}
+        <span class="files-toolbar-album-info text-body-secondary">{{ album.info }}</span>
+        {% endif %}
+        <span class="files-toolbar-album-meta text-body-secondary small">
+            <i class="fa-regular fa-eye me-1" aria-hidden="true"></i><strong id="views-count">{{ album.view }}</strong> views
+            <span class="mx-1 opacity-50">&bull;</span>
+            <i class="fa-solid fa-file me-1" aria-hidden="true"></i><strong>{{ album_file_count }}</strong> files
+        </span>
+        {% is_mobile_browser request as mobile_browser %}
+        {% if mobile_browser %}
+        <a href="{{ native_app_arg }}" class="ms-auto link-body-emphasis files-toolbar-album-app-link" title="Open in App">
+            <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
