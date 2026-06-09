@@ -7,7 +7,7 @@ COPY ["package.json", "package-lock.json", "gulpfile.js", "swagger.yaml", "/work
 RUN npm install
 
 
-FROM python:3.12-alpine AS python
+FROM python:3.14-alpine AS python
 
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -21,13 +21,13 @@ COPY app/requirements.txt /
 RUN uv pip install --system --no-cache -r /requirements.txt
 
 
-FROM python:3.12-alpine
+FROM python:3.14-alpine
 
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE=1
 
 COPY --from=node /work/app/static/dist/ /app/static/dist/
-COPY --from=python /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
+COPY --from=python /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
 COPY --from=python /usr/local/bin/ /usr/local/bin/
 
 RUN addgroup -g 1000 app  &&\
