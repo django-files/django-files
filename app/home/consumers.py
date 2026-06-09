@@ -916,7 +916,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             viewer_data["display_name"] = display_name
             redis.hset(viewer_key, identity["viewer_key"], json.dumps(viewer_data))
             return self._get_chat_viewers(redis, viewer_key)
-        except (json.JSONDecodeError, TypeError):
+        except json.JSONDecodeError, TypeError:
             return None
 
     def _redis_ban_user(self, name: str, identity: Optional[dict], target: str) -> tuple:
@@ -997,7 +997,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         for vk, vraw in raw_viewers.items():
             try:
                 v = json.loads(vraw)
-            except (json.JSONDecodeError, TypeError):
+            except json.JSONDecodeError, TypeError:
                 continue
             vk_str = vk.decode() if isinstance(vk, bytes) else vk
             if v.get("display_name", "").lower() == target_lower or v.get("username", "").lower() == target_lower:
@@ -1013,7 +1013,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         for raw in raw_history:
             try:
                 msg = json.loads(raw)
-            except (json.JSONDecodeError, TypeError):
+            except json.JSONDecodeError, TypeError:
                 kept.append(raw)
                 continue
             if msg.get("display_name", "").lower() == target_lower or msg.get("username", "").lower() == target_lower:
@@ -1030,7 +1030,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         for v in raw.values():
             try:
                 viewers.append(json.loads(v))
-            except (json.JSONDecodeError, TypeError):
+            except json.JSONDecodeError, TypeError:
                 pass
         return viewers
 
@@ -1042,7 +1042,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         for item in reversed(raw):
             try:
                 messages.append(json.loads(item))
-            except (json.JSONDecodeError, TypeError):
+            except json.JSONDecodeError, TypeError:
                 pass
         return messages
 
