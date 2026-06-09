@@ -236,18 +236,6 @@ function debounce(fn, timeout = 250) {
 }
 
 // eslint-disable-next-line no-unused-vars
-function syncNavbarHeight() {
-    const navbar = document.querySelector('.navbar')
-    if (!navbar) return
-    const sync = () =>
-        document.documentElement.style.setProperty(
-            '--navbar-h',
-            `${navbar.offsetHeight}px`
-        )
-    new ResizeObserver(sync).observe(navbar)
-}
-
-// eslint-disable-next-line no-unused-vars
 function observeToolbarHeight(toolbarId, cssVar) {
     const toolbar = document.getElementById(toolbarId)
     const container = toolbar?.parentElement
@@ -256,6 +244,14 @@ function observeToolbarHeight(toolbarId, cssVar) {
         container.style.setProperty(cssVar, `${toolbar.offsetHeight}px`)
     sync()
     new ResizeObserver(sync).observe(toolbar)
+}
+
+// eslint-disable-next-line no-unused-vars
+function initToolbar(toolbarId, dt) {
+    const searchInputId = `${toolbarId}-search-input`
+    if (dt) wireToolbarSearch(searchInputId, dt)
+    initCollapsibleSearch(`${toolbarId}-search`, searchInputId)
+    observeToolbarHeight(toolbarId, '--toolbar-h')
 }
 
 // eslint-disable-next-line no-unused-vars
@@ -291,11 +287,6 @@ function initCollapsibleSearch(wrapperId, inputId) {
         }
     })
     input.addEventListener('blur', collapse)
-}
-
-// eslint-disable-next-line no-unused-vars
-function clearSkeletonRows() {
-    document.querySelectorAll('.dt-skeleton-row').forEach((el) => el.remove())
 }
 
 // eslint-disable-next-line no-unused-vars

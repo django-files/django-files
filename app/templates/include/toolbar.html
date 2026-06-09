@@ -1,0 +1,50 @@
+{# Shared toolbar chrome for list pages (albums, shorts, streams).
+   Required context vars (tb_ prefix to avoid collisions):
+     tb_id                — element id, e.g. "albums-toolbar"
+     tb_label             — aria-label text
+     tb_icon              — FA icon class string, e.g. "fa-solid fa-images"
+     tb_title             — visible title text
+     tb_search_placeholder
+     tb_count_wrapper_id  — id of the count badge wrapper
+     tb_count_id          — id of the <strong> count number
+   Optional:
+     tb_btn_icon          — FA icon for the action button
+     tb_btn_label         — action button text (omit to hide button)
+     tb_btn_modal         — data-bs-target value
+     tb_btn_title         — button title attribute (tooltip)
+     tb_btn_auth          — True → only show button to authenticated users #}
+<div class="files-toolbar" id="{{ tb_id }}" aria-label="{{ tb_label }}">
+    <span class="files-toolbar-title">
+        <i class="{{ tb_icon }} me-2" aria-hidden="true"></i>{{ tb_title }}
+    </span>
+
+    <div class="files-toolbar-search" id="{{ tb_id }}-search">
+        <label class="visually-hidden" for="{{ tb_id }}-search-input">Search {{ tb_title|lower }}</label>
+        <i class="fa-solid fa-magnifying-glass files-toolbar-search-icon" aria-hidden="true"></i>
+        <input type="search" id="{{ tb_id }}-search-input" class="form-control form-control-sm"
+               placeholder="{{ tb_search_placeholder }}" autocomplete="off">
+    </div>
+
+    <div class="files-toolbar-filters" id="{{ tb_id }}-filters">
+        {% if request.user.is_superuser %}
+            {% include 'include/user-select.html' %}
+        {% endif %}
+    </div>
+
+    <div class="files-toolbar-actions">
+        <span class="files-toolbar-count text-body-secondary small text-nowrap" id="{{ tb_count_wrapper_id }}">
+            <span class="files-toolbar-count-label">Showing</span>
+            <strong id="{{ tb_count_id }}">0</strong>
+        </span>
+        {% if tb_btn_label %}
+            {% if not tb_btn_auth or request.user.is_authenticated %}
+            <button class="btn btn-primary btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="{{ tb_btn_modal }}"
+                    {% if tb_btn_title %}title="{{ tb_btn_title }}"{% endif %}>
+                <i class="{{ tb_btn_icon }} me-2" aria-hidden="true"></i>{{ tb_btn_label }}
+            </button>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>

@@ -29,16 +29,6 @@ const dataTablesOptions = {
         { data: 'max' },
         { data: null },
     ],
-    initComplete: function () {
-        const section = document.getElementById('shorts-table-section')
-        if (section) {
-            requestAnimationFrame(() =>
-                requestAnimationFrame(() =>
-                    section.classList.add('dt-section-ready')
-                )
-            )
-        }
-    },
     columnDefs: [
         {
             targets: 0,
@@ -86,13 +76,7 @@ const dataTablesOptions = {
 
 async function domContentLoaded() {
     shortsDataTable = shortsTable.DataTable(dataTablesOptions)
-    wireToolbarSearch('shorts-toolbar-search-input', shortsDataTable)
-    initCollapsibleSearch(
-        'shorts-toolbar-search',
-        'shorts-toolbar-search-input'
-    )
-    syncNavbarHeight()
-    observeToolbarHeight('shorts-toolbar', '--shorts-toolbar-h')
+    initToolbar('shorts-toolbar', shortsDataTable)
     await initDataTable(
         shortsDataTable,
         showShortsSkeletons,

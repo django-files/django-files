@@ -4,24 +4,9 @@
 }
 
 /*
- * Hide any DT-managed section from first paint so DataTables can finish
- * inserting its toolbar and moving elements before anything is visible.
- * JS adds .dt-section-ready (via double-rAF) once layout is settled.
- */
-.dt-section {
-    opacity: 0;
-    transition: opacity 0.15s ease;
-}
-
-.dt-section.dt-section-ready {
-    opacity: 1;
-}
-
-/*
  * Reserve space for the home-page files table until data is fully loaded,
  * preventing the Shorts section from shifting while rows are fetched.
- * Keyed off dt-data-loaded (added in home.js after addFileTableRows) rather
- * than dt-section-ready, which fires at DataTables init — before the fetch.
+ * Keyed off dt-data-loaded (added in home.js after addFileTableRows).
  */
 #home-files-section:not(.dt-data-loaded) {
     min-height: 1205px;
@@ -235,10 +220,14 @@ div.dataTables_wrapper span.select-item {
 
 /* Push list/gallery content past the floating toolbar. Map peeks through.
  * clip (not hidden) prevents scroll without creating a scroll container, so
- * position:fixed dropdowns still escape the boundary. */
+ * position:fixed dropdowns still escape the boundary.
+ * --toolbar-h is set per-page by initToolbar() via observeToolbarHeight(). */
 .container-fluid[data-files-view='list'],
-.container-fluid[data-files-view='gallery'] {
-    padding-top: var(--files-toolbar-h, 48px) !important;
+.container-fluid[data-files-view='gallery'],
+.container-fluid[data-albums-view='list'],
+.container-fluid[data-streams-view='list'],
+.container-fluid[data-shorts-view='list'] {
+    padding-top: var(--toolbar-h, 48px) !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
     overflow-x: clip;
@@ -261,13 +250,6 @@ div.dataTables_wrapper span.select-item {
     margin-top: 0 !important;
 }
 
-.container-fluid[data-albums-view='list'] {
-    padding-top: var(--albums-toolbar-h, 48px) !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    overflow-x: clip;
-}
-
 #streams-table-section .streams-table-narrow-msg,
 #streams-table-section .dt-container > *:not(.dt-layout-table),
 #streams-table-section .dt-search,
@@ -286,13 +268,6 @@ div.dataTables_wrapper span.select-item {
     margin-top: 0 !important;
 }
 
-.container-fluid[data-streams-view='list'] {
-    padding-top: var(--streams-toolbar-h, 48px) !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    overflow-x: clip;
-}
-
 #shorts-table-section .dt-container > *:not(.dt-layout-table),
 #shorts-table-section .dt-search,
 #shorts-table-section .dt-info,
@@ -308,11 +283,4 @@ div.dataTables_wrapper span.select-item {
 
 [id='shorts-table_wrapper'] .dt-layout-table {
     margin-top: 0 !important;
-}
-
-.container-fluid[data-shorts-view='list'] {
-    padding-top: var(--shorts-toolbar-h, 48px) !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    overflow-x: clip;
 }

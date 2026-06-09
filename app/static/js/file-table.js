@@ -156,28 +156,6 @@ const dataTablesOptions = {
         zeroRecords: '',
     },
     initComplete: function () {
-        // Reveal the file-count badge — the unified files-toolbar owns the bulk
-        // menu, user filter, search, and view toggles directly, so nothing needs
-        // to be relocated into DT's built-in layout (it's hidden via CSS).
-        const fileCountWrapper = document.getElementById(
-            'dt-file-count-wrapper'
-        )
-        if (fileCountWrapper) {
-            fileCountWrapper.classList.remove('d-none')
-        }
-
-        // Double-rAF ensures the browser commits layout before the opacity transition starts
-        const section = document.getElementById('files-table-section')
-        if (section) {
-            requestAnimationFrame(() =>
-                requestAnimationFrame(() =>
-                    section.classList.add('dt-section-ready')
-                )
-            )
-        }
-
-        // Restore empty-state messages. No explicit draw needed — the caller's
-        // data-load draw (or columns.adjust().draw()) will use these strings.
         initDtLang(this.api(), 'No files available', 'No matching files found')
     },
 }

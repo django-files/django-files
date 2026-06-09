@@ -49,19 +49,6 @@ const dataTablesOptions = {
         { data: 'maxv' },
         { data: 'delete' },
     ],
-    initComplete: function () {
-        // Reveal the section after DataTables has finished all DOM mutations.
-        // Double-rAF ensures the browser commits the new layout before
-        // opacity transitions to 1, eliminating toolbar-insertion jitter.
-        const section = document.getElementById('albums-table-section')
-        if (section) {
-            requestAnimationFrame(() =>
-                requestAnimationFrame(() =>
-                    section.classList.add('dt-section-ready')
-                )
-            )
-        }
-    },
     columnDefs: [
         { targets: 0, width: '30px', responsivePriority: 5 },
         {
@@ -104,13 +91,7 @@ const dataTablesOptions = {
 
 async function domContentLoaded() {
     albumsDataTable = albumsTable.DataTable(dataTablesOptions)
-    wireToolbarSearch('albums-toolbar-search-input', albumsDataTable)
-    initCollapsibleSearch(
-        'albums-toolbar-search',
-        'albums-toolbar-search-input'
-    )
-    syncNavbarHeight()
-    observeToolbarHeight('albums-toolbar', '--albums-toolbar-h')
+    initToolbar('albums-toolbar', albumsDataTable)
     await initDataTable(
         albumsDataTable,
         showAlbumsSkeletons,

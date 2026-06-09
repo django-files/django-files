@@ -189,9 +189,10 @@ function filterGallery() {
 async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
-    wireToolbarSearch('files-toolbar-search-input', filesDataTable)
-    initCollapsibleSearch('files-toolbar-search', 'files-toolbar-search-input')
+    initToolbar('files-toolbar', filesDataTable)
 
+    // Gallery-view filtering: mirror the search input value into gallerySearchTerm
+    // so filterGallery() can apply it when the gallery view is active.
     const searchInput = document.getElementById('files-toolbar-search-input')
     if (searchInput) {
         let filterTimer
@@ -203,9 +204,6 @@ async function initGallery() {
             }
         })
     }
-
-    syncNavbarHeight()
-    observeToolbarHeight('files-toolbar', '--files-toolbar-h')
 
     const view = detectInitialView()
     applyView(view)

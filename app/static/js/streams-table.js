@@ -137,14 +137,6 @@ const dataTablesOptions = {
         const dt = this.api()
         initDtLang(dt, 'No streams available', 'No matching streams found')
         if (dt.rows().count() === 0) dt.draw()
-
-        requestAnimationFrame(() =>
-            requestAnimationFrame(() =>
-                document
-                    .getElementById('streams-table-section')
-                    ?.classList.add('dt-section-ready')
-            )
-        )
     },
 }
 
@@ -278,13 +270,7 @@ document.addEventListener('DOMContentLoaded', domContentLoaded)
 function domContentLoaded() {
     streamsDataTable = streamsTable.DataTable(dataTablesOptions)
     showStreamsSkeletons()
-    wireToolbarSearch('streams-toolbar-search-input', streamsDataTable)
-    initCollapsibleSearch(
-        'streams-toolbar-search',
-        'streams-toolbar-search-input'
-    )
-    syncNavbarHeight()
-    observeToolbarHeight('streams-toolbar', '--streams-toolbar-h')
+    initToolbar('streams-toolbar', streamsDataTable)
 
     const totalStreamsCount = document.getElementById('total-streams-count')
     if (totalStreamsCount) {
