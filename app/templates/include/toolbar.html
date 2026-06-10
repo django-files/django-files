@@ -1,18 +1,20 @@
-{# Shared toolbar chrome for list pages (albums, shorts, streams).
-   Required context vars (tb_ prefix to avoid collisions):
-     tb_id                — element id, e.g. "albums-toolbar"
-     tb_label             — aria-label text
-     tb_icon              — FA icon class string, e.g. "fa-solid fa-images"
-     tb_title             — visible title text
-     tb_search_placeholder
-     tb_count_wrapper_id  — id of the count badge wrapper
-     tb_count_id          — id of the <strong> count number
-   Optional:
-     tb_btn_icon          — FA icon for the action button
-     tb_btn_label         — action button text (omit to hide button)
-     tb_btn_modal         — data-bs-target value
-     tb_btn_title         — button title attribute (tooltip)
-     tb_btn_auth          — True → only show button to authenticated users #}
+{% comment %}
+Shared toolbar chrome for list pages (albums, shorts, streams).
+Required context vars (tb_ prefix to avoid collisions):
+  tb_id                — element id, e.g. "albums-toolbar"
+  tb_label             — aria-label text
+  tb_icon              — FA icon class string, e.g. "fa-solid fa-images"
+  tb_title             — visible title text
+  tb_search_placeholder
+  tb_count_wrapper_id  — id of the count badge wrapper
+  tb_count_id          — id of the <strong> count number
+Optional:
+  tb_btn_icon          — FA icon for the action button
+  tb_btn_label         — action button text (omit to hide button)
+  tb_btn_modal         — data-bs-target value
+  tb_btn_title         — button title attribute (tooltip)
+  tb_btn_auth          — True → only show button to authenticated users
+{% endcomment %}
 <div class="files-toolbar" id="{{ tb_id }}" aria-label="{{ tb_label }}">
     <span class="files-toolbar-title">
         <i class="{{ tb_icon }} me-2" aria-hidden="true"></i>{{ tb_title }}
