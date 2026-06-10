@@ -39,6 +39,7 @@ const dataTablesOptions = {
             targets: 1,
             render: renderShortLink,
             defaultContent: '',
+            width: '120px',
             responsivePriority: 1,
         },
         {
@@ -68,7 +69,7 @@ const dataTablesOptions = {
             render: renderActions,
             defaultContent: '',
             className: 'text-center',
-            width: '80px',
+            width: '160px',
             responsivePriority: 3,
         },
     ],

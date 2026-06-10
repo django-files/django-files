@@ -8,6 +8,7 @@
 
 {% block head %}
     <link href="{% static 'dist/uppy/uppy.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
     <link rel="stylesheet" href="{% static 'css/table.css' %}" />
     <script src="{% static 'dist/echarts/echarts.min.js' %}"></script>
     <style>
@@ -108,8 +109,12 @@
                 <i class="fa-solid fa-upload me-1"></i> Upload Files</a>
             <a class="btn btn-outline-secondary btn-sm" href="{% url 'home:paste' %}">
                 <i class="fa-regular fa-file-lines me-1"></i> Upload Text</a>
-            <a class="btn btn-outline-secondary btn-sm" href="{% url 'home:shorts' %}">
-                <i class="fa-solid fa-link me-1"></i> Short URLs</a>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#create-short-modal">
+                <i class="fa-solid fa-link me-1"></i> Create Short</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#create-album-modal">
+                <i class="fa-regular fa-images me-1"></i> Create Album</button>
         </div>
     </div>
 
@@ -119,7 +124,7 @@
     {% if stats %}
     {% with s=stats|first %}
     <div class="row g-3 mb-2" id="stat-cards-mine">
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl">
             <div class="dash-stat-card d-flex align-items-center gap-3">
                 <div class="dash-stat-icon text-bg-primary"><i class="fa-regular fa-folder-open"></i></div>
                 <div>
@@ -128,7 +133,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl">
             <div class="dash-stat-card d-flex align-items-center gap-3">
                 <div class="dash-stat-icon text-bg-info"><i class="fa-solid fa-database"></i></div>
                 <div>
@@ -137,7 +142,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl">
             <div class="dash-stat-card d-flex align-items-center gap-3">
                 <div class="dash-stat-icon text-bg-success"><i class="fa-solid fa-link"></i></div>
                 <div>
@@ -146,9 +151,18 @@
                 </div>
             </div>
         </div>
+        <div class="col-sm-6 col-xl">
+            <div class="dash-stat-card d-flex align-items-center gap-3">
+                <div class="dash-stat-icon text-bg-warning"><i class="fa-regular fa-images"></i></div>
+                <div>
+                    <div class="dash-stat-value">{{ album_count }}</div>
+                    <div class="dash-stat-label">My Albums</div>
+                </div>
+            </div>
+        </div>
         {# User quota — visible to any user with a personal quota set #}
         {% if user.storage_quota %}
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl">
             <div class="dash-stat-card d-flex align-items-center gap-3">
                 <div class="dash-stat-icon {% if user.get_storage_usage_pct > 95 %}text-bg-danger{% elif user.get_storage_usage_pct > 85 %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
                     <i class="fa-solid fa-hard-drive"></i>
@@ -168,7 +182,7 @@
     {% if user.is_superuser and stats_server %}
     {% with ss=stats_server|first %}
     <div class="row g-3 mb-2 d-none" id="stat-cards-server">
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl">
             <div class="dash-stat-card d-flex align-items-center gap-3">
                 <div class="dash-stat-icon text-bg-primary"><i class="fa-regular fa-folder-open"></i></div>
                 <div>
@@ -177,7 +191,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl">
             <div class="dash-stat-card d-flex align-items-center gap-3">
                 <div class="dash-stat-icon text-bg-info"><i class="fa-solid fa-database"></i></div>
                 <div>
@@ -186,7 +200,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl">
             <div class="dash-stat-card d-flex align-items-center gap-3">
                 <div class="dash-stat-icon text-bg-success"><i class="fa-solid fa-link"></i></div>
                 <div>
@@ -195,9 +209,18 @@
                 </div>
             </div>
         </div>
+        <div class="col-sm-6 col-xl">
+            <div class="dash-stat-card d-flex align-items-center gap-3">
+                <div class="dash-stat-icon text-bg-warning"><i class="fa-regular fa-images"></i></div>
+                <div>
+                    <div class="dash-stat-value">{{ server_album_count }}</div>
+                    <div class="dash-stat-label">Server Albums</div>
+                </div>
+            </div>
+        </div>
         {# System quota — only shown when a global quota is configured #}
         {% if site_settings.global_storage_quota %}
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl">
             <div class="dash-stat-card d-flex align-items-center gap-3">
                 <div class="dash-stat-icon {% if site_settings.get_global_storage_quota_usage_pct > 95 %}text-bg-danger{% elif site_settings.get_global_storage_quota_usage_pct > 85 %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
                     <i class="fa-solid fa-server"></i>
@@ -522,26 +545,49 @@
             <a class="btn btn-sm btn-outline-secondary" href="{% url 'home:shorts' %}">
                 View All <i class="fa-solid fa-arrow-right ms-1"></i></a>
         </div>
-        <div class="dash-card-body">
-            {% if not shorts %}
+        {% if not shorts %}
+            <div class="dash-card-body">
                 <p class="text-muted mb-0 small">Short URLs will appear here once created.</p>
-            {% else %}
+            </div>
+        {% else %}
+            <div class="px-2 pt-1">
                 {% include 'include/shorts-table.html' with shorts=shorts|slice:":10" home_mode=True %}
-                {% if shorts|length > 10 %}
-                    <p class="mt-1 mb-0 small text-muted">
-                        <em>Truncated to 10.</em>
-                        <a href="{% url 'home:shorts' %}">View All</a>
-                    </p>
-                {% endif %}
+            </div>
+            {% if shorts|length > 10 %}
+                <p class="mt-0 px-3 pb-2 small text-muted">
+                    <em>Truncated to 10.</em>
+                    <a href="{% url 'home:shorts' %}">View All</a>
+                </p>
             {% endif %}
-        </div>
+        {% endif %}
     </div>
 
     {% include 'files/file-upload-modal.html' %}
     {% include 'files/ctx-menu.html' %}
     {% include 'files/ctx-modals.html' %}
+    {% include 'shorts/create-modal.html' %}
+    {% include 'albums/create-modal.html' %}
 
 </div>
+<script>
+    $('#shortsForm').on('submit', function (event) {
+        event.preventDefault()
+        const form = $(this)
+        submitJsonForm(form, function (resp) {
+            form.trigger('reset')
+            $('#create-short-modal').modal('hide')
+            show_toast('Short Created: ' + resp.url, 'success')
+        })
+    })
+    $('#albumsForm').on('submit', function (event) {
+        event.preventDefault()
+        const form = $(this)
+        submitJsonForm(form, function () {
+            form.trigger('reset')
+            $('#create-album-modal').modal('hide')
+        })
+    })
+</script>
 {% endblock %}
 
 

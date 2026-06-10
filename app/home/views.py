@@ -91,6 +91,7 @@ def home_view(request):
         "chart_files": chart_files,
         "chart_size": chart_size,
         "chart_shorts": chart_shorts,
+        "album_count": Albums.objects.filter(user=request.user).count(),
     }
 
     if request.user.is_superuser:
@@ -103,6 +104,7 @@ def home_view(request):
                 "server_chart_files": server_chart_files,
                 "server_chart_size": server_chart_size,
                 "server_chart_shorts": server_chart_shorts,
+                "server_album_count": Albums.objects.count(),
             }
         )
 

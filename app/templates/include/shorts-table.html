@@ -4,10 +4,10 @@
     <caption class="visually-hidden">List of Short URLs</caption>
     <thead>
         <tr>
-            <th scope="col" class="">Short</th>
-            <th scope="col" class="">URL</th>
-            <th scope="col" class=""><i class="fa-solid fa-eye"></i></th>
-            <th scope="col" class=""><i class="fa-solid fa-bomb"></i></th>
+            <th scope="col">Short</th>
+            <th scope="col">URL</th>
+            <th scope="col"><i class="fa-solid fa-eye"></i></th>
+            <th scope="col"><i class="fa-solid fa-bomb"></i></th>
             <th scope="col" class="text-center"><i class="fa-solid fa-gears"></i></th>
         </tr>
     </thead>
@@ -17,7 +17,7 @@
             <td class=""> <!-- Short -->
                 <a href="{{ site_settings.site_url }}{% url 'home:short' short=short.short %}"
                 class="link-body-emphasis" target="_blank">{{ short.short }}</a></td>
-            <td class=""><a href="{{ short.url }}" target="_blank" class="link-body-emphasis">{{ short.url }}</a></td>  <!-- URL -->
+            <td><a href="{{ short.url }}" target="_blank" class="link-body-emphasis" title="{{ short.url }}">{{ short.url|truncatechars:60 }}</a></td>  <!-- URL -->
             <td class="">{{ short.views }}</td> <!-- Views -->
             <td class="">{{ short.max|default:"-" }}</td>  <!-- Bomb -->
             <td class="text-center"> <!-- Copy/Delete -->
