@@ -3,7 +3,12 @@ import { socket } from './socket.js'
 import { paginatedTableDefaults } from './table-defaults.js'
 
 const albumsTable = $('#albums-table')
-const deleteAlbumModal = $('#delete-album-modal')
+const isHome = !!albumsTable.data('home')
+const MAX_HOME_ALBUMS = 10
+const deleteAlbumModalEl = document.getElementById('delete-album-modal')
+const deleteAlbumModal = deleteAlbumModalEl
+    ? bootstrap.Modal.getOrCreateInstance(deleteAlbumModalEl)
+    : null
 const deleteAlbumButton = document.querySelector('.delete-album-btn')
 const albumLink = document.querySelector('div.d-none > .dj-album-link')
 const totalAlbumsCount = document.getElementById('total-albums-count')
@@ -13,25 +18,49 @@ let nextPage = 1
 let fetchLock = false
 let params = new URL(document.location.toString()).searchParams
 
-document.addEventListener('DOMContentLoaded', domContentLoaded)
-document.addEventListener('scroll', debounce(scrollHandle))
-window.addEventListener('resize', debounce(scrollHandle))
+// Same dynamic-truncation pattern as file-table.js: viewport-based char
+// count, debounced resize listener that invalidates and redraws.
+let albumNameLen = getAlbumNameLen(window.innerWidth)
 
-$('#user').on('change', async function () {
-    const userId = $(this).val()
-    if (userId) {
-        params.set('user', userId)
-    } else {
-        params.delete('user')
-    }
-    globalThis.history.replaceState({}, null, '/albums/?' + params)
-    nextPage = 1
-    fetchLock = false
-    if (albumsDataTable) albumsDataTable.clear().draw()
-    showAlbumsSkeletons()
-    await addAlbumRows()
-    if (!albumsDataTable.rows().count()) albumsDataTable.draw()
-})
+window.addEventListener(
+    'resize',
+    debounce(function () {
+        albumNameLen = getAlbumNameLen(window.innerWidth)
+        if (albumsDataTable) {
+            albumsDataTable.rows().invalidate('data').draw(false)
+        }
+    }, 100),
+    { passive: true }
+)
+
+function getAlbumNameLen(width) {
+    // Home is a half-width dash card, so use a tighter slope.
+    return Math.round((isHome ? 0.02 : 0.04) * width + 8)
+}
+
+document.addEventListener('DOMContentLoaded', domContentLoaded)
+if (!isHome) {
+    document.addEventListener('scroll', debounce(scrollHandle))
+    window.addEventListener('resize', debounce(scrollHandle))
+}
+
+if (!isHome) {
+    $('#user').on('change', async function () {
+        const userId = $(this).val()
+        if (userId) {
+            params.set('user', userId)
+        } else {
+            params.delete('user')
+        }
+        globalThis.history.replaceState({}, null, '/albums/?' + params)
+        nextPage = 1
+        fetchLock = false
+        if (albumsDataTable) albumsDataTable.clear().draw()
+        showAlbumsSkeletons()
+        await addAlbumRows()
+        if (!albumsDataTable.rows().count()) albumsDataTable.draw()
+    })
+}
 
 async function scrollHandle(event) {
     await pageScroll(event, nextPage, addAlbumRows)
@@ -40,6 +69,19 @@ async function scrollHandle(event) {
 
 const dataTablesOptions = {
     ...paginatedTableDefaults,
+    // Home: no chrome. /albums/: hide DataTable's built-in search ('topEnd')
+    // because the shared toolbar already provides one.
+    layout: isHome
+        ? {
+              topStart: null,
+              topEnd: null,
+              bottomStart: null,
+              bottomEnd: null,
+          }
+        : {
+              topStart: null,
+              topEnd: null,
+          },
     columns: [
         { data: 'id' },
         { data: 'name' },
@@ -70,7 +112,10 @@ const dataTablesOptions = {
             width: '30px',
             defaultContent: '',
             className: 'expire-value text-center',
-            responsivePriority: 7,
+            // Expire column is the lowest-value info; hide it entirely on the
+            // home card (narrow col-lg-6), demote heavily on /albums/.
+            visible: !isHome,
+            responsivePriority: 10,
         },
         {
             targets: [4, 5],
@@ -91,12 +136,14 @@ const dataTablesOptions = {
 
 async function domContentLoaded() {
     albumsDataTable = albumsTable.DataTable(dataTablesOptions)
-    initToolbar('albums-toolbar', albumsDataTable)
+    if (!isHome) initToolbar('albums-toolbar', albumsDataTable)
     await initDataTable(
         albumsDataTable,
         showAlbumsSkeletons,
         addAlbumRows,
-        'No albums available',
+        isHome
+            ? 'Albums will appear here once created.'
+            : 'No albums available',
         'No matching albums found'
     )
 }
@@ -109,14 +156,6 @@ function renderDeleteBtn(data, type, row, _meta) {
 }
 
 function renderAlbumLink(data, type, row, _meta) {
-    let max_name_length
-    if (screen.width < 500) {
-        max_name_length = 20
-    } else if (screen.width > 500 && screen.width < 1500) {
-        max_name_length = 40
-    } else {
-        max_name_length = 60
-    }
     const albumLinkElem = albumLink.cloneNode(true)
     albumLinkElem.classList.add(`dj-album-link-${row.id}`)
     albumLinkElem
@@ -125,24 +164,40 @@ function renderAlbumLink(data, type, row, _meta) {
     albumLinkElem.querySelector('.dj-album-link-ref').href = row.url
     albumLinkElem.querySelector('.dj-album-link-ref').ariaLabel = row.name
     let newName = row.name
-    if (row.name.length > max_name_length) {
-        newName = row.name.substring(0, max_name_length) + '...'
+    if (row.name.length > albumNameLen) {
+        newName = row.name.substring(0, albumNameLen - 1) + '…'
     }
     albumLinkElem.querySelector('.dj-album-link-ref').textContent = newName
     return albumLinkElem
 }
 
 async function addAlbumRows() {
-    if (!fetchLock) {
-        fetchLock = true
-        const data = await fetchAlbums(nextPage)
-        // console.debug(data)
-        nextPage = data.next
-        for (const album of data.albums) {
-            addAlbumRow(album)
-        }
-        fetchLock = false
+    if (fetchLock) return
+    // On the home dashboard, only ever fetch the first page and cap at
+    // MAX_HOME_ALBUMS rows — the "View All" link goes to /albums/.
+    if (isHome && albumsDataTable?.rows().count() >= MAX_HOME_ALBUMS) {
+        nextPage = null
+        return
     }
+    fetchLock = true
+    const data = await fetchAlbums(nextPage)
+    nextPage = data.next
+    let added = 0
+    for (const album of data.albums) {
+        if (isHome && albumsDataTable.rows().count() >= MAX_HOME_ALBUMS) break
+        addAlbumRow(album)
+        added += 1
+    }
+    if (isHome) {
+        const overflow = data.albums.length > added || !!data.next
+        if (overflow) {
+            document
+                .querySelector('.albums-truncation-warning')
+                ?.classList.remove('d-none')
+        }
+        nextPage = null
+    }
+    fetchLock = false
 }
 
 function addAlbumRow(row) {
@@ -175,25 +230,16 @@ function showAlbumsSkeletons(count = 10) {
     })
 }
 
-$('#albumsForm').on('submit', function (event) {
-    event.preventDefault()
-    const form = $(this)
-    submitJsonForm(form, function () {
-        form.trigger('reset')
-        $('#create-album-modal').modal('hide')
-    })
-})
-
 function handleDeleteClick(_event) {
     const pk = $(this).data('hook-id')
     $('#album-delete-confirm').data('pk', pk)
-    deleteAlbumModal.modal('show')
+    deleteAlbumModal?.show()
 }
 
 $('#album-delete-confirm').on('click', function (_event) {
     const pk = $(this).data('pk')
     socket.send(JSON.stringify({ method: 'delete-album', pk: pk }))
-    deleteAlbumModal.modal('hide')
+    deleteAlbumModal?.hide()
 })
 
 socket?.addEventListener('message', function (event) {
@@ -204,6 +250,12 @@ socket?.addEventListener('message', function (event) {
         if (totalAlbumsCount)
             totalAlbumsCount.textContent = albumsDataTable.rows().count()
     } else if (data.event === 'album-new') {
+        if (isHome && albumsDataTable.rows().count() >= MAX_HOME_ALBUMS) {
+            document
+                .querySelector('.albums-truncation-warning')
+                ?.classList.remove('d-none')
+            return
+        }
         addAlbumRow(data)
     }
 })
