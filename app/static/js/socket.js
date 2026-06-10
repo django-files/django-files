@@ -271,3 +271,47 @@ function truncateName(filename) {
     }
     return filename
 }
+
+/**
+ * Subscribes a DataTable to socket-driven new/delete events. Optional `extra`
+ * map handles event names that don't fit the simple add/delete shape (e.g.
+ * file rename). Uses the DataTables row API for delete so internal state
+ * stays consistent.
+ *
+ *   attachSocketTableSync(albumsDataTable, {
+ *       newEvent: 'album-new',
+ *       deleteEvent: 'album-delete',
+ *       idPrefix: 'album',
+ *       addRow: loader.addRow,
+ *       countEl: totalAlbumsCount,
+ *       maxRows: isHome ? 10 : null,
+ *       onOverflow: () => warn.classList.remove('d-none'),
+ *   })
+ *
+ * @param {any} dt DataTables API instance.
+ * @param {object} opts
+ */
+export function attachSocketTableSync(dt, opts) {
+    socket?.addEventListener('message', function (event) {
+        if (event.data === 'pong') return
+        let data
+        try {
+            data = JSON.parse(event.data)
+        } catch {
+            return
+        }
+        if (data.event === opts.deleteEvent) {
+            const row = dt.row(`#${opts.idPrefix}-${data.id}`)
+            if (row.node()) row.remove().draw(false)
+            if (opts.countEl) opts.countEl.textContent = dt.rows().count()
+        } else if (data.event === opts.newEvent) {
+            if (opts.maxRows && dt.rows().count() >= opts.maxRows) {
+                opts.onOverflow?.()
+                return
+            }
+            opts.addRow(data)
+        } else if (opts.extra?.[data.event]) {
+            opts.extra[data.event](data)
+        }
+    })
+}

@@ -268,19 +268,6 @@ div.dataTables_wrapper span.select-item {
     margin-top: 0 !important;
 }
 
-#shorts-table-section .dt-container > *:not(.dt-layout-table),
-#shorts-table-section .dt-search,
-#shorts-table-section .dt-info,
-#shorts-table-section .dt-paging,
-#shorts-table-section .dt-length {
-    display: none !important;
-}
-
-#shorts-table-section .dt-container {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
 [id='shorts-table_wrapper'] .dt-layout-table {
     margin-top: 0 !important;
 }

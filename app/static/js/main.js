@@ -370,6 +370,152 @@ async function pageScroll(event, nextPage, callable, buffer = 500) {
 }
 
 /**
+ * Viewport-based dynamic char-length tracker. Use for column-text truncation
+ * that should respond to window resizes. Same formula file-table.js has used
+ * for file names: round(slope * innerWidth + 8).
+ *
+ *   const truncator = createTruncator(0.04)
+ *   truncator.attach(myDataTable)
+ *   // in a render fn:  txt.slice(0, truncator.length)
+ *
+ * Calls dt.rows().invalidate('data').draw(false) on resize so already-rendered
+ * cells re-flow to the new length.
+ *
+ * @param {number} slope per-pixel char growth — tighten on half-width cards.
+ * @returns {{ attach: (dt: any) => void, length: number }}
+ */
+// eslint-disable-next-line no-unused-vars
+function createTruncator(slope = 0.04) {
+    let dt = null
+    const compute = () => Math.round(slope * window.innerWidth + 8)
+    let len = compute()
+    window.addEventListener(
+        'resize',
+        debounce(() => {
+            len = compute()
+            if (dt) dt.rows().invalidate('data').draw(false)
+        }, 100),
+        { passive: true }
+    )
+    return {
+        attach(table) {
+            dt = table
+        },
+        get length() {
+            return len
+        },
+    }
+}
+
+/**
+ * Manages nextPage / fetchLock / row insertion for an infinite-scroll DataTable
+ * fed by a paginated API. Pass `maxRows` for home-dashboard-style cards that
+ * cap at e.g. 10 rows and surface a truncation hint via `onOverflow`.
+ *
+ *   const loader = createPaginatedLoader(dt, {
+ *       fetcher: fetchShorts,        // (page) => { next, shorts: [...] }
+ *       listKey: 'shorts',           // key of the array inside the response
+ *       idPrefix: 'short',           // DT_RowId = `${idPrefix}-${row.id}`
+ *       countEl: totalShortsCount,   // optional <strong> to update
+ *       maxRows: isHome ? 10 : null,
+ *       onOverflow: () => warn.classList.remove('d-none'),
+ *   })
+ *   await loader.load()
+ *   loader.reset()                   // before re-fetching from page 1
+ *
+ * @param {any} dt DataTables API instance.
+ * @param {object} opts
+ * @returns {{ load: () => Promise<void>, addRow: (row: any) => void, reset: () => void, nextPage: any }}
+ */
+// eslint-disable-next-line no-unused-vars
+function createPaginatedLoader(dt, opts) {
+    let nextPage = 1
+    let lock = false
+
+    function addRow(row) {
+        row['DT_RowId'] = `${opts.idPrefix}-${row.id}`
+        dt.row.add(row).draw(false)
+        if (opts.countEl) opts.countEl.textContent = dt.rows().count()
+    }
+
+    async function load() {
+        if (lock) return
+        if (opts.maxRows && dt.rows().count() >= opts.maxRows) {
+            nextPage = null
+            return
+        }
+        lock = true
+        try {
+            const data = await opts.fetcher(nextPage)
+            nextPage = data.next
+            const list = data[opts.listKey] || []
+            let added = 0
+            for (const row of list) {
+                if (opts.maxRows && dt.rows().count() >= opts.maxRows) break
+                addRow(row)
+                added += 1
+            }
+            if (opts.maxRows) {
+                if (list.length > added || !!data.next) opts.onOverflow?.()
+                nextPage = null
+            }
+        } finally {
+            lock = false
+        }
+    }
+
+    function reset() {
+        nextPage = 1
+        lock = false
+    }
+
+    return {
+        load,
+        addRow,
+        reset,
+        get nextPage() {
+            return nextPage
+        },
+    }
+}
+
+/**
+ * Wires the standard scroll + resize infinite-scroll triggers for a loader
+ * created by createPaginatedLoader.
+ */
+// eslint-disable-next-line no-unused-vars
+function attachInfiniteScroll(dt, loader) {
+    const handle = debounce(async (event) => {
+        await pageScroll(event, loader.nextPage, loader.load)
+        dt?.columns.adjust().draw()
+    })
+    document.addEventListener('scroll', handle)
+    window.addEventListener('resize', handle)
+}
+
+/**
+ * Wires the toolbar's `#user` <select> to clear + re-skeleton + re-fetch.
+ * Used by /shorts/ and /albums/ when a superuser switches whose rows to view.
+ *
+ *   attachUserFilter(dt, { loader, skeletonFn: showAlbumsSkeletons })
+ */
+// eslint-disable-next-line no-unused-vars
+function attachUserFilter(dt, { loader, skeletonFn }) {
+    $('#user').on('change', async function () {
+        const userId = $(this).val()
+        const url = new URL(location.href)
+        if (userId) url.searchParams.set('user', userId)
+        else url.searchParams.delete('user')
+        globalThis.history.replaceState({}, null, url.href)
+        loader.reset()
+        dt.clear().draw()
+        skeletonFn?.()
+        await loader.load()
+        if (!dt.rows().count()) dt.draw()
+    })
+}
+
+/**
  * Generate Random String at length
  * @param {Number} length
  * @return {String}

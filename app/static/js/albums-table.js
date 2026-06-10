@@ -1,6 +1,6 @@
 import { fetchAlbums } from './api-fetch.js'
-import { socket } from './socket.js'
-import { paginatedTableDefaults } from './table-defaults.js'
+import { attachSocketTableSync, socket } from './socket.js'
+import { noChromeLayout, paginatedTableDefaults } from './table-defaults.js'
 
 const albumsTable = $('#albums-table')
 const isHome = !!albumsTable.data('home')
@@ -14,74 +14,16 @@ const albumLink = document.querySelector('div.d-none > .dj-album-link')
 const totalAlbumsCount = document.getElementById('total-albums-count')
 
 let albumsDataTable
-let nextPage = 1
-let fetchLock = false
-let params = new URL(document.location.toString()).searchParams
+let loader
 
-// Same dynamic-truncation pattern as file-table.js: viewport-based char
-// count, debounced resize listener that invalidates and redraws.
-let albumNameLen = getAlbumNameLen(window.innerWidth)
-
-window.addEventListener(
-    'resize',
-    debounce(function () {
-        albumNameLen = getAlbumNameLen(window.innerWidth)
-        if (albumsDataTable) {
-            albumsDataTable.rows().invalidate('data').draw(false)
-        }
-    }, 100),
-    { passive: true }
-)
-
-function getAlbumNameLen(width) {
-    // Home is a half-width dash card, so use a tighter slope.
-    return Math.round((isHome ? 0.02 : 0.04) * width + 8)
-}
+// Dynamic name truncation — viewport-based, half-slope on the narrow home card.
+const truncator = createTruncator(isHome ? 0.02 : 0.04)
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)
-if (!isHome) {
-    document.addEventListener('scroll', debounce(scrollHandle))
-    window.addEventListener('resize', debounce(scrollHandle))
-}
-
-if (!isHome) {
-    $('#user').on('change', async function () {
-        const userId = $(this).val()
-        if (userId) {
-            params.set('user', userId)
-        } else {
-            params.delete('user')
-        }
-        globalThis.history.replaceState({}, null, '/albums/?' + params)
-        nextPage = 1
-        fetchLock = false
-        if (albumsDataTable) albumsDataTable.clear().draw()
-        showAlbumsSkeletons()
-        await addAlbumRows()
-        if (!albumsDataTable.rows().count()) albumsDataTable.draw()
-    })
-}
-
-async function scrollHandle(event) {
-    await pageScroll(event, nextPage, addAlbumRows)
-    albumsDataTable?.columns.adjust().draw()
-}
 
 const dataTablesOptions = {
     ...paginatedTableDefaults,
-    // Home: no chrome. /albums/: hide DataTable's built-in search ('topEnd')
-    // because the shared toolbar already provides one.
-    layout: isHome
-        ? {
-              topStart: null,
-              topEnd: null,
-              bottomStart: null,
-              bottomEnd: null,
-          }
-        : {
-              topStart: null,
-              topEnd: null,
-          },
+    ...(isHome && { layout: noChromeLayout }),
     columns: [
         { data: 'id' },
         { data: 'name' },
@@ -136,11 +78,42 @@ const dataTablesOptions = {
 
 async function domContentLoaded() {
     albumsDataTable = albumsTable.DataTable(dataTablesOptions)
-    if (!isHome) initToolbar('albums-toolbar', albumsDataTable)
+    truncator.attach(albumsDataTable)
+    loader = createPaginatedLoader(albumsDataTable, {
+        fetcher: fetchAlbums,
+        listKey: 'albums',
+        idPrefix: 'album',
+        countEl: totalAlbumsCount,
+        maxRows: isHome ? MAX_HOME_ALBUMS : null,
+        onOverflow: () =>
+            document
+                .querySelector('.albums-truncation-warning')
+                ?.classList.remove('d-none'),
+    })
+    if (!isHome) {
+        initToolbar('albums-toolbar', albumsDataTable)
+        attachInfiniteScroll(albumsDataTable, loader)
+        attachUserFilter(albumsDataTable, {
+            loader,
+            skeletonFn: showAlbumsSkeletons,
+        })
+    }
+    attachSocketTableSync(albumsDataTable, {
+        newEvent: 'album-new',
+        deleteEvent: 'album-delete',
+        idPrefix: 'album',
+        addRow: loader.addRow,
+        countEl: totalAlbumsCount,
+        maxRows: isHome ? MAX_HOME_ALBUMS : null,
+        onOverflow: () =>
+            document
+                .querySelector('.albums-truncation-warning')
+                ?.classList.remove('d-none'),
+    })
     await initDataTable(
         albumsDataTable,
         showAlbumsSkeletons,
-        addAlbumRows,
+        loader.load,
         isHome
             ? 'Albums will appear here once created.'
             : 'No albums available',
@@ -163,48 +136,13 @@ function renderAlbumLink(data, type, row, _meta) {
         .setAttribute('data-clipboard-text', row.url)
     albumLinkElem.querySelector('.dj-album-link-ref').href = row.url
     albumLinkElem.querySelector('.dj-album-link-ref').ariaLabel = row.name
+    const len = truncator.length
     let newName = row.name
-    if (row.name.length > albumNameLen) {
-        newName = row.name.substring(0, albumNameLen - 1) + '…'
+    if (row.name.length > len) {
+        newName = row.name.substring(0, len - 1) + '…'
     }
     albumLinkElem.querySelector('.dj-album-link-ref').textContent = newName
     return albumLinkElem
-}
-
-async function addAlbumRows() {
-    if (fetchLock) return
-    // On the home dashboard, only ever fetch the first page and cap at
-    // MAX_HOME_ALBUMS rows — the "View All" link goes to /albums/.
-    if (isHome && albumsDataTable?.rows().count() >= MAX_HOME_ALBUMS) {
-        nextPage = null
-        return
-    }
-    fetchLock = true
-    const data = await fetchAlbums(nextPage)
-    nextPage = data.next
-    let added = 0
-    for (const album of data.albums) {
-        if (isHome && albumsDataTable.rows().count() >= MAX_HOME_ALBUMS) break
-        addAlbumRow(album)
-        added += 1
-    }
-    if (isHome) {
-        const overflow = data.albums.length > added || !!data.next
-        if (overflow) {
-            document
-                .querySelector('.albums-truncation-warning')
-                ?.classList.remove('d-none')
-        }
-        nextPage = null
-    }
-    fetchLock = false
-}
-
-function addAlbumRow(row) {
-    row['DT_RowId'] = `album-${row.id}`
-    albumsDataTable.row.add(row).draw()
-    if (totalAlbumsCount)
-        totalAlbumsCount.textContent = albumsDataTable.rows().count()
 }
 
 // Varied name-column widths so skeleton rows look realistic
@@ -240,22 +178,4 @@ $('#album-delete-confirm').on('click', function (_event) {
     const pk = $(this).data('pk')
     socket.send(JSON.stringify({ method: 'delete-album', pk: pk }))
     deleteAlbumModal?.hide()
-})
-
-socket?.addEventListener('message', function (event) {
-    if (event.data === 'pong') return
-    let data = JSON.parse(event.data)
-    if (data.event === 'album-delete') {
-        $(`#album-${data.id}`).remove()
-        if (totalAlbumsCount)
-            totalAlbumsCount.textContent = albumsDataTable.rows().count()
-    } else if (data.event === 'album-new') {
-        if (isHome && albumsDataTable.rows().count() >= MAX_HOME_ALBUMS) {
-            document
-                .querySelector('.albums-truncation-warning')
-                ?.classList.remove('d-none')
-            return
-        }
-        addAlbumRow(data)
-    }
 })

@@ -1,6 +1,7 @@
 import { getContextMenu } from './file-context-menu.js'
 
-import { socket } from './socket.js'
+import { attachSocketTableSync, socket } from './socket.js'
+import { noChromeLayout } from './table-defaults.js'
 
 const filesTable = $('#files-table')
 
@@ -18,27 +19,11 @@ const confirmDelete = $('#confirm-delete')
 const fileDeleteModal = $('#fileDeleteModal')
 
 let filesDataTable
-let fileNameLength = getNameSize(window.innerWidth)
-
-window.addEventListener(
-    'resize',
-    debounce(function () {
-        fileNameLength = getNameSize(window.innerWidth)
-        if (filesDataTable) {
-            filesDataTable.rows().invalidate('data').draw(false)
-        }
-    }, 100),
-    { passive: true }
-)
+const truncator = createTruncator()
 
 const dataTablesOptions = {
     paging: false,
-    layout: {
-        topStart: null,
-        topEnd: null,
-        bottomStart: null,
-        bottomEnd: null,
-    },
+    layout: noChromeLayout,
     order: [1, 'desc'],
     responsive: {
         details: false,
@@ -166,6 +151,15 @@ export function initFilesTable(search = true, ordering = true, info = true) {
     dataTablesOptions.info = info
     filesDataTable = filesTable.DataTable(dataTablesOptions)
     filesDataTable.on('draw.dt', debounce(dtDraw, 150))
+    truncator.attach(filesDataTable)
+    attachSocketTableSync(filesDataTable, {
+        newEvent: 'file-new',
+        deleteEvent: 'file-delete',
+        idPrefix: 'file',
+        addRow: addFileTableRow,
+        countEl: totalFilesCount,
+        extra: { 'set-file-name': renameFileRow },
+    })
     return filesDataTable
 }
 
@@ -178,16 +172,13 @@ function getFileLink(data, type, row, _meta) {
     fileLinkElem.querySelector('.dj-file-link-ref').href = row.url
     fileLinkElem.querySelector('.dj-file-link-ref').ariaLabel = row.name
 
+    const len = truncator.length
     let newName = row.name
-    if (row.name.length > fileNameLength) {
-        newName = row.name.substring(0, fileNameLength - 5) + '...'
+    if (row.name.length > len) {
+        newName = row.name.substring(0, len - 5) + '...'
     }
     fileLinkElem.querySelector('.dj-file-link-ref').textContent = newName
     return fileLinkElem
-}
-
-function getNameSize(width) {
-    return Math.round(0.04 * width + 8)
 }
 
 function getPwIcon(data, type, row, _meta) {
@@ -247,10 +238,6 @@ export function addFileTableRows(data) {
     addFileTableRowsBatch(data.files)
 }
 
-export function removeFileTableRow(pk) {
-    filesDataTable.row(`#file-${pk}`).remove().draw()
-}
-
 export function renameFileRow(data) {
     let fileName = document
         .getElementsByClassName(`dj-file-link-${data.id}`)[0]
@@ -260,18 +247,6 @@ export function renameFileRow(data) {
     fileName.href = link.href
     fileName.innerHTML = data.name
 }
-
-socket?.addEventListener('message', function (event) {
-    if (event.data === 'pong') return
-    let data = JSON.parse(event.data)
-    if (data.event === 'file-delete') {
-        removeFileTableRow(data.id)
-    } else if (data.event === 'file-new') {
-        addFileTableRow(data)
-    } else if (data.event === 'set-file-name') {
-        renameFileRow(data)
-    }
-})
 
 // Varied name-column widths so rows look realistic rather than uniform
 const skeletonNameWidths = [130, 165, 210, 145, 180, 195, 120, 155, 200, 140]
