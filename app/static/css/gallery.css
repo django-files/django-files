@@ -89,15 +89,14 @@
 
 .gallery-ctx {
     position: absolute;
-    top: 0;
-    right: 25px;
+    top: 4px;
+    right: 4px;
 }
 
-.gallery-ctx-toggle {
-    background-color: transparent;
-    border: none;
-    width: 20px;
-    text-align: center;
+.gallery-ctx .dt-ctx-btn {
+    background: var(--toolbar-glass-bg);
+    -webkit-backdrop-filter: var(--toolbar-glass-blur);
+    backdrop-filter: var(--toolbar-glass-blur);
 }
 
 .gallery-checkbox {
