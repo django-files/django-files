@@ -71,7 +71,11 @@ def _build_chart_data(qs):
 
 
 def _quota_bg(pct):
-    return "danger" if pct > 95 else "warning" if pct > 85 else "secondary"
+    if pct > 95:
+        return "danger"
+    if pct > 85:
+        return "warning"
+    return "secondary"
 
 
 def _build_user_stat_cards(request, stats):
