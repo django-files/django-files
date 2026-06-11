@@ -9,16 +9,13 @@ $('.log-out').on('click', function (event) {
 })
 
 $('#flush-cache').on('click', function (event) {
-    // console.log('#flush-cache click', event)
     event.preventDefault()
     $.ajax({
         type: 'POST',
         url: '/flush-cache/',
         headers: { 'X-CSRFToken': csrftoken },
-        success: function (data) {
-            console.log('data:', data)
-            alert('Cache Flush Successfully Sent...')
-            location.reload()
+        success: function () {
+            show_toast('Cache flush queued.', 'info')
         },
         error: messageErrorHandler,
         cache: false,

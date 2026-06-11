@@ -348,6 +348,22 @@ def invites_view(request):
     return JsonResponse({"error": "Not Implemented"}, status=501)
 
 
+@login_required()
+@require_http_methods(["DELETE"])
+def invite_detail_view(request, invite_id):
+    """
+    View  /api/invites/<invite_id>/
+    """
+    if not request.user.is_superuser:
+        return HttpResponse(status=403)
+    try:
+        invite = UserInvites.objects.get(pk=invite_id)
+    except UserInvites.DoesNotExist:
+        return JsonResponse({"error": "Not Found"}, status=404)
+    invite.delete()
+    return HttpResponse(status=204)
+
+
 @csrf_exempt
 @require_http_methods(["OPTIONS", "GET"])
 @auth_from_token
@@ -1354,7 +1370,7 @@ def users_paginated_view(request, page=1, count=50):
     if not request.user.is_superuser:
         return JsonResponse({"error": "Superuser required"}, status=403)
     try:
-        query = CustomUser.objects.all().order_by("id")
+        query = CustomUser.objects.select_related("discord", "github", "google").order_by("id")
         paginator = Paginator(query, count)
         page_obj = paginator.get_page(page)
         users_data = serialize_users(page_obj.object_list)

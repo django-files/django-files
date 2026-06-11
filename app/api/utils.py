@@ -58,6 +58,14 @@ def serialize_user(user: CustomUser) -> Dict[str, Any]:
     """
     user_dict = model_to_dict(user, exclude=["password", "authorization"])
     user_dict["avatar_url"] = user.get_avatar_url()
+    providers = []
+    for provider in ("discord", "github", "google"):
+        try:
+            getattr(user, provider)
+            providers.append(provider)
+        except Exception:
+            pass
+    user_dict["oauth_providers"] = providers
     return user_dict
 
 

@@ -124,9 +124,17 @@
                                 <div class="form-text">Used in meta tags.</div>
                             </div>
                         </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-outline-info btn-sm" id="flush-cache">
+                                <i class="fa-solid fa-toilet me-2"></i>Flush Cache
+                            </button>
+                            <div class="form-text">Clears all server-side template caches.</div>
+                        </div>
                     </div>
                 </div>
             </section>
+
+            <hr class="my-4">
 
             <!-- Features -->
             <section id="features" class="settings-section">
@@ -181,6 +189,8 @@
                     </div>
                 </div>
             </section>
+
+            <hr class="my-4">
 
             <!-- Appearance -->
             <section id="appearance" class="settings-section">
@@ -256,6 +266,8 @@
 
         </form>
 
+        <hr class="my-4">
+
         <!-- Invites -->
         <section id="invites" class="settings-section">
             <div class="dash-card">
@@ -304,6 +316,7 @@
                                     <th scope="col" class="d-none d-md-table-cell text-center">Quota</th>
                                     <th scope="col" class="d-none d-sm-table-cell text-center">Admin</th>
                                     <th scope="col" class="text-center">Uses</th>
+                                    <th scope="col" style="width: 28px;"></th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -328,6 +341,10 @@
                                         {% if data.super_user %}<i class="fa-solid fa-plane-circle-check text-warning-emphasis"></i>{% else %}-{% endif %}
                                     </td>
                                     <td class="text-center">{{ data.uses }}/{{ data.max_uses }}</td>
+                                    <td>
+                                        <a role="button" class="invite-delete" data-invite-id="{{ data.id }}" title="Delete">
+                                            <i class="fa-regular fa-trash-can fa-fw link-danger"></i></a>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                                 </tbody>
@@ -337,6 +354,8 @@
                 </div>
             </div>
         </section>
+
+        <hr class="my-4">
 
         <!-- Users -->
         <section id="users" class="settings-section">
@@ -365,6 +384,8 @@
             </div>
         </section>
 
+        <hr class="my-4">
+
         <!-- Sessions -->
         <section id="sessions" class="settings-section">
             <div class="dash-card">
@@ -380,26 +401,26 @@
                         <table id="sessions-table" class="table table-sm mb-0 w-100" style="table-layout: fixed;">
                             <thead>
                             <tr>
-                                <th scope="col" style="width: 28px;"></th>
                                 <th scope="col">Username</th>
                                 <th scope="col" class="d-none d-sm-table-cell" style="width: 164px;">Expiration</th>
                                 <th scope="col" class="d-none d-md-table-cell" style="width: 156px;">Age/TTL</th>
                                 <th scope="col">User Agent</th>
+                                <th scope="col" style="width: 28px;"></th>
                             </tr>
                             </thead>
                             <tbody>
                             {% for session in sessions %}
                             <tr class="{% if session.current %}table-active{% endif %}">
+                                <th scope="row" class="text-nowrap text-truncate overflow-hidden">{{ session.user_name }}</th>
+                                <td class="d-none d-sm-table-cell" style="width: 160px;">{{ session.date|date }}</td>
+                                <td class="d-none d-md-table-cell" style="width: 140px;">{{ session.ttl }}/{{ session.age }}</td>
+                                <td class="text-nowrap text-truncate overflow-hidden">{{ session.user_agent }}</td>
                                 <td>
                                     {% if not session.current %}
                                     <a role="button" class="ctx-delete" data-session="{{ session.key }}" title="Delete">
                                         <i class="fa-regular fa-trash-can fa-fw link-danger"></i></a>
                                     {% endif %}
                                 </td>
-                                <th scope="row" class="text-nowrap text-truncate overflow-hidden">{{ session.user_name }}</th>
-                                <td class="d-none d-sm-table-cell" style="width: 160px;">{{ session.date|date }}</td>
-                                <td class="d-none d-md-table-cell" style="width: 140px;">{{ session.ttl }}/{{ session.age }}</td>
-                                <td class="text-nowrap text-truncate overflow-hidden">{{ session.user_agent }}</td>
                             </tr>
                             {% endfor %}
                             </tbody>

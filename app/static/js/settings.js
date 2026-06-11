@@ -65,12 +65,29 @@ document
         })
         if (response.ok) {
             const json = await response.json()
-            alert(`Invite Created: ${json.invite}`)
+            show_toast(`Invite created: ${json.invite}`, 'success')
             location.reload()
         } else {
             await fetchErrorToast(response)
         }
     })
+
+// -- Invite delete (site page) --
+document.querySelectorAll('.invite-delete').forEach((el) =>
+    el.addEventListener('click', async (event) => {
+        const inviteId = event.currentTarget.dataset.inviteId
+        const response = await fetch(`/api/invites/${inviteId}/`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': csrftoken },
+        })
+        if (response.ok) {
+            document.getElementById(`invite-${inviteId}`)?.remove()
+            show_toast('Invite deleted.', 'success')
+        } else {
+            await fetchErrorToast(response)
+        }
+    })
+)
 
 // -- Check for update (site page) --
 document.getElementById('check-for-update')?.addEventListener('click', () => {
