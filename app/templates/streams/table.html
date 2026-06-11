@@ -2,7 +2,7 @@
 {% load static %}
 
 <div id="streams-table-section">
-<p class="d-xl-none text-muted mb-0 streams-table-narrow-msg"><em>Some columns hidden due to narrow viewport.</em></p>
+<p class="d-xl-none text-muted mb-0 table-narrow-msg"><em>Some columns hidden due to narrow viewport.</em></p>
 <table class="display responsive nowrap table table-hover table-responsive mb-0 dt-select-no-highlight w-100" id="streams-table">
     <caption class="visually-hidden">List of Streams</caption>
     <thead>
@@ -30,7 +30,7 @@
                 <h1 class="modal-title fs-5" id="delete-stream-label">Delete Stream</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">Are you sure you want to delete this stream?</div>
+            <div class="modal-body" id="delete-stream-body">Are you sure you want to delete this stream?</div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-danger" id="stream-delete-confirm">Delete
                     <i class="fa-regular fa-trash-can ms-1"></i></button>

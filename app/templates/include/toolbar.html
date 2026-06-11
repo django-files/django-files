@@ -40,6 +40,9 @@ Optional:
             <strong id="{{ tb_count_id }}">0</strong>
         </span>
         {% if tb_bulk_menu and request.user.is_authenticated %}
+            <span class="files-toolbar-count small text-nowrap d-none" id="bulk-selected-count">
+                <strong>0</strong> selected
+            </span>
             {% include 'include/bulk-menu.html' %}
         {% endif %}
         {% if tb_btn_label %}

@@ -36,12 +36,14 @@ _ALLOWED_METHODS = frozenset(
         "paste_text",
         "delete_files",
         "delete_albums",
+        "private_albums",
         "toggle_private_file",
         "private_files",
+        "private_streams",
         "set_expr_files",
         "set_password_file",
         "set_file_name",
-        "delete_stream",
+        "delete_streams",
         "set_stream_title",
         "set_stream_description",
         "set_stream_live_chat",
@@ -233,6 +235,19 @@ class HomeConsumer(AsyncWebsocketConsumer):
         else:
             return self._error("Album not found.", **kwargs)
 
+    def private_albums(self, *, user_id: int = None, pks: List[int] = None, private: bool, **kwargs) -> dict:
+        log.debug("private_albums: user_id=%s pks=%s private=%s", user_id, pks, private)
+        albums = list(Albums.objects.filter(**filter_kwargs(pks, user_id)))
+        if not albums:
+            return self._error("Album(s) not found.", **kwargs)
+        for a in albums:
+            a.private = private
+        Albums.objects.bulk_update(albums, ["private"])
+        return {
+            "objects": [{"id": a.id, "name": a.name, "private": a.private} for a in albums],
+            "event": "toggle-private-album",
+        }
+
     def toggle_private_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
@@ -359,17 +374,26 @@ class HomeConsumer(AsyncWebsocketConsumer):
     # Stream CRUD
     # -------------------------------------------------------------------------
 
-    async def delete_stream(self, *, user_id: int = None, name: str = None, **kwargs):
-        log.debug("delete_stream: user_id=%s, name=%s", user_id, name)
-        if not name:
-            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
-        stream = await self._fetch_stream(name)
-        if not stream:
-            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
-        err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
-        if err:
-            return err
-        await database_sync_to_async(stream.delete)()
+    def delete_streams(self, *, user_id: int = None, pks: List[int] = None, **kwargs) -> Optional[dict]:
+        log.debug("delete_streams: user_id=%s pks=%s", user_id, pks)
+        streams = Stream.objects.filter(**filter_kwargs(pks, user_id))
+        if len(streams) > 0:
+            streams.delete()
+        else:
+            return self._error("Stream not found.", **kwargs)
+
+    def private_streams(self, *, user_id: int = None, pks: List[int] = None, public: bool, **kwargs) -> dict:
+        log.debug("private_streams: user_id=%s pks=%s public=%s", user_id, pks, public)
+        streams = list(Stream.objects.filter(**filter_kwargs(pks, user_id)))
+        if not streams:
+            return self._error("Stream(s) not found.", **kwargs)
+        for s in streams:
+            s.public = public
+        Stream.objects.bulk_update(streams, ["public"])
+        return {
+            "objects": [{"id": s.id, "name": s.name, "public": s.public} for s in streams],
+            "event": "toggle-public-stream",
+        }
 
     # -------------------------------------------------------------------------
     # Stream metadata — title & description

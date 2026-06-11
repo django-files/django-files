@@ -1,16 +1,24 @@
 // Shared helpers for bulk-action support on DataTables (albums, shorts, etc.).
 // Files uses its own richer bulk menu — see file-table.js.
 
+// Update the "n selected" count chip in the toolbar.
+// Call with the current selection count; hides the chip when n === 0.
+export function updateBulkCount(n) {
+    const el = document.getElementById('bulk-selected-count')
+    if (!el) return
+    el.querySelector('strong').textContent = n
+    el.classList.toggle('d-none', n === 0)
+}
+
 // Toggle the toolbar's #bulk-actions dropdown disabled state based on row
-// selection in the given DataTable.
+// selection in the given DataTable, and keep the count chip in sync.
 export function initBulkSelect(dt, btnId = 'bulk-actions') {
     const btn = document.getElementById(btnId)
     if (!btn) return
-    dt.on('select', () => {
-        btn.disabled = false
-    })
-    dt.on('deselect', () => {
-        if (dt.rows({ selected: true }).count() === 0) btn.disabled = true
+    dt.on('select deselect', () => {
+        const n = dt.rows({ selected: true }).count()
+        btn.disabled = n === 0
+        updateBulkCount(n)
     })
 }
 

@@ -155,7 +155,7 @@ div.dataTables_wrapper span.select-item {
 }
 
 /* Remove Bootstrap's mt-2 that DT Bootstrap5 integration bakes into the table row class. */
-[id='files-table_wrapper'] .dt-layout-table {
+[id$='-table_wrapper'] .dt-layout-table {
     margin-top: 0 !important;
 }
 
@@ -191,16 +191,18 @@ div.dataTables_wrapper span.select-item {
  * Hide every DT layout row that isn't the table itself, plus the DT search,
  * info, paging, and length controls (belt-and-braces alongside the row rule).
  */
-#files-table-section .files-table-narrow-msg,
-#files-table-section .dt-container > *:not(.dt-layout-table),
-#files-table-section .dt-search,
-#files-table-section .dt-info,
-#files-table-section .dt-paging,
-#files-table-section .dt-length {
+:is(#files-table-section, #streams-table-section) .table-narrow-msg,
+:is(#files-table-section, #streams-table-section)
+    .dt-container
+    > *:not(.dt-layout-table),
+:is(#files-table-section, #streams-table-section) .dt-search,
+:is(#files-table-section, #streams-table-section) .dt-info,
+:is(#files-table-section, #streams-table-section) .dt-paging,
+:is(#files-table-section, #streams-table-section) .dt-length {
     display: none !important;
 }
 
-#files-table-section .dt-container {
+:is(#files-table-section, #streams-table-section) .dt-container {
     margin-top: 0 !important;
     padding-top: 0 !important;
 }
@@ -239,43 +241,4 @@ th.dt-select-col {
     padding-left: 0 !important;
     padding-right: 0 !important;
     overflow-x: clip;
-}
-
-#albums-table-section .dt-container > *:not(.dt-layout-table),
-#albums-table-section .dt-search,
-#albums-table-section .dt-info,
-#albums-table-section .dt-paging,
-#albums-table-section .dt-length {
-    display: none !important;
-}
-
-#albums-table-section .dt-container {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
-[id='albums-table_wrapper'] .dt-layout-table {
-    margin-top: 0 !important;
-}
-
-#streams-table-section .streams-table-narrow-msg,
-#streams-table-section .dt-container > *:not(.dt-layout-table),
-#streams-table-section .dt-search,
-#streams-table-section .dt-info,
-#streams-table-section .dt-paging,
-#streams-table-section .dt-length {
-    display: none !important;
-}
-
-#streams-table-section .dt-container {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
-[id='streams-table_wrapper'] .dt-layout-table {
-    margin-top: 0 !important;
-}
-
-[id='shorts-table_wrapper'] .dt-layout-table {
-    margin-top: 0 !important;
 }

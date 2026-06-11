@@ -1,3 +1,4 @@
+import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import { socket } from './socket.js'
 import {
     selectColumn,
@@ -6,8 +7,7 @@ import {
 } from './table-defaults.js'
 
 const streamsTable = $('#streams-table')
-const deleteStreamModal = $('#delete-stream-modal')
-let pendingDeleteName
+let deleteModal
 
 export const faKey = document.querySelector('div.d-none > .fa-key')
 export const faGlobe = document.querySelector('div.d-none > .fa-globe')
@@ -222,7 +222,7 @@ function getActions(data, type, row) {
                     <i class="fa-solid fa-ellipsis-vertical"></i>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item stream-delete-btn link-danger" role="button" data-stream-name="${row.name}">
+                    <li><a class="dropdown-item stream-delete-btn link-danger" role="button" data-hook-id="${row.id}">
                         <i class="fa-regular fa-trash-can me-2"></i>Delete
                     </a></li>
                 </ul>
@@ -230,6 +230,13 @@ function getActions(data, type, row) {
         `
     }
     return data
+}
+
+function deleteStreams(ids) {
+    return new Promise((resolve) => {
+        socket.send(JSON.stringify({ method: 'delete-streams', pks: ids }))
+        resolve()
+    })
 }
 
 // Varied widths for name and title columns so skeleton rows look realistic
@@ -267,6 +274,7 @@ function domContentLoaded() {
     streamsDataTable = streamsTable.DataTable(dataTablesOptions)
     showStreamsSkeletons()
     initToolbar('streams-toolbar', streamsDataTable)
+    initBulkSelect(streamsDataTable)
 
     const totalStreamsCount = document.getElementById('total-streams-count')
     if (totalStreamsCount) {
@@ -318,19 +326,39 @@ function domContentLoaded() {
         }
     })
 
-    streamsTable.on('click', '.stream-delete-btn', function () {
-        pendingDeleteName = $(this).data('stream-name')
-        deleteStreamModal.modal('show')
+    deleteModal = wireDeleteModal({
+        modalId: 'delete-stream-modal',
+        bodyId: 'delete-stream-body',
+        confirmId: 'stream-delete-confirm',
+        entity: 'stream',
+        onConfirm: deleteStreams,
     })
 
-    $('#stream-delete-confirm').on('click', function () {
-        if (!pendingDeleteName) return
-        socket.send(
-            JSON.stringify({ method: 'delete-stream', name: pendingDeleteName })
-        )
-        deleteStreamModal.modal('hide')
-        pendingDeleteName = null
+    streamsTable.on('click', '.stream-delete-btn', function () {
+        deleteModal.open([Number($(this).data('hook-id'))])
     })
+
+    $('.bulk-delete').on('click', () =>
+        deleteModal.open(selectedPks(streamsDataTable))
+    )
+    $('.bulk-private').on('click', () =>
+        socket.send(
+            JSON.stringify({
+                method: 'private_streams',
+                pks: selectedPks(streamsDataTable),
+                public: false,
+            })
+        )
+    )
+    $('.bulk-public').on('click', () =>
+        socket.send(
+            JSON.stringify({
+                method: 'private_streams',
+                pks: selectedPks(streamsDataTable),
+                public: true,
+            })
+        )
+    )
 }
 
 socket?.addEventListener('message', function (event) {
@@ -343,5 +371,17 @@ socket?.addEventListener('message', function (event) {
             })
             .remove()
             .draw()
+    } else if (data.event === 'toggle-public-stream') {
+        data.objects.forEach((obj) => {
+            const row = streamsDataTable?.row(function (_idx, rowData) {
+                return rowData.id === obj.id
+            })
+            if (row?.node()) {
+                const rowData = row.data()
+                rowData.public = obj.public
+                row.data(rowData).invalidate()
+            }
+        })
+        streamsDataTable?.draw(false)
     }
 })

@@ -11,6 +11,7 @@ import {
     hideTableSkeletons,
 } from './file-table.js'
 
+import { updateBulkCount } from './bulk-actions.js'
 import { fetchFiles } from './api-fetch.js'
 
 import { socket } from './socket.js'
@@ -212,16 +213,18 @@ async function initGallery() {
 
     setupScrollObserver()
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
+        const n = filesDataTable.rows({ selected: true }).count()
         document.getElementById('bulk-actions').disabled = false
+        updateBulkCount(n)
         let checkbox = document.getElementById(`file-${dt.data().id}`)
         if (checkbox) {
             checkbox.classList.remove('d-none')
         }
     })
     filesDataTable.on('deselect', function (_e, _dt, _type, _indexes) {
-        if (filesDataTable.rows({ selected: true }).count() === 0) {
-            document.getElementById('bulk-actions').disabled = true
-        }
+        const n = filesDataTable.rows({ selected: true }).count()
+        document.getElementById('bulk-actions').disabled = n === 0
+        updateBulkCount(n)
     })
     filesDataTable?.columns.adjust().draw()
 }

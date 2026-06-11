@@ -82,6 +82,7 @@ const EVENT_HANDLERS = {
     'set-stream-description': messageStreamDescriptionUpdate,
     'album-delete': messageAlbumDelete,
     'album-new': messageAlbumNew,
+    'toggle-private-album': messageTogglePrivateAlbum,
     message: messageToast,
 }
 
@@ -181,6 +182,13 @@ function messageAlbumDelete(data) {
 
 function messageAlbumNew(data) {
     show_toast(`"${truncateName(data.name)}" Album created by ${data.user}.`)
+}
+
+function messageTogglePrivateAlbum(data) {
+    data.objects.forEach((album) => {
+        const label = album.private ? 'private' : 'public'
+        show_toast(`"${truncateName(album.name)}" set to ${label}.`, 'success')
+    })
 }
 
 function messageNewFile(data) {

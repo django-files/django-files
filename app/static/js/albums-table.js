@@ -109,6 +109,24 @@ async function domContentLoaded() {
         $('.bulk-delete').on('click', () =>
             deleteModal.open(selectedPks(albumsDataTable))
         )
+        $('.bulk-private').on('click', () =>
+            socket.send(
+                JSON.stringify({
+                    method: 'private_albums',
+                    pks: selectedPks(albumsDataTable),
+                    private: true,
+                })
+            )
+        )
+        $('.bulk-public').on('click', () =>
+            socket.send(
+                JSON.stringify({
+                    method: 'private_albums',
+                    pks: selectedPks(albumsDataTable),
+                    private: false,
+                })
+            )
+        )
     }
     deleteModal = wireDeleteModal({
         modalId: 'delete-album-modal',
