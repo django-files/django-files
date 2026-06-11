@@ -38,6 +38,34 @@ aria-hidden="true">
     </div> <!-- modal-dialog -->
 </div> <!-- modal -->
 
+<div class="modal fade" id="tokenRegenerateModal" tabindex="-1"
+     aria-labelledby="tokenRegenerateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="tokenRegenerateModalLabel">
+                    <i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Regenerate Token?
+                </h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Your current token will be <strong>permanently invalidated</strong>. Any clients using it will stop working until reconfigured:</p>
+                <ul class="mb-0">
+                    <li>ShareX / Flameshot upload configs</li>
+                    <li>iOS / Android native clients</li>
+                    <li>Stream clients authenticating via token</li>
+                    <li>Any scripts or custom integrations</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmTokenRegenerateBtn">
+                    <i class="fa-solid fa-rotate me-2"></i>Regenerate</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
     const uploadUrl = "{% url 'api:upload' %}"
 </script>

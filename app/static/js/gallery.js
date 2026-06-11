@@ -369,7 +369,6 @@ function buildGalleryCard(file, top = false) {
 
     const ctxMenu = tmplCtx.cloneNode(true)
     const toggle = tmplCtxToggle.cloneNode(true)
-    toggle.innerHTML = '<i class="fa-solid fa-ellipsis"></i>'
     ctxMenu.appendChild(toggle)
     outer.appendChild(ctxMenu)
     const menu = getCtxMenuContainer(file)

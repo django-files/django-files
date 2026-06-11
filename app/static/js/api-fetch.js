@@ -28,6 +28,12 @@ export async function fetchAlbums(page, count = 100) {
     return fetchPaginated('/api/albums/', page, count)
 }
 
+export async function fetchAlbumsSearch(query = '', count = 12) {
+    const url = new URL(`${globalThis.location.origin}/api/albums/1/${count}/`)
+    if (query) url.searchParams.append('search', query)
+    return (await fetch(url)).json()
+}
+
 export async function fetchShorts(page, count = 100) {
     return fetchPaginated('/api/shorts/', page, count)
 }

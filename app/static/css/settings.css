@@ -1,0 +1,71 @@
+/* Settings page — only rules Bootstrap utilities cannot cover */
+
+/* scroll-margin-top must reference --navbar-h; no Bootstrap equivalent */
+.settings-section {
+    margin-bottom: 1.5rem;
+    scroll-margin-top: calc(var(--navbar-h, 52px) + 1.25rem);
+}
+
+/* Bootstrap sticky-top uses top:0; we need to clear the fixed navbar */
+.settings-nav {
+    position: sticky;
+    top: calc(var(--navbar-h, 52px) + 1rem);
+}
+
+/* nav-pills active/hover: translucent primary to match app aesthetic */
+.settings-nav .nav-link {
+    color: var(--bs-body-color);
+    opacity: 0.75;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition:
+        background 0.12s,
+        opacity 0.12s;
+}
+
+.settings-nav .nav-link i {
+    width: 1rem;
+    text-align: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.settings-nav .nav-link:hover,
+.settings-nav .nav-link:focus {
+    background: rgba(var(--bs-emphasis-color-rgb), 0.07);
+    opacity: 1;
+    color: var(--bs-emphasis-color);
+}
+
+.settings-nav .nav-link.active {
+    background: rgba(var(--bs-primary-rgb), 0.15);
+    color: var(--bs-primary);
+    opacity: 1;
+    font-weight: 500;
+}
+
+/* Avatar hover transform — no Bootstrap utility for scale */
+.settings-avatar {
+    transition:
+        opacity 0.18s,
+        transform 0.18s;
+    object-fit: cover;
+}
+
+.settings-avatar:hover {
+    opacity: 0.82;
+    transform: scale(1.04);
+}
+
+/* Token display — word-break and transition have no Bootstrap utility */
+.settings-token {
+    word-break: break-all;
+    line-height: 1.6;
+    transition: filter 0.2s;
+}
+
+.settings-token-blurred {
+    filter: blur(3px);
+}
