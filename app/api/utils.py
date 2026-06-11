@@ -98,6 +98,7 @@ def extract_albums(q: Albums.objects):
         data = model_to_dict(album)
         data["date"] = album.date
         data["url"] = site_settings["site_url"] + "/files/?view=gallery&album=" + str(album.id)
+        data["user_name"] = album.user.get_name()
         albums.append(data)
     return albums
 
