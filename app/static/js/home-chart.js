@@ -53,8 +53,7 @@
         }
     }
 
-    const isDark =
-        document.documentElement.getAttribute('data-bs-theme') !== 'light'
+    const isDark = document.documentElement.dataset.bsTheme !== 'light'
     const textColor = isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.55)'
     const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'
     const chart = echarts.init(root, isDark ? 'dark' : null)

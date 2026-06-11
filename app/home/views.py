@@ -60,6 +60,64 @@ def detect_cdn(request):
     return None
 
 
+def _build_chart_data(qs):
+    days, chart_files, chart_size, chart_shorts = [], [], [], []
+    for stat in reversed(qs):
+        days.append(f"{stat.created_at.month}/{stat.created_at.day}")
+        chart_files.append(stat.stats["count"])
+        chart_size.append(stat.stats["size"])
+        chart_shorts.append(stat.stats["shorts"])
+    return days, chart_files, chart_size, chart_shorts
+
+
+def _quota_bg(pct):
+    return "danger" if pct > 95 else "warning" if pct > 85 else "secondary"
+
+
+def _build_user_stat_cards(request, stats):
+    if not stats:
+        return []
+    s = stats[0]
+    album_count = Albums.objects.filter(user=request.user).count()
+    cards = [
+        {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": s.stats["count"], "label": "Files"},
+        {"icon": "fa-solid fa-database", "bg": "info", "value": s.stats["human_size"], "label": "Storage Used"},
+        {"icon": "fa-solid fa-link", "bg": "success", "value": s.stats["shorts"], "label": "Short URLs"},
+        {"icon": "fa-regular fa-images", "bg": "warning", "value": album_count, "label": "Albums"},
+    ]
+    if request.user.storage_quota:
+        pct = request.user.get_storage_usage_pct()
+        quota_label = f"My Quota &mdash; {request.user.get_storage_used_human_read()} / {request.user.get_storage_quota_human_read()}"
+        cards.append(
+            {"icon": "fa-solid fa-hard-drive", "bg": _quota_bg(pct), "value": f"{pct}%", "label": quota_label}
+        )
+    return cards
+
+
+def _build_server_stat_cards(stats_server):
+    if not stats_server:
+        return []
+    ss = stats_server[0]
+    server_album_count = Albums.objects.count()
+    cards = [
+        {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": ss.stats["count"], "label": "Server Files"},
+        {
+            "icon": "fa-solid fa-database",
+            "bg": "info",
+            "value": ss.stats["human_size"],
+            "label": "Server Storage Used",
+        },
+        {"icon": "fa-solid fa-link", "bg": "success", "value": ss.stats["shorts"], "label": "Server Shorts"},
+        {"icon": "fa-regular fa-images", "bg": "warning", "value": server_album_count, "label": "Server Albums"},
+    ]
+    site_settings = SiteSettings.objects.settings()
+    if site_settings.global_storage_quota:
+        pct = site_settings.get_global_storage_quota_usage_pct()
+        quota_label = f"System Quota &mdash; {site_settings.get_global_storage_usage_human_read()} / {site_settings.get_global_storage_quota_human_read()}"
+        cards.append({"icon": "fa-solid fa-server", "bg": _quota_bg(pct), "value": f"{pct}%", "label": quota_label})
+    return cards
+
+
 @cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="files.stats.shorts")
@@ -70,42 +128,7 @@ def home_view(request):
     """
     log.debug("%s - home_view: is_secure: %s", request.method, request.is_secure())
     stats = FileStats.objects.get_request(request)
-
-    def build_chart_data(qs):
-        days, chart_files, chart_size, chart_shorts = [], [], [], []
-        for stat in reversed(qs):
-            days.append(f"{stat.created_at.month}/{stat.created_at.day}")
-            chart_files.append(stat.stats["count"])
-            chart_size.append(stat.stats["size"])
-            chart_shorts.append(stat.stats["shorts"])
-        return days, chart_files, chart_size, chart_shorts
-
-    days, chart_files, chart_size, chart_shorts = build_chart_data(stats)
-
-    user_stat_cards = []
-    if stats:
-        s = stats[0]
-        album_count = Albums.objects.filter(user=request.user).count()
-        user_stat_cards = [
-            {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": s.stats["count"], "label": "Files"},
-            {"icon": "fa-solid fa-database", "bg": "info", "value": s.stats["human_size"], "label": "Storage Used"},
-            {"icon": "fa-solid fa-link", "bg": "success", "value": s.stats["shorts"], "label": "Short URLs"},
-            {"icon": "fa-regular fa-images", "bg": "warning", "value": album_count, "label": "Albums"},
-        ]
-        if request.user.storage_quota:
-            pct = request.user.get_storage_usage_pct()
-            bg = "danger" if pct > 95 else "warning" if pct > 85 else "secondary"
-            user_stat_cards.append(
-                {
-                    "icon": "fa-solid fa-hard-drive",
-                    "bg": bg,
-                    "value": f"{pct}%",
-                    "label": (
-                        f"My Quota &mdash; {request.user.get_storage_used_human_read()} "
-                        f"/ {request.user.get_storage_quota_human_read()}"
-                    ),
-                }
-            )
+    days, chart_files, chart_size, chart_shorts = _build_chart_data(stats)
 
     context = {
         "stats": stats,
@@ -115,52 +138,12 @@ def home_view(request):
         "chart_files": chart_files,
         "chart_size": chart_size,
         "chart_shorts": chart_shorts,
-        "user_stat_cards": user_stat_cards,
+        "user_stat_cards": _build_user_stat_cards(request, stats),
     }
 
     if request.user.is_superuser:
         stats_server = FileStats.objects.filter(user=None).order_by("-created_at")
-        server_days, server_chart_files, server_chart_size, server_chart_shorts = build_chart_data(stats_server)
-        server_stat_cards = []
-        if stats_server:
-            ss = stats_server[0]
-            server_album_count = Albums.objects.count()
-            server_stat_cards = [
-                {
-                    "icon": "fa-regular fa-folder-open",
-                    "bg": "primary",
-                    "value": ss.stats["count"],
-                    "label": "Server Files",
-                },
-                {
-                    "icon": "fa-solid fa-database",
-                    "bg": "info",
-                    "value": ss.stats["human_size"],
-                    "label": "Server Storage Used",
-                },
-                {"icon": "fa-solid fa-link", "bg": "success", "value": ss.stats["shorts"], "label": "Server Shorts"},
-                {
-                    "icon": "fa-regular fa-images",
-                    "bg": "warning",
-                    "value": server_album_count,
-                    "label": "Server Albums",
-                },
-            ]
-            site_settings = SiteSettings.objects.settings()
-            if site_settings.global_storage_quota:
-                pct = site_settings.get_global_storage_quota_usage_pct()
-                bg = "danger" if pct > 95 else "warning" if pct > 85 else "secondary"
-                server_stat_cards.append(
-                    {
-                        "icon": "fa-solid fa-server",
-                        "bg": bg,
-                        "value": f"{pct}%",
-                        "label": (
-                            f"System Quota &mdash; {site_settings.get_global_storage_usage_human_read()} "
-                            f"/ {site_settings.get_global_storage_quota_human_read()}"
-                        ),
-                    }
-                )
+        server_days, server_chart_files, server_chart_size, server_chart_shorts = _build_chart_data(stats_server)
         context.update(
             {
                 "stats_server": stats_server,
@@ -168,7 +151,7 @@ def home_view(request):
                 "server_chart_files": server_chart_files,
                 "server_chart_size": server_chart_size,
                 "server_chart_shorts": server_chart_shorts,
-                "server_stat_cards": server_stat_cards,
+                "server_stat_cards": _build_server_stat_cards(stats_server),
             }
         )
 
