@@ -1181,7 +1181,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         file.albums.add(selected_album)
         return {"event": "set-file-albums", "file_id": pk, "added_to": {selected_album.id: selected_album.name}}
 
-    def bulk_add_file_albums(self, *, user_id: int = None, pks: List[int] = None, albums: List[int] = None, **kwargs) -> dict:
+    def bulk_add_file_albums(
+        self, *, user_id: int = None, pks: List[int] = None, albums: List[int] = None, **kwargs
+    ) -> dict:
         if not pks:
             return self._error("No file IDs specified.", **kwargs)
         if not albums:
@@ -1198,7 +1200,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
             count += 1
         return {"event": "bulk-add-file-albums", "count": count}
 
-    def bulk_remove_file_albums(self, *, user_id: int = None, pks: List[int] = None, albums: List[int] = None, **kwargs) -> dict:
+    def bulk_remove_file_albums(
+        self, *, user_id: int = None, pks: List[int] = None, albums: List[int] = None, **kwargs
+    ) -> dict:
         if not pks:
             return self._error("No file IDs specified.", **kwargs)
         if not albums:

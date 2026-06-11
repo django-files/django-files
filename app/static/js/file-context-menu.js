@@ -108,7 +108,7 @@ $('#modal-album-form').on('submit', function (event) {
     const mode = this.dataset.mode || 'single'
     const albums = Array.from(
         document.getElementById('album-options').selectedOptions
-    ).map((o) => parseInt(o.value))
+    ).map((o) => Number.parseInt(o.value))
     if (mode === 'single') {
         const data = genData($(this), 'set-file-albums')
         socket.send(JSON.stringify(data))
@@ -185,7 +185,7 @@ export function ctxRenameFile(event) {
 
 export async function ctxAlbumFile(event) {
     const pk = getPrimaryKey(event)
-    await openAlbumModal([parseInt(pk)], 'single', 'Manage Albums')
+    await openAlbumModal([Number.parseInt(pk)], 'single', 'Manage Albums')
 }
 
 /**
