@@ -308,7 +308,7 @@ function handleAlbumBadges(data) {
                 'click',
                 removeAlbumPress
             )
-            container.insertBefore(span, addGroup)
+            addGroup.before(span)
         }
     }
 }

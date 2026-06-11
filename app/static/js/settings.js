@@ -235,6 +235,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // -- Functions --
 
+function applyValidationErrors(form, data) {
+    for (const el of form.elements) {
+        if (Object.hasOwn(data, el.name)) {
+            const invalid = document.getElementById(`${el.name}-invalid`)
+            if (invalid) invalid.textContent = data[el.name]
+            el.classList.add('is-invalid')
+        }
+    }
+}
+
 async function saveOptions(event) {
     const excludes = ['data-bs-theme-value']
     if (excludes.includes(event.target.id)) {
@@ -249,16 +259,7 @@ async function saveOptions(event) {
     })
     if (!response.ok) {
         if (response.status === 400) {
-            const data = await response.json()
-            for (const el of form.elements) {
-                if (Object.hasOwn(data, el.name)) {
-                    const invalid = document.getElementById(
-                        `${el.name}-invalid`
-                    )
-                    if (invalid) invalid.textContent = data[el.name]
-                    el.classList.add('is-invalid')
-                }
-            }
+            applyValidationErrors(form, await response.json())
         }
         show_toast(`${response.status}: ${response.statusText}`, 'danger')
         return

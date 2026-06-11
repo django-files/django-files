@@ -50,12 +50,14 @@
                     <div class="dash-card-body">
                         <div class="row g-3 align-items-center mb-3">
                             <div class="col-auto">
-                                <img id="uploadAvatarHookBtn" class="rounded-circle settings-avatar" role="button"
-                                     src="{{ user.get_avatar_url }}"
-                                     {% if user.user_avatar_choice == "DF" %}
-                                     data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Upload new avatar"
-                                     {% endif %}
-                                     height="80" width="80" alt="Avatar">
+                                <button id="uploadAvatarHookBtn" type="button" class="p-0 border-0 bg-transparent"
+                                        {% if user.user_avatar_choice == "DF" %}
+                                        data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Upload new avatar"
+                                        {% endif %}>
+                                    <img class="rounded-circle settings-avatar"
+                                         src="{{ user.get_avatar_url }}"
+                                         height="80" width="80" alt="Avatar">
+                                </button>
                             </div>
                             <div class="col">
                                 <label for="user_avatar_choice" class="form-label fw-medium">Avatar Source</label>
@@ -415,7 +417,7 @@
 
                     <div class="tab-content pt-3" id="myTabContent">
                         <div class="tab-pane fade show active" id="cli-tab-pane" role="tabpanel"
-                             aria-labelledby="cli-tab" tabindex="0">
+                             aria-labelledby="cli-tab">
                             <p>
                                 <a class="clip text-decoration-none text-warning" role="button"
                                    data-clipboard-action="copy" data-clipboard-target="#cli-code">
@@ -431,7 +433,7 @@
                         </div>
 
                         <div class="tab-pane fade" id="shell-tab-pane" role="tabpanel"
-                             aria-labelledby="shell-tab" tabindex="0">
+                             aria-labelledby="shell-tab">
                             <p>
                                 <a class="clip text-decoration-none text-warning" role="button"
                                    data-clipboard-action="copy" data-clipboard-target="#shell-code">
@@ -443,7 +445,7 @@
                         </div>
 
                         <div class="tab-pane fade" id="python-tab-pane" role="tabpanel"
-                             aria-labelledby="python-tab" tabindex="0">
+                             aria-labelledby="python-tab">
                             <p>
                                 <a class="clip text-decoration-none text-warning" role="button"
                                    data-clipboard-action="copy" data-clipboard-target="#python-code">
@@ -455,7 +457,7 @@
                         </div>
 
                         <div class="tab-pane fade" id="home-tab-pane" role="tabpanel"
-                             aria-labelledby="home-tab" tabindex="0">
+                             aria-labelledby="home-tab">
                             <p>
                                 <a class="clip text-decoration-none text-warning" role="button"
                                    data-clipboard-action="copy" data-clipboard-target="#upload-url">
