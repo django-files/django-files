@@ -1,7 +1,14 @@
-{% if full_context %}
+{% comment %}
+Generic delete-only bulk-actions dropdown for pages using the shared toolbar
+(albums, shorts). The richer files variant lives in files/bulk-menu.html.
+
+Required context:
+  bulk_entity — singular noun (e.g. "album", "short URL") used in modal text
+{% endcomment %}
 <div id="dt-bulk-wrapper" class="dropdown">
-    <button id="bulk-actions" class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled>
-      Bulk Actions
+    <button id="bulk-actions" class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+            data-bs-toggle="dropdown" aria-expanded="false" disabled>
+        Bulk Actions
     </button>
     <ul class="dropdown-menu">
         <li>
@@ -12,10 +19,6 @@
             <a role="button" class="dropdown-item bulk-public" title="Make Public">
                 <i class="fa-solid fa-lock-open fa-fw me-2"></i> Make Public</a>
         </li>
-        <li>
-            <a role="button" class="dropdown-item bulk-expire" title="Bulk Expiration">
-                <i class="fa-solid fa-hourglass fa-fw me-2"></i> Set Expiration</a>
-        </li>
         <li><hr class="dropdown-divider"></li>
         <li>
             <a role="button" class="dropdown-item bulk-delete" title="Bulk Delete">
@@ -23,4 +26,3 @@
         </li>
     </ul>
 </div>
-{% endif %}

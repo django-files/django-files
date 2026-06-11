@@ -122,9 +122,9 @@
 }
 
 /* Push Leaflet's top controls (zoom, fullscreen) below the floating toolbar
- * so they aren't clipped. --files-toolbar-h is set by gallery.js. */
+ * so they aren't clipped. --toolbar-h is set by initToolbar() in gallery.js. */
 #map-container .leaflet-top {
-    top: var(--files-toolbar-h, 48px);
+    top: var(--toolbar-h, 48px);
 }
 
 /*

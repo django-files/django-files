@@ -1,27 +1,34 @@
 import { fetchShorts } from './api-fetch.js'
-import { paginatedTableDefaults } from './table-defaults.js'
+import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
+import {
+    noChromeLayout,
+    paginatedTableDefaults,
+    selectColumn,
+    selectColumnDef,
+    selectConfig,
+} from './table-defaults.js'
 
 const shortsTable = $('#shorts-table')
-const deleteShortModal = $('#delete-short-modal')
-
-let shortsDataTable
-let nextPage = 1
-let fetchLock = false
-let pendingDeleteId
+const isHome = !!shortsTable.data('home')
+const MAX_HOME_SHORTS = 10
 const totalShortsCount = document.getElementById('total-shorts-count')
 
-document.addEventListener('DOMContentLoaded', domContentLoaded)
-document.addEventListener('scroll', debounce(scrollHandle))
-window.addEventListener('resize', debounce(scrollHandle))
+let shortsDataTable
+let loader
+let deleteModal
 
-async function scrollHandle(event) {
-    await pageScroll(event, nextPage, addShortRows)
-    shortsDataTable?.columns.adjust().draw()
-}
+// Dynamic URL truncation — viewport-based, half-slope on the narrow home card.
+const truncator = createTruncator(isHome ? 0.02 : 0.04)
+
+document.addEventListener('DOMContentLoaded', domContentLoaded)
 
 const dataTablesOptions = {
     ...paginatedTableDefaults,
+    ...(isHome && { layout: noChromeLayout }),
+    order: [1, 'desc'],
+    select: selectConfig,
     columns: [
+        selectColumn,
         { data: 'id' },
         { data: 'short' },
         { data: 'url' },
@@ -29,75 +36,99 @@ const dataTablesOptions = {
         { data: 'max' },
         { data: null },
     ],
-    initComplete: function () {
-        const section = document.getElementById('shorts-table-section')
-        if (section) {
-            requestAnimationFrame(() =>
-                requestAnimationFrame(() =>
-                    section.classList.add('dt-section-ready')
-                )
-            )
-        }
-    },
     columnDefs: [
+        selectColumnDef,
+        { targets: 1, visible: false, responsivePriority: 9 },
         {
-            targets: 0,
-            visible: false,
-            responsivePriority: 9,
-        },
-        {
-            targets: 1,
+            targets: 2,
             render: renderShortLink,
             defaultContent: '',
+            width: isHome ? '90px' : '120px',
             responsivePriority: 1,
         },
         {
-            targets: 2,
+            targets: 3,
             render: renderUrl,
             defaultContent: '',
-            responsivePriority: 2,
-        },
-        {
-            targets: 3,
-            className: 'text-center',
-            width: '50px',
-            defaultContent: '0',
-            responsivePriority: 3,
+            // On the narrow home card, drop the URL column before the actions
+            // column so the copy/delete buttons stay visible.
+            responsivePriority: isHome ? 8 : 2,
         },
         {
             targets: 4,
             className: 'text-center',
             width: '50px',
-            defaultContent: '-',
-            render: (data) => (data && data !== '0' && data !== 0 ? data : '-'),
-            responsivePriority: 4,
+            defaultContent: '0',
+            visible: !isHome,
+            responsivePriority: 3,
         },
         {
             targets: 5,
+            className: 'text-center',
+            width: '50px',
+            defaultContent: '-',
+            render: (data) => (data && data !== '0' && data !== 0 ? data : '-'),
+            visible: !isHome,
+            responsivePriority: 4,
+        },
+        {
+            targets: 6,
             orderable: false,
             render: renderActions,
             defaultContent: '',
             className: 'text-center',
-            width: '80px',
-            responsivePriority: 3,
+            width: isHome ? '70px' : '160px',
+            responsivePriority: 2,
         },
     ],
 }
 
 async function domContentLoaded() {
     shortsDataTable = shortsTable.DataTable(dataTablesOptions)
-    wireToolbarSearch('shorts-toolbar-search-input', shortsDataTable)
-    initCollapsibleSearch(
-        'shorts-toolbar-search',
-        'shorts-toolbar-search-input'
-    )
-    syncNavbarHeight()
-    observeToolbarHeight('shorts-toolbar', '--shorts-toolbar-h')
+    truncator.attach(shortsDataTable)
+    loader = createPaginatedLoader(shortsDataTable, {
+        fetcher: fetchShorts,
+        listKey: 'shorts',
+        idPrefix: 'short',
+        countEl: totalShortsCount,
+        maxRows: isHome ? MAX_HOME_SHORTS : null,
+        onOverflow: () =>
+            document
+                .querySelector('.shorts-truncation-warning')
+                ?.classList.remove('d-none'),
+    })
+    if (!isHome) {
+        initToolbar('shorts-toolbar', shortsDataTable)
+        attachInfiniteScroll(shortsDataTable, loader)
+        attachUserFilter(shortsDataTable, {
+            loader,
+            skeletonFn: showShortsSkeletons,
+        })
+        initBulkSelect(shortsDataTable)
+        $('.bulk-delete').on('click', () =>
+            deleteModal.open(selectedPks(shortsDataTable))
+        )
+    }
+    deleteModal = wireDeleteModal({
+        modalId: 'delete-short-modal',
+        bodyId: 'delete-short-body',
+        confirmId: 'short-delete-confirm',
+        entity: 'short URL',
+        entityPlural: 'short URLs',
+        onConfirm: deleteShorts,
+    })
+    document.addEventListener('click', function (event) {
+        const btn = event.target.closest('.delete-short-btn')
+        if (!btn) return
+        deleteModal.open([Number(btn.dataset.hookId)])
+    })
     await initDataTable(
         shortsDataTable,
         showShortsSkeletons,
-        addShortRows,
-        'No short URLs available',
+        loader.load,
+        isHome
+            ? 'Short URLs will appear here once created.'
+            : 'No short URLs available',
         'No matching short URLs found'
     )
 }
@@ -111,9 +142,9 @@ function renderShortLink(data, type, row) {
 
 function renderUrl(data, type, _row) {
     if (type === 'display') {
-        const maxLen = 60
+        const len = truncator.length
         const display =
-            data.length > maxLen ? data.substring(0, maxLen) + '…' : data
+            data.length > len ? data.substring(0, len - 1) + '…' : data
         return `<a href="${data}" target="_blank" class="link-body-emphasis">${display}</a>`
     }
     return data
@@ -126,100 +157,69 @@ function renderActions(_data, type, row) {
     return ''
 }
 
-async function addShortRows() {
-    if (!fetchLock) {
-        fetchLock = true
-        const data = await fetchShorts(nextPage)
-        nextPage = data.next
-        for (const short of data.shorts) {
-            addShortRow(short)
-        }
-        fetchLock = false
-    }
-}
+const _shortSkeletonUrlWidths = isHome
+    ? [90, 120, 80, 130, 100, 110]
+    : [180, 220, 150, 240, 170, 200]
 
-function addShortRow(row) {
-    row['DT_RowId'] = `short-${row.id}`
-    shortsDataTable.row.add(row).draw(false)
-    if (totalShortsCount)
-        totalShortsCount.textContent = shortsDataTable.rows().count()
-}
+// Visible columns differ by mode (id is the always-hidden ordering column):
+// /shorts/: select, short, url, views, max, actions
+// home:    select, short, url, actions (views/max also hidden)
+const _shortSkeletonSpecs = isHome
+    ? [{ w: 18, h: 18 }, { w: 60 }, { w: 0 }, { w: 40 }]
+    : [{ w: 18, h: 18 }, { w: 60 }, { w: 0 }, { w: 24 }, { w: 24 }, { w: 50 }]
 
-const _shortSkeletonUrlWidths = [180, 220, 150, 240, 170, 200]
-
-// Visible columns: short, url, views, max, actions (id is hidden col 0)
-const _shortSkeletonSpecs = [
-    { w: 60 },
-    { w: 0 }, // url — varied per row
-    { w: 24 },
-    { w: 24 },
-    { w: 50 },
-]
-
-function showShortsSkeletons(count = 8) {
+function showShortsSkeletons(count = isHome ? MAX_HOME_SHORTS : 8) {
     const tbody = document.querySelector('#shorts-table tbody')
     if (!tbody) return
     buildSkeletonRows(tbody, count, _shortSkeletonSpecs, {
-        1: _shortSkeletonUrlWidths,
+        2: _shortSkeletonUrlWidths,
     })
 }
 
-$('#shortsForm').on('submit', function (event) {
-    event.preventDefault()
-    const form = $(this)
-    submitJsonForm(form, function (resp) {
-        form.trigger('reset')
-        $('#create-short-modal').modal('hide')
-        show_toast(`Short Created: ${resp.url}`, 'success')
-        shortsDataTable.clear().draw()
-        nextPage = 1
-        fetchLock = false
-        addShortRows()
+function deleteShorts(ids) {
+    return new Promise((resolve) => {
+        $.ajax({
+            type: 'DELETE',
+            url: '/api/shorts/delete/',
+            data: JSON.stringify({ ids }),
+            contentType: 'application/json',
+            headers: { 'X-CSRFToken': csrftoken },
+            success: function () {
+                ids.forEach((id) =>
+                    document.dispatchEvent(
+                        new CustomEvent('short:deleted', { detail: { id } })
+                    )
+                )
+                show_toast(
+                    ids.length === 1
+                        ? `Short URL ${ids[0]} Successfully Removed.`
+                        : `${ids.length} Short URLs Successfully Removed.`,
+                    'success'
+                )
+                resolve()
+            },
+            error: function (jqXHR) {
+                messageErrorHandler(jqXHR)
+                resolve()
+            },
+        })
     })
-})
+}
 
-shortsTable.on('click', '.delete-short-btn', function () {
-    pendingDeleteId = $(this).data('hook-id')
-    deleteShortModal.modal('show')
-})
-
-$('#short-delete-confirm').on('click', function () {
-    $.ajax({
-        type: 'POST',
-        url: `/ajax/delete/short/${pendingDeleteId}/`,
-        headers: { 'X-CSRFToken': csrftoken },
-        success: function () {
-            deleteShortModal.modal('hide')
-            const row = shortsDataTable.row(`#short-${pendingDeleteId}`)
-            if (row.node()) row.remove().draw(false)
-            show_toast(
-                `Short URL ${pendingDeleteId} Successfully Removed.`,
-                'success'
-            )
-        },
-        error: function (jqXHR) {
-            deleteShortModal.modal('hide')
-            messageErrorHandler(jqXHR)
-        },
-        cache: false,
-        contentType: false,
-        processData: false,
-    })
-})
-
-$('#user').on('change', async function () {
-    const userId = $(this).val()
-    const url = new URL(location.href)
-    if (userId) {
-        url.searchParams.set('user', userId)
-    } else {
-        url.searchParams.delete('user')
-    }
-    globalThis.history.replaceState({}, null, url.href)
-    nextPage = 1
-    fetchLock = false
+// Create behavior is shared across pages via short-create.js. React to its
+// CustomEvent to keep the DataTable in sync.
+document.addEventListener('short:created', function () {
     shortsDataTable.clear().draw()
-    showShortsSkeletons()
-    await addShortRows()
-    if (!shortsDataTable.rows().count()) shortsDataTable.draw()
+    loader.reset()
+    document
+        .querySelector('.shorts-truncation-warning')
+        ?.classList.add('d-none')
+    loader.load()
+})
+
+document.addEventListener('short:deleted', function (event) {
+    const { id } = event.detail || {}
+    if (!id) return
+    const row = shortsDataTable.row(`#short-${id}`)
+    if (row.node()) row.remove().draw(false)
 })

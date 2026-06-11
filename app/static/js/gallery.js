@@ -11,6 +11,7 @@ import {
     hideTableSkeletons,
 } from './file-table.js'
 
+import { updateBulkCount } from './bulk-actions.js'
 import { fetchFiles } from './api-fetch.js'
 
 import { socket } from './socket.js'
@@ -189,9 +190,10 @@ function filterGallery() {
 async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
-    wireToolbarSearch('files-toolbar-search-input', filesDataTable)
-    initCollapsibleSearch('files-toolbar-search', 'files-toolbar-search-input')
+    initToolbar('files-toolbar', filesDataTable)
 
+    // Gallery-view filtering: mirror the search input value into gallerySearchTerm
+    // so filterGallery() can apply it when the gallery view is active.
     const searchInput = document.getElementById('files-toolbar-search-input')
     if (searchInput) {
         let filterTimer
@@ -204,9 +206,6 @@ async function initGallery() {
         })
     }
 
-    syncNavbarHeight()
-    observeToolbarHeight('files-toolbar', '--files-toolbar-h')
-
     const view = detectInitialView()
     applyView(view)
     await addNodes()
@@ -214,16 +213,18 @@ async function initGallery() {
 
     setupScrollObserver()
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
+        const n = filesDataTable.rows({ selected: true }).count()
         document.getElementById('bulk-actions').disabled = false
+        updateBulkCount(n)
         let checkbox = document.getElementById(`file-${dt.data().id}`)
         if (checkbox) {
             checkbox.classList.remove('d-none')
         }
     })
     filesDataTable.on('deselect', function (_e, _dt, _type, _indexes) {
-        if (filesDataTable.rows({ selected: true }).count() === 0) {
-            document.getElementById('bulk-actions').disabled = true
-        }
+        const n = filesDataTable.rows({ selected: true }).count()
+        document.getElementById('bulk-actions').disabled = n === 0
+        updateBulkCount(n)
     })
     filesDataTable?.columns.adjust().draw()
 }

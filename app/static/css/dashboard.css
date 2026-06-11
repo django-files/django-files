@@ -1,0 +1,96 @@
+/* Shared dashboard "card" aesthetic used on the home page.
+   Extracted from home.html so other pages can adopt the look. */
+
+.dash-stat-card {
+    border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--bs-body-bg);
+    transition:
+        transform 0.15s,
+        box-shadow 0.15s;
+}
+
+.dash-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.dash-stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.dash-stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.dash-stat-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.6;
+    font-weight: 500;
+}
+
+.dash-card {
+    border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);
+    border-radius: 0.75rem;
+    background: var(--bs-body-bg);
+}
+
+.dash-card-header {
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.dash-card-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0.85;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dash-card-body {
+    padding: 1rem 1.25rem;
+}
+
+.dash-welcome {
+    font-size: 1.35rem;
+    font-weight: 600;
+}
+
+.dash-welcome-sub {
+    font-size: 0.9rem;
+    opacity: 0.55;
+}
+
+.quota-bar-wrap {
+    border-radius: 0.75rem;
+    border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);
+    padding: 1rem 1.25rem;
+    background: var(--bs-body-bg);
+}
+
+/* Keep the home dash cards from growing a scroll region — let DataTables
+   responsive drop columns instead. The min-height skeleton reservation
+   in table.css still works; overflow:hidden just clips any overflow. */
+#home-files-card,
+#home-shorts-card,
+#home-albums-card {
+    overflow: hidden;
+}

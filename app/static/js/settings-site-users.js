@@ -1,5 +1,5 @@
 import { fetchUsers } from './api-fetch.js'
-import { paginatedTableDefaults } from './table-defaults.js'
+import { noChromeLayout, paginatedTableDefaults } from './table-defaults.js'
 
 const usersTable = $('#users-table')
 
@@ -10,12 +10,7 @@ let fetchLock = false
 const dataTablesOptions = {
     ...paginatedTableDefaults,
     order: [1, 'asc'],
-    layout: {
-        topStart: null,
-        topEnd: null,
-        bottomStart: null,
-        bottomEnd: null,
-    },
+    layout: noChromeLayout,
     columns: [{ data: 'id' }, { data: 'username' }, { data: 'storage_usage' }],
     columnDefs: [
         {
