@@ -57,7 +57,8 @@ input[type='checkbox'] {
 }
 
 /* I hate that we have to do this, but datatables has no option to not
-highlight a row and it fucks up our other stylings */
+highlight a row and it fucks up our other stylings. We deliberately keep
+--dt-row-hover so Bootstrap's table-hover effect still works on these tables. */
 .dt-select-no-highlight {
     background-color: transparent !important;
     color: inherit !important;
@@ -66,7 +67,6 @@ highlight a row and it fucks up our other stylings */
     --dt-row-selected-text: initial;
     --dt-row-selected-link: initial;
     --dt-row-stripe: initial;
-    --dt-row-hover: initial;
     --dt-column-ordering: initial;
     --dt-html-background: initial;
 }
@@ -98,10 +98,10 @@ div.dataTables_wrapper span.select-item {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     padding: 0;
-    font-size: 14px;
+    font-size: 16px;
     border-radius: 999px;
     background: transparent;
     border: 1px solid var(--bs-border-color);
@@ -216,6 +216,14 @@ div.dataTables_wrapper span.select-item {
 [data-files-view='list'] #files-table thead th:first-child,
 [data-files-view='list'] #files-table tbody td:first-child {
     padding-left: 0.75rem;
+}
+
+/* Center the multi-select checkbox column (files / streams / shorts / albums)
+ * in both header and body cells. */
+td.dt-select-col,
+th.dt-select-col {
+    text-align: center;
+    vertical-align: middle;
 }
 
 /* Push list/gallery content past the floating toolbar. Map peeks through.

@@ -1,4 +1,9 @@
 import { socket } from './socket.js'
+import {
+    selectColumn,
+    selectColumnDef,
+    selectConfig,
+} from './table-defaults.js'
 
 const streamsTable = $('#streams-table')
 const deleteStreamModal = $('#delete-stream-modal')
@@ -25,12 +30,9 @@ const dataTablesOptions = {
         [1, 10, 25, 45, 100, 250, -1],
         [1, 10, 25, 45, 100, 250, 'All'],
     ],
-    select: {
-        style: 'multi',
-        selector: 'td:first-child',
-    },
+    select: selectConfig,
     columns: [
-        { data: null },
+        selectColumn,
         { data: 'name' },
         { data: 'title' },
         { data: 'user_name' },
@@ -43,13 +45,7 @@ const dataTablesOptions = {
         { data: null },
     ],
     columnDefs: [
-        {
-            orderable: true,
-            render: DataTable.render.select(),
-            width: '10px',
-            targets: 0,
-            responsivePriority: 2,
-        },
+        selectColumnDef,
         {
             targets: 1,
             width: '150px',

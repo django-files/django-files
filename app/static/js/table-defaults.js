@@ -14,6 +14,26 @@ export const toolbarOnlyLayout = {
     topEnd: null,
 }
 
+// Shared multi-select column. Place `selectColumn` at index 0 of `columns`,
+// `selectColumnDef` at index 0 of `columnDefs`, and spread `selectConfig` into
+// the top-level DataTables options as `select`. Templates need a matching
+// empty `<th></th>` at the start of <thead>. CSS class `dt-select-col` keeps
+// the checkbox horizontally centered (see table.css).
+export const selectColumn = { data: null }
+export const selectColumnDef = {
+    targets: 0,
+    orderable: true,
+    render: DataTable.render.select(),
+    width: '32px',
+    responsivePriority: 2,
+    className: 'dt-select-col',
+    defaultContent: '',
+}
+export const selectConfig = {
+    style: 'multi',
+    selector: 'td:first-child',
+}
+
 export const paginatedTableDefaults = {
     paging: false,
     order: [0, 'desc'],

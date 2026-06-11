@@ -16,6 +16,7 @@
         <caption class="visually-hidden">List of Short URLs</caption>
         <thead>
             <tr>
+                <th scope="col"></th>
                 <th scope="col">ID</th>
                 <th scope="col">Short</th>
                 <th scope="col">URL</th>
@@ -35,6 +36,5 @@
 {% block tail %}
     {% include 'include/datatables-scripts.html' %}
     <script type="text/javascript" src="{% static 'js/short-create.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/short-delete.js' %}"></script>
     <script type="module" src="{% static 'js/shorts-table.js' %}"></script>
 {% endblock %}

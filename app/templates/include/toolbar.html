@@ -14,6 +14,7 @@ Optional:
   tb_btn_modal         — data-bs-target value
   tb_btn_title         — button title attribute (tooltip)
   tb_btn_auth          — True → only show button to authenticated users
+  tb_bulk_menu         — True → render shared delete-only bulk-actions dropdown
 {% endcomment %}
 <div class="files-toolbar" id="{{ tb_id }}" aria-label="{{ tb_label }}">
     <span class="files-toolbar-title">
@@ -38,6 +39,9 @@ Optional:
             <span class="files-toolbar-count-label">Showing</span>
             <strong id="{{ tb_count_id }}">0</strong>
         </span>
+        {% if tb_bulk_menu and request.user.is_authenticated %}
+            {% include 'include/bulk-menu.html' %}
+        {% endif %}
         {% if tb_btn_label %}
             {% if not tb_btn_auth or request.user.is_authenticated %}
             <button class="btn btn-primary btn-sm"

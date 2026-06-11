@@ -1,5 +1,12 @@
 import { fetchShorts } from './api-fetch.js'
-import { noChromeLayout, paginatedTableDefaults } from './table-defaults.js'
+import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
+import {
+    noChromeLayout,
+    paginatedTableDefaults,
+    selectColumn,
+    selectColumnDef,
+    selectConfig,
+} from './table-defaults.js'
 
 const shortsTable = $('#shorts-table')
 const isHome = !!shortsTable.data('home')
@@ -8,6 +15,7 @@ const totalShortsCount = document.getElementById('total-shorts-count')
 
 let shortsDataTable
 let loader
+let deleteModal
 
 // Dynamic URL truncation — viewport-based, half-slope on the narrow home card.
 const truncator = createTruncator(isHome ? 0.02 : 0.04)
@@ -17,7 +25,10 @@ document.addEventListener('DOMContentLoaded', domContentLoaded)
 const dataTablesOptions = {
     ...paginatedTableDefaults,
     ...(isHome && { layout: noChromeLayout }),
+    order: [1, 'desc'],
+    select: selectConfig,
     columns: [
+        selectColumn,
         { data: 'id' },
         { data: 'short' },
         { data: 'url' },
@@ -26,16 +37,17 @@ const dataTablesOptions = {
         { data: null },
     ],
     columnDefs: [
-        { targets: 0, visible: false, responsivePriority: 9 },
+        selectColumnDef,
+        { targets: 1, visible: false, responsivePriority: 9 },
         {
-            targets: 1,
+            targets: 2,
             render: renderShortLink,
             defaultContent: '',
             width: isHome ? '90px' : '120px',
             responsivePriority: 1,
         },
         {
-            targets: 2,
+            targets: 3,
             render: renderUrl,
             defaultContent: '',
             // On the narrow home card, drop the URL column before the actions
@@ -43,7 +55,7 @@ const dataTablesOptions = {
             responsivePriority: isHome ? 8 : 2,
         },
         {
-            targets: 3,
+            targets: 4,
             className: 'text-center',
             width: '50px',
             defaultContent: '0',
@@ -51,7 +63,7 @@ const dataTablesOptions = {
             responsivePriority: 3,
         },
         {
-            targets: 4,
+            targets: 5,
             className: 'text-center',
             width: '50px',
             defaultContent: '-',
@@ -60,7 +72,7 @@ const dataTablesOptions = {
             responsivePriority: 4,
         },
         {
-            targets: 5,
+            targets: 6,
             orderable: false,
             render: renderActions,
             defaultContent: '',
@@ -92,7 +104,24 @@ async function domContentLoaded() {
             loader,
             skeletonFn: showShortsSkeletons,
         })
+        initBulkSelect(shortsDataTable)
+        $('.bulk-delete').on('click', () =>
+            deleteModal.open(selectedPks(shortsDataTable))
+        )
     }
+    deleteModal = wireDeleteModal({
+        modalId: 'delete-short-modal',
+        bodyId: 'delete-short-body',
+        confirmId: 'short-delete-confirm',
+        entity: 'short URL',
+        entityPlural: 'short URLs',
+        onConfirm: deleteShorts,
+    })
+    document.addEventListener('click', function (event) {
+        const btn = event.target.closest('.delete-short-btn')
+        if (!btn) return
+        deleteModal.open([Number(btn.dataset.hookId)])
+    })
     await initDataTable(
         shortsDataTable,
         showShortsSkeletons,
@@ -132,23 +161,53 @@ const _shortSkeletonUrlWidths = isHome
     ? [90, 120, 80, 130, 100, 110]
     : [180, 220, 150, 240, 170, 200]
 
-// Visible columns differ by mode:
-// /shorts/: short, url, views, max, actions (id is hidden col 0)
-// home:    short, url, actions (views/max also hidden)
+// Visible columns differ by mode (id is the always-hidden ordering column):
+// /shorts/: select, short, url, views, max, actions
+// home:    select, short, url, actions (views/max also hidden)
 const _shortSkeletonSpecs = isHome
-    ? [{ w: 60 }, { w: 0 }, { w: 40 }]
-    : [{ w: 60 }, { w: 0 }, { w: 24 }, { w: 24 }, { w: 50 }]
+    ? [{ w: 18, h: 18 }, { w: 60 }, { w: 0 }, { w: 40 }]
+    : [{ w: 18, h: 18 }, { w: 60 }, { w: 0 }, { w: 24 }, { w: 24 }, { w: 50 }]
 
 function showShortsSkeletons(count = isHome ? MAX_HOME_SHORTS : 8) {
     const tbody = document.querySelector('#shorts-table tbody')
     if (!tbody) return
     buildSkeletonRows(tbody, count, _shortSkeletonSpecs, {
-        1: _shortSkeletonUrlWidths,
+        2: _shortSkeletonUrlWidths,
     })
 }
 
-// Create/delete behavior is shared across pages via short-create.js and
-// short-delete.js. React to their CustomEvents to keep the DataTable in sync.
+function deleteShorts(ids) {
+    return new Promise((resolve) => {
+        $.ajax({
+            type: 'DELETE',
+            url: '/api/shorts/delete/',
+            data: JSON.stringify({ ids }),
+            contentType: 'application/json',
+            headers: { 'X-CSRFToken': csrftoken },
+            success: function () {
+                ids.forEach((id) =>
+                    document.dispatchEvent(
+                        new CustomEvent('short:deleted', { detail: { id } })
+                    )
+                )
+                show_toast(
+                    ids.length === 1
+                        ? `Short URL ${ids[0]} Successfully Removed.`
+                        : `${ids.length} Short URLs Successfully Removed.`,
+                    'success'
+                )
+                resolve()
+            },
+            error: function (jqXHR) {
+                messageErrorHandler(jqXHR)
+                resolve()
+            },
+        })
+    })
+}
+
+// Create behavior is shared across pages via short-create.js. React to its
+// CustomEvent to keep the DataTable in sync.
 document.addEventListener('short:created', function () {
     shortsDataTable.clear().draw()
     loader.reset()

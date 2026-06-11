@@ -35,7 +35,7 @@ _ALLOWED_METHODS = frozenset(
         "authorize",
         "paste_text",
         "delete_files",
-        "delete_album",
+        "delete_albums",
         "toggle_private_file",
         "private_files",
         "set_expr_files",
@@ -218,19 +218,18 @@ class HomeConsumer(AsyncWebsocketConsumer):
         else:
             return self._error("File not found.", **kwargs)
 
-    def delete_album(self, *, user_id: int = None, pk: int = None, **kwargs) -> Optional[dict]:
+    def delete_albums(self, *, user_id: int = None, pks: List[int] = None, **kwargs) -> Optional[dict]:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
-        :param pk: Integer - File ID
+        :param pks: List of Integers - Album IDs
         :return: Dictionary - With Key: 'success': bool
         """
         log.debug("delete_albums")
         log.debug("user_id: %s", user_id)
-        log.debug("pk: %s", pk)
-        if album := Albums.objects.filter(pk=pk):
-            if album[0].user.id != user_id:
-                return self._error("File owned by another user.", **kwargs)
-            album[0].delete()
+        log.debug("pks: %s", pks)
+        albums = Albums.objects.filter(**filter_kwargs(pks, user_id))
+        if len(albums) > 0:
+            albums.delete()
         else:
             return self._error("Album not found.", **kwargs)
 

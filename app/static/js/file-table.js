@@ -1,7 +1,12 @@
 import { getContextMenu } from './file-context-menu.js'
 
 import { attachSocketTableSync, socket } from './socket.js'
-import { noChromeLayout } from './table-defaults.js'
+import {
+    noChromeLayout,
+    selectColumn,
+    selectColumnDef,
+    selectConfig,
+} from './table-defaults.js'
 
 const filesTable = $('#files-table')
 
@@ -35,9 +40,7 @@ const dataTablesOptions = {
         [1, 10, 25, 45, 100, 250, 'All'],
     ],
     columns: [
-        {
-            data: null,
-        },
+        selectColumn,
         { data: 'id', name: 'id' },
         { data: 'name' },
         { data: 'size' },
@@ -49,13 +52,7 @@ const dataTablesOptions = {
         { data: 'view' },
     ],
     columnDefs: [
-        {
-            orderable: true,
-            render: DataTable.render.select(),
-            width: '10px',
-            targets: 0,
-            responsivePriority: 2,
-        },
+        selectColumnDef,
         {
             targets: 1,
             width: '15px',
@@ -130,10 +127,7 @@ const dataTablesOptions = {
             className: 'dt-ctx-menu-col',
         },
     ],
-    select: {
-        style: 'multi',
-        selector: 'td:first-child',
-    },
+    select: selectConfig,
     language: {
         info: '',
         emptyTable: '',

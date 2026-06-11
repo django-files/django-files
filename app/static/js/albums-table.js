@@ -1,20 +1,24 @@
 import { fetchAlbums } from './api-fetch.js'
+import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import { attachSocketTableSync, socket } from './socket.js'
-import { noChromeLayout, paginatedTableDefaults } from './table-defaults.js'
+import {
+    noChromeLayout,
+    paginatedTableDefaults,
+    selectColumn,
+    selectColumnDef,
+    selectConfig,
+} from './table-defaults.js'
 
 const albumsTable = $('#albums-table')
 const isHome = !!albumsTable.data('home')
 const MAX_HOME_ALBUMS = 10
-const deleteAlbumModalEl = document.getElementById('delete-album-modal')
-const deleteAlbumModal = deleteAlbumModalEl
-    ? bootstrap.Modal.getOrCreateInstance(deleteAlbumModalEl)
-    : null
 const deleteAlbumButton = document.querySelector('.delete-album-btn')
 const albumLink = document.querySelector('div.d-none > .dj-album-link')
 const totalAlbumsCount = document.getElementById('total-albums-count')
 
 let albumsDataTable
 let loader
+let deleteModal
 
 // Dynamic name truncation — viewport-based, half-slope on the narrow home card.
 const truncator = createTruncator(isHome ? 0.02 : 0.04)
@@ -24,7 +28,10 @@ document.addEventListener('DOMContentLoaded', domContentLoaded)
 const dataTablesOptions = {
     ...paginatedTableDefaults,
     ...(isHome && { layout: noChromeLayout }),
+    order: [1, 'desc'],
+    select: selectConfig,
     columns: [
+        selectColumn,
         { data: 'id' },
         { data: 'name' },
         { data: 'date' },
@@ -34,23 +41,24 @@ const dataTablesOptions = {
         { data: 'delete' },
     ],
     columnDefs: [
-        { targets: 0, width: '30px', responsivePriority: 5 },
+        selectColumnDef,
+        { targets: 1, width: '30px', responsivePriority: 5 },
         {
-            targets: 1,
+            targets: 2,
             render: renderAlbumLink,
             defaultContent: '',
             responsivePriority: 1,
         },
         {
             name: 'date',
-            targets: 2,
+            targets: 3,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
             responsivePriority: 2,
             width: '200px',
         },
         {
-            targets: 3,
+            targets: 4,
             width: '30px',
             defaultContent: '',
             className: 'expire-value text-center',
@@ -60,13 +68,13 @@ const dataTablesOptions = {
             responsivePriority: 10,
         },
         {
-            targets: [4, 5],
+            targets: [5, 6],
             className: 'text-center',
             width: '30px',
             responsivePriority: 4,
         },
         {
-            targets: 6,
+            targets: 7,
             orderable: false,
             render: renderDeleteBtn,
             defaultContent: '',
@@ -97,7 +105,20 @@ async function domContentLoaded() {
             loader,
             skeletonFn: showAlbumsSkeletons,
         })
+        initBulkSelect(albumsDataTable)
+        $('.bulk-delete').on('click', () =>
+            deleteModal.open(selectedPks(albumsDataTable))
+        )
     }
+    deleteModal = wireDeleteModal({
+        modalId: 'delete-album-modal',
+        bodyId: 'delete-album-body',
+        confirmId: 'album-delete-confirm',
+        entity: 'album',
+        onConfirm: (pks) => {
+            socket.send(JSON.stringify({ method: 'delete-albums', pks: pks }))
+        },
+    })
     attachSocketTableSync(albumsDataTable, {
         newEvent: 'album-new',
         deleteEvent: 'album-delete',
@@ -148,9 +169,10 @@ function renderAlbumLink(data, type, row, _meta) {
 // Varied name-column widths so skeleton rows look realistic
 const _albumSkeletonNameWidths = [140, 175, 110, 195, 130, 160, 105, 155]
 
-// Column widths [px] matching the 7 header columns:
-// id, name, date, expire, views, maxviews, delete
+// Column widths [px] matching the 8 header columns:
+// select, id, name, date, expire, views, maxviews, delete
 const _albumSkeletonSpecs = [
+    { w: 18, h: 18 },
     { w: 24 },
     { w: 0 }, // name — varied per row
     { w: 128 },
@@ -164,18 +186,10 @@ function showAlbumsSkeletons(count = 10) {
     const tbody = document.querySelector('#albums-table tbody')
     if (!tbody) return
     buildSkeletonRows(tbody, count, _albumSkeletonSpecs, {
-        1: _albumSkeletonNameWidths,
+        2: _albumSkeletonNameWidths,
     })
 }
 
 function handleDeleteClick(_event) {
-    const pk = $(this).data('hook-id')
-    $('#album-delete-confirm').data('pk', pk)
-    deleteAlbumModal?.show()
+    deleteModal.open([$(this).data('hook-id')])
 }
-
-$('#album-delete-confirm').on('click', function (_event) {
-    const pk = $(this).data('pk')
-    socket.send(JSON.stringify({ method: 'delete-album', pk: pk }))
-    deleteAlbumModal?.hide()
-})
