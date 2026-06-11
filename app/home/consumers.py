@@ -57,8 +57,7 @@ _ALLOWED_METHODS = frozenset(
         "set_file_albums",
         "remove_file_album",
         "add_file_album",
-        "bulk_add_file_albums",
-        "bulk_remove_file_albums",
+        "bulk_edit_file_albums",
         "check_for_update",
     }
 )
@@ -1181,13 +1180,21 @@ class HomeConsumer(AsyncWebsocketConsumer):
         file.albums.add(selected_album)
         return {"event": "set-file-albums", "file_id": pk, "added_to": {selected_album.id: selected_album.name}}
 
-    def bulk_add_file_albums(
-        self, *, user_id: int = None, pks: List[int] = None, albums: List[int] = None, **kwargs
+    def bulk_edit_file_albums(
+        self,
+        *,
+        user_id: int = None,
+        pks: List[int] = None,
+        albums: List[int] = None,
+        action: str = None,
+        **kwargs,
     ) -> dict:
         if not pks:
             return self._error("No file IDs specified.", **kwargs)
         if not albums:
             return self._error("No album IDs specified.", **kwargs)
+        if action not in ("add", "remove"):
+            return self._error("Action must be 'add' or 'remove'.", **kwargs)
         album_objs = list(Albums.objects.filter(id__in=albums, user_id=user_id))
         if not album_objs:
             return self._error("Albums not found.", **kwargs)
@@ -1196,28 +1203,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
             files = files.filter(user_id=user_id)
         count = 0
         for file in files:
-            file.albums.add(*album_objs)
+            getattr(file.albums, action)(*album_objs)
             count += 1
-        return {"event": "bulk-add-file-albums", "count": count}
-
-    def bulk_remove_file_albums(
-        self, *, user_id: int = None, pks: List[int] = None, albums: List[int] = None, **kwargs
-    ) -> dict:
-        if not pks:
-            return self._error("No file IDs specified.", **kwargs)
-        if not albums:
-            return self._error("No album IDs specified.", **kwargs)
-        album_objs = list(Albums.objects.filter(id__in=albums, user_id=user_id))
-        if not album_objs:
-            return self._error("Albums not found.", **kwargs)
-        files = Files.objects.filter(id__in=pks)
-        if not self.scope["user"].is_superuser:
-            files = files.filter(user_id=user_id)
-        count = 0
-        for file in files:
-            file.albums.remove(*album_objs)
-            count += 1
-        return {"event": "bulk-remove-file-albums", "count": count}
+        return {"event": f"bulk-{action}-file-albums", "count": count}
 
     async def check_for_update(self, *args, **kwargs) -> dict:
         log.debug("async - check_for_update")

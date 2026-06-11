@@ -114,11 +114,15 @@ $('#modal-album-form').on('submit', function (event) {
         socket.send(JSON.stringify(data))
     } else {
         const pks = JSON.parse(this.dataset.pks || '[]')
-        const method =
-            mode === 'bulk-add'
-                ? 'bulk-add-file-albums'
-                : 'bulk-remove-file-albums'
-        socket.send(JSON.stringify({ method, pks, albums }))
+        const action = mode === 'bulk-add' ? 'add' : 'remove'
+        socket.send(
+            JSON.stringify({
+                method: 'bulk-edit-file-albums',
+                pks,
+                albums,
+                action,
+            })
+        )
     }
     fileAlbumModal.modal('hide')
 })
