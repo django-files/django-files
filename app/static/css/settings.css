@@ -1,9 +1,11 @@
 /* Settings page — only rules Bootstrap utilities cannot cover */
 
-/* scroll-margin-top must reference --navbar-h; no Bootstrap equivalent */
+/* scroll-margin-top must reference --navbar-h; no Bootstrap equivalent.
+   Extra offset = dash-card-header padding-top (1rem) + breathing room (0.75rem)
+   so the heading lands visibly below the navbar, not just past it. */
 .settings-section {
     margin-bottom: 1.5rem;
-    scroll-margin-top: calc(var(--navbar-h, 52px) + 1.25rem);
+    scroll-margin-top: calc(var(--navbar-h, 52px) + env(safe-area-inset-top, 0px) + 1.75rem);
 }
 
 /* Bootstrap sticky-top uses top:0; we need to clear the fixed navbar */
