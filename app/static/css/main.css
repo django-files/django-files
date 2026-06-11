@@ -134,6 +134,9 @@
 
 :root {
     --navbar-h: 40px;
+    --toolbar-glass-bg: rgba(0, 0, 0, 0.18);
+    --toolbar-glass-border: 1px ridge rgba(66 69 73 / 100%);
+    --toolbar-glass-blur: blur(6px);
 }
 
 /* backdrop-filter on the nav itself would create a CSS containing block for
@@ -190,12 +193,6 @@
 /* ---- Floating page toolbar ---- */
 /* Shared chrome for any page toolbar (files list/gallery/map, albums, etc.).
  * Sits flush below the navbar; pages opt in by rendering a .files-toolbar element. */
-
-:root {
-    --toolbar-glass-bg: rgba(0, 0, 0, 0.18);
-    --toolbar-glass-border: 1px ridge rgba(66 69 73 / 100%);
-    --toolbar-glass-blur: blur(6px);
-}
 
 .files-toolbar {
     position: fixed;
