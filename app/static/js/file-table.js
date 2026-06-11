@@ -1,4 +1,4 @@
-import { getContextMenu } from './file-context-menu.js'
+import { getContextMenu, openAlbumModal } from './file-context-menu.js'
 
 import { attachSocketTableSync, socket } from './socket.js'
 import {
@@ -343,5 +343,35 @@ export function bulkPublic(_event) {
     })
     socket.send(
         JSON.stringify({ method: 'private_files', pks: pks, private: false })
+    )
+}
+
+$('.bulk-album-add').on('click', bulkAddAlbum)
+
+export async function bulkAddAlbum(_event) {
+    const pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    const s = pks.length === 1 ? '' : 's'
+    await openAlbumModal(
+        pks,
+        'bulk-add',
+        `Add ${pks.length} File${s} to Album(s)`
+    )
+}
+
+$('.bulk-album-remove').on('click', bulkRemoveAlbum)
+
+export async function bulkRemoveAlbum(_event) {
+    const pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    const s = pks.length === 1 ? '' : 's'
+    await openAlbumModal(
+        pks,
+        'bulk-remove',
+        `Remove ${pks.length} File${s} from Album(s)`
     )
 }
