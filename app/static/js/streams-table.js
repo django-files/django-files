@@ -218,8 +218,8 @@ function getActions(data, type, row) {
     if (type === 'display') {
         return `
             <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                <button class="dt-ctx-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More options">
+                    <i class="fa-solid fa-ellipsis"></i>
                 </button>
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item stream-delete-btn link-danger" role="button" data-hook-id="${row.id}">
