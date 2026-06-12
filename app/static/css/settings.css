@@ -1,11 +1,17 @@
 /* Settings page — only rules Bootstrap utilities cannot cover */
 
-/* scroll-margin-top must reference --navbar-h; no Bootstrap equivalent.
-   Extra offset = dash-card-header padding-top (1rem) + breathing room (0.75rem)
-   so the heading lands visibly below the navbar, not just past it. */
+/* Native CSS smooth scroll + scroll-padding-top is more reliable than
+   Bootstrap's smoothScroll (which uses scrollTo and ignores scroll-padding-top).
+   Scoped via :has() so it only applies on pages with the settings sidebar nav. */
+html:has(#settings-nav) {
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(
+        var(--navbar-h, 52px) + env(safe-area-inset-top, 0px) + 1rem
+    );
+}
+
 .settings-section {
     margin-bottom: 1.5rem;
-    scroll-margin-top: calc(var(--navbar-h, 52px) + env(safe-area-inset-top, 0px) + 1.75rem);
 }
 
 /* Bootstrap sticky-top uses top:0; we need to clear the fixed navbar */

@@ -1,7 +1,7 @@
 // JS for embed/preview.html
 
 import { socket } from './socket.js'
-import { fetchFile, fetchAlbumsSearch } from './api-fetch.js'
+import { initAlbumSelector } from './album-selector.js'
 
 document.addEventListener('DOMContentLoaded', domLoaded)
 window.addEventListener('resize', checkSize)
@@ -273,148 +273,7 @@ if (streamDescEdit) {
 
 ////////////////////////
 // Album Badges Section
-const addToAlbumButton = document.querySelector('.addto-album')
-const addAlbumInput = document.getElementById('add-album')
-const addAlbumContainer = document.querySelector('.album-add-container')
-const albumSearchResults = document.getElementById('album-search-results')
-
-let filePk
-const albumContainer = document.querySelector('.album-container')
-
-if (albumContainer) {
-    filePk = albumContainer.id.replace('albums-file-', '')
-}
-
-function handleAlbumBadges(data) {
-    const container = document.querySelector('.album-container')
-    if (data.removed_from) {
-        for (const [key] of Object.entries(data.removed_from)) {
-            document.getElementById(`album-${key}`)?.remove()
-        }
-    }
-    if (data.added_to) {
-        const addGroup = document.querySelector('.addto-album-group')
-        for (const [key, value] of Object.entries(data.added_to)) {
-            const span = document.createElement('span')
-            span.className =
-                'badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1'
-            span.id = `album-${key}`
-            span.innerHTML = `
-                <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album=${key}">${value} </a>
-                <button id="remove-album-${key}" class="btn p-0 mt-0 remove-album">
-                    <i class="fa-solid fa-xmark text-small remove-album"></i>
-                </button>`
-            span.querySelector('.remove-album').addEventListener(
-                'click',
-                removeAlbumPress
-            )
-            addGroup.before(span)
-        }
-    }
-}
-
-document
-    .querySelectorAll('.remove-album')
-    .forEach((el) => el.addEventListener('click', removeAlbumPress))
-
-function removeAlbumPress(event) {
-    const albumId = event.target
-        .closest('button')
-        .id.replace('remove-album-', '')
-    socket.send(
-        JSON.stringify({
-            album: albumId,
-            pk: filePk,
-            method: 'remove_file_album',
-        })
-    )
-}
-
-// Album search dropdown
-let albumSearchTimer
-
-function renderAlbumDropdown(albums, query) {
-    albumSearchResults.innerHTML = ''
-    for (const album of albums) {
-        const li = document.createElement('li')
-        const a = document.createElement('a')
-        a.className = 'dropdown-item'
-        a.href = '#'
-        a.textContent = album.name
-        a.addEventListener('mousedown', (e) => {
-            e.preventDefault()
-            selectAlbum(album.name)
-        })
-        li.appendChild(a)
-        albumSearchResults.appendChild(li)
-    }
-    if (query) {
-        const li = document.createElement('li')
-        if (albums.length) {
-            li.innerHTML = '<li><hr class="dropdown-divider"></li>'
-            albumSearchResults.appendChild(li.firstChild)
-        }
-        const createLi = document.createElement('li')
-        const a = document.createElement('a')
-        a.className = 'dropdown-item'
-        a.href = '#'
-        a.innerHTML = `<i class="fa-solid fa-plus me-1"></i> Create <strong>${query}</strong>`
-        a.addEventListener('mousedown', (e) => {
-            e.preventDefault()
-            selectAlbum(query)
-        })
-        createLi.appendChild(a)
-        albumSearchResults.appendChild(createLi)
-    }
-    albumSearchResults.classList.toggle('show', albums.length > 0 || !!query)
-}
-
-function selectAlbum(name) {
-    socket.send(
-        JSON.stringify({
-            album_name: name,
-            pk: filePk,
-            method: 'add_file_album',
-        })
-    )
-    addAlbumInput.value = ''
-    addAlbumContainer.classList.add('d-none')
-    albumSearchResults.classList.remove('show')
-}
-
-addToAlbumButton?.addEventListener('click', async () => {
-    addAlbumContainer.classList.remove('d-none')
-    addAlbumInput.value = ''
-    addAlbumInput.focus()
-    const resp = await fetchAlbumsSearch('', 12)
-    const file = await fetchFile(filePk)
-    const albums = (resp.albums || []).filter(
-        (a) => !file.albums.includes(a.id)
-    )
-    renderAlbumDropdown(albums, '')
-})
-
-addAlbumInput?.addEventListener('input', () => {
-    clearTimeout(albumSearchTimer)
-    albumSearchTimer = setTimeout(async () => {
-        const query = addAlbumInput.value.trim()
-        const resp = await fetchAlbumsSearch(query, 12)
-        const file = await fetchFile(filePk)
-        const albums = (resp.albums || []).filter(
-            (a) => !file.albums.includes(a.id)
-        )
-        renderAlbumDropdown(albums, query)
-    }, 250)
-})
-
-addAlbumInput?.addEventListener('blur', () => {
-    setTimeout(() => {
-        addAlbumInput.value = ''
-        addAlbumContainer.classList.add('d-none')
-        albumSearchResults.classList.remove('show')
-    }, 150)
-})
-
+const handleAlbumBadges = initAlbumSelector(document, socket)
 // End Album Badges Section
 ////////////////////////////
 

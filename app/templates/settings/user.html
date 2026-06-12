@@ -39,7 +39,7 @@
 
     <!-- Content -->
     <div class="col-lg-10 col-12">
-        <form id="settingsForm" method="post" action="{% url 'settings:site' %}">
+        <form id="settingsForm" method="post" action="{% url 'settings:user' %}">
 
             <!-- Profile -->
             <section id="profile" class="settings-section">
@@ -60,9 +60,14 @@
                                 </button>
                             </div>
                             <div class="col">
-                                <label for="user_avatar_choice" class="form-label fw-medium">Avatar Source</label>
+                                <label for="user_avatar_choice" class="form-label fw-medium">
+                                    Avatar Source
+                                    <span data-bs-toggle="tooltip" data-bs-title="Source for your profile picture.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                                 <select class="form-select form-select-sm" id="user_avatar_choice" name="user_avatar_choice"
-                                        aria-describedby="user_avatar_choice-help user_avatar_choice-invalid">
+                                        aria-describedby="user_avatar_choice-invalid">
                                     {% for value, display in user_avatar_choices %}
                                         {% if not site_settings.discord_client_id and display == "Discord" and not 'DISCORD_CLIENT_ID'|get_config or not user.discord and display == "Discord" %}
                                         {% elif not site_settings.github_client_id and display == "Github" and not 'GITHUB_CLIENT_ID'|get_config or not user.github and display == "Github" %}
@@ -73,7 +78,6 @@
                                     {% endfor %}
                                 </select>
                                 <div id="user_avatar_choice_choice-invalid" class="invalid-feedback"></div>
-                                <div id="user_avatar_choice-help" class="form-text">Source for your profile picture.</div>
                             </div>
                         </div>
 
@@ -97,29 +101,41 @@
                                 <div id="timezone-invalid" class="invalid-feedback"></div>
                             </div>
                             <div class="col-md-6">
-                                <label for="default_expire" class="form-label fw-medium">Default Expire</label>
+                                <label for="default_expire" class="form-label fw-medium">
+                                    Default Expire
+                                    <span data-bs-toggle="tooltip" data-bs-title="Default expiration time applied to new uploads.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                    <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
+                                       target="_blank" rel="noopener" class="ms-1 link-secondary fs-6"
+                                       data-bs-toggle="tooltip" data-bs-title="Format examples">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
+                                </label>
                                 <input type="text" class="form-control" id="default_expire" name="default_expire"
                                        value="{{ user.default_expire }}"
-                                       aria-describedby="default_expire-help default_expire-invalid">
+                                       aria-describedby="default_expire-invalid">
                                 <div id="default_expire-invalid" class="invalid-feedback"></div>
-                                <div id="default_expire-help" class="form-text">
-                                    See <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
-                                           target="_blank" rel="noopener">format examples</a>.
-                                </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="default_upload_name_format" class="form-label fw-medium">Upload Name Format</label>
+                                <label for="default_upload_name_format" class="form-label fw-medium">
+                                    Upload Name Format
+                                    <span data-bs-toggle="tooltip" data-bs-title="Controls how uploaded files are named.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                    <a href="https://github.com/django-files/django-files#table-of-contents"
+                                       target="_blank" rel="noopener" class="ms-1 link-secondary fs-6"
+                                       data-bs-toggle="tooltip" data-bs-title="Naming docs">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
+                                </label>
                                 <select class="form-select" id="default_upload_name_format" name="default_upload_name_format"
-                                        aria-describedby="default_upload_name_format-help default_upload_name_format-invalid">
+                                        aria-describedby="default_upload_name_format-invalid">
                                     {% for value, display in default_upload_name_formats %}
                                         <option value="{{ value }}" {% if value == user.default_upload_name_format %}selected{% endif %}>{{ display }}</option>
                                     {% endfor %}
                                 </select>
                                 <div id="default_upload_name_format_name_format-invalid" class="invalid-feedback"></div>
-                                <div id="default_upload_name_format-help" class="form-text">
-                                    See <a href="https://github.com/django-files/django-files#table-of-contents"
-                                           target="_blank" rel="noopener">naming docs</a>.
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -140,26 +156,51 @@
                                 <p class="text-secondary fw-semibold text-uppercase small mb-3">File Defaults</p>
                                 <div class="form-check form-switch fs-5">
                                     <input class="form-check-input" type="checkbox" id="remove_exif" name="remove_exif" {{ request.user.remove_exif|if_true:"checked" }}>
-                                    <label class="form-check-label" for="remove_exif">Strip All EXIF Data</label>
+                                    <label class="form-check-label" for="remove_exif">
+                                        Strip All EXIF Data
+                                        <span data-bs-toggle="tooltip" data-bs-title="Remove all embedded EXIF metadata from uploaded images.">
+                                            <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                        </span>
+                                    </label>
                                 </div>
                                 <div class="form-check form-switch fs-5 mt-2">
                                     <input class="form-check-input" type="checkbox" id="remove_exif_geo" name="remove_exif_geo" {{ request.user.remove_exif_geo|if_true:"checked" }}>
-                                    <label class="form-check-label" for="remove_exif_geo">Strip GPS EXIF Data</label>
+                                    <label class="form-check-label" for="remove_exif_geo">
+                                        Strip GPS EXIF Data
+                                        <span data-bs-toggle="tooltip" data-bs-title="Remove only GPS location data from uploaded images, leaving other EXIF intact.">
+                                            <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                        </span>
+                                    </label>
                                 </div>
                                 <div class="form-check form-switch fs-5 mt-2">
                                     <input class="form-check-input" type="checkbox" id="default_file_private" name="default_file_private" {{ request.user.default_file_private|if_true:"checked" }}>
-                                    <label class="form-check-label" for="default_file_private">Private Files</label>
+                                    <label class="form-check-label" for="default_file_private">
+                                        Private Files
+                                        <span data-bs-toggle="tooltip" data-bs-title="New uploads are private by default and only visible to you or admins.">
+                                            <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                        </span>
+                                    </label>
                                 </div>
                                 <div class="form-check form-switch fs-5 mt-2">
                                     <input class="form-check-input" type="checkbox" id="default_file_password" name="default_file_password" {{ request.user.default_file_password|if_true:"checked" }}>
-                                    <label class="form-check-label" for="default_file_password">Password Protected Files</label>
+                                    <label class="form-check-label" for="default_file_password">
+                                        Password Protected Files
+                                        <span data-bs-toggle="tooltip" data-bs-title="New uploads require a password to view by default.">
+                                            <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                        </span>
+                                    </label>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <p class="text-secondary fw-semibold text-uppercase small mb-3">Display</p>
                                 <div class="form-check form-switch fs-5">
                                     <input class="form-check-input" type="checkbox" id="show_exif_preview" name="show_exif_preview" {{ request.user.show_exif_preview|if_true:"checked" }}>
-                                    <label class="form-check-label" for="show_exif_preview">Enable EXIF Embeds</label>
+                                    <label class="form-check-label" for="show_exif_preview">
+                                        Enable EXIF Embeds
+                                        <span data-bs-toggle="tooltip" data-bs-title="Show EXIF metadata panel when previewing images.">
+                                            <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                        </span>
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -178,28 +219,42 @@
                     <div class="dash-card-body">
                         <div class="d-flex gap-4 flex-wrap align-items-end">
                             <div>
-                                <label for="default_color" class="form-label fw-medium d-block">Embed Color</label>
+                                <label for="default_color" class="form-label fw-medium d-block">
+                                    Embed Color
+                                    <span data-bs-toggle="tooltip" data-bs-title="Accent color used in shared file embeds.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                                 <input type="color" class="form-control form-control-color" id="default_color" name="default_color"
                                        value="{{ user.default_color }}" title="Default embed color"
                                        aria-describedby="default_color-invalid">
                                 <div id="default_color-invalid" class="invalid-feedback"></div>
                             </div>
                             <div>
-                                <label for="nav_color_1" class="form-label fw-medium d-block">Nav Start</label>
+                                <label for="nav_color_1" class="form-label fw-medium d-block">
+                                    Nav Start
+                                    <span data-bs-toggle="tooltip" data-bs-title="Start color of your navbar gradient. Saved automatically.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                                 <input type="color" class="form-control form-control-color" id="nav_color_1" name="nav_color_1"
                                        value="{{ user.nav_color_1 }}" title="Navbar gradient start"
                                        aria-describedby="nav_color_1-invalid">
                                 <div id="nav_color_1-invalid" class="invalid-feedback"></div>
                             </div>
                             <div>
-                                <label for="nav_color_2" class="form-label fw-medium d-block">Nav End</label>
+                                <label for="nav_color_2" class="form-label fw-medium d-block">
+                                    Nav End
+                                    <span data-bs-toggle="tooltip" data-bs-title="End color of your navbar gradient. Saved automatically.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                                 <input type="color" class="form-control form-control-color" id="nav_color_2" name="nav_color_2"
                                        value="{{ user.nav_color_2 }}" title="Navbar gradient end"
                                        aria-describedby="nav_color_2-invalid">
                                 <div id="nav_color_2-invalid" class="invalid-feedback"></div>
                             </div>
                         </div>
-                        <p class="form-text mt-2 mb-0">Color changes apply to your navbar gradient and shared embeds. Saved automatically.</p>
                     </div>
                 </div>
             </section>

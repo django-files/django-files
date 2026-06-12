@@ -74,39 +74,60 @@
 
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="site_url" class="form-label fw-medium">Site URL</label>
+                                <label for="site_url" class="form-label fw-medium">
+                                    Site URL
+                                    <span data-bs-toggle="tooltip" data-bs-title="Used for generating URLs.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                                 <input type="text" class="form-control" id="site_url" name="site_url"
                                        value="{{ site_settings.site_url }}"
-                                       aria-describedby="site_url-help site_url-invalid">
+                                       aria-describedby="site_url-invalid">
                                 <div id="site_url-invalid" class="invalid-feedback"></div>
-                                <div id="site_url-help" class="form-text">Used for generating URLs.</div>
                             </div>
                             <div class="col-md-6">
-                                <label for="site_title" class="form-label fw-medium">Site Title</label>
+                                <label for="site_title" class="form-label fw-medium">
+                                    Site Title
+                                    <span data-bs-toggle="tooltip" data-bs-title="Used in UI and meta tags.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                                 <input type="text" class="form-control" id="site_title" name="site_title"
                                        value="{{ site_settings.site_title }}"
-                                       aria-describedby="site_title-help site_title-invalid">
+                                       aria-describedby="site_title-invalid">
                                 <div id="site_title-invalid" class="invalid-feedback"></div>
-                                <div id="site_title-help" class="form-text">Used in UI and meta tags.</div>
                             </div>
                             <div class="col-md-6">
-                                <label for="global_storage_quota" class="form-label fw-medium">Global Storage Quota</label>
+                                <label for="global_storage_quota" class="form-label fw-medium">
+                                    Global Storage Quota
+                                    <span data-bs-toggle="tooltip" data-bs-title="Total storage for this deployment. 0 is unlimited.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                                 <input type="text" class="form-control" id="global_storage_quota" name="global_storage_quota"
                                        value="{{ site_settings.get_global_storage_quota_human_read }}"
-                                       aria-describedby="global_storage_quota-help global_storage_quota-invalid">
+                                       aria-describedby="global_storage_quota-invalid">
                                 <div id="global_storage_quota-invalid" class="invalid-feedback"></div>
-                                <div id="global_storage_quota-help" class="form-text">Total storage for this deployment. 0 is unlimited.</div>
                             </div>
                             <div class="col-md-6">
-                                <label for="default_user_storage_quota" class="form-label fw-medium">User Default Storage Quota</label>
+                                <label for="default_user_storage_quota" class="form-label fw-medium">
+                                    User Default Storage Quota
+                                    <span data-bs-toggle="tooltip" data-bs-title="Default per-user storage quota. 0 is unlimited.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                                 <input class="form-control" id="default_user_storage_quota" name="default_user_storage_quota"
                                        value="{{ site_settings.get_default_user_storage_quota_human_read }}"
-                                       aria-describedby="default_user_storage_quota-help default_user_storage_quota-invalid">
+                                       aria-describedby="default_user_storage_quota-invalid">
                                 <div id="default_user_storage_quota-invalid" class="invalid-feedback"></div>
-                                <div id="default_user_storage_quota-help" class="form-text">Default per-user storage quota. 0 is unlimited.</div>
                             </div>
                             <div class="col-md-6">
-                                <label for="timezone" class="form-label fw-medium">Global Timezone</label>
+                                <label for="timezone" class="form-label fw-medium">
+                                    Global Timezone
+                                    <span data-bs-toggle="tooltip" data-bs-title="Timezone for anonymous users.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                                 <input class="form-control" list="timezoneOptions" id="timezone" name="timezone"
                                        autocomplete="off" value="{{ site_settings.timezone }}" placeholder="Type to search...">
                                 <datalist id="timezoneOptions">
@@ -115,20 +136,25 @@
                                     {% endfor %}
                                 </datalist>
                                 <div id="timezone-invalid" class="invalid-feedback"></div>
-                                <div id="timezone-help" class="form-text">Timezone for anonymous users.</div>
                             </div>
                             <div class="col-12">
-                                <label for="site_description" class="form-label fw-medium">Site Description</label>
+                                <label for="site_description" class="form-label fw-medium">
+                                    Site Description
+                                    <span data-bs-toggle="tooltip" data-bs-title="Used in meta tags.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                                 <textarea class="form-control" id="site_description" name="site_description" rows="2">{{ site_settings.site_description }}</textarea>
                                 <div id="site_description-invalid" class="invalid-feedback"></div>
-                                <div class="form-text">Used in meta tags.</div>
                             </div>
                         </div>
                         <div class="mt-3">
                             <button type="button" class="btn btn-outline-info btn-sm" id="flush-cache">
                                 <i class="fa-solid fa-toilet me-2"></i>Flush Cache
+                                <span data-bs-toggle="tooltip" data-bs-title="Clears all server-side template caches.">
+                                    <i class="fa-solid fa-circle-info ms-1"></i>
+                                </span>
                             </button>
-                            <div class="form-text">Clears all server-side template caches.</div>
                         </div>
                     </div>
                 </div>
@@ -147,11 +173,19 @@
                             <input class="form-check-input" type="checkbox" id="pub_load" name="pub_load" {{ site_settings.pub_load|if_true:"checked" }}>
                             <label class="form-check-label" for="pub_load">
                                 Public Uploads: <kbd>/public</kbd>
+                                <span data-bs-toggle="tooltip" data-bs-title="Enables an unauthenticated upload endpoint at /public. Anyone with the URL can upload files.">
+                                    <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                </span>
                             </label>
                         </div>
                         <div id="public-album" class="row g-2 align-items-center mt-1 ms-4 {{ site_settings.pub_load|if_false:"d-none" }}">
                             <div class="col-auto">
-                                <label for="pub_album_search" class="col-form-label">Public Album</label>
+                                <label for="pub_album_search" class="col-form-label">
+                                    Public Album
+                                    <span data-bs-toggle="tooltip" data-bs-title="Files uploaded via the public endpoint will be added to this album. Leave empty to skip album assignment.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                             </div>
                             <div class="col-auto">
                                 <input type="hidden" name="pub_album" id="pub_album" value="{{ site_settings.pub_album }}">
@@ -167,24 +201,44 @@
                         {% if site_settings.discord_client_id or site_settings.google_client_id or site_settings.github_client_id %}
                             <div class="form-check form-switch fs-5 mt-2">
                                 <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
-                                <label class="form-check-label" for="oauth_reg">OAuth Registration</label>
+                                <label class="form-check-label" for="oauth_reg">
+                                    OAuth Registration
+                                    <span data-bs-toggle="tooltip" data-bs-title="Allow new users to register via linked OAuth providers (Discord, GitHub, Google). Disable to restrict OAuth to already linked accounts only.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                             </div>
                             <div class="form-check form-switch fs-5 mt-2">
                                 <input class="form-check-input" type="checkbox" id="local_auth" name="local_auth" {{ site_settings.local_auth|if_true:"checked" }}>
-                                <label class="form-check-label" for="local_auth">Local Authentication</label>
+                                <label class="form-check-label" for="local_auth">
+                                    Local Authentication
+                                    <span data-bs-toggle="tooltip" data-bs-title="Allow users to log in with a username and password. Disable to require OAuth-only login.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                             </div>
                         {% endif %}
 
                         {% if 'DUO_CLIENT_ID'|get_config %}
                             <div class="form-check form-switch fs-5 mt-2">
                                 <input class="form-check-input" type="checkbox" id="duo_auth" name="duo_auth" {{ site_settings.duo_auth|if_true:"checked" }}>
-                                <label class="form-check-label" for="duo_auth">Enable Duo Authentication</label>
+                                <label class="form-check-label" for="duo_auth">
+                                    Enable Duo Authentication
+                                    <span data-bs-toggle="tooltip" data-bs-title="Require Duo two-factor authentication for all logins. Duo client credentials must be configured in the environment.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
                             </div>
                         {% endif %}
 
                         <div class="form-check form-switch fs-5 mt-2">
                             <input class="form-check-input" type="checkbox" id="site_animations" name="site_animations" {{ site_settings.site_animations|if_true:"checked" }}>
-                            <label class="form-check-label" for="site_animations">Enable Site Animations</label>
+                            <label class="form-check-label" for="site_animations">
+                                Enable Site Animations
+                                <span data-bs-toggle="tooltip" data-bs-title="Enables transitions and motion effects throughout the UI. Disable for a reduced-motion experience.">
+                                    <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                </span>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -273,33 +327,12 @@
             <div class="dash-card">
                 <div class="dash-card-header">
                     <h4 class="d-flex align-items-center gap-2"><i class="fas fa-user-plus"></i> Invites</h4>
+                    <button type="button" class="btn btn-sm btn-outline-success"
+                            data-bs-toggle="modal" data-bs-target="#create-invite-modal">
+                        <i class="fa-solid fa-user-plus me-1"></i> Create Invite
+                    </button>
                 </div>
                 <div class="dash-card-body">
-                    <form id="invitesForm" method="post" action="{% url 'api:invites' %}">
-                        <div class="row g-2 align-items-center">
-                            <div class="col-sm-3">
-                                <input type="text" class="form-control" placeholder="Max Uses"
-                                       id="max_uses" name="max_uses" value="1" aria-label="Max Uses">
-                            </div>
-                            <div class="col-sm-2">
-                                <input type="text" class="form-control" placeholder="Expiration"
-                                       id="expire" name="expire" aria-label="Expiration">
-                            </div>
-                            <div class="col-sm-2">
-                                <input type="text" class="form-control" placeholder="Storage Quota"
-                                       id="storage_quota" name="storage_quota" aria-label="Storage Quota">
-                            </div>
-                            <div class="col-sm-5 d-flex align-items-center gap-2">
-                                <div class="form-check form-switch fs-5 mb-0">
-                                    <input class="form-check-input" type="checkbox" id="super_user" name="super_user">
-                                    <label class="form-check-label" for="super_user">Admin</label>
-                                </div>
-                                <button class="btn btn-outline-success flex-fill" type="submit">
-                                    <i class="fa-solid fa-user-plus me-2"></i> Create</button>
-                            </div>
-                        </div>
-                    </form>
-
                     {% if not invites %}
                         <p class="text-muted mt-3 mb-0">No invites found.</p>
                     {% else %}
@@ -432,6 +465,54 @@
 
     </div><!-- col content -->
 </div><!-- row -->
+
+<!-- Create Invite Modal -->
+<div class="modal fade" id="create-invite-modal" tabindex="-1"
+     aria-labelledby="create-invite-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="create-invite-modal-label">
+                    <i class="fa-solid fa-user-plus me-2"></i> Create Invite
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="invitesForm" method="post" action="{% url 'api:invites' %}">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label for="max_uses" class="form-label">Max Uses</label>
+                            <input type="text" class="form-control" placeholder="Max Uses"
+                                   id="max_uses" name="max_uses" value="1" aria-label="Max Uses">
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="expire" class="form-label">Expiration</label>
+                            <input type="text" class="form-control" placeholder="e.g. 7d, 24h"
+                                   id="expire" name="expire" aria-label="Expiration">
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="storage_quota" class="form-label">Storage Quota</label>
+                            <input type="text" class="form-control" placeholder="e.g. 10GB"
+                                   id="storage_quota" name="storage_quota" aria-label="Storage Quota">
+                        </div>
+                        <div class="col-sm-6 d-flex align-items-end">
+                            <div class="form-check form-switch fs-5 mb-1">
+                                <input class="form-check-input" type="checkbox" id="super_user" name="super_user">
+                                <label class="form-check-label" for="super_user">Admin</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-success" type="submit">
+                        <i class="fa-solid fa-user-plus me-2"></i> Create
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- Delete Sessions Modal -->
 <div class="modal fade" id="delete-sessions-modal" tabindex="-1"

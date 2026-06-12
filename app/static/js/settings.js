@@ -3,6 +3,8 @@
 console.debug('LOADING: settings.js')
 
 import { socket } from './socket.js'
+import { initAlbumSearchInput } from './album-selector.js'
+import { fetchAlbumsSearch } from './api-fetch.js'
 
 // -- Settings form (both pages) --
 document.getElementById('settingsForm')?.addEventListener('change', saveOptions)
@@ -65,6 +67,9 @@ document
         })
         if (response.ok) {
             const json = await response.json()
+            bootstrap.Modal.getOrCreateInstance(
+                document.getElementById('create-invite-modal')
+            ).hide()
             show_toast(`Invite created: ${json.invite}`, 'success')
             location.reload()
         } else {
@@ -126,98 +131,39 @@ const pubAlbumSearch = document.getElementById('pub_album_search')
 const pubAlbumResults = document.getElementById('pub_album_results')
 
 if (pubAlbumSearch) {
-    let albumSearchTimer
-
-    async function fetchAlbums(query) {
-        const url = query
-            ? `/api/albums/1/8/?search=${encodeURIComponent(query)}`
-            : '/api/albums/1/8/'
-        const response = await fetch(url)
-        if (!response.ok) return []
-        const data = await response.json()
-        return data.albums || []
+    function selectPubAlbum(id, name) {
+        pubAlbumHidden.value = id
+        pubAlbumSearch.value = name
+        pubAlbumHidden.dispatchEvent(new Event('change', { bubbles: true }))
     }
 
-    function renderAlbumResults(albums, query) {
-        pubAlbumResults.innerHTML = ''
-        for (const album of albums) {
-            const li = document.createElement('li')
-            const a = document.createElement('a')
-            a.className = 'dropdown-item'
-            a.href = '#'
-            a.textContent = album.name
-            a.dataset.id = album.id
-            a.addEventListener('mousedown', (e) => {
-                e.preventDefault()
-                pubAlbumHidden.value = album.id
-                pubAlbumSearch.value = album.name
-                pubAlbumResults.classList.remove('show')
-                pubAlbumHidden.dispatchEvent(
-                    new Event('change', { bubbles: true })
-                )
-            })
-            li.appendChild(a)
-            pubAlbumResults.appendChild(li)
-        }
-        if (query) {
-            if (albums.length) {
-                const divider = document.createElement('li')
-                divider.innerHTML = '<hr class="dropdown-divider">'
-                pubAlbumResults.appendChild(divider)
-            }
-            const createLi = document.createElement('li')
-            const a = document.createElement('a')
-            a.className = 'dropdown-item'
-            a.href = '#'
-            a.innerHTML = `<i class="fa-solid fa-plus me-1"></i> Create <strong>${query}</strong>`
-            a.addEventListener('mousedown', async (e) => {
-                e.preventDefault()
-                const response = await fetch('/api/album/', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrftoken,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ name: query }),
-                })
-                if (response.ok) {
-                    const data = await response.json()
-                    const albumId = new URL(data.url).searchParams.get('album')
-                    pubAlbumHidden.value = albumId
-                    pubAlbumSearch.value = query
-                    pubAlbumResults.classList.remove('show')
-                    pubAlbumHidden.dispatchEvent(
-                        new Event('change', { bubbles: true })
-                    )
-                }
-            })
-            createLi.appendChild(a)
-            pubAlbumResults.appendChild(createLi)
-        }
-        pubAlbumResults.classList.toggle('show', albums.length > 0 || !!query)
-    }
-
-    pubAlbumSearch.addEventListener('focus', async () => {
-        const query = pubAlbumSearch.value.trim()
-        const albums = await fetchAlbums(query)
-        renderAlbumResults(albums, query)
-    })
-
+    // Clear hidden value when the text is erased manually
     pubAlbumSearch.addEventListener('input', () => {
         if (!pubAlbumSearch.value) {
             pubAlbumHidden.value = '0'
             pubAlbumHidden.dispatchEvent(new Event('change', { bubbles: true }))
         }
-        clearTimeout(albumSearchTimer)
-        albumSearchTimer = setTimeout(async () => {
-            const query = pubAlbumSearch.value.trim()
-            const albums = await fetchAlbums(query)
-            renderAlbumResults(albums, query)
-        }, 250)
     })
 
-    pubAlbumSearch.addEventListener('blur', () => {
-        setTimeout(() => pubAlbumResults.classList.remove('show'), 150)
+    initAlbumSearchInput(pubAlbumSearch, pubAlbumResults, {
+        fetchAlbums: (query) =>
+            fetchAlbumsSearch(query, 8).then((r) => r.albums || []),
+        onSelect: (album) => selectPubAlbum(album.id, album.name),
+        onCreate: async (name) => {
+            const response = await fetch('/api/album/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name }),
+            })
+            if (response.ok) {
+                const data = await response.json()
+                const albumId = new URL(data.url).searchParams.get('album')
+                selectPubAlbum(albumId, name)
+            }
+        },
     })
 
     // Init: load current album name if ID is set
@@ -238,10 +184,17 @@ document.addEventListener('DOMContentLoaded', () => {
     console.debug('DOMContentLoaded: settings.js')
     // ScrollSpy for sticky sidebar nav
     if (document.getElementById('settings-nav')) {
+        const navH =
+            parseFloat(
+                getComputedStyle(document.documentElement).getPropertyValue(
+                    '--navbar-h'
+                )
+            ) || 52
         document.body.dataset.bsSpy = 'scroll'
         document.body.dataset.bsTarget = '#settings-nav'
-        document.body.dataset.bsSmoothScroll = 'true'
-        bootstrap.ScrollSpy.getOrCreateInstance(document.body)
+        bootstrap.ScrollSpy.getOrCreateInstance(document.body, {
+            rootMargin: `-${navH}px 0px -50%`,
+        })
     }
     // Init login background input visibility
     const selected = document.querySelector(
@@ -294,8 +247,7 @@ async function saveOptions(event) {
 async function deleteSession(event, all = false) {
     console.debug('deleteSession:', event)
     const sessionId = all ? 'all' : event.currentTarget.dataset.session
-    const siteUrl = document.getElementById('site_settings-site_url').value
-    const response = await fetch(`${siteUrl}/api/session/${sessionId}`, {
+    const response = await fetch(`/api/session/${sessionId}`, {
         method: 'DELETE',
     })
     if (response.status === 201) {
