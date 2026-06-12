@@ -60,11 +60,8 @@ def serialize_user(user: CustomUser) -> Dict[str, Any]:
     user_dict["avatar_url"] = user.get_avatar_url()
     providers = []
     for provider in ("discord", "github", "google"):
-        try:
-            getattr(user, provider)
+        if getattr(user, provider, None) is not None:
             providers.append(provider)
-        except Exception:
-            pass
     user_dict["oauth_providers"] = providers
     return user_dict
 
