@@ -12,9 +12,19 @@ document.addEventListener('DOMContentLoaded', domContentLoaded)
 showCodeBtn.addEventListener('click', showQrCode)
 hideCodeBtn.addEventListener('click', hideQrCode)
 showTokenBtn.addEventListener('click', toggleToken)
+document.getElementById('tokenRefreshBtn').addEventListener('click', () => {
+    bootstrap.Modal.getOrCreateInstance(
+        document.getElementById('tokenRegenerateModal')
+    ).show()
+})
 document
-    .getElementById('tokenRefreshBtn')
-    .addEventListener('click', tokenRefresh)
+    .getElementById('confirmTokenRegenerateBtn')
+    .addEventListener('click', () => {
+        bootstrap.Modal.getOrCreateInstance(
+            document.getElementById('tokenRegenerateModal')
+        ).hide()
+        tokenRefresh()
+    })
 
 showCodeBtn.addEventListener('mouseover', () =>
     cameraIcon.classList.add('fa-beat')
@@ -35,11 +45,7 @@ async function domContentLoaded() {
 function toggleToken(event) {
     event.preventDefault()
     console.log('toggleToken:', event)
-    if (primaryToken.style.filter) {
-        primaryToken.style.filter = ''
-    } else {
-        primaryToken.style.filter = 'blur(3px)'
-    }
+    primaryToken.classList.toggle('settings-token-blurred')
 }
 
 function tokenRefresh() {
@@ -147,7 +153,7 @@ function genQrCode(data) {
 
 function isDark() {
     let theme = localStorage.getItem('theme')
-    if (theme !== 'dark' || theme !== 'light') {
+    if (theme !== 'dark' && theme !== 'light') {
         theme = window.matchMedia('(prefers-color-scheme: dark)').matches
             ? 'dark'
             : 'light'

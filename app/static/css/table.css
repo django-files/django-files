@@ -101,7 +101,10 @@ div.dataTables_wrapper span.select-item {
     width: 30px;
     height: 30px;
     padding: 0;
-    font-size: 16px;
+    font-size: 18px;
+    transform: scale(
+        1.13
+    ); /* scale instead of larger font-size to avoid expanding table row height */
     border-radius: 999px;
     background: transparent;
     border: 1px solid var(--bs-border-color);

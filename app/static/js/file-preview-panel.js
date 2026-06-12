@@ -1,6 +1,7 @@
 // file-preview-panel.js — Slide-in file preview panel for the gallery page
 
 import { socket } from './socket.js'
+import { initAlbumSelector } from './album-selector.js'
 
 const panel = document.getElementById('file-preview-panel')
 const panelContent = document.getElementById('previewPanelContent')
@@ -137,6 +138,7 @@ function initPanelContent(container) {
             () => {
                 if (!isOpen) return
                 initPanelSidebar(container)
+                const handleAlbumBadges = initPanelAlbums(container)
 
                 if (render === 'text' || render === 'code') {
                     initCodePreview(root)
@@ -146,7 +148,7 @@ function initPanelContent(container) {
                     initPanelMapToggle(root)
                 }
 
-                initPanelSocket(root)
+                initPanelSocket(root, handleAlbumBadges)
             },
             { timeout: 1000 }
         )
@@ -155,6 +157,7 @@ function initPanelContent(container) {
         setTimeout(() => {
             if (!isOpen) return
             initPanelSidebar(container)
+            const handleAlbumBadges = initPanelAlbums(container)
 
             if (render === 'text' || render === 'code') {
                 initCodePreview(root)
@@ -164,7 +167,7 @@ function initPanelContent(container) {
                 initPanelMapToggle(root)
             }
 
-            initPanelSocket(root)
+            initPanelSocket(root, handleAlbumBadges)
         }, 0)
     }
 }
@@ -303,6 +306,12 @@ function initPanelSidebar(container) {
     }
 }
 
+// ---- Album selector ----
+
+function initPanelAlbums(container) {
+    return initAlbumSelector(container, socket)
+}
+
 // ---- Text / code preview ----
 
 async function initCodePreview(root) {
@@ -410,7 +419,7 @@ function initPanelMapToggle(root) {
 
 // ---- WebSocket: live rename inside panel ----
 
-function initPanelSocket(root) {
+function initPanelSocket(root, handleAlbumBadges) {
     if (!socket) return
 
     const fileId = String(root.dataset.fileId)
@@ -430,6 +439,11 @@ function initPanelSocket(root) {
             if (history.state?.panelOpen) {
                 history.replaceState(history.state, '', data.uri)
             }
+        } else if (
+            data.event === 'set-file-albums' &&
+            String(data.file_id) === fileId
+        ) {
+            handleAlbumBadges?.(data)
         }
     }
 

@@ -441,6 +441,8 @@ def delete_file_websocket(data: dict, user_id):
     log.debug("delete_file_websocket pk: %s user_id: %s", data["id"], user_id)
     data["event"] = "file-delete"
     data["pk"] = data["id"]
+    user = CustomUser.objects.filter(pk=user_id).first()
+    data["user_name"] = user.get_name() if user else str(user_id)
     channel_layer = get_channel_layer()
     event = {
         "type": "websocket.send",
@@ -492,6 +494,8 @@ def delete_album_websocket(data: dict, user_id):
     log.debug("delete_album_websocket pk: %s user_id: %s", data["id"], user_id)
     data["event"] = "album-delete"
     data["pk"] = data["id"]
+    user = CustomUser.objects.filter(pk=user_id).first()
+    data["user_name"] = user.get_name() if user else str(user_id)
     channel_layer = get_channel_layer()
     event = {
         "type": "websocket.send",

@@ -37,7 +37,7 @@ export const selectConfig = {
 export const paginatedTableDefaults = {
     paging: false,
     order: [0, 'desc'],
-    responsive: true,
+    responsive: { details: false },
     saveState: true,
     searching: true,
     pageLength: -1,

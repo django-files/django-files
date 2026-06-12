@@ -6,7 +6,6 @@ import {
     faHourglass,
     addFileTableRowsBatch,
     formatBytes,
-    faCaret,
     showTableSkeletons,
     hideTableSkeletons,
 } from './file-table.js'
@@ -51,7 +50,7 @@ const tmplInner = document.querySelector('.d-none .gallery-inner')
 const tmplIcons = document.querySelector('.d-none .image-icons')
 const tmplLabels = document.querySelector('.d-none .image-labels')
 const tmplCtx = document.querySelector('.d-none .gallery-ctx')
-const tmplCtxToggle = document.querySelector('.d-none .gallery-ctx-toggle')
+const tmplCtxToggle = document.querySelector('.d-none button.dt-ctx-btn')
 const tmplCheckbox = document.querySelector('.d-none .gallery-checkbox')
 
 function setupScrollObserver() {
@@ -370,7 +369,6 @@ function buildGalleryCard(file, top = false) {
 
     const ctxMenu = tmplCtx.cloneNode(true)
     const toggle = tmplCtxToggle.cloneNode(true)
-    toggle.appendChild(faCaret.cloneNode(true))
     ctxMenu.appendChild(toggle)
     outer.appendChild(ctxMenu)
     const menu = getCtxMenuContainer(file)

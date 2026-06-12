@@ -7,414 +7,601 @@
 {% block title %}User Settings{% endblock %}
 {% block fa_class %}fas fa-user-circle{% endblock %}
 
-{% block head %}
-    <link href="{% static 'dist/uppy/uppy.min.css' %}" rel="stylesheet">{% endblock %}
+{% block head %}{{ block.super }}
+    <link href="{% static 'dist/uppy/uppy.min.css' %}" rel="stylesheet">
+{% endblock %}
+
 {% block main %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <small class="text-muted">ID: {{ user.id }}</small>
+    <small class="text-muted">Last login: {{ user.last_login }}</small>
+</div>
 
-    <div class="float-end">Last Login: {{ user.last_login }}</div>
-    <div>ID: {{ user.id }}</div>
-
-    <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
-        <div class="border border-success-subtle rounded-2 p-3 my-2">
-            <div class="row mt-1">
-                <div class="col-md-2 d-flex justify-content-center">
-                    <img id="uploadAvatarHookBtn" class="rounded-circle mx-5" role="button" src="{{ user.get_avatar_url }}"
-                         {% if user.user_avatar_choice == "DF" %}
-                            data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Upload new avatar"
-                         {% endif%}
-                         height="128" width="128" alt="Avatar" >
-                </div>
-
-                <div class="col-md-10 mt-2">
-                    <label for="user_avatar_choice" class="form-label">Avatar Source</label>
-                    <select class="form-select" id="user_avatar_choice" name="user_avatar_choice"
-                        aria-describedby="user_avatar_choice-help user_avatar_choice-invalid">
-                        {% for value, display in user_avatar_choices %}
-                            {% if not site_settings.discord_client_id and display == "Discord" and not 'DISCORD_CLIENT_ID'|get_config or not user.discord and display == "Discord" %}
-                            {% elif not site_settings.github_client_id and display == "Github" and not 'GITHUB_CLIENT_ID'|get_config or not user.github and display == "Github" %}
-                            {% elif not site_settings.google_client_id and display == "Google" and not 'GOOGLE_CLIENT_ID'|get_config or not user.google and display == "Google" %}
-                            {% else %}
-                            <option value="{{ value }}" {% if value == user.user_avatar_choice %}selected{% endif %}>{{ display }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-                    <div id="user_avatar_choice_choice-invalid" class="invalid-feedback"></div>
-                    <div id="user_avatar_choice-help" class="form-text">
-                        Select the source for avatar.
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <label for="first_name" class="form-label">First Name</label>
-                    <input type="text" class="form-control" id="first_name" name="first_name" autocomplete="given-name"
-                           value="{{ user.first_name }}" aria-describedby="first_name-help first_name-invalid">
-                    <div id="first_name-invalid" class="invalid-feedback"></div>
-                    <div id="first_name-help" class="form-text">
-                        First Name.
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <label for="timezone" class="form-label">Timezone</label>
-                    <input class="form-control" list="timezoneOptions" id="timezone" name="timezone"
-                        value="{{ user.timezone }}" placeholder="Type to Search...">
-                    <datalist id="timezoneOptions">
-                        {% for timezone in timezones %}
-                            <option value="{{ timezone }}"></option>
-                        {% endfor %}
-                    </datalist>
-                    <div id="timezone-invalid" class="invalid-feedback"></div>
-                    <div id="timezone-help" class="form-text">Current Timezone.</div>
-                </div>
-            </div>
-
-            <div class="row mt-1">
-                <div class="col-md-6">
-                    <label for="default_expire" class="form-label">Default Expire</label>
-                    <input type="text" class="form-control" id="default_expire" name="default_expire"
-                        value="{{ user.default_expire }}" aria-describedby="default_expire-help default_expire-invalid">
-                    <div id="default_expire-invalid" class="invalid-feedback"></div>
-                    <div id="default_expire-help" class="form-text">
-                        For examples, see <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
-                                             target="_blank" rel="noopener">this README.md</a>.
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <label for="default_upload_name_format" class="form-label">Default Upload Format</label>
-                    <select class="form-select" id="default_upload_name_format" name="default_upload_name_format"
-                        aria-describedby="default_upload_name_format-help default_upload_name_format-invalid">
-                        {% for value, display in default_upload_name_formats %}
-                            <option value="{{ value }}" {% if value == user.default_upload_name_format %}selected{% endif %}>{{ display }}</option>
-                        {% endfor %}
-                    </select>
-                    <div id="default_upload_name_format_name_format-invalid" class="invalid-feedback"></div>
-                    <div id="default_upload_name_format-help" class="form-text">
-                        For examples, see <a href="https://github.com/django-files/django-files#table-of-contents" target="_blank" rel="noopener">this README.md</a>.
-                    </div>
-                </div>
-            </div>
-
-            <hr class="mt-4"/>
-            <div class="row g-0 ms-0">
-                <div class="col-12 col-md-6">
-                    <h4 class="">File Defaults</h4>
-                    <div class="ms-0 ms-sm-4">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="remove_exif" name="remove_exif" {{ request.user.remove_exif|if_true:"checked" }}>
-                            <label class="form-check-label" for="remove_exif">
-                              Strip All EXIF Data
-                            </label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="remove_exif_geo" name="remove_exif_geo" {{ request.user.remove_exif_geo|if_true:"checked" }}>
-                            <label class="form-check-label" for="remove_exif_geo">
-                                Strip GPS EXIF Data
-                            </label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="default_file_private" name="default_file_private" {{ request.user.default_file_private|if_true:"checked" }}>
-                            <label class="form-check-label" for="default_file_private">
-                              Private Files
-                            </label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="default_file_password" name="default_file_password" {{ request.user.default_file_password|if_true:"checked" }}>
-                            <label class="form-check-label" for="default_file_password">
-                              Password Protected Files
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12 col-md-6 mt-4 mt-md-0">
-                    <h4 class="">User Settings</h4>
-                    <div class="ms-0 ms-sm-4">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="show_exif_preview" name="show_exif_preview" {{ request.user.show_exif_preview|if_true:"checked" }}>
-                            <label class="form-check-label" for="show_exif_preview">
-                              Enable EXIF Embeds
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <h4 class="mt-4">Appearance</h4>
-            <div class="row d-flex align-items-center">
-                <div class="col-auto mx-sm-2">
-                    <label for="default_color" class="form-label">Embed</label>
-                    <input type="color" class="form-control form-control-color" id="default_color" name="default_color"
-                        value="{{ user.default_color }}" title="Default Color" aria-describedby="default_color-invalid">
-                    <div id="default_color-invalid" class="invalid-feedback"></div>
-                </div>
-                <div class="col-auto mx-sm-2">
-                    <label for="nav_color_1" class="form-label">Nav 1</label>
-                    <input type="color" class="form-control form-control-color" id="nav_color_1" name="nav_color_1"
-                        value="{{ user.nav_color_1 }}" title="Default Color" aria-describedby="nav_color_1-invalid">
-                    <div id="nav_color_1-invalid" class="invalid-feedback"></div>
-                </div>
-                <div class="col-auto mx-sm-2">
-                    <label for="nav_color_2" class="form-label">Nav 2</label>
-                    <input type="color" class="form-control form-control-color" id="nav_color_2" name="nav_color_2"
-                        value="{{ user.nav_color_2 }}" title="Default Color" aria-describedby="nav_color_2-invalid">
-                    <div id="nav_color_2-invalid" class="invalid-feedback"></div>
-                </div>
-            </div>
-
-        </div>
-    </form>
-
-    {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
-        {% if not user.discord %}
-            <a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary me-2 mt-4" role="button">
-                <i class="fab fa-discord me-2"></i> Connect Account to Discord</a>
-        {% endif %}
-    {% endif %}
-    {% if site_settings.github_client_id or 'GITHUB_CLIENT_ID'|get_config %}
-        {% if not user.github %}
-            <a href="{% url 'oauth:github' %}" class="btn btn-sm btn-outline-light me-2 mt-4" role="button">
-                <i class="fab fa-github me-2"></i> Connect Account to GitHub</a>
-        {% endif %}
-    {% endif %}
-    {% if site_settings.google_client_id or 'GOOGLE_CLIENT_ID'|get_config %}
-        {% if not user.google %}
-            <a href="{% url 'oauth:google' %}" class="btn btn-info btn-sm me-2 mt-4" role="button">
-                <i class="fab fa-google me-2"></i> Connect Account to Google</a>
-        {% endif %}
-    {% endif %}
-
-    <hr>
-
-    <section id="webhooks">
-    <h3>Webhooks</h3>
-
-    {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
-        {% if user.discord %}
-            <div class="mt-3">
-                <p><a href="{% url 'oauth:webhook' %}" class="btn btn-lg btn-outline-primary" role="button">
-                    <i class="fab fa-discord me-2"></i> Add Webhook to Discord</a></p>
-            </div>
-
-            {% if not webhooks %}
-                <p class="lead">No Webhooks Found. Perhaps you forgot to add one?</p>
-            {% else %}
-                <table class="table table-responsive" id="discordWebhooksTable">
-                    <caption class="visually-hidden">Active Webhooks</caption>
-                    <thead>
-                    <tr>
-                        <th scope="col" class="d-none d-sm-table-cell">ID</th>
-                        <th scope="col" class="d-none d-sm-table-cell">Guild ID</th>
-                        <th scope="col">Channel ID</th>
-                        <th scope="col" class="d-none d-md-table-cell">Date</th>
-                        <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {% for data in webhooks %}
-                        <tr id="webhook-{{ data.id }}">
-                            <th scope="row" class="d-none d-sm-table-cell">{{ data.id }}</th>
-                            <td><a class="clip link-body-emphasis text-decoration-none" role="button"
-                                data-clipboard-text="{{ data.guild_id }}">{{ data.guild_id }}</a></td>
-                            <td class="d-none d-sm-table-cell">
-                                <a class="clip link-body-emphasis text-decoration-none" role="button"
-                                data-clipboard-text="{{ data.channel_id }}">{{ data.channel_id }}</a></td>
-                            <td class="d-none d-md-table-cell">
-                                <a class="clip link-body-emphasis text-decoration-none" role="button"
-                                data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a></td>
-                            <td class="text-center"><a role="button" class="deleteDiscordHookBtn" data-hook-id="{{ data.id }}" title="Delete">
-                                <i class="fa-regular fa-trash-can link-danger"></i></a></td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+<div class="row g-4">
+    <!-- Sidebar nav (desktop only) -->
+    <div class="col-lg-2 d-none d-lg-block">
+        <nav id="settings-nav" class="settings-nav nav nav-pills flex-column p-2 rounded border bg-body">
+            <p class="px-3 pt-1 pb-0 mb-1 text-secondary fw-semibold text-uppercase small">Jump to</p>
+            <a class="nav-link" href="#profile"><i class="fas fa-user"></i> Profile</a>
+            <a class="nav-link" href="#preferences"><i class="fas fa-sliders"></i> Preferences</a>
+            <a class="nav-link" href="#appearance"><i class="fas fa-palette"></i> Appearance</a>
+            <a class="nav-link" href="#connected"><i class="fas fa-plug"></i> Connected</a>
+            <a class="nav-link" href="#webhooks"><i class="fab fa-discord"></i> Webhooks</a>
+            <a class="nav-link" href="#clients"><i class="fas fa-mobile-screen"></i> Clients</a>
+            <a class="nav-link" href="#upload"><i class="fas fa-cloud-arrow-up"></i> Upload</a>
+            <a class="nav-link" href="#token"><i class="fas fa-key"></i> Token</a>
+            {% if request.user.is_superuser %}
+            <hr class="my-2">
+            <a class="nav-link" href="{% url 'settings:site' %}"><i class="fa-solid fa-gears"></i> Site Settings</a>
             {% endif %}
-        {% else %}
-            <p>To enable Webhooks, you must connect Discord.</p>
-            <p><a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary" role="button">
-                <i class="fab fa-discord me-2"></i> Connect Account to a Discord</a></p>
-        {% endif %}
-    {% else %}
-        <p>To enable Webhooks, you must configure Discord.</p>
-    {% endif %}
-    </section>
+        </nav>
+    </div>
 
-    <hr>
-    <section id="clients">
-        <h3>Clients</h3>
-        <p>Django Files has the following native clients.
+    <!-- Content -->
+    <div class="col-lg-10 col-12">
+        <form id="settingsForm" method="post" action="{% url 'settings:user' %}">
 
-        <div class="d-flex flex-sm-row flex-column justify-content-evenly align-items-start pb-4">
-            <div class="d-flex flex-column align-items-sm-center">
-                <a href="https://apps.apple.com/us/app/django-files/id6742523003?itscg=30200&itsct=apps_box_badge&mttnsubad=6742523003">
-                    <img class="img-fluid" src="{% static 'images/assets/qr-code-apple.svg' %}" alt="Download on the App Store"  /></a>
-            </div>
-            <div class="d-flex flex-column align-items-sm-center mt-4 mt-sm-0">
-                <a href="https://github.com/django-files/android-client/releases/latest/download/django-files.apk">
-                    <img class="img-fluid" src="{% static 'images/assets/qr-code-android.svg' %}" alt="Download on the App Store"  /></a>
-            </div>
-        </div>
+            <!-- Profile -->
+            <section id="profile" class="settings-section">
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h4 class="d-flex align-items-center gap-2"><i class="fas fa-user"></i> Profile</h4>
+                    </div>
+                    <div class="dash-card-body">
+                        <div class="row g-3 align-items-center mb-3">
+                            <div class="col-auto">
+                                <button id="uploadAvatarHookBtn" type="button" class="p-0 border-0 bg-transparent"
+                                        {% if user.user_avatar_choice == "DF" %}
+                                        data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Upload new avatar"
+                                        {% endif %}>
+                                    <img class="rounded-circle settings-avatar"
+                                         src="{{ user.get_avatar_url }}"
+                                         height="80" width="80" alt="Avatar">
+                                </button>
+                            </div>
+                            <div class="col">
+                                <label for="user_avatar_choice" class="form-label fw-medium">
+                                    Avatar Source
+                                    <span data-bs-toggle="tooltip" data-bs-title="Source for your profile picture.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                                <select class="form-select form-select-sm" id="user_avatar_choice" name="user_avatar_choice"
+                                        aria-describedby="user_avatar_choice-invalid">
+                                    {% for value, display in user_avatar_choices %}
+                                        {% if not site_settings.discord_client_id and display == "Discord" and not 'DISCORD_CLIENT_ID'|get_config or not user.discord and display == "Discord" %}
+                                        {% elif not site_settings.github_client_id and display == "Github" and not 'GITHUB_CLIENT_ID'|get_config or not user.github and display == "Github" %}
+                                        {% elif not site_settings.google_client_id and display == "Google" and not 'GOOGLE_CLIENT_ID'|get_config or not user.google and display == "Google" %}
+                                        {% else %}
+                                        <option value="{{ value }}" {% if value == user.user_avatar_choice %}selected{% endif %}>{{ display }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <div id="user_avatar_choice_choice-invalid" class="invalid-feedback"></div>
+                            </div>
+                        </div>
 
-        <div class="d-flex flex-sm-row flex-column pb-4 justify-content-sm-center justify-content-start">
-            <div class="text-center">
-                <a id="showCodeBtn" class="btn btn-outline-warning align-self-start" role="button"
-                   data-bs-toggle="tooltip" data-bs-title="Sensitive Info">
-                    View QR Authentication Code
-                    <i id="cameraIcon" class="fa-solid fa-camera ms-2"></i></a>
-                <a id="hideCodeBtn" class="btn btn-success align-self-start d-none" role="button">
-                    Hide QR Authentication Code
-                    <i class="fa-solid fa-eye ms-2"></i></a>
-                <div id="qrcode-div" class="d-none">
-                    <p class="text-center">Valid for <span class="text-success-emphasis">10:00</span> minutes.</p>
-                    <a id="qrcode-link" href="{% url 'settings:qrcode' %}" data-qrcode="{% url 'settings:qrcode' %}"></a>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label fw-medium">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name"
+                                       autocomplete="given-name" value="{{ user.first_name }}"
+                                       aria-describedby="first_name-invalid">
+                                <div id="first_name-invalid" class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="timezone" class="form-label fw-medium">Timezone</label>
+                                <input class="form-control" list="timezoneOptions" id="timezone" name="timezone"
+                                       value="{{ user.timezone }}" placeholder="Type to search...">
+                                <datalist id="timezoneOptions">
+                                    {% for timezone in timezones %}
+                                        <option value="{{ timezone }}"></option>
+                                    {% endfor %}
+                                </datalist>
+                                <div id="timezone-invalid" class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="default_expire" class="form-label fw-medium">
+                                    Default Expire
+                                    <span data-bs-toggle="tooltip" data-bs-title="Default expiration time applied to new uploads.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                    <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
+                                       target="_blank" rel="noopener" class="ms-1 link-secondary fs-6"
+                                       data-bs-toggle="tooltip" data-bs-title="Format examples">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
+                                </label>
+                                <input type="text" class="form-control" id="default_expire" name="default_expire"
+                                       value="{{ user.default_expire }}"
+                                       aria-describedby="default_expire-invalid">
+                                <div id="default_expire-invalid" class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="default_upload_name_format" class="form-label fw-medium">
+                                    Upload Name Format
+                                    <span data-bs-toggle="tooltip" data-bs-title="Controls how uploaded files are named.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                    <a href="https://github.com/django-files/django-files#table-of-contents"
+                                       target="_blank" rel="noopener" class="ms-1 link-secondary fs-6"
+                                       data-bs-toggle="tooltip" data-bs-title="Naming docs">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    </a>
+                                </label>
+                                <select class="form-select" id="default_upload_name_format" name="default_upload_name_format"
+                                        aria-describedby="default_upload_name_format-invalid">
+                                    {% for value, display in default_upload_name_formats %}
+                                        <option value="{{ value }}" {% if value == user.default_upload_name_format %}selected{% endif %}>{{ display }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div id="default_upload_name_format_name_format-invalid" class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="my-4">
+
+            <!-- Preferences -->
+            <section id="preferences" class="settings-section">
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h4 class="d-flex align-items-center gap-2"><i class="fas fa-sliders"></i> Preferences</h4>
+                    </div>
+                    <div class="dash-card-body">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <p class="text-secondary fw-semibold text-uppercase small mb-1">File Defaults</p>
+                                <div class="form-check form-switch fs-5">
+                                    <input class="form-check-input" type="checkbox" id="remove_exif" name="remove_exif" {{ request.user.remove_exif|if_true:"checked" }}>
+                                    <label class="form-check-label" for="remove_exif">
+                                        Strip All EXIF Data
+                                        <span data-bs-toggle="tooltip" data-bs-title="Remove all embedded EXIF metadata from uploaded images.">
+                                            <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch fs-5 mt-2">
+                                    <input class="form-check-input" type="checkbox" id="remove_exif_geo" name="remove_exif_geo" {{ request.user.remove_exif_geo|if_true:"checked" }}>
+                                    <label class="form-check-label" for="remove_exif_geo">
+                                        Strip GPS EXIF Data
+                                        <span data-bs-toggle="tooltip" data-bs-title="Remove only GPS location data from uploaded images, leaving other EXIF intact.">
+                                            <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch fs-5 mt-2">
+                                    <input class="form-check-input" type="checkbox" id="default_file_private" name="default_file_private" {{ request.user.default_file_private|if_true:"checked" }}>
+                                    <label class="form-check-label" for="default_file_private">
+                                        Private Files
+                                        <span data-bs-toggle="tooltip" data-bs-title="New uploads are private by default and only visible to you or admins.">
+                                            <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch fs-5 mt-2">
+                                    <input class="form-check-input" type="checkbox" id="default_file_password" name="default_file_password" {{ request.user.default_file_password|if_true:"checked" }}>
+                                    <label class="form-check-label" for="default_file_password">
+                                        Password Protected Files
+                                        <span data-bs-toggle="tooltip" data-bs-title="New uploads require a password to view by default.">
+                                            <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="text-secondary fw-semibold text-uppercase small mb-1">Display</p>
+                                <div class="form-check form-switch fs-5">
+                                    <input class="form-check-input" type="checkbox" id="show_exif_preview" name="show_exif_preview" {{ request.user.show_exif_preview|if_true:"checked" }}>
+                                    <label class="form-check-label" for="show_exif_preview">
+                                        Enable EXIF Embeds
+                                        <span data-bs-toggle="tooltip" data-bs-title="Show EXIF metadata panel when previewing images.">
+                                            <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="my-4">
+
+            <!-- Appearance -->
+            <section id="appearance" class="settings-section">
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h4 class="d-flex align-items-center gap-2"><i class="fas fa-palette"></i> Appearance</h4>
+                    </div>
+                    <div class="dash-card-body">
+                        <div class="d-flex gap-4 flex-wrap align-items-end">
+                            <div>
+                                <label for="default_color" class="form-label fw-medium d-block">
+                                    Embed Color
+                                    <span data-bs-toggle="tooltip" data-bs-title="Accent color used in shared file embeds.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                                <input type="color" class="form-control form-control-color" id="default_color" name="default_color"
+                                       value="{{ user.default_color }}" title="Default embed color"
+                                       aria-describedby="default_color-invalid">
+                                <div id="default_color-invalid" class="invalid-feedback"></div>
+                            </div>
+                            <div>
+                                <label for="nav_color_1" class="form-label fw-medium d-block">
+                                    Nav Start
+                                    <span data-bs-toggle="tooltip" data-bs-title="Start color of your navbar gradient. Saved automatically.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                                <input type="color" class="form-control form-control-color" id="nav_color_1" name="nav_color_1"
+                                       value="{{ user.nav_color_1 }}" title="Navbar gradient start"
+                                       aria-describedby="nav_color_1-invalid">
+                                <div id="nav_color_1-invalid" class="invalid-feedback"></div>
+                            </div>
+                            <div>
+                                <label for="nav_color_2" class="form-label fw-medium d-block">
+                                    Nav End
+                                    <span data-bs-toggle="tooltip" data-bs-title="End color of your navbar gradient. Saved automatically.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                                <input type="color" class="form-control form-control-color" id="nav_color_2" name="nav_color_2"
+                                       value="{{ user.nav_color_2 }}" title="Navbar gradient end"
+                                       aria-describedby="nav_color_2-invalid">
+                                <div id="nav_color_2-invalid" class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </form>
+
+        <hr class="my-4">
+
+        <!-- Connected Accounts -->
+        <section id="connected" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-plug"></i> Connected Accounts</h4>
+                </div>
+                <div class="dash-card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
+                            {% if not user.discord %}
+                                <a href="{% url 'oauth:discord' %}" class="btn btn-outline-primary">
+                                    <i class="fab fa-discord me-2"></i>Connect Discord</a>
+                            {% else %}
+                                <span class="badge text-bg-success fs-6 fw-normal p-2 pe-3">
+                                    <i class="fab fa-discord me-2"></i>Discord</span>
+                            {% endif %}
+                        {% endif %}
+                        {% if site_settings.github_client_id or 'GITHUB_CLIENT_ID'|get_config %}
+                            {% if not user.github %}
+                                <a href="{% url 'oauth:github' %}" class="btn btn-outline-light">
+                                    <i class="fab fa-github me-2"></i>Connect GitHub</a>
+                            {% else %}
+                                <span class="badge text-bg-success fs-6 fw-normal p-2 pe-3">
+                                    <i class="fab fa-github me-2"></i>GitHub</span>
+                            {% endif %}
+                        {% endif %}
+                        {% if site_settings.google_client_id or 'GOOGLE_CLIENT_ID'|get_config %}
+                            {% if not user.google %}
+                                <a href="{% url 'oauth:google' %}" class="btn btn-info">
+                                    <i class="fab fa-google me-2"></i>Connect Google</a>
+                            {% else %}
+                                <span class="badge text-bg-success fs-6 fw-normal p-2 pe-3">
+                                    <i class="fab fa-google me-2"></i>Google</span>
+                            {% endif %}
+                        {% endif %}
+                        {% if not site_settings.discord_client_id and not 'DISCORD_CLIENT_ID'|get_config and not site_settings.github_client_id and not 'GITHUB_CLIENT_ID'|get_config and not site_settings.google_client_id and not 'GOOGLE_CLIENT_ID'|get_config %}
+                            <p class="text-muted mb-0">No OAuth providers are configured on this instance.</p>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-    <section id="upload">
-    <h3>Upload Methods</h3>
+        </section>
 
-    <p class="lead">Django Files is backwards compatible with
-        <a href="https://zipline.diced.vercel.app/docs/api/upload" target="_blank">
-            Zipline</a> client upload settings.</p>
+        <hr class="my-4">
 
-    <div class="row g-3">
-        <div class="col-sm-6">
-            <a href="{% url 'settings:sharex' %}" class="btn btn-lg btn-outline-primary d-block">
-                <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="24">
-                ShareX Files</a>
-        </div>
-        <div class="col-sm-6">
-            <a href="{% url 'settings:sharex-url' %}" class="btn btn-lg btn-outline-primary d-block">
-                <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="24">
-                ShareX URL Shorts</a>
-        </div>
-        <div class="col-sm-6">
-            <a href="{% url 'settings:flameshot' %}" class="btn btn-lg btn-outline-primary d-block">
-                <img src="{% static 'images/assets/flameshot.svg' %}" class="me-2" alt="Flameshot" width="24">
-                Flameshot Script</a>
-        </div>
-        <div class="col-sm-6">
-            <a href="https://www.icloud.com/shortcuts/9fde67b3aa9c401b86987061e5c359a8" class="btn btn-lg btn-outline-primary d-block" title="iOS/macOS Shortcut" target="_blank" rel="noopener">
-                <i class="fa-brands fa-apple fa-xl"></i>&nbsp;
-                iOS/macOS Shortcut</a>
-        </div>
-    </div>
-    </section>
-
-    <hr>
-
-    <ul class="nav nav-tabs" id="myTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="cli-tab" data-bs-toggle="tab" type="button"
-                    data-bs-target="#cli-tab-pane" role="tab" aria-controls="cli-tab-pane" aria-selected="false">CLI</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="shell-tab" data-bs-toggle="tab" type="button"
-                    data-bs-target="#shell-tab-pane" role="tab" aria-controls="shell-tab-pane" aria-selected="false">Shell</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="python-tab" data-bs-toggle="tab" type="button"
-                    data-bs-target="#python-tab-pane" role="tab" aria-controls="python-tab-pane" aria-selected="false">Python</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="home-tab" data-bs-toggle="tab" type="button"
-                    data-bs-target="#home-tab-pane" role="tab" aria-controls="home-tab-pane" aria-selected="true">Custom</button>
-        </li>
-    </ul>
-
-    <div class="tab-content" id="myTabContent">
-        <div class="tab-pane fade show active" id="cli-tab-pane" role="tabpanel" aria-labelledby="cli-tab" tabindex="0">
-            <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#cli-code">
-                <i class="fa-regular fa-clipboard ms-2 mt-3"></i> Copy</a></p>
-            <h4>Install From PyPI:</h4>
-            <p><kbd id="cli-code">python3 -m pip install zipline-cli</kbd></p>
-            <p>Or alternatively from GitHub:</p>
-            <p><kbd id="cli-code">python3 -m pip install git+https://github.com/cssnr/zipline-cli.git</kbd></p>
-            <p>For more information and usage visit
-                <span class="d-inline-block"><a href="https://github.com/cssnr/zipline-cli" target="_blank" rel="noopener">
-                    Zipline CLI on GitHub</a></span></p>
-        </div>
-
-        <div class="tab-pane fade col-md-8" id="shell-tab-pane" role="tabpanel" aria-labelledby="shell-tab" tabindex="0">
-            <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#shell-code">
-                <i class="fa-regular fa-clipboard ms-2 mt-3"></i> Copy</a></p>
-            <div class="h-100 p-5 bg-body-tertiary border rounded-3">
-                <pre><code id="shell-code">{% include 'scripts/shell-example.sh' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url  %}</code></pre>
+        <!-- Webhooks -->
+        <section id="webhooks" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header pb-3">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fab fa-discord"></i> Webhooks</h4>
+                    {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
+                        {% if user.discord %}
+                            <a href="{% url 'oauth:webhook' %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fab fa-discord me-1"></i> Add Webhook</a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <div class="dash-card-body">
+                    {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
+                        {% if user.discord %}
+                            {% if not webhooks %}
+                                <p class="text-muted mb-0">No webhooks found.</p>
+                            {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0" id="discordWebhooksTable">
+                                        <caption class="visually-hidden">Active Webhooks</caption>
+                                        <thead>
+                                        <tr>
+                                            <th scope="col" class="d-none d-sm-table-cell">ID</th>
+                                            <th scope="col">Guild ID</th>
+                                            <th scope="col" class="d-none d-sm-table-cell">Channel ID</th>
+                                            <th scope="col" class="d-none d-md-table-cell">Date</th>
+                                            <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for data in webhooks %}
+                                            <tr id="webhook-{{ data.id }}">
+                                                <th scope="row" class="d-none d-sm-table-cell">{{ data.id }}</th>
+                                                <td>
+                                                    <a class="clip link-body-emphasis text-decoration-none" role="button"
+                                                       data-clipboard-text="{{ data.guild_id }}">{{ data.guild_id }}</a>
+                                                </td>
+                                                <td class="d-none d-sm-table-cell">
+                                                    <a class="clip link-body-emphasis text-decoration-none" role="button"
+                                                       data-clipboard-text="{{ data.channel_id }}">{{ data.channel_id }}</a>
+                                                </td>
+                                                <td class="d-none d-md-table-cell">
+                                                    <a class="clip link-body-emphasis text-decoration-none" role="button"
+                                                       data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a>
+                                                </td>
+                                                <td class="text-center">
+                                                    <a role="button" class="deleteDiscordHookBtn"
+                                                       data-hook-id="{{ data.id }}" title="Delete">
+                                                        <i class="fa-regular fa-trash-can link-danger"></i></a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <p class="mb-2">Connect a Discord account to enable webhooks.</p>
+                            <a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fab fa-discord me-2"></i>Connect Discord</a>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted mb-0">Webhooks require Discord to be configured on this instance.</p>
+                    {% endif %}
+                </div>
             </div>
-        </div>
+        </section>
 
-        <div class="tab-pane fade col-md-8" id="python-tab-pane" role="tabpanel" aria-labelledby="python-tab" tabindex="0">
-            <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#python-code">
-                <i class="fa-regular fa-clipboard ms-2 mt-3"></i> Copy</a></p>
-            <div class="h-100 p-5 bg-body-tertiary border rounded-3">
-                <pre><code id="python-code">{% include 'scripts/python-example.py' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url  %}</code></pre>
+        <hr class="my-4">
+
+        <!-- Clients -->
+        <section id="clients" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-mobile-screen"></i> Clients</h4>
+                </div>
+                <div class="dash-card-body">
+                    <div class="row g-4 mb-4">
+                        <div class="col-auto text-center">
+                            <a href="https://apps.apple.com/us/app/django-files/id6742523003?itscg=30200&itsct=apps_box_badge&mttnsubad=6742523003">
+                                <img class="img-fluid" width="150"
+                                     src="{% static 'images/assets/qr-code-apple.svg' %}"
+                                     alt="Download on the App Store"></a>
+                            <div class="mt-1"><small class="text-muted">iOS / macOS</small></div>
+                        </div>
+                        <div class="col-auto text-center">
+                            <a href="https://github.com/django-files/android-client/releases/latest/download/django-files.apk">
+                                <img class="img-fluid" width="150"
+                                     src="{% static 'images/assets/qr-code-android.svg' %}"
+                                     alt="Download the Android app"></a>
+                            <div class="mt-1"><small class="text-muted">Android</small></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <a id="showCodeBtn" class="btn btn-outline-warning" role="button"
+                           data-bs-toggle="tooltip" data-bs-title="Sensitive Info">
+                            View QR Auth Code
+                            <i id="cameraIcon" class="fa-solid fa-camera ms-2"></i></a>
+                        <a id="hideCodeBtn" class="btn btn-success d-none" role="button">
+                            Hide QR Auth Code
+                            <i class="fa-solid fa-eye ms-2"></i></a>
+                    </div>
+
+                    <div id="qrcode-div" class="d-none mt-3">
+                        <p>Valid for <span class="text-success-emphasis">10:00</span> minutes.</p>
+                        <a id="qrcode-link" href="{% url 'settings:qrcode' %}" data-qrcode="{% url 'settings:qrcode' %}"></a>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
 
-        <div class="tab-pane fade" id="home-tab-pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
-            <p><a class="clip text-decoration-none text-warning" role="button" data-clipboard-action="copy" data-clipboard-target="#upload-url">
-                <i class="fa-regular fa-clipboard ms-2 mt-3"></i> Copy</a></p>
-            <p><kbd id="upload-url">{{ site_settings.site_url }}{% url 'home:upload' %}</kbd></p>
-            <p>Uploads accept the following parameters. Click a tab above to view full examples.</p>
-            <table class="table table-sm table-striped">
-                <caption class="visually-hidden">Custom Upload Options</caption>
-                <thead>
-                <tr>
-                    <th scope="col">Key</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">Value</th>
-                    <th scope="col" class="d-none d-md-table-cell">Description</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <th scope="row">File</th>
-                    <th scope="row">file</th>
-                    <td>@file</td>
-                    <td class="d-none d-md-table-cell">File Object to Upload</td>
-                </tr>
-                <tr>
-                    <th scope="row">Authorization</th>
-                    <th scope="row">header</th>
-                    <td>&lt;see below&gt;</td>
-                    <td class="d-none d-md-table-cell">Authorization Token</td>
-                </tr>
-                <tr>
-                    <th scope="row">Expires-At</th>
-                    <th scope="row">header</th>
-                    <td>{{ user.default_expire }}</td>
-                    <td class="d-none d-md-table-cell">Expire Value. To override default use <kbd>0</kbd> or <kbd>never</kbd>.
-                        For values <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
-                                      target="_blank" rel="noopener">read this</a>.</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+        <hr class="my-4">
 
-    <hr>
+        <!-- Upload Methods -->
+        <section id="upload" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-cloud-arrow-up"></i> Upload Methods</h4>
+                </div>
+                <div class="dash-card-body">
+                    <p class="text-muted mb-3 small">
+                        Compatible with
+                        <a href="https://zipline.diced.vercel.app/docs/api/upload" target="_blank" rel="noopener">Zipline</a>
+                        client settings.
+                    </p>
+                    <div class="row g-2 mb-4">
+                        <div class="col-sm-6">
+                            <a href="{% url 'settings:sharex' %}" class="btn btn-outline-primary d-block">
+                                <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="18">
+                                ShareX Files</a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a href="{% url 'settings:sharex-url' %}" class="btn btn-outline-primary d-block">
+                                <img src="{% static 'images/assets/sharex.svg' %}" class="me-2" alt="ShareX" width="18">
+                                ShareX URL Shorts</a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a href="{% url 'settings:flameshot' %}" class="btn btn-outline-primary d-block">
+                                <img src="{% static 'images/assets/flameshot.svg' %}" class="me-2" alt="Flameshot" width="18">
+                                Flameshot Script</a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a href="https://www.icloud.com/shortcuts/9fde67b3aa9c401b86987061e5c359a8"
+                               class="btn btn-outline-primary d-block" title="iOS/macOS Shortcut"
+                               target="_blank" rel="noopener">
+                                <i class="fa-brands fa-apple me-1"></i> iOS/macOS Shortcut</a>
+                        </div>
+                    </div>
 
-    <section id="token">
-    <h3>Authorization Token</h3>
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="cli-tab" data-bs-toggle="tab" type="button"
+                                    data-bs-target="#cli-tab-pane" role="tab"
+                                    aria-controls="cli-tab-pane" aria-selected="true">CLI</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="shell-tab" data-bs-toggle="tab" type="button"
+                                    data-bs-target="#shell-tab-pane" role="tab"
+                                    aria-controls="shell-tab-pane" aria-selected="false">Shell</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="python-tab" data-bs-toggle="tab" type="button"
+                                    data-bs-target="#python-tab-pane" role="tab"
+                                    aria-controls="python-tab-pane" aria-selected="false">Python</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="home-tab" data-bs-toggle="tab" type="button"
+                                    data-bs-target="#home-tab-pane" role="tab"
+                                    aria-controls="home-tab-pane" aria-selected="false">Custom</button>
+                        </li>
+                    </ul>
 
-    <p>Treat this token like a password.</p>
-    <p>
-        <a class="btn btn-outline-light clip" role="button" data-clipboard-target="#primary-token">
-{#           data-bs-toggle="tooltip" data-bs-title="Sensitive Info">#}
-            <i class="fa-solid fa-key me-2"></i> Copy</a>
-        <a id="showTokenBtn" class="btn btn-outline-warning" role="button"
-           data-bs-toggle="tooltip" data-bs-title="Sensitive Info">
-            <i class="fa-solid fa-eye me-2"></i> Toggle</a>
-    </p>
-    <p><kbd id="primary-token" style="filter: blur(3px)">{{ user.authorization }}</kbd></p>
-    <p>
-        <a id="tokenRefreshBtn" class="btn btn-outline-danger" role="button">
-            <i class="fa-solid fa-key me-2"></i> Regenerate Token</a>
-    </p>
+                    <div class="tab-content pt-3" id="myTabContent">
+                        <div class="tab-pane fade show active" id="cli-tab-pane" role="tabpanel"
+                             aria-labelledby="cli-tab">
+                            <p>
+                                <a class="clip text-decoration-none text-warning" role="button"
+                                   data-clipboard-action="copy" data-clipboard-target="#cli-code">
+                                    <i class="fa-regular fa-clipboard me-1"></i> Copy</a>
+                            </p>
+                            <h6>Install from PyPI:</h6>
+                            <p><kbd id="cli-code">python3 -m pip install zipline-cli</kbd></p>
+                            <p>Or from GitHub:</p>
+                            <p><kbd>python3 -m pip install git+https://github.com/cssnr/zipline-cli.git</kbd></p>
+                            <p>For more information and usage visit
+                                <a href="https://github.com/cssnr/zipline-cli" target="_blank" rel="noopener">
+                                    Zipline CLI on GitHub</a>.</p>
+                        </div>
 
-    {% include 'settings/user-settings-modals.html' %}
-    </section>
+                        <div class="tab-pane fade" id="shell-tab-pane" role="tabpanel"
+                             aria-labelledby="shell-tab">
+                            <p>
+                                <a class="clip text-decoration-none text-warning" role="button"
+                                   data-clipboard-action="copy" data-clipboard-target="#shell-code">
+                                    <i class="fa-regular fa-clipboard me-1"></i> Copy</a>
+                            </p>
+                            <div class="p-4 bg-body-tertiary border rounded-3">
+                                <pre class="mb-0"><code id="shell-code">{% include 'scripts/shell-example.sh' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url %}</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="python-tab-pane" role="tabpanel"
+                             aria-labelledby="python-tab">
+                            <p>
+                                <a class="clip text-decoration-none text-warning" role="button"
+                                   data-clipboard-action="copy" data-clipboard-target="#python-code">
+                                    <i class="fa-regular fa-clipboard me-1"></i> Copy</a>
+                            </p>
+                            <div class="p-4 bg-body-tertiary border rounded-3">
+                                <pre class="mb-0"><code id="python-code">{% include 'scripts/python-example.py' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url %}</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="home-tab-pane" role="tabpanel"
+                             aria-labelledby="home-tab">
+                            <p>
+                                <a class="clip text-decoration-none text-warning" role="button"
+                                   data-clipboard-action="copy" data-clipboard-target="#upload-url">
+                                    <i class="fa-regular fa-clipboard me-1"></i> Copy</a>
+                            </p>
+                            <p><kbd id="upload-url">{{ site_settings.site_url }}{% url 'home:upload' %}</kbd></p>
+                            <p class="text-muted small">Uploads accept the following parameters:</p>
+                            <table class="table table-sm table-striped">
+                                <caption class="visually-hidden">Custom Upload Options</caption>
+                                <thead>
+                                <tr>
+                                    <th scope="col">Key</th>
+                                    <th scope="col">Type</th>
+                                    <th scope="col">Value</th>
+                                    <th scope="col" class="d-none d-md-table-cell">Description</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <th scope="row">File</th>
+                                    <th scope="row">file</th>
+                                    <td>@file</td>
+                                    <td class="d-none d-md-table-cell">File object to upload</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Authorization</th>
+                                    <th scope="row">header</th>
+                                    <td>&lt;see below&gt;</td>
+                                    <td class="d-none d-md-table-cell">Authorization token</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Expires-At</th>
+                                    <th scope="row">header</th>
+                                    <td>{{ user.default_expire }}</td>
+                                    <td class="d-none d-md-table-cell">
+                                        Expire value. Use <kbd>0</kbd> or <kbd>never</kbd> to override default.
+                                        <a href="https://github.com/onegreyonewhite/pytimeparse2#pytimeparse2-time-expression-parser"
+                                           target="_blank" rel="noopener">Format docs</a>.
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-4">
+
+        <!-- Authorization Token -->
+        <section id="token" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-key"></i> Authorization Token</h4>
+                </div>
+                <div class="dash-card-body">
+                    <p class="text-muted small mb-3">Treat this token like a password — do not share it.</p>
+                    <code id="primary-token" class="settings-token settings-token-blurred d-block font-monospace p-3 rounded bg-body-tertiary border mb-3">{{ user.authorization }}</code>
+                    <div class="d-flex gap-2 flex-wrap mt-3">
+                        <a class="btn btn-outline-secondary clip" role="button" data-clipboard-target="#primary-token">
+                            <i class="fa-solid fa-key me-2"></i>Copy</a>
+                        <a id="showTokenBtn" class="btn btn-outline-warning" role="button"
+                           data-bs-toggle="tooltip" data-bs-title="Sensitive Info">
+                            <i class="fa-solid fa-eye me-2"></i>Toggle</a>
+                        <a id="tokenRefreshBtn" class="btn btn-outline-danger" role="button">
+                            <i class="fa-solid fa-rotate me-2"></i>Regenerate</a>
+                    </div>
+                </div>
+            </div>
+
+            {% include 'settings/user-settings-modals.html' %}
+        </section>
+
+    </div><!-- col content -->
+</div><!-- row -->
+
 {% endblock %}
 
 {% block tail %}

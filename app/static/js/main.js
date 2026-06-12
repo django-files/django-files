@@ -235,7 +235,6 @@ function debounce(fn, timeout = 250) {
     }
 }
 
-// eslint-disable-next-line no-unused-vars
 function observeToolbarHeight(toolbarId, cssVar) {
     const toolbar = document.getElementById(toolbarId)
     const container = toolbar?.parentElement
@@ -254,7 +253,6 @@ function initToolbar(toolbarId, dt) {
     observeToolbarHeight(toolbarId, '--toolbar-h')
 }
 
-// eslint-disable-next-line no-unused-vars
 function wireToolbarSearch(inputId, dt) {
     const input = document.getElementById(inputId)
     if (!input || !dt) return
@@ -265,7 +263,6 @@ function wireToolbarSearch(inputId, dt) {
     })
 }
 
-// eslint-disable-next-line no-unused-vars
 function initCollapsibleSearch(wrapperId, inputId) {
     const wrapper = document.getElementById(wrapperId)
     const input = document.getElementById(inputId)
@@ -355,7 +352,6 @@ function submitJsonForm(form, onSuccess) {
     })
 }
 
-// eslint-disable-next-line no-unused-vars
 async function pageScroll(event, nextPage, callable, buffer = 500) {
     // await sleep(200)
     const maxScrollY = document.body.scrollHeight - globalThis.innerHeight

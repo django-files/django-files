@@ -329,7 +329,7 @@ export function getContextMenu(data, type, row) {
     toggle.setAttribute('aria-expanded', 'false')
     toggle.setAttribute('aria-label', 'More options')
     toggle.className = 'dt-ctx-btn file-context-dropdown'
-    toggle.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>'
+    toggle.innerHTML = '<i class="fa-solid fa-ellipsis"></i>'
     ctxMenu.appendChild(toggle)
 
     const menu = getCtxMenuContainer(row)
