@@ -1,12 +1,14 @@
 {% if request.user.is_authenticated %}
 <form id="upload_inputs" class="row justify-content-center">
     <div class="col col-md-12 pb-3 align-self-center" id="dest_album">
-        <label for="upload_albums" class="form-label">Destination Album</label>
-        <select class="form-select form-select-lg" id="upload_albums" name="upload_albums"
-            aria-describedby="upload_albums-help upload_albums-invalid">
-            <option value="0">None</option>
-        </select>
-        <div id="upload_albums_name_format-invalid" class="invalid-feedback"></div>
+        <label for="upload_album_search" class="form-label">Destination Album</label>
+        <input type="hidden" id="upload_albums" name="upload_albums" value="0">
+        <div class="dropdown">
+            <input type="text" id="upload_album_search" class="form-control form-control-lg"
+                   placeholder="Search albums…" aria-label="Search albums"
+                   autocomplete="off">
+            <ul id="upload_album_results" class="dropdown-menu w-100" style="max-height: 220px; overflow-y: auto;"></ul>
+        </div>
         <div id="upload_albums-help" class="form-text">
             Select an album to add uploads to.
         </div>
