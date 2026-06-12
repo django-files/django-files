@@ -2,93 +2,15 @@
 {% load static %}
 {% load tz %}
 {% load home_tags %}
-{% load cache %}
 {% block home_active %}active{% endblock %}
 {% block title %}Home{% endblock %}
 
 {% block head %}
     <link href="{% static 'dist/uppy/uppy.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
     <link rel="stylesheet" href="{% static 'css/table.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
     <script src="{% static 'dist/echarts/echarts.min.js' %}"></script>
-    <style>
-        .dash-stat-card {
-            border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);
-            border-radius: 0.75rem;
-            padding: 1.25rem 1.5rem;
-            background: var(--bs-body-bg);
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-        .dash-stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-        }
-        .dash-stat-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            flex-shrink: 0;
-        }
-        .dash-stat-value {
-            font-size: 1.6rem;
-            font-weight: 700;
-            line-height: 1.1;
-        }
-        .dash-stat-label {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            opacity: 0.6;
-            font-weight: 500;
-        }
-        .dash-card {
-            border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);
-            border-radius: 0.75rem;
-            background: var(--bs-body-bg);
-        }
-        .dash-card-header {
-            padding: 1rem 1.25rem 0.75rem;
-            border-bottom: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.08);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-        }
-        .dash-card-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            opacity: 0.85;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .dash-card-body {
-            padding: 1rem 1.25rem;
-        }
-        .dash-welcome {
-            font-size: 1.35rem;
-            font-weight: 600;
-        }
-        .dash-welcome-sub {
-            font-size: 0.9rem;
-            opacity: 0.55;
-        }
-        .quota-bar-wrap {
-            border-radius: 0.75rem;
-            border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);
-            padding: 1rem 1.25rem;
-            background: var(--bs-body-bg);
-        }
-        /* Keep the files card from growing a scroll region — let DataTables
-           responsive drop columns instead. The min-height skeleton reservation
-           in table.css still works; overflow:hidden just clips any overflow. */
-        #home-files-card {
-            overflow: hidden;
-        }
-    </style>
 {% endblock %}
 
 {% block body %}
@@ -108,109 +30,31 @@
                 <i class="fa-solid fa-upload me-1"></i> Upload Files</a>
             <a class="btn btn-outline-secondary btn-sm" href="{% url 'home:paste' %}">
                 <i class="fa-regular fa-file-lines me-1"></i> Upload Text</a>
-            <a class="btn btn-outline-secondary btn-sm" href="{% url 'home:shorts' %}">
-                <i class="fa-solid fa-link me-1"></i> Short URLs</a>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#create-short-modal">
+                <i class="fa-solid fa-link me-1"></i> Create Short</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#create-album-modal">
+                <i class="fa-regular fa-images me-1"></i> Create Album</button>
         </div>
     </div>
 
     {# ── Stat cards ── #}
 
-    {# Personal stats row — always shown when user has stats #}
-    {% if stats %}
-    {% with s=stats|first %}
+    {% if user_stat_cards %}
     <div class="row g-3 mb-2" id="stat-cards-mine">
-        <div class="col-sm-6 col-xl-3">
-            <div class="dash-stat-card d-flex align-items-center gap-3">
-                <div class="dash-stat-icon text-bg-primary"><i class="fa-regular fa-folder-open"></i></div>
-                <div>
-                    <div class="dash-stat-value">{{ s.stats.count }}</div>
-                    <div class="dash-stat-label">My Files</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="dash-stat-card d-flex align-items-center gap-3">
-                <div class="dash-stat-icon text-bg-info"><i class="fa-solid fa-database"></i></div>
-                <div>
-                    <div class="dash-stat-value">{{ s.stats.human_size }}</div>
-                    <div class="dash-stat-label">My Storage Used</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="dash-stat-card d-flex align-items-center gap-3">
-                <div class="dash-stat-icon text-bg-success"><i class="fa-solid fa-link"></i></div>
-                <div>
-                    <div class="dash-stat-value">{{ s.stats.shorts }}</div>
-                    <div class="dash-stat-label">My Shorts</div>
-                </div>
-            </div>
-        </div>
-        {# User quota — visible to any user with a personal quota set #}
-        {% if user.storage_quota %}
-        <div class="col-sm-6 col-xl-3">
-            <div class="dash-stat-card d-flex align-items-center gap-3">
-                <div class="dash-stat-icon {% if user.get_storage_usage_pct > 95 %}text-bg-danger{% elif user.get_storage_usage_pct > 85 %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
-                    <i class="fa-solid fa-hard-drive"></i>
-                </div>
-                <div class="flex-grow-1 min-w-0">
-                    <div class="dash-stat-value">{{ user.get_storage_usage_pct }}%</div>
-                    <div class="dash-stat-label">My Quota &mdash; {{ user.get_storage_used_human_read }} / {{ user.get_storage_quota_human_read }}</div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
+        {% for card in user_stat_cards %}
+            {% include 'include/dash-stat-card.html' %}
+        {% endfor %}
     </div>
-    {% endwith %}
     {% endif %}
 
-    {# Server stats row — superuser only, hidden until toggled #}
-    {% if user.is_superuser and stats_server %}
-    {% with ss=stats_server|first %}
+    {% if user.is_superuser and server_stat_cards %}
     <div class="row g-3 mb-2 d-none" id="stat-cards-server">
-        <div class="col-sm-6 col-xl-3">
-            <div class="dash-stat-card d-flex align-items-center gap-3">
-                <div class="dash-stat-icon text-bg-primary"><i class="fa-regular fa-folder-open"></i></div>
-                <div>
-                    <div class="dash-stat-value">{{ ss.stats.count }}</div>
-                    <div class="dash-stat-label">Server Files</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="dash-stat-card d-flex align-items-center gap-3">
-                <div class="dash-stat-icon text-bg-info"><i class="fa-solid fa-database"></i></div>
-                <div>
-                    <div class="dash-stat-value">{{ ss.stats.human_size }}</div>
-                    <div class="dash-stat-label">Server Storage Used</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="dash-stat-card d-flex align-items-center gap-3">
-                <div class="dash-stat-icon text-bg-success"><i class="fa-solid fa-link"></i></div>
-                <div>
-                    <div class="dash-stat-value">{{ ss.stats.shorts }}</div>
-                    <div class="dash-stat-label">Server Shorts</div>
-                </div>
-            </div>
-        </div>
-        {# System quota — only shown when a global quota is configured #}
-        {% if site_settings.global_storage_quota %}
-        <div class="col-sm-6 col-xl-3">
-            <div class="dash-stat-card d-flex align-items-center gap-3">
-                <div class="dash-stat-icon {% if site_settings.get_global_storage_quota_usage_pct > 95 %}text-bg-danger{% elif site_settings.get_global_storage_quota_usage_pct > 85 %}text-bg-warning{% else %}text-bg-secondary{% endif %}">
-                    <i class="fa-solid fa-server"></i>
-                </div>
-                <div class="flex-grow-1 min-w-0">
-                    <div class="dash-stat-value">{{ site_settings.get_global_storage_quota_usage_pct }}%</div>
-                    <div class="dash-stat-label">System Quota &mdash; {{ site_settings.get_global_storage_usage_human_read }} / {{ site_settings.get_global_storage_quota_human_read }}</div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
+        {% for card in server_stat_cards %}
+            {% include 'include/dash-stat-card.html' %}
+        {% endfor %}
     </div>
-    {% endwith %}
     {% endif %}
 
     {% if not stats %}
@@ -230,7 +74,7 @@
             <div class="dash-card h-100">
                 <div class="dash-card-header">
                     <span class="dash-card-title" id="home-chart-title">
-                        <i class="fa-solid fa-chart-line opacity-60"></i> My Upload Activity
+                        <i class="fa-solid fa-chart-line opacity-75"></i> My Upload Activity
                     </span>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         {% if user.is_superuser and stats_server %}
@@ -262,163 +106,12 @@
                         {{ chart_files|json_script:"home-chart-files" }}
                         {{ chart_size|json_script:"home-chart-size" }}
                         {{ chart_shorts|json_script:"home-chart-shorts" }}
-                        {% if user.is_superuser %}
+                        {% if user.is_superuser and server_days %}
                         {{ server_days|json_script:"home-chart-server-days" }}
                         {{ server_chart_files|json_script:"home-chart-server-files" }}
                         {{ server_chart_size|json_script:"home-chart-server-size" }}
                         {{ server_chart_shorts|json_script:"home-chart-server-shorts" }}
                         {% endif %}
-                        <script>
-                            (function() {
-                                const scopes = {
-                                    mine: {
-                                        label: 'My',
-                                        days:   JSON.parse(document.getElementById('home-chart-days').textContent),
-                                        files:  JSON.parse(document.getElementById('home-chart-files').textContent),
-                                        size:   JSON.parse(document.getElementById('home-chart-size').textContent),
-                                        shorts: JSON.parse(document.getElementById('home-chart-shorts').textContent),
-                                    },
-                                };
-                                {% if user.is_superuser %}
-                                // Smooth deltas then reintegrate so the trend is smooth but
-                                // the cumulative total stays grounded (doesn't undercount reality).
-                                function smoothDeltas(data, win) {
-                                    if (data.length < 2) return data.slice();
-                                    const w = Math.min(win, Math.max(1, Math.floor(data.length / 4)));
-                                    // compute daily net change
-                                    const deltas = data.map((v, i) => i === 0 ? 0 : v - data[i - 1]);
-                                    // trailing rolling average of deltas (causal — no future lookahead)
-                                    const smoothed = deltas.map((_, i) => {
-                                        const lo = Math.max(0, i - w + 1);
-                                        const slice = deltas.slice(lo, i + 1);
-                                        return slice.reduce((a, b) => a + b, 0) / slice.length;
-                                    });
-                                    // reintegrate from the first actual value
-                                    const out = [data[0]];
-                                    for (let i = 1; i < data.length; i++) {
-                                        out.push(Math.round(out[i - 1] + smoothed[i]));
-                                    }
-                                    return out;
-                                }
-                                const rawServerFiles  = JSON.parse(document.getElementById('home-chart-server-files').textContent);
-                                const rawServerSize   = JSON.parse(document.getElementById('home-chart-server-size').textContent);
-                                const rawServerShorts = JSON.parse(document.getElementById('home-chart-server-shorts').textContent);
-                                scopes.server = {
-                                    label: 'Server',
-                                    days:   JSON.parse(document.getElementById('home-chart-server-days').textContent),
-                                    files:  smoothDeltas(rawServerFiles, 7),
-                                    size:   smoothDeltas(rawServerSize, 7),
-                                    shorts: smoothDeltas(rawServerShorts, 7),
-                                };
-                                {% endif %}
-
-                                const isDark = document.documentElement.getAttribute('data-bs-theme') !== 'light';
-                                const textColor = isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.55)';
-                                const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
-                                const chart = echarts.init(document.getElementById('home-chart'), isDark ? 'dark' : null);
-
-                                function bytesHuman(bytes) {
-                                    if (bytes === 0) return '0 B';
-                                    const units = ['B','KB','MB','GB','TB'];
-                                    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-                                    return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i];
-                                }
-
-                                const metricCfg = {
-                                    files:  { label: 'Files',  color: '#0d6efd', leftPad: 40, formatter: undefined },
-                                    size:   { label: 'Size',   color: '#0dcaf0', leftPad: 64, formatter: bytesHuman },
-                                    shorts: { label: 'Shorts', color: '#198754', leftPad: 40, formatter: undefined },
-                                };
-
-                                let currentScope  = 'mine';
-                                let currentMetric = 'files';
-
-                                function buildOption(scope, metric) {
-                                    const s = scopes[scope];
-                                    const m = metricCfg[metric];
-                                    return {
-                                        backgroundColor: 'transparent',
-                                        grid: { top: 16, bottom: 30, left: m.leftPad, right: 16 },
-                                        tooltip: {
-                                            trigger: 'axis',
-                                            formatter: m.formatter
-                                                ? (p) => p[0].name + '<br/>' + p[0].marker + ' ' + m.label + ': ' + m.formatter(p[0].value)
-                                                : undefined,
-                                        },
-                                        xAxis: {
-                                            type: 'category',
-                                            data: s.days,
-                                            axisLine: { lineStyle: { color: gridColor } },
-                                            axisLabel: { color: textColor, fontSize: 11 },
-                                            axisTick: { show: false },
-                                        },
-                                        yAxis: {
-                                            type: 'value',
-                                            splitLine: { lineStyle: { color: gridColor } },
-                                            axisLabel: { color: textColor, fontSize: 11, formatter: m.formatter },
-                                        },
-                                        series: [{
-                                            name: m.label,
-                                            type: 'line',
-                                            data: s[metric],
-                                            smooth: true,
-                                            symbol: 'circle',
-                                            symbolSize: 5,
-                                            lineStyle: { width: 2 },
-                                            areaStyle: { opacity: 0.12 },
-                                            itemStyle: { color: m.color },
-                                        }],
-                                    };
-                                }
-
-                                function setActiveBtn(group, key, attr) {
-                                    group.querySelectorAll('[' + attr + ']').forEach((b) => {
-                                        const active = b.dataset[attr.replace('data-', '')] === key;
-                                        b.classList.toggle('active', active);
-                                        b.classList.toggle('btn-secondary', active);
-                                        b.classList.toggle('btn-outline-secondary', !active);
-                                    });
-                                }
-
-                                function updateChartTitle() {
-                                    const scopeLabel = scopes[currentScope].label;
-                                    const smoothNote = currentScope === 'server'
-                                        ? ' <small class="text-muted fw-normal" style="font-size:0.72rem;">7-day avg</small>'
-                                        : '';
-                                    document.getElementById('home-chart-title').innerHTML =
-                                        '<i class="fa-solid fa-chart-line opacity-60"></i> ' + scopeLabel + ' Upload Activity' + smoothNote;
-                                }
-
-                                function updateStatCards() {
-                                    document.getElementById('stat-cards-mine')?.classList.toggle('d-none', currentScope === 'server');
-                                    document.getElementById('stat-cards-server')?.classList.toggle('d-none', currentScope === 'mine');
-                                }
-
-                                chart.setOption(buildOption(currentScope, currentMetric));
-                                window.addEventListener('resize', () => chart.resize());
-
-                                const scopeToggle = document.getElementById('home-scope-toggle');
-                                if (scopeToggle) {
-                                    scopeToggle.addEventListener('click', (e) => {
-                                        const btn = e.target.closest('[data-scope]');
-                                        if (!btn) return;
-                                        currentScope = btn.dataset.scope;
-                                        setActiveBtn(scopeToggle, currentScope, 'data-scope');
-                                        updateChartTitle();
-                                        updateStatCards();
-                                        chart.setOption(buildOption(currentScope, currentMetric));
-                                    });
-                                }
-
-                                document.getElementById('home-chart-toggle').addEventListener('click', (e) => {
-                                    const btn = e.target.closest('[data-metric]');
-                                    if (!btn) return;
-                                    currentMetric = btn.dataset.metric;
-                                    setActiveBtn(document.getElementById('home-chart-toggle'), currentMetric, 'data-metric');
-                                    chart.setOption(buildOption(currentScope, currentMetric));
-                                });
-                            })();
-                        </script>
                     {% else %}
                         <div class="d-flex align-items-center justify-content-center text-muted" style="height:260px;">
                             <div class="text-center">
@@ -438,7 +131,7 @@
             <div class="dash-card h-100">
                 <div class="dash-card-header">
                     <span class="dash-card-title">
-                        <i class="fa-solid fa-bolt opacity-60"></i> Quick Actions
+                        <i class="fa-solid fa-bolt opacity-75"></i> Quick Actions
                     </span>
                 </div>
                 <div class="dash-card-body d-flex flex-column gap-3">
@@ -494,7 +187,7 @@
     <div class="dash-card mb-4" id="home-files-card">
         <div class="dash-card-header">
             <span class="dash-card-title">
-                <i class="fa-regular fa-folder-open opacity-60"></i> Recent Files
+                <i class="fa-regular fa-folder-open opacity-75"></i> Recent Files
             </span>
             <div class="d-flex align-items-center gap-2">
                 {% include 'files/bulk-menu.html' %}
@@ -513,33 +206,89 @@
         </div>
     </div>
 
-    {# ── Recent Shorts ── #}
-    <div class="dash-card mb-4">
-        <div class="dash-card-header">
-            <span class="dash-card-title">
-                <i class="fa-solid fa-link opacity-60"></i> Recent Short URLs
-            </span>
-            <a class="btn btn-sm btn-outline-secondary" href="{% url 'home:shorts' %}">
-                View All <i class="fa-solid fa-arrow-right ms-1"></i></a>
+    {# ── Recent Shorts + Recent Albums ── #}
+    <div class="row g-3 mb-4">
+
+        {# Recent Shorts #}
+        <div class="col-lg-6">
+            <div class="dash-card h-100" id="home-shorts-card">
+                <div class="dash-card-header">
+                    <span class="dash-card-title">
+                        <i class="fa-solid fa-link opacity-75"></i> Recent Short URLs
+                    </span>
+                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'home:shorts' %}">
+                        View All <i class="fa-solid fa-arrow-right ms-1"></i></a>
+                </div>
+                <div class="px-2 pt-1">
+                    <table class="display responsive nowrap table table-hover table-responsive mb-0 dt-select-no-highlight w-100"
+                           id="shorts-table" data-home="true">
+                        <caption class="visually-hidden">Recent Short URLs</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col"></th>
+                                <th scope="col">ID</th>
+                                <th scope="col">Short</th>
+                                <th scope="col">URL</th>
+                                <th scope="col"><i class="fa-solid fa-eye"></i></th>
+                                <th scope="col"><i class="fa-solid fa-bomb"></i></th>
+                                <th scope="col" class="text-center"><i class="fa-solid fa-gears"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p class="mt-0 px-3 pb-2 shorts-truncation-warning d-none small text-muted">
+                    <em>List truncated to 10 shorts.</em>
+                    <a href="{% url 'home:shorts' %}">View All Shorts</a>
+                </p>
+            </div>
         </div>
-        <div class="dash-card-body">
-            {% if not shorts %}
-                <p class="text-muted mb-0 small">Short URLs will appear here once created.</p>
-            {% else %}
-                {% include 'include/shorts-table.html' with shorts=shorts|slice:":10" home_mode=True %}
-                {% if shorts|length > 10 %}
-                    <p class="mt-1 mb-0 small text-muted">
-                        <em>Truncated to 10.</em>
-                        <a href="{% url 'home:shorts' %}">View All</a>
-                    </p>
-                {% endif %}
-            {% endif %}
+
+        {# Recent Albums #}
+        <div class="col-lg-6">
+            <div class="dash-card h-100" id="home-albums-card">
+                <div class="dash-card-header">
+                    <span class="dash-card-title">
+                        <i class="fa-regular fa-images opacity-75"></i> Recent Albums
+                    </span>
+                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'home:albums' %}">
+                        View All <i class="fa-solid fa-arrow-right ms-1"></i></a>
+                </div>
+                <div class="px-2 pt-1">
+                    <table class="display responsive nowrap table table-hover table-responsive mb-0 dt-select-no-highlight w-100"
+                           id="albums-table" data-home="true">
+                        <caption class="visually-hidden">Recent Albums</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col"></th>
+                                <th scope="col">ID</th>
+                                <th scope="col">Album Name</th>
+                                <th scope="col">Date</th>
+                                <th scope="col">Expire</th>
+                                <th scope="col"><i class="fa-solid fa-eye"></i></th>
+                                <th scope="col"><i class="fa-solid fa-bomb"></i></th>
+                                <th scope="col" class="text-center"><i class="fa-solid fa-gears"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p class="mt-0 px-3 pb-2 albums-truncation-warning d-none small text-muted">
+                    <em>List truncated to 10 albums.</em>
+                    <a href="{% url 'home:albums' %}">View All Albums</a>
+                </p>
+            </div>
         </div>
+
     </div>
 
     {% include 'files/file-upload-modal.html' %}
     {% include 'files/ctx-menu.html' %}
     {% include 'files/ctx-modals.html' %}
+    {% include 'shorts/create-modal.html' %}
+    {% include 'shorts/delete-modal.html' %}
+    {% include 'albums/create-modal.html' %}
+    {% include 'albums/delete-modal.html' %}
 
 </div>
 {% endblock %}
@@ -550,6 +299,10 @@
     <script type="module" src="{% static 'js/home.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/stats.js' %}"></script>
     <script type="module" src="{% static 'js/file-context-menu.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/shorts.js' %}"></script>
+    <script type="module" src="{% static 'js/shorts-table.js' %}"></script>
+    <script type="module" src="{% static 'js/albums-table.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/short-create.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/album-create.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/home-chart.js' %}"></script>
     <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}

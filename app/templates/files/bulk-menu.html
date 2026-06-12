@@ -1,6 +1,6 @@
 {% if full_context %}
 <div id="dt-bulk-wrapper" class="dropdown">
-    <button id="bulk-actions" class="{% if use_simple_bulk_btn %}btn btn-sm btn-outline-secondary{% else %}files-toolbar-btn{% endif %} dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+    <button id="bulk-actions" class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled>
       Bulk Actions
     </button>
     <ul class="dropdown-menu">
@@ -15,6 +15,15 @@
         <li>
             <a role="button" class="dropdown-item bulk-expire" title="Bulk Expiration">
                 <i class="fa-solid fa-hourglass fa-fw me-2"></i> Set Expiration</a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a role="button" class="dropdown-item bulk-album-add" title="Add to Album">
+                <i class="fa-solid fa-folder-plus fa-fw me-2"></i> Add to Album</a>
+        </li>
+        <li>
+            <a role="button" class="dropdown-item bulk-album-remove" title="Remove from Album">
+                <i class="fa-solid fa-folder-minus fa-fw me-2"></i> Remove from Album</a>
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>

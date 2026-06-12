@@ -6,11 +6,11 @@ import {
     faHourglass,
     addFileTableRowsBatch,
     formatBytes,
-    faCaret,
     showTableSkeletons,
     hideTableSkeletons,
 } from './file-table.js'
 
+import { updateBulkCount } from './bulk-actions.js'
 import { fetchFiles } from './api-fetch.js'
 
 import { socket } from './socket.js'
@@ -50,7 +50,7 @@ const tmplInner = document.querySelector('.d-none .gallery-inner')
 const tmplIcons = document.querySelector('.d-none .image-icons')
 const tmplLabels = document.querySelector('.d-none .image-labels')
 const tmplCtx = document.querySelector('.d-none .gallery-ctx')
-const tmplCtxToggle = document.querySelector('.d-none .gallery-ctx-toggle')
+const tmplCtxToggle = document.querySelector('.d-none button.dt-ctx-btn')
 const tmplCheckbox = document.querySelector('.d-none .gallery-checkbox')
 
 function setupScrollObserver() {
@@ -189,9 +189,10 @@ function filterGallery() {
 async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
-    wireToolbarSearch('files-toolbar-search-input', filesDataTable)
-    initCollapsibleSearch('files-toolbar-search', 'files-toolbar-search-input')
+    initToolbar('files-toolbar', filesDataTable)
 
+    // Gallery-view filtering: mirror the search input value into gallerySearchTerm
+    // so filterGallery() can apply it when the gallery view is active.
     const searchInput = document.getElementById('files-toolbar-search-input')
     if (searchInput) {
         let filterTimer
@@ -204,9 +205,6 @@ async function initGallery() {
         })
     }
 
-    syncNavbarHeight()
-    observeToolbarHeight('files-toolbar', '--files-toolbar-h')
-
     const view = detectInitialView()
     applyView(view)
     await addNodes()
@@ -214,16 +212,18 @@ async function initGallery() {
 
     setupScrollObserver()
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
+        const n = filesDataTable.rows({ selected: true }).count()
         document.getElementById('bulk-actions').disabled = false
+        updateBulkCount(n)
         let checkbox = document.getElementById(`file-${dt.data().id}`)
         if (checkbox) {
             checkbox.classList.remove('d-none')
         }
     })
     filesDataTable.on('deselect', function (_e, _dt, _type, _indexes) {
-        if (filesDataTable.rows({ selected: true }).count() === 0) {
-            document.getElementById('bulk-actions').disabled = true
-        }
+        const n = filesDataTable.rows({ selected: true }).count()
+        document.getElementById('bulk-actions').disabled = n === 0
+        updateBulkCount(n)
     })
     filesDataTable?.columns.adjust().draw()
 }
@@ -369,7 +369,6 @@ function buildGalleryCard(file, top = false) {
 
     const ctxMenu = tmplCtx.cloneNode(true)
     const toggle = tmplCtxToggle.cloneNode(true)
-    toggle.appendChild(faCaret.cloneNode(true))
     ctxMenu.appendChild(toggle)
     outer.appendChild(ctxMenu)
     const menu = getCtxMenuContainer(file)

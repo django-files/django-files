@@ -1,5 +1,5 @@
 import { fetchUsers } from './api-fetch.js'
-import { paginatedTableDefaults } from './table-defaults.js'
+import { noChromeLayout, paginatedTableDefaults } from './table-defaults.js'
 
 const usersTable = $('#users-table')
 
@@ -10,12 +10,7 @@ let fetchLock = false
 const dataTablesOptions = {
     ...paginatedTableDefaults,
     order: [1, 'asc'],
-    layout: {
-        topStart: null,
-        topEnd: null,
-        bottomStart: null,
-        bottomEnd: null,
-    },
+    layout: noChromeLayout,
     columns: [{ data: 'id' }, { data: 'username' }, { data: 'storage_usage' }],
     columnDefs: [
         {
@@ -36,6 +31,12 @@ const dataTablesOptions = {
     ],
 }
 
+const PROVIDER_ICONS = {
+    discord: '<i class="fab fa-discord" title="Discord"></i>',
+    github: '<i class="fab fa-github" title="GitHub"></i>',
+    google: '<i class="fab fa-google" title="Google"></i>',
+}
+
 function renderUser(data, type, row) {
     if (type === 'filter') return `${row.username} ${row.first_name || ''}`
     if (type !== 'display') return data
@@ -47,10 +48,16 @@ function renderUser(data, type, row) {
         row.first_name && row.first_name !== row.username
             ? `<div class="text-body-secondary small">@${row.username}</div>`
             : ''
+    const providerIcons = (row.oauth_providers || [])
+        .map((p) => PROVIDER_ICONS[p] || '')
+        .join('')
+    const providers = providerIcons
+        ? `<span class="ms-2 d-inline-flex gap-1 text-body-secondary small">${providerIcons}</span>`
+        : ''
     return `<div class="d-flex align-items-center gap-2">
         <img src="${row.avatar_url}" class="rounded-circle flex-shrink-0"
              style="width:32px;height:32px;object-fit:cover;" alt="${name}">
-        <div><div>${name}${adminBadge}</div>${sub}</div>
+        <div><div>${name}${adminBadge}${providers}</div>${sub}</div>
     </div>`
 }
 

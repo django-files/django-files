@@ -4,24 +4,9 @@
 }
 
 /*
- * Hide any DT-managed section from first paint so DataTables can finish
- * inserting its toolbar and moving elements before anything is visible.
- * JS adds .dt-section-ready (via double-rAF) once layout is settled.
- */
-.dt-section {
-    opacity: 0;
-    transition: opacity 0.15s ease;
-}
-
-.dt-section.dt-section-ready {
-    opacity: 1;
-}
-
-/*
  * Reserve space for the home-page files table until data is fully loaded,
  * preventing the Shorts section from shifting while rows are fetched.
- * Keyed off dt-data-loaded (added in home.js after addFileTableRows) rather
- * than dt-section-ready, which fires at DataTables init — before the fetch.
+ * Keyed off dt-data-loaded (added in home.js after addFileTableRows).
  */
 #home-files-section:not(.dt-data-loaded) {
     min-height: 1205px;
@@ -72,7 +57,8 @@ input[type='checkbox'] {
 }
 
 /* I hate that we have to do this, but datatables has no option to not
-highlight a row and it fucks up our other stylings */
+highlight a row and it fucks up our other stylings. We deliberately keep
+--dt-row-hover so Bootstrap's table-hover effect still works on these tables. */
 .dt-select-no-highlight {
     background-color: transparent !important;
     color: inherit !important;
@@ -81,7 +67,6 @@ highlight a row and it fucks up our other stylings */
     --dt-row-selected-text: initial;
     --dt-row-selected-link: initial;
     --dt-row-stripe: initial;
-    --dt-row-hover: initial;
     --dt-column-ordering: initial;
     --dt-html-background: initial;
 }
@@ -113,10 +98,13 @@ div.dataTables_wrapper span.select-item {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     padding: 0;
-    font-size: 14px;
+    font-size: 18px;
+    transform: scale(
+        1.13
+    ); /* scale instead of larger font-size to avoid expanding table row height */
     border-radius: 999px;
     background: transparent;
     border: 1px solid var(--bs-border-color);
@@ -170,7 +158,7 @@ div.dataTables_wrapper span.select-item {
 }
 
 /* Remove Bootstrap's mt-2 that DT Bootstrap5 integration bakes into the table row class. */
-[id='files-table_wrapper'] .dt-layout-table {
+[id$='-table_wrapper'] .dt-layout-table {
     margin-top: 0 !important;
 }
 
@@ -206,16 +194,18 @@ div.dataTables_wrapper span.select-item {
  * Hide every DT layout row that isn't the table itself, plus the DT search,
  * info, paging, and length controls (belt-and-braces alongside the row rule).
  */
-#files-table-section .files-table-narrow-msg,
-#files-table-section .dt-container > *:not(.dt-layout-table),
-#files-table-section .dt-search,
-#files-table-section .dt-info,
-#files-table-section .dt-paging,
-#files-table-section .dt-length {
+:is(#files-table-section, #streams-table-section) .table-narrow-msg,
+:is(#files-table-section, #streams-table-section)
+    .dt-container
+    > *:not(.dt-layout-table),
+:is(#files-table-section, #streams-table-section) .dt-search,
+:is(#files-table-section, #streams-table-section) .dt-info,
+:is(#files-table-section, #streams-table-section) .dt-paging,
+:is(#files-table-section, #streams-table-section) .dt-length {
     display: none !important;
 }
 
-#files-table-section .dt-container {
+:is(#files-table-section, #streams-table-section) .dt-container {
     margin-top: 0 !important;
     padding-top: 0 !important;
 }
@@ -233,85 +223,24 @@ div.dataTables_wrapper span.select-item {
     padding-left: 0.75rem;
 }
 
+/* Center the multi-select checkbox column (files / streams / shorts / albums)
+ * in both header and body cells. */
+td.dt-select-col,
+th.dt-select-col {
+    text-align: center;
+    vertical-align: middle;
+}
+
 /* Push list/gallery content past the floating toolbar. Map peeks through.
  * clip (not hidden) prevents scroll without creating a scroll container, so
- * position:fixed dropdowns still escape the boundary. */
+ * position:fixed dropdowns still escape the boundary.
+ * --toolbar-h is set per-page by initToolbar() via observeToolbarHeight(). */
 .container-fluid[data-files-view='list'],
-.container-fluid[data-files-view='gallery'] {
-    padding-top: var(--files-toolbar-h, 48px) !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    overflow-x: clip;
-}
-
-#albums-table-section .dt-container > *:not(.dt-layout-table),
-#albums-table-section .dt-search,
-#albums-table-section .dt-info,
-#albums-table-section .dt-paging,
-#albums-table-section .dt-length {
-    display: none !important;
-}
-
-#albums-table-section .dt-container {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
-[id='albums-table_wrapper'] .dt-layout-table {
-    margin-top: 0 !important;
-}
-
-.container-fluid[data-albums-view='list'] {
-    padding-top: var(--albums-toolbar-h, 48px) !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    overflow-x: clip;
-}
-
-#streams-table-section .streams-table-narrow-msg,
-#streams-table-section .dt-container > *:not(.dt-layout-table),
-#streams-table-section .dt-search,
-#streams-table-section .dt-info,
-#streams-table-section .dt-paging,
-#streams-table-section .dt-length {
-    display: none !important;
-}
-
-#streams-table-section .dt-container {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
-[id='streams-table_wrapper'] .dt-layout-table {
-    margin-top: 0 !important;
-}
-
-.container-fluid[data-streams-view='list'] {
-    padding-top: var(--streams-toolbar-h, 48px) !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    overflow-x: clip;
-}
-
-#shorts-table-section .dt-container > *:not(.dt-layout-table),
-#shorts-table-section .dt-search,
-#shorts-table-section .dt-info,
-#shorts-table-section .dt-paging,
-#shorts-table-section .dt-length {
-    display: none !important;
-}
-
-#shorts-table-section .dt-container {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
-[id='shorts-table_wrapper'] .dt-layout-table {
-    margin-top: 0 !important;
-}
-
+.container-fluid[data-files-view='gallery'],
+.container-fluid[data-albums-view='list'],
+.container-fluid[data-streams-view='list'],
 .container-fluid[data-shorts-view='list'] {
-    padding-top: var(--shorts-toolbar-h, 48px) !important;
+    padding-top: var(--toolbar-h, 48px) !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
     overflow-x: clip;

@@ -103,14 +103,27 @@ $('#modal-rename-form').on('submit', function (event) {
 
 // albums Form
 
-fileAlbumModal.on('shown.bs.modal', function () {
-    $(this).find('input').trigger('focus').trigger('select')
-})
-
 $('#modal-album-form').on('submit', function (event) {
     event.preventDefault()
-    const data = genData($(this), 'set-file-albums')
-    socket.send(JSON.stringify(data))
+    const mode = this.dataset.mode || 'single'
+    const albums = Array.from(
+        document.getElementById('album-options').selectedOptions
+    ).map((o) => Number.parseInt(o.value))
+    if (mode === 'single') {
+        const data = genData($(this), 'set-file-albums')
+        socket.send(JSON.stringify(data))
+    } else {
+        const pks = JSON.parse(this.dataset.pks || '[]')
+        const action = mode === 'bulk-add' ? 'add' : 'remove'
+        socket.send(
+            JSON.stringify({
+                method: 'bulk-edit-file-albums',
+                pks,
+                albums,
+                action,
+            })
+        )
+    }
     fileAlbumModal.modal('hide')
 })
 
@@ -175,28 +188,51 @@ export function ctxRenameFile(event) {
 }
 
 export async function ctxAlbumFile(event) {
+    const pk = getPrimaryKey(event)
+    await openAlbumModal([Number.parseInt(pk)], 'single', 'Manage Albums')
+}
+
+/**
+ * Open the album picker modal in single-file or bulk mode.
+ * @param {number[]} pks - File IDs to act on.
+ * @param {'single'|'bulk-add'|'bulk-remove'} mode
+ * @param {string} title - Modal header text.
+ */
+export async function openAlbumModal(
+    pks,
+    mode = 'single',
+    title = 'Manage Albums'
+) {
     const albumOptions = document.getElementById('album-options')
     albumOptions.length = 0
-    const pk = getPrimaryKey(event)
-    fileAlbumModal.find('input[name=pk]').val(pk)
-    // FETCH ALBUMS AND SET HERE
-    let nextPage = 1
-    // fetch file details for up-to-date albums
-    const file = await fetchFile(pk)
-    console.debug('file:', file)
+    const form = document.getElementById('modal-album-form')
+    form.dataset.mode = mode
+    form.dataset.pks = JSON.stringify(pks)
+    fileAlbumModal.find('input[name=pk]').val(mode === 'single' ? pks[0] : '')
+    document.getElementById('fileAlbumModalLabel').textContent = title
+    const submitBtn = document.getElementById('file-album-submit')
+    if (mode === 'bulk-add') {
+        submitBtn.textContent = 'Add to Albums'
+    } else if (mode === 'bulk-remove') {
+        submitBtn.textContent = 'Remove from Albums'
+    } else {
+        submitBtn.textContent = 'Save Album Selection'
+    }
+
+    let currentAlbums = []
+    if (mode === 'single') {
+        const file = await fetchFile(pks[0])
+        console.debug('file:', file)
+        currentAlbums = file.albums || []
+    }
     fileAlbumModal.modal('show')
+    let nextPage = 1
     while (nextPage) {
         const resp = await fetchAlbums(nextPage)
-        console.debug('resp:', resp)
         nextPage = resp.next
-        /**
-         * @type {Object}
-         * @property {Array[Object]} albums
-         */
         for (const album of resp.albums) {
-            console.debug('album:', album)
-            let option = createOption(album.id, album.name)
-            if (file.albums.includes(album.id)) {
+            const option = createOption(album.id, album.name)
+            if (currentAlbums.includes(album.id)) {
                 option.selected = true
             }
             albumOptions.options.add(option)
@@ -293,7 +329,7 @@ export function getContextMenu(data, type, row) {
     toggle.setAttribute('aria-expanded', 'false')
     toggle.setAttribute('aria-label', 'More options')
     toggle.className = 'dt-ctx-btn file-context-dropdown'
-    toggle.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>'
+    toggle.innerHTML = '<i class="fa-solid fa-ellipsis"></i>'
     ctxMenu.appendChild(toggle)
 
     const menu = getCtxMenuContainer(row)

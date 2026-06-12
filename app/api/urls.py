@@ -10,6 +10,7 @@ urlpatterns = [
     re_path(r"^upload/?$", views.upload_view, name="upload"),
     re_path(r"^shorten/?$", views.shorten_view, name="shorten"),
     path("invites/", views.invites_view, name="invites"),
+    path("invites/<int:invite_id>/", views.invite_detail_view, name="invite-detail"),
     path("recent/", views.recent_view, name="recent"),
     path("shorts/", views.shorts_view, name="shorts"),
     path("shorts/<int:page>/", views.shorts_paginated_view, name="shorts-page"),

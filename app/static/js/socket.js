@@ -3,7 +3,6 @@
 
 let disconnected = false
 export let socket //NOSONAR
-let ws
 let heartbeatInterval
 const _initializedSockets = new WeakSet()
 
@@ -11,9 +10,9 @@ console.log('Connecting to WebSocket...')
 wsConnect()
 
 async function wsConnect() {
-    if (ws) {
+    if (socket) {
         console.warn('Closing Existing WebSocket Connection!')
-        ws.close()
+        socket.close()
     }
     const toast = bootstrap.Toast.getOrCreateInstance($('#disconnected-toast'))
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -82,6 +81,7 @@ const EVENT_HANDLERS = {
     'set-stream-description': messageStreamDescriptionUpdate,
     'album-delete': messageAlbumDelete,
     'album-new': messageAlbumNew,
+    'toggle-private-album': messageTogglePrivateAlbum,
     message: messageToast,
 }
 
@@ -106,6 +106,21 @@ function initListener() {
     })
 }
 
+// Batched toast: accumulates events within `delay` ms; shows individual toasts
+// for 1-2 events, summary for 3+. batchKey groups events of the same type+user.
+const _toastBatches = {}
+function batchedToast(batchKey, singleMsg, summaryFn, delay = 500) {
+    const batch = _toastBatches[batchKey] || { count: 0, singleMsg }
+    batch.count++
+    _toastBatches[batchKey] = batch
+    clearTimeout(batch.timer)
+    batch.timer = setTimeout(() => {
+        delete _toastBatches[batchKey]
+        const msg = batch.count >= 3 ? summaryFn(batch.count) : batch.singleMsg
+        show_toast(typeof msg === 'function' ? msg() : msg)
+    }, delay)
+}
+
 // Socket Handlers
 // these handlers are dual purpose and used across a variety of pages
 
@@ -123,19 +138,24 @@ function messageExpire(data) {
         if (element.expr) {
             expireText.text(element.expr).data('clipboard-text', element.expr)
             expireIcon.attr('title', `File Expires in ${element.expr}`).show()
-            show_toast(
-                `${truncateName(element.name)} - Expire set to: ${element.expr}`,
-                'success'
-            )
         } else {
             expireText.text('Never').data('clipboard-text', 'Never')
             expireIcon.attr('title', 'No Expiration').hide()
-            show_toast(
-                `${truncateName(element.name)} - Cleared Expiration.`,
-                'success'
-            )
         }
     })
+    if (data.objects.length >= 3) {
+        show_toast(
+            `${data.objects.length} file expirations updated.`,
+            'success'
+        )
+    } else {
+        data.objects.forEach((element) => {
+            const msg = element.expr
+                ? `${truncateName(element.name)} - Expire set to: ${element.expr}`
+                : `${truncateName(element.name)} - Cleared Expiration.`
+            show_toast(msg, 'success')
+        })
+    }
 }
 
 function messagePrivate(data) {
@@ -172,27 +192,61 @@ function messagePassword(data) {
 }
 
 function messageDelete(data) {
-    show_toast(`${truncateName(data.name)} deleted by ${data.user}.`)
+    batchedToast(
+        `file-delete:${data.user_name}`,
+        `${truncateName(data.name)} deleted by ${data.user_name}.`,
+        (n) => `${n} files deleted by ${data.user_name}.`
+    )
 }
 
 function messageAlbumDelete(data) {
-    show_toast(`"${truncateName(data.name)}" Album deleted by ${data.user}.`)
+    batchedToast(
+        `album-delete:${data.user_name}`,
+        `"${truncateName(data.name)}" Album deleted by ${data.user_name}.`,
+        (n) => `${n} albums deleted by ${data.user_name}.`
+    )
 }
 
 function messageAlbumNew(data) {
-    show_toast(`"${truncateName(data.name)}" Album created by ${data.user}.`)
+    batchedToast(
+        `album-new:${data.user_name}`,
+        `"${truncateName(data.name)}" Album created by ${data.user_name}.`,
+        (n) => `${n} albums created by ${data.user_name}.`
+    )
+}
+
+function messageTogglePrivateAlbum(data) {
+    if (data.objects.length >= 3) {
+        const label = data.objects[0].private ? 'private' : 'public'
+        show_toast(`${data.objects.length} albums set to ${label}.`, 'success')
+    } else {
+        data.objects.forEach((album) => {
+            const label = album.private ? 'private' : 'public'
+            show_toast(
+                `"${truncateName(album.name)}" set to ${label}.`,
+                'success'
+            )
+        })
+    }
 }
 
 function messageNewFile(data) {
-    const link = $('<a>', {
-        href: data.url,
-        class: 'link-light fw-semibold',
-        text: truncateName(data.name),
-    })
-    const msg = $('<span>')
-        .append(link)
-        .append(document.createTextNode(` uploaded by ${data.user_name}.`))
-    show_toast(msg)
+    batchedToast(
+        `file-new:${data.user_name}`,
+        () => {
+            const link = $('<a>', {
+                href: data.url,
+                class: 'link-light fw-semibold',
+                text: truncateName(data.name),
+            })
+            return $('<span>')
+                .append(link)
+                .append(
+                    document.createTextNode(` uploaded by ${data.user_name}.`)
+                )
+        },
+        (n) => `${n} files uploaded by ${data.user_name}.`
+    )
 }
 
 function messageTogglePrivate(data) {
@@ -202,7 +256,7 @@ function messageTogglePrivate(data) {
 
 function messageToast(data) {
     const bsClass = data.bsClass || 'info'
-    const delay = data.delay || '6000'
+    const delay = data.delay || 6000
     show_toast(data.message, bsClass, delay)
 }
 
@@ -270,4 +324,48 @@ function truncateName(filename) {
         return filename.substring(0, 40) + '...'
     }
     return filename
+}
+
+/**
+ * Subscribes a DataTable to socket-driven new/delete events. Optional `extra`
+ * map handles event names that don't fit the simple add/delete shape (e.g.
+ * file rename). Uses the DataTables row API for delete so internal state
+ * stays consistent.
+ *
+ *   attachSocketTableSync(albumsDataTable, {
+ *       newEvent: 'album-new',
+ *       deleteEvent: 'album-delete',
+ *       idPrefix: 'album',
+ *       addRow: loader.addRow,
+ *       countEl: totalAlbumsCount,
+ *       maxRows: isHome ? 10 : null,
+ *       onOverflow: () => warn.classList.remove('d-none'),
+ *   })
+ *
+ * @param {any} dt DataTables API instance.
+ * @param {object} opts
+ */
+export function attachSocketTableSync(dt, opts) {
+    socket?.addEventListener('message', function (event) {
+        if (event.data === 'pong') return
+        let data
+        try {
+            data = JSON.parse(event.data)
+        } catch {
+            return
+        }
+        if (data.event === opts.deleteEvent) {
+            const row = dt.row(`#${opts.idPrefix}-${data.id}`)
+            if (row.node()) row.remove().draw(false)
+            if (opts.countEl) opts.countEl.textContent = dt.rows().count()
+        } else if (data.event === opts.newEvent) {
+            if (opts.maxRows && dt.rows().count() >= opts.maxRows) {
+                opts.onOverflow?.()
+                return
+            }
+            opts.addRow(data)
+        } else if (opts.extra?.[data.event]) {
+            opts.extra[data.event](data)
+        }
+    })
 }

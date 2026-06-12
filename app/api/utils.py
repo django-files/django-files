@@ -58,6 +58,11 @@ def serialize_user(user: CustomUser) -> Dict[str, Any]:
     """
     user_dict = model_to_dict(user, exclude=["password", "authorization"])
     user_dict["avatar_url"] = user.get_avatar_url()
+    providers = []
+    for provider in ("discord", "github", "google"):
+        if getattr(user, provider, None) is not None:
+            providers.append(provider)
+    user_dict["oauth_providers"] = providers
     return user_dict
 
 
@@ -98,6 +103,7 @@ def extract_albums(q: Albums.objects):
         data = model_to_dict(album)
         data["date"] = album.date
         data["url"] = site_settings["site_url"] + "/files/?view=gallery&album=" + str(album.id)
+        data["user_name"] = album.user.get_name()
         albums.append(data)
     return albums
 

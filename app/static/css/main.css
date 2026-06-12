@@ -133,7 +133,10 @@
 }
 
 :root {
-    --navbar-h: 52px;
+    --navbar-h: 40px;
+    --toolbar-glass-bg: rgba(0, 0, 0, 0.18);
+    --toolbar-glass-border: 1px ridge rgba(66 69 73 / 100%);
+    --toolbar-glass-blur: blur(6px);
 }
 
 /* backdrop-filter on the nav itself would create a CSS containing block for
@@ -141,7 +144,7 @@
    The blur lives on ::before instead; position:fixed on the navbar already
    establishes a containing block for the pseudo-element. */
 .navbar {
-    --bs-navbar-padding-y: 0.35rem;
+    --bs-navbar-padding-y: 0.1rem;
 
     background-image: linear-gradient(
         15deg,
@@ -164,8 +167,8 @@
     .navbar {
         background-image: linear-gradient(
             15deg,
-            color-mix(in srgb, var(--nav-color-1, #130e36) 88%, transparent) 0%,
-            color-mix(in srgb, var(--nav-color-2, #1e1c21) 88%, transparent)
+            color-mix(in srgb, var(--nav-color-1, #130e36) 93%, transparent) 0%,
+            color-mix(in srgb, var(--nav-color-2, #1e1c21) 93%, transparent)
                 100%
         );
     }
@@ -177,7 +180,7 @@
     }
 
     .navbar {
-        padding-top: max(env(safe-area-inset-top, 0px), 6px);
+        padding-top: env(safe-area-inset-top, 0);
     }
 
     @media (max-width: 992px) {
@@ -203,10 +206,10 @@
     gap: 0.5rem 0.75rem;
     padding: 0.65rem 1rem 0.5rem;
     margin: 0;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    background: rgba(0, 0, 0, 0.18);
-    border-bottom: 1px ridge rgba(66 69 73 / 100%);
+    -webkit-backdrop-filter: var(--toolbar-glass-blur);
+    backdrop-filter: var(--toolbar-glass-blur);
+    background: var(--toolbar-glass-bg);
+    border-bottom: var(--toolbar-glass-border);
 }
 
 .files-toolbar-title {
@@ -221,30 +224,47 @@
     gap: 0.15rem;
 }
 
-.files-toolbar-view {
+/* Shared pill-button base: view switchers and action buttons */
+.files-toolbar-view,
+.files-toolbar-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.3rem 0.65rem;
     border-radius: 999px;
     color: var(--bs-emphasis-color);
-    text-decoration: none;
     line-height: 1;
-    transition:
-        background 0.15s,
-        color 0.15s;
     opacity: 0.75;
 }
 
+.files-toolbar-view {
+    text-decoration: none;
+    transition:
+        background 0.15s,
+        color 0.15s;
+}
+
+.files-toolbar-btn {
+    border: 1px solid var(--bs-border-color);
+    background: transparent;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition:
+        background 0.15s,
+        opacity 0.15s;
+}
+
 .files-toolbar-view:hover,
-.files-toolbar-view:focus-visible {
+.files-toolbar-view:focus-visible,
+.files-toolbar-btn:hover,
+.files-toolbar-btn:focus-visible,
+.files-toolbar-btn[aria-expanded='true'] {
     background: rgba(var(--bs-emphasis-color-rgb), 0.08);
     opacity: 1;
 }
 
 .files-toolbar-view.view-active {
     background: rgba(var(--bs-primary-rgb), 0.18);
-    color: var(--bs-emphasis-color);
     opacity: 1;
     font-weight: 600;
 }
@@ -254,6 +274,23 @@
     .files-toolbar-view-label {
         display: none;
     }
+}
+
+.files-toolbar-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.files-toolbar-btn--private {
+    color: var(--bs-warning-text-emphasis);
+    border-color: var(--bs-warning-border-subtle);
+    opacity: 1;
+}
+
+.files-toolbar-btn--private:hover,
+.files-toolbar-btn--private:focus-visible {
+    background: rgba(var(--bs-warning-rgb), 0.15);
 }
 
 .files-toolbar-search {
@@ -320,49 +357,6 @@
     color: var(--bs-emphasis-color);
 }
 
-.files-toolbar-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.65rem;
-    border-radius: 999px;
-    border: 1px solid var(--bs-border-color);
-    background: transparent;
-    color: var(--bs-emphasis-color);
-    font-size: 0.875rem;
-    line-height: 1;
-    opacity: 0.75;
-    cursor: pointer;
-    transition:
-        background 0.15s,
-        opacity 0.15s;
-}
-
-.files-toolbar-btn:hover,
-.files-toolbar-btn:focus-visible,
-.files-toolbar-btn[aria-expanded='true'] {
-    background: rgba(var(--bs-emphasis-color-rgb), 0.08);
-    opacity: 1;
-    color: var(--bs-emphasis-color);
-}
-
-.files-toolbar-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-.files-toolbar-btn--private {
-    color: var(--bs-warning-text-emphasis);
-    border-color: var(--bs-warning-border-subtle);
-    opacity: 1;
-}
-
-.files-toolbar-btn--private:hover,
-.files-toolbar-btn--private:focus-visible {
-    background: rgba(var(--bs-warning-rgb), 0.15);
-}
-
 /* ---- Album info row (second toolbar row, album detail view only) ---- */
 
 .files-toolbar-album-row {
@@ -375,12 +369,17 @@
     min-width: 0;
 }
 
-.files-toolbar-album-title {
-    font-weight: 600;
+/* Shared text-truncation for album title and info */
+.files-toolbar-album-title,
+.files-toolbar-album-info {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
+}
+
+.files-toolbar-album-title {
+    font-weight: 600;
 }
 
 .files-toolbar-album-owner {
@@ -394,10 +393,6 @@
 }
 
 .files-toolbar-album-info {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
     flex-shrink: 1;
 }
 
@@ -425,11 +420,11 @@
     z-index: 1020;
     padding: 0.25rem 0.65rem;
     font-size: 0.8rem;
-    background: rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border-top: 1px ridge rgba(66 69 73 / 100%);
-    border-right: 1px ridge rgba(66 69 73 / 100%);
+    background: var(--toolbar-glass-bg);
+    -webkit-backdrop-filter: var(--toolbar-glass-blur);
+    backdrop-filter: var(--toolbar-glass-blur);
+    border-top: var(--toolbar-glass-border);
+    border-right: var(--toolbar-glass-border);
 }
 
 .files-version-strip a {

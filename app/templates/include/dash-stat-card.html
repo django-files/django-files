@@ -1,0 +1,12 @@
+{# Expected context: card.icon, card.bg, card.value, card.label #}
+<div class="col-sm-6 col-xl">
+    <div class="dash-stat-card h-100 d-flex align-items-center gap-3">
+        <div class="dash-stat-icon text-bg-{{ card.bg }}">
+            <i class="{{ card.icon }}"></i>
+        </div>
+        <div class="flex-grow-1 min-w-0">
+            <div class="dash-stat-value">{{ card.value }}</div>
+            <div class="dash-stat-label">{{ card.label|safe }}</div>
+        </div>
+    </div>
+</div>

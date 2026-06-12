@@ -89,15 +89,14 @@
 
 .gallery-ctx {
     position: absolute;
-    top: 0;
-    right: 25px;
+    top: 4px;
+    right: 4px;
 }
 
-.gallery-ctx-toggle {
-    background-color: transparent;
-    border: none;
-    width: 20px;
-    text-align: center;
+.gallery-ctx .dt-ctx-btn {
+    background: var(--toolbar-glass-bg);
+    -webkit-backdrop-filter: var(--toolbar-glass-blur);
+    backdrop-filter: var(--toolbar-glass-blur);
 }
 
 .gallery-checkbox {
@@ -122,9 +121,9 @@
 }
 
 /* Push Leaflet's top controls (zoom, fullscreen) below the floating toolbar
- * so they aren't clipped. --files-toolbar-h is set by gallery.js. */
+ * so they aren't clipped. --toolbar-h is set by initToolbar() in gallery.js. */
 #map-container .leaflet-top {
-    top: var(--files-toolbar-h, 48px);
+    top: var(--toolbar-h, 48px);
 }
 
 /*

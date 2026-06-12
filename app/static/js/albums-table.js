@@ -1,46 +1,37 @@
 import { fetchAlbums } from './api-fetch.js'
-import { socket } from './socket.js'
-import { paginatedTableDefaults } from './table-defaults.js'
+import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
+import { attachSocketTableSync, socket } from './socket.js'
+import {
+    noChromeLayout,
+    paginatedTableDefaults,
+    selectColumn,
+    selectColumnDef,
+    selectConfig,
+} from './table-defaults.js'
 
 const albumsTable = $('#albums-table')
-const deleteAlbumModal = $('#delete-album-modal')
+const isHome = !!albumsTable.data('home')
+const MAX_HOME_ALBUMS = 10
 const deleteAlbumButton = document.querySelector('.delete-album-btn')
 const albumLink = document.querySelector('div.d-none > .dj-album-link')
 const totalAlbumsCount = document.getElementById('total-albums-count')
 
 let albumsDataTable
-let nextPage = 1
-let fetchLock = false
-let params = new URL(document.location.toString()).searchParams
+let loader
+let deleteModal
+
+// Dynamic name truncation — viewport-based, half-slope on the narrow home card.
+const truncator = createTruncator(isHome ? 0.02 : 0.04)
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)
-document.addEventListener('scroll', debounce(scrollHandle))
-window.addEventListener('resize', debounce(scrollHandle))
-
-$('#user').on('change', async function () {
-    const userId = $(this).val()
-    if (userId) {
-        params.set('user', userId)
-    } else {
-        params.delete('user')
-    }
-    globalThis.history.replaceState({}, null, '/albums/?' + params)
-    nextPage = 1
-    fetchLock = false
-    if (albumsDataTable) albumsDataTable.clear().draw()
-    showAlbumsSkeletons()
-    await addAlbumRows()
-    if (!albumsDataTable.rows().count()) albumsDataTable.draw()
-})
-
-async function scrollHandle(event) {
-    await pageScroll(event, nextPage, addAlbumRows)
-    albumsDataTable?.columns.adjust().draw()
-}
 
 const dataTablesOptions = {
     ...paginatedTableDefaults,
+    ...(isHome && { layout: noChromeLayout }),
+    order: [1, 'desc'],
+    select: selectConfig,
     columns: [
+        selectColumn,
         { data: 'id' },
         { data: 'name' },
         { data: 'date' },
@@ -49,50 +40,41 @@ const dataTablesOptions = {
         { data: 'maxv' },
         { data: 'delete' },
     ],
-    initComplete: function () {
-        // Reveal the section after DataTables has finished all DOM mutations.
-        // Double-rAF ensures the browser commits the new layout before
-        // opacity transitions to 1, eliminating toolbar-insertion jitter.
-        const section = document.getElementById('albums-table-section')
-        if (section) {
-            requestAnimationFrame(() =>
-                requestAnimationFrame(() =>
-                    section.classList.add('dt-section-ready')
-                )
-            )
-        }
-    },
     columnDefs: [
-        { targets: 0, width: '30px', responsivePriority: 5 },
+        selectColumnDef,
+        { targets: 1, width: '30px', responsivePriority: 5 },
         {
-            targets: 1,
+            targets: 2,
             render: renderAlbumLink,
             defaultContent: '',
             responsivePriority: 1,
         },
         {
             name: 'date',
-            targets: 2,
+            targets: 3,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
             responsivePriority: 2,
             width: '200px',
         },
         {
-            targets: 3,
+            targets: 4,
             width: '30px',
             defaultContent: '',
             className: 'expire-value text-center',
-            responsivePriority: 7,
+            // Expire column is the lowest-value info; hide it entirely on the
+            // home card (narrow col-lg-6), demote heavily on /albums/.
+            visible: !isHome,
+            responsivePriority: 10,
         },
         {
-            targets: [4, 5],
+            targets: [5, 6],
             className: 'text-center',
             width: '30px',
             responsivePriority: 4,
         },
         {
-            targets: 6,
+            targets: 7,
             orderable: false,
             render: renderDeleteBtn,
             defaultContent: '',
@@ -104,18 +86,76 @@ const dataTablesOptions = {
 
 async function domContentLoaded() {
     albumsDataTable = albumsTable.DataTable(dataTablesOptions)
-    wireToolbarSearch('albums-toolbar-search-input', albumsDataTable)
-    initCollapsibleSearch(
-        'albums-toolbar-search',
-        'albums-toolbar-search-input'
-    )
-    syncNavbarHeight()
-    observeToolbarHeight('albums-toolbar', '--albums-toolbar-h')
+    truncator.attach(albumsDataTable)
+    loader = createPaginatedLoader(albumsDataTable, {
+        fetcher: fetchAlbums,
+        listKey: 'albums',
+        idPrefix: 'album',
+        countEl: totalAlbumsCount,
+        maxRows: isHome ? MAX_HOME_ALBUMS : null,
+        onOverflow: () =>
+            document
+                .querySelector('.albums-truncation-warning')
+                ?.classList.remove('d-none'),
+    })
+    if (!isHome) {
+        initToolbar('albums-toolbar', albumsDataTable)
+        attachInfiniteScroll(albumsDataTable, loader)
+        attachUserFilter(albumsDataTable, {
+            loader,
+            skeletonFn: showAlbumsSkeletons,
+        })
+        initBulkSelect(albumsDataTable)
+        $('.bulk-delete').on('click', () =>
+            deleteModal.open(selectedPks(albumsDataTable))
+        )
+        $('.bulk-private').on('click', () =>
+            socket.send(
+                JSON.stringify({
+                    method: 'private_albums',
+                    pks: selectedPks(albumsDataTable),
+                    private: true,
+                })
+            )
+        )
+        $('.bulk-public').on('click', () =>
+            socket.send(
+                JSON.stringify({
+                    method: 'private_albums',
+                    pks: selectedPks(albumsDataTable),
+                    private: false,
+                })
+            )
+        )
+    }
+    deleteModal = wireDeleteModal({
+        modalId: 'delete-album-modal',
+        bodyId: 'delete-album-body',
+        confirmId: 'album-delete-confirm',
+        entity: 'album',
+        onConfirm: (pks) => {
+            socket.send(JSON.stringify({ method: 'delete-albums', pks: pks }))
+        },
+    })
+    attachSocketTableSync(albumsDataTable, {
+        newEvent: 'album-new',
+        deleteEvent: 'album-delete',
+        idPrefix: 'album',
+        addRow: loader.addRow,
+        countEl: totalAlbumsCount,
+        maxRows: isHome ? MAX_HOME_ALBUMS : null,
+        onOverflow: () =>
+            document
+                .querySelector('.albums-truncation-warning')
+                ?.classList.remove('d-none'),
+    })
     await initDataTable(
         albumsDataTable,
         showAlbumsSkeletons,
-        addAlbumRows,
-        'No albums available',
+        loader.load,
+        isHome
+            ? 'Albums will appear here once created.'
+            : 'No albums available',
         'No matching albums found'
     )
 }
@@ -128,14 +168,6 @@ function renderDeleteBtn(data, type, row, _meta) {
 }
 
 function renderAlbumLink(data, type, row, _meta) {
-    let max_name_length
-    if (screen.width < 500) {
-        max_name_length = 20
-    } else if (screen.width > 500 && screen.width < 1500) {
-        max_name_length = 40
-    } else {
-        max_name_length = 60
-    }
     const albumLinkElem = albumLink.cloneNode(true)
     albumLinkElem.classList.add(`dj-album-link-${row.id}`)
     albumLinkElem
@@ -143,40 +175,22 @@ function renderAlbumLink(data, type, row, _meta) {
         .setAttribute('data-clipboard-text', row.url)
     albumLinkElem.querySelector('.dj-album-link-ref').href = row.url
     albumLinkElem.querySelector('.dj-album-link-ref').ariaLabel = row.name
+    const len = truncator.length
     let newName = row.name
-    if (row.name.length > max_name_length) {
-        newName = row.name.substring(0, max_name_length) + '...'
+    if (row.name.length > len) {
+        newName = row.name.substring(0, len - 1) + '…'
     }
     albumLinkElem.querySelector('.dj-album-link-ref').textContent = newName
     return albumLinkElem
 }
 
-async function addAlbumRows() {
-    if (!fetchLock) {
-        fetchLock = true
-        const data = await fetchAlbums(nextPage)
-        // console.debug(data)
-        nextPage = data.next
-        for (const album of data.albums) {
-            addAlbumRow(album)
-        }
-        fetchLock = false
-    }
-}
-
-function addAlbumRow(row) {
-    row['DT_RowId'] = `album-${row.id}`
-    albumsDataTable.row.add(row).draw()
-    if (totalAlbumsCount)
-        totalAlbumsCount.textContent = albumsDataTable.rows().count()
-}
-
 // Varied name-column widths so skeleton rows look realistic
 const _albumSkeletonNameWidths = [140, 175, 110, 195, 130, 160, 105, 155]
 
-// Column widths [px] matching the 7 header columns:
-// id, name, date, expire, views, maxviews, delete
+// Column widths [px] matching the 8 header columns:
+// select, id, name, date, expire, views, maxviews, delete
 const _albumSkeletonSpecs = [
+    { w: 18, h: 18 },
     { w: 24 },
     { w: 0 }, // name — varied per row
     { w: 128 },
@@ -190,39 +204,10 @@ function showAlbumsSkeletons(count = 10) {
     const tbody = document.querySelector('#albums-table tbody')
     if (!tbody) return
     buildSkeletonRows(tbody, count, _albumSkeletonSpecs, {
-        1: _albumSkeletonNameWidths,
+        2: _albumSkeletonNameWidths,
     })
 }
-
-$('#albumsForm').on('submit', function (event) {
-    event.preventDefault()
-    const form = $(this)
-    submitJsonForm(form, function () {
-        form.trigger('reset')
-        $('#create-album-modal').modal('hide')
-    })
-})
 
 function handleDeleteClick(_event) {
-    const pk = $(this).data('hook-id')
-    $('#album-delete-confirm').data('pk', pk)
-    deleteAlbumModal.modal('show')
+    deleteModal.open([$(this).data('hook-id')])
 }
-
-$('#album-delete-confirm').on('click', function (_event) {
-    const pk = $(this).data('pk')
-    socket.send(JSON.stringify({ method: 'delete-album', pk: pk }))
-    deleteAlbumModal.modal('hide')
-})
-
-socket?.addEventListener('message', function (event) {
-    if (event.data === 'pong') return
-    let data = JSON.parse(event.data)
-    if (data.event === 'album-delete') {
-        $(`#album-${data.id}`).remove()
-        if (totalAlbumsCount)
-            totalAlbumsCount.textContent = albumsDataTable.rows().count()
-    } else if (data.event === 'album-new') {
-        addAlbumRow(data)
-    }
-})

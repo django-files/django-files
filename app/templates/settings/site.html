@@ -7,399 +7,538 @@
 {% block title %}Site Settings{% endblock %}
 {% block fa_class %}fa-solid fa-gears{% endblock %}
 
-{% block head %}
+{% block head %}{{ block.super }}
     <link rel="stylesheet" href="{% static 'css/site.css' %}">
     <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}">
 {% endblock %}
 
 {% block main %}
-    <div class="d-flex align-items-center">
-        Version: <a role="link" class="clip link-body-emphasis link-underline-opacity-25 link-underline-opacity-50-hover ms-2" data-clipboard-text="{{ 'APP_VERSION'|get_config }}">{{ 'APP_VERSION'|get_config }}</a>
-        {% if site_settings.latest_version %}
-            <a href="https://github.com/django-files/django-files/releases/latest" title="{{ 'APP_VERSION'|get_config }}" target="_blank" rel="noopener">
-                <span class="badge rounded-pill text-bg-warning ms-2">{{ site_settings.latest_version }}</span></a>
-        {% else %}
-            <a href="https://github.com/django-files/django-files/releases/latest" title="{{ 'APP_VERSION'|get_config }}" target="_blank" rel="noopener">
-                <span class="badge rounded-pill text-bg-success ms-2">Latest</span></a>
-            <button id="check-for-update" type="button" title="Check for Update" class="btn btn-link link-body-emphasis">
-                <i class="fa-solid fa-rotate"></i></button>
-        {% endif %}
-    </div>
-
-    <div class="border border-warning-subtle rounded-2 p-3 my-2">
-        <form class="row" id="settingsForm" method="post" action="{% url 'settings:site' %}">
-
-            {% if site_settings.global_storage_quota %}
-                <div class="row mt-1">
-                    <div class="col-md-6">
-                        <label for="storage_quota" class="form-label">Global Storage Quota Usage</label>
-                        <div class="progress" id="storage_quota" aria-label="Global Storage Quota"
-                             aria-valuenow="{{ site_settings.get_global_storage_quota_usage_pct }}" aria-valuemin="0" aria-valuemax="100" style="height: 35px; font-size: large">
-                            <div class="progress-bar overflow-visible {% if site_settings.get_global_storage_quota_usage_pct > 95 %}bg-danger{% elif site_settings.get_global_storage_quota_usage_pct > 85 %}bg-warning{% endif %}" style="width: {{ site_settings.get_global_storage_quota_usage_pct }}%">
-                                <b>({{ site_settings.get_global_storage_usage_human_read }}/{{ site_settings.get_global_storage_quota_human_read }}) {{ site_settings.get_global_storage_quota_usage_pct }}%</b>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-
-            <div class="row mt-2">
-                <div class="col-md-6">
-                    <label for="site_url" class="form-label">Site URL</label>
-                    <input type="text" class="form-control" id="site_url" name="site_url" placeholder=""
-                        value="{{ site_settings.site_url }}" aria-describedby="site_url-help site_url-invalid">
-                    <div id="site_url-invalid" class="invalid-feedback"></div>
-                    <div id="site_url-help" class="form-text">
-                        Used for Generating URLs.
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <label for="site_title" class="form-label">Site Title</label>
-                    <input type="text" class="form-control" id="site_title" name="site_title" placeholder=""
-                           value="{{ site_settings.site_title }}" aria-describedby="site_title-help site_title-invalid">
-                    <div id="site_title-invalid" class="invalid-feedback"></div>
-                    <div id="site_title-help" class="form-text">
-                        Site Title for UI and Meta.
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mt-2">
-                <div class="col-md-6">
-                    <label for="global_storage_quota" class="form-label">Global Storage Quota</label>
-                    <input type="text" class="form-control" id="global_storage_quota" name="global_storage_quota"
-                           value="{{ site_settings.get_global_storage_quota_human_read }}"
-                           aria-describedby="global_storage_quota-help global_storage_quota-invalid">
-                    <div id="global_storage_quota-invalid" class="invalid-feedback"></div>
-                    <div id="global_storage_quota-help" class="form-text">Total storage quota for this deployment. 0 is unlimited.</div>
-                </div>
-                <div class="col-md-6">
-                    <label for="default_user_storage_quota" class="form-label">User Default Storage Quota</label>
-                    <input class="form-control" id="default_user_storage_quota" name="default_user_storage_quota"
-                           value="{{ site_settings.get_default_user_storage_quota_human_read }}">
-                    <div id="default_user_storage_quota-invalid" class="invalid-feedback"></div>
-                    <div id="default_user_storage_quota-help" class="form-text">Default per user storage quota. 0 is unlimited.</div>
-                </div>
-            </div>
-
-            <div class="row mt-2">
-                <div class="col-md-6">
-                    <label for="timezone" class="form-label">Global Timezone</label>
-                    <input class="form-control" list="timezoneOptions" id="timezone" name="timezone" autocomplete="off"
-                           value="{{ site_settings.timezone }}" placeholder="Type to Search...">
-                    <datalist id="timezoneOptions">
-                        {% for timezone in timezones %}
-                            <option value="{{ timezone }}"></option>
-                        {% endfor %}
-                    </datalist>
-                    <div id="timezone-invalid" class="invalid-feedback"></div>
-                    <div id="timezone-help" class="form-text">Timezone for Anonymous Users.</div>
-                </div>
-            </div>
-
-            <div class='row mt-2'>
-                <div class="mb-3">
-                    <label for="site_description" class="form-label">Site Description</label>
-                    <textarea class="form-control" id="site_description" name="site_description" rows="2" >{{ site_settings.site_description }}</textarea>
-                    <div id="site_description-invalid" class="invalid-feedback"></div>
-                    <div id="site_title-help" class="form-text">
-                        Site Description for Meta.
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mx-sm-4 fs-5">
-                <div class="col-12">
-                    <div class="form-check form-switch px-lg-5">
-                        <input class="form-check-input" type="checkbox" id="pub_load" name="pub_load" {{ site_settings.pub_load|if_true:"checked" }}>
-                        <label class="form-check-label" for="pub_load">
-                            Public Uploads: <kbd>/public</kbd>
-                        </label>
-                    </div>
-                    <div id="public-album" class="row g-3 align-items-center my-1 ms-0 ms-md-5 {{ site_settings.pub_load|if_false:"d-none" }}">
-                        <div class="col-auto my-0">
-                            <label for="pub_album" class="col-form-label">Public Album ID</label>
-                        </div>
-                        <div class="col-auto my-0">
-                            <input type="text" name="pub_album" id="pub_album" class="form-control" placeholder="Album ID" aria-label="Album ID" value="{{ site_settings.pub_album }}">
-                        </div>
-                    </div>
-                </div>
-                {% if site_settings.discord_client_id or site_settings.google_client_id or site_settings.github_client_id %}
-                    <div class="col-12">
-                        <div class="form-check form-switch px-lg-5">
-                            <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
-                            <label class="form-check-label" for="oauth_reg">
-                                Oauth Registration
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="form-check form-switch px-lg-5">
-                            <input class="form-check-input" type="checkbox" id="local_auth" name="local_auth" {{ site_settings.local_auth|if_true:"checked" }}>
-                            <label class="form-check-label" for="local_auth">
-                                Local Authentication
-                            </label>
-                        </div>
-                    </div>
-                {% endif %}
-                {% if 'DUO_CLIENT_ID'|get_config %}
-                <div class="col-12">
-                    <div class="form-check form-switch px-lg-5">
-                        <input class="form-check-input" type="checkbox" id="duo_auth" name="duo_auth" {{ site_settings.duo_auth|if_true:"checked" }}>
-                        <label class="form-check-label" for="duo_auth">
-                            Enable Duo Authentication
-                        </label>
-                    </div>
-                </div>
-                {% endif %}
-                <div class="col-12">
-                    <div class="form-check form-switch px-lg-5">
-                        <input class="form-check-input" type="checkbox" id="site_animations" name="site_animations" {{ site_settings.site_animations|if_true:"checked" }}>
-                        <label class="form-check-label" for="site_animations">
-                            Enable Site Animations
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="d-flex flex-column flex-md-row mt-2">
-                <div class="flex-grow-0 me-4">
-                    <label for="site_color" class="form-label">Theme</label>
-                    <input type="color" class="form-control form-control-color ms-2 ms-md-0" id="site_color" name="site_color"
-                           value="{{ site_settings.site_color }}" title="Default Color" aria-describedby="site_color-invalid">
-                    <div id="site_color-invalid" class="invalid-feedback"></div>
-                </div>
-                <div class="flex-grow-0 mt-3 mt-md-0">
-                    <p class="mb-3">
-                        Login Page Background
-                        <span class="small" data-bs-toggle="tooltip" data-bs-title="Disabled, Random Picture or Video Loop.">
-                            <i class="fa-solid fa-circle-info ms-1"></i>
-                        </span>
-                    </p>
-                    <div id="login_background" class="ms-2 ms-md-0">
-                        <div class="d-grid d-sm-flex">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="login_background" id="bgNone" value="none" {% if site_settings.login_background == 'none' %}checked{% endif %}>
-                                <label class="form-check-label" for="bgNone">
-                                    <i class="fa-regular fa-square"></i> None
-                                </label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="login_background" id="bgPicture" value="picture" {% if site_settings.login_background == 'picture' %}checked{% endif %}>
-                                <label class="form-check-label" for="bgPicture">
-                                    <i class="fa-regular fa-image"></i> Picture
-                                </label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="login_background" id="bgVideo" value="video" {% if site_settings.login_background == 'video' %}checked{% endif %}>
-                                <label class="form-check-label" for="bgVideo">
-                                    <i class="fa-solid fa-video"></i> Video
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex-fill mt-2 mt-md-auto ms-2 ms-md-0 ">
-                    <div id="background_picture_group" class="input-group mt-auto d-none">
-                        <span class="input-group-text" id="picture-addon" data-bs-toggle="tooltip" data-bs-title="URL or Path to a Web Image.">
-                            <i class="fa-solid fa-circle-info"></i></span>
-                        <input type="text" class="form-control" placeholder="Background Picture URL" aria-label="Background Picture URL"
-                               id="background_picture" name="background_picture" value="{{ site_settings.background_picture }}" aria-describedby="picture-addon">
-                    </div>
-                    <div id="background_video_group" class="input-group mt-auto d-none">
-                        <span class="input-group-text" id="video-addon" data-bs-toggle="tooltip" data-bs-title="WIP: URL or Path to a .mp4 Video.">
-                            <i class="fa-solid fa-circle-exclamation"></i></span>
-                        <input type="text" class="form-control" placeholder="Background Video URL" aria-label="Background Video URL"
-                               id="background_video" name="background_video" value="{{ site_settings.background_video }}" aria-describedby="video-addon">
-                    </div>
-                </div>
-            </div>
-
-            <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center mt-2">
-                <div class="form-check form-switch fs-5 me-3 ms-2 ms-md-0">
-                    <input class="form-check-input" type="checkbox" id="tsparticles_enabled" name="tsparticles_enabled" {{ site_settings.tsparticles_enabled|if_true:"checked" }}>
-                    <label class="form-check-label text-nowrap" for="tsparticles_enabled">
-                        tsParticles
-                    </label>
-                </div>
-                <div id="background_video_group" class="input-group mt-2 mt-sm-auto ms-2 ms-md-0">
-                    <span class="input-group-text" id="tsconfig-addon" data-bs-toggle="tooltip" data-bs-title="tsParticles Config File.">
-                        <i class="fa-solid fa-circle-exclamation"></i></span>
-                    <input type="text" class="form-control" placeholder="tsParticles Config File URL" aria-label="tsParticles Config"
-                           id="tsparticles_config" name="tsparticles_config" value="{{ site_settings.tsparticles_config }}" aria-describedby="tsconfig-addon">
-                </div>
-            </div>
-
-        </form> <!-- form -->
-    </div> <!-- border -->
-
-    <hr>
-
-    <section id="invites">
-    <h3>Invites</h3>
-
-    <form id="invitesForm" method="post" action="{% url 'api:invites' %}">
-        <div class="row g-1">
-            <div class="col-sm-3">
-                <input type="text" class="form-control" placeholder="Max Uses" aria-label="Max Uses"
-                       id="max_uses" name="max_uses" value="1">
-            </div>
-            <div class="col-sm-2">
-                <input type="text" class="form-control" placeholder="Expiration" aria-label="Expiration"
-                       id="expire" name="expire">
-            </div>
-            <div class="col-sm-2">
-                <input type="text" class="form-control" placeholder="Storage Quota" aria-label="Storage Quota"
-                       id="storage_quota" name="storage_quota">
-            </div>
-            <div class="col-sm-5 fs-5 d-flex align-items-center">
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="super_user" name="super_user" style="float: none;">
-                    <label class="form-check-label" for="super_user">Admin</label>
-                </div>
-                <button class="btn btn-outline-success ms-2 w-100" type="submit">
-                    <i class="fa-solid fa-user-plus me-2"></i> <span class="d-sm-none d-md-inline">Create</span></button>
-            </div>
-        </div>
-    </form>
-
-    {% if not invites %}
-        <p class="lead mt-2">No Invites Found.</p>
+<div class="d-flex align-items-center gap-2 mb-3 text-muted small">
+    <span>Version:
+        <a role="link" class="clip link-body-emphasis link-underline-opacity-25 link-underline-opacity-50-hover"
+           data-clipboard-text="{{ 'APP_VERSION'|get_config }}">{{ 'APP_VERSION'|get_config }}</a>
+    </span>
+    {% if site_settings.latest_version %}
+        <a href="https://github.com/django-files/django-files/releases/latest" title="{{ 'APP_VERSION'|get_config }}" target="_blank" rel="noopener">
+            <span class="badge rounded-pill text-bg-warning">{{ site_settings.latest_version }}</span></a>
     {% else %}
-        <table class="table table-responsive mt-2" id="invitesTable">
-            <caption class="visually-hidden">User Invites</caption>
-            <thead>
-            <tr>
-                <th scope="col" class="d-none d-sm-table-cell">ID</th>
-                <th scope="col" class="">Invite</th>
-                <th scope="col" class="d-none d-sm-table-cell">Owner</th>
-                <th scope="col" class="d-none d-lg-table-cell">Created</th>
-                <th scope="col" class="d-none d-md-table-cell text-center">Expire</th>
-                <th scope="col" class="d-none d-md-table-cell text-center">Quota</th>
-                <th scope="col" class="d-none d-sm-table-cell text-center">Admin</th>
-                <th scope="col" class="text-center">Uses</th>
-{#                <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>#}
-            </tr>
-            </thead>
-            <tbody>
-            {% for data in invites %}
-            <tr id="invite-{{ data.id }}" class="">
-                <td class="d-none d-sm-table-cell"> <!-- ID -->
-                    {{ data.id }}</td>
-                <td class=""> <!-- Invite -->
-                    <a role="button" class="clip link-offset-2 link-underline-opacity-25 link-{{ data.is_valid|if_true:"success"|default:"danger" }}"
-                       data-clipboard-text="{{ data.build_url }}">{{ data.invite }}</a></td>
-                <td class="d-none d-sm-table-cell"><!-- Owner -->
-                    <a role="button" class="clip text-decoration-none link-body-emphasis"
-                       data-clipboard-text="{{ data.owner.get_name }}">{{ data.owner.get_name }}</a></td>
-                <td class="d-none d-lg-table-cell"> <!-- Created -->
-                    <a role="button" class="clip text-decoration-none link-body-emphasis"
-                       data-clipboard-text="{{ data.created_at }}">{{ data.created_at }}</a></td>
-                <td class="d-none d-md-table-cell text-center text-l"> <!-- Expire -->
-                    {{ data.expire_date|default:'Never' }}</td>
-                <td class="d-none d-md-table-cell text-center text-l"> <!-- Quota -->
-                    {{ data.get_storage_quota_human_read }}</td>
-                <td class="d-none d-sm-table-cell text-center "> <!-- Admin -->
-                    {% if data.super_user %}<i class="fa-solid fa-plane-circle-check text-warning-emphasis"></i>{% else %}-{% endif %}</td>
-                <td class="text-center "> <!-- Uses -->
-                    {{ data.uses }}/{{ data.max_uses }}</td>
-{#                <td class="text-center">#}
-{#                    <a role="button" class="deleteInviteBtn" data-hook-id="{{ data.id }}" title="Delete">#}
-{#                        <i class="fa-regular fa-trash-can link-danger"></i></a></td>#}
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+        <a href="https://github.com/django-files/django-files/releases/latest" title="{{ 'APP_VERSION'|get_config }}" target="_blank" rel="noopener">
+            <span class="badge rounded-pill text-bg-success">Latest</span></a>
+        <button id="check-for-update" type="button" title="Check for Update" class="btn btn-link link-body-emphasis p-0">
+            <i class="fa-solid fa-rotate"></i></button>
     {% endif %}
-    </section>
+</div>
 
-    <hr>
-
-    <section id="users">
-    <div class="d-flex align-items-center justify-content-between mb-2">
-        <h3 class="mb-0">Users</h3>
-        <div class="input-group input-group-sm" style="max-width: 220px;">
-            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
-            <input type="search" id="users-search-input" class="form-control" placeholder="Search users…" autocomplete="off" aria-label="Search users">
-        </div>
+<div class="row g-4">
+    <!-- Sidebar nav -->
+    <div class="col-lg-2 d-none d-lg-block">
+        <nav id="settings-nav" class="settings-nav nav nav-pills flex-column p-2 rounded border bg-body">
+            <p class="px-3 pt-1 pb-0 mb-1 text-secondary fw-semibold text-uppercase small">Jump to</p>
+            <a class="nav-link" href="#general"><i class="fa-solid fa-gears"></i> General</a>
+            <a class="nav-link" href="#features"><i class="fas fa-sliders"></i> Features</a>
+            <a class="nav-link" href="#appearance"><i class="fas fa-palette"></i> Appearance</a>
+            <a class="nav-link" href="#invites"><i class="fas fa-user-plus"></i> Invites</a>
+            <a class="nav-link" href="#users"><i class="fas fa-users"></i> Users</a>
+            <a class="nav-link" href="#sessions"><i class="fas fa-desktop"></i> Sessions</a>
+            <hr class="my-2">
+            <a class="nav-link" href="{% url 'settings:user' %}"><i class="fas fa-user"></i> User Settings</a>
+        </nav>
     </div>
-    <table class="display responsive nowrap table table-hover w-100" id="users-table">
-        <caption class="visually-hidden">User List</caption>
-        <thead>
-            <tr>
-                <th scope="col">ID</th>
-                <th scope="col">User</th>
-                <th scope="col">Storage</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-    </section>
 
-    <hr>
+    <!-- Content -->
+    <div class="col-lg-10 col-12">
+        <form id="settingsForm" method="post" action="{% url 'settings:site' %}">
 
-    <section id="sessions">
-    <h3>Sessions</h3>
-        <button type="button" class="btn btn-outline-danger my-2" data-bs-toggle="modal" data-bs-target="#delete-sessions-modal">
-            Delete All Sessions
-        </button>
-        <table id="sessions-table" class="table table-sm w-100" style="table-layout: fixed;">
-            <thead>
-            <tr>
-                <th scope="col" style="width: 28px;"></th>
-                <th scope="col">Username</th>
-                <th scope="col" class="d-none d-sm-table-cell" style="width: 164px;">Expiration</th>
-                <th scope="col" class="d-none d-md-table-cell" style="width: 156px;">Age/TTL</th>
-                <th scope="col">User Agent</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for session in sessions %}
-            <tr class="{% if session.current %}table-active{% endif %}">
-                <td>
-                    {% if not session.current %}
-                    <a role="button" class="dropdown-item ctx-delete" data-session="{{ session.key }}"
-                       title="Delete"><i class="fa-regular fa-trash-can fa-fw link-danger"></i></a>
-                    {% endif %}
-                </td>
-                <th scope="row" class="text-nowrap text-truncate overflow-hidden">{{ session.user_name }}</th>
-                <td class="d-none d-sm-table-cell" style="width: 160px;">{{ session.date|date }}</td>
-                <td class="d-none d-md-table-cell" style="width: 140px;">{{ session.ttl }}/{{ session.age }}</td>
-                <td class="text-nowrap text-truncate overflow-hidden">{{ session.user_agent }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+            <!-- General -->
+            <section id="general" class="settings-section">
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h4 class="d-flex align-items-center gap-2"><i class="fa-solid fa-gears"></i> General</h4>
+                    </div>
+                    <div class="dash-card-body">
+                        {% if site_settings.global_storage_quota %}
+                            <div class="mb-3">
+                                <p class="form-label fw-medium">Global Storage Quota Usage</p>
+                                <div class="progress" id="storage_quota" aria-label="Global Storage Quota"
+                                     aria-valuenow="{{ site_settings.get_global_storage_quota_usage_pct }}"
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar overflow-visible
+                                        {% if site_settings.get_global_storage_quota_usage_pct > 95 %}bg-danger
+                                        {% elif site_settings.get_global_storage_quota_usage_pct > 85 %}bg-warning{% endif %}"
+                                         style="width: {{ site_settings.get_global_storage_quota_usage_pct }}%">
+                                        <b>({{ site_settings.get_global_storage_usage_human_read }}/{{ site_settings.get_global_storage_quota_human_read }}) {{ site_settings.get_global_storage_quota_usage_pct }}%</b>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
 
-    </section>
-
-    <!-- Clear Sessions Modal -->
-    <div class="modal fade" id="delete-sessions-modal" tabindex="-1" aria-labelledby="delete-sessions-modal-label" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="delete-sessions-modal-label">Delete All Sessions?</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="site_url" class="form-label fw-medium">
+                                    Site URL
+                                    <span data-bs-toggle="tooltip" data-bs-title="Used for generating URLs.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                                <input type="text" class="form-control" id="site_url" name="site_url"
+                                       value="{{ site_settings.site_url }}"
+                                       aria-describedby="site_url-invalid">
+                                <div id="site_url-invalid" class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="site_title" class="form-label fw-medium">
+                                    Site Title
+                                    <span data-bs-toggle="tooltip" data-bs-title="Used in UI and meta tags.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                                <input type="text" class="form-control" id="site_title" name="site_title"
+                                       value="{{ site_settings.site_title }}"
+                                       aria-describedby="site_title-invalid">
+                                <div id="site_title-invalid" class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="global_storage_quota" class="form-label fw-medium">
+                                    Global Storage Quota
+                                    <span data-bs-toggle="tooltip" data-bs-title="Total storage for this deployment. 0 is unlimited.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                                <input type="text" class="form-control" id="global_storage_quota" name="global_storage_quota"
+                                       value="{{ site_settings.get_global_storage_quota_human_read }}"
+                                       aria-describedby="global_storage_quota-invalid">
+                                <div id="global_storage_quota-invalid" class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="default_user_storage_quota" class="form-label fw-medium">
+                                    User Default Storage Quota
+                                    <span data-bs-toggle="tooltip" data-bs-title="Default per-user storage quota. 0 is unlimited.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                                <input class="form-control" id="default_user_storage_quota" name="default_user_storage_quota"
+                                       value="{{ site_settings.get_default_user_storage_quota_human_read }}"
+                                       aria-describedby="default_user_storage_quota-invalid">
+                                <div id="default_user_storage_quota-invalid" class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="timezone" class="form-label fw-medium">
+                                    Global Timezone
+                                    <span data-bs-toggle="tooltip" data-bs-title="Timezone for anonymous users.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                                <input class="form-control" list="timezoneOptions" id="timezone" name="timezone"
+                                       autocomplete="off" value="{{ site_settings.timezone }}" placeholder="Type to search...">
+                                <datalist id="timezoneOptions">
+                                    {% for timezone in timezones %}
+                                        <option value="{{ timezone }}"></option>
+                                    {% endfor %}
+                                </datalist>
+                                <div id="timezone-invalid" class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-12">
+                                <label for="site_description" class="form-label fw-medium">
+                                    Site Description
+                                    <span data-bs-toggle="tooltip" data-bs-title="Used in meta tags.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                                <textarea class="form-control" id="site_description" name="site_description" rows="2">{{ site_settings.site_description }}</textarea>
+                                <div id="site_description-invalid" class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-outline-info btn-sm" id="flush-cache">
+                                <i class="fa-solid fa-toilet me-2"></i>Flush Cache
+                                <span data-bs-toggle="tooltip" data-bs-title="Clears all server-side template caches.">
+                                    <i class="fa-solid fa-circle-info ms-1"></i>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-body text-center">
-                    All <code>{{ sessions|length|add:"-1" }}</code> sessions will be removed the applications logged out.
-                    <br>
-                    This excludes your current session.
+            </section>
+
+            <hr class="my-4">
+
+            <!-- Features -->
+            <section id="features" class="settings-section">
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h4 class="d-flex align-items-center gap-2"><i class="fas fa-sliders"></i> Features</h4>
+                    </div>
+                    <div class="dash-card-body">
+                        <div class="form-check form-switch fs-5">
+                            <input class="form-check-input" type="checkbox" id="pub_load" name="pub_load" {{ site_settings.pub_load|if_true:"checked" }}>
+                            <label class="form-check-label" for="pub_load">
+                                Public Uploads: <kbd>/public</kbd>
+                                <span data-bs-toggle="tooltip" data-bs-title="Enables an unauthenticated upload endpoint at /public. Anyone with the URL can upload files.">
+                                    <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                </span>
+                            </label>
+                        </div>
+                        <div id="public-album" class="row g-2 align-items-center mt-1 ms-4 {{ site_settings.pub_load|if_false:"d-none" }}">
+                            <div class="col-auto">
+                                <label for="pub_album_search" class="col-form-label">
+                                    Public Album
+                                    <span data-bs-toggle="tooltip" data-bs-title="Files uploaded via the public endpoint will be added to this album. Leave empty to skip album assignment.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="col-auto">
+                                <input type="hidden" name="pub_album" id="pub_album" value="{{ site_settings.pub_album }}">
+                                <div class="dropdown">
+                                    <input type="text" id="pub_album_search" class="form-control"
+                                           placeholder="Search albums…" aria-label="Search albums"
+                                           autocomplete="off" style="min-width: 220px;">
+                                    <ul id="pub_album_results" class="dropdown-menu w-100" style="max-height: 220px; overflow-y: auto;"></ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if site_settings.discord_client_id or site_settings.google_client_id or site_settings.github_client_id %}
+                            <div class="form-check form-switch fs-5 mt-2">
+                                <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
+                                <label class="form-check-label" for="oauth_reg">
+                                    OAuth Registration
+                                    <span data-bs-toggle="tooltip" data-bs-title="Allow new users to register via linked OAuth providers (Discord, GitHub, Google). Disable to restrict OAuth to already linked accounts only.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="form-check form-switch fs-5 mt-2">
+                                <input class="form-check-input" type="checkbox" id="local_auth" name="local_auth" {{ site_settings.local_auth|if_true:"checked" }}>
+                                <label class="form-check-label" for="local_auth">
+                                    Local Authentication
+                                    <span data-bs-toggle="tooltip" data-bs-title="Allow users to log in with a username and password. Disable to require OAuth-only login.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                            </div>
+                        {% endif %}
+
+                        {% if 'DUO_CLIENT_ID'|get_config %}
+                            <div class="form-check form-switch fs-5 mt-2">
+                                <input class="form-check-input" type="checkbox" id="duo_auth" name="duo_auth" {{ site_settings.duo_auth|if_true:"checked" }}>
+                                <label class="form-check-label" for="duo_auth">
+                                    Enable Duo Authentication
+                                    <span data-bs-toggle="tooltip" data-bs-title="Require Duo two-factor authentication for all logins. Duo client credentials must be configured in the environment.">
+                                        <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                    </span>
+                                </label>
+                            </div>
+                        {% endif %}
+
+                        <div class="form-check form-switch fs-5 mt-2">
+                            <input class="form-check-input" type="checkbox" id="site_animations" name="site_animations" {{ site_settings.site_animations|if_true:"checked" }}>
+                            <label class="form-check-label" for="site_animations">
+                                Enable Site Animations
+                                <span data-bs-toggle="tooltip" data-bs-title="Enables transitions and motion effects throughout the UI. Disable for a reduced-motion experience.">
+                                    <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="my-4">
+
+            <!-- Appearance -->
+            <section id="appearance" class="settings-section">
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h4 class="d-flex align-items-center gap-2"><i class="fas fa-palette"></i> Appearance</h4>
+                    </div>
+                    <div class="dash-card-body">
+                        <div class="row g-4">
+                            <div class="col-auto">
+                                <label for="site_color" class="form-label fw-medium">Theme Color</label>
+                                <div>
+                                    <input type="color" class="form-control form-control-color" id="site_color" name="site_color"
+                                           value="{{ site_settings.site_color }}" title="Theme color"
+                                           aria-describedby="site_color-invalid">
+                                </div>
+                                <div id="site_color-invalid" class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md">
+                                <p class="form-label fw-medium">
+                                    Login Page Background
+                                    <span data-bs-toggle="tooltip" data-bs-title="Disabled, Random Picture or Video Loop.">
+                                        <i class="fa-solid fa-circle-info ms-1"></i>
+                                    </span>
+                                </p>
+                                <div id="login_background" class="d-flex flex-wrap gap-3 mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="login_background" id="bgNone" value="none" {% if site_settings.login_background == 'none' %}checked{% endif %}>
+                                        <label class="form-check-label" for="bgNone"><i class="fa-regular fa-square me-1"></i> None</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="login_background" id="bgPicture" value="picture" {% if site_settings.login_background == 'picture' %}checked{% endif %}>
+                                        <label class="form-check-label" for="bgPicture"><i class="fa-regular fa-image me-1"></i> Picture</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="login_background" id="bgVideo" value="video" {% if site_settings.login_background == 'video' %}checked{% endif %}>
+                                        <label class="form-check-label" for="bgVideo"><i class="fa-solid fa-video me-1"></i> Video</label>
+                                    </div>
+                                </div>
+                                <div id="background_picture_group" class="input-group d-none">
+                                    <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="URL or Path to a Web Image.">
+                                        <i class="fa-solid fa-circle-info"></i></span>
+                                    <input type="text" class="form-control" placeholder="Background Picture URL"
+                                           id="background_picture" name="background_picture"
+                                           value="{{ site_settings.background_picture }}" aria-label="Background Picture URL">
+                                </div>
+                                <div id="background_video_group" class="input-group d-none">
+                                    <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="WIP: URL or Path to a .mp4 Video.">
+                                        <i class="fa-solid fa-circle-exclamation"></i></span>
+                                    <input type="text" class="form-control" placeholder="Background Video URL"
+                                           id="background_video" name="background_video"
+                                           value="{{ site_settings.background_video }}" aria-label="Background Video URL">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-3 mt-3 flex-wrap">
+                            <div class="form-check form-switch fs-5">
+                                <input class="form-check-input" type="checkbox" id="tsparticles_enabled" name="tsparticles_enabled" {{ site_settings.tsparticles_enabled|if_true:"checked" }}>
+                                <label class="form-check-label text-nowrap" for="tsparticles_enabled">tsParticles</label>
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text" data-bs-toggle="tooltip" data-bs-title="tsParticles Config File.">
+                                    <i class="fa-solid fa-circle-exclamation"></i></span>
+                                <input type="text" class="form-control" placeholder="tsParticles Config File URL"
+                                       id="tsparticles_config" name="tsparticles_config"
+                                       value="{{ site_settings.tsparticles_config }}" aria-label="tsParticles Config">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </form>
+
+        <hr class="my-4">
+
+        <!-- Invites -->
+        <section id="invites" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-user-plus"></i> Invites</h4>
+                    <button type="button" class="btn btn-sm btn-outline-success"
+                            data-bs-toggle="modal" data-bs-target="#create-invite-modal">
+                        <i class="fa-solid fa-user-plus me-1"></i> Create Invite
+                    </button>
+                </div>
+                <div class="dash-card-body">
+                    {% if not invites %}
+                        <p class="text-muted mt-3 mb-0">No invites found.</p>
+                    {% else %}
+                        <div class="table-responsive mt-3">
+                            <table class="table table-sm mb-0" id="invitesTable">
+                                <caption class="visually-hidden">User Invites</caption>
+                                <thead>
+                                <tr>
+                                    <th scope="col" class="d-none d-sm-table-cell">ID</th>
+                                    <th scope="col">Invite</th>
+                                    <th scope="col" class="d-none d-sm-table-cell">Owner</th>
+                                    <th scope="col" class="d-none d-lg-table-cell">Created</th>
+                                    <th scope="col" class="d-none d-md-table-cell text-center">Expire</th>
+                                    <th scope="col" class="d-none d-md-table-cell text-center">Quota</th>
+                                    <th scope="col" class="d-none d-sm-table-cell text-center">Admin</th>
+                                    <th scope="col" class="text-center">Uses</th>
+                                    <th scope="col" style="width: 28px;"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for data in invites %}
+                                <tr id="invite-{{ data.id }}">
+                                    <td class="d-none d-sm-table-cell">{{ data.id }}</td>
+                                    <td>
+                                        <a role="button" class="clip link-offset-2 link-underline-opacity-25 link-{{ data.is_valid|if_true:"success"|default:"danger" }}"
+                                           data-clipboard-text="{{ data.build_url }}">{{ data.invite }}</a>
+                                    </td>
+                                    <td class="d-none d-sm-table-cell">
+                                        <a role="button" class="clip text-decoration-none link-body-emphasis"
+                                           data-clipboard-text="{{ data.owner.get_name }}">{{ data.owner.get_name }}</a>
+                                    </td>
+                                    <td class="d-none d-lg-table-cell">
+                                        <a role="button" class="clip text-decoration-none link-body-emphasis"
+                                           data-clipboard-text="{{ data.created_at }}">{{ data.created_at }}</a>
+                                    </td>
+                                    <td class="d-none d-md-table-cell text-center">{{ data.expire_date|default:'Never' }}</td>
+                                    <td class="d-none d-md-table-cell text-center">{{ data.get_storage_quota_human_read }}</td>
+                                    <td class="d-none d-sm-table-cell text-center">
+                                        {% if data.super_user %}<i class="fa-solid fa-plane-circle-check text-warning-emphasis"></i>{% else %}-{% endif %}
+                                    </td>
+                                    <td class="text-center">{{ data.uses }}/{{ data.max_uses }}</td>
+                                    <td>
+                                        <a role="button" class="invite-delete" data-invite-id="{{ data.id }}" title="Delete">
+                                            <i class="fa-regular fa-trash-can fa-fw link-danger"></i></a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-4">
+
+        <!-- Users -->
+        <section id="users" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-users"></i> Users</h4>
+                    <div class="input-group input-group-sm w-auto">
+                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></span>
+                        <input type="search" id="users-search-input" class="form-control" placeholder="Search users…"
+                               autocomplete="off" aria-label="Search users">
+                    </div>
+                </div>
+                <div class="dash-card-body p-0">
+                    <table class="display responsive nowrap table table-hover w-100 mb-0" id="users-table">
+                        <caption class="visually-hidden">User List</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">User</th>
+                                <th scope="col">Storage</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-4">
+
+        <!-- Sessions -->
+        <section id="sessions" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-desktop"></i> Sessions</h4>
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                            data-bs-toggle="modal" data-bs-target="#delete-sessions-modal">
+                        Delete All
+                    </button>
+                </div>
+                <div class="dash-card-body p-0">
+                    <div class="table-responsive">
+                        <table id="sessions-table" class="table table-sm mb-0 w-100" style="table-layout: fixed;">
+                            <thead>
+                            <tr>
+                                <th scope="col">Username</th>
+                                <th scope="col" class="d-none d-sm-table-cell" style="width: 164px;">Expiration</th>
+                                <th scope="col" class="d-none d-md-table-cell" style="width: 156px;">Age/TTL</th>
+                                <th scope="col">User Agent</th>
+                                <th scope="col" style="width: 28px;"></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for session in sessions %}
+                            <tr class="{% if session.current %}table-active{% endif %}">
+                                <th scope="row" class="text-nowrap text-truncate overflow-hidden">{{ session.user_name }}</th>
+                                <td class="d-none d-sm-table-cell" style="width: 160px;">{{ session.date|date }}</td>
+                                <td class="d-none d-md-table-cell" style="width: 140px;">{{ session.ttl }}/{{ session.age }}</td>
+                                <td class="text-nowrap text-truncate overflow-hidden">{{ session.user_agent }}</td>
+                                <td>
+                                    {% if not session.current %}
+                                    <a role="button" class="ctx-delete" data-session="{{ session.key }}" title="Delete">
+                                        <i class="fa-regular fa-trash-can fa-fw link-danger"></i></a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div><!-- col content -->
+</div><!-- row -->
+
+<!-- Create Invite Modal -->
+<div class="modal fade" id="create-invite-modal" tabindex="-1"
+     aria-labelledby="create-invite-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="create-invite-modal-label">
+                    <i class="fa-solid fa-user-plus me-2"></i> Create Invite
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="invitesForm" method="post" action="{% url 'api:invites' %}">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label for="max_uses" class="form-label">Max Uses</label>
+                            <input type="text" class="form-control" placeholder="Max Uses"
+                                   id="max_uses" name="max_uses" value="1" aria-label="Max Uses">
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="expire" class="form-label">Expiration</label>
+                            <input type="text" class="form-control" placeholder="e.g. 7d, 24h"
+                                   id="expire" name="expire" aria-label="Expiration">
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="storage_quota" class="form-label">Storage Quota</label>
+                            <input type="text" class="form-control" placeholder="e.g. 10GB"
+                                   id="storage_quota" name="storage_quota" aria-label="Storage Quota">
+                        </div>
+                        <div class="col-sm-6 d-flex align-items-end">
+                            <div class="form-check form-switch fs-5 mb-1">
+                                <input class="form-check-input" type="checkbox" id="super_user" name="super_user">
+                                <label class="form-check-label" for="super_user">Admin</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger {% if sessions|length < 1 %}{% endif %}"
-                            id="delete-all-sessions">Delete All</button>
+                    <button class="btn btn-success" type="submit">
+                        <i class="fa-solid fa-user-plus me-2"></i> Create
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Sessions Modal -->
+<div class="modal fade" id="delete-sessions-modal" tabindex="-1"
+     aria-labelledby="delete-sessions-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="delete-sessions-modal-label">Delete All Sessions?</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                All <code>{{ sessions|length|add:"-1" }}</code> sessions will be removed and those applications logged out.
+                <br>This excludes your current session.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="delete-all-sessions">Delete All</button>
             </div>
         </div>
     </div>
+</div>
+
 {% endblock %}
 
 {% block tail %}
     {% include 'include/datatables-scripts.html' %}
     <script type="module" src="{% static 'js/settings.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/settings-site.js' %}"></script>
     <script type="module" src="{% static 'js/settings-site-users.js' %}"></script>
 {% endblock %}

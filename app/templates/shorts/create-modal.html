@@ -1,0 +1,32 @@
+<div class="modal fade" id="create-short-modal" tabindex="-1" aria-labelledby="create-short-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="create-short-label"><i class="fa-solid fa-link me-2"></i> New Short URL</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="shortsForm" method="post" action="{% url 'home:shorten' %}">
+                <div class="modal-body">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <input type="text" class="form-control" placeholder="Destination URL" aria-label="URL"
+                                   id="url" name="url" required>
+                        </div>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" placeholder="Vanity Name (optional)" aria-label="Vanity"
+                                   id="vanity" name="vanity">
+                        </div>
+                        <div class="col-sm-4">
+                            <input type="number" class="form-control" placeholder="Max Views" aria-label="Max Views"
+                                   id="max-views" name="max-views" min="1">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-success" type="submit"><i class="fa-solid fa-hammer me-2"></i> Create</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
