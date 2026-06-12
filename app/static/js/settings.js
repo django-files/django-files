@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ScrollSpy for sticky sidebar nav
     if (document.getElementById('settings-nav')) {
         const navH =
-            parseFloat(
+            Number.parseFloat(
                 getComputedStyle(document.documentElement).getPropertyValue(
                     '--navbar-h'
                 )
