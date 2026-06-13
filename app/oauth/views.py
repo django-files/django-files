@@ -190,8 +190,6 @@ def oauth_callback(request, oauth_provider: str = ""):
         post_login(request)
         messages.info(request, f"Successfully logged in via oauth. {user.username} {user.get_name()}.")
         log.debug("OAuth Login Success: %s", user)
-        log.debug("user.authorization: %s", user.authorization)
-        log.debug("request.session: %s", request.session)
         url = get_login_redirect_url(
             request,
             native_auth=native_auth,
@@ -217,8 +215,6 @@ def pre_login(request, user: Union[AbstractBaseUser, CustomUser], site_settings)
 
 def post_login(request):
     log.debug("post_login: %s", request.user.username)
-    log.debug("user.authorization: %s", request.user.authorization)
-    log.debug("request.session: %s", request.session)
     try:
         agent = request.META.get("HTTP_USER_AGENT", "")
         log.debug("agent: %s", agent)
@@ -273,7 +269,6 @@ def duo_callback(request):
         username = request.session["username"]
         log.debug("username: %s", username)
         decoded_token = duo_client.exchange_authorization_code_for_2fa_result(code, username)
-        log.debug("decoded_token: %s", decoded_token)
 
         if request.session.pop("pending_account_delete", False):
             user = CustomUser.objects.get(username=username)

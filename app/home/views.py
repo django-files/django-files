@@ -23,6 +23,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from home.models import Albums, Files, FileStats, ShortURLs, Stream
 from home.tasks import clear_shorts_cache, process_stats
+from home.util.misc import redact_log
 from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
 from oauth.forms import UserForm
@@ -430,7 +431,7 @@ def invite_view(request, invite=None):
         log.debug("request.user.is_authenticated: %s", request.user.is_authenticated)
         return redirect("home:index")
     if request.method == "POST":
-        log.debug("request.POST: %s", request.POST)
+        log.debug("request.POST: %s", redact_log(request.POST))
         invite = UserInvites.objects.get_invite(invite)
         log.debug("invite: %s", invite)
         if not invite or not invite.is_valid():
@@ -440,7 +441,6 @@ def invite_view(request, invite=None):
         if not form.is_valid():
             return JsonResponse(form.errors, status=400)
         log.debug("username: %s", form.cleaned_data["username"])
-        log.debug("password: %s", form.cleaned_data["password"])
         if invite.super_user:
             user = CustomUser.objects.create_superuser(
                 username=form.cleaned_data["username"],

@@ -19,6 +19,7 @@ from django.shortcuts import redirect, render, reverse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from home.util.misc import redact_log
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
@@ -52,13 +53,13 @@ def site_view(request):
         }
         return render(request, "settings/site.html", context)
 
-    log.debug(request.POST)
+    log.debug(redact_log(request.POST))
     form = SiteSettingsForm(request.POST)
     if not form.is_valid():
         log.debug("form INVALID")
         return JsonResponse(form.errors, status=400)
     data = {"reload": False}
-    log.debug(form.cleaned_data)
+    log.debug(redact_log(form.cleaned_data))
 
     if not site_settings.site_url:
         data["reload"] = True
@@ -105,13 +106,13 @@ def user_view(request):
         }
         return render(request, "settings/user.html", context)
 
-    log.debug(request.POST)
+    log.debug(redact_log(request.POST))
     form = UserSettingsForm(request.POST)
     if not form.is_valid():
         log.debug("form INVALID")
         return JsonResponse(form.errors, status=400)
     data = {"reload": False}
-    log.debug(form.cleaned_data)
+    log.debug(redact_log(form.cleaned_data))
 
     request.user.first_name = form.cleaned_data["first_name"]
     request.user.timezone = form.cleaned_data["timezone"]
@@ -175,7 +176,6 @@ def welcome_view(request):
         user.username = form.cleaned_data["username"]
         log.debug("username: %s", form.cleaned_data["username"])
         user.set_password(form.cleaned_data["password"])
-        log.debug("password: %s", form.cleaned_data["password"])
         user.timezone = form.cleaned_data["timezone"]
         user.save()
         if request.user.is_superuser and form.cleaned_data["site_url"]:
@@ -352,7 +352,7 @@ def delete_account_view(request):
         request.session["pending_account_delete"] = True
         try:
             url = duo_redirect(request, request.user.username)
-        except ValueError as error:
+        except ValueError:
             del request.session["pending_account_delete"]
             log.exception("delete_account_view: Duo health check failed")
             return JsonResponse({"error": "Duo is unavailable. Please try again later."}, status=503)

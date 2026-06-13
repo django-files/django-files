@@ -15,6 +15,7 @@ from django_redis import get_redis_connection
 from home.models import Albums, Files, Stream
 from home.tasks import version_check
 from home.util.file import process_file
+from home.util.misc import redact_log
 from home.util.storage import file_rename
 from oauth.models import CustomUser
 from pytimeparse2 import parse
@@ -157,7 +158,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         data["user_id"] = self.scope["user"].id
 
         log.debug("process_message: user_id: %s", data["user_id"])
-        log.debug(data)
+        log.debug(redact_log(data))
 
         method = getattr(self, method_name)
         if inspect.iscoroutinefunction(method):
@@ -193,7 +194,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
 
     def authorize(self, *, authorization: str = None, **kwargs):
         log.debug("authorize")
-        log.debug("authorization: %s", authorization)
         user = CustomUser.objects.filter(authorization=authorization)
         if not user:
             return self._error("Invalid Authorization.")
@@ -339,7 +339,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if file := Files.objects.filter(pk=pk):
             if user_id and file[0].user.id != user_id:
                 return self._error("File owned by another user.", **kwargs)
-            log.debug("password: %s", password)
             file[0].password = password or ""
             file[0].save(update_fields=["password"])
             response = model_to_dict(file[0], exclude=["file", "thumb", "albums"])

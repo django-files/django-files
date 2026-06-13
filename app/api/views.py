@@ -45,7 +45,7 @@ from home.tasks import (
     stream_status_websocket,
 )
 from home.util.file import process_file
-from home.util.misc import anytobool, human_read_to_byte
+from home.util.misc import anytobool, human_read_to_byte, redact_log
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
@@ -161,7 +161,7 @@ def upload_view(request):
     log.debug("upload_view")
     # log.debug(request.headers)
     post = request.POST.dict().copy()
-    log.debug(post)
+    log.debug(redact_log(post))
     log.debug(request.FILES)
     site_settings = SiteSettings.objects.settings()
     if not site_settings.pub_load and not request.user.is_authenticated:
@@ -631,7 +631,7 @@ def file_view(request, idname):
             file.delete()
             return HttpResponse(status=204)
         elif request.method == "POST" and (request.user == file.user or request.user.is_superuser):
-            log.debug(request.POST)
+            log.debug(redact_log(request.POST))
             data = get_json_body(request)
             log.debug("data: %s", data)
             if not data:
@@ -721,7 +721,7 @@ def remote_view(request):
     """
     site_settings = site_settings_processor(None)["site_settings"]
     log.debug("%s - remote_view: is_secure: %s", request.method, request.is_secure())
-    log.debug("request.POST: %s", request.POST)
+    log.debug("request.POST: %s", redact_log(request.POST))
     data = get_json_body(request)
     log.debug("data: %s", data)
     if not data:
@@ -882,15 +882,6 @@ def session_view(request, sessionid):
         return HttpResponse(str(error), status=500)
 
 
-_SENSITIVE_QUERY_KEYS = ("stream_token", "token", "authorization")
-
-
-def _redact(params):
-    if not params:
-        return params
-    return {k: (["***"] if k in _SENSITIVE_QUERY_KEYS else v) for k, v in params.items()}
-
-
 def _resolve_stream_user(name, data):
     """
     Resolve the authenticated user from RTMP tcurl query params.
@@ -937,7 +928,7 @@ def stream_auth_view(request):
     """
     try:
         log.debug("stream_auth_view: %s - %s", request.method, request.META["PATH_INFO"])
-        log.debug("stream_auth_view: %s", _redact(request.GET))
+        log.debug("stream_auth_view: %s", redact_log(request.GET))
         name = request.GET.get("name")
         log.debug("name: %s", name)
         if not name:
@@ -946,7 +937,7 @@ def stream_auth_view(request):
 
         url = urlparse(request.GET.get("tcurl", ""))
         data = parse_qs(url.query)
-        log.debug("data: %s", _redact(data))
+        log.debug("data: %s", redact_log(data))
         user, _ = _resolve_stream_user(name, data)
         log.debug("user: %s", user)
         if not user:
@@ -990,7 +981,7 @@ def stream_done_view(request):
     """
     try:
         log.debug("stream_done_view: %s - %s", request.method, request.META["PATH_INFO"])
-        log.debug("stream_done_view: %s", _redact(request.GET))
+        log.debug("stream_done_view: %s", redact_log(request.GET))
         name = request.GET.get("name")
         log.debug("name: %s", name)
         if not name:
