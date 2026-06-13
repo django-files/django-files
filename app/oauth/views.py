@@ -274,6 +274,15 @@ def duo_callback(request):
         log.debug("username: %s", username)
         decoded_token = duo_client.exchange_authorization_code_for_2fa_result(code, username)
         log.debug("decoded_token: %s", decoded_token)
+
+        if request.session.pop("pending_account_delete", False):
+            user = CustomUser.objects.get(username=username)
+            log.warning("duo_callback: account deletion confirmed via Duo for user %s (id=%s)", user.username, user.pk)
+            logout(request)
+            user.delete()
+            messages.info(request, "Your account has been permanently deleted.")
+            return HttpResponseRedirect(reverse("oauth:login"))
+
         user = CustomUser.objects.get(username=username)
         login(request, user)
 

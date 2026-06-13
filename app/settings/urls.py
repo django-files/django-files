@@ -14,4 +14,5 @@ urlpatterns = [
     path("user/signature", views.signature_view, name="signature"),
     path("user/password", views.password_view, name="password"),
     path("user/local-auth", views.local_auth_view, name="local-auth"),
+    path("user/delete", views.delete_account_view, name="delete-account"),
 ]

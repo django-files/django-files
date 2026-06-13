@@ -7,7 +7,7 @@ from urllib.parse import quote
 import qrcode
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.sessions.backends.cache import SessionStore
@@ -321,6 +321,47 @@ def password_view(request):
     request.user.save()
     update_session_auth_hash(request, request.user)
     return JsonResponse({"success": True}, status=200)
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_account_view(request):
+    """
+    View  /settings/user/delete
+    Permanently deletes the authenticated user's account and all associated data.
+    Session-authenticated only — token auth is explicitly rejected.
+    CASCADE deletes Albums, Files, ShortURLs, Streams; pre_delete signals remove
+    the actual files from storage (local filesystem or S3) and update quotas.
+    """
+    log.debug("delete_account_view: %s", request.user)
+    if not request.session.session_key or not request.session.get("_auth_user_id"):
+        return JsonResponse({"error": "Session authentication required."}, status=401)
+
+    expected_phrase = f"delete {request.user.username} and all associated data"
+    confirm_phrase = request.POST.get("confirm_phrase", "").strip()
+    if not confirm_phrase:
+        return JsonResponse({"error": "Confirmation phrase is required."}, status=400)
+    if confirm_phrase != expected_phrase:
+        return JsonResponse({"error": "Confirmation phrase did not match. Please try again."}, status=400)
+
+    site_settings = SiteSettings.objects.settings()
+    if site_settings.duo_auth:
+        from oauth.views import duo_redirect
+
+        request.session["pending_account_delete"] = True
+        try:
+            url = duo_redirect(request, request.user.username)
+        except ValueError as error:
+            del request.session["pending_account_delete"]
+            log.error("delete_account_view: Duo health check failed: %s", error)
+            return JsonResponse({"error": "Duo is unavailable. Please try again later."}, status=503)
+        return JsonResponse({"duo_redirect": url}, status=200)
+
+    user = request.user
+    log.warning("delete_account_view: deleting account for user %s (id=%s)", user.username, user.pk)
+    logout(request)
+    user.delete()
+    return JsonResponse({"redirect": reverse("oauth:login")}, status=200)
 
 
 @login_required

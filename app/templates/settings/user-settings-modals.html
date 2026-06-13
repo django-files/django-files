@@ -129,6 +129,43 @@
     </div>
 </div>
 
+<div class="modal fade" id="deleteAccountModal" tabindex="-1"
+     aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header border-danger">
+                <h1 class="modal-title fs-5 text-danger" id="deleteAccountModalLabel">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i>Delete Account
+                </h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="fw-semibold mb-2">This action is <strong>permanent and cannot be undone.</strong></p>
+                <p class="mb-2">Deleting your account will immediately and permanently destroy:</p>
+                <ul class="mb-3">
+                    <li>All uploaded <strong>files</strong> (removed from storage)</li>
+                    <li>All <strong>albums</strong></li>
+                    <li>All <strong>short URLs</strong></li>
+                    <li>All <strong>streams</strong></li>
+                    <li>Your <strong>account</strong> and all settings</li>
+                </ul>
+                <p class="mb-2 text-muted small">To confirm, type exactly:</p>
+                <p class="font-monospace small bg-body-tertiary border rounded p-2 mb-2 user-select-all" id="deleteAccountPhrase">delete {{ request.user.username }} and all associated data</p>
+                <input type="text" class="form-control" id="deleteAccountConfirmInput"
+                       placeholder="Type the phrase above to confirm"
+                       autocomplete="off" spellcheck="false">
+                <div id="deleteAccountConfirmFeedback" class="invalid-feedback"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteAccountBtn" disabled>
+                    <i class="fa-solid fa-trash me-2"></i>Permanently Delete My Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
     const uploadUrl = "{% url 'api:upload' %}"
 </script>
