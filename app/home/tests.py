@@ -247,6 +247,8 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 page.locator(".album-search-results").get_by_text("My Cool Pictures").click()
                 self.screenshot(page, f"{view}-add-file")
                 page.wait_for_timeout(timeout=500)
+                page.locator("#fileAlbumModal .btn-close").click()
+                page.locator("#fileAlbumModal").wait_for(state="hidden")
                 page.get_by_label("Main Navigation").get_by_role("link", name="Albums").click()
                 page.get_by_text("My Cool Pictures").click()
                 page.wait_for_timeout(timeout=500)
