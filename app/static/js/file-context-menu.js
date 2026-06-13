@@ -1,5 +1,6 @@
 import { socket } from './socket.js'
 import { fetchAlbums, fetchFile } from './api-fetch.js'
+import { initAlbumSelector } from './album-selector.js'
 
 // JS for Context Menu
 
@@ -101,29 +102,24 @@ $('#modal-rename-form').on('submit', function (event) {
     )
 })
 
-// albums Form
+// albums Form — bulk mode only (single-file changes are dispatched immediately via badge UI)
 
 $('#modal-album-form').on('submit', function (event) {
     event.preventDefault()
-    const mode = this.dataset.mode || 'single'
+    const mode = this.dataset.mode
     const albums = Array.from(
         document.getElementById('album-options').selectedOptions
     ).map((o) => Number.parseInt(o.value))
-    if (mode === 'single') {
-        const data = genData($(this), 'set-file-albums')
-        socket.send(JSON.stringify(data))
-    } else {
-        const pks = JSON.parse(this.dataset.pks || '[]')
-        const action = mode === 'bulk-add' ? 'add' : 'remove'
-        socket.send(
-            JSON.stringify({
-                method: 'bulk-edit-file-albums',
-                pks,
-                albums,
-                action,
-            })
-        )
-    }
+    const pks = JSON.parse(this.dataset.pks || '[]')
+    const action = mode === 'bulk-add' ? 'add' : 'remove'
+    socket.send(
+        JSON.stringify({
+            method: 'bulk-edit-file-albums',
+            pks,
+            albums,
+            action,
+        })
+    )
     fileAlbumModal.modal('hide')
 })
 
@@ -192,8 +188,20 @@ export async function ctxAlbumFile(event) {
     await openAlbumModal([Number.parseInt(pk)], 'single', 'Manage Albums')
 }
 
+let albumModalSocketHandler = null
+
+fileAlbumModal.on('hidden.bs.modal', () => {
+    if (albumModalSocketHandler) {
+        socket?.removeEventListener('message', albumModalSocketHandler)
+        albumModalSocketHandler = null
+    }
+})
+
 /**
  * Open the album picker modal in single-file or bulk mode.
+ * Single mode renders the badge UI (identical to the preview sidebar).
+ * Bulk modes render a multi-select for batch add/remove operations.
+ *
  * @param {number[]} pks - File IDs to act on.
  * @param {'single'|'bulk-add'|'bulk-remove'} mode
  * @param {string} title - Modal header text.
@@ -203,39 +211,95 @@ export async function openAlbumModal(
     mode = 'single',
     title = 'Manage Albums'
 ) {
-    const albumOptions = document.getElementById('album-options')
-    albumOptions.length = 0
-    const form = document.getElementById('modal-album-form')
-    form.dataset.mode = mode
-    form.dataset.pks = JSON.stringify(pks)
-    fileAlbumModal.find('input[name=pk]').val(mode === 'single' ? pks[0] : '')
     document.getElementById('fileAlbumModalLabel').textContent = title
-    const submitBtn = document.getElementById('file-album-submit')
-    if (mode === 'bulk-add') {
-        submitBtn.textContent = 'Add to Albums'
-    } else if (mode === 'bulk-remove') {
-        submitBtn.textContent = 'Remove from Albums'
-    } else {
-        submitBtn.textContent = 'Save Album Selection'
-    }
 
-    let currentAlbums = []
+    const badgeUi = document.getElementById('modal-album-badge-ui')
+    const form = document.getElementById('modal-album-form')
+    const submitBtn = document.getElementById('file-album-submit')
+
     if (mode === 'single') {
-        const file = await fetchFile(pks[0])
-        console.debug('file:', file)
-        currentAlbums = file.albums || []
-    }
-    fileAlbumModal.modal('show')
-    let nextPage = 1
-    while (nextPage) {
-        const resp = await fetchAlbums(nextPage)
-        nextPage = resp.next
-        for (const album of resp.albums) {
-            const option = createOption(album.id, album.name)
-            if (currentAlbums.includes(album.id)) {
-                option.selected = true
+        badgeUi.classList.remove('d-none')
+        form.classList.add('d-none')
+        submitBtn.classList.add('d-none')
+
+        const pk = pks[0]
+        const albumContainer = badgeUi.querySelector('.album-container')
+        albumContainer.id = `albums-file-${pk}`
+
+        albumContainer.innerHTML =
+            '<span class="spinner-border spinner-border-sm text-secondary ms-1" role="status"></span>'
+
+        fileAlbumModal.modal('show')
+
+        const file = await fetchFile(pk)
+        const currentAlbums = file.albums_details || []
+
+        const addGroupHtml = `
+            <span class="badge rounded-pill text-bg-primary p-0 input-group-sm addto-album-group mx-2">
+                <button class="btn py-0 px-1 addto-album"><i class="fa-solid fa-plus"></i></button>
+                <span class="album-add-container d-none">
+                    <input class="form-control d-inline input-sm album-list album-search-input" autocomplete="off" placeholder="Search albums…">
+                </span>
+            </span>`
+
+        const badgesHtml = currentAlbums
+            .map(
+                (a) => `
+            <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1" id="album-${a.id}">
+                <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album=${a.id}">${a.name} </a>
+                <button id="remove-album-${a.id}" class="btn p-0 mt-0 remove-album">
+                    <i class="fa-solid fa-xmark text-small remove-album"></i>
+                </button>
+            </span>`
+            )
+            .join('')
+
+        albumContainer.innerHTML = badgesHtml + addGroupHtml
+
+        if (albumModalSocketHandler) {
+            socket?.removeEventListener('message', albumModalSocketHandler)
+        }
+        const handleAlbumBadges = initAlbumSelector(badgeUi, socket)
+        albumModalSocketHandler = (event) => {
+            if (event.data === 'pong') return
+            let data
+            try {
+                data = JSON.parse(event.data)
+            } catch {
+                return
             }
-            albumOptions.options.add(option)
+            if (
+                data.event === 'set-file-albums' &&
+                String(data.file_id) === String(pk)
+            ) {
+                handleAlbumBadges?.(data)
+            }
+        }
+        socket?.addEventListener('message', albumModalSocketHandler)
+    } else {
+        badgeUi.classList.add('d-none')
+        form.classList.remove('d-none')
+        submitBtn.classList.remove('d-none')
+        form.dataset.mode = mode
+        form.dataset.pks = JSON.stringify(pks)
+
+        if (mode === 'bulk-add') {
+            submitBtn.textContent = 'Add to Albums'
+        } else {
+            submitBtn.textContent = 'Remove from Albums'
+        }
+
+        const albumOptions = document.getElementById('album-options')
+        albumOptions.length = 0
+
+        fileAlbumModal.modal('show')
+        let nextPage = 1
+        while (nextPage) {
+            const resp = await fetchAlbums(nextPage)
+            nextPage = resp.next
+            for (const album of resp.albums) {
+                albumOptions.options.add(createOption(album.id, album.name))
+            }
         }
     }
 }

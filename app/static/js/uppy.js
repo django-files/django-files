@@ -8,14 +8,15 @@ import {
     XHRUpload,
 } from '../dist/uppy/uppy.min.mjs'
 
-import { fetchAlbums } from './api-fetch.js'
+import { fetchAlbumsSearch } from './api-fetch.js'
+import { initAlbumSearchInput } from './album-selector.js'
 
 console.debug('LOADING: uppy.js')
 console.debug('uploadUrl:', uploadUrl)
 
 const fileUploadModal = $('#fileUploadModal')
 
-const albumOptions = document.getElementById('upload_albums')
+const albumHidden = document.getElementById('upload_albums')
 
 function getResponseError(responseText, _response) {
     return new Error(JSON.parse(responseText).message)
@@ -97,42 +98,48 @@ fileUploadModal?.on('hidden.bs.modal', (event) => {
     uppy.cancelAll()
 })
 
-export async function getAlbums() {
-    let nextPage = 1
-    while (nextPage) {
-        const resp = await fetchAlbums(nextPage)
-        console.debug('resp:', resp)
-        nextPage = resp.next
-        resp.albums.forEach(createOption)
-    }
+function selectAlbum(id, name) {
+    albumHidden.value = id
+    document.getElementById('upload_album_search').value = name
+    headers.albums = id || ''
 }
 
-/**
- * Create Album Option
- * @function postURL
- * @param {Object} albumEntry
- */
-function createOption(album) {
-    const option = document.createElement('option')
-    option.textContent = album.name
-    option.value = album.id
-    if (selectedAlbum == album.id) {
-        option.selected = true
-    }
-    albumOptions.options.add(option)
-}
+document.addEventListener('DOMContentLoaded', async () => {
+    const searchInput = document.getElementById('upload_album_search')
+    const resultsEl = document.getElementById('upload_album_results')
+    if (!searchInput || !resultsEl) return
 
-document.addEventListener('DOMContentLoaded', getAlbums)
-
-document
-    .getElementById('upload_inputs')
-    .addEventListener('change', function () {
-        Array.from(this.elements).forEach((input) => {
-            let header_name = input.id.replace('upload_', '')
-            if (input.value !== 0) {
-                headers[header_name] = input.value
-            } else {
-                headers[header_name] = ''
+    initAlbumSearchInput(searchInput, resultsEl, {
+        fetchAlbums: (query) =>
+            fetchAlbumsSearch(query, 8).then((r) => r.albums || []),
+        onSelect: (album) => selectAlbum(album.id, album.name),
+        onCreate: async (name) => {
+            const response = await fetch('/api/album/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': $('input[name=csrfmiddlewaretoken]').val(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name }),
+            })
+            if (response.ok) {
+                const data = await response.json()
+                const albumId = new URL(data.url).searchParams.get('album')
+                selectAlbum(albumId, name)
             }
-        })
+        },
     })
+
+    searchInput.addEventListener('input', () => {
+        if (!searchInput.value) {
+            albumHidden.value = '0'
+            headers.albums = ''
+        }
+    })
+
+    if (selectedAlbum) {
+        const resp = await fetchAlbumsSearch('', 100)
+        const album = (resp.albums || []).find((a) => a.id === selectedAlbum)
+        if (album) selectAlbum(album.id, album.name)
+    }
+})

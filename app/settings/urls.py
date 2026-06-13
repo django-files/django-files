@@ -12,4 +12,6 @@ urlpatterns = [
     path("flameshot/", views.gen_flameshot, name="flameshot"),
     path("user/qr.png", views.qr_view, name="qrcode"),
     path("user/signature", views.signature_view, name="signature"),
+    path("user/password", views.password_view, name="password"),
+    path("user/local-auth", views.local_auth_view, name="local-auth"),
 ]

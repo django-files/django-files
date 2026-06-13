@@ -383,7 +383,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         else:
             return self._error("Stream not found.", **kwargs)
 
-    def private_streams(self, *, user_id: int = None, pks: List[int] = None, public: bool, **kwargs) -> dict:
+    def private_streams(self, *, user_id: int = None, pks: List[int] = None, public: bool, **kwargs) -> Optional[dict]:
         log.debug("private_streams: user_id=%s pks=%s public=%s", user_id, pks, public)
         streams = list(Stream.objects.filter(**filter_kwargs(pks, user_id)))
         if not streams:
@@ -391,10 +391,12 @@ class HomeConsumer(AsyncWebsocketConsumer):
         for s in streams:
             s.public = public
         Stream.objects.bulk_update(streams, ["public"])
-        return {
-            "objects": [{"id": s.id, "name": s.name, "public": s.public} for s in streams],
+        data = {
             "event": "toggle-public-stream",
+            "objects": [{"name": s.name, "public": s.public} for s in streams],
         }
+        async_to_sync(self.channel_layer.group_send)(f"user-{user_id}", {"type": _WS_SEND, "text": json.dumps(data)})
+        return None
 
     # -------------------------------------------------------------------------
     # Stream metadata — title & description
