@@ -268,7 +268,7 @@ def duo_callback(request):
             return HttpResponseRedirect(get_login_redirect_url(request))
         username = request.session["username"]
         log.debug("username: %s", username)
-        decoded_token = duo_client.exchange_authorization_code_for_2fa_result(code, username)
+        duo_client.exchange_authorization_code_for_2fa_result(code, username)
 
         if request.session.pop("pending_account_delete", False):
             user = CustomUser.objects.get(username=username)
