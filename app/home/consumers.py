@@ -395,9 +395,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             "event": "toggle-public-stream",
             "objects": [{"name": s.name, "public": s.public} for s in streams],
         }
-        async_to_sync(self.channel_layer.group_send)(
-            f"user-{user_id}", {"type": _WS_SEND, "text": json.dumps(data)}
-        )
+        async_to_sync(self.channel_layer.group_send)(f"user-{user_id}", {"type": _WS_SEND, "text": json.dumps(data)})
         return None
 
     # -------------------------------------------------------------------------

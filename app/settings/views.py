@@ -304,7 +304,7 @@ def password_view(request):
     if not new_password:
         return JsonResponse({"new_password": "This field is required."}, status=400)  # nosec B105
     if new_password != confirm:
-        return JsonResponse({"confirm_new_password": "Passwords do not match."}, status=400)
+        return JsonResponse({"confirm_new_password": "Passwords do not match."}, status=400)  # nosec B105
     try:
         validate_password(new_password, user=request.user)
     except ValidationError as error:

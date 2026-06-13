@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 def populate_stream_tokens(apps, schema_editor):
     Stream = apps.get_model("home", "Stream")
-    for stream in Stream.objects.filter(stream_token=""):
+    for stream in Stream.objects.filter(stream_token=""):  # nosec B106
         stream.stream_token = home.util.rand.rand_string()
         stream.save(update_fields=["stream_token"])
 

@@ -513,7 +513,6 @@ def delete_stream_websocket(name: str, user_id: int):
     async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
 
 
-
 # @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 1, "countdown": 300})
 @shared_task()
 def stream_status_websocket(stream_name: str, is_live: bool, ended_at: str = None, started_at: str = None):
