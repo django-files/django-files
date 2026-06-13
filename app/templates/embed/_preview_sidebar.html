@@ -87,17 +87,17 @@
             <h6 class="pt-3">Albums</h6>
             <div class="album-container position-relative" id="albums-file-{{ file.id }}">
                 {% for album in file.albums.all %}
-                    <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1" id="album-{{ album.id }}">
+                    <span class="badge rounded-pill text-bg-primary ps-2 file-album-active" id="album-{{ album.id }}">
                         <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album={{ album.id }}">{{ album.name }} </a>
                         <button id="remove-album-{{ album.id }}" class="btn p-0 mt-0 remove-album">
                             <i class="fa-solid fa-xmark text-small remove-album"></i>
                         </button>
                     </span>
                 {% endfor %}
-                <span class="badge rounded-pill text-bg-primary p-0 input-group-sm addto-album-group mx-2">
-                    <button class="btn py-0 px-1 addto-album"><i class="fa-solid fa-plus"></i></button>
+                <span class="badge rounded-pill text-bg-primary addto-album-group">
+                    <button class="btn p-0 addto-album"><i class="fa-solid fa-plus"></i></button>
                     <span class="album-add-container d-none">
-                        <input name="add-album-list" class="form-control d-inline input-sm album-list album-search-input" autocomplete="off" placeholder="Search albums…">
+                        <input name="add-album-list" class="album-search-input" autocomplete="off" placeholder="Search albums…">
                     </span>
                 </span>
                 <ul class="dropdown-menu mt-1 album-search-results" style="min-width: 200px;"></ul>

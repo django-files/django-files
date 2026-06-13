@@ -1184,18 +1184,23 @@ class HomeConsumer(AsyncWebsocketConsumer):
         user_id: int = None,
         pks: List[int] = None,
         albums: List[int] = None,
+        album_name: str = None,
         action: str = None,
         **kwargs,
     ) -> dict:
         if not pks:
             return self._error("No file IDs specified.", **kwargs)
-        if not albums:
-            return self._error("No album IDs specified.", **kwargs)
+        if not albums and not album_name:
+            return self._error("No albums specified.", **kwargs)
         if action not in ("add", "remove"):
             return self._error("Action must be 'add' or 'remove'.", **kwargs)
-        album_objs = list(Albums.objects.filter(id__in=albums, user_id=user_id))
-        if not album_objs:
-            return self._error("Albums not found.", **kwargs)
+        if album_name and action == "add":
+            qalbum = Albums.objects.filter(name=album_name, user_id=user_id)
+            album_objs = list(qalbum) if qalbum else [Albums.objects.create(user_id=user_id, name=album_name)]
+        else:
+            album_objs = list(Albums.objects.filter(id__in=albums or [], user_id=user_id))
+            if not album_objs:
+                return self._error("Albums not found.", **kwargs)
         files = Files.objects.filter(id__in=pks)
         if not self.scope["user"].is_superuser:
             files = files.filter(user_id=user_id)

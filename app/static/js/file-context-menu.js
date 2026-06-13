@@ -178,16 +178,16 @@ fileAlbumModal.on('hidden.bs.modal', () => {
 })
 
 const ADD_GROUP_HTML = `
-    <span class="badge rounded-pill text-bg-primary p-0 input-group-sm addto-album-group mx-2">
-        <button class="btn py-0 px-1 addto-album"><i class="fa-solid fa-plus"></i></button>
+    <span class="badge rounded-pill text-bg-primary addto-album-group">
+        <button class="btn p-0 addto-album"><i class="fa-solid fa-plus"></i></button>
         <span class="album-add-container d-none">
-            <input class="form-control d-inline input-sm album-list album-search-input" autocomplete="off" placeholder="Search albums…">
+            <input class="album-search-input" autocomplete="off" placeholder="Search albums…">
         </span>
     </span>`
 
 function albumBadgeHtml(id, label) {
     return `
-        <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1" id="album-${id}">
+        <span class="badge rounded-pill text-bg-primary ps-2 file-album-active" id="album-${id}">
             <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album=${id}" title="${label}">${label} </a>
             <button id="remove-album-${id}" class="btn p-0 mt-0 remove-album">
                 <i class="fa-solid fa-xmark text-small remove-album"></i>
@@ -227,6 +227,8 @@ export async function openAlbumModal(
         albumContainer.id = `albums-file-${pk}`
 
         const file = await fetchFile(pk)
+        document.getElementById('fileAlbumModalLabel').textContent =
+            `Albums — ${file.name}`
         const currentAlbums = file.albums_details || []
 
         albumContainer.innerHTML =
@@ -469,3 +471,16 @@ socket?.addEventListener('message', function (event) {
         messageFileRename(data)
     }
 })
+
+export function initContextMenu(container) {
+    const wire = (selector, handler) =>
+        container
+            .querySelectorAll(selector)
+            .forEach((el) => el.addEventListener('click', handler))
+    wire('.ctx-expire', ctxSetExpire)
+    wire('.ctx-private', ctxSetPrivate)
+    wire('.ctx-password', ctxSetPassword)
+    wire('.ctx-delete', ctxDeleteFile)
+    wire('.ctx-rename', ctxRenameFile)
+    wire('.ctx-album', ctxAlbumFile)
+}
