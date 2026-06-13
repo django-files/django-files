@@ -1,10 +1,12 @@
 import random
+import secrets
 import string
+
+_TOKEN_ALPHABET = string.ascii_uppercase + string.ascii_lowercase + string.digits
 
 
 def rand_string(length=32):
-    choices = string.ascii_uppercase + string.ascii_lowercase + string.digits
-    return "".join(random.choices(choices, k=length))
+    return "".join(secrets.choice(_TOKEN_ALPHABET) for _ in range(length))
 
 
 def rand_color_hex(prefix: str = "#"):

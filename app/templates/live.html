@@ -51,9 +51,22 @@
                 
                 <!-- Sidebar button - positioned over video -->
                 <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
-                
+                {% if is_owner %}
+                <div class="context-placement" data-bs-toggle="dropdown" id="streamContextPlacement" title="Stream options">
+                    <i class="fa-solid fa-ellipsis"></i>
+                    <button class="file-context-dropdown my-0 py-0" type="button" aria-expanded="false" hidden></button>
+                </div>
+                {% include 'streams/ctx-menu.html' with rtmp_url='rtmp://'|add:rtmp_host|add:'/live?stream_token='|add:stream_token %}
+                {% endif %}
+
                 <div id="preview-sidebar" class="sidebar d-flex flex-column h-100" data-no-auto-close="true">
                     <a role="button" class="closebtn" id="closeSidebar"><i class="fa-solid fa-xmark"></i></a>
+                    {% if is_owner %}
+                    <button class="sidebar-context-btn" id="sidebarStreamContext" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Stream options">
+                        <i class="fa-solid fa-ellipsis"></i>
+                    </button>
+                    {% include 'streams/ctx-menu.html' with rtmp_url='rtmp://'|add:rtmp_host|add:'/live?stream_token='|add:stream_token %}
+                    {% endif %}
                     {% is_ios_browser request as ios %}
                     {% if ios %}
                     <a href="djangofiles://stream/?url={{ site_settings.site_url }}&name={{ stream.name }}"
@@ -76,11 +89,17 @@
                         </div>
                         <div class="row">
                             <div class="col-md d-flex justify-content-between align-items-center">
-                                {% if stream.is_live %}
-                                <strong id="stream-status-badge" class="m-0 text-danger fw-bold text-glow">Live</strong>
-                                {% else %}
-                                <strong id="stream-status-badge" class="m-0 text-secondary fw-bold">Offline</strong>
-                                {% endif %}
+                                <span class="d-inline-flex align-items-center gap-2">
+                                    {% if stream.is_live %}
+                                    <strong id="stream-status-badge" class="m-0 text-danger fw-bold text-glow">Live</strong>
+                                    {% else %}
+                                    <strong id="stream-status-badge" class="m-0 text-secondary fw-bold">Offline</strong>
+                                    {% endif %}
+                                    <i id="stream-public-badge"
+                                       class="fa-solid fa-lock text-warning{% if stream.public %} d-none{% endif %}"
+                                       data-stream-name="{{ stream.name }}"
+                                       title="Private"></i>
+                                </span>
                                 <strong class="m-0 text-info text-end">
                                     <span id="subscriber-count">{{ subscriber_count }}</span> <i class="fa-solid fa-bell" title="Notification subscribers"></i>
                                     &nbsp;
@@ -115,13 +134,6 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row mt-2">
-                            <div class="col-sm">
-                                <button class="btn btn-sm btn-outline-secondary w-100" id="copyObsUrl" title="Copy OBS server URL (with auth token) to clipboard">
-                                    <i class="fa-solid fa-satellite-dish me-1"></i> Copy OBS Server URL
-                                </button>
-                            </div>
-                        </div>
                         {% endif %}
                     </div>
                     {% if stream.live_chat or is_owner %}
@@ -154,6 +166,10 @@
                     {% endif %}
                 </div>
             </div>
+            {% if is_owner %}
+            {% include 'streams/delete-modal.html' %}
+            {% include 'streams/regenerate-token-modal.html' %}
+            {% endif %}
 {% endblock %}
 
 {% block footer %}{% endblock %}
@@ -165,21 +181,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
     {% if is_owner %}
+    <script type="module" src="{% static 'js/streams-actions.js' %}"></script>
+    {% if cdn_detected %}
     <script>
-        document.getElementById('copyObsUrl').addEventListener('click', function () {
-            const serverUrl = 'rtmp://{{ rtmp_host|escapejs }}/live?token={{ request.user.authorization|escapejs }}'
-            navigator.clipboard.writeText(serverUrl).then(() => {
-                const btn = document.getElementById('copyObsUrl')
-                const orig = btn.innerHTML
-                btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Copied!'
-                setTimeout(() => { btn.innerHTML = orig }, 2000)
-                show_toast('Set OBS stream key to: {{ stream.name|escapejs }}', 'info', '6000')
-                {% if cdn_detected %}
-                show_toast('CDN detected ({{ cdn_detected|escapejs }}) — if streaming fails, set RTMP_HOST in the server environment to a direct IP or hostname.', 'warning', '10000')
-                {% endif %}
-            })
-        })
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('.stream-copy-rtmp-btn')) {
+            show_toast('CDN detected ({{ cdn_detected|escapejs }}) — if streaming fails, set RTMP_HOST to a direct IP or hostname.', 'warning', '10000')
+        }
+    })
     </script>
+    {% endif %}
     {% endif %}
     {% if stream.live_chat or is_owner %}
     {{ chat_user_info|json_script:"chat-user-info" }}

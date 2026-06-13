@@ -75,10 +75,12 @@ const EVENT_HANDLERS = {
     'toggle-private-file': messageTogglePrivate,
     'set-password-file': messagePassword,
     'file-delete': messageDelete,
+    'file-update': messageFileUpdate,
     'set-file-name': messageFileRename,
     'stream-status': messageStreamStatus,
     'set-stream-title': messageStreamTitleUpdate,
     'set-stream-description': messageStreamDescriptionUpdate,
+    'toggle-public-stream': messageTogglePublicStream,
     'album-delete': messageAlbumDelete,
     'album-new': messageAlbumNew,
     'toggle-private-album': messageTogglePrivateAlbum,
@@ -165,14 +167,14 @@ function messagePrivate(data) {
     const ctxPrivateText = $(`.ctx-menu[data-id="${data.id}"] .privateText`)
     const ctxPrivateIcon = $(`.ctx-menu[data-id="${data.id}"] .privateIcon`)
     if (data.private) {
-        privateStatus.show()
-        previewIcon.show()
+        privateStatus.removeClass('d-none')
+        previewIcon.removeClass('d-none').show()
         ctxPrivateText.text('Make Public')
         ctxPrivateIcon.removeClass('fa-lock').addClass('fa-lock-open')
         show_toast(`File ${truncateName(data.name)} set to private.`, 'success')
     } else {
-        privateStatus.hide()
-        previewIcon.hide()
+        privateStatus.addClass('d-none')
+        previewIcon.addClass('d-none').hide()
         ctxPrivateText.text('Make Private')
         ctxPrivateIcon.removeClass('fa-lock-open').addClass('fa-lock')
         show_toast(`File ${truncateName(data.name)} set to public.`, 'success')
@@ -183,13 +185,21 @@ function messagePassword(data) {
     console.log('messagePassword', data)
     const passwordStatus = $(`#file-${data.id} .passwordStatus`)
     if (data.password) {
-        passwordStatus.show()
+        passwordStatus.removeClass('d-none')
         show_toast(`Password set for ${truncateName(data.name)}`, 'success')
     } else {
-        passwordStatus.hide()
+        passwordStatus.addClass('d-none')
         show_toast(`Password unset for ${truncateName(data.name)}`, 'success')
     }
 }
+
+// file-update fires from the Files post_save signal for any field change.
+// Specific events (toggle-private-file, set-expr-file, set-password-file,
+// set-file-name) already handle their own toasts and DOM updates; this
+// handler exists so the catch-all 'unhandled event' warning doesn't fire.
+// The files DataTable refreshes its row data via the extra map in
+// file-table.js so derived column renderers stay in sync.
+function messageFileUpdate(_data) {}
 
 function messageDelete(data) {
     batchedToast(
@@ -317,6 +327,18 @@ function messageStreamTitleUpdate(data) {
 
 function messageStreamDescriptionUpdate(_data) {
     show_toast(`Stream description updated.`)
+}
+
+function messageTogglePublicStream(data) {
+    if (data.objects.length >= 3) {
+        const label = data.objects[0].public ? 'public' : 'private'
+        show_toast(`${data.objects.length} streams set to ${label}.`, 'success')
+    } else {
+        data.objects.forEach((s) => {
+            const label = s.public ? 'public' : 'private'
+            show_toast(`Stream "${s.name}" set to ${label}.`, 'success')
+        })
+    }
 }
 
 function truncateName(filename) {

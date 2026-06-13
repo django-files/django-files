@@ -42,6 +42,102 @@ async function domContentLoaded() {
     //qrCode.download({ name: 'qr', extension: 'svg' })
 }
 
+const changePasswordBtn = document.getElementById('changePasswordBtn')
+const passwordChangeModalEl = document.getElementById('passwordChangeModal')
+const passwordChangeForm = document.getElementById('passwordChangeForm')
+const localAuthToggle = document.getElementById('local_auth_disabled')
+
+changePasswordBtn?.addEventListener('click', () => {
+    passwordChangeForm.reset()
+    clearPasswordErrors()
+    bootstrap.Modal.getOrCreateInstance(passwordChangeModalEl).show()
+})
+
+const newPasswordInput = document.getElementById('new_password')
+const confirmPasswordInput = document.getElementById('confirm_new_password')
+const confirmFeedback = document.getElementById('confirm_new_password-invalid')
+
+function checkPasswordMatch() {
+    if (!confirmPasswordInput) return
+    if (!confirmPasswordInput.value) {
+        confirmPasswordInput.classList.remove('is-invalid')
+        if (confirmFeedback) confirmFeedback.textContent = ''
+        return
+    }
+    if (confirmPasswordInput.value !== newPasswordInput.value) {
+        confirmPasswordInput.classList.add('is-invalid')
+        if (confirmFeedback)
+            confirmFeedback.textContent = 'Passwords do not match.'
+    } else {
+        confirmPasswordInput.classList.remove('is-invalid')
+        if (confirmFeedback) confirmFeedback.textContent = ''
+    }
+}
+
+confirmPasswordInput?.addEventListener('input', checkPasswordMatch)
+newPasswordInput?.addEventListener('input', checkPasswordMatch)
+
+passwordChangeForm?.addEventListener('submit', async (event) => {
+    event.preventDefault()
+    clearPasswordErrors()
+    const data = new FormData(passwordChangeForm)
+    const csrfToken = data.get('csrfmiddlewaretoken')
+    const response = await fetch('/settings/user/password', {
+        method: 'POST',
+        body: data,
+        headers: { 'X-CSRFToken': csrfToken },
+    })
+    if (response.ok) {
+        bootstrap.Modal.getOrCreateInstance(passwordChangeModalEl).hide()
+        show_toast('Password updated.', 'success')
+        if (localAuthToggle) localAuthToggle.checked = false
+    } else if (response.status === 400) {
+        const errors = await response.json()
+        for (const [field, message] of Object.entries(errors)) {
+            const input = passwordChangeForm.querySelector(`[name="${field}"]`)
+            const feedback = document.getElementById(`${field}-invalid`)
+            if (input) input.classList.add('is-invalid')
+            if (feedback) feedback.textContent = message
+        }
+    } else {
+        show_toast(`${response.status}: ${response.statusText}`, 'danger')
+    }
+})
+
+function clearPasswordErrors() {
+    passwordChangeForm
+        ?.querySelectorAll('.is-invalid')
+        .forEach((el) => el.classList.remove('is-invalid'))
+    passwordChangeForm
+        ?.querySelectorAll('.invalid-feedback')
+        .forEach((el) => (el.textContent = ''))
+}
+
+localAuthToggle?.addEventListener('change', async (event) => {
+    if (!event.target.checked) {
+        // Re-enabling requires a password — open the modal instead.
+        event.target.checked = true
+        bootstrap.Modal.getOrCreateInstance(passwordChangeModalEl).show()
+        return
+    }
+    const csrfToken = document.querySelector(
+        'input[name="csrfmiddlewaretoken"]'
+    ).value
+    const body = new FormData()
+    body.append('disable', 'true')
+    const response = await fetch('/settings/user/local-auth', {
+        method: 'POST',
+        body: body,
+        headers: { 'X-CSRFToken': csrfToken },
+    })
+    if (response.ok) {
+        show_toast('Local login disabled.', 'success')
+    } else {
+        event.target.checked = false
+        show_toast(`${response.status}: ${response.statusText}`, 'danger')
+    }
+})
+
 function toggleToken(event) {
     event.preventDefault()
     console.log('toggleToken:', event)

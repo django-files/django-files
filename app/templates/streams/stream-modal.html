@@ -1,0 +1,210 @@
+{% if request.user.is_authenticated %}
+<!-- Stream Setup Modal -->
+<div class="modal fade" id="streamSetupModal" tabindex="-1" aria-labelledby="streamSetupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="streamSetupModalLabel"><i class="fa-solid fa-satellite-dish me-2"></i>Go Live</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <div class="mb-3">
+                    <label for="streamSetupName" class="form-label fw-semibold">Stream Name <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="streamSetupName" placeholder="my-stream" autocomplete="off"
+                               pattern="[a-zA-Z0-9_\-]+" title="Letters, numbers, hyphens, and underscores only">
+                        <button class="btn btn-outline-primary" type="button" id="streamSetupCreateBtn">
+                            <i class="fa-solid fa-satellite-dish me-1"></i> Create / Get Token
+                        </button>
+                    </div>
+                    <div class="form-text">This becomes your stream path: <code>/live/&lt;name&gt;/</code></div>
+                </div>
+
+                <div id="streamSetupTokenSection" class="d-none">
+                    <div class="mb-3">
+                        <label for="streamSetupTitle" class="form-label fw-semibold">Title <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" class="form-control" id="streamSetupTitle" placeholder="My Stream Title" autocomplete="off">
+                    </div>
+                    <div class="mb-4">
+                        <label for="streamSetupTokenDisplay" class="form-label fw-semibold">
+                            Stream Token
+                            <span class="text-muted fw-normal small ms-1">— scoped to this stream only</span>
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control font-monospace small" id="streamSetupTokenDisplay" readonly autocomplete="off">
+                            <button class="btn btn-outline-secondary" type="button" id="streamSetupTokenVisibilityBtn" title="Show/hide token">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary stream-setup-clip-btn" type="button" data-target="streamSetupTokenDisplay" title="Copy token">
+                                <i class="fa-regular fa-clipboard"></i>
+                            </button>
+                            <button class="btn btn-outline-warning" type="button" id="streamSetupRotateBtn" title="Rotate token — invalidates the current token">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                            </button>
+                        </div>
+                        <div class="form-text text-warning d-none" id="streamSetupRotateWarning">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i>Token rotated — update your streaming client's server URL.
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="streamSetupServerUrl" class="form-label fw-semibold">RTMP Server URL</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace small" id="streamSetupServerUrl" readonly>
+                            <button class="btn btn-outline-secondary stream-setup-clip-btn" type="button" data-target="streamSetupServerUrl" title="Copy server URL">
+                                <i class="fa-regular fa-clipboard"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            Paste into your streaming client's <strong>Server</strong> field. Set <strong>Stream Key</strong> to <code id="streamSetupNameHint"></code>.
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <p class="fw-semibold mb-1">Quick setup</p>
+                    <ol class="mb-0 lh-lg small">
+                        <li>In your streaming client, set <strong>Service</strong> to <strong>Custom RTMP</strong></li>
+                        <li>Set <strong>Server</strong> to the RTMP Server URL above</li>
+                        <li>Set <strong>Stream Key</strong> to <code id="streamSetupNameHint2"></code></li>
+                        <li>Hit <strong>Start Streaming</strong></li>
+                    </ol>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    const rtmpHost = '{{ rtmp_host|escapejs }}'
+    const cdnDetected = '{{ cdn_detected|default:"" }}'
+    const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
+    let currentStreamName = ''
+    let currentStreamToken = ''
+
+    function buildServerUrl(token) {
+        let url = `rtmp://${rtmpHost}/live?stream_token=${token}`
+        const title = document.getElementById('streamSetupTitle')?.value.trim()
+        if (title) url += `&title=${encodeURIComponent(title)}`
+        return url
+    }
+
+    function setTokenUI(name, token) {
+        currentStreamName = name
+        currentStreamToken = token
+        document.getElementById('streamSetupTokenDisplay').value = token
+        document.getElementById('streamSetupServerUrl').value = buildServerUrl(token)
+        document.getElementById('streamSetupNameHint').textContent = name
+        document.getElementById('streamSetupNameHint2').textContent = name
+        document.getElementById('streamSetupTokenSection').classList.remove('d-none')
+        document.getElementById('streamSetupRotateWarning').classList.add('d-none')
+    }
+
+    document.getElementById('streamSetupTitle')?.addEventListener('input', function () {
+        if (currentStreamToken) {
+            document.getElementById('streamSetupServerUrl').value = buildServerUrl(currentStreamToken)
+        }
+    })
+
+    document.getElementById('streamSetupCreateBtn').addEventListener('click', async function () {
+        const name = document.getElementById('streamSetupName').value.trim()
+        if (!name) {
+            document.getElementById('streamSetupName').focus()
+            return
+        }
+        const btn = this
+        btn.disabled = true
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Loading…'
+        try {
+            const fd = new FormData()
+            fd.append('name', name)
+            const res = await fetch('/api/stream/create/', {
+                method: 'POST',
+                body: fd,
+                headers: { 'X-CSRFToken': csrfToken },
+            })
+            if (res.status === 409) {
+                alert('That stream name is already taken by another user.')
+                return
+            }
+            if (!res.ok) {
+                const d = await res.json().catch(() => ({}))
+                alert(d.error || 'Failed to create stream.')
+                return
+            }
+            const data = await res.json()
+            setTokenUI(data.name, data.stream_token)
+        } finally {
+            btn.disabled = false
+            btn.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Create / Get Token'
+        }
+    })
+
+    document.getElementById('streamSetupTokenVisibilityBtn').addEventListener('click', function () {
+        const input = document.getElementById('streamSetupTokenDisplay')
+        const isHidden = input.type === 'password'
+        input.type = isHidden ? 'text' : 'password'
+        this.innerHTML = isHidden ? '<i class="fa-regular fa-eye-slash"></i>' : '<i class="fa-regular fa-eye"></i>'
+    })
+
+    document.getElementById('streamSetupRotateBtn').addEventListener('click', async function () {
+        if (!currentStreamName) return
+        if (!(await window.confirmRotateStreamToken?.(currentStreamName))) return
+        const btn = this
+        btn.disabled = true
+        try {
+            const res = await fetch(`/api/stream/${encodeURIComponent(currentStreamName)}/rotate-token/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+            })
+            if (!res.ok) {
+                alert('Failed to rotate token.')
+                return
+            }
+            const data = await res.json()
+            setTokenUI(data.name, data.stream_token)
+            document.getElementById('streamSetupTokenDisplay').type = 'text'
+            document.getElementById('streamSetupTokenVisibilityBtn').innerHTML = '<i class="fa-regular fa-eye-slash"></i>'
+            document.getElementById('streamSetupRotateWarning').classList.remove('d-none')
+            document.dispatchEvent(new CustomEvent('stream-token-rotated', {
+                detail: { name: data.name, token: data.stream_token },
+            }))
+        } finally {
+            btn.disabled = false
+        }
+    })
+
+    async function handleClipClick(btn) {
+        const target = document.getElementById(btn.dataset.target)
+        if (!target) return
+        const text = target.value
+        if (!text) return
+        await navigator.clipboard.writeText(text)
+        const orig = btn.innerHTML
+        btn.innerHTML = '<i class="fa-solid fa-check"></i>'
+        setTimeout(() => { btn.innerHTML = orig }, 2000)
+    }
+
+    document.querySelectorAll('#streamSetupModal .stream-setup-clip-btn').forEach(function (btn) {
+        btn.addEventListener('click', () => handleClipClick(btn))
+    })
+
+    if (cdnDetected) {
+        document.getElementById('streamSetupModal').addEventListener('show.bs.modal', function () {
+            if (document.getElementById('cdn-warning')) return
+            const warning = document.createElement('div')
+            warning.id = 'cdn-warning'
+            warning.className = 'alert alert-warning alert-dismissible fade show mb-3'
+            warning.role = 'alert'
+            warning.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i><strong>CDN detected (${cdnDetected}).</strong> RTMP port 1935 is not proxied — streaming may fail. Set <code>RTMP_HOST</code> in the server environment to a direct IP or hostname.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`
+            document.querySelector('#streamSetupModal .modal-body').prepend(warning)
+        })
+    }
+})()
+</script>
+{% endif %}

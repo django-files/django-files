@@ -87,10 +87,12 @@
 }
 
 /* Keep the home dash cards from growing a scroll region — let DataTables
-   responsive drop columns instead. The min-height skeleton reservation
-   in table.css still works; overflow:hidden just clips any overflow. */
+   responsive drop columns instead. Horizontal-only clipping preserves the
+   rounded corners while letting dropdown context menus overflow vertically
+   without being cut off by the card edge. */
 #home-files-card,
 #home-shorts-card,
 #home-albums-card {
-    overflow: hidden;
+    overflow-x: clip;
+    overflow-y: visible;
 }

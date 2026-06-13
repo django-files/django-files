@@ -1,5 +1,6 @@
-import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
+import { initBulkSelect, selectedPks } from './bulk-actions.js'
 import { socket } from './socket.js'
+import { openDeleteStreamsModal } from './streams-actions.js'
 import {
     selectColumn,
     selectColumnDef,
@@ -7,7 +8,6 @@ import {
 } from './table-defaults.js'
 
 const streamsTable = $('#streams-table')
-let deleteModal
 
 export const faKey = document.querySelector('div.d-none > .fa-key')
 export const faGlobe = document.querySelector('div.d-none > .fa-globe')
@@ -205,24 +205,35 @@ function getPasswordIcon(data, type, _row) {
 
 function getPublicIcon(data, type, _row) {
     if (type === 'display') {
-        if (data) {
-            return faGlobe.outerHTML
-        } else {
-            return faGlobe.outerHTML.replace('fa-globe', 'fa-lock')
-        }
+        if (data) return ''
+        return faGlobe.outerHTML.replace('fa-globe', 'fa-lock')
     }
     return data
 }
 
 function getActions(data, type, row) {
     if (type === 'display') {
+        const ownerItems = row.is_owner
+            ? `<li><a class="dropdown-item stream-copy-rtmp-btn" role="button" data-stream-name="${row.name}" data-rtmp-url="${row.rtmp_url || ''}">
+                    <i class="fa-solid fa-satellite-dish me-2"></i>Copy RTMP URL
+                </a></li>
+                <li><a class="dropdown-item stream-rotate-token-btn" role="button" data-stream-name="${row.name}">
+                    <i class="fa-solid fa-arrows-rotate me-2"></i>Regenerate Token
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item stream-toggle-public-btn" role="button" data-stream-name="${row.name}" data-public="${row.public}">
+                    <i class="fa-solid fa-${row.public ? 'lock' : 'globe'} me-2"></i>${row.public ? 'Make Private' : 'Make Public'}
+                </a></li>
+                <li><hr class="dropdown-divider"></li>`
+            : ''
         return `
             <div class="dropdown">
                 <button class="dt-ctx-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More options">
                     <i class="fa-solid fa-ellipsis"></i>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item stream-delete-btn link-danger" role="button" data-hook-id="${row.id}">
+                    ${ownerItems}
+                    <li><a class="dropdown-item stream-delete-btn link-danger" role="button" data-hook-id="${row.name}">
                         <i class="fa-regular fa-trash-can me-2"></i>Delete
                     </a></li>
                 </ul>
@@ -230,13 +241,6 @@ function getActions(data, type, row) {
         `
     }
     return data
-}
-
-function deleteStreams(ids) {
-    return new Promise((resolve) => {
-        socket.send(JSON.stringify({ method: 'delete-streams', pks: ids }))
-        resolve()
-    })
 }
 
 // Varied widths for name and title columns so skeleton rows look realistic
@@ -326,26 +330,14 @@ function domContentLoaded() {
         }
     })
 
-    deleteModal = wireDeleteModal({
-        modalId: 'delete-stream-modal',
-        bodyId: 'delete-stream-body',
-        confirmId: 'stream-delete-confirm',
-        entity: 'stream',
-        onConfirm: deleteStreams,
-    })
-
-    streamsTable.on('click', '.stream-delete-btn', function () {
-        deleteModal.open([Number($(this).data('hook-id'))])
-    })
-
     $('.bulk-delete').on('click', () =>
-        deleteModal.open(selectedPks(streamsDataTable))
+        openDeleteStreamsModal(selectedPks(streamsDataTable, 'name'))
     )
     $('.bulk-private').on('click', () =>
         socket.send(
             JSON.stringify({
                 method: 'private_streams',
-                pks: selectedPks(streamsDataTable),
+                pks: selectedPks(streamsDataTable, 'name'),
                 public: false,
             })
         )
@@ -354,7 +346,7 @@ function domContentLoaded() {
         socket.send(
             JSON.stringify({
                 method: 'private_streams',
-                pks: selectedPks(streamsDataTable),
+                pks: selectedPks(streamsDataTable, 'name'),
                 public: true,
             })
         )
@@ -373,15 +365,27 @@ socket?.addEventListener('message', function (event) {
             .draw()
     } else if (data.event === 'toggle-public-stream') {
         data.objects.forEach((obj) => {
-            const row = streamsDataTable?.row(function (_idx, rowData) {
-                return rowData.id === obj.id
-            })
-            if (row?.node()) {
-                const rowData = row.data()
-                rowData.public = obj.public
-                row.data(rowData).invalidate()
-            }
+            updateStreamRow(obj.name, { public: obj.public })
         })
         streamsDataTable?.draw(false)
+    } else if (data.event === 'set-stream-title') {
+        if (updateStreamRow(data.name, { title: data.title })) {
+            streamsDataTable?.draw(false)
+        }
+    } else if (data.event === 'set-stream-description') {
+        if (updateStreamRow(data.name, { description: data.description })) {
+            streamsDataTable?.draw(false)
+        }
     }
 })
+
+function updateStreamRow(name, patch) {
+    const row = streamsDataTable?.row(function (_idx, rowData) {
+        return rowData.name === name
+    })
+    if (!row?.node()) return false
+    const rowData = row.data()
+    Object.assign(rowData, patch)
+    row.data(rowData).invalidate()
+    return true
+}

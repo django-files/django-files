@@ -845,6 +845,38 @@ def session_view(request, sessionid):
         return HttpResponse(str(error), status=500)
 
 
+_SENSITIVE_QUERY_KEYS = ("stream_token", "token", "authorization")
+
+
+def _redact(params):
+    if not params:
+        return params
+    return {k: (["***"] if k in _SENSITIVE_QUERY_KEYS else v) for k, v in params.items()}
+
+
+def _resolve_stream_user(name, data):
+    """
+    Resolve the authenticated user from RTMP tcurl query params.
+    Tries stream_token (scoped, preferred) first, then falls back to the
+    legacy per-user authorization token for backwards compatibility.
+    Returns (user, stream_or_None) — stream is non-None only when stream_token auth is used.
+    """
+    stream_token = data.get("stream_token", [None])[0]
+    if stream_token:
+        stream = Stream.objects.filter(stream_token=stream_token, name=name).first()
+        if stream:
+            return stream.user, stream
+        log.debug("_resolve_stream_user: invalid stream_token for name=%s", name)
+        return None, None
+
+    token = data.get("token", [None])[0]
+    if token:
+        user = CustomUser.objects.filter(authorization=token).first()
+        return user, None
+
+    return None, None
+
+
 @csrf_exempt
 def stream_auth_view(request):
     """
@@ -852,19 +884,17 @@ def stream_auth_view(request):
     """
     try:
         log.debug("stream_auth_view: %s - %s", request.method, request.META["PATH_INFO"])
-        log.debug("stream_auth_view: %s", request.GET)
+        log.debug("stream_auth_view: %s", _redact(request.GET))
         name = request.GET.get("name")
         log.debug("name: %s", name)
         if not name:
             log.debug("No Stream Name Provided: %s", name)
             return HttpResponse(status=401)
 
-        url = urlparse(request.GET.get("tcurl"))
+        url = urlparse(request.GET.get("tcurl", ""))
         data = parse_qs(url.query)
-        log.debug("data: %s", data)
-        token = data["token"][0]
-        log.debug("token: %s", token)
-        user = CustomUser.objects.filter(authorization=token).first()
+        log.debug("data: %s", _redact(data))
+        user, _ = _resolve_stream_user(name, data)
         log.debug("user: %s", user)
         if not user:
             log.debug("User Authorization Failed: %s", name)
@@ -883,9 +913,18 @@ def stream_auth_view(request):
             stream_kwargs["description"] = description[0]
         if title := data.get("title"):
             stream_kwargs["title"] = title[0]
-        stream, _ = Stream.objects.update_or_create(
+        stream, created = Stream.objects.get_or_create(
             name=name, defaults={"user": user, "is_live": True, "started_at": datetime.now(), **stream_kwargs}
         )
+        if not created and stream.user != user and not user.is_superuser:
+            log.debug("stream_auth_view: name %s owned by %s, rejecting %s", name, stream.user, user)
+            return HttpResponse(status=403)
+        if not created:
+            stream.is_live = True
+            stream.started_at = datetime.now()
+            for k, v in stream_kwargs.items():
+                setattr(stream, k, v)
+            stream.save()
         log.debug("stream: %s", stream.__dict__)
         # if the stream ended, we want to set started_at to now, and clear ended_at
         if stream.ended_at:
@@ -907,13 +946,11 @@ def stream_auth_view(request):
 def stream_done_view(request):
     """
     View /stream/done/
-    Called by the RTMP server when a stream ends.  The request must carry the
-    same ?tcurl=...&token=<authorization_token> that stream_auth_view validates,
-    and the token must belong to the stream owner.
+    Called by the RTMP server when a stream ends.
     """
     try:
         log.debug("stream_done_view: %s - %s", request.method, request.META["PATH_INFO"])
-        log.debug("stream_done_view: %s", request.GET)
+        log.debug("stream_done_view: %s", _redact(request.GET))
         name = request.GET.get("name")
         log.debug("name: %s", name)
         if not name:
@@ -921,13 +958,9 @@ def stream_done_view(request):
 
         url = urlparse(request.GET.get("tcurl", ""))
         data = parse_qs(url.query)
-        token = data.get("token", [None])[0]
-        if not token:
-            log.debug("stream_done_view: no token provided")
-            return HttpResponse(status=401)
-        user = CustomUser.objects.filter(authorization=token).first()
+        user, _ = _resolve_stream_user(name, data)
         if not user:
-            log.debug("stream_done_view: invalid token")
+            log.debug("stream_done_view: invalid or missing credentials")
             return HttpResponse(status=401)
 
         stream = Stream.objects.get(name=name)
@@ -945,6 +978,46 @@ def stream_done_view(request):
         log.debug("error: %s", error)
 
     return HttpResponse()
+
+
+@require_http_methods(["POST"])
+@login_required
+def stream_create_view(request):
+    """
+    View /api/stream/create/
+    Pre-creates a stream for the authenticated user and returns its stream_token.
+    Idempotent: re-fetches and returns an existing stream owned by the user.
+    """
+    name = request.POST.get("name", "").strip()
+    if not name:
+        return JsonResponse({"error": "Stream name is required."}, status=400)
+    title = request.POST.get("title", "").strip() or name
+    description = request.POST.get("description", "").strip()
+
+    stream, created = Stream.objects.get_or_create(
+        name=name,
+        defaults={"user": request.user, "title": title, "description": description},
+    )
+    if not created and stream.user != request.user:
+        return JsonResponse({"error": "Stream name already taken."}, status=409)
+    return JsonResponse({"name": stream.name, "stream_token": stream.stream_token})
+
+
+@require_http_methods(["POST"])
+@login_required
+def stream_rotate_token_view(request, name):
+    """
+    View /api/stream/<name>/rotate-token/
+    Generates a new stream_token for the given stream (owner only).
+    """
+    stream = Stream.objects.filter(name=name).first()
+    if not stream:
+        return JsonResponse({"error": "Stream not found."}, status=404)
+    if stream.user != request.user and not request.user.is_superuser:
+        return JsonResponse({"error": "Forbidden."}, status=403)
+    stream.stream_token = rand_string()
+    stream.save(update_fields=["stream_token"])
+    return JsonResponse({"name": stream.name, "stream_token": stream.stream_token})
 
 
 @csrf_exempt
@@ -1460,7 +1533,10 @@ def streams_view(request, page=None, count=100):
     )
     paginator = Paginator(q, count)
     page_obj = paginator.get_page(page)
-    streams = extract_streams(page_obj.object_list, request.user.id)
+    from home.views import get_rtmp_host
+
+    rtmp_host, _ = get_rtmp_host(request)
+    streams = extract_streams(page_obj.object_list, request.user.id, rtmp_host=rtmp_host)
     log.debug("streams: %s", streams)
     _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {

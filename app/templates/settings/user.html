@@ -30,6 +30,7 @@
             <a class="nav-link" href="#clients"><i class="fas fa-mobile-screen"></i> Clients</a>
             <a class="nav-link" href="#upload"><i class="fas fa-cloud-arrow-up"></i> Upload</a>
             <a class="nav-link" href="#token"><i class="fas fa-key"></i> Token</a>
+            <a class="nav-link" href="#security"><i class="fas fa-shield-halved"></i> Security</a>
             {% if request.user.is_superuser %}
             <hr class="my-2">
             <a class="nav-link" href="{% url 'settings:site' %}"><i class="fa-solid fa-gears"></i> Site Settings</a>
@@ -592,6 +593,50 @@
                             <i class="fa-solid fa-eye me-2"></i>Toggle</a>
                         <a id="tokenRefreshBtn" class="btn btn-outline-danger" role="button">
                             <i class="fa-solid fa-rotate me-2"></i>Regenerate</a>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <hr class="my-4">
+
+        <!-- Security -->
+        <section id="security" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-shield-halved"></i> Security</h4>
+                </div>
+                <div class="dash-card-body">
+                    <div class="mb-4">
+                        <h6 class="fw-medium mb-1">Password</h6>
+                        <p class="text-muted small mb-2">
+                            {% if user.has_usable_password %}
+                                Local username/password login is enabled for your account.
+                            {% else %}
+                                Local username/password login is <strong>disabled</strong>. Set a password to re-enable it.
+                            {% endif %}
+                        </p>
+                        <button type="button" class="btn btn-outline-primary" id="changePasswordBtn">
+                            <i class="fa-solid fa-key me-2"></i>
+                            {% if user.has_usable_password %}Change Password{% else %}Set Password{% endif %}
+                        </button>
+                    </div>
+
+                    <hr>
+
+                    <div>
+                        <h6 class="fw-medium mb-1">Disable Local Login</h6>
+                        <p class="text-muted small mb-2">
+                            Prevents your account from being used with username/password. You will still be able to sign in through any connected OAuth provider.
+                        </p>
+                        <div class="form-check form-switch fs-5">
+                            <input class="form-check-input" type="checkbox" id="local_auth_disabled"
+                                   {% if not user.has_usable_password %}checked{% endif %}>
+                            <label class="form-check-label" for="local_auth_disabled">
+                                Disable local login for my account
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
