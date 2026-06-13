@@ -66,6 +66,30 @@ aria-hidden="true">
     </div>
 </div>
 
+<div class="modal fade" id="disableLocalAuthModal" tabindex="-1"
+     aria-labelledby="disableLocalAuthModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="disableLocalAuthModalLabel">
+                    <i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Disable Local Login?
+                </h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">You will no longer be able to sign in with your username and password. Sign in will only be possible through a connected OAuth provider.</p>
+                <p class="mb-0 text-muted small">To re-enable local login later, you must set a new password through the <strong>Change Password</strong> option in your account settings.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDisableLocalAuthBtn">
+                    <i class="fa-solid fa-lock me-2"></i>Disable Local Login
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="passwordChangeModal" tabindex="-1"
      aria-labelledby="passwordChangeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

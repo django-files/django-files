@@ -113,13 +113,24 @@ function clearPasswordErrors() {
         .forEach((el) => (el.textContent = ''))
 }
 
-localAuthToggle?.addEventListener('change', async (event) => {
+const disableLocalAuthModalEl = document.getElementById('disableLocalAuthModal')
+const confirmDisableLocalAuthBtn = document.getElementById(
+    'confirmDisableLocalAuthBtn'
+)
+
+localAuthToggle?.addEventListener('change', (event) => {
     if (!event.target.checked) {
-        // Re-enabling requires a password — open the modal instead.
+        // Re-enabling requires a password — open the password modal instead.
         event.target.checked = true
         bootstrap.Modal.getOrCreateInstance(passwordChangeModalEl).show()
         return
     }
+    // Show confirmation modal; revert toggle until confirmed.
+    event.target.checked = false
+    bootstrap.Modal.getOrCreateInstance(disableLocalAuthModalEl).show()
+})
+
+confirmDisableLocalAuthBtn?.addEventListener('click', async () => {
     const csrfToken = document.querySelector(
         'input[name="csrfmiddlewaretoken"]'
     ).value
@@ -130,11 +141,16 @@ localAuthToggle?.addEventListener('change', async (event) => {
         body: body,
         headers: { 'X-CSRFToken': csrfToken },
     })
+    bootstrap.Modal.getOrCreateInstance(disableLocalAuthModalEl).hide()
     if (response.ok) {
+        if (localAuthToggle) localAuthToggle.checked = true
         show_toast('Local login disabled.', 'success')
     } else {
-        event.target.checked = false
-        show_toast(`${response.status}: ${response.statusText}`, 'danger')
+        const data = await response.json().catch(() => ({}))
+        show_toast(
+            data.error || `${response.status}: ${response.statusText}`,
+            'danger'
+        )
     }
 })
 

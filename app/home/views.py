@@ -27,6 +27,9 @@ from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
 from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
+from oauth.providers.discord import DiscordOauth
+from oauth.providers.github import GithubOauth
+from oauth.providers.google import GoogleOauth
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
 from webpush.models import PushInformation
@@ -466,6 +469,31 @@ def invite_view(request, invite=None):
             context = {"invite": invite}
     log.debug("context: %s", context)
     return render(request, "invite.html", context=context)
+
+
+_invite_provider_map = {
+    "discord": DiscordOauth,
+    "github": GithubOauth,
+    "google": GoogleOauth,
+}
+
+
+def invite_oauth_view(request, invite: str, provider: str):
+    """
+    View  /i/<invite>/oauth/<provider>/
+    Stores the invite code in the session then redirects to the OAuth provider.
+    """
+    if request.user.is_authenticated:
+        return redirect("home:index")
+    site_settings = SiteSettings.objects.settings()
+    invite_obj = UserInvites.objects.get_invite(invite)
+    if not invite_obj or not invite_obj.is_valid():
+        return HttpResponse(status=400)
+    provider_cls = _invite_provider_map.get(provider)
+    if not provider_cls:
+        return HttpResponse(status=400)
+    request.session["oauth_invite"] = invite
+    return provider_cls.redirect_login(request, site_settings)
 
 
 def shorten_short_view(_request, short):

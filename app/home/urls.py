@@ -30,6 +30,7 @@ urlpatterns = [
     path("public/", views.pub_uppy_view, name="public-uppy"),
     path("i/", views.invite_view, name="invite-base"),
     path("i/<str:invite>", views.invite_view, name="invite"),
+    path("i/<str:invite>/oauth/<str:provider>/", views.invite_oauth_view, name="invite-oauth"),
     re_path(r"^upload/?$", upload_view, name="upload"),
     re_path(r"^shorten/?$", shorten_view, name="shorten"),
     path("s/<str:short>", views.shorten_short_view, name="short"),

@@ -279,9 +279,20 @@ def local_auth_view(request):
             {"error": "Set a new password to re-enable local login."},
             status=400,
         )
-    request.user.set_unusable_password()
-    request.user.save()
-    update_session_auth_hash(request, request.user)
+    user = request.user
+    has_oauth = (
+        hasattr(user, "discord")
+        or hasattr(user, "github")
+        or hasattr(user, "google")
+    )
+    if not has_oauth:
+        return JsonResponse(
+            {"error": "Link at least one OAuth provider before disabling local login."},
+            status=400,
+        )
+    user.set_unusable_password()
+    user.save()
+    update_session_auth_hash(request, user)
     return JsonResponse({"disabled": True}, status=200)
 
 

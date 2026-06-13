@@ -16,7 +16,7 @@ from django.views.decorators.http import require_http_methods
 from home.templatetags.home_tags import is_mobile
 from home.util.requests import CustomSchemeRedirect
 from oauth.forms import LoginForm
-from oauth.models import CustomUser, DiscordWebhooks
+from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
@@ -152,13 +152,35 @@ def oauth_callback(request, oauth_provider: str = ""):
             url = get_login_redirect_url(request, native_auth=native_auth)
             return _maybe_native_redirect(url)
 
-        user = get_or_create_user(request, oauth.id, oauth.username, provider, first_name=oauth.first_name)
+        invite_code = request.session.pop("oauth_invite", None)
+        invite = UserInvites.objects.get_invite(invite_code) if invite_code else None
+        log.debug("oauth_callback: invite: %s", invite)
+
+        user = get_or_create_user(
+            request,
+            oauth.id,
+            oauth.username,
+            provider,
+            first_name=oauth.first_name,
+            allow_invite_create=bool(invite and invite.is_valid()),
+        )
         log.debug("user: %s", user)
         if not user:
             message = "User Not Found or Already Taken."
             messages.error(request, message)
             url = get_login_redirect_url(request, native_auth=native_auth, native_client_error=message)
             return _maybe_native_redirect(url)
+
+        if invite and invite.is_valid() and not user.last_login:
+            if invite.super_user:
+                user.is_staff = True
+                user.is_superuser = True
+            if invite.storage_quota is not None:
+                user.storage_quota = invite.storage_quota
+            user.save()
+            invite.use_invite(user.id)
+            request.session["login_redirect_url"] = reverse("settings:user")
+            log.info("oauth_callback: invite used by user: %s", user)
 
         oauth.update_profile(user)
         if response := pre_login(request, user, site_settings):
