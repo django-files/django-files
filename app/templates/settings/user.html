@@ -31,6 +31,7 @@
             <a class="nav-link" href="#upload"><i class="fas fa-cloud-arrow-up"></i> Upload</a>
             <a class="nav-link" href="#token"><i class="fas fa-key"></i> Token</a>
             <a class="nav-link" href="#security"><i class="fas fa-shield-halved"></i> Security</a>
+            <a class="nav-link text-danger" href="#danger-zone"><i class="fa-solid fa-triangle-exclamation"></i> Danger</a>
             {% if request.user.is_superuser %}
             <hr class="my-2">
             <a class="nav-link" href="{% url 'settings:site' %}"><i class="fa-solid fa-gears"></i> Site Settings</a>
@@ -642,6 +643,30 @@
             </div>
 
             {% include 'settings/user-settings-modals.html' %}
+        </section>
+
+        <hr class="my-4">
+
+        <!-- Danger Zone -->
+        <section id="danger-zone" class="settings-section">
+            <div class="dash-card border-danger">
+                <div class="dash-card-header">
+                    <h4 class="d-flex align-items-center gap-2 text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h4>
+                </div>
+                <div class="dash-card-body">
+                    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                        <div>
+                            <h6 class="fw-medium mb-1">Delete Account</h6>
+                            <p class="text-muted small mb-0">
+                                Permanently deletes your account and <strong>all associated data</strong> — files, albums, short URLs, and streams. This cannot be undone.
+                            </p>
+                        </div>
+                        <button type="button" class="btn btn-danger flex-shrink-0" id="deleteAccountBtn">
+                            <i class="fa-solid fa-trash me-2"></i>Delete My Account
+                        </button>
+                    </div>
+                </div>
+            </div>
         </section>
 
     </div><!-- col content -->

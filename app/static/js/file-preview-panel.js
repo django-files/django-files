@@ -2,6 +2,7 @@
 
 import { socket } from './socket.js'
 import { initAlbumSelector } from './album-selector.js'
+import { initContextMenu } from './file-context-menu.js'
 
 const panel = document.getElementById('file-preview-panel')
 const panelContent = document.getElementById('previewPanelContent')
@@ -128,6 +129,9 @@ function initPanelContent(container) {
     if (!root) return
 
     const render = root.dataset.render
+
+    // Wire all context menu actions for dynamically injected elements
+    initContextMenu(container)
 
     // Initialize main content immediately (blocking)
     initPanelImage(container)

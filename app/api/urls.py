@@ -54,8 +54,6 @@ urlpatterns = [
     path("stream/viewers/<str:name>/", views.stream_viewers_view, name="stream-viewers"),
     path("stream/subscribers/<str:name>/", views.stream_subscribers_view, name="stream-subscribers"),
     path("stream/commands/<str:name>/", views.stream_commands_view, name="stream-commands"),
-    # path("stream/update/", views.stream_update_view, name="stream-update"),
-    # path("stream/play/", views.stream_update_view, name="stream-play"),
-    # path("stream/play_done/", views.stream_update_view, name="stream-play_done"),
+    path("stream/<str:name>/", views.stream_detail_view, name="stream-detail"),
     path("oauth/", oauth_show, name="oauth-show"),
 ]

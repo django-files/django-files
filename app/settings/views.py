@@ -7,7 +7,7 @@ from urllib.parse import quote
 import qrcode
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.sessions.backends.cache import SessionStore
@@ -19,6 +19,7 @@ from django.shortcuts import redirect, render, reverse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from home.util.misc import redact_log
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
@@ -27,6 +28,7 @@ signer = TimestampSigner()
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
+SESSION_AUTH_REQUIRED = "Session authentication required."
 
 
 @csrf_exempt
@@ -51,13 +53,13 @@ def site_view(request):
         }
         return render(request, "settings/site.html", context)
 
-    log.debug(request.POST)
+    log.debug(redact_log(request.POST))
     form = SiteSettingsForm(request.POST)
     if not form.is_valid():
         log.debug("form INVALID")
         return JsonResponse(form.errors, status=400)
     data = {"reload": False}
-    log.debug(form.cleaned_data)
+    log.debug(redact_log(form.cleaned_data))
 
     if not site_settings.site_url:
         data["reload"] = True
@@ -104,13 +106,13 @@ def user_view(request):
         }
         return render(request, "settings/user.html", context)
 
-    log.debug(request.POST)
+    log.debug(redact_log(request.POST))
     form = UserSettingsForm(request.POST)
     if not form.is_valid():
         log.debug("form INVALID")
         return JsonResponse(form.errors, status=400)
     data = {"reload": False}
-    log.debug(form.cleaned_data)
+    log.debug(redact_log(form.cleaned_data))
 
     request.user.first_name = form.cleaned_data["first_name"]
     request.user.timezone = form.cleaned_data["timezone"]
@@ -174,7 +176,6 @@ def welcome_view(request):
         user.username = form.cleaned_data["username"]
         log.debug("username: %s", form.cleaned_data["username"])
         user.set_password(form.cleaned_data["password"])
-        log.debug("password: %s", form.cleaned_data["password"])
         user.timezone = form.cleaned_data["timezone"]
         user.save()
         if request.user.is_superuser and form.cleaned_data["site_url"]:
@@ -271,7 +272,7 @@ def local_auth_view(request):
     """
     log.debug("local_auth_view: %s", request.user)
     if not request.session.session_key or not request.session.get("_auth_user_id"):
-        return JsonResponse({"error": "Session authentication required."}, status=401)
+        return JsonResponse({"error": SESSION_AUTH_REQUIRED}, status=401)
 
     disable = request.POST.get("disable") == "true"
     if not disable:
@@ -279,9 +280,16 @@ def local_auth_view(request):
             {"error": "Set a new password to re-enable local login."},
             status=400,
         )
-    request.user.set_unusable_password()
-    request.user.save()
-    update_session_auth_hash(request, request.user)
+    user = request.user
+    has_oauth = hasattr(user, "discord") or hasattr(user, "github") or hasattr(user, "google")
+    if not has_oauth:
+        return JsonResponse(
+            {"error": "Link at least one OAuth provider before disabling local login."},
+            status=400,
+        )
+    user.set_unusable_password()
+    user.save()
+    update_session_auth_hash(request, user)
     return JsonResponse({"disabled": True}, status=200)
 
 
@@ -297,7 +305,7 @@ def password_view(request):
     # auth_from_token is not applied here, but enforce it explicitly so future
     # decorator changes can't silently allow token-based password resets.
     if not request.session.session_key or not request.session.get("_auth_user_id"):
-        return JsonResponse({"error": "Session authentication required."}, status=401)
+        return JsonResponse({"error": SESSION_AUTH_REQUIRED}, status=401)
 
     new_password = request.POST.get("new_password", "")
     confirm = request.POST.get("confirm_new_password", "")
@@ -314,6 +322,47 @@ def password_view(request):
     request.user.save()
     update_session_auth_hash(request, request.user)
     return JsonResponse({"success": True}, status=200)
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_account_view(request):
+    """
+    View  /settings/user/delete
+    Permanently deletes the authenticated user's account and all associated data.
+    Session-authenticated only — token auth is explicitly rejected.
+    CASCADE deletes Albums, Files, ShortURLs, Streams; pre_delete signals remove
+    the actual files from storage (local filesystem or S3) and update quotas.
+    """
+    log.debug("delete_account_view: %s", request.user)
+    if not request.session.session_key or not request.session.get("_auth_user_id"):
+        return JsonResponse({"error": SESSION_AUTH_REQUIRED}, status=401)
+
+    expected_phrase = f"delete {request.user.username} and all associated data"
+    confirm_phrase = request.POST.get("confirm_phrase", "").strip()
+    if not confirm_phrase:
+        return JsonResponse({"error": "Confirmation phrase is required."}, status=400)
+    if confirm_phrase != expected_phrase:
+        return JsonResponse({"error": "Confirmation phrase did not match. Please try again."}, status=400)
+
+    site_settings = SiteSettings.objects.settings()
+    if site_settings.duo_auth:
+        from oauth.views import duo_redirect
+
+        request.session["pending_account_delete"] = True
+        try:
+            url = duo_redirect(request, request.user.username)
+        except ValueError:
+            del request.session["pending_account_delete"]
+            log.exception("delete_account_view: Duo health check failed")
+            return JsonResponse({"error": "Duo is unavailable. Please try again later."}, status=503)
+        return JsonResponse({"duo_redirect": url}, status=200)
+
+    user = request.user
+    log.warning("delete_account_view: deleting account for user %s (id=%s)", user.username, user.pk)
+    logout(request)
+    user.delete()
+    return JsonResponse({"redirect": reverse("oauth:login")}, status=200)
 
 
 @login_required

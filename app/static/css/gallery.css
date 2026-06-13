@@ -266,3 +266,23 @@
     opacity: 0.6;
     font-size: 0.8em;
 }
+
+/* Empty-state watermark overlay */
+.no-files-overlay {
+    min-height: 240px;
+    opacity: 0.2;
+    pointer-events: none;
+    user-select: none;
+}
+
+.ls-wide {
+    letter-spacing: 0.15em;
+}
+
+/* Inside the map container: stretch to fill and overlay the tiles */
+#map-container > .no-files-overlay {
+    position: absolute;
+    inset: 0;
+    min-height: unset;
+    z-index: 400;
+}

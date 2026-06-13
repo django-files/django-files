@@ -15,6 +15,7 @@ from django_redis import get_redis_connection
 from home.models import Albums, Files, Stream
 from home.tasks import version_check
 from home.util.file import process_file
+from home.util.misc import redact_log
 from home.util.storage import file_rename
 from oauth.models import CustomUser
 from pytimeparse2 import parse
@@ -71,6 +72,19 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug(event)
         await self.channel_layer.group_add("home", self.channel_name)
         user = self.scope["user"]
+        if not (hasattr(user, "id") and user.id):
+            # AuthMiddlewareStack only handles session auth; fall back to token
+            # from the Authorization header so the iOS client (which sends the
+            # API token as an HTTP header on the WS upgrade) joins the user group.
+            headers = dict(self.scope.get("headers", []))
+            token = headers.get(b"authorization", b"").decode()
+            if token:
+                auth_user = await database_sync_to_async(
+                    lambda: CustomUser.objects.filter(authorization=token).first()
+                )()
+                if auth_user:
+                    self.scope["user"] = auth_user
+                    user = auth_user
         if hasattr(user, "id") and user.id:
             await self.channel_layer.group_add(f"user-{user.id}", self.channel_name)
         session = self.scope.get("session")
@@ -144,7 +158,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         data["user_id"] = self.scope["user"].id
 
         log.debug("process_message: user_id: %s", data["user_id"])
-        log.debug(data)
+        log.debug(redact_log(data))
 
         method = getattr(self, method_name)
         if inspect.iscoroutinefunction(method):
@@ -180,7 +194,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
 
     def authorize(self, *, authorization: str = None, **kwargs):
         log.debug("authorize")
-        log.debug("authorization: %s", authorization)
         user = CustomUser.objects.filter(authorization=authorization)
         if not user:
             return self._error("Invalid Authorization.")
@@ -236,18 +249,14 @@ class HomeConsumer(AsyncWebsocketConsumer):
         else:
             return self._error("Album not found.", **kwargs)
 
-    def private_albums(self, *, user_id: int = None, pks: List[int] = None, private: bool, **kwargs) -> dict:
+    def private_albums(self, *, user_id: int = None, pks: List[int] = None, private: bool, **kwargs) -> None:
         log.debug("private_albums: user_id=%s pks=%s private=%s", user_id, pks, private)
         albums = list(Albums.objects.filter(**filter_kwargs(pks, user_id)))
         if not albums:
             return self._error("Album(s) not found.", **kwargs)
         for a in albums:
             a.private = private
-        Albums.objects.bulk_update(albums, ["private"])
-        return {
-            "objects": [{"id": a.id, "name": a.name, "private": a.private} for a in albums],
-            "event": "toggle-private-album",
-        }
+            a.save(update_fields=["private"])  # triggers post_save signal → album-update WS broadcast
 
     def toggle_private_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
         """
@@ -330,7 +339,6 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if file := Files.objects.filter(pk=pk):
             if user_id and file[0].user.id != user_id:
                 return self._error("File owned by another user.", **kwargs)
-            log.debug("password: %s", password)
             file[0].password = password or ""
             file[0].save(update_fields=["password"])
             response = model_to_dict(file[0], exclude=["file", "thumb", "albums"])
@@ -1188,18 +1196,23 @@ class HomeConsumer(AsyncWebsocketConsumer):
         user_id: int = None,
         pks: List[int] = None,
         albums: List[int] = None,
+        album_name: str = None,
         action: str = None,
         **kwargs,
     ) -> dict:
         if not pks:
             return self._error("No file IDs specified.", **kwargs)
-        if not albums:
-            return self._error("No album IDs specified.", **kwargs)
+        if not albums and not album_name:
+            return self._error("No albums specified.", **kwargs)
         if action not in ("add", "remove"):
             return self._error("Action must be 'add' or 'remove'.", **kwargs)
-        album_objs = list(Albums.objects.filter(id__in=albums, user_id=user_id))
-        if not album_objs:
-            return self._error("Albums not found.", **kwargs)
+        if album_name and action == "add":
+            qalbum = Albums.objects.filter(name=album_name, user_id=user_id)
+            album_objs = list(qalbum) if qalbum else [Albums.objects.create(user_id=user_id, name=album_name)]
+        else:
+            album_objs = list(Albums.objects.filter(id__in=albums or [], user_id=user_id))
+            if not album_objs:
+                return self._error("Albums not found.", **kwargs)
         files = Files.objects.filter(id__in=pks)
         if not self.scope["user"].is_superuser:
             files = files.filter(user_id=user_id)

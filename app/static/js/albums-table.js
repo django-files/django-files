@@ -148,6 +148,7 @@ async function domContentLoaded() {
             document
                 .querySelector('.albums-truncation-warning')
                 ?.classList.remove('d-none'),
+        extra: { 'album-update': updateAlbumRow },
     })
     await initDataTable(
         albumsDataTable,
@@ -206,6 +207,16 @@ function showAlbumsSkeletons(count = 10) {
     buildSkeletonRows(tbody, count, _albumSkeletonSpecs, {
         2: _albumSkeletonNameWidths,
     })
+}
+
+export function updateAlbumRow(data) {
+    if (!albumsDataTable) return
+    const row = albumsDataTable.row(`#album-${data.id}`)
+    if (!row.node()) return
+    const current = row.data() || {}
+    row.data({ ...current, ...data })
+        .invalidate('data')
+        .draw(false)
 }
 
 function handleDeleteClick(_event) {

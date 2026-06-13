@@ -38,6 +38,10 @@
         {% include 'files/table.html'%}
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap{% if view_mode != 'gallery' %} d-none{% endif %}"></div>
         <div id="map-container" class="d-none"></div>
+        <div id="no-files-overlay" class="d-none flex-column align-items-center justify-content-center gap-3 py-5 w-100 text-body-tertiary no-files-overlay" aria-live="polite">
+            <i class="fa-regular fa-folder-open" style="font-size: 5rem;"></i>
+            <span class="fw-bold text-uppercase fs-4 ls-wide">No Files</span>
+        </div>
     </div>
 
     {% include 'files/file-upload-modal.html' %}

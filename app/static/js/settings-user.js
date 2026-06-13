@@ -113,13 +113,24 @@ function clearPasswordErrors() {
         .forEach((el) => (el.textContent = ''))
 }
 
-localAuthToggle?.addEventListener('change', async (event) => {
+const disableLocalAuthModalEl = document.getElementById('disableLocalAuthModal')
+const confirmDisableLocalAuthBtn = document.getElementById(
+    'confirmDisableLocalAuthBtn'
+)
+
+localAuthToggle?.addEventListener('change', (event) => {
     if (!event.target.checked) {
-        // Re-enabling requires a password — open the modal instead.
+        // Re-enabling requires a password — open the password modal instead.
         event.target.checked = true
         bootstrap.Modal.getOrCreateInstance(passwordChangeModalEl).show()
         return
     }
+    // Show confirmation modal; revert toggle until confirmed.
+    event.target.checked = false
+    bootstrap.Modal.getOrCreateInstance(disableLocalAuthModalEl).show()
+})
+
+confirmDisableLocalAuthBtn?.addEventListener('click', async () => {
     const csrfToken = document.querySelector(
         'input[name="csrfmiddlewaretoken"]'
     ).value
@@ -130,11 +141,16 @@ localAuthToggle?.addEventListener('change', async (event) => {
         body: body,
         headers: { 'X-CSRFToken': csrfToken },
     })
+    bootstrap.Modal.getOrCreateInstance(disableLocalAuthModalEl).hide()
     if (response.ok) {
+        if (localAuthToggle) localAuthToggle.checked = true
         show_toast('Local login disabled.', 'success')
     } else {
-        event.target.checked = false
-        show_toast(`${response.status}: ${response.statusText}`, 'danger')
+        const data = await response.json().catch(() => ({}))
+        show_toast(
+            data.error || `${response.status}: ${response.statusText}`,
+            'danger'
+        )
     }
 })
 
@@ -246,6 +262,75 @@ function genQrCode(data) {
         },
     })
 }
+
+const deleteAccountBtn = document.getElementById('deleteAccountBtn')
+const deleteAccountModalEl = document.getElementById('deleteAccountModal')
+const deleteAccountConfirmInput = document.getElementById(
+    'deleteAccountConfirmInput'
+)
+const confirmDeleteAccountBtn = document.getElementById(
+    'confirmDeleteAccountBtn'
+)
+const deleteAccountPhrase = document
+    .getElementById('deleteAccountPhrase')
+    ?.textContent?.trim()
+
+deleteAccountBtn?.addEventListener('click', () => {
+    deleteAccountConfirmInput.value = ''
+    deleteAccountConfirmInput.classList.remove('is-invalid')
+    document.getElementById('deleteAccountConfirmFeedback').textContent = ''
+    confirmDeleteAccountBtn.disabled = true
+    bootstrap.Modal.getOrCreateInstance(deleteAccountModalEl).show()
+    deleteAccountModalEl.addEventListener(
+        'shown.bs.modal',
+        () => deleteAccountConfirmInput.focus(),
+        { once: true }
+    )
+})
+
+deleteAccountConfirmInput?.addEventListener('input', () => {
+    const matches =
+        deleteAccountConfirmInput.value.trim() === deleteAccountPhrase
+    confirmDeleteAccountBtn.disabled = !matches
+    if (matches) {
+        deleteAccountConfirmInput.classList.remove('is-invalid')
+    }
+})
+
+confirmDeleteAccountBtn?.addEventListener('click', async () => {
+    const phrase = deleteAccountConfirmInput.value.trim()
+    if (phrase !== deleteAccountPhrase) {
+        deleteAccountConfirmInput.classList.add('is-invalid')
+        document.getElementById('deleteAccountConfirmFeedback').textContent =
+            'Confirmation phrase did not match.'
+        return
+    }
+    const csrfToken = document.querySelector(
+        'input[name="csrfmiddlewaretoken"]'
+    ).value
+    const body = new FormData()
+    body.append('confirm_phrase', phrase)
+    confirmDeleteAccountBtn.disabled = true
+    confirmDeleteAccountBtn.innerHTML =
+        '<span class="spinner-border spinner-border-sm me-2"></span>Deleting...'
+    const response = await fetch('/settings/user/delete', {
+        method: 'POST',
+        body: body,
+        headers: { 'X-CSRFToken': csrfToken },
+    })
+    if (response.ok) {
+        const data = await response.json()
+        window.location.href = data.duo_redirect || data.redirect || '/'
+    } else {
+        const data = await response.json().catch(() => ({}))
+        deleteAccountConfirmInput.classList.add('is-invalid')
+        document.getElementById('deleteAccountConfirmFeedback').textContent =
+            data.error || `${response.status}: ${response.statusText}`
+        confirmDeleteAccountBtn.disabled = false
+        confirmDeleteAccountBtn.innerHTML =
+            '<i class="fa-solid fa-trash me-2"></i>Permanently Delete My Account'
+    }
+})
 
 function isDark() {
     let theme = localStorage.getItem('theme')

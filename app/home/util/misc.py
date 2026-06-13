@@ -3,6 +3,29 @@ from math import floor, log10
 
 log = logging.getLogger("app")
 
+_SENSITIVE_LOG_KEYS = frozenset(
+    {
+        "password",
+        "authorization",
+        "token",
+        "stream_token",
+        "key",
+        "secret",
+        "private_key",
+        "private",
+        "client_secret",
+        "access_token",
+        "refresh_token",
+    }
+)
+
+
+def redact_log(data):
+    """Return a copy of *data* with sensitive keys replaced by '***', safe to pass to log calls."""
+    if not data:
+        return data
+    return {k: ("***" if k in _SENSITIVE_LOG_KEYS else v) for k, v in dict(data).items()}
+
 
 def anytobool(value) -> bool:
     log.debug("anytobool: %s", value)

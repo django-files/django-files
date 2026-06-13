@@ -1,6 +1,6 @@
 import { socket } from './socket.js'
-import { fetchAlbums, fetchFile } from './api-fetch.js'
-import { initAlbumSelector } from './album-selector.js'
+import { fetchFile } from './api-fetch.js'
+import { initAlbumSelector, initBulkAlbumSelector } from './album-selector.js'
 
 // JS for Context Menu
 
@@ -102,27 +102,6 @@ $('#modal-rename-form').on('submit', function (event) {
     )
 })
 
-// albums Form — bulk mode only (single-file changes are dispatched immediately via badge UI)
-
-$('#modal-album-form').on('submit', function (event) {
-    event.preventDefault()
-    const mode = this.dataset.mode
-    const albums = Array.from(
-        document.getElementById('album-options').selectedOptions
-    ).map((o) => Number.parseInt(o.value))
-    const pks = JSON.parse(this.dataset.pks || '[]')
-    const action = mode === 'bulk-add' ? 'add' : 'remove'
-    socket.send(
-        JSON.stringify({
-            method: 'bulk-edit-file-albums',
-            pks,
-            albums,
-            action,
-        })
-    )
-    fileAlbumModal.modal('hide')
-})
-
 // Event Listeners
 
 export function ctxSetExpire(event) {
@@ -195,15 +174,36 @@ fileAlbumModal.on('hidden.bs.modal', () => {
         socket?.removeEventListener('message', albumModalSocketHandler)
         albumModalSocketHandler = null
     }
+    document.getElementById('modal-album-badge-ui').classList.add('d-none')
 })
 
+const ADD_GROUP_HTML = `
+    <span class="badge rounded-pill text-bg-primary addto-album-group">
+        <button class="btn p-0 addto-album"><i class="fa-solid fa-plus"></i></button>
+        <span class="album-add-container d-none">
+            <input class="album-search-input" autocomplete="off" placeholder="Search albums…">
+        </span>
+    </span>`
+
+function albumBadgeHtml(id, label) {
+    return `
+        <span class="badge rounded-pill text-bg-primary ps-2 file-album-active" id="album-${id}">
+            <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album=${id}" title="${label}">${label} </a>
+            <button id="remove-album-${id}" class="btn p-0 mt-0 remove-album">
+                <i class="fa-solid fa-xmark text-small remove-album"></i>
+            </button>
+        </span>`
+}
+
 /**
- * Open the album picker modal in single-file or bulk mode.
- * Single mode renders the badge UI (identical to the preview sidebar).
- * Bulk modes render a multi-select for batch add/remove operations.
+ * Open the album picker modal.
+ * Single mode renders the badge UI identical to the preview sidebar.
+ * Bulk mode renders the same badge UI but for the union of albums across all
+ * selected files, showing a count "(n)" on badges where only n of the N
+ * selected files are in that album.
  *
  * @param {number[]} pks - File IDs to act on.
- * @param {'single'|'bulk-add'|'bulk-remove'} mode
+ * @param {'single'|'bulk'} mode
  * @param {string} title - Modal header text.
  */
 export async function openAlbumModal(
@@ -214,47 +214,26 @@ export async function openAlbumModal(
     document.getElementById('fileAlbumModalLabel').textContent = title
 
     const badgeUi = document.getElementById('modal-album-badge-ui')
-    const form = document.getElementById('modal-album-form')
-    const submitBtn = document.getElementById('file-album-submit')
+    const albumContainer = badgeUi.querySelector('.album-container')
+
+    badgeUi.classList.remove('d-none')
+    albumContainer.innerHTML =
+        '<span class="spinner-border spinner-border-sm text-secondary ms-1" role="status"></span>'
+
+    fileAlbumModal.modal('show')
 
     if (mode === 'single') {
-        badgeUi.classList.remove('d-none')
-        form.classList.add('d-none')
-        submitBtn.classList.add('d-none')
-
         const pk = pks[0]
-        const albumContainer = badgeUi.querySelector('.album-container')
         albumContainer.id = `albums-file-${pk}`
 
-        albumContainer.innerHTML =
-            '<span class="spinner-border spinner-border-sm text-secondary ms-1" role="status"></span>'
-
-        fileAlbumModal.modal('show')
-
         const file = await fetchFile(pk)
+        document.getElementById('fileAlbumModalLabel').textContent =
+            `Albums — ${file.name}`
         const currentAlbums = file.albums_details || []
 
-        const addGroupHtml = `
-            <span class="badge rounded-pill text-bg-primary p-0 input-group-sm addto-album-group mx-2">
-                <button class="btn py-0 px-1 addto-album"><i class="fa-solid fa-plus"></i></button>
-                <span class="album-add-container d-none">
-                    <input class="form-control d-inline input-sm album-list album-search-input" autocomplete="off" placeholder="Search albums…">
-                </span>
-            </span>`
-
-        const badgesHtml = currentAlbums
-            .map(
-                (a) => `
-            <span class="badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1" id="album-${a.id}">
-                <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album=${a.id}">${a.name} </a>
-                <button id="remove-album-${a.id}" class="btn p-0 mt-0 remove-album">
-                    <i class="fa-solid fa-xmark text-small remove-album"></i>
-                </button>
-            </span>`
-            )
-            .join('')
-
-        albumContainer.innerHTML = badgesHtml + addGroupHtml
+        albumContainer.innerHTML =
+            currentAlbums.map((a) => albumBadgeHtml(a.id, a.name)).join('') +
+            ADD_GROUP_HTML
 
         if (albumModalSocketHandler) {
             socket?.removeEventListener('message', albumModalSocketHandler)
@@ -277,30 +256,30 @@ export async function openAlbumModal(
         }
         socket?.addEventListener('message', albumModalSocketHandler)
     } else {
-        badgeUi.classList.add('d-none')
-        form.classList.remove('d-none')
-        submitBtn.classList.remove('d-none')
-        form.dataset.mode = mode
-        form.dataset.pks = JSON.stringify(pks)
+        albumContainer.id = 'albums-file-bulk'
 
-        if (mode === 'bulk-add') {
-            submitBtn.textContent = 'Add to Albums'
-        } else {
-            submitBtn.textContent = 'Remove from Albums'
-        }
+        const files = await Promise.all(pks.map((pk) => fetchFile(pk)))
 
-        const albumOptions = document.getElementById('album-options')
-        albumOptions.length = 0
-
-        fileAlbumModal.modal('show')
-        let nextPage = 1
-        while (nextPage) {
-            const resp = await fetchAlbums(nextPage)
-            nextPage = resp.next
-            for (const album of resp.albums) {
-                albumOptions.options.add(createOption(album.id, album.name))
+        const albumMap = {}
+        for (const file of files) {
+            for (const a of file.albums_details || []) {
+                if (!albumMap[a.id])
+                    albumMap[a.id] = { id: a.id, name: a.name, count: 0 }
+                albumMap[a.id].count++
             }
         }
+
+        const albums = Object.values(albumMap)
+        albumContainer.innerHTML =
+            albums
+                .map((a) => {
+                    const label =
+                        a.count < pks.length ? `${a.name} (${a.count})` : a.name
+                    return albumBadgeHtml(a.id, label)
+                })
+                .join('') + ADD_GROUP_HTML
+
+        initBulkAlbumSelector(badgeUi, socket, pks)
     }
 }
 
@@ -493,16 +472,15 @@ socket?.addEventListener('message', function (event) {
     }
 })
 
-/**
- * Create Option
- * @function postURL
- * @param {String} id
- * @param {String} name
- * @return {HTMLOptionElement}
- */
-export function createOption(id, name) {
-    const option = document.createElement('option')
-    option.textContent = name
-    option.value = id
-    return option
+export function initContextMenu(container) {
+    const wire = (selector, handler) =>
+        container
+            .querySelectorAll(selector)
+            .forEach((el) => el.addEventListener('click', handler))
+    wire('.ctx-expire', ctxSetExpire)
+    wire('.ctx-private', ctxSetPrivate)
+    wire('.ctx-password', ctxSetPassword)
+    wire('.ctx-delete', ctxDeleteFile)
+    wire('.ctx-rename', ctxRenameFile)
+    wire('.ctx-album', ctxAlbumFile)
 }

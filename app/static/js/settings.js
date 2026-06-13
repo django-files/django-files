@@ -118,6 +118,32 @@ document
         )
     )
 
+// -- OAuth Registration confirm (site page) --
+const oauthRegCheckbox = document.getElementById('oauth_reg')
+if (oauthRegCheckbox) {
+    oauthRegCheckbox.addEventListener('change', (event) => {
+        if (!event.target.checked) return
+        event.stopPropagation()
+        event.target.checked = false
+        bootstrap.Modal.getOrCreateInstance(
+            document.getElementById('oauth-reg-confirm-modal')
+        ).show()
+    })
+}
+
+document.getElementById('confirmOauthRegBtn')?.addEventListener('click', () => {
+    bootstrap.Modal.getOrCreateInstance(
+        document.getElementById('oauth-reg-confirm-modal')
+    ).hide()
+    oauthRegCheckbox.checked = true
+    const form = document.getElementById('settingsForm')
+    saveOptions({
+        currentTarget: form,
+        target: oauthRegCheckbox,
+        type: 'change',
+    })
+})
+
 // -- Public uploads toggle (site page) --
 document.getElementById('pub_load')?.addEventListener('change', (event) => {
     document

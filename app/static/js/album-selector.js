@@ -78,6 +78,46 @@ export function initAlbumSearchInput(
 }
 
 /**
+ * Wires the add-album button, search input, and blur behaviour shared by both
+ * single-file and bulk selectors. Automatically calls closeInput() after each
+ * onSelect/onCreate so the callbacks don't have to.
+ */
+function wireAlbumAddInput(container, { fetchAlbums, onSelect, onCreate }) {
+    const addToAlbumButton = container.querySelector('.addto-album')
+    const addAlbumInput = container.querySelector('.album-search-input')
+    const addAlbumContainer = container.querySelector('.album-add-container')
+    const albumSearchResults = container.querySelector('.album-search-results')
+
+    function closeInput() {
+        addAlbumInput.value = ''
+        addAlbumContainer.classList.add('d-none')
+        albumSearchResults.classList.remove('show')
+    }
+
+    addToAlbumButton?.addEventListener('click', () => {
+        addAlbumContainer.classList.remove('d-none')
+        addAlbumInput.value = ''
+        addAlbumInput.focus()
+    })
+
+    addAlbumInput?.addEventListener('blur', () => setTimeout(closeInput, 150))
+
+    initAlbumSearchInput(addAlbumInput, albumSearchResults, {
+        fetchAlbums,
+        onSelect: (album) => {
+            onSelect(album)
+            closeInput()
+        },
+        onCreate: onCreate
+            ? (name) => {
+                  onCreate(name)
+                  closeInput()
+              }
+            : undefined,
+    })
+}
+
+/**
  * Full album badge selector for the file preview sidebar.
  * Returns a handleAlbumBadges(data) callback for the websocket handler.
  */
@@ -86,10 +126,6 @@ export function initAlbumSelector(container, socket) {
     if (!albumContainer) return null
 
     const filePk = albumContainer.id.replace('albums-file-', '')
-    const addToAlbumButton = container.querySelector('.addto-album')
-    const addAlbumInput = container.querySelector('.album-search-input')
-    const addAlbumContainer = container.querySelector('.album-add-container')
-    const albumSearchResults = container.querySelector('.album-search-results')
 
     function removeAlbumPress(event) {
         const albumId = event.target
@@ -108,23 +144,7 @@ export function initAlbumSelector(container, socket) {
         .querySelectorAll('.remove-album')
         .forEach((el) => el.addEventListener('click', removeAlbumPress))
 
-    function closeInput() {
-        addAlbumInput.value = ''
-        addAlbumContainer.classList.add('d-none')
-        albumSearchResults.classList.remove('show')
-    }
-
-    addToAlbumButton?.addEventListener('click', async () => {
-        addAlbumContainer.classList.remove('d-none')
-        addAlbumInput.value = ''
-        addAlbumInput.focus()
-    })
-
-    addAlbumInput?.addEventListener('blur', () => {
-        setTimeout(closeInput, 150)
-    })
-
-    initAlbumSearchInput(addAlbumInput, albumSearchResults, {
+    wireAlbumAddInput(container, {
         fetchAlbums: async (query) => {
             const [resp, file] = await Promise.all([
                 fetchAlbumsSearch(query, 12),
@@ -142,7 +162,6 @@ export function initAlbumSelector(container, socket) {
                     method: 'add_file_album',
                 })
             )
-            closeInput()
         },
         onCreate: (name) => {
             socket.send(
@@ -152,7 +171,6 @@ export function initAlbumSelector(container, socket) {
                     method: 'add_file_album',
                 })
             )
-            closeInput()
         },
     })
 
@@ -167,10 +185,10 @@ export function initAlbumSelector(container, socket) {
             for (const [key, value] of Object.entries(data.added_to)) {
                 const span = document.createElement('span')
                 span.className =
-                    'badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1'
+                    'badge rounded-pill text-bg-primary ps-2 file-album-active'
                 span.id = `album-${key}`
                 span.innerHTML = `
-                    <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album=${key}">${value} </a>
+                    <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album=${key}" title="${value}">${value} </a>
                     <button id="remove-album-${key}" class="btn p-0 mt-0 remove-album">
                         <i class="fa-solid fa-xmark text-small remove-album"></i>
                     </button>`
@@ -184,4 +202,89 @@ export function initAlbumSelector(container, socket) {
     }
 
     return handleAlbumBadges
+}
+
+/**
+ * Bulk album badge selector. Shows badges for the union of albums across all
+ * selected files. Badges show a count "(n)" when only n of the selected files
+ * are in that album. Add/remove dispatch bulk-edit-file-albums WS messages.
+ *
+ * @param {HTMLElement} container  - the #modal-album-badge-ui element
+ * @param {WebSocket}   socket
+ * @param {number[]}    pks        - selected file IDs
+ */
+export function initBulkAlbumSelector(container, socket, pks) {
+    const albumContainer = container.querySelector('.album-container')
+
+    function removeAlbumPress(event) {
+        const albumId = Number(
+            event.target.closest('button').id.replace('remove-album-', '')
+        )
+        socket.send(
+            JSON.stringify({
+                method: 'bulk-edit-file-albums',
+                pks,
+                albums: [albumId],
+                action: 'remove',
+            })
+        )
+        albumContainer.querySelector(`#album-${albumId}`)?.remove()
+    }
+
+    container
+        .querySelectorAll('.remove-album')
+        .forEach((el) => el.addEventListener('click', removeAlbumPress))
+
+    function addBadge(id, name) {
+        const existing = albumContainer.querySelector(`#album-${id}`)
+        if (existing) {
+            const a = existing.querySelector('a')
+            a.textContent = name + ' '
+            a.title = name
+            return
+        }
+        const addGroup = albumContainer.querySelector('.addto-album-group')
+        const span = document.createElement('span')
+        span.className =
+            'badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1'
+        span.id = `album-${id}`
+        span.innerHTML = `
+            <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album=${id}" title="${name}">${name} </a>
+            <button id="remove-album-${id}" class="btn p-0 mt-0 remove-album">
+                <i class="fa-solid fa-xmark text-small remove-album"></i>
+            </button>`
+        span.querySelector('.remove-album').addEventListener(
+            'click',
+            removeAlbumPress
+        )
+        addGroup.before(span)
+    }
+
+    wireAlbumAddInput(container, {
+        fetchAlbums: async (query) => {
+            const resp = await fetchAlbumsSearch(query, 12)
+            return resp.albums || []
+        },
+        onSelect: (album) => {
+            socket.send(
+                JSON.stringify({
+                    method: 'bulk-edit-file-albums',
+                    pks,
+                    albums: [album.id],
+                    action: 'add',
+                })
+            )
+            addBadge(album.id, album.name)
+        },
+        onCreate: (name) => {
+            socket.send(
+                JSON.stringify({
+                    method: 'bulk-edit-file-albums',
+                    pks,
+                    album_name: name,
+                    action: 'add',
+                })
+            )
+        },
+    })
 }
