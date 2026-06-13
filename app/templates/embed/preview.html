@@ -92,7 +92,7 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
             <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
             <pre class="pt-3 ps-3 w-100"><code id="text-preview"><i class="fas fa-spinner fa-pulse"></i></code></pre>
         {% else %}
-            <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
+            <div class="d-flex align-items-center justify-content-center h-100 w-100"><i class="fa-10x fa-solid fa-file"></i></div>
         {% endif %}
         <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
         <div class="context-placement" data-bs-toggle="dropdown" id="contextPlacement" title="More options">
