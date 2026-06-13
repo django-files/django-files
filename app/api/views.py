@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 import validators
+from django.db.models.fields.json import KeyTextTransform
 from api.utils import (
     apply_ordering,
     extract_albums,
@@ -492,10 +493,13 @@ def files_view(request, page, count=25):
         return JsonResponse({"error": "Not Authenticated"}, status=401)
     if mime := request.GET.get("mime"):
         q = q.filter(mime__startswith=mime)
+    ordering_param = (request.GET.get("ordering") or "").lstrip("-")
+    if ordering_param == "exif_date":
+        q = q.annotate(_exif_date=KeyTextTransform("DateTimeOriginal", "exif"))
     q = apply_ordering(
         q,
         request,
-        allowed={"created": "date", "size": "size", "name": "name"},
+        allowed={"created": "date", "size": "size", "name": "name", "exif_date": "_exif_date"},
         default="-created",
     )
     paginator = Paginator(q, count)
