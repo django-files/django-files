@@ -10,7 +10,6 @@ from urllib.parse import parse_qs, urlparse
 
 import httpx
 import validators
-from django.db.models.fields.json import KeyTextTransform
 from api.utils import (
     apply_ordering,
     extract_albums,
@@ -27,6 +26,7 @@ from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.signing import TimestampSigner
 from django.db.models import Count, QuerySet
+from django.db.models.fields.json import KeyTextTransform
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
