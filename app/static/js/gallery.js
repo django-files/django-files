@@ -673,15 +673,24 @@ function changeView(event) {
 
 socket?.addEventListener('message', function (event) {
     if (event.data === 'pong') return
-    if (params.get('view') === 'gallery') {
-        let data = JSON.parse(event.data)
-        if (data.event === 'file-delete') {
-            fileDeleteGallery(data.id)
-        } else if (data.event === 'file-new') {
-            fileData.unshift(data)
+    const data = JSON.parse(event.data)
+    const inGallery = params.get('view') === 'gallery'
+
+    if (data.event === 'file-new') {
+        fileData.unshift(data)
+        if (inGallery) {
             addGalleryFile(data, true)
             updateNoFilesOverlay()
-        } else if (data.event === 'set-password-file') {
+        }
+    } else if (data.event === 'file-delete') {
+        const idx = fileData.findIndex((file) => file.id === data.id)
+        if (idx !== -1) fileData.splice(idx, 1)
+        if (inGallery) {
+            $(`#gallery-image-${data.id}`).remove()
+            updateNoFilesOverlay()
+        }
+    } else if (inGallery) {
+        if (data.event === 'set-password-file') {
             passwordStatusChange(data)
         } else if (data.event === 'toggle-private-file') {
             privateStatusChange(data)
@@ -717,13 +726,6 @@ function updateNoFilesOverlay() {
         mapContainer.parentElement.appendChild(noFilesOverlay)
         mapContainer.style.position = ''
     }
-}
-
-function fileDeleteGallery(pk) {
-    $(`#gallery-image-${pk}`).remove()
-    const idx = fileData.findIndex((file) => file.id === pk)
-    if (idx !== -1) fileData.splice(idx, 1)
-    updateNoFilesOverlay()
 }
 
 function passwordStatusChange(data) {
