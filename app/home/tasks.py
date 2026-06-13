@@ -471,6 +471,23 @@ def update_file_websocket(data: dict, user_id: int, update_fields: Optional[list
 
 
 @shared_task()
+def update_album_websocket(data: dict, user_id: int, update_fields: Optional[list] = None):
+    try:
+        log.debug("update_album_websocket user_id: %s data: %s", user_id, data)
+        log.debug("update_fields: %s", update_fields)
+        data["event"] = "album-update"
+        data["update_fields"] = update_fields
+        channel_layer = get_channel_layer()
+        event = {
+            "type": "websocket.send",
+            "text": json.dumps(data, default=str),
+        }
+        async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
+    except Exception as error:
+        log.warning("tasks websocket error: %s", error)
+
+
+@shared_task()
 def new_album_websocket(album):
     log.debug("new_album_websocket: %s", album)
     log.debug("album: %s", album)

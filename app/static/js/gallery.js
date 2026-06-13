@@ -18,6 +18,7 @@ import { getCtxMenuContainer } from './file-context-menu.js'
 import { openPanel } from './file-preview-panel.js'
 
 const galleryContainer = document.getElementById('gallery-container')
+const noFilesOverlay = document.getElementById('no-files-overlay')
 
 const imageNode = document.querySelector('div.d-none > img')
 
@@ -318,6 +319,7 @@ async function addNodes() {
     }
     addFileTableRowsBatch(data.files)
     fetchLock = false
+    updateNoFilesOverlay()
 
     if (atBottom && nextPage) {
         window.scrollTo({
@@ -666,6 +668,7 @@ function changeView(event) {
             }
         })
     }
+    updateNoFilesOverlay()
 }
 
 socket?.addEventListener('message', function (event) {
@@ -675,7 +678,9 @@ socket?.addEventListener('message', function (event) {
         if (data.event === 'file-delete') {
             fileDeleteGallery(data.id)
         } else if (data.event === 'file-new') {
+            fileData.unshift(data)
             addGalleryFile(data, true)
+            updateNoFilesOverlay()
         } else if (data.event === 'set-password-file') {
             passwordStatusChange(data)
         } else if (data.event === 'toggle-private-file') {
@@ -696,10 +701,29 @@ function fileExpireChange(data) {
     expireStatus.title = data.expr
 }
 
+function updateNoFilesOverlay() {
+    if (!noFilesOverlay) return
+    const view = params.get('view') || 'list'
+    const isEmpty = fileData.length === 0 && !nextPage
+    const show = (view === 'gallery' || view === 'map') && isEmpty
+
+    noFilesOverlay.classList.toggle('d-none', !show)
+    noFilesOverlay.classList.toggle('d-flex', show)
+
+    if (show && view === 'map') {
+        mapContainer.style.position = 'relative'
+        mapContainer.appendChild(noFilesOverlay)
+    } else if (noFilesOverlay.parentElement === mapContainer) {
+        mapContainer.parentElement.appendChild(noFilesOverlay)
+        mapContainer.style.position = ''
+    }
+}
+
 function fileDeleteGallery(pk) {
     $(`#gallery-image-${pk}`).remove()
     const idx = fileData.findIndex((file) => file.id === pk)
     if (idx !== -1) fileData.splice(idx, 1)
+    updateNoFilesOverlay()
 }
 
 function passwordStatusChange(data) {
@@ -842,6 +866,9 @@ function initMapView() {
 
             fetchAndPlotAllFiles(L)
         }
+        // Re-append after Leaflet builds its pane DOM so the overlay
+        // sits last in the container and renders above the tile layers.
+        updateNoFilesOverlay()
     })
 }
 

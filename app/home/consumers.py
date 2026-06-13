@@ -236,18 +236,14 @@ class HomeConsumer(AsyncWebsocketConsumer):
         else:
             return self._error("Album not found.", **kwargs)
 
-    def private_albums(self, *, user_id: int = None, pks: List[int] = None, private: bool, **kwargs) -> dict:
+    def private_albums(self, *, user_id: int = None, pks: List[int] = None, private: bool, **kwargs) -> None:
         log.debug("private_albums: user_id=%s pks=%s private=%s", user_id, pks, private)
         albums = list(Albums.objects.filter(**filter_kwargs(pks, user_id)))
         if not albums:
             return self._error("Album(s) not found.", **kwargs)
         for a in albums:
             a.private = private
-        Albums.objects.bulk_update(albums, ["private"])
-        return {
-            "objects": [{"id": a.id, "name": a.name, "private": a.private} for a in albums],
-            "event": "toggle-private-album",
-        }
+            a.save(update_fields=["private"])  # triggers post_save signal → album-update WS broadcast
 
     def toggle_private_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
         """
