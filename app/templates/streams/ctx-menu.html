@@ -1,0 +1,37 @@
+{% comment %}
+Stream context menu — shared between the streams table (rendered per-row in JS)
+and live.html (rendered server-side here). The classes and data attributes must
+match what streams-table.js emits in getActions(), so streams-actions.js can
+delegate handlers globally for both contexts.
+
+Required context: stream, rtmp_url.
+{% endcomment %}
+<div class="dropdown stream-ctx-menu">
+    <ul class="dropdown-menu file-context-dropdown-menu dropdown-menu-end">
+        <li>
+            <a role="button" class="dropdown-item stream-copy-rtmp-btn"
+               data-stream-name="{{ stream.name }}"
+               data-rtmp-url="{{ rtmp_url|default_if_none:'' }}">
+                <i class="fa-solid fa-satellite-dish fa-fw me-2 link-info"></i>Copy RTMP URL</a>
+        </li>
+        <li>
+            <a role="button" class="dropdown-item stream-rotate-token-btn"
+               data-stream-name="{{ stream.name }}">
+                <i class="fa-solid fa-arrows-rotate fa-fw me-2"></i>Regenerate Token</a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a role="button" class="dropdown-item stream-toggle-public-btn"
+               data-stream-name="{{ stream.name }}"
+               data-public="{{ stream.public|yesno:'true,false' }}">
+                <i class="fa-solid fa-{% if stream.public %}lock{% else %}globe{% endif %} fa-fw me-2"></i>{% if stream.public %}Make Private{% else %}Make Public{% endif %}</a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a role="button" class="dropdown-item stream-delete-btn link-danger"
+               data-hook-id="{{ stream.name }}"
+               data-redirect-on-delete="{% url 'home:streams' %}">
+                <i class="fa-regular fa-trash-can fa-fw me-2"></i>Delete</a>
+        </li>
+    </ul>
+</div>

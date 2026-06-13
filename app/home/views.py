@@ -199,6 +199,7 @@ def live_view(request, key):
         context["rtmp_host"] = rtmp_host
         context["rtmp_host_is_custom"] = rtmp_host_is_custom
         context["cdn_detected"] = None if rtmp_host_is_custom else detect_cdn(request)
+        context["stream_token"] = stream.stream_token
     return render(request, "live.html", context)
 
 

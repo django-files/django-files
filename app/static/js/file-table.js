@@ -152,7 +152,10 @@ export function initFilesTable(search = true, ordering = true, info = true) {
         idPrefix: 'file',
         addRow: addFileTableRow,
         countEl: totalFilesCount,
-        extra: { 'set-file-name': renameFileRow },
+        extra: {
+            'set-file-name': renameFileRow,
+            'file-update': updateFileRow,
+        },
     })
     return filesDataTable
 }
@@ -230,6 +233,20 @@ export function addFileTableRowsBatch(files) {
 
 export function addFileTableRows(data) {
     addFileTableRowsBatch(data.files)
+}
+
+// Refresh the DataTables row data from a `file-update` payload so the row's
+// underlying state matches the backend. invalidate() re-runs column renderers
+// (private/password/expire icons, etc.) without re-sorting or redrawing the
+// whole table.
+export function updateFileRow(data) {
+    if (!filesDataTable) return
+    const row = filesDataTable.row(`#file-${data.id}`)
+    if (!row.node()) return
+    const current = row.data() || {}
+    row.data({ ...current, ...data })
+        .invalidate('data')
+        .draw(false)
 }
 
 export function renameFileRow(data) {

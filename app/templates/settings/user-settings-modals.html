@@ -66,6 +66,45 @@ aria-hidden="true">
     </div>
 </div>
 
+<div class="modal fade" id="passwordChangeModal" tabindex="-1"
+     aria-labelledby="passwordChangeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="passwordChangeForm" autocomplete="off">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="passwordChangeModalLabel">
+                        <i class="fa-solid fa-key me-2"></i>Set Password
+                    </h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-floating mb-2">
+                        <input type="password" class="form-control" id="new_password" name="new_password"
+                               autocomplete="new-password" placeholder="New Password"
+                               aria-describedby="new_password-label" required minlength="6">
+                        <label for="new_password" id="new_password-label">New Password</label>
+                        <div id="new_password-invalid" class="invalid-feedback"></div>
+                    </div>
+                    <div class="form-floating">
+                        <input type="password" class="form-control" id="confirm_new_password" name="confirm_new_password"
+                               autocomplete="new-password" placeholder="Confirm New Password"
+                               aria-describedby="confirm_new_password-label" required minlength="6">
+                        <label for="confirm_new_password" id="confirm_new_password-label">Confirm New Password</label>
+                        <div id="confirm_new_password-invalid" class="invalid-feedback"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="confirmPasswordChangeBtn">
+                        <i class="fa-solid fa-check me-2"></i>Save Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
     const uploadUrl = "{% url 'api:upload' %}"
 </script>

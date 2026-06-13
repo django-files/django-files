@@ -87,9 +87,9 @@ export function initAlbumSelector(container, socket) {
 
     const filePk = albumContainer.id.replace('albums-file-', '')
     const addToAlbumButton = container.querySelector('.addto-album')
-    const addAlbumInput = container.querySelector('#add-album')
+    const addAlbumInput = container.querySelector('.album-search-input')
     const addAlbumContainer = container.querySelector('.album-add-container')
-    const albumSearchResults = container.querySelector('#album-search-results')
+    const albumSearchResults = container.querySelector('.album-search-results')
 
     function removeAlbumPress(event) {
         const albumId = event.target

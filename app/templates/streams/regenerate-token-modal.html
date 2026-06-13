@@ -1,0 +1,22 @@
+{% comment %}
+Shared confirmation modal for stream token rotation. Wired by streams-actions.js.
+Included from streams.html (via table.html) and live.html.
+{% endcomment %}
+<div class="modal fade" id="regenerate-token-modal" tabindex="-1" aria-labelledby="regenerate-token-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="regenerate-token-label">Regenerate Stream Token</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="regenerate-token-body">
+                Rotate the stream token? The current RTMP URL will stop working until updated in your streaming client.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-warning" id="regenerate-token-confirm">Regenerate
+                    <i class="fa-solid fa-arrows-rotate ms-1"></i></button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>

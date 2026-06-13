@@ -380,6 +380,7 @@
 
 .files-toolbar-album-title {
     font-weight: 600;
+    flex-shrink: 0;
 }
 
 .files-toolbar-album-owner {
@@ -387,7 +388,7 @@
     align-items: center;
     gap: 0.35rem;
     white-space: nowrap;
-    flex-shrink: 0;
+    flex-shrink: 1;
     opacity: 0.85;
     font-size: 0.875rem;
 }
@@ -435,4 +436,38 @@
 
 .files-version-strip a:hover {
     opacity: 1;
+}
+
+/* Liquid-glass modal styling — applies to every Bootstrap modal globally.
+   Override --bs-modal-bg directly; Bootstrap's .modal-content sets
+   background-color from that variable, so changing the var keeps the
+   background translucent without specificity battles. */
+.modal .modal-content {
+    background-color: rgba(255, 255, 255, 0.35);
+    border-color: rgba(0, 0, 0, 0.12);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 20px 60px -10px rgba(0, 0, 0, 0.45);
+}
+
+[data-bs-theme='dark'] .modal .modal-content {
+    background-color: rgba(20, 20, 24, 0.3);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 20px 60px -10px rgba(0, 0, 0, 0.65);
+}
+
+.modal-header,
+.modal-footer {
+    border-color: rgba(var(--bs-emphasis-color-rgb), 0.08);
+    background: transparent;
+}
+
+.modal-backdrop.show {
+    opacity: 0.55;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
 }

@@ -91,7 +91,9 @@ def extract_files(q: Files.objects):
         data["thumb"] = site_settings["site_url"] + file.thumb_path
         data["raw"] = site_settings["site_url"] + file.raw_path
         data["date"] = file.date
-        data["albums"] = [album.id for album in file.albums.all()]
+        albums = list(file.albums.all())
+        data["albums"] = [a.id for a in albums]
+        data["albums_details"] = [{"id": a.id, "name": a.name} for a in albums]
         files.append(data)
     return files
 
@@ -108,17 +110,22 @@ def extract_albums(q: Albums.objects):
     return albums
 
 
-def extract_streams(q: Stream.objects, user_id: int = None):
+def extract_streams(q: Stream.objects, user_id: int = None, rtmp_host: str = None):
     site_settings = site_settings_processor(None)["site_settings"]
     streams = []
     for stream in q:
+        is_owner = user_id is not None and stream.user_id == user_id
         data = model_to_dict(stream, exclude=["user"])
         data["user_name"] = stream.user.get_name()
         data["user_username"] = stream.user.username
         data["started_at"] = stream.started_at
         data["ended_at"] = stream.ended_at
         data["url"] = site_settings["site_url"] + f"/live/{stream.name}/"
-        data["is_owner"] = user_id is not None and stream.user_id == user_id
+        data["is_owner"] = is_owner
         data["subscriber_count"] = PushInformation.objects.filter(group__name=stream.name).count()
+        if not is_owner:
+            data.pop("stream_token", None)
+        elif rtmp_host:
+            data["rtmp_url"] = f"rtmp://{rtmp_host}/live?stream_token={stream.stream_token}"
         streams.append(data)
     return streams

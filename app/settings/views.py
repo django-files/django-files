@@ -7,10 +7,12 @@ from urllib.parse import quote
 import qrcode
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.sessions.backends.cache import SessionStore
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.core.signing import TimestampSigner
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render, reverse
@@ -256,6 +258,62 @@ def gen_flameshot(request):
     response = HttpResponse(message)
     response["Content-Disposition"] = 'attachment; filename="flameshot.sh"'
     return response
+
+
+@login_required
+@require_http_methods(["POST"])
+def local_auth_view(request):
+    """
+    View  /settings/user/local-auth
+    Toggle local (username/password) login. Disabling sets an unusable password
+    on the user, which makes Django's authenticate() reject password logins.
+    Re-enabling requires setting a new password through password_view.
+    """
+    log.debug("local_auth_view: %s", request.user)
+    if not request.session.session_key or not request.session.get("_auth_user_id"):
+        return JsonResponse({"error": "Session authentication required."}, status=401)
+
+    disable = request.POST.get("disable") == "true"
+    if not disable:
+        return JsonResponse(
+            {"error": "Set a new password to re-enable local login."},
+            status=400,
+        )
+    request.user.set_unusable_password()
+    request.user.save()
+    update_session_auth_hash(request, request.user)
+    return JsonResponse({"disabled": True}, status=200)
+
+
+@login_required
+@require_http_methods(["POST"])
+def password_view(request):
+    """
+    View  /settings/user/password
+    Session-authenticated only — token auth is not applied to this endpoint.
+    """
+    log.debug("password_view: %s", request.user)
+    # Defensive check: only allow real session-authenticated users.
+    # auth_from_token is not applied here, but enforce it explicitly so future
+    # decorator changes can't silently allow token-based password resets.
+    if not request.session.session_key or not request.session.get("_auth_user_id"):
+        return JsonResponse({"error": "Session authentication required."}, status=401)
+
+    new_password = request.POST.get("new_password", "")
+    confirm = request.POST.get("confirm_new_password", "")
+    if not new_password:
+        return JsonResponse({"new_password": "This field is required."}, status=400)  # nosec B105
+    if new_password != confirm:
+        return JsonResponse({"confirm_new_password": "Passwords do not match."}, status=400)  # nosec B105
+    try:
+        validate_password(new_password, user=request.user)
+    except ValidationError as error:
+        return JsonResponse({"new_password": " ".join(error.messages)}, status=400)
+
+    request.user.set_password(new_password)
+    request.user.save()
+    update_session_auth_hash(request, request.user)
+    return JsonResponse({"success": True}, status=200)
 
 
 @login_required

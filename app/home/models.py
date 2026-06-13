@@ -10,6 +10,7 @@ from home.managers import (
     ShortURLsManager,
 )
 from home.util.nginx import sign_nginx_urls
+from home.util.rand import rand_string
 from home.util.storage import StoragesRouterFileField, use_s3
 from oauth.managers import DiscordWebhooksManager
 from oauth.models import CustomUser
@@ -262,6 +263,13 @@ class Stream(models.Model):
     live_chat = models.BooleanField(default=False, verbose_name="Live Chat", help_text="Stream Live Chat Enabled")
     anonymous_chat = models.BooleanField(
         default=False, verbose_name="Anonymous Chat", help_text="Stream Anonymous Chat Enabled"
+    )
+    stream_token = models.CharField(
+        default=rand_string,
+        max_length=32,
+        unique=True,
+        verbose_name="Stream Token",
+        help_text="Per-stream RTMP authentication token. Scoped only to this stream.",
     )
 
     def __str__(self):
