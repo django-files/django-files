@@ -280,11 +280,7 @@ def local_auth_view(request):
             status=400,
         )
     user = request.user
-    has_oauth = (
-        hasattr(user, "discord")
-        or hasattr(user, "github")
-        or hasattr(user, "google")
-    )
+    has_oauth = hasattr(user, "discord") or hasattr(user, "github") or hasattr(user, "google")
     if not has_oauth:
         return JsonResponse(
             {"error": "Link at least one OAuth provider before disabling local login."},

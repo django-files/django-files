@@ -9,7 +9,9 @@ from settings.models import SiteSettings
 log = logging.getLogger("app")
 
 
-def get_or_create_user(request, _id, username, provider, first_name="", allow_invite_create=False) -> Optional[CustomUser]:
+def get_or_create_user(
+    request, _id, username, provider, first_name="", allow_invite_create=False
+) -> Optional[CustomUser]:
     log.debug("_id: %s %s", _id, type(_id))
     log.debug("username %s", username)
 

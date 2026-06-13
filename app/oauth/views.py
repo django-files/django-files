@@ -116,6 +116,20 @@ def _maybe_native_redirect(url):
     return HttpResponseRedirect(url)
 
 
+def _apply_invite(request, user, invite):
+    if not (invite and invite.is_valid() and not user.last_login):
+        return
+    if invite.super_user:
+        user.is_staff = True
+        user.is_superuser = True
+    if invite.storage_quota is not None:
+        user.storage_quota = invite.storage_quota
+    user.save()
+    invite.use_invite(user.id)
+    request.session["login_redirect_url"] = reverse("settings:user")
+    log.info("oauth_callback: invite used by user: %s", user)
+
+
 def oauth_callback(request, oauth_provider: str = ""):
     """
     View  /oauth/callback/
@@ -124,12 +138,8 @@ def oauth_callback(request, oauth_provider: str = ""):
         site_settings = SiteSettings.objects.settings()
         code = request.GET.get("code")
         log.debug("code: %s", code)
-        if not code:
-            messages.warning(request, "User aborted or no code in response...")
-            return HttpResponseRedirect(get_login_redirect_url(request))
-
         log.debug("oauth_callback: login_next_url: %s", request.session.get("login_next_url"))
-        if not (code := request.GET.get("code")):
+        if not code:
             messages.warning(request, "User aborted or no code in response...")
             return HttpResponseRedirect(get_login_redirect_url(request))
 
@@ -171,16 +181,7 @@ def oauth_callback(request, oauth_provider: str = ""):
             url = get_login_redirect_url(request, native_auth=native_auth, native_client_error=message)
             return _maybe_native_redirect(url)
 
-        if invite and invite.is_valid() and not user.last_login:
-            if invite.super_user:
-                user.is_staff = True
-                user.is_superuser = True
-            if invite.storage_quota is not None:
-                user.storage_quota = invite.storage_quota
-            user.save()
-            invite.use_invite(user.id)
-            request.session["login_redirect_url"] = reverse("settings:user")
-            log.info("oauth_callback: invite used by user: %s", user)
+        _apply_invite(request, user, invite)
 
         oauth.update_profile(user)
         if response := pre_login(request, user, site_settings):
