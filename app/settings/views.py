@@ -8,8 +8,8 @@ import qrcode
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
-from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.sessions.backends.cache import SessionStore
 from django.core.cache import cache
 from django.core.exceptions import ValidationError

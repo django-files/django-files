@@ -93,6 +93,5 @@
 #home-files-card,
 #home-shorts-card,
 #home-albums-card {
-    overflow-x: clip;
-    overflow-y: visible;
+    overflow: clip visible;
 }
