@@ -314,7 +314,6 @@ def album_view(request, album_id: int = None):
         return JsonResponse({"error": f"{error}"}, status=400)
 
 
-
 @csrf_exempt
 @require_http_methods(["GET"])
 @auth_from_token(no_fail=True)
