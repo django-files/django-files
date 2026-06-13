@@ -71,6 +71,19 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug(event)
         await self.channel_layer.group_add("home", self.channel_name)
         user = self.scope["user"]
+        if not (hasattr(user, "id") and user.id):
+            # AuthMiddlewareStack only handles session auth; fall back to token
+            # from the Authorization header so the iOS client (which sends the
+            # API token as an HTTP header on the WS upgrade) joins the user group.
+            headers = dict(self.scope.get("headers", []))
+            token = headers.get(b"authorization", b"").decode()
+            if token:
+                auth_user = await database_sync_to_async(
+                    lambda: CustomUser.objects.filter(authorization=token).first()
+                )()
+                if auth_user:
+                    self.scope["user"] = auth_user
+                    user = auth_user
         if hasattr(user, "id") and user.id:
             await self.channel_layer.group_add(f"user-{user.id}", self.channel_name)
         session = self.scope.get("session")

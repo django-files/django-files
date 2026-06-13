@@ -241,6 +241,58 @@ def shorten_view(request):
         return JsonResponse({"error": str(error)}, status=500)
 
 
+def _handle_create_album(request):
+    data = get_json_body(request)
+    log.debug("data: %s", data)
+    album = Albums.objects.create(
+        user=request.user,
+        name=data_or_header(request, data, "name"),
+        maxv=data_or_header(request, data, "max-views", 0, cast=int),
+        info=data_or_header(request, data, "description"),
+        password=data_or_header(request, data, "password"),
+        private=data_or_header(request, data, "private", False, cast=bool),
+        expr=data_or_header(request, data, "expire"),
+    )
+    site_settings = SiteSettings.objects.settings()
+    full_url = site_settings.site_url + reverse("home:files") + f"?album={album.id}"
+    new_album_websocket.apply_async(args=[extract_albums([album])[0]])  # no time to de-tangle this line
+    return JsonResponse({"url": full_url}, safe=False)
+
+
+def _handle_delete_album(request, album_id):
+    album = get_object_or_404(Albums, id=album_id)
+    if album.user != request.user and not request.user.is_superuser:
+        return HttpResponse(status=403)
+    album.delete()
+    return HttpResponse(status=204)
+
+
+def _handle_update_album(request, album_id):
+    album = get_object_or_404(Albums, id=album_id)
+    if album.user != request.user and not request.user.is_superuser:
+        return HttpResponse(status=403)
+    data = get_json_body(request)
+    if "private" in data:
+        album.private = data_or_header(request, data, "private", False, cast=bool)
+    if "name" in data:
+        album.name = data_or_header(request, data, "name")
+    if "password" in data:
+        album.password = data_or_header(request, data, "password")
+    if "description" in data:
+        album.info = data_or_header(request, data, "description")
+    if "max-views" in data:
+        album.maxv = data_or_header(request, data, "max-views", 0, cast=int)
+    if "expire" in data:
+        album.expr = data_or_header(request, data, "expire")
+    album.save()
+    return JsonResponse(extract_albums([album])[0])
+
+
+def _handle_get_album(request, album_id):
+    album = get_object_or_404(Albums, id=album_id if album_id else request.GET.get("id"))
+    return JsonResponse(extract_albums([album])[0])
+
+
 @csrf_exempt
 @require_http_methods(["OPTIONS", "POST", "GET", "DELETE", "PATCH"])
 @auth_from_token
@@ -250,54 +302,17 @@ def album_view(request, album_id: int = None):
     """
     try:
         if request.method == "POST":
-            log.debug("request.headers: %s", request.headers)
-            data = get_json_body(request)
-            log.debug("data: %s", data)
-            album = Albums.objects.create(
-                user=request.user,
-                name=data_or_header(request, data, "name"),
-                maxv=data_or_header(request, data, "max-views", 0, cast=int),
-                info=data_or_header(request, data, "description"),
-                password=data_or_header(request, data, "password"),
-                private=data_or_header(request, data, "private", False, cast=bool),
-                expr=data_or_header(request, data, "expire"),
-            )
-            site_settings = SiteSettings.objects.settings()
-            full_url = site_settings.site_url + reverse("home:files") + f"?album={album.id}"
-            # clear_albums_cache.delay()  # this is redundant and handled by a signal
-            new_album_websocket.apply_async(args=[extract_albums([album])[0]])  # no time to de-tangle this line
-            return JsonResponse({"url": full_url}, safe=False)
+            return _handle_create_album(request)
         elif request.method == "DELETE":
-            album = get_object_or_404(Albums, id=album_id)
-            if album.user != request.user and not request.user.is_superuser:
-                return HttpResponse(status=403)
-            album.delete()
-            return HttpResponse(status=204)
+            return _handle_delete_album(request, album_id)
         elif request.method == "PATCH":
-            album = get_object_or_404(Albums, id=album_id)
-            if album.user != request.user and not request.user.is_superuser:
-                return HttpResponse(status=403)
-            data = get_json_body(request)
-            if "private" in data:
-                album.private = data_or_header(request, data, "private", False, cast=bool)
-            if "name" in data:
-                album.name = data_or_header(request, data, "name")
-            if "password" in data:
-                album.password = data_or_header(request, data, "password")
-            if "description" in data:
-                album.info = data_or_header(request, data, "description")
-            if "max-views" in data:
-                album.maxv = data_or_header(request, data, "max-views", 0, cast=int)
-            if "expire" in data:
-                album.expr = data_or_header(request, data, "expire")
-            album.save()
-            return JsonResponse(extract_albums([album])[0])
+            return _handle_update_album(request, album_id)
         else:
-            album = get_object_or_404(Albums, id=album_id if album_id else request.GET.get("id"))
-            return JsonResponse(extract_albums([album])[0])
+            return _handle_get_album(request, album_id)
     except Exception as error:
-        log.error(error)
+        log.exception(error)
         return JsonResponse({"error": f"{error}"}, status=400)
+
 
 
 @csrf_exempt
@@ -579,7 +594,7 @@ def files_edit_view(request):
             clear_files_cache.delay()
         return HttpResponse(count)
     except Exception as error:
-        log.error(error)
+        log.exception(error)
         return JsonResponse({"error": f"{error}"}, status=400)
 
 
@@ -1210,7 +1225,7 @@ def stream_detail_view(request, name: str = None):
             stream.save()
             return JsonResponse(extract_streams([stream], request.user.id)[0])
     except Exception as error:
-        log.error(error)
+        log.exception(error)
         return JsonResponse({"error": f"{error}"}, status=400)
 
 
@@ -1323,8 +1338,12 @@ def parse_expire(request) -> str:
 
 def data_or_header(request, data: dict, value: str, default: Any = "", cast: Callable = str):
     if data and value in data:
-        return cast(data[value])
-    return cast(request.headers.get(value, default))
+        raw = data[value]
+    else:
+        raw = request.headers.get(value, default)
+    if raw == "" and cast is not str:
+        return default
+    return cast(raw)
 
 
 def id_or_name(id_name: Union[str, int], name="name") -> dict:
