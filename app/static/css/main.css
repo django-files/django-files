@@ -480,7 +480,13 @@
 }
 
 .addto-album-group {
+    position: relative;
     font-size: 0.85rem;
+    background: rgba(13, 110, 253, 0.18) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(13, 110, 253, 0.35);
+    color: #fff;
 }
 
 .addto-album-group .album-search-input {
@@ -501,11 +507,24 @@
     max-width: 100%;
     overflow: hidden;
     font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    background: rgba(13, 110, 253, 0.18) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(13, 110, 253, 0.35);
+    color: #fff;
 }
 
 .badge.file-album-active a {
+    flex: 1 1 0;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: #fff;
+}
+
+.badge.file-album-active .remove-album {
+    flex-shrink: 0;
 }
