@@ -27,6 +27,7 @@ signer = TimestampSigner()
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
+SESSION_AUTH_REQUIRED = "Session authentication required."
 
 
 @csrf_exempt
@@ -271,7 +272,7 @@ def local_auth_view(request):
     """
     log.debug("local_auth_view: %s", request.user)
     if not request.session.session_key or not request.session.get("_auth_user_id"):
-        return JsonResponse({"error": "Session authentication required."}, status=401)
+        return JsonResponse({"error": SESSION_AUTH_REQUIRED}, status=401)
 
     disable = request.POST.get("disable") == "true"
     if not disable:
@@ -304,7 +305,7 @@ def password_view(request):
     # auth_from_token is not applied here, but enforce it explicitly so future
     # decorator changes can't silently allow token-based password resets.
     if not request.session.session_key or not request.session.get("_auth_user_id"):
-        return JsonResponse({"error": "Session authentication required."}, status=401)
+        return JsonResponse({"error": SESSION_AUTH_REQUIRED}, status=401)
 
     new_password = request.POST.get("new_password", "")
     confirm = request.POST.get("confirm_new_password", "")
@@ -335,7 +336,7 @@ def delete_account_view(request):
     """
     log.debug("delete_account_view: %s", request.user)
     if not request.session.session_key or not request.session.get("_auth_user_id"):
-        return JsonResponse({"error": "Session authentication required."}, status=401)
+        return JsonResponse({"error": SESSION_AUTH_REQUIRED}, status=401)
 
     expected_phrase = f"delete {request.user.username} and all associated data"
     confirm_phrase = request.POST.get("confirm_phrase", "").strip()
@@ -353,7 +354,7 @@ def delete_account_view(request):
             url = duo_redirect(request, request.user.username)
         except ValueError as error:
             del request.session["pending_account_delete"]
-            log.error("delete_account_view: Duo health check failed: %s", error)
+            log.exception("delete_account_view: Duo health check failed")
             return JsonResponse({"error": "Duo is unavailable. Please try again later."}, status=503)
         return JsonResponse({"duo_redirect": url}, status=200)
 
