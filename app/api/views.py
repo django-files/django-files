@@ -242,7 +242,7 @@ def shorten_view(request):
 
 
 @csrf_exempt
-@require_http_methods(["OPTIONS", "POST", "GET", "DELETE"])
+@require_http_methods(["OPTIONS", "POST", "GET", "DELETE", "PATCH"])
 @auth_from_token
 def album_view(request, album_id: int = None):
     """
@@ -273,6 +273,25 @@ def album_view(request, album_id: int = None):
                 return HttpResponse(status=403)
             album.delete()
             return HttpResponse(status=204)
+        elif request.method == "PATCH":
+            album = get_object_or_404(Albums, id=album_id)
+            if album.user != request.user and not request.user.is_superuser:
+                return HttpResponse(status=403)
+            data = get_json_body(request)
+            if "private" in data:
+                album.private = data_or_header(request, data, "private", False, cast=bool)
+            if "name" in data:
+                album.name = data_or_header(request, data, "name")
+            if "password" in data:
+                album.password = data_or_header(request, data, "password")
+            if "description" in data:
+                album.info = data_or_header(request, data, "description")
+            if "max-views" in data:
+                album.maxv = data_or_header(request, data, "max-views", 0, cast=int)
+            if "expire" in data:
+                album.expr = data_or_header(request, data, "expire")
+            album.save()
+            return JsonResponse(extract_albums([album])[0])
         else:
             album = get_object_or_404(Albums, id=album_id if album_id else request.GET.get("id"))
             return JsonResponse(extract_albums([album])[0])
@@ -1165,6 +1184,36 @@ def stream_commands_view(request, name):
     )
 
 
+@csrf_exempt
+@require_http_methods(["OPTIONS", "PATCH"])
+@auth_from_token
+def stream_detail_view(request, name: str = None):
+    """
+    View  /api/stream/<name>/
+    """
+    try:
+        if request.method == "PATCH":
+            stream = get_object_or_404(Stream, name=name)
+            if stream.user != request.user and not request.user.is_superuser:
+                return HttpResponse(status=403)
+            data = get_json_body(request)
+            if "public" in data:
+                stream.public = data_or_header(request, data, "public", True, cast=bool)
+            if "title" in data:
+                stream.title = data_or_header(request, data, "title")
+            if "description" in data:
+                stream.description = data_or_header(request, data, "description")
+            if "password" in data:
+                stream.password = data_or_header(request, data, "password")
+            if "viewer_limit" in data:
+                stream.viewer_limit = data_or_header(request, data, "viewer_limit", 0, cast=int)
+            stream.save()
+            return JsonResponse(extract_streams([stream], request.user.id)[0])
+    except Exception as error:
+        log.error(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
+
+
 def get_viewer_count(name):
     log.debug("stream_viewers_view - name: %s", name)
     key = f"stream:{name}:viewers"
@@ -1273,9 +1322,8 @@ def parse_expire(request) -> str:
 
 
 def data_or_header(request, data: dict, value: str, default: Any = "", cast: Callable = str):
-    if data:
-        if result := data.get(value):
-            return cast(result)
+    if data and value in data:
+        return cast(data[value])
     return cast(request.headers.get(value, default))
 
 
