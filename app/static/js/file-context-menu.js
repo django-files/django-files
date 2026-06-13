@@ -183,6 +183,7 @@ const ADD_GROUP_HTML = `
         <span class="album-add-container d-none">
             <input class="album-search-input" autocomplete="off" placeholder="Search albums…">
         </span>
+        <ul class="dropdown-menu mt-1 album-search-results" style="min-width: 200px;"></ul>
     </span>`
 
 function albumBadgeHtml(id, label) {
