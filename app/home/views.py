@@ -836,7 +836,7 @@ def handle_image_meta(exif: dict) -> dict:
                 ptr = ptr[key]
             elif isinstance(ptr, list):
                 ptr = {k: v for d in ptr for k, v in d.items()}[key]
-    except (KeyError, IndexError):
+    except KeyError, IndexError:
         log.debug("No image tags or failed to parse image tags.")
         ptr = []
     resp["tags"] = ptr
