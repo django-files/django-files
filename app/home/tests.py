@@ -352,8 +352,8 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         private_file.private = True
         private_file.save()
         page.goto(f"{self.live_server_url}{private_file.preview_uri()}")
-        page.locator("text=Permission Denied")
-        self.screenshot(page, "Error-403-private-file")
+        page.locator("text=Not Found")
+        self.screenshot(page, "Error-404-private-file")
 
         private_file.password = "test123"
         private_file.save()

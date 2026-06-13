@@ -26,6 +26,7 @@ from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.signing import TimestampSigner
 from django.db.models import Count, QuerySet
+from django.db.models.fields.json import KeyTextTransform
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
@@ -44,7 +45,7 @@ from home.tasks import (
     stream_status_websocket,
 )
 from home.util.file import process_file
-from home.util.misc import anytobool, human_read_to_byte
+from home.util.misc import anytobool, human_read_to_byte, redact_log
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
@@ -160,7 +161,7 @@ def upload_view(request):
     log.debug("upload_view")
     # log.debug(request.headers)
     post = request.POST.dict().copy()
-    log.debug(post)
+    log.debug(redact_log(post))
     log.debug(request.FILES)
     site_settings = SiteSettings.objects.settings()
     if not site_settings.pub_load and not request.user.is_authenticated:
@@ -240,8 +241,60 @@ def shorten_view(request):
         return JsonResponse({"error": str(error)}, status=500)
 
 
+def _handle_create_album(request):
+    data = get_json_body(request)
+    log.debug("data: %s", data)
+    album = Albums.objects.create(
+        user=request.user,
+        name=data_or_header(request, data, "name"),
+        maxv=data_or_header(request, data, "max-views", 0, cast=int),
+        info=data_or_header(request, data, "description"),
+        password=data_or_header(request, data, "password"),
+        private=data_or_header(request, data, "private", False, cast=bool),
+        expr=data_or_header(request, data, "expire"),
+    )
+    site_settings = SiteSettings.objects.settings()
+    full_url = site_settings.site_url + reverse("home:files") + f"?album={album.id}"
+    new_album_websocket.apply_async(args=[extract_albums([album])[0]])  # no time to de-tangle this line
+    return JsonResponse({"url": full_url}, safe=False)
+
+
+def _handle_delete_album(request, album_id):
+    album = get_object_or_404(Albums, id=album_id)
+    if album.user != request.user and not request.user.is_superuser:
+        return HttpResponse(status=403)
+    album.delete()
+    return HttpResponse(status=204)
+
+
+def _handle_update_album(request, album_id):
+    album = get_object_or_404(Albums, id=album_id)
+    if album.user != request.user and not request.user.is_superuser:
+        return HttpResponse(status=403)
+    data = get_json_body(request)
+    if "private" in data:
+        album.private = data_or_header(request, data, "private", False, cast=bool)
+    if "name" in data:
+        album.name = data_or_header(request, data, "name")
+    if "password" in data:
+        album.password = data_or_header(request, data, "password")
+    if "description" in data:
+        album.info = data_or_header(request, data, "description")
+    if "max-views" in data:
+        album.maxv = data_or_header(request, data, "max-views", 0, cast=int)
+    if "expire" in data:
+        album.expr = data_or_header(request, data, "expire")
+    album.save()
+    return JsonResponse(extract_albums([album])[0])
+
+
+def _handle_get_album(request, album_id):
+    album = get_object_or_404(Albums, id=album_id if album_id else request.GET.get("id"))
+    return JsonResponse(extract_albums([album])[0])
+
+
 @csrf_exempt
-@require_http_methods(["OPTIONS", "POST", "GET", "DELETE"])
+@require_http_methods(["OPTIONS", "POST", "GET", "DELETE", "PATCH"])
 @auth_from_token
 def album_view(request, album_id: int = None):
     """
@@ -249,34 +302,15 @@ def album_view(request, album_id: int = None):
     """
     try:
         if request.method == "POST":
-            log.debug("request.headers: %s", request.headers)
-            data = get_json_body(request)
-            log.debug("data: %s", data)
-            album = Albums.objects.create(
-                user=request.user,
-                name=data_or_header(request, data, "name"),
-                maxv=data_or_header(request, data, "max-views", 0, cast=int),
-                info=data_or_header(request, data, "description"),
-                password=data_or_header(request, data, "password"),
-                private=data_or_header(request, data, "private", False, cast=bool),
-                expr=data_or_header(request, data, "expire"),
-            )
-            site_settings = SiteSettings.objects.settings()
-            full_url = site_settings.site_url + reverse("home:files") + f"?album={album.id}"
-            # clear_albums_cache.delay()  # this is redundant and handled by a signal
-            new_album_websocket.apply_async(args=[extract_albums([album])[0]])  # no time to de-tangle this line
-            return JsonResponse({"url": full_url}, safe=False)
+            return _handle_create_album(request)
         elif request.method == "DELETE":
-            album = get_object_or_404(Albums, id=album_id)
-            if album.user != request.user and not request.user.is_superuser:
-                return HttpResponse(status=403)
-            album.delete()
-            return HttpResponse(status=204)
+            return _handle_delete_album(request, album_id)
+        elif request.method == "PATCH":
+            return _handle_update_album(request, album_id)
         else:
-            album = get_object_or_404(Albums, id=album_id if album_id else request.GET.get("id"))
-            return JsonResponse(extract_albums([album])[0])
+            return _handle_get_album(request, album_id)
     except Exception as error:
-        log.error(error)
+        log.exception(error)
         return JsonResponse({"error": f"{error}"}, status=400)
 
 
@@ -492,10 +526,13 @@ def files_view(request, page, count=25):
         return JsonResponse({"error": "Not Authenticated"}, status=401)
     if mime := request.GET.get("mime"):
         q = q.filter(mime__startswith=mime)
+    ordering_param = (request.GET.get("ordering") or "").lstrip("-")
+    if ordering_param == "exif_date":
+        q = q.annotate(_exif_date=KeyTextTransform("DateTimeOriginal", "exif"))
     q = apply_ordering(
         q,
         request,
-        allowed={"created": "date", "size": "size", "name": "name"},
+        allowed={"created": "date", "size": "size", "name": "name", "exif_date": "_exif_date"},
         default="-created",
     )
     paginator = Paginator(q, count)
@@ -556,7 +593,7 @@ def files_edit_view(request):
             clear_files_cache.delay()
         return HttpResponse(count)
     except Exception as error:
-        log.error(error)
+        log.exception(error)
         return JsonResponse({"error": f"{error}"}, status=400)
 
 
@@ -594,7 +631,7 @@ def file_view(request, idname):
             file.delete()
             return HttpResponse(status=204)
         elif request.method == "POST" and (request.user == file.user or request.user.is_superuser):
-            log.debug(request.POST)
+            log.debug(redact_log(request.POST))
             data = get_json_body(request)
             log.debug("data: %s", data)
             if not data:
@@ -684,7 +721,7 @@ def remote_view(request):
     """
     site_settings = site_settings_processor(None)["site_settings"]
     log.debug("%s - remote_view: is_secure: %s", request.method, request.is_secure())
-    log.debug("request.POST: %s", request.POST)
+    log.debug("request.POST: %s", redact_log(request.POST))
     data = get_json_body(request)
     log.debug("data: %s", data)
     if not data:
@@ -845,15 +882,6 @@ def session_view(request, sessionid):
         return HttpResponse(str(error), status=500)
 
 
-_SENSITIVE_QUERY_KEYS = ("stream_token", "token", "authorization")
-
-
-def _redact(params):
-    if not params:
-        return params
-    return {k: (["***"] if k in _SENSITIVE_QUERY_KEYS else v) for k, v in params.items()}
-
-
 def _resolve_stream_user(name, data):
     """
     Resolve the authenticated user from RTMP tcurl query params.
@@ -900,7 +928,7 @@ def stream_auth_view(request):
     """
     try:
         log.debug("stream_auth_view: %s - %s", request.method, request.META["PATH_INFO"])
-        log.debug("stream_auth_view: %s", _redact(request.GET))
+        log.debug("stream_auth_view: %s", redact_log(request.GET))
         name = request.GET.get("name")
         log.debug("name: %s", name)
         if not name:
@@ -909,7 +937,7 @@ def stream_auth_view(request):
 
         url = urlparse(request.GET.get("tcurl", ""))
         data = parse_qs(url.query)
-        log.debug("data: %s", _redact(data))
+        log.debug("data: %s", redact_log(data))
         user, _ = _resolve_stream_user(name, data)
         log.debug("user: %s", user)
         if not user:
@@ -953,7 +981,7 @@ def stream_done_view(request):
     """
     try:
         log.debug("stream_done_view: %s - %s", request.method, request.META["PATH_INFO"])
-        log.debug("stream_done_view: %s", _redact(request.GET))
+        log.debug("stream_done_view: %s", redact_log(request.GET))
         name = request.GET.get("name")
         log.debug("name: %s", name)
         if not name:
@@ -1161,6 +1189,36 @@ def stream_commands_view(request, name):
     )
 
 
+@csrf_exempt
+@require_http_methods(["OPTIONS", "PATCH"])
+@auth_from_token
+def stream_detail_view(request, name: str = None):
+    """
+    View  /api/stream/<name>/
+    """
+    try:
+        if request.method == "PATCH":
+            stream = get_object_or_404(Stream, name=name)
+            if stream.user != request.user and not request.user.is_superuser:
+                return HttpResponse(status=403)
+            data = get_json_body(request)
+            if "public" in data:
+                stream.public = data_or_header(request, data, "public", True, cast=bool)
+            if "title" in data:
+                stream.title = data_or_header(request, data, "title")
+            if "description" in data:
+                stream.description = data_or_header(request, data, "description")
+            if "password" in data:
+                stream.password = data_or_header(request, data, "password")
+            if "viewer_limit" in data:
+                stream.viewer_limit = data_or_header(request, data, "viewer_limit", 0, cast=int)
+            stream.save()
+            return JsonResponse(extract_streams([stream], request.user.id)[0])
+    except Exception as error:
+        log.exception(error)
+        return JsonResponse({"error": f"{error}"}, status=400)
+
+
 def get_viewer_count(name):
     log.debug("stream_viewers_view - name: %s", name)
     key = f"stream:{name}:viewers"
@@ -1269,10 +1327,13 @@ def parse_expire(request) -> str:
 
 
 def data_or_header(request, data: dict, value: str, default: Any = "", cast: Callable = str):
-    if data:
-        if result := data.get(value):
-            return cast(result)
-    return cast(request.headers.get(value, default))
+    if data and value in data:
+        raw = data[value]
+    else:
+        raw = request.headers.get(value, default)
+    if raw == "" and cast is not str:
+        return default
+    return cast(raw)
 
 
 def id_or_name(id_name: Union[str, int], name="name") -> dict:

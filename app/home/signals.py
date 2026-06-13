@@ -16,6 +16,7 @@ from home.tasks import (
     delete_file_websocket,
     delete_stream_websocket,
     send_success_message,
+    update_album_websocket,
     update_file_websocket,
 )
 from home.util.quota import decrement_storage_usage
@@ -61,6 +62,18 @@ def files_post_save_signal(sender, instance, **kwargs):
 def clear_files_cache_signal(sender, instance, **kwargs):
     log.debug("clear_files_cache_signal")
     clear_files_cache.delay()
+
+
+@receiver(post_save, sender=Albums)
+def albums_post_save_signal(sender, instance, **kwargs):
+    try:
+        data = model_to_dict(instance)
+        data["date"] = str(instance.date)
+        data["user_name"] = instance.user.get_name()
+        update_fields = list(kwargs["update_fields"]) if kwargs.get("update_fields") else []
+        update_album_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
+    except Exception as error:
+        log.warning("ERROR: %s", error)
 
 
 @receiver(post_save, sender=Albums)

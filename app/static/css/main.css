@@ -471,3 +471,41 @@
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
 }
+
+.album-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.addto-album-group {
+    font-size: 0.85rem;
+}
+
+.addto-album-group .album-search-input {
+    width: 9rem;
+    border: none;
+    background: transparent;
+    color: inherit;
+    outline: none;
+    padding: 0 0.15rem;
+    font-size: inherit;
+}
+
+.addto-album-group .album-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.badge.file-album-active {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.85rem;
+}
+
+.badge.file-album-active a {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

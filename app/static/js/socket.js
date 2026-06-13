@@ -83,7 +83,7 @@ const EVENT_HANDLERS = {
     'toggle-public-stream': messageTogglePublicStream,
     'album-delete': messageAlbumDelete,
     'album-new': messageAlbumNew,
-    'toggle-private-album': messageTogglePrivateAlbum,
+    'album-update': messageAlbumUpdate,
     message: messageToast,
 }
 
@@ -227,19 +227,8 @@ function messageAlbumNew(data) {
     )
 }
 
-function messageTogglePrivateAlbum(data) {
-    if (data.objects.length >= 3) {
-        const label = data.objects[0].private ? 'private' : 'public'
-        show_toast(`${data.objects.length} albums set to ${label}.`, 'success')
-    } else {
-        data.objects.forEach((album) => {
-            const label = album.private ? 'private' : 'public'
-            show_toast(
-                `"${truncateName(album.name)}" set to ${label}.`,
-                'success'
-            )
-        })
-    }
+function messageAlbumUpdate(_data) {
+    // intentionally empty — albumsDataTable row update handled in albums-table.js
 }
 
 function messageNewFile(data) {

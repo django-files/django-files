@@ -23,16 +23,21 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from home.models import Albums, Files, FileStats, ShortURLs, Stream
 from home.tasks import clear_shorts_cache, process_stats
+from home.util.misc import redact_log
 from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
 from oauth.forms import UserForm
 from oauth.models import CustomUser, DiscordWebhooks, UserInvites
+from oauth.providers.discord import DiscordOauth
+from oauth.providers.github import GithubOauth
+from oauth.providers.google import GoogleOauth
 from settings.context_processors import site_settings_processor
 from settings.models import SiteSettings
 from webpush.models import PushInformation
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
+_404_TEMPLATE = "error/404.html"
 
 
 def get_rtmp_host(request, site_settings=None):
@@ -170,7 +175,7 @@ def live_view(request, key):
     log.debug("%s - live_view: is_secure: %s", request.method, request.is_secure())
     stream = get_object_or_404(Stream, name=key)
     if not stream.public and not request.user.is_authenticated:
-        return HttpResponseNotFound()
+        return render(request, _404_TEMPLATE, status=404)
     is_owner = request.user.is_authenticated and (stream.user_id == request.user.id or request.user.is_superuser)
     chat_user_info = {}
     if request.user.is_authenticated:
@@ -211,7 +216,7 @@ def live_manifest_view(request, key):
     log.debug("%s - live_manifest_view: is_secure: %s", request.method, request.is_secure())
     stream = get_object_or_404(Stream, name=key)
     if not stream.public and not request.user.is_authenticated:
-        return HttpResponseNotFound()
+        return render(request, _404_TEMPLATE, status=404)
     data = {
         "name": stream.title,
         "short_name": stream.name,
@@ -427,7 +432,7 @@ def invite_view(request, invite=None):
         log.debug("request.user.is_authenticated: %s", request.user.is_authenticated)
         return redirect("home:index")
     if request.method == "POST":
-        log.debug("request.POST: %s", request.POST)
+        log.debug("request.POST: %s", redact_log(request.POST))
         invite = UserInvites.objects.get_invite(invite)
         log.debug("invite: %s", invite)
         if not invite or not invite.is_valid():
@@ -437,7 +442,6 @@ def invite_view(request, invite=None):
         if not form.is_valid():
             return JsonResponse(form.errors, status=400)
         log.debug("username: %s", form.cleaned_data["username"])
-        log.debug("password: %s", form.cleaned_data["password"])
         if invite.super_user:
             user = CustomUser.objects.create_superuser(
                 username=form.cleaned_data["username"],
@@ -466,6 +470,31 @@ def invite_view(request, invite=None):
             context = {"invite": invite}
     log.debug("context: %s", context)
     return render(request, "invite.html", context=context)
+
+
+_invite_provider_map = {
+    "discord": DiscordOauth,
+    "github": GithubOauth,
+    "google": GoogleOauth,
+}
+
+
+def invite_oauth_view(request, invite: str, provider: str):
+    """
+    View  /i/<invite>/oauth/<provider>/
+    Stores the invite code in the session then redirects to the OAuth provider.
+    """
+    if request.user.is_authenticated:
+        return redirect("home:index")
+    site_settings = SiteSettings.objects.settings()
+    invite_obj = UserInvites.objects.get_invite(invite)
+    if not invite_obj or not invite_obj.is_valid():
+        return HttpResponse(status=400)
+    provider_cls = _invite_provider_map.get(provider)
+    if not provider_cls:
+        return HttpResponse(status=400)
+    request.session["oauth_invite"] = invite
+    return provider_cls.redirect_login(request, site_settings)
 
 
 def shorten_short_view(_request, short):
@@ -765,7 +794,7 @@ def handle_lock(request, ctx):
     """Returns a not allowed if private or file pw page if password set."""
     obj = ctx.get("file") or ctx.get("album")
     if obj.private and (request.user != obj.user) and (obj.password is None or obj.password == ""):  # nosec
-        return render(request, "error/403.html", context=ctx, status=403)
+        return render(request, _404_TEMPLATE, context=ctx, status=404)
     if obj.password and (request.user != obj.user):
         if (supplied_password := (request.GET.get("password"))) != obj.password:
             if supplied_password is not None:

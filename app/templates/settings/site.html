@@ -203,7 +203,7 @@
                                 <input class="form-check-input" type="checkbox" id="oauth_reg" name="oauth_reg" {{ site_settings.oauth_reg|if_true:"checked" }}>
                                 <label class="form-check-label" for="oauth_reg">
                                     OAuth Registration
-                                    <span data-bs-toggle="tooltip" data-bs-title="Allow new users to register via linked OAuth providers (Discord, GitHub, Google). Disable to restrict OAuth to already linked accounts only.">
+                                    <span data-bs-toggle="tooltip" data-bs-title="Allow any users with linked oAuth Provider accounts to register a new account. Disable to restrict OAuth to already linked accounts and/or invites only.">
                                         <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
                                     </span>
                                 </label>
@@ -530,6 +530,48 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger" id="delete-all-sessions">Delete All</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OAuth Registration Confirm Modal -->
+<div class="modal fade" id="oauth-reg-confirm-modal" tabindex="-1"
+     aria-labelledby="oauth-reg-confirm-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="oauth-reg-confirm-modal-label">
+                    <i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>Enable OAuth Registration?
+                </h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Enabling OAuth Registration allows <strong>anyone</strong> with an account on a configured OAuth provider (Discord, GitHub, or Google) to automatically create a new account on this site — <strong>without an invite</strong>.</p>
+                {% if site_settings.default_user_storage_quota == 0 %}
+                    <div class="alert alert-warning d-flex gap-2 mb-0" role="alert">
+                        <i class="fa-solid fa-circle-exclamation flex-shrink-0 mt-1"></i>
+                        <div>
+                            <strong>No default user quota is set.</strong> New self-registered users will have
+                            <em>unlimited</em> storage. Consider setting a
+                            <a href="#general" data-bs-dismiss="modal" class="alert-link">default user storage quota</a>
+                            before enabling open registration.
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info d-flex gap-2 mb-0" role="alert">
+                        <i class="fa-solid fa-circle-info flex-shrink-0 mt-1"></i>
+                        <div>New self-registered users will receive the current default quota of
+                            <strong>{{ site_settings.get_default_user_storage_quota_human_read }}</strong>.
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="confirmOauthRegBtn">
+                    <i class="fa-solid fa-check me-2"></i>Enable OAuth Registration
+                </button>
             </div>
         </div>
     </div>

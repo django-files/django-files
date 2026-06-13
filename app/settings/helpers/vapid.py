@@ -1,20 +1,14 @@
-import logging
-
 from cryptography.hazmat.primitives import serialization
 from py_vapid import Vapid
 from py_vapid.utils import b64urlencode, num_to_bytes
 from settings.models import VAPIDKeys
 
-log = logging.getLogger("app")
-
 
 def get_or_create_vapid_keys():
     result = VAPIDKeys.objects.first()
-    log.debug("get_or_create_vapid_keys: result: %s", result)
     if result:
         return result
     keys = get_vapid_keypair()
-    log.debug("get_or_create_vapid_keys: keys: %s", keys)
     return VAPIDKeys.objects.create(
         public=keys["public"],
         private=keys["private"],
