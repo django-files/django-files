@@ -7,7 +7,7 @@ COPY ["package.json", "package-lock.json", "gulpfile.js", "swagger.yaml", "/work
 RUN npm install
 
 
-FROM python:3.12-slim AS python
+FROM python:3.14-slim AS python
 
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -23,7 +23,7 @@ RUN uv pip install --system --no-cache -r /requirements.txt
 FROM ghcr.io/django-files/docker-nginx:1.29.7 AS nginx-base
 
 
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 LABEL org.opencontainers.image.source="https://github.com/django-files/django-files"
 LABEL org.opencontainers.image.description="Django Files"
@@ -38,7 +38,7 @@ ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE=1
 
 COPY --from=node /work/app/static/dist/ /app/static/dist/
-COPY --from=python /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
+COPY --from=python /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
 COPY --from=python /usr/local/bin/ /usr/local/bin/
 COPY --from=nginx-base /usr/sbin/nginx /usr/sbin/nginx
 COPY --from=nginx-base /etc/nginx /etc/nginx

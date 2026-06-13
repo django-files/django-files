@@ -79,7 +79,8 @@ jobs:
 
       - name: "black"
         if: ${{ !cancelled() }}
-        uses: psf/black@stable
+        run: |
+          uv run black --check .
 
       - name: "isort"
         if: ${{ !cancelled() }}

@@ -77,7 +77,7 @@ class CustomUser(AbstractUser):
             elif self.user_avatar_choice == "DF":
                 # filter vs get just in case a user users admin to set more than 1 file as avatar
                 avatar_url = self.files_set.filter(avatar=True)[0].get_meta_static_url()
-        except (ObjectDoesNotExist, IndexError):
+        except ObjectDoesNotExist, IndexError:
             pass
         if not avatar_url or avatar_url == "":
             # if avatar_url fails to be set for any reason fallback to a safe default

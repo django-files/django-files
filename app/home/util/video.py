@@ -115,7 +115,7 @@ def _extract_fps(vs, cm: dict):
     if avg_rate := vs.average_rate:
         try:
             return round(float(avg_rate), 3)
-        except (ValueError, ZeroDivisionError):
+        except ValueError, ZeroDivisionError:
             pass
     return None
 
