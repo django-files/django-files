@@ -1,7 +1,7 @@
 [project]
 name = "django-files"
 version = "0.0.0"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 
 # Bandit
 # https://bandit.readthedocs.io/en/latest/config.html
@@ -39,7 +39,7 @@ exclude = ["venv", ".venv", "migrations"]
 # https://docs.astral.sh/ruff/configuration/
 [tool.ruff]
 line-length = 119
-target-version = "py312"
+target-version = "py314"
 extend-exclude = ["migrations", ".github"]
 
 [tool.ruff.lint]
