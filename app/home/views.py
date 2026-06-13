@@ -37,6 +37,7 @@ from webpush.models import PushInformation
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
+_404_TEMPLATE = "error/404.html"
 
 
 def get_rtmp_host(request, site_settings=None):
@@ -174,7 +175,7 @@ def live_view(request, key):
     log.debug("%s - live_view: is_secure: %s", request.method, request.is_secure())
     stream = get_object_or_404(Stream, name=key)
     if not stream.public and not request.user.is_authenticated:
-        return render(request, "error/404.html", status=404)
+        return render(request, _404_TEMPLATE, status=404)
     is_owner = request.user.is_authenticated and (stream.user_id == request.user.id or request.user.is_superuser)
     chat_user_info = {}
     if request.user.is_authenticated:
@@ -215,7 +216,7 @@ def live_manifest_view(request, key):
     log.debug("%s - live_manifest_view: is_secure: %s", request.method, request.is_secure())
     stream = get_object_or_404(Stream, name=key)
     if not stream.public and not request.user.is_authenticated:
-        return render(request, "error/404.html", status=404)
+        return render(request, _404_TEMPLATE, status=404)
     data = {
         "name": stream.title,
         "short_name": stream.name,
@@ -793,7 +794,7 @@ def handle_lock(request, ctx):
     """Returns a not allowed if private or file pw page if password set."""
     obj = ctx.get("file") or ctx.get("album")
     if obj.private and (request.user != obj.user) and (obj.password is None or obj.password == ""):  # nosec
-        return render(request, "error/404.html", context=ctx, status=404)
+        return render(request, _404_TEMPLATE, context=ctx, status=404)
     if obj.password and (request.user != obj.user):
         if (supplied_password := (request.GET.get("password"))) != obj.password:
             if supplied_password is not None:
