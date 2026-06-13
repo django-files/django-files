@@ -363,9 +363,9 @@ export function bulkPublic(_event) {
     )
 }
 
-$('.bulk-album-add').on('click', bulkAddAlbum)
+$('.bulk-album').on('click', bulkManageAlbums)
 
-export async function bulkAddAlbum(_event) {
+export async function bulkManageAlbums(_event) {
     const pks = []
     filesDataTable.rows('.selected').every(function () {
         pks.push(this.data().id)
@@ -373,22 +373,7 @@ export async function bulkAddAlbum(_event) {
     const s = pks.length === 1 ? '' : 's'
     await openAlbumModal(
         pks,
-        'bulk-add',
-        `Add ${pks.length} File${s} to Album(s)`
-    )
-}
-
-$('.bulk-album-remove').on('click', bulkRemoveAlbum)
-
-export async function bulkRemoveAlbum(_event) {
-    const pks = []
-    filesDataTable.rows('.selected').every(function () {
-        pks.push(this.data().id)
-    })
-    const s = pks.length === 1 ? '' : 's'
-    await openAlbumModal(
-        pks,
-        'bulk-remove',
-        `Remove ${pks.length} File${s} from Album(s)`
+        'bulk',
+        `Updating albums for ${pks.length} file${s}.`
     )
 }

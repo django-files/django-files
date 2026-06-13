@@ -471,3 +471,15 @@
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
 }
+
+.badge.file-album-active {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.badge.file-album-active a {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
