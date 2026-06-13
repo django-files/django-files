@@ -877,6 +877,22 @@ def _resolve_stream_user(name, data):
     return None, None
 
 
+def _parse_stream_kwargs(data):
+    kwargs = {}
+    if public := data.get("public"):
+        kwargs["public"] = anytobool(public[0])
+    if viewer_limit := data.get("viewer_limit"):
+        try:
+            kwargs["viewer_limit"] = int(viewer_limit[0])
+        except ValueError:
+            log.error("Invalid viewer_limit: %s", viewer_limit)
+    if description := data.get("description"):
+        kwargs["description"] = description[0]
+    if title := data.get("title"):
+        kwargs["title"] = title[0]
+    return kwargs
+
+
 @csrf_exempt
 def stream_auth_view(request):
     """
@@ -900,19 +916,7 @@ def stream_auth_view(request):
             log.debug("User Authorization Failed: %s", name)
             return HttpResponse(status=401)
 
-        title = data.get("title") or data.get("message") or "Click here to watch the stream."
-        stream_kwargs = {}
-        if public := data.get("public"):
-            stream_kwargs["public"] = anytobool(public[0])
-        if viewer_limit := data.get("viewer_limit"):
-            try:
-                stream_kwargs["viewer_limit"] = int(viewer_limit[0])
-            except ValueError:
-                log.error("Invalid viewer_limit: %s", viewer_limit)
-        if description := data.get("description"):
-            stream_kwargs["description"] = description[0]
-        if title := data.get("title"):
-            stream_kwargs["title"] = title[0]
+        stream_kwargs = _parse_stream_kwargs(data)
         stream, created = Stream.objects.get_or_create(
             name=name, defaults={"user": user, "is_live": True, "started_at": datetime.now(), **stream_kwargs}
         )
@@ -932,7 +936,6 @@ def stream_auth_view(request):
             stream.started_at = datetime.now()
             stream.ended_at = None
             stream.save()
-        log.debug("title: %s", title)
         send_push_live.apply_async(args=[stream.name], countdown=10)
         stream_status_websocket.delay(stream.name, True, started_at=stream.started_at.isoformat())
 

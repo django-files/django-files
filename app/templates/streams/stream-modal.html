@@ -117,9 +117,8 @@
             document.getElementById('streamSetupName').focus()
             return
         }
-        const btn = this
-        btn.disabled = true
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Loading…'
+        this.disabled = true
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Loading…'
         try {
             const fd = new FormData()
             fd.append('name', name)
@@ -140,8 +139,8 @@
             const data = await res.json()
             setTokenUI(data.name, data.stream_token)
         } finally {
-            btn.disabled = false
-            btn.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Create / Get Token'
+            this.disabled = false
+            this.innerHTML = '<i class="fa-solid fa-satellite-dish me-1"></i> Create / Get Token'
         }
     })
 
@@ -155,8 +154,7 @@
     document.getElementById('streamSetupRotateBtn').addEventListener('click', async function () {
         if (!currentStreamName) return
         if (!(await window.confirmRotateStreamToken?.(currentStreamName))) return
-        const btn = this
-        btn.disabled = true
+        this.disabled = true
         try {
             const res = await fetch(`/api/stream/${encodeURIComponent(currentStreamName)}/rotate-token/`, {
                 method: 'POST',
@@ -175,7 +173,7 @@
                 detail: { name: data.name, token: data.stream_token },
             }))
         } finally {
-            btn.disabled = false
+            this.disabled = false
         }
     })
 

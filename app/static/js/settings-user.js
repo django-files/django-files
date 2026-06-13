@@ -64,13 +64,13 @@ function checkPasswordMatch() {
         if (confirmFeedback) confirmFeedback.textContent = ''
         return
     }
-    if (confirmPasswordInput.value !== newPasswordInput.value) {
+    if (confirmPasswordInput.value === newPasswordInput.value) {
+        confirmPasswordInput.classList.remove('is-invalid')
+        if (confirmFeedback) confirmFeedback.textContent = ''
+    } else {
         confirmPasswordInput.classList.add('is-invalid')
         if (confirmFeedback)
             confirmFeedback.textContent = 'Passwords do not match.'
-    } else {
-        confirmPasswordInput.classList.remove('is-invalid')
-        if (confirmFeedback) confirmFeedback.textContent = ''
     }
 }
 

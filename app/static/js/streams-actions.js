@@ -6,7 +6,7 @@
 import { socket } from './socket.js'
 import { wireDeleteModal } from './bulk-actions.js'
 
-const csrfToken = () => document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
+const csrfToken = () => /csrftoken=([^;]+)/.exec(document.cookie)?.[1] || ''
 
 let _deleteModal
 let pendingRedirect = null

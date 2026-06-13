@@ -213,6 +213,8 @@ function getPublicIcon(data, type, _row) {
 
 function getActions(data, type, row) {
     if (type === 'display') {
+        const publicIcon = row.public ? 'lock' : 'globe'
+        const publicLabel = row.public ? 'Make Private' : 'Make Public'
         const ownerItems = row.is_owner
             ? `<li><a class="dropdown-item stream-copy-rtmp-btn" role="button" data-stream-name="${row.name}" data-rtmp-url="${row.rtmp_url || ''}">
                     <i class="fa-solid fa-satellite-dish me-2"></i>Copy RTMP URL
@@ -222,7 +224,7 @@ function getActions(data, type, row) {
                 </a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item stream-toggle-public-btn" role="button" data-stream-name="${row.name}" data-public="${row.public}">
-                    <i class="fa-solid fa-${row.public ? 'lock' : 'globe'} me-2"></i>${row.public ? 'Make Private' : 'Make Public'}
+                    <i class="fa-solid fa-${publicIcon} me-2"></i>${publicLabel}
                 </a></li>
                 <li><hr class="dropdown-divider"></li>`
             : ''

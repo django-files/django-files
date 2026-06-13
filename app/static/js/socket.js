@@ -199,7 +199,9 @@ function messagePassword(data) {
 // handler exists so the catch-all 'unhandled event' warning doesn't fire.
 // The files DataTable refreshes its row data via the extra map in
 // file-table.js so derived column renderers stay in sync.
-function messageFileUpdate(_data) {}
+function messageFileUpdate(_data) {
+    // intentionally empty — see comment above
+}
 
 function messageDelete(data) {
     batchedToast(
