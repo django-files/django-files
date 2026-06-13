@@ -31,6 +31,9 @@ if (showMap) showMap.onclick = changeView
 
 let params = new URL(document.location.toString()).searchParams
 
+const GALLERY_ALL_TYPES_KEY = 'galleryShowAllTypes'
+let showAllTypes = localStorage.getItem(GALLERY_ALL_TYPES_KEY) === 'true'
+
 let nextPage = 1
 let fileData = []
 let fetchLock = false
@@ -168,6 +171,10 @@ function applyView(view) {
     else if (view === 'gallery') active = showGallery
     else active = showList
     active?.classList.add('view-active')
+
+    const galleryTypesBtn = document.getElementById('gallery-all-types-btn')
+    if (galleryTypesBtn)
+        galleryTypesBtn.classList.toggle('d-none', view !== 'gallery')
 }
 
 function detectInitialView() {
@@ -187,10 +194,41 @@ function filterGallery() {
     }
 }
 
+function initGalleryTypesBtn() {
+    const btn = document.getElementById('gallery-all-types-btn')
+    if (!btn) return
+
+    const label = btn.querySelector('.files-toolbar-view-label')
+    const syncBtn = () => {
+        btn.classList.toggle('view-active', showAllTypes)
+        btn.setAttribute('aria-pressed', showAllTypes ? 'true' : 'false')
+        btn.title = showAllTypes
+            ? 'Showing all file types — click to show only images & videos'
+            : 'Showing images & videos only — click to show all file types'
+        if (label)
+            label.textContent = showAllTypes ? 'All Types' : 'Images & Videos'
+    }
+    syncBtn()
+
+    btn.addEventListener('click', () => {
+        showAllTypes = !showAllTypes
+        localStorage.setItem(
+            GALLERY_ALL_TYPES_KEY,
+            showAllTypes ? 'true' : 'false'
+        )
+        syncBtn()
+        if (params.get('view') === 'gallery') {
+            galleryContainer.replaceChildren()
+            renderGalleryChunked(fileData, 20, () => filterGallery())
+        }
+    })
+}
+
 async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
     initToolbar('files-toolbar', filesDataTable)
+    initGalleryTypesBtn()
 
     // Gallery-view filtering: mirror the search input value into gallerySearchTerm
     // so filterGallery() can apply it when the gallery view is active.
@@ -330,11 +368,17 @@ async function addNodes() {
     if (nextPage) setupScrollObserver()
 }
 
+const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp|jxl|avif)$/i
+
 function addGalleryFile(file, top = false) {
     if (file.mime?.startsWith('video/')) {
         addGalleryVideo(file, top)
-    } else {
+    } else if (imageExtensions.test(file.name)) {
         addGalleryImage(file, top)
+    } else if (showAllTypes) {
+        addGalleryGeneric(file, top)
+    } else {
+        console.debug(`Skipping non-media: ${file.name}`)
     }
 }
 
@@ -391,15 +435,61 @@ function buildGalleryCard(file, top = false) {
     return { outer, inner }
 }
 
-function addGalleryImage(file, top = false) {
-    const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp|jxl|avif)$/i
-    if (!file.name.match(imageExtensions)) {
-        console.debug(`Skipping non-image: ${file.name}`)
-        return
-    }
+function showLabelsAlways(outer) {
+    const labels = outer.querySelector('.image-labels')
+    if (!labels) return
+    labels.classList.remove('gallery-mouse', 'd-none')
+    if (outer._mouseEls)
+        outer._mouseEls = outer._mouseEls.filter((el) => el !== labels)
+}
 
+function getFileTypeIcon(mime) {
+    if (!mime) return 'fa-file'
+    if (mime.startsWith('audio/')) return 'fa-file-audio'
+    if (mime.startsWith('text/')) return 'fa-file-lines'
+    if (mime === 'application/pdf') return 'fa-file-pdf'
+    if (
+        mime.includes('zip') ||
+        mime.includes('archive') ||
+        mime.includes('tar') ||
+        mime.includes('gzip')
+    )
+        return 'fa-file-zipper'
+    if (mime.includes('word') || mime.includes('document'))
+        return 'fa-file-word'
+    if (mime.includes('excel') || mime.includes('spreadsheet'))
+        return 'fa-file-excel'
+    if (mime.includes('powerpoint') || mime.includes('presentation'))
+        return 'fa-file-powerpoint'
+    return 'fa-file'
+}
+
+function addGalleryGeneric(file, top = false) {
     const maxThumbSize = 256
-    const { inner } = buildGalleryCard(file, top)
+    const { outer, inner } = buildGalleryCard(file, top)
+
+    inner.style.minWidth = `${maxThumbSize}px`
+    inner.style.minHeight = `${maxThumbSize}px`
+
+    const link = document.createElement('a')
+    link.classList.add('image-link')
+    link.href = file.url
+    link.title = file.name
+    link.target = '_blank'
+    link.style.cssText = 'position:absolute;inset:0;display:block'
+
+    const placeholder = document.createElement('div')
+    placeholder.className = 'img-error-placeholder'
+    placeholder.innerHTML = `<i class="fa-solid ${getFileTypeIcon(file.mime)}"></i>`
+
+    link.appendChild(placeholder)
+    inner.prepend(link)
+    showLabelsAlways(outer)
+}
+
+function addGalleryImage(file, top = false) {
+    const maxThumbSize = 256
+    const { outer, inner } = buildGalleryCard(file, top)
 
     // IMAGE AND LINK
     const link = document.createElement('a')
@@ -446,7 +536,9 @@ function addGalleryImage(file, top = false) {
             const placeholder = document.createElement('div')
             placeholder.className = 'img-error-placeholder'
             placeholder.innerHTML = '<i class="fa-solid fa-file-image"></i>'
-            inner.appendChild(placeholder)
+            link.appendChild(placeholder)
+            link.style.cssText = 'position:absolute;inset:0;display:block'
+            showLabelsAlways(outer)
         },
         { once: true }
     )
@@ -478,6 +570,7 @@ function showVideoThumbError(skeleton, inner) {
     placeholder.className = 'img-error-placeholder'
     placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
     inner.appendChild(placeholder)
+    showLabelsAlways(inner.parentElement)
 }
 
 /**
@@ -559,6 +652,8 @@ function addGalleryVideo(file, top = false) {
 
     if (file.thumb) {
         pollVideoThumb(file.thumb, img, skeleton, inner)
+    } else {
+        showVideoThumbError(skeleton, inner)
     }
 }
 

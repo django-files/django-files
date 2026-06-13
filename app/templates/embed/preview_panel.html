@@ -39,7 +39,7 @@
     {% elif render == 'markdown' %}
         <div class="container pt-3 mt-5 px-4 overflow-auto h-100">{{ markdown|safe }}</div>
     {% else %}
-        <div class="container card-body text-center"><i class="fa-10x fa-solid fa-file mx-auto"></i></div>
+        <div class="d-flex align-items-center justify-content-center h-100 w-100"><i class="fa-10x fa-solid fa-file"></i></div>
     {% endif %}
 
     <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
