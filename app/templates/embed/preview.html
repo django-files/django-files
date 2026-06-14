@@ -11,6 +11,7 @@
     <meta name="title" content="{{ file.name }}"/>
     <meta name="description" content="{{ file.info }}"/>
 
+    <meta property="og:site_name" content="{{ site_settings.site_title }}">
     <meta property="og:author" content="{{ file.user.get_name }}">
     <meta property="og:title" content="{{ file.name }}">
     <meta property="og:description" content="{% if code_snippet %}{{ code_snippet }}{% else %}{{ file.info|default:"" }}{% if file.meta_preview %}{% if file.exif.Model %}
@@ -31,12 +32,19 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:title" content="{{ file.name }}">
+    <meta property="twitter:description" content="{% if code_snippet %}{{ code_snippet }}{% else %}{{ file.info|default:"" }}{% endif %}">
     {% if render == 'image' %}
         <meta property="og:image" content="{{ static_meta_url|safe }}">
         <meta property="og:type" content="website">
         <meta property="twitter:card" content="summary_large_image">
+        <meta property="twitter:image" content="{{ static_meta_url|safe }}">
+        {% if file.meta.PILImageWidth %}
+            <meta property="og:image:width" content="{{ file.meta.PILImageWidth }}">
+            <meta property="og:image:height" content="{{ file.meta.PILImageHeight }}">
+        {% endif %}
     {% elif render == 'video' %}
         <meta property="og:video" content="{{ static_meta_url|safe }}">
+        <meta property="og:video:type" content="{{ file.mime }}">
         <meta property="og:type" content="video.other">
         <meta property="twitter:card" content="player">
     {% elif render == 'audio' %}

@@ -11,6 +11,7 @@
     <meta name="title" content="{{ file.name }}"/>
     <meta name="description" content="{{ file.info }}"/>
 
+    <meta property="og:site_name" content="{{ site_settings.site_title }}">
     <meta property="og:author" content="{{ file.user.get_name }}">
     <meta property="og:title" content="{{ file.name }}">
     <meta property="og:description" content="{{ file.info }}">
@@ -19,6 +20,7 @@
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
 
     <meta property="twitter:title" content="{{ file.name }}">
+    <meta property="twitter:description" content="{{ file.info }}">
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
     {#    <meta property="twitter:card" content="summary_large_image">#}
 {% endblock %}
