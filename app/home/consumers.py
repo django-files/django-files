@@ -1220,7 +1220,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
         for file in files:
             getattr(file.albums, action)(*album_objs)
             count += 1
-        return {"event": f"bulk-{action}-file-albums", "count": count}
+        result = {"event": f"bulk-{action}-file-albums", "count": count}
+        if action == "add":
+            result["albums"] = [{"id": a.id, "name": a.name} for a in album_objs]
+        return result
 
     async def check_for_update(self, *args, **kwargs) -> dict:
         log.debug("async - check_for_update")

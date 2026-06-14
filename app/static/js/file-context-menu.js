@@ -168,12 +168,15 @@ export async function ctxAlbumFile(event) {
 }
 
 let albumModalSocketHandler = null
+let bulkAlbumSelectorCleanup = null
 
 fileAlbumModal.on('hidden.bs.modal', () => {
     if (albumModalSocketHandler) {
         socket?.removeEventListener('message', albumModalSocketHandler)
         albumModalSocketHandler = null
     }
+    bulkAlbumSelectorCleanup?.()
+    bulkAlbumSelectorCleanup = null
     document.getElementById('modal-album-badge-ui').classList.add('d-none')
 })
 
@@ -280,7 +283,8 @@ export async function openAlbumModal(
                 })
                 .join('') + ADD_GROUP_HTML
 
-        initBulkAlbumSelector(badgeUi, socket, pks)
+        bulkAlbumSelectorCleanup?.()
+        bulkAlbumSelectorCleanup = initBulkAlbumSelector(badgeUi, socket, pks)
     }
 }
 
