@@ -11,9 +11,10 @@
     <meta name="title" content="{{ file.name }}"/>
     <meta name="description" content="{{ file.info }}"/>
 
+    <meta property="og:site_name" content="{{ site_settings.site_title }}">
     <meta property="og:author" content="{{ file.user.get_name }}">
     <meta property="og:title" content="{{ file.name }}">
-    <meta property="og:description" content="{{ file.info|default:"" }}{% if file.meta_preview %}{% if file.exif.Model %}
+    <meta property="og:description" content="{% if code_snippet %}{{ code_snippet }}{% else %}{{ file.info|default:"" }}{% if file.meta_preview %}{% if file.exif.Model %}
 Camera: {% if file.exif.Make not in file.exif.Model %}{{ file.exif.Make }} {% endif %}{{ file.exif.Model }}{% endif %}{% if file.exif.DateTimeOriginal%}
 {{ file.exif.DateTimeOriginal|convert_str_date }}{% if file.meta.GPSArea %}{% endif %}{% if file.meta.GPSArea %}
 {{ file.meta.GPSArea }}{% endif %}{% if file.exif.GPSInfo.6 %}{% endif %}{% if file.exif.GPSInfo.6 %}
@@ -26,19 +27,32 @@ Exposure Time: {{ file.exif.ExposureTime }} s{% endif %}
 Resolution: {{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}{% if file.meta.VideoCodec %}
 Codec: {{ file.meta.VideoCodec|upper }}{% endif %}{% if file.meta.FrameRate %}
 Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
-{{ file.mime }} uploaded by {{ file.user.get_name }} on {{ file.date|date:"D \t\h\e jS\, M Y \a\t f a T" }}">
+{{ file.mime }} uploaded by {{ file.user.get_name }} on {{ file.date|date:"D \t\h\e jS\, M Y \a\t f a T" }}{% endif %}">
 
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
     <meta property="twitter:title" content="{{ file.name }}">
+    <meta property="twitter:description" content="{% if code_snippet %}{{ code_snippet }}{% else %}{{ file.info|default:"" }}{% endif %}">
     {% if render == 'image' %}
         <meta property="og:image" content="{{ static_meta_url|safe }}">
         <meta property="og:type" content="website">
         <meta property="twitter:card" content="summary_large_image">
+        <meta property="twitter:image" content="{{ static_meta_url|safe }}">
+        {% if file.meta.PILImageWidth %}
+            <meta property="og:image:width" content="{{ file.meta.PILImageWidth }}">
+            <meta property="og:image:height" content="{{ file.meta.PILImageHeight }}">
+        {% endif %}
     {% elif render == 'video' %}
         <meta property="og:video" content="{{ static_meta_url|safe }}">
+        <meta property="og:video:type" content="{{ file.mime }}">
         <meta property="og:type" content="video.other">
-        <meta property="twitter:card" content="player">
+        {% if file.thumb %}
+            <meta property="og:image" content="{{ site_settings.site_url }}{% url 'home:url-raw-redirect' file.name %}?thumb=1">
+            <meta property="twitter:card" content="summary_large_image">
+            <meta property="twitter:image" content="{{ site_settings.site_url }}{% url 'home:url-raw-redirect' file.name %}?thumb=1">
+        {% else %}
+            <meta property="twitter:card" content="summary">
+        {% endif %}
     {% elif render == 'audio' %}
         <meta property="og:audio" content="{{ static_meta_url|safe }}">
         <meta property="og:type" content="music.song">
@@ -80,10 +94,12 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
                 </video>
             </div>
         {% elif render == 'audio' %}
-            <audio class="w-100 pt-3 mt-5" controls>
-                <source src="{{ static_url }}" type="{{ file.mime }}">
-                Your browser does not support the audio tag.
-            </audio>
+            <div class="position-absolute top-50 start-0 end-0 translate-middle-y px-3">
+                <audio class="w-100" controls>
+                    <source src="{{ static_url }}" type="{{ file.mime }}">
+                    Your browser does not support the audio tag.
+                </audio>
+            </div>
         {% elif file.mime == 'application/pdf' %}
             <embed src="{{ static_url }}" type="application/pdf" frameBorder="0" scrolling="auto" width="100%" class="h-100 pt-3 mt-5">               
         {% elif render in 'text,code' %}
