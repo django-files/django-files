@@ -16,6 +16,7 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.utils import timezone
 from django.views.decorators.cache import cache_control, cache_page
 from django.views.decorators.common import no_append_slash
 from django.views.decorators.csrf import csrf_exempt
@@ -47,39 +48,6 @@ CODE_MIMES = frozenset(
         "application/x-sh",
     ]
 )
-
-MIME_TO_DISCORD_LANG = {
-    "application/json": "json",
-    "application/javascript": "js",
-    "application/x-sh": "bash",
-    "application/x-perl": "perl",
-    "text/javascript": "js",
-    "text/typescript": "ts",
-    "text/x-python": "python",
-    "text/x-java-source": "java",
-    "text/x-c": "c",
-    "text/x-c++src": "cpp",
-    "text/x-ruby": "ruby",
-    "text/x-rust": "rust",
-    "text/x-go": "go",
-    "text/x-shellscript": "bash",
-    "text/x-yaml": "yaml",
-    "text/xml": "xml",
-    "text/html": "html",
-    "text/css": "css",
-    "text/x-sql": "sql",
-    "text/x-lua": "lua",
-    "text/x-swift": "swift",
-    "text/x-kotlin": "kotlin",
-    "text/x-scala": "scala",
-    "text/x-haskell": "haskell",
-    "text/x-r": "r",
-    "text/x-matlab": "matlab",
-    "text/x-makefile": "makefile",
-    "text/x-dockerfile": "dockerfile",
-    "text/x-toml": "toml",
-    "text/x-ini": "ini",
-}
 
 
 def get_rtmp_host(request, site_settings=None):
@@ -752,17 +720,13 @@ def _read_file_text(file, max_bytes=None, errors="strict"):
 def _build_code_snippet(file):
     try:
         raw = _read_file_text(file, max_bytes=512, errors="replace")
-        snippet = raw.strip()
-        triple_tick_pos = snippet.find("```")
-        if triple_tick_pos != -1:
-            snippet = snippet[:triple_tick_pos].rstrip()
-        snippet = snippet[:220]
+        snippet = raw.strip()[:240]
         if not snippet:
             return None
-        lang = MIME_TO_DISCORD_LANG.get(file.mime, "")
-        upload_date = file.date.strftime("%-d %b %Y at %-I:%M %p")
-        footer = f"\n— {file.user.get_name()} | {upload_date}"
-        return f"```{lang}\n{snippet}\n```{footer}"
+        local_date = timezone.localtime(file.date)
+        date_str = local_date.strftime("%-d %b %Y %-I:%M %p %Z")
+        footer = f"{file.user.get_name()} • {date_str}"
+        return f"{snippet}\n\n{footer}"
     except Exception:
         log.exception("Failed to read code snippet for unfurl: %s", file.name)
         return None
