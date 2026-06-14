@@ -47,6 +47,9 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
         <meta property="og:video:type" content="{{ file.mime }}">
         <meta property="og:type" content="video.other">
         <meta property="twitter:card" content="player">
+        {% if file.thumb %}
+            <meta property="og:image" content="{{ site_settings.site_url }}{% url 'home:url-raw-redirect' file.name %}?thumb=1">
+        {% endif %}
     {% elif render == 'audio' %}
         <meta property="og:audio" content="{{ static_meta_url|safe }}">
         <meta property="og:type" content="music.song">
