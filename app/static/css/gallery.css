@@ -94,15 +94,74 @@
 }
 
 .gallery-ctx .dt-ctx-btn {
-    background: var(--toolbar-glass-bg);
+    background: rgba(0 0 0 / 52%);
     -webkit-backdrop-filter: var(--toolbar-glass-blur);
     backdrop-filter: var(--toolbar-glass-blur);
+    border-color: rgba(255 255 255 / 15%);
+    color: #fff;
+    opacity: 0.85;
+}
+
+.gallery-ctx .dt-ctx-btn:hover,
+.gallery-ctx .dt-ctx-btn[aria-expanded='true'] {
+    background: rgba(0 0 0 / 72%);
+    color: #fff;
+    opacity: 1;
 }
 
 .gallery-checkbox {
     position: absolute;
     top: 8px;
     left: 12px;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    transition:
+        background 0.15s,
+        border-color 0.15s,
+        box-shadow 0.15s;
+}
+
+/* Light mode: white-tinted glass — pops over bright images */
+[data-bs-theme='light'] .gallery-checkbox {
+    background: rgba(255 255 255 / 40%);
+    border: 1.5px solid rgba(255 255 255 / 70%);
+    box-shadow: 0 1px 6px rgba(0 0 0 / 20%);
+}
+
+[data-bs-theme='light'] .gallery-checkbox:checked {
+    background: rgba(13 110 253 / 85%);
+    border-color: rgba(13 110 253 / 60%);
+}
+
+/* Dark mode: dark-tinted glass — readable over dark images */
+[data-bs-theme='dark'] .gallery-checkbox {
+    background: rgba(0 0 0 / 35%);
+    border: 1.5px solid rgba(255 255 255 / 25%);
+    box-shadow: 0 1px 6px rgba(0 0 0 / 40%);
+}
+
+[data-bs-theme='dark'] .gallery-checkbox:checked {
+    background: rgba(13 110 253 / 80%);
+    border-color: rgba(130 180 255 / 70%);
+}
+
+.gallery-checkbox:checked {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 14px;
+    box-shadow: 0 1px 6px rgba(0 0 0 / 30%);
+}
+
+.gallery-checkbox:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(13 110 253 / 40%);
 }
 
 /* ---- Map view ---- */

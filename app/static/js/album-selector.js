@@ -246,7 +246,7 @@ export function initBulkAlbumSelector(container, socket, pks) {
         const addGroup = albumContainer.querySelector('.addto-album-group')
         const span = document.createElement('span')
         span.className =
-            'badge rounded-pill text-bg-primary ps-2 ms-1 file-album-active pb-0 pt-0 mt-1 mb-1'
+            'badge rounded-pill text-bg-primary ps-2 file-album-active'
         span.id = `album-${id}`
         span.innerHTML = `
             <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album=${id}" title="${name}">${name} </a>
@@ -287,4 +287,21 @@ export function initBulkAlbumSelector(container, socket, pks) {
             )
         },
     })
+
+    function handleBulkAdd(event) {
+        if (event.data === 'pong') return
+        let data
+        try {
+            data = JSON.parse(event.data)
+        } catch {
+            return
+        }
+        if (data.event !== 'bulk-add-file-albums') return
+        for (const album of data.albums || []) {
+            addBadge(album.id, album.name)
+        }
+    }
+
+    socket?.addEventListener('message', handleBulkAdd)
+    return () => socket?.removeEventListener('message', handleBulkAdd)
 }
