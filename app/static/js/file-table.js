@@ -227,8 +227,8 @@ function getExifDate(_data, type, row) {
     if (type === 'sort' || type === 'type') return raw
     const match = raw.match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2})/)
     if (!match) return raw
-    const month = _EXIF_MONTHS[parseInt(match[2], 10) - 1]
-    return `${parseInt(match[3], 10)} ${month} ${match[1]}, ${match[4]}:${match[5]}`
+    const month = _EXIF_MONTHS[Number.parseInt(match[2], 10) - 1]
+    return `${Number.parseInt(match[3], 10)} ${month} ${match[1]}, ${match[4]}:${match[5]}`
 }
 
 export function formatBytes(bytes) {

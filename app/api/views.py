@@ -1,10 +1,11 @@
 import io
 import json
 import logging
+import operator
 import os
 import random
 from datetime import datetime
-from functools import wraps
+from functools import reduce, wraps
 from typing import Any, BinaryIO, Callable, List, Optional, Union
 from urllib.parse import parse_qs, urlparse
 
@@ -566,27 +567,23 @@ def files_view(request, page, count=25):
     log.debug("user: %s", user)
     if album := request.GET.get("album"):
         q = Files.objects.filtered_request(request, albums__id=album).select_related("user").prefetch_related("albums")
+    elif user == "0":
+        # this grabs files for ALL users, user parameter only is accepted for superusers
+        q = Files.objects.filtered_request(request).select_related("user").prefetch_related("albums")
     elif user:
-        if user == "0":
-            # this grabs files for ALL users, user parameter only is accepted for superusers
-            q = Files.objects.filtered_request(request).select_related("user").prefetch_related("albums")
-        else:
-            q = (
-                Files.objects.filtered_request(request, user_id=int(user))
-                .select_related("user")
-                .prefetch_related("albums")
-            )
+        q = (
+            Files.objects.filtered_request(request, user_id=int(user))
+            .select_related("user")
+            .prefetch_related("albums")
+        )
     else:
         return JsonResponse({"error": "Not Authenticated"}, status=401)
     if mime := request.GET.get("mime"):
         q = q.filter(mime__startswith=mime)
     if type_param := request.GET.get("type"):
-        requested = [t.strip() for t in type_param.split(",") if t.strip() in _TYPE_Q]
-        if requested:
-            combined = _TYPE_Q[requested[0]]
-            for t in requested[1:]:
-                combined |= _TYPE_Q[t]
-            q = q.filter(combined)
+        type_qs = [_TYPE_Q[ts] for t in type_param.split(",") if (ts := t.strip()) in _TYPE_Q]
+        if type_qs:
+            q = q.filter(reduce(operator.or_, type_qs))
     ordering_param = (request.GET.get("ordering") or "").lstrip("-")
     if ordering_param == "exif_date":
         q = q.annotate(_exif_date=KeyTextTransform("DateTimeOriginal", "exif"))

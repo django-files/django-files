@@ -58,11 +58,18 @@ async function initHome() {
         .getElementById('home-files-section')
         ?.classList.add('dt-data-loaded')
     filesDataTable.on('select', function (_e, _dt, _type, _indexes) {
-        document.getElementById('bulk-actions').disabled = false
+        const bulkActions = document.getElementById('bulk-actions')
+        if (bulkActions) {
+            bulkActions.disabled = false
+            bulkActions.classList.add('bulk-actions--active')
+        }
     })
     filesDataTable.on('deselect', function (_e, _dt, _type, _indexes) {
-        if (filesDataTable.rows({ selected: true }).count() === 0) {
-            document.getElementById('bulk-actions').disabled = true
+        const n = filesDataTable.rows({ selected: true }).count()
+        const bulkActions = document.getElementById('bulk-actions')
+        if (bulkActions) {
+            bulkActions.disabled = n === 0
+            bulkActions.classList.toggle('bulk-actions--active', n > 0)
         }
     })
     filesDataTable?.columns.adjust().draw()

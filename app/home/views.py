@@ -45,8 +45,8 @@ _ORDERING_LABELS = {
     "-name": "Name",
     "size": "Size",
     "-size": "Size",
-    "exif_date": "EXIF Date",
-    "-exif_date": "EXIF Date",
+    "exif_date": "Taken",
+    "-exif_date": "Taken",
 }
 _404_TEMPLATE = "error/404.html"
 

@@ -24,6 +24,7 @@ export function initBulkSelect(dt, btnId = 'bulk-actions') {
     dt.on('select deselect', () => {
         const n = dt.rows({ selected: true }).count()
         btn.disabled = n === 0
+        btn.classList.toggle('bulk-actions--active', n > 0)
         updateBulkCount(n)
     })
 }

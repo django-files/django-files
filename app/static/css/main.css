@@ -5,6 +5,14 @@ html {
     scrollbar-gutter: stable;
 }
 
+/* Bootstrap adds padding-right to body when a modal opens to compensate for
+   the scrollbar it hides. With scrollbar-gutter: stable the gutter is always
+   reserved, so the scrollbar never actually disappears — the extra padding
+   just shifts content unnecessarily. */
+.modal-open {
+    padding-right: 0 !important;
+}
+
 /* Back to Top Button */
 #back-to-top {
     position: fixed;
@@ -247,6 +255,7 @@ html {
 
 .files-toolbar-view {
     text-decoration: none;
+    font-weight: 600;
     transition:
         background 0.15s,
         color 0.15s;
@@ -261,9 +270,13 @@ html {
     max-width: 250px;
     overflow: hidden;
     white-space: nowrap;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.07);
     transition:
         background 0.15s,
         opacity 0.2s ease,
+        box-shadow 0.15s,
         max-width 0.25s ease,
         padding-left 0.25s ease,
         padding-right 0.25s ease,
@@ -297,10 +310,6 @@ html {
     opacity: 1;
 }
 
-.files-toolbar-view {
-    font-weight: 600;
-}
-
 .files-toolbar-view.view-active {
     background: rgba(var(--bs-primary-rgb), 0.18);
     opacity: 1;
@@ -328,6 +337,35 @@ html {
 .files-toolbar-btn--private:hover,
 .files-toolbar-btn--private:focus-visible {
     background: rgba(var(--bs-warning-rgb), 0.15);
+}
+
+.files-toolbar-btn.view-active {
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-color: rgba(var(--bs-primary-rgb), 0.3);
+    opacity: 1;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+        0 0 8px rgba(var(--bs-primary-rgb), 0.18);
+}
+
+.files-toolbar-btn.bulk-actions--active {
+    background: rgba(var(--bs-primary-rgb), 0.12);
+    border-color: rgba(var(--bs-primary-rgb), 0.35);
+    opacity: 1;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+        0 0 8px rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.files-toolbar-btn.bulk-actions--active:hover,
+.files-toolbar-btn.bulk-actions--active:focus-visible {
+    background: rgba(var(--bs-primary-rgb), 0.2);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+        0 0 12px rgba(var(--bs-primary-rgb), 0.28);
 }
 
 .files-toolbar-search {

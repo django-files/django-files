@@ -330,12 +330,10 @@ function initFilterBtn() {
                 const t = optBtn.dataset.type
                 if (t === 'all') {
                     activeTypes.clear()
+                } else if (activeTypes.has(t)) {
+                    activeTypes.delete(t)
                 } else {
-                    if (activeTypes.has(t)) {
-                        activeTypes.delete(t)
-                    } else {
-                        activeTypes.add(t)
-                    }
+                    activeTypes.add(t)
                 }
                 syncFilterPopoverState(tip)
                 applyTypeFilter()
@@ -381,13 +379,13 @@ async function applyTypeFilter() {
 
 const SORT_LABELS = {
     '-created': 'Sort',
-    created: 'Sort',
+    created: 'Upload Date',
     name: 'Name',
     '-name': 'Name',
     '-size': 'Size',
     size: 'Size',
-    '-exif_date': 'EXIF Date',
-    exif_date: 'EXIF Date',
+    '-exif_date': 'Taken',
+    exif_date: 'Taken',
 }
 
 function syncSortBtn() {
@@ -396,20 +394,16 @@ function syncSortBtn() {
     if (!btn) return
     btn.classList.toggle('view-active', galleryOrdering !== '-created')
     if (label) label.textContent = SORT_LABELS[galleryOrdering] ?? 'Sort'
+    const icon = btn.querySelector('i')
+    if (icon) {
+        const isDesc = galleryOrdering.startsWith('-')
+        icon.className = `fa-solid ${isDesc ? 'fa-arrow-down-wide-short' : 'fa-arrow-up-wide-short'}`
+    }
 }
 
 function syncSortPopoverState(popoverBody) {
-    const isExif =
-        galleryOrdering === '-exif_date' || galleryOrdering === 'exif_date'
-
-    popoverBody.querySelectorAll('.gallery-sort-opt').forEach((btn) => {
-        const active = !isExif && btn.dataset.ordering === galleryOrdering
-        btn.classList.toggle('btn-secondary', active)
-        btn.classList.toggle('btn-outline-secondary', !active)
-    })
-
-    popoverBody.querySelectorAll('[data-exif-dir]').forEach((btn) => {
-        const active = btn.dataset.exifDir === galleryOrdering
+    popoverBody.querySelectorAll('[data-ordering]').forEach((btn) => {
+        const active = btn.dataset.ordering === galleryOrdering
         btn.classList.toggle('btn-secondary', active)
         btn.classList.toggle('btn-outline-secondary', !active)
     })
@@ -440,16 +434,9 @@ function initGallerySortBtn() {
         )
         if (!tip) return
 
-        tip.querySelectorAll('.gallery-sort-opt').forEach((optBtn) => {
+        tip.querySelectorAll('[data-ordering]').forEach((optBtn) => {
             optBtn.addEventListener('click', () => {
                 setGalleryOrdering(optBtn.dataset.ordering)
-                popover.hide()
-            })
-        })
-
-        tip.querySelectorAll('[data-exif-dir]').forEach((dirBtn) => {
-            dirBtn.addEventListener('click', () => {
-                setGalleryOrdering(dirBtn.dataset.exifDir)
                 popover.hide()
             })
         })
@@ -575,7 +562,10 @@ async function initGallery() {
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
         const n = filesDataTable.rows({ selected: true }).count()
         const bulkActions = document.getElementById('bulk-actions')
-        if (bulkActions) bulkActions.disabled = false
+        if (bulkActions) {
+            bulkActions.disabled = false
+            bulkActions.classList.add('bulk-actions--active')
+        }
         updateBulkCount(n)
         let checkbox = document.getElementById(`file-${dt.data().id}`)
         if (checkbox) {
@@ -585,7 +575,10 @@ async function initGallery() {
     filesDataTable.on('deselect', function (_e, _dt, _type, _indexes) {
         const n = filesDataTable.rows({ selected: true }).count()
         const bulkActions = document.getElementById('bulk-actions')
-        if (bulkActions) bulkActions.disabled = n === 0
+        if (bulkActions) {
+            bulkActions.disabled = n === 0
+            bulkActions.classList.toggle('bulk-actions--active', n > 0)
+        }
         updateBulkCount(n)
     })
     filesDataTable?.columns.adjust().draw()

@@ -56,27 +56,38 @@
     <button id="gallery-sort-btn"
             class="files-toolbar-btn{% if view_mode != 'gallery' %} d-none{% endif %}{% if ordering != '-created' %} view-active{% endif %}"
             aria-label="Sort gallery">
-        <i class="fa-solid fa-arrow-up-wide-short" aria-hidden="true"></i><span class="files-toolbar-view-label" id="gallery-sort-label">{{ ordering_label }}</span>
+        <i class="fa-solid {% if ordering|slice:':1' == '-' or not ordering %}fa-arrow-down-wide-short{% else %}fa-arrow-up-wide-short{% endif %}" aria-hidden="true"></i><span class="files-toolbar-view-label" id="gallery-sort-label">{{ ordering_label }}</span>
     </button>
     <template id="gallery-sort-popup-tpl">
-        <div style="min-width:195px">
-            <div class="d-flex flex-column gap-1">
-                <button type="button" class="btn btn-sm text-start w-100 gallery-sort-opt" data-ordering="-created">
-                    <i class="fa-regular fa-clock me-1"></i> Upload Date
-                </button>
-                <button type="button" class="btn btn-sm text-start w-100 gallery-sort-opt" data-ordering="name">
-                    <i class="fa-solid fa-font me-1"></i> Name
-                </button>
-                <button type="button" class="btn btn-sm text-start w-100 gallery-sort-opt" data-ordering="-size">
-                    <i class="fa-solid fa-database me-1"></i> Size
-                </button>
-            </div>
-            <hr class="my-2 opacity-25">
-            <div class="d-flex align-items-center justify-content-between gap-2 px-1">
-                <span class="small text-nowrap"><i class="fa-solid fa-camera me-1"></i> EXIF Date</span>
-                <div class="btn-group btn-group-sm" role="group" aria-label="EXIF date sort direction">
-                    <button type="button" class="btn btn-outline-secondary" data-exif-dir="-exif_date">Newest</button>
-                    <button type="button" class="btn btn-outline-secondary" data-exif-dir="exif_date">Oldest</button>
+        <div style="min-width:220px">
+            <div class="d-flex flex-column gap-2">
+                <div class="d-flex align-items-center justify-content-between gap-2 px-1">
+                    <span class="small text-nowrap"><i class="fa-regular fa-clock me-1"></i> Upload Date</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Upload date sort direction">
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="-created">Newest</button>
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="created">Oldest</button>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between gap-2 px-1">
+                    <span class="small text-nowrap"><i class="fa-solid fa-font me-1"></i> Name</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Name sort direction">
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="name">A→Z</button>
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="-name">Z→A</button>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between gap-2 px-1">
+                    <span class="small text-nowrap"><i class="fa-solid fa-database me-1"></i> Size</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Size sort direction">
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="-size">Largest</button>
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="size">Smallest</button>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between gap-2 px-1">
+                    <span class="small text-nowrap"><i class="fa-solid fa-camera me-1"></i> Taken</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Taken date sort direction">
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="-exif_date">Newest</button>
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="exif_date">Oldest</button>
+                    </div>
                 </div>
             </div>
         </div>
