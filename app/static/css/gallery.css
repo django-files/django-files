@@ -36,7 +36,62 @@
 
 .gallery-outer {
     position: relative;
-    background-color: var(--bs-secondary-bg);
+    background-color: transparent;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.38);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+        inset 1px 0 0 rgba(255, 255, 255, 0.2),
+        inset -1px 0 0 rgba(0, 0, 0, 0.06),
+        0 4px 20px rgba(0, 0, 0, 0.1),
+        0 1px 4px rgba(0, 0, 0, 0.05);
+    transition:
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+[data-bs-theme='dark'] .gallery-outer {
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.09),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+        inset 1px 0 0 rgba(255, 255, 255, 0.05),
+        inset -1px 0 0 rgba(0, 0, 0, 0.2),
+        0 4px 20px rgba(0, 0, 0, 0.25),
+        0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* Elevate on hover only when no context menu is open anywhere in the gallery */
+#gallery-container:not(:has(.dt-ctx-btn[aria-expanded='true']))
+    .gallery-outer:hover {
+    z-index: 2;
+}
+
+/* Always keep the card whose menu is open above everything else */
+.gallery-outer:has(.dt-ctx-btn[aria-expanded='true']) {
+    z-index: 3;
+}
+
+.gallery-outer:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+        inset 1px 0 0 rgba(255, 255, 255, 0.28),
+        inset -1px 0 0 rgba(0, 0, 0, 0.08),
+        0 8px 32px rgba(0, 0, 0, 0.14),
+        0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+[data-bs-theme='dark'] .gallery-outer:hover {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+        inset 1px 0 0 rgba(255, 255, 255, 0.07),
+        inset -1px 0 0 rgba(0, 0, 0, 0.25),
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
 .image-labels {
@@ -56,6 +111,7 @@
 .gallery-inner {
     position: relative;
     overflow: hidden;
+    border-radius: 9px; /* 1px less than outer to avoid sub-pixel corner bleed */
 }
 
 .video-play-overlay {

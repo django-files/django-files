@@ -5,13 +5,14 @@ import {
     faKey,
     faHourglass,
     addFileTableRowsBatch,
+    removeFileTableRow,
     formatBytes,
     showTableSkeletons,
     hideTableSkeletons,
 } from './file-table.js'
 
 import { updateBulkCount } from './bulk-actions.js'
-import { fetchFiles } from './api-fetch.js'
+import { fetchFiles, fetchFile } from './api-fetch.js'
 
 import { socket } from './socket.js'
 import { getCtxMenuContainer } from './file-context-menu.js'
@@ -103,7 +104,7 @@ document.addEventListener('click', (e) => {
     const galleryLink = e.target.closest('.image-link')
     if (galleryLink?.href) {
         e.preventDefault()
-        openPanel(galleryLink.href)
+        openPanel(galleryLink.href, galleryLink.closest('.gallery-outer'))
         return
     }
 
@@ -371,6 +372,7 @@ async function applyTypeFilter() {
             galleryLeafletMap.remove()
             galleryLeafletMap = null
             mapInitialised = false
+            mapFileMarkers.clear()
         }
         document.getElementById('map-container').innerHTML = ''
         initMapView()
@@ -609,6 +611,7 @@ $('#user').on('change', async function (_event) {
             galleryLeafletMap.remove()
             galleryLeafletMap = null
             mapInitialised = false
+            mapFileMarkers.clear()
         }
         document.getElementById('map-container').innerHTML = ''
         initMapView()
@@ -1105,6 +1108,8 @@ socket?.addEventListener('message', function (event) {
     if (event.data === 'pong') return
     const data = JSON.parse(event.data)
     const inGallery = params.get('view') === 'gallery'
+    const inMap = params.get('view') === 'map'
+    const currentAlbum = params.get('album')
 
     if (data.event === 'file-new') {
         fileData.unshift(data)
@@ -1118,6 +1123,70 @@ socket?.addEventListener('message', function (event) {
         if (inGallery) {
             $(`#gallery-image-${data.id}`).remove()
             updateNoFilesOverlay()
+        }
+    } else if (
+        data.event === 'set-file-albums' ||
+        data.event === 'bulk-add-file-albums' ||
+        data.event === 'bulk-remove-file-albums'
+    ) {
+        if (!currentAlbum) return
+        const albumId = parseInt(currentAlbum, 10)
+        const affectsAlbum =
+            data.event === 'set-file-albums'
+                ? (data.removed_from && albumId in data.removed_from) ||
+                  (data.added_to && albumId in data.added_to)
+                : data.albums?.some((a) => a.id === albumId)
+        if (!affectsAlbum) return
+
+        const fileIds =
+            data.event === 'set-file-albums' ? [data.file_id] : data.pks || []
+        const isRemove =
+            data.event === 'bulk-remove-file-albums' ||
+            (data.event === 'set-file-albums' &&
+                data.removed_from &&
+                albumId in data.removed_from)
+        const isAdd =
+            data.event === 'bulk-add-file-albums' ||
+            (data.event === 'set-file-albums' &&
+                data.added_to &&
+                albumId in data.added_to)
+
+        if (isRemove) {
+            for (const fileId of fileIds) {
+                const idx = fileData.findIndex((f) => f.id === fileId)
+                if (idx !== -1) fileData.splice(idx, 1)
+                if (inGallery) {
+                    document.getElementById(`gallery-image-${fileId}`)?.remove()
+                } else if (inMap) {
+                    const marker = mapFileMarkers.get(fileId)
+                    if (marker) {
+                        marker.remove()
+                        mapFileMarkers.delete(fileId)
+                    }
+                } else {
+                    removeFileTableRow(fileId)
+                }
+            }
+            if (inGallery || inMap) updateNoFilesOverlay()
+        }
+
+        if (isAdd) {
+            for (const fileId of fileIds) {
+                fetchFile(fileId).then((file) => {
+                    fileData.push(file)
+                    if (inGallery) {
+                        addGalleryFile(file, true)
+                        updateNoFilesOverlay()
+                    } else if (inMap) {
+                        const L = globalThis.L
+                        if (L && mapInitialised) addFileMapMarker(L, file)
+                        updateNoFilesOverlay()
+                    } else {
+                        file['DT_RowId'] = `file-${file.id}`
+                        addFileTableRowsBatch([file])
+                    }
+                })
+            }
         }
     } else if (inGallery) {
         if (data.event === 'set-password-file') {
@@ -1200,10 +1269,12 @@ function buildImageLabels(file, bottomLeft) {
 const mapContainer = document.getElementById('map-container')
 let galleryLeafletMap = null
 let mapInitialised = false
+const mapFileMarkers = new Map()
 let trackerFiles = []
 let trackerPolyline = null
 let trackerStartMarker = null
 let trackerEndMarker = null
+let trackerArrows = []
 let trackerEnabled = params.get('tracker') === '1'
 
 // Promise-valued cache deduplicates concurrent hovers on the same pin
@@ -1310,6 +1381,16 @@ function initMapView() {
             })
             new FullscreenControl().addTo(galleryLeafletMap)
 
+            let arrowRedrawTimer = null
+            galleryLeafletMap.on('zoomend', () => {
+                if (!trackerEnabled || trackerSorted.length < 2) return
+                clearTimeout(arrowRedrawTimer)
+                arrowRedrawTimer = setTimeout(
+                    () => drawTrackerArrows(L, trackerSorted),
+                    150
+                )
+            })
+
             fetchAndPlotAllFiles(L)
         }
         // Re-append after Leaflet builds its pane DOM so the overlay
@@ -1368,6 +1449,69 @@ function makeTrackerPin(L, icon, bg) {
     })
 }
 
+function segmentBearing(lat1, lon1, lat2, lon2) {
+    const toRad = (d) => (d * Math.PI) / 180
+    const y = Math.sin(toRad(lon2 - lon1)) * Math.cos(toRad(lat2))
+    const x =
+        Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+        Math.sin(toRad(lat1)) *
+            Math.cos(toRad(lat2)) *
+            Math.cos(toRad(lon2 - lon1))
+    return (Math.atan2(y, x) * 180) / Math.PI
+}
+
+// Desired screen-space gap between consecutive arrows (px)
+const ARROW_SPACING_PX = 60
+
+function buildArrowIcon(L, angle) {
+    return L.divIcon({
+        html: `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="12" viewBox="0 0 10 12"
+                    style="transform:rotate(${angle}deg);transform-origin:50% 50%;display:block;overflow:visible;">
+                 <path d="M5,0 L10,11 L5,7.5 L0,11 Z"
+                       fill="#e85d04" fill-opacity="0.75"
+                       stroke="rgba(255,255,255,0.55)" stroke-width="1" stroke-linejoin="round"/>
+               </svg>`,
+        className: '',
+        iconSize: [10, 12],
+        iconAnchor: [5, 6],
+    })
+}
+
+function drawTrackerArrows(L, sorted) {
+    trackerArrows.forEach((m) => m.remove())
+    trackerArrows = []
+
+    const segments = sorted.length - 1
+    if (segments < 1) return
+
+    for (let i = 0; i < segments; i++) {
+        const [lat1, lon1] = sorted[i].coords
+        const [lat2, lon2] = sorted[i + 1].coords
+
+        const p1 = galleryLeafletMap.latLngToContainerPoint([lat1, lon1])
+        const p2 = galleryLeafletMap.latLngToContainerPoint([lat2, lon2])
+        const pixelLen = Math.hypot(p2.x - p1.x, p2.y - p1.y)
+        const count = Math.floor(pixelLen / ARROW_SPACING_PX)
+        if (count < 1) continue
+
+        const angle = segmentBearing(lat1, lon1, lat2, lon2).toFixed(1)
+        const icon = buildArrowIcon(L, angle)
+
+        for (let j = 1; j <= count; j++) {
+            const t = j / (count + 1)
+            trackerArrows.push(
+                L.marker([lat1 + (lat2 - lat1) * t, lon1 + (lon2 - lon1) * t], {
+                    icon,
+                    interactive: false,
+                    keyboard: false,
+                }).addTo(galleryLeafletMap)
+            )
+        }
+    }
+}
+
+let trackerSorted = []
+
 function drawTrackerPolyline(L) {
     if (trackerPolyline) {
         trackerPolyline.remove()
@@ -1381,21 +1525,27 @@ function drawTrackerPolyline(L) {
         trackerEndMarker.remove()
         trackerEndMarker = null
     }
+    trackerArrows.forEach((m) => m.remove())
+    trackerArrows = []
+    trackerSorted = []
+
     if (!trackerEnabled || trackerFiles.length < 2) return
-    const sorted = [...trackerFiles].sort((a, b) => a.dt - b.dt)
+    trackerSorted = [...trackerFiles].sort((a, b) => a.dt - b.dt)
     trackerPolyline = L.polyline(
-        sorted.map((f) => f.coords),
+        trackerSorted.map((f) => f.coords),
         { color: '#e85d04', weight: 3, opacity: 0.75, dashArray: '6, 4' }
     ).addTo(galleryLeafletMap)
 
-    trackerStartMarker = L.marker(sorted[0].coords, {
+    drawTrackerArrows(L, trackerSorted)
+
+    trackerStartMarker = L.marker(trackerSorted[0].coords, {
         icon: makeTrackerPin(L, 'fa-solid fa-flag', '#2a9d2a'),
         zIndexOffset: 1000,
     })
         .addTo(galleryLeafletMap)
         .bindTooltip('Start', { direction: 'top' })
 
-    trackerEndMarker = L.marker(sorted.at(-1).coords, {
+    trackerEndMarker = L.marker(trackerSorted.at(-1).coords, {
         icon: makeTrackerPin(L, 'fa-solid fa-flag-checkered', '#dc3545'),
         zIndexOffset: 1000,
     })
@@ -1484,6 +1634,56 @@ function initKMLExportBtn() {
     })
 }
 
+function addFileMapMarker(L, file) {
+    const coords = gpsToDecimal(file.exif?.GPSInfo)
+    if (!coords) return null
+
+    trackerFiles.push({
+        coords,
+        dt:
+            parseExifDatetime(file.exif?.DateTimeOriginal) ||
+            new Date(file.date),
+    })
+
+    const marker = L.marker(coords)
+        .addTo(galleryLeafletMap)
+        .bindTooltip(buildMarkerTooltip(file, coords), {
+            direction: 'top',
+            offset: [-15, -13],
+        })
+        .on('click', () => {
+            openPanel(file.url)
+        })
+        .on('tooltipopen', async (e) => {
+            const el = e.tooltip.getElement()
+            if (!el) return
+            L.DomEvent.disableClickPropagation(el)
+            el.style.cursor = 'pointer'
+            L.DomEvent.on(el, 'click', (e) => {
+                L.DomEvent.stopPropagation(e)
+                openPanel(file.url)
+            })
+            const img = el.querySelector('img[data-file-id]')
+            if (!img) return
+            const blobUrl = await resolveThumbSrc(file)
+            // Guard: tooltip may have closed before the blob resolved
+            if (!img.isConnected) return
+            img.src = blobUrl
+            img.addEventListener(
+                'load',
+                () => {
+                    img.style.opacity = '1'
+                    img.parentElement
+                        ?.querySelector('.placeholder-glow')
+                        ?.remove()
+                },
+                { once: true }
+            )
+        })
+    mapFileMarkers.set(file.id, marker)
+    return coords
+}
+
 async function fetchAndPlotAllFiles(L) {
     let page = 1
     const album = params.get('album')
@@ -1501,52 +1701,8 @@ async function fetchAndPlotAllFiles(L) {
         page = data.next
 
         for (const file of data.files) {
-            const coords = gpsToDecimal(file.exif?.GPSInfo)
-            if (!coords) continue
-
-            allCoords.push(coords)
-            trackerFiles.push({
-                coords,
-                dt:
-                    parseExifDatetime(file.exif?.DateTimeOriginal) ||
-                    new Date(file.date),
-            })
-
-            L.marker(coords)
-                .addTo(galleryLeafletMap)
-                .bindTooltip(buildMarkerTooltip(file, coords), {
-                    direction: 'top',
-                    offset: [-15, -13],
-                })
-                .on('click', () => {
-                    openPanel(file.url)
-                })
-                .on('tooltipopen', async (e) => {
-                    const el = e.tooltip.getElement()
-                    if (!el) return
-                    L.DomEvent.disableClickPropagation(el)
-                    el.style.cursor = 'pointer'
-                    L.DomEvent.on(el, 'click', (e) => {
-                        L.DomEvent.stopPropagation(e)
-                        openPanel(file.url)
-                    })
-                    const img = el.querySelector('img[data-file-id]')
-                    if (!img) return
-                    const blobUrl = await resolveThumbSrc(file)
-                    // Guard: tooltip may have closed before the blob resolved
-                    if (!img.isConnected) return
-                    img.src = blobUrl
-                    img.addEventListener(
-                        'load',
-                        () => {
-                            img.style.opacity = '1'
-                            img.parentElement
-                                ?.querySelector('.placeholder-glow')
-                                ?.remove()
-                        },
-                        { once: true }
-                    )
-                })
+            const coords = addFileMapMarker(L, file)
+            if (coords) allCoords.push(coords)
         }
     }
 

@@ -63,6 +63,17 @@
     transform: translateY(0);
 }
 
+/* ---- Hero thumbnail (zooms from card to full screen on open) ---- */
+
+.panel-hero-thumb {
+    position: fixed;
+    inset: 0;
+    z-index: 1041; /* above panel (1040) and backdrop (1039) */
+    will-change: clip-path;
+    pointer-events: none;
+    background: var(--bs-body-bg);
+}
+
 /* ---- Close button (top-left, matching preview chrome style) ---- */
 
 .file-preview-panel-close {
