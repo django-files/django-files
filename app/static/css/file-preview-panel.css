@@ -30,7 +30,7 @@
     position: fixed;
     inset: 0;
     z-index: 1039;
-    background: var(--bs-body-bg);
+    background: rgba(0, 0, 0, 0.5);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
@@ -67,10 +67,21 @@
 
 .panel-hero-thumb {
     position: fixed;
+    inset: 0;
     z-index: 1041; /* above panel (1040) and backdrop (1039) */
-    overflow: hidden;
-    will-change: transform;
+    will-change: opacity;
     pointer-events: none;
+    background: #fff;
+}
+
+[data-bs-theme='dark'] .panel-hero-thumb {
+    background: #000;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-bs-theme='light']) .panel-hero-thumb {
+        background: #000;
+    }
 }
 
 /* ---- Close button (top-left, matching preview chrome style) ---- */
