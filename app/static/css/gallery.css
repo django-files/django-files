@@ -62,6 +62,17 @@
         0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
+/* Elevate on hover only when no context menu is open anywhere in the gallery */
+#gallery-container:not(:has(.dt-ctx-btn[aria-expanded='true']))
+    .gallery-outer:hover {
+    z-index: 2;
+}
+
+/* Always keep the card whose menu is open above everything else */
+.gallery-outer:has(.dt-ctx-btn[aria-expanded='true']) {
+    z-index: 3;
+}
+
 .gallery-outer:hover {
     transform: translateY(-2px);
     box-shadow:

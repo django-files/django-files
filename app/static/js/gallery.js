@@ -1274,6 +1274,7 @@ let trackerFiles = []
 let trackerPolyline = null
 let trackerStartMarker = null
 let trackerEndMarker = null
+let trackerArrows = []
 let trackerEnabled = params.get('tracker') === '1'
 
 // Promise-valued cache deduplicates concurrent hovers on the same pin
@@ -1380,6 +1381,12 @@ function initMapView() {
             })
             new FullscreenControl().addTo(galleryLeafletMap)
 
+            galleryLeafletMap.on('zoomend', () => {
+                if (trackerEnabled && trackerSorted.length > 1) {
+                    drawTrackerArrows(L, trackerSorted)
+                }
+            })
+
             fetchAndPlotAllFiles(L)
         }
         // Re-append after Leaflet builds its pane DOM so the overlay
@@ -1438,6 +1445,69 @@ function makeTrackerPin(L, icon, bg) {
     })
 }
 
+function segmentBearing(lat1, lon1, lat2, lon2) {
+    const toRad = (d) => (d * Math.PI) / 180
+    const y = Math.sin(toRad(lon2 - lon1)) * Math.cos(toRad(lat2))
+    const x =
+        Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+        Math.sin(toRad(lat1)) *
+            Math.cos(toRad(lat2)) *
+            Math.cos(toRad(lon2 - lon1))
+    return (Math.atan2(y, x) * 180) / Math.PI
+}
+
+// Desired screen-space gap between consecutive arrows (px)
+const ARROW_SPACING_PX = 60
+
+function buildArrowIcon(L, angle) {
+    return L.divIcon({
+        html: `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="12" viewBox="0 0 10 12"
+                    style="transform:rotate(${angle}deg);transform-origin:50% 50%;display:block;overflow:visible;">
+                 <path d="M5,0 L10,11 L5,7.5 L0,11 Z"
+                       fill="#e85d04" fill-opacity="0.75"
+                       stroke="rgba(255,255,255,0.55)" stroke-width="1" stroke-linejoin="round"/>
+               </svg>`,
+        className: '',
+        iconSize: [10, 12],
+        iconAnchor: [5, 6],
+    })
+}
+
+function drawTrackerArrows(L, sorted) {
+    trackerArrows.forEach((m) => m.remove())
+    trackerArrows = []
+
+    const segments = sorted.length - 1
+    if (segments < 1) return
+
+    for (let i = 0; i < segments; i++) {
+        const [lat1, lon1] = sorted[i].coords
+        const [lat2, lon2] = sorted[i + 1].coords
+
+        const p1 = galleryLeafletMap.latLngToContainerPoint([lat1, lon1])
+        const p2 = galleryLeafletMap.latLngToContainerPoint([lat2, lon2])
+        const pixelLen = Math.hypot(p2.x - p1.x, p2.y - p1.y)
+        const count = Math.floor(pixelLen / ARROW_SPACING_PX)
+        if (count < 1) continue
+
+        const angle = segmentBearing(lat1, lon1, lat2, lon2).toFixed(1)
+        const icon = buildArrowIcon(L, angle)
+
+        for (let j = 1; j <= count; j++) {
+            const t = j / (count + 1)
+            trackerArrows.push(
+                L.marker([lat1 + (lat2 - lat1) * t, lon1 + (lon2 - lon1) * t], {
+                    icon,
+                    interactive: false,
+                    keyboard: false,
+                }).addTo(galleryLeafletMap)
+            )
+        }
+    }
+}
+
+let trackerSorted = []
+
 function drawTrackerPolyline(L) {
     if (trackerPolyline) {
         trackerPolyline.remove()
@@ -1451,21 +1521,27 @@ function drawTrackerPolyline(L) {
         trackerEndMarker.remove()
         trackerEndMarker = null
     }
+    trackerArrows.forEach((m) => m.remove())
+    trackerArrows = []
+    trackerSorted = []
+
     if (!trackerEnabled || trackerFiles.length < 2) return
-    const sorted = [...trackerFiles].sort((a, b) => a.dt - b.dt)
+    trackerSorted = [...trackerFiles].sort((a, b) => a.dt - b.dt)
     trackerPolyline = L.polyline(
-        sorted.map((f) => f.coords),
+        trackerSorted.map((f) => f.coords),
         { color: '#e85d04', weight: 3, opacity: 0.75, dashArray: '6, 4' }
     ).addTo(galleryLeafletMap)
 
-    trackerStartMarker = L.marker(sorted[0].coords, {
+    drawTrackerArrows(L, trackerSorted)
+
+    trackerStartMarker = L.marker(trackerSorted[0].coords, {
         icon: makeTrackerPin(L, 'fa-solid fa-flag', '#2a9d2a'),
         zIndexOffset: 1000,
     })
         .addTo(galleryLeafletMap)
         .bindTooltip('Start', { direction: 'top' })
 
-    trackerEndMarker = L.marker(sorted.at(-1).coords, {
+    trackerEndMarker = L.marker(trackerSorted.at(-1).coords, {
         icon: makeTrackerPin(L, 'fa-solid fa-flag-checkered', '#dc3545'),
         zIndexOffset: 1000,
     })
