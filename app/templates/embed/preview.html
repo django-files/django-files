@@ -56,7 +56,7 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
     {% elif render == 'audio' %}
         <meta property="og:audio" content="{{ static_meta_url|safe }}">
         <meta property="og:type" content="music.song">
-        <meta property="twitter:card" content="summary">
+        <meta property="twitter:card" content="player">
     {% else %}
         <meta property="og:type" content="website">
     {% endif %}
@@ -94,10 +94,12 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
                 </video>
             </div>
         {% elif render == 'audio' %}
-            <audio class="w-100 pt-3 mt-5" controls>
-                <source src="{{ static_url }}" type="{{ file.mime }}">
-                Your browser does not support the audio tag.
-            </audio>
+            <div class="d-flex align-items-center h-100 px-3">
+                <audio class="w-100" controls>
+                    <source src="{{ static_url }}" type="{{ file.mime }}">
+                    Your browser does not support the audio tag.
+                </audio>
+            </div>
         {% elif file.mime == 'application/pdf' %}
             <embed src="{{ static_url }}" type="application/pdf" frameBorder="0" scrolling="auto" width="100%" class="h-100 pt-3 mt-5">               
         {% elif render in 'text,code' %}
