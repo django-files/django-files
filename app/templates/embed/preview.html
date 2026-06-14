@@ -94,7 +94,7 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
                 </video>
             </div>
         {% elif render == 'audio' %}
-            <div class="d-flex align-items-center h-100 px-3">
+            <div class="position-absolute top-50 start-0 end-0 translate-middle-y px-3">
                 <audio class="w-100" controls>
                     <source src="{{ static_url }}" type="{{ file.mime }}">
                     Your browser does not support the audio tag.
