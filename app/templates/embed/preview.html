@@ -46,14 +46,17 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
         <meta property="og:video" content="{{ static_meta_url|safe }}">
         <meta property="og:video:type" content="{{ file.mime }}">
         <meta property="og:type" content="video.other">
-        <meta property="twitter:card" content="player">
         {% if file.thumb %}
             <meta property="og:image" content="{{ site_settings.site_url }}{% url 'home:url-raw-redirect' file.name %}?thumb=1">
+            <meta property="twitter:card" content="summary_large_image">
+            <meta property="twitter:image" content="{{ site_settings.site_url }}{% url 'home:url-raw-redirect' file.name %}?thumb=1">
+        {% else %}
+            <meta property="twitter:card" content="summary">
         {% endif %}
     {% elif render == 'audio' %}
         <meta property="og:audio" content="{{ static_meta_url|safe }}">
         <meta property="og:type" content="music.song">
-        <meta property="twitter:card" content="player">
+        <meta property="twitter:card" content="summary">
     {% else %}
         <meta property="og:type" content="website">
     {% endif %}
