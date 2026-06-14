@@ -175,6 +175,19 @@ function applyView(view) {
     const galleryTypesBtn = document.getElementById('gallery-all-types-btn')
     if (galleryTypesBtn)
         galleryTypesBtn.classList.toggle('d-none', view !== 'gallery')
+
+    const gallerySelectAllBtn = document.getElementById(
+        'gallery-select-all-btn'
+    )
+    if (gallerySelectAllBtn)
+        gallerySelectAllBtn.classList.toggle('d-none', view !== 'gallery')
+
+    const trackerBtn = document.getElementById('map-tracker-btn')
+    if (trackerBtn)
+        trackerBtn.classList.toggle(
+            'd-none',
+            view !== 'map' || !params.get('album')
+        )
 }
 
 function detectInitialView() {
@@ -224,11 +237,93 @@ function initGalleryTypesBtn() {
     })
 }
 
+function initGallerySelectAllBtn() {
+    const btn = document.getElementById('gallery-select-all-btn')
+    if (!btn) return
+
+    const icon = btn.querySelector('i')
+    const label = btn.querySelector('.files-toolbar-view-label')
+
+    const syncBtn = (allSelected) => {
+        btn.setAttribute('aria-pressed', allSelected ? 'true' : 'false')
+        btn.classList.toggle('view-active', allSelected)
+        if (allSelected) {
+            icon.className = 'fa-regular fa-square-minus'
+            btn.title = 'Deselect all'
+            if (label) label.textContent = 'Deselect all'
+        } else {
+            icon.className = 'fa-regular fa-square-check'
+            btn.title = 'Select all'
+            if (label) label.textContent = 'Select all'
+        }
+    }
+
+    btn.addEventListener('click', () => {
+        const visibleIds = fileData
+            .filter((f) => {
+                const card = document.getElementById(`gallery-image-${f.id}`)
+                return card && card.style.display !== 'none'
+            })
+            .map((f) => f.id)
+        const selectedIds = filesDataTable
+            .rows('.selected')
+            .data()
+            .toArray()
+            .map((r) => r.id)
+        const allSelected =
+            visibleIds.length > 0 &&
+            visibleIds.every((id) => selectedIds.includes(id))
+
+        if (allSelected) {
+            filesDataTable.rows('.selected').deselect()
+            visibleIds.forEach((id) => {
+                const cb = document.getElementById(`checkbox-${id}`)
+                if (cb) {
+                    cb.checked = false
+                    cb.classList.add('gallery-mouse')
+                    if (!isTouch) cb.classList.add('d-none')
+                }
+            })
+            syncBtn(false)
+        } else {
+            visibleIds.forEach((id) => {
+                filesDataTable.rows(`#file-${id}`).select()
+                const cb = document.getElementById(`checkbox-${id}`)
+                if (cb) {
+                    cb.checked = true
+                    cb.classList.remove('gallery-mouse', 'd-none')
+                }
+            })
+            syncBtn(true)
+        }
+    })
+
+    filesDataTable.on('select deselect', () => {
+        const visibleIds = fileData
+            .filter((f) => {
+                const card = document.getElementById(`gallery-image-${f.id}`)
+                return card && card.style.display !== 'none'
+            })
+            .map((f) => f.id)
+        const selectedIds = filesDataTable
+            .rows('.selected')
+            .data()
+            .toArray()
+            .map((r) => r.id)
+        const allSelected =
+            visibleIds.length > 0 &&
+            visibleIds.every((id) => selectedIds.includes(id))
+        syncBtn(allSelected)
+    })
+}
+
 async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
     initToolbar('files-toolbar', filesDataTable)
     initGalleryTypesBtn()
+    initGallerySelectAllBtn()
+    initTrackerBtn()
 
     // Gallery-view filtering: mirror the search input value into gallerySearchTerm
     // so filterGallery() can apply it when the gallery view is active.
@@ -676,6 +771,7 @@ function buildGalleryCheckbox(file) {
         } else {
             filesDataTable.rows(`#file-${file.id}`).deselect()
             this.classList.add('gallery-mouse')
+            if (!isTouch) this.classList.add('d-none')
         }
     })
     return checkbox
@@ -865,6 +961,11 @@ function buildImageLabels(file, bottomLeft) {
 const mapContainer = document.getElementById('map-container')
 let galleryLeafletMap = null
 let mapInitialised = false
+let trackerFiles = []
+let trackerPolyline = null
+let trackerStartMarker = null
+let trackerEndMarker = null
+let trackerEnabled = params.get('tracker') === '1'
 
 // Promise-valued cache deduplicates concurrent hovers on the same pin
 const markerThumbCache = new Map()
@@ -893,14 +994,23 @@ function gpsToDecimal(gpsInfo) {
     return [lat, lon]
 }
 
-function formatMapDate(dateVal) {
-    if (!dateVal) return ''
-    const d = new Date(dateVal)
-    if (Number.isNaN(d)) return String(dateVal)
-    return d.toLocaleDateString(undefined, {
+function parseExifDatetime(s) {
+    if (!s || typeof s !== 'string') return null
+    const m = /^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/.exec(s)
+    if (!m) return null
+    return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6])
+}
+
+function formatMapDatetime(file) {
+    const exifDt = parseExifDatetime(file.exif?.DateTimeOriginal)
+    const d = exifDt || (file.date ? new Date(file.date) : null)
+    if (!d || isNaN(d)) return ''
+    return d.toLocaleString(undefined, {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
     })
 }
 
@@ -984,7 +1094,7 @@ function buildMarkerTooltip(file, coords) {
                      class="map-tooltip-thumb">
             </div>
             <strong class="map-tooltip-name">${file.name}</strong>
-            <span class="map-tooltip-date">${formatMapDate(file.date)}</span><br>
+            <span class="map-tooltip-date">${formatMapDatetime(file)}</span><br>
             <span class="map-tooltip-gps">${gpsLabel}</span>
         </div>`
 }
@@ -1009,10 +1119,80 @@ function resolveThumbSrc(file) {
     return promise
 }
 
+function makeTrackerPin(L, icon, bg) {
+    return L.divIcon({
+        html: `<div style="width:30px;height:30px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(0,0,0,.45);"><i class="${icon}" style="color:#fff;font-size:13px;"></i></div>`,
+        className: '',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+        tooltipAnchor: [0, -18],
+    })
+}
+
+function drawTrackerPolyline(L) {
+    if (trackerPolyline) {
+        trackerPolyline.remove()
+        trackerPolyline = null
+    }
+    if (trackerStartMarker) {
+        trackerStartMarker.remove()
+        trackerStartMarker = null
+    }
+    if (trackerEndMarker) {
+        trackerEndMarker.remove()
+        trackerEndMarker = null
+    }
+    if (!trackerEnabled || trackerFiles.length < 2) return
+    const sorted = [...trackerFiles].sort((a, b) => a.dt - b.dt)
+    trackerPolyline = L.polyline(
+        sorted.map((f) => f.coords),
+        { color: '#e85d04', weight: 3, opacity: 0.75, dashArray: '6, 4' }
+    ).addTo(galleryLeafletMap)
+
+    trackerStartMarker = L.marker(sorted[0].coords, {
+        icon: makeTrackerPin(L, 'fa-solid fa-flag', '#2a9d2a'),
+        zIndexOffset: 1000,
+    })
+        .addTo(galleryLeafletMap)
+        .bindTooltip('Start', { direction: 'top' })
+
+    trackerEndMarker = L.marker(sorted[sorted.length - 1].coords, {
+        icon: makeTrackerPin(L, 'fa-solid fa-flag-checkered', '#dc3545'),
+        zIndexOffset: 1000,
+    })
+        .addTo(galleryLeafletMap)
+        .bindTooltip('Finish', { direction: 'top' })
+}
+
+function initTrackerBtn() {
+    const btn = document.getElementById('map-tracker-btn')
+    if (!btn) return
+    const syncBtn = () => {
+        btn.classList.toggle('view-active', trackerEnabled)
+        btn.setAttribute('aria-pressed', trackerEnabled ? 'true' : 'false')
+        btn.title = trackerEnabled ? 'Hide tracker path' : 'Show tracker path'
+    }
+    syncBtn()
+    btn.addEventListener('click', () => {
+        trackerEnabled = !trackerEnabled
+        const url = new URL(document.location.toString())
+        if (trackerEnabled) {
+            url.searchParams.set('tracker', '1')
+        } else {
+            url.searchParams.delete('tracker')
+        }
+        history.replaceState(null, '', url.toString())
+        syncBtn()
+        const L = globalThis.L
+        if (L && mapInitialised) drawTrackerPolyline(L)
+    })
+}
+
 async function fetchAndPlotAllFiles(L) {
     let page = 1
     const album = params.get('album')
     const allCoords = []
+    trackerFiles = []
 
     while (page) {
         const data = await fetchFiles(page, 100, album)
@@ -1023,6 +1203,12 @@ async function fetchAndPlotAllFiles(L) {
             if (!coords) continue
 
             allCoords.push(coords)
+            trackerFiles.push({
+                coords,
+                dt:
+                    parseExifDatetime(file.exif?.DateTimeOriginal) ||
+                    new Date(file.date),
+            })
 
             L.marker(coords)
                 .addTo(galleryLeafletMap)
@@ -1067,4 +1253,6 @@ async function fetchAndPlotAllFiles(L) {
     } else if (allCoords.length > 1) {
         galleryLeafletMap.fitBounds(allCoords, { padding: [40, 40] })
     }
+
+    drawTrackerPolyline(L)
 }
