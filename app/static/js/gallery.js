@@ -188,6 +188,13 @@ function applyView(view) {
             'd-none',
             view !== 'map' || !params.get('album')
         )
+
+    const kmlExportBtn = document.getElementById('map-kml-export-btn')
+    if (kmlExportBtn)
+        kmlExportBtn.classList.toggle(
+            'd-none',
+            view !== 'map' || !params.get('album') || !trackerEnabled
+        )
 }
 
 function detectInitialView() {
@@ -324,6 +331,7 @@ async function initGallery() {
     initGalleryTypesBtn()
     initGallerySelectAllBtn()
     initTrackerBtn()
+    initKMLExportBtn()
 
     // Gallery-view filtering: mirror the search input value into gallerySearchTerm
     // so filterGallery() can apply it when the gallery view is active.
@@ -1172,7 +1180,12 @@ function initTrackerBtn() {
         btn.setAttribute('aria-pressed', trackerEnabled ? 'true' : 'false')
         btn.title = trackerEnabled ? 'Hide tracker path' : 'Show tracker path'
     }
+    const syncKmlBtn = () => {
+        const kmlBtn = document.getElementById('map-kml-export-btn')
+        if (kmlBtn) kmlBtn.classList.toggle('d-none', !trackerEnabled)
+    }
     syncBtn()
+    syncKmlBtn()
     btn.addEventListener('click', () => {
         trackerEnabled = !trackerEnabled
         const url = new URL(document.location.toString())
@@ -1183,8 +1196,60 @@ function initTrackerBtn() {
         }
         history.replaceState(null, '', url.toString())
         syncBtn()
+        syncKmlBtn()
         const L = globalThis.L
         if (L && mapInitialised) drawTrackerPolyline(L)
+    })
+}
+
+function escapeXml(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+}
+
+function buildKML() {
+    const sorted = [...trackerFiles].sort((a, b) => a.dt - b.dt)
+    const coordLines = sorted
+        .map((f) => `${f.coords[1]},${f.coords[0]},0`)
+        .join('\n                ')
+    const albumTitle =
+        document
+            .querySelector('.files-toolbar-album-title')
+            ?.textContent.trim() || 'Track'
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>${escapeXml(albumTitle)}</name>
+    <Placemark>
+      <name>Track</name>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+                ${coordLines}
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>`
+}
+
+function initKMLExportBtn() {
+    const btn = document.getElementById('map-kml-export-btn')
+    if (!btn) return
+    btn.addEventListener('click', () => {
+        if (trackerFiles.length < 2) return
+        const blob = new Blob([buildKML()], {
+            type: 'application/vnd.google-earth.kml+xml',
+        })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `album-${params.get('album') || 'track'}.kml`
+        a.click()
+        URL.revokeObjectURL(url)
     })
 }
 
