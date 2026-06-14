@@ -265,23 +265,31 @@ function initGallerySelectAllBtn() {
         }
     }
 
-    btn.addEventListener('click', () => {
-        const visibleIds = fileData
+    const getVisibleIds = () =>
+        fileData
             .filter((f) => {
                 const card = document.getElementById(`gallery-image-${f.id}`)
                 return card && card.style.display !== 'none'
             })
             .map((f) => f.id)
-        const selectedIds = filesDataTable
-            .rows('.selected')
-            .data()
-            .toArray()
-            .map((r) => r.id)
-        const allSelected =
-            visibleIds.length > 0 &&
-            visibleIds.every((id) => selectedIds.includes(id))
 
-        if (allSelected) {
+    const isAllSelected = (visibleIds) => {
+        const selectedIds = new Set(
+            filesDataTable
+                .rows('.selected')
+                .data()
+                .toArray()
+                .map((r) => r.id)
+        )
+        return (
+            visibleIds.length > 0 &&
+            visibleIds.every((id) => selectedIds.has(id))
+        )
+    }
+
+    btn.addEventListener('click', () => {
+        const visibleIds = getVisibleIds()
+        if (isAllSelected(visibleIds)) {
             filesDataTable.rows('.selected').deselect()
             visibleIds.forEach((id) => {
                 const cb = document.getElementById(`checkbox-${id}`)
@@ -306,21 +314,8 @@ function initGallerySelectAllBtn() {
     })
 
     filesDataTable.on('select deselect', () => {
-        const visibleIds = fileData
-            .filter((f) => {
-                const card = document.getElementById(`gallery-image-${f.id}`)
-                return card && card.style.display !== 'none'
-            })
-            .map((f) => f.id)
-        const selectedIds = filesDataTable
-            .rows('.selected')
-            .data()
-            .toArray()
-            .map((r) => r.id)
-        const allSelected =
-            visibleIds.length > 0 &&
-            visibleIds.every((id) => selectedIds.includes(id))
-        syncBtn(allSelected)
+        const visibleIds = getVisibleIds()
+        syncBtn(isAllSelected(visibleIds))
     })
 }
 
@@ -1012,7 +1007,7 @@ function parseExifDatetime(s) {
 function formatMapDatetime(file) {
     const exifDt = parseExifDatetime(file.exif?.DateTimeOriginal)
     const d = exifDt || (file.date ? new Date(file.date) : null)
-    if (!d || isNaN(d)) return ''
+    if (!d || Number.isNaN(d.getTime())) return ''
     return d.toLocaleString(undefined, {
         year: 'numeric',
         month: 'short',
@@ -1164,7 +1159,7 @@ function drawTrackerPolyline(L) {
         .addTo(galleryLeafletMap)
         .bindTooltip('Start', { direction: 'top' })
 
-    trackerEndMarker = L.marker(sorted[sorted.length - 1].coords, {
+    trackerEndMarker = L.marker(sorted.at(-1).coords, {
         icon: makeTrackerPin(L, 'fa-solid fa-flag-checkered', '#dc3545'),
         zIndexOffset: 1000,
     })
