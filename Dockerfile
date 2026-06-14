@@ -52,13 +52,13 @@ COPY --from=nginx-base /usr/sbin/nginx /usr/sbin/nginx
 COPY --from=nginx-base /etc/nginx /etc/nginx
 COPY --from=nginx-base /stat.xsl /stat.xsl
 
-# runtime libs only — dev packages and pkg-config belong in the build stage, not here
-RUN apt-get -y update  &&\
+# Create users before apt installs — redis-server claims GID 101 on Debian trixie if we don't reserve it first
+RUN groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin/nologin app  &&\
+    groupadd -g 101 nginx  &&  useradd -r -d /var/cache/nginx -M -u 101 -g 101 -s /usr/sbin/nologin nginx  &&\
+    apt-get -y update  &&\
     apt-get -y install --no-install-recommends \
         libmagic1 libmariadb3 \
         redis-server supervisor libssl3 zlib1g libpcre2-8-0  &&\
-    groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin/nologin app  &&\
-    groupadd -g 101 nginx  &&  useradd -r -d /var/cache/nginx -M -u 101 -g 101 -s /usr/sbin/nologin nginx  &&\
     mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
     chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
     mkdir -p /etc/nginx/conf.rtmp.d /opt/nginx /tmp/record /tmp/hls  &&\
