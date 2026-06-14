@@ -30,7 +30,7 @@
     position: fixed;
     inset: 0;
     z-index: 1039;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--bs-body-bg);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
@@ -67,11 +67,10 @@
 
 .panel-hero-thumb {
     position: fixed;
-    inset: 0;
     z-index: 1041; /* above panel (1040) and backdrop (1039) */
-    will-change: clip-path;
+    overflow: hidden;
+    will-change: transform;
     pointer-events: none;
-    background: var(--bs-body-bg);
 }
 
 /* ---- Close button (top-left, matching preview chrome style) ---- */

@@ -42,33 +42,39 @@ export function openPanel(fileUrl, originEl = null) {
     if (originEl) {
         const thumbImg = originEl.querySelector('img')
         if (thumbImg?.complete && thumbImg.naturalWidth > 0) {
-            const rect = originEl.getBoundingClientRect()
+            const thumbRect = thumbImg.getBoundingClientRect()
             const vw = window.innerWidth
             const vh = window.innerHeight
-            const t = ((rect.top / vh) * 100).toFixed(2)
-            const r = (((vw - rect.right) / vw) * 100).toFixed(2)
-            const b = (((vh - rect.bottom) / vh) * 100).toFixed(2)
-            const l = ((rect.left / vw) * 100).toFixed(2)
+            const dst = imageDisplayRect(thumbImg, vw, vh)
 
             heroEl = document.createElement('div')
             heroEl.className = 'panel-hero-thumb'
-            heroEl.style.clipPath = `inset(${t}% ${r}% ${b}% ${l}% round 9px)`
+            // Start: hero sits exactly over the thumbnail
+            Object.assign(heroEl.style, {
+                top: `${thumbRect.top}px`,
+                left: `${thumbRect.left}px`,
+                width: `${thumbRect.width}px`,
+                height: `${thumbRect.height}px`,
+                transformOrigin: '0 0',
+            })
 
             const heroImg = document.createElement('img')
             heroImg.src = thumbImg.src
-            // contain so the image fills its proportional area, matching what
-            // the full-size image will show inside the panel
             heroImg.style.cssText =
-                'width:100%;height:100%;object-fit:contain;display:block'
+                'width:100%;height:100%;object-fit:cover;display:block'
             heroEl.appendChild(heroImg)
             document.body.appendChild(heroEl)
             currentHeroEl = heroEl
 
-            // Force layout so the start clip-path is committed, then animate
+            // End: hero occupies the exact rect the panel image will fill
+            const scaleX = dst.w / thumbRect.width
+            const scaleY = dst.h / thumbRect.height
+            const tx = (dst.left - thumbRect.left).toFixed(2)
+            const ty = (dst.top - thumbRect.top).toFixed(2)
             heroEl.offsetHeight
             heroEl.style.transition =
-                'clip-path 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-            heroEl.style.clipPath = 'inset(0% 0% 0% 0% round 0px)'
+                'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+            heroEl.style.transform = `translate(${tx}px,${ty}px) scale(${scaleX},${scaleY})`
         }
 
         // Panel opens instantly behind the hero — no slide animation
@@ -197,30 +203,39 @@ function closePanelInternal() {
         panel.offsetHeight
         panel.style.transition = ''
 
-        const rect = origin.getBoundingClientRect()
+        const thumbRect = thumbImg.getBoundingClientRect()
         const vw = window.innerWidth
         const vh = window.innerHeight
-        const t = ((rect.top / vh) * 100).toFixed(2)
-        const r = (((vw - rect.right) / vw) * 100).toFixed(2)
-        const b = (((vh - rect.bottom) / vh) * 100).toFixed(2)
-        const l = ((rect.left / vw) * 100).toFixed(2)
+        const dst = imageDisplayRect(thumbImg, vw, vh)
 
         const closeHero = document.createElement('div')
         closeHero.className = 'panel-hero-thumb'
-        closeHero.style.clipPath = 'inset(0% 0% 0% 0% round 0px)'
+        // Start: hero sits at the image display rect (where it just was in panel)
+        Object.assign(closeHero.style, {
+            top: `${dst.top}px`,
+            left: `${dst.left}px`,
+            width: `${dst.w}px`,
+            height: `${dst.h}px`,
+            transformOrigin: '0 0',
+        })
 
         const heroImg = document.createElement('img')
         heroImg.src = thumbImg.src
         heroImg.style.cssText =
-            'width:100%;height:100%;object-fit:contain;display:block'
+            'width:100%;height:100%;object-fit:cover;display:block'
         closeHero.appendChild(heroImg)
         document.body.appendChild(closeHero)
         currentHeroEl = closeHero
 
+        // End: hero shrinks back to the thumbnail's position and size
+        const scaleX = thumbRect.width / dst.w
+        const scaleY = thumbRect.height / dst.h
+        const tx = (thumbRect.left - dst.left).toFixed(2)
+        const ty = (thumbRect.top - dst.top).toFixed(2)
         closeHero.offsetHeight
         closeHero.style.transition =
-            'clip-path 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-        closeHero.style.clipPath = `inset(${t}% ${r}% ${b}% ${l}% round 9px)`
+            'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+        closeHero.style.transform = `translate(${tx}px,${ty}px) scale(${scaleX},${scaleY})`
 
         setTimeout(() => {
             closeHero.remove()
@@ -241,6 +256,28 @@ function panelCleanup() {
         panelLeafletMap = null
     }
     panelContent.innerHTML = loadingHtml
+}
+
+// Returns the object-fit:contain display rect for an image within the panel
+// viewport, so the hero can animate to exactly where the image will land.
+function imageDisplayRect(thumbImg, vw, vh) {
+    const imgW = thumbImg.naturalWidth || thumbImg.width || 1
+    const imgH = thumbImg.naturalHeight || thumbImg.height || 1
+    const imgAspect = imgW / imgH
+    const vpAspect = vw / vh
+    let w, h, left, top
+    if (imgAspect >= vpAspect) {
+        w = vw
+        h = vw / imgAspect
+        left = 0
+        top = (vh - h) / 2
+    } else {
+        h = vh
+        w = vh * imgAspect
+        left = (vw - w) / 2
+        top = 0
+    }
+    return { w, h, left, top }
 }
 
 // ============================================================
