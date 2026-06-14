@@ -16,6 +16,7 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.utils import timezone
 from django.views.decorators.cache import cache_control, cache_page
 from django.views.decorators.common import no_append_slash
 from django.views.decorators.csrf import csrf_exempt
@@ -38,6 +39,15 @@ from webpush.models import PushInformation
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
 _404_TEMPLATE = "error/404.html"
+
+CODE_MIMES = frozenset(
+    [
+        "application/json",
+        "application/javascript",
+        "application/x-perl",
+        "application/x-sh",
+    ]
+)
 
 
 def get_rtmp_host(request, site_settings=None):
@@ -699,6 +709,29 @@ def raw_redirect_view(request, filename):
     return response
 
 
+def _read_file_text(file, max_bytes=None, errors="strict"):
+    if use_s3():
+        raw = file.file.read(max_bytes) if max_bytes else file.file.read()
+        return raw.decode("utf-8", errors=errors)
+    with open(file.file.path, "r", errors=errors) as f:
+        return f.read(max_bytes) if max_bytes else f.read()
+
+
+def _build_code_snippet(file):
+    try:
+        raw = _read_file_text(file, max_bytes=512, errors="replace")
+        snippet = raw.strip()[:240]
+        if not snippet:
+            return None
+        local_date = timezone.localtime(file.date)
+        date_str = local_date.strftime("%-d %b %Y %-I:%M %p %Z")
+        footer = f"{file.user.get_name()} • {date_str}"
+        return f"{snippet}\n\n{footer}"
+    except Exception:
+        log.exception("Failed to read code snippet for unfurl: %s", file.name)
+        return None
+
+
 @require_http_methods(["GET"])
 def url_route_view(request, filename):
     """
@@ -707,11 +740,6 @@ def url_route_view(request, filename):
     # TODO: Fix Type Hinting on file.exif ?
     site_url = site_settings_processor(request)["site_settings"]["site_url"]
     is_panel = bool(request.GET.get("panel"))
-    code_mimes = [
-        "application/json",
-        "application/x-perl",
-        "application/x-sh",
-    ]
     log.debug("url_route_view: %s", filename)
     file = get_object_or_404(Files, name=filename)
     log.debug("file.mime: %s", file.mime)
@@ -746,19 +774,17 @@ def url_route_view(request, filename):
         return render(request, embed_template, context=ctx)
     elif file.mime == "text/markdown":
         log.debug("MARKDOWN")
-        if use_s3():
-            md_text = file.file.read().decode("utf-8")
-        else:
-            with open(file.file.path, "r") as f:
-                md_text = f.read()
+        md_text = _read_file_text(file)
         ctx["markdown"] = markdown.markdown(md_text, extensions=["extra", "toc"])
         if is_panel:
             ctx["render"] = "markdown"
             return render(request, embed_template, context=ctx)
         return render(request, "embed/markdown.html", context=ctx)
-    elif file.mime.startswith("text/") or file.mime in code_mimes or file.mime in ["application/javascript"]:
+    elif file.mime.startswith("text/") or file.mime in CODE_MIMES:
         log.debug("CODE")
         ctx["render"] = "code"
+        if snippet := _build_code_snippet(file):
+            ctx["code_snippet"] = snippet
         return render(request, embed_template, context=ctx)
     else:
         log.debug("UNKNOWN")
