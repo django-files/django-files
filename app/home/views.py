@@ -759,6 +759,17 @@ def url_route_view(request, filename):
     elif file.mime.startswith("text/") or file.mime in code_mimes or file.mime in ["application/javascript"]:
         log.debug("CODE")
         ctx["render"] = "code"
+        try:
+            if use_s3():
+                raw = file.file.read(512).decode("utf-8", errors="replace")
+            else:
+                with open(file.file.path, "r", errors="replace") as f:
+                    raw = f.read(512)
+            snippet = raw.strip()[:300]
+            if snippet:
+                ctx["code_snippet"] = snippet
+        except Exception:
+            log.exception("Failed to read code snippet for unfurl: %s", file.name)
         return render(request, embed_template, context=ctx)
     else:
         log.debug("UNKNOWN")
