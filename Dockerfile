@@ -39,24 +39,30 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 COPY --from=node /work/app/static/dist/ /app/static/dist/
 COPY --from=python /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
-COPY --from=python /usr/local/bin/ /usr/local/bin/
+COPY --from=python \
+    /usr/local/bin/gunicorn \
+    /usr/local/bin/celery \
+    /usr/local/bin/uvicorn \
+    /usr/local/bin/daphne \
+    /usr/local/bin/django-admin \
+    /usr/local/bin/httpx \
+    /usr/local/bin/qr \
+    /usr/local/bin/
 COPY --from=nginx-base /usr/sbin/nginx /usr/sbin/nginx
 COPY --from=nginx-base /etc/nginx /etc/nginx
 COPY --from=nginx-base /stat.xsl /stat.xsl
 
-RUN apt-get -y update  &&  apt-get -y install --no-install-recommends curl  &&\
+RUN apt-get -y update  &&\
+    apt-get -y install --no-install-recommends \
+        libmagic-dev libmariadb-dev-compat pkg-config \
+        redis-server supervisor libssl3 zlib1g libpcre2-8-0  &&\
     groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin/nologin app  &&\
     groupadd -g 101 nginx  &&  useradd -r -d /var/cache/nginx -M -u 101 -g 101 -s /usr/sbin/nologin nginx  &&\
     mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
     chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
-    apt-get -y install --no-install-recommends libmagic-dev libmariadb-dev-compat  \
-        pkg-config redis-server supervisor libssl3 zlib1g libpcre2-8-0  &&\
-    apt-get -y remove --auto-remove curl  &&  apt-get -y autoremove  &&\
+    mkdir -p /etc/nginx/conf.rtmp.d /opt/nginx /tmp/record /tmp/hls  &&\
+    chown nginx /tmp/record /tmp/hls  &&\
     apt-get -y clean  &&  rm -rf /var/lib/apt/lists/*
-
-# Create RTMP configuration directories
-RUN mkdir -p /etc/nginx/conf.rtmp.d /opt/nginx /tmp/record /tmp/hls &&\
-    chown nginx /tmp/record /tmp/hls
 
 COPY nginx/60-sign-secret.sh /docker-entrypoint.d/60-sign-secret.sh
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
