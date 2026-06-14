@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   django-files:
     image: ghcr.io/django-files/django-files:latest

@@ -2,3 +2,12 @@
 */settings.env
 */test.env
 */*.sqlite3
+
+.git
+.github
+.venv
+node_modules
+__pycache__
+*.pyc
+*.pyo
+*.pyd
