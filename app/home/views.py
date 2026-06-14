@@ -765,9 +765,49 @@ def url_route_view(request, filename):
             else:
                 with open(file.file.path, "r", errors="replace") as f:
                     raw = f.read(512)
-            snippet = raw.strip()[:300]
+            snippet = raw.strip()
+            # Truncate before any embedded triple-backtick to avoid breaking the code block
+            triple_tick_pos = snippet.find("```")
+            if triple_tick_pos != -1:
+                snippet = snippet[:triple_tick_pos].rstrip()
+            snippet = snippet[:220]
             if snippet:
-                ctx["code_snippet"] = snippet
+                mime_to_lang = {
+                    "application/json": "json",
+                    "application/javascript": "js",
+                    "application/x-sh": "bash",
+                    "application/x-perl": "perl",
+                    "text/javascript": "js",
+                    "text/typescript": "ts",
+                    "text/x-python": "python",
+                    "text/x-java-source": "java",
+                    "text/x-c": "c",
+                    "text/x-c++src": "cpp",
+                    "text/x-ruby": "ruby",
+                    "text/x-rust": "rust",
+                    "text/x-go": "go",
+                    "text/x-shellscript": "bash",
+                    "text/x-yaml": "yaml",
+                    "text/xml": "xml",
+                    "text/html": "html",
+                    "text/css": "css",
+                    "text/x-sql": "sql",
+                    "text/x-lua": "lua",
+                    "text/x-swift": "swift",
+                    "text/x-kotlin": "kotlin",
+                    "text/x-scala": "scala",
+                    "text/x-haskell": "haskell",
+                    "text/x-r": "r",
+                    "text/x-matlab": "matlab",
+                    "text/x-makefile": "makefile",
+                    "text/x-dockerfile": "dockerfile",
+                    "text/x-toml": "toml",
+                    "text/x-ini": "ini",
+                }
+                lang = mime_to_lang.get(file.mime, "")
+                upload_date = file.date.strftime("%-d %b %Y at %-I:%M %p")
+                footer = f"\n— {file.user.get_name()} | {upload_date}"
+                ctx["code_snippet"] = f"```{lang}\n{snippet}\n```{footer}"
         except Exception:
             log.exception("Failed to read code snippet for unfurl: %s", file.name)
         return render(request, embed_template, context=ctx)
