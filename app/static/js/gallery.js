@@ -104,7 +104,7 @@ document.addEventListener('click', (e) => {
     const galleryLink = e.target.closest('.image-link')
     if (galleryLink?.href) {
         e.preventDefault()
-        openPanel(galleryLink.href)
+        openPanel(galleryLink.href, galleryLink.closest('.gallery-outer'))
         return
     }
 

@@ -21,12 +21,35 @@ const loadingHtml =
 // Public API
 // ============================================================
 
-export function openPanel(fileUrl) {
+export function openPanel(fileUrl, originEl = null) {
     currentFileUrl = fileUrl
     const panelUrl = `${fileUrl}${fileUrl.includes('?') ? '&' : '?'}panel=1`
 
     // 1. Show panel with skeleton immediately (no layout jank)
     panelContent.innerHTML = `<div class="file-preview-panel-loading" role="status" aria-live="polite"><i class="fa-solid fa-spinner fa-pulse"></i></div>`
+
+    if (originEl) {
+        const rect = originEl.getBoundingClientRect()
+        const vw = window.innerWidth
+        const vh = window.innerHeight
+        const t = ((rect.top / vh) * 100).toFixed(2)
+        const r = (((vw - rect.right) / vw) * 100).toFixed(2)
+        const b = (((vh - rect.bottom) / vh) * 100).toFixed(2)
+        const l = ((rect.left / vw) * 100).toFixed(2)
+        // Snap to card position without a transition, then animate open
+        panel.style.transition = 'none'
+        panel.dataset.fromCard = '1'
+        panel.style.setProperty(
+            '--panel-clip-start',
+            `inset(${t}% ${r}% ${b}% ${l}% round 10px)`
+        )
+        panel.offsetHeight // force layout so clip-path start state is painted
+        panel.style.transition = ''
+    } else {
+        delete panel.dataset.fromCard
+        panel.style.removeProperty('--panel-clip-start')
+    }
+
     panel.classList.add('open')
     panel.removeAttribute('aria-hidden')
     backdrop.classList.add('active')
@@ -93,7 +116,7 @@ function closePanelInternal() {
         panelSocketHandler = null
     }
 
-    // After slide-out animation: destroy map + clear content
+    // After slide-out animation: destroy map + clear content + reset card mode
     setTimeout(() => {
         if (!isOpen) {
             if (panelLeafletMap) {
@@ -101,6 +124,13 @@ function closePanelInternal() {
                 panelLeafletMap = null
             }
             panelContent.innerHTML = loadingHtml
+            // Disable transitions before removing data-from-card so the
+            // transform: translateY(100%) reset doesn't trigger a slide-out
+            panel.style.transition = 'none'
+            delete panel.dataset.fromCard
+            panel.style.removeProperty('--panel-clip-start')
+            panel.offsetHeight // force layout before re-enabling transitions
+            panel.style.transition = ''
         }
     }, 360)
 }
