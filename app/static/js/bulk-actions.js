@@ -4,10 +4,16 @@
 // Update the "n selected" count chip in the toolbar.
 // Call with the current selection count; hides the chip when n === 0.
 export function updateBulkCount(n) {
+    const inline = document.getElementById('bulk-selected-count-inline')
+    if (inline) {
+        inline.querySelector('strong').textContent = n
+        inline.classList.toggle('d-none', n === 0)
+    }
     const el = document.getElementById('bulk-selected-count')
-    if (!el) return
-    el.querySelector('strong').textContent = n
-    el.classList.toggle('d-none', n === 0)
+    if (el) {
+        el.querySelector('strong').textContent = n
+        el.classList.toggle('d-none', n === 0)
+    }
 }
 
 // Toggle the toolbar's #bulk-actions dropdown disabled state based on row

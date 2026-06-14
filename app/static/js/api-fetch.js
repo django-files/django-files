@@ -20,8 +20,18 @@ async function fetchPaginated(path, page, count, extraParams = {}) {
  * @param {String} [album] Optional - See Ralph
  * @return {Promise<Object>} JSON Response Object
  */
-export async function fetchFiles(page, count = 25, album = null) {
-    return fetchPaginated('/api/files/', page, count, { album })
+export async function fetchFiles(
+    page,
+    count = 25,
+    album = null,
+    ordering = null,
+    types = null
+) {
+    return fetchPaginated('/api/files/', page, count, {
+        album,
+        ordering,
+        type: types,
+    })
 }
 
 export async function fetchAlbums(page, count = 100) {

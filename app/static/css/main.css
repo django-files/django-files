@@ -1,3 +1,10 @@
+/* Reserve scrollbar gutter on html so the viewport width never changes when
+   content height changes (e.g. clearing the gallery on view switch). Without
+   this the scrollbar appears/disappears and shifts the entire page. */
+html {
+    scrollbar-gutter: stable;
+}
+
 /* Back to Top Button */
 #back-to-top {
     position: fixed;
@@ -203,7 +210,8 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem 0.75rem;
+    --toolbar-col-gap: 0.75rem;
+    gap: 0.5rem var(--toolbar-col-gap);
     padding: 0.65rem 1rem 0.5rem;
     margin: 0;
     -webkit-backdrop-filter: var(--toolbar-glass-blur);
@@ -249,9 +257,35 @@
     background: transparent;
     font-size: 0.875rem;
     cursor: pointer;
+    /* max-width cap must exceed any real button width; drives the slide animation */
+    max-width: 250px;
+    overflow: hidden;
+    white-space: nowrap;
     transition:
         background 0.15s,
-        opacity 0.15s;
+        opacity 0.2s ease,
+        max-width 0.25s ease,
+        padding-left 0.25s ease,
+        padding-right 0.25s ease,
+        border-left-width 0.25s ease,
+        border-right-width 0.25s ease,
+        margin-left 0.25s ease,
+        margin-right 0.25s ease;
+}
+
+/* Collapsed state: zeroes all inline layout properties and pulls in negative
+   margins equal to half the flex column-gap on each side so the gap between
+   the surrounding buttons collapses to a single gap instead of two. */
+.files-toolbar-btn.is-collapsing {
+    opacity: 0 !important;
+    max-width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-left-width: 0 !important;
+    border-right-width: 0 !important;
+    margin-left: calc(var(--toolbar-col-gap, 0.75rem) / -2) !important;
+    margin-right: calc(var(--toolbar-col-gap, 0.75rem) / -2) !important;
+    pointer-events: none !important;
 }
 
 .files-toolbar-view:hover,
@@ -263,10 +297,13 @@
     opacity: 1;
 }
 
+.files-toolbar-view {
+    font-weight: 600;
+}
+
 .files-toolbar-view.view-active {
     background: rgba(var(--bs-primary-rgb), 0.18);
     opacity: 1;
-    font-weight: 600;
 }
 
 /* Hide labels on narrow screens — icons only */

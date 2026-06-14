@@ -36,9 +36,7 @@
 
 .gallery-outer {
     position: relative;
-    background-color: #495057;
-    background-size: 25px 25px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='25' height='25'%3E%3Crect width='13' height='13' fill='%23919191'/%3E%3Crect x='13' y='13' width='12' height='12' fill='%23919191'/%3E%3C/svg%3E");
+    background-color: var(--bs-secondary-bg);
 }
 
 .image-labels {
@@ -77,14 +75,32 @@
     pointer-events: none;
 }
 
-.gallery-inner .img-error-placeholder {
+.gallery-inner .gallery-no-thumb {
     position: absolute;
     inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.3);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.6) inset,
+        0 4px 20px rgba(0, 0, 0, 0.15);
     pointer-events: none;
 }
 
-.gallery-inner .img-error-placeholder i {
-    font-size: 6rem;
+[data-bs-theme='dark'] .gallery-inner .gallery-no-thumb {
+    background-color: rgba(20, 20, 24, 0.45);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.07) inset,
+        0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.gallery-inner .gallery-no-thumb i {
+    font-size: 5rem;
+    opacity: 0.55;
+    color: var(--bs-body-color);
 }
 
 .gallery-ctx {
@@ -135,7 +151,7 @@
 }
 
 [data-bs-theme='light'] .gallery-checkbox:checked {
-    background: rgba(13 110 253 / 85%);
+    background-color: rgba(13 110 253 / 85%);
     border-color: rgba(13 110 253 / 60%);
 }
 
@@ -147,7 +163,7 @@
 }
 
 [data-bs-theme='dark'] .gallery-checkbox:checked {
-    background: rgba(13 110 253 / 80%);
+    background-color: rgba(13 110 253 / 80%);
     border-color: rgba(130 180 255 / 70%);
 }
 
@@ -201,17 +217,17 @@
     padding-bottom: 0 !important;
 }
 
-/* Negative margins break the map out of the container-fluid's px-4 padding
- * (1.5rem each side) so the map runs flush to the viewport edges.
- * width: auto allows flex stretch + negative margins to expand past the
- * content box — width: 100% would pin it inside the content area. */
+/* Negative margins break the map out of the container-fluid's gutter padding
+ * so the map runs flush to the viewport edges. Using calc() against the
+ * Bootstrap gutter variable means the offset is always exact regardless of
+ * the gutter value, preventing any horizontal scroll sliver. */
 .map-view-active #map-container {
     flex: 1;
     min-height: 200px;
     height: auto;
     width: auto;
-    margin-left: -1.5rem;
-    margin-right: -1.5rem;
+    margin-left: calc(var(--bs-gutter-x) * -0.5);
+    margin-right: calc(var(--bs-gutter-x) * -0.5);
     border: none;
     border-radius: 0;
 }
@@ -344,4 +360,46 @@
     inset: 0;
     min-height: unset;
     z-index: 400;
+}
+
+/* Liquid-glass popover — shared by sort and filter */
+.gallery-sort-popover .popover-body,
+.files-filter-popover .popover-body {
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.72);
+    border-radius: var(--bs-popover-border-radius);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 12px 40px -8px rgba(0, 0, 0, 0.35);
+}
+
+.gallery-sort-popover.popover,
+.files-filter-popover.popover {
+    border-color: rgba(0, 0, 0, 0.15);
+    background: transparent;
+    box-shadow: none;
+}
+
+.gallery-sort-popover .popover-arrow::after,
+.files-filter-popover .popover-arrow::after {
+    border-bottom-color: rgba(255, 255, 255, 0.72);
+}
+
+[data-bs-theme='dark'] .gallery-sort-popover .popover-body,
+[data-bs-theme='dark'] .files-filter-popover .popover-body {
+    background-color: rgba(20, 20, 24, 0.72);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.08) inset,
+        0 12px 40px -8px rgba(0, 0, 0, 0.6);
+}
+
+[data-bs-theme='dark'] .gallery-sort-popover.popover,
+[data-bs-theme='dark'] .files-filter-popover.popover {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-bs-theme='dark'] .gallery-sort-popover .popover-arrow::after,
+[data-bs-theme='dark'] .files-filter-popover .popover-arrow::after {
+    border-bottom-color: rgba(20, 20, 24, 0.72);
 }

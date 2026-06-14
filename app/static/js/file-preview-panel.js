@@ -77,6 +77,7 @@ function closePanelInternal() {
     isOpen = false
     currentFileUrl = null
     panel.classList.remove('open')
+    if (panel.contains(document.activeElement)) document.activeElement.blur()
     panel.setAttribute('aria-hidden', 'true')
     backdrop.classList.remove('active')
     document.body.style.overflow = ''

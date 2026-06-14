@@ -46,6 +46,7 @@ const dataTablesOptions = {
         { data: 'size' },
         { data: 'mime' },
         { data: 'date' },
+        { data: null },
         { data: 'expr' },
         { data: 'password' },
         { data: 'private' },
@@ -78,6 +79,7 @@ const dataTablesOptions = {
             targets: 4,
             defaultContent: '',
             responsivePriority: 10,
+            width: '80px',
             className: 'text-nowrap',
         },
         {
@@ -91,34 +93,42 @@ const dataTablesOptions = {
         },
         {
             targets: 6,
+            render: getExifDate,
+            defaultContent: '',
+            responsivePriority: 6,
+            width: '155px',
+            className: 'text-nowrap',
+        },
+        {
+            targets: 7,
             width: '15px',
             defaultContent: '',
             className: 'expire-value text-center',
             responsivePriority: 10,
         },
         {
-            targets: 7,
+            targets: 8,
             width: '15px',
             render: getPwIcon,
             defaultContent: '',
             responsivePriority: 4,
         },
         {
-            targets: 8,
+            targets: 9,
             width: '15px',
             responsivePriority: 4,
             render: getPrivateIcon,
             defaultContent: '',
         },
         {
-            targets: 9,
+            targets: 10,
             width: '15px',
             defaultContent: '',
             responsivePriority: 8,
             className: 'text-center',
         },
         {
-            targets: 10,
+            targets: 11,
             orderable: false,
             width: '50px',
             responsivePriority: 3,
@@ -196,6 +206,31 @@ function getPrivateIcon(data, type, row, _meta) {
     return privateIcon
 }
 
+const _EXIF_MONTHS = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+]
+
+function getExifDate(_data, type, row) {
+    const raw = row.exif?.DateTimeOriginal
+    if (!raw) return ''
+    if (type === 'sort' || type === 'type') return raw
+    const match = raw.match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2})/)
+    if (!match) return raw
+    const month = _EXIF_MONTHS[parseInt(match[2], 10) - 1]
+    return `${parseInt(match[3], 10)} ${month} ${match[1]}, ${match[4]}:${match[5]}`
+}
+
 export function formatBytes(bytes) {
     const decimals = 2
     if (bytes === 0) {
@@ -267,8 +302,9 @@ const _fileSkeletonSpecs = [
     { w: 24 },
     { w: 0 }, // name — varied per row
     { w: 58 },
-    { w: 78 },
+    { w: 60 },
     { w: 112 },
+    { w: 100 },
     { w: 14 },
     { w: 14 },
     { w: 14 },
