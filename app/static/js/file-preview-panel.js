@@ -79,7 +79,7 @@ export function openPanel(fileUrl, originEl = null) {
             currentHeroEl = heroEl
 
             // Background fades in and image scales to display rect together
-            heroEl.offsetHeight
+            void heroEl.offsetHeight
             heroEl.style.transition =
                 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
             heroImg.style.transition =
@@ -91,7 +91,7 @@ export function openPanel(fileUrl, originEl = null) {
         // Panel opens instantly behind the hero — no slide animation
         panel.style.transition = 'none'
         panel.classList.add('open')
-        panel.offsetHeight
+        void panel.offsetHeight
         panel.style.transition = ''
     } else {
         panel.classList.add('open')
@@ -211,7 +211,7 @@ function closePanelInternal() {
         panelCleanup()
         panel.style.transition = 'none'
         panel.classList.remove('open')
-        panel.offsetHeight
+        void panel.offsetHeight
         panel.style.transition = ''
 
         const thumbRect = thumbImg.getBoundingClientRect()
@@ -245,7 +245,7 @@ function closePanelInternal() {
         currentHeroEl = closeHero
 
         // Background fades out and image scales back to thumbnail together
-        closeHero.offsetHeight
+        void closeHero.offsetHeight
         closeHero.style.transition =
             'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
         heroImg.style.transition =

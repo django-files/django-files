@@ -1129,7 +1129,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
             log.debug(f"removing {pk} from {album_id}")
             file.albums.remove(Albums.objects.get(id=album_id))
         file_album_websocket.apply_async(
-            args=[{"event": "set-file-albums", "file_id": pk, "added_to": added, "removed_from": file_albums}, user_id],
+            args=[
+                {"event": "set-file-albums", "file_id": pk, "added_to": added, "removed_from": file_albums},
+                user_id,
+            ],
             priority=0,
         )
         return None
@@ -1197,7 +1200,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error("Album not found.", **kwargs)
         file.albums.add(selected_album)
         file_album_websocket.apply_async(
-            args=[{"event": "set-file-albums", "file_id": pk, "added_to": {selected_album.id: selected_album.name}}, user_id],
+            args=[
+                {"event": "set-file-albums", "file_id": pk, "added_to": {selected_album.id: selected_album.name}},
+                user_id,
+            ],
             priority=0,
         )
         return None
