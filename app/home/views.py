@@ -39,6 +39,48 @@ log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
 _404_TEMPLATE = "error/404.html"
 
+CODE_MIMES = frozenset(
+    [
+        "application/json",
+        "application/javascript",
+        "application/x-perl",
+        "application/x-sh",
+    ]
+)
+
+MIME_TO_DISCORD_LANG = {
+    "application/json": "json",
+    "application/javascript": "js",
+    "application/x-sh": "bash",
+    "application/x-perl": "perl",
+    "text/javascript": "js",
+    "text/typescript": "ts",
+    "text/x-python": "python",
+    "text/x-java-source": "java",
+    "text/x-c": "c",
+    "text/x-c++src": "cpp",
+    "text/x-ruby": "ruby",
+    "text/x-rust": "rust",
+    "text/x-go": "go",
+    "text/x-shellscript": "bash",
+    "text/x-yaml": "yaml",
+    "text/xml": "xml",
+    "text/html": "html",
+    "text/css": "css",
+    "text/x-sql": "sql",
+    "text/x-lua": "lua",
+    "text/x-swift": "swift",
+    "text/x-kotlin": "kotlin",
+    "text/x-scala": "scala",
+    "text/x-haskell": "haskell",
+    "text/x-r": "r",
+    "text/x-matlab": "matlab",
+    "text/x-makefile": "makefile",
+    "text/x-dockerfile": "dockerfile",
+    "text/x-toml": "toml",
+    "text/x-ini": "ini",
+}
+
 
 def get_rtmp_host(request, site_settings=None):
     """
@@ -699,6 +741,33 @@ def raw_redirect_view(request, filename):
     return response
 
 
+def _read_file_text(file, max_bytes=None, errors="strict"):
+    if use_s3():
+        raw = file.file.read(max_bytes) if max_bytes else file.file.read()
+        return raw.decode("utf-8", errors=errors)
+    with open(file.file.path, "r", errors=errors) as f:
+        return f.read(max_bytes) if max_bytes else f.read()
+
+
+def _build_code_snippet(file):
+    try:
+        raw = _read_file_text(file, max_bytes=512, errors="replace")
+        snippet = raw.strip()
+        triple_tick_pos = snippet.find("```")
+        if triple_tick_pos != -1:
+            snippet = snippet[:triple_tick_pos].rstrip()
+        snippet = snippet[:220]
+        if not snippet:
+            return None
+        lang = MIME_TO_DISCORD_LANG.get(file.mime, "")
+        upload_date = file.date.strftime("%-d %b %Y at %-I:%M %p")
+        footer = f"\n— {file.user.get_name()} | {upload_date}"
+        return f"```{lang}\n{snippet}\n```{footer}"
+    except Exception:
+        log.exception("Failed to read code snippet for unfurl: %s", file.name)
+        return None
+
+
 @require_http_methods(["GET"])
 def url_route_view(request, filename):
     """
@@ -707,11 +776,6 @@ def url_route_view(request, filename):
     # TODO: Fix Type Hinting on file.exif ?
     site_url = site_settings_processor(request)["site_settings"]["site_url"]
     is_panel = bool(request.GET.get("panel"))
-    code_mimes = [
-        "application/json",
-        "application/x-perl",
-        "application/x-sh",
-    ]
     log.debug("url_route_view: %s", filename)
     file = get_object_or_404(Files, name=filename)
     log.debug("file.mime: %s", file.mime)
@@ -746,70 +810,17 @@ def url_route_view(request, filename):
         return render(request, embed_template, context=ctx)
     elif file.mime == "text/markdown":
         log.debug("MARKDOWN")
-        if use_s3():
-            md_text = file.file.read().decode("utf-8")
-        else:
-            with open(file.file.path, "r") as f:
-                md_text = f.read()
+        md_text = _read_file_text(file)
         ctx["markdown"] = markdown.markdown(md_text, extensions=["extra", "toc"])
         if is_panel:
             ctx["render"] = "markdown"
             return render(request, embed_template, context=ctx)
         return render(request, "embed/markdown.html", context=ctx)
-    elif file.mime.startswith("text/") or file.mime in code_mimes or file.mime in ["application/javascript"]:
+    elif file.mime.startswith("text/") or file.mime in CODE_MIMES:
         log.debug("CODE")
         ctx["render"] = "code"
-        try:
-            if use_s3():
-                raw = file.file.read(512).decode("utf-8", errors="replace")
-            else:
-                with open(file.file.path, "r", errors="replace") as f:
-                    raw = f.read(512)
-            snippet = raw.strip()
-            # Truncate before any embedded triple-backtick to avoid breaking the code block
-            triple_tick_pos = snippet.find("```")
-            if triple_tick_pos != -1:
-                snippet = snippet[:triple_tick_pos].rstrip()
-            snippet = snippet[:220]
-            if snippet:
-                mime_to_lang = {
-                    "application/json": "json",
-                    "application/javascript": "js",
-                    "application/x-sh": "bash",
-                    "application/x-perl": "perl",
-                    "text/javascript": "js",
-                    "text/typescript": "ts",
-                    "text/x-python": "python",
-                    "text/x-java-source": "java",
-                    "text/x-c": "c",
-                    "text/x-c++src": "cpp",
-                    "text/x-ruby": "ruby",
-                    "text/x-rust": "rust",
-                    "text/x-go": "go",
-                    "text/x-shellscript": "bash",
-                    "text/x-yaml": "yaml",
-                    "text/xml": "xml",
-                    "text/html": "html",
-                    "text/css": "css",
-                    "text/x-sql": "sql",
-                    "text/x-lua": "lua",
-                    "text/x-swift": "swift",
-                    "text/x-kotlin": "kotlin",
-                    "text/x-scala": "scala",
-                    "text/x-haskell": "haskell",
-                    "text/x-r": "r",
-                    "text/x-matlab": "matlab",
-                    "text/x-makefile": "makefile",
-                    "text/x-dockerfile": "dockerfile",
-                    "text/x-toml": "toml",
-                    "text/x-ini": "ini",
-                }
-                lang = mime_to_lang.get(file.mime, "")
-                upload_date = file.date.strftime("%-d %b %Y at %-I:%M %p")
-                footer = f"\n— {file.user.get_name()} | {upload_date}"
-                ctx["code_snippet"] = f"```{lang}\n{snippet}\n```{footer}"
-        except Exception:
-            log.exception("Failed to read code snippet for unfurl: %s", file.name)
+        if snippet := _build_code_snippet(file):
+            ctx["code_snippet"] = snippet
         return render(request, embed_template, context=ctx)
     else:
         log.debug("UNKNOWN")
