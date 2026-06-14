@@ -274,6 +274,16 @@ export function addFileTableRows(data) {
 // underlying state matches the backend. invalidate() re-runs column renderers
 // (private/password/expire icons, etc.) without re-sorting or redrawing the
 // whole table.
+export function removeFileTableRow(fileId) {
+    if (!filesDataTable) return
+    const row = filesDataTable.row(`#file-${fileId}`)
+    if (row.node()) {
+        row.remove().draw(false)
+        if (totalFilesCount)
+            totalFilesCount.textContent = filesDataTable.rows().count()
+    }
+}
+
 export function updateFileRow(data) {
     if (!filesDataTable) return
     const row = filesDataTable.row(`#file-${data.id}`)

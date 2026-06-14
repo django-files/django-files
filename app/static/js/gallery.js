@@ -5,13 +5,14 @@ import {
     faKey,
     faHourglass,
     addFileTableRowsBatch,
+    removeFileTableRow,
     formatBytes,
     showTableSkeletons,
     hideTableSkeletons,
 } from './file-table.js'
 
 import { updateBulkCount } from './bulk-actions.js'
-import { fetchFiles } from './api-fetch.js'
+import { fetchFiles, fetchFile } from './api-fetch.js'
 
 import { socket } from './socket.js'
 import { getCtxMenuContainer } from './file-context-menu.js'
@@ -371,6 +372,7 @@ async function applyTypeFilter() {
             galleryLeafletMap.remove()
             galleryLeafletMap = null
             mapInitialised = false
+            mapFileMarkers.clear()
         }
         document.getElementById('map-container').innerHTML = ''
         initMapView()
@@ -609,6 +611,7 @@ $('#user').on('change', async function (_event) {
             galleryLeafletMap.remove()
             galleryLeafletMap = null
             mapInitialised = false
+            mapFileMarkers.clear()
         }
         document.getElementById('map-container').innerHTML = ''
         initMapView()
@@ -1105,6 +1108,8 @@ socket?.addEventListener('message', function (event) {
     if (event.data === 'pong') return
     const data = JSON.parse(event.data)
     const inGallery = params.get('view') === 'gallery'
+    const inMap = params.get('view') === 'map'
+    const currentAlbum = params.get('album')
 
     if (data.event === 'file-new') {
         fileData.unshift(data)
@@ -1118,6 +1123,70 @@ socket?.addEventListener('message', function (event) {
         if (inGallery) {
             $(`#gallery-image-${data.id}`).remove()
             updateNoFilesOverlay()
+        }
+    } else if (
+        data.event === 'set-file-albums' ||
+        data.event === 'bulk-add-file-albums' ||
+        data.event === 'bulk-remove-file-albums'
+    ) {
+        if (!currentAlbum) return
+        const albumId = parseInt(currentAlbum, 10)
+        const affectsAlbum =
+            data.event === 'set-file-albums'
+                ? (data.removed_from && albumId in data.removed_from) ||
+                  (data.added_to && albumId in data.added_to)
+                : data.albums?.some((a) => a.id === albumId)
+        if (!affectsAlbum) return
+
+        const fileIds =
+            data.event === 'set-file-albums' ? [data.file_id] : data.pks || []
+        const isRemove =
+            data.event === 'bulk-remove-file-albums' ||
+            (data.event === 'set-file-albums' &&
+                data.removed_from &&
+                albumId in data.removed_from)
+        const isAdd =
+            data.event === 'bulk-add-file-albums' ||
+            (data.event === 'set-file-albums' &&
+                data.added_to &&
+                albumId in data.added_to)
+
+        if (isRemove) {
+            for (const fileId of fileIds) {
+                const idx = fileData.findIndex((f) => f.id === fileId)
+                if (idx !== -1) fileData.splice(idx, 1)
+                if (inGallery) {
+                    document.getElementById(`gallery-image-${fileId}`)?.remove()
+                } else if (inMap) {
+                    const marker = mapFileMarkers.get(fileId)
+                    if (marker) {
+                        marker.remove()
+                        mapFileMarkers.delete(fileId)
+                    }
+                } else {
+                    removeFileTableRow(fileId)
+                }
+            }
+            if (inGallery || inMap) updateNoFilesOverlay()
+        }
+
+        if (isAdd) {
+            for (const fileId of fileIds) {
+                fetchFile(fileId).then((file) => {
+                    fileData.push(file)
+                    if (inGallery) {
+                        addGalleryFile(file, true)
+                        updateNoFilesOverlay()
+                    } else if (inMap) {
+                        const L = globalThis.L
+                        if (L && mapInitialised) addFileMapMarker(L, file)
+                        updateNoFilesOverlay()
+                    } else {
+                        file['DT_RowId'] = `file-${file.id}`
+                        addFileTableRowsBatch([file])
+                    }
+                })
+            }
         }
     } else if (inGallery) {
         if (data.event === 'set-password-file') {
@@ -1200,6 +1269,7 @@ function buildImageLabels(file, bottomLeft) {
 const mapContainer = document.getElementById('map-container')
 let galleryLeafletMap = null
 let mapInitialised = false
+const mapFileMarkers = new Map()
 let trackerFiles = []
 let trackerPolyline = null
 let trackerStartMarker = null
@@ -1484,6 +1554,56 @@ function initKMLExportBtn() {
     })
 }
 
+function addFileMapMarker(L, file) {
+    const coords = gpsToDecimal(file.exif?.GPSInfo)
+    if (!coords) return null
+
+    trackerFiles.push({
+        coords,
+        dt:
+            parseExifDatetime(file.exif?.DateTimeOriginal) ||
+            new Date(file.date),
+    })
+
+    const marker = L.marker(coords)
+        .addTo(galleryLeafletMap)
+        .bindTooltip(buildMarkerTooltip(file, coords), {
+            direction: 'top',
+            offset: [-15, -13],
+        })
+        .on('click', () => {
+            openPanel(file.url)
+        })
+        .on('tooltipopen', async (e) => {
+            const el = e.tooltip.getElement()
+            if (!el) return
+            L.DomEvent.disableClickPropagation(el)
+            el.style.cursor = 'pointer'
+            L.DomEvent.on(el, 'click', (e) => {
+                L.DomEvent.stopPropagation(e)
+                openPanel(file.url)
+            })
+            const img = el.querySelector('img[data-file-id]')
+            if (!img) return
+            const blobUrl = await resolveThumbSrc(file)
+            // Guard: tooltip may have closed before the blob resolved
+            if (!img.isConnected) return
+            img.src = blobUrl
+            img.addEventListener(
+                'load',
+                () => {
+                    img.style.opacity = '1'
+                    img.parentElement
+                        ?.querySelector('.placeholder-glow')
+                        ?.remove()
+                },
+                { once: true }
+            )
+        })
+    mapFileMarkers.set(file.id, marker)
+    return coords
+}
+
 async function fetchAndPlotAllFiles(L) {
     let page = 1
     const album = params.get('album')
@@ -1501,52 +1621,8 @@ async function fetchAndPlotAllFiles(L) {
         page = data.next
 
         for (const file of data.files) {
-            const coords = gpsToDecimal(file.exif?.GPSInfo)
-            if (!coords) continue
-
-            allCoords.push(coords)
-            trackerFiles.push({
-                coords,
-                dt:
-                    parseExifDatetime(file.exif?.DateTimeOriginal) ||
-                    new Date(file.date),
-            })
-
-            L.marker(coords)
-                .addTo(galleryLeafletMap)
-                .bindTooltip(buildMarkerTooltip(file, coords), {
-                    direction: 'top',
-                    offset: [-15, -13],
-                })
-                .on('click', () => {
-                    openPanel(file.url)
-                })
-                .on('tooltipopen', async (e) => {
-                    const el = e.tooltip.getElement()
-                    if (!el) return
-                    L.DomEvent.disableClickPropagation(el)
-                    el.style.cursor = 'pointer'
-                    L.DomEvent.on(el, 'click', (e) => {
-                        L.DomEvent.stopPropagation(e)
-                        openPanel(file.url)
-                    })
-                    const img = el.querySelector('img[data-file-id]')
-                    if (!img) return
-                    const blobUrl = await resolveThumbSrc(file)
-                    // Guard: tooltip may have closed before the blob resolved
-                    if (!img.isConnected) return
-                    img.src = blobUrl
-                    img.addEventListener(
-                        'load',
-                        () => {
-                            img.style.opacity = '1'
-                            img.parentElement
-                                ?.querySelector('.placeholder-glow')
-                                ?.remove()
-                        },
-                        { once: true }
-                    )
-                })
+            const coords = addFileMapMarker(L, file)
+            if (coords) allCoords.push(coords)
         }
     }
 

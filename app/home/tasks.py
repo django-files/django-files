@@ -522,6 +522,13 @@ def delete_album_websocket(data: dict, user_id):
 
 
 @shared_task()
+def file_album_websocket(data: dict, user_id: int):
+    channel_layer = get_channel_layer()
+    event = {"type": "websocket.send", "text": json.dumps(data)}
+    async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
+
+
+@shared_task()
 def delete_stream_websocket(name: str, user_id: int):
     log.debug("delete_stream_websocket: name=%s user_id=%s", name, user_id)
     data = {"event": "stream-delete", "name": name}
