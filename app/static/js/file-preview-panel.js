@@ -13,6 +13,8 @@ let isOpen = false
 let panelLeafletMap = null
 let currentFileUrl = null
 let panelSocketHandler = null
+let currentHeroEl = null
+let currentOriginEl = null
 
 const loadingHtml =
     '<div class="file-preview-panel-loading"><i class="fa-solid fa-spinner fa-pulse"></i></div>'
@@ -28,29 +30,56 @@ export function openPanel(fileUrl, originEl = null) {
     // 1. Show panel with skeleton immediately (no layout jank)
     panelContent.innerHTML = `<div class="file-preview-panel-loading" role="status" aria-live="polite"><i class="fa-solid fa-spinner fa-pulse"></i></div>`
 
+    // Clean up any hero left over from a rapid re-open
+    if (currentHeroEl) {
+        currentHeroEl.remove()
+        currentHeroEl = null
+    }
+    currentOriginEl = originEl
+
+    let heroEl = null
+
     if (originEl) {
-        const rect = originEl.getBoundingClientRect()
-        const vw = window.innerWidth
-        const vh = window.innerHeight
-        const t = ((rect.top / vh) * 100).toFixed(2)
-        const r = (((vw - rect.right) / vw) * 100).toFixed(2)
-        const b = (((vh - rect.bottom) / vh) * 100).toFixed(2)
-        const l = ((rect.left / vw) * 100).toFixed(2)
-        // Snap to card position without a transition, then animate open
+        const thumbImg = originEl.querySelector('img')
+        if (thumbImg?.complete && thumbImg.naturalWidth > 0) {
+            const rect = originEl.getBoundingClientRect()
+            const vw = window.innerWidth
+            const vh = window.innerHeight
+            const t = ((rect.top / vh) * 100).toFixed(2)
+            const r = (((vw - rect.right) / vw) * 100).toFixed(2)
+            const b = (((vh - rect.bottom) / vh) * 100).toFixed(2)
+            const l = ((rect.left / vw) * 100).toFixed(2)
+
+            heroEl = document.createElement('div')
+            heroEl.className = 'panel-hero-thumb'
+            heroEl.style.clipPath = `inset(${t}% ${r}% ${b}% ${l}% round 9px)`
+
+            const heroImg = document.createElement('img')
+            heroImg.src = thumbImg.src
+            // contain so the image fills its proportional area, matching what
+            // the full-size image will show inside the panel
+            heroImg.style.cssText =
+                'width:100%;height:100%;object-fit:contain;display:block'
+            heroEl.appendChild(heroImg)
+            document.body.appendChild(heroEl)
+            currentHeroEl = heroEl
+
+            // Force layout so the start clip-path is committed, then animate
+            heroEl.offsetHeight
+            heroEl.style.transition =
+                'clip-path 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+            heroEl.style.clipPath = 'inset(0% 0% 0% 0% round 0px)'
+        }
+
+        // Panel opens instantly behind the hero — no slide animation
         panel.style.transition = 'none'
-        panel.dataset.fromCard = '1'
-        panel.style.setProperty(
-            '--panel-clip-start',
-            `inset(${t}% ${r}% ${b}% ${l}% round 10px)`
-        )
-        panel.offsetHeight // force layout so clip-path start state is painted
+        panel.classList.add('open')
+        panel.offsetHeight
         panel.style.transition = ''
     } else {
-        delete panel.dataset.fromCard
-        panel.style.removeProperty('--panel-clip-start')
+        panel.classList.add('open')
     }
 
-    panel.classList.add('open')
     panel.removeAttribute('aria-hidden')
     backdrop.classList.add('active')
     document.body.style.overflow = 'hidden'
@@ -60,23 +89,43 @@ export function openPanel(fileUrl, originEl = null) {
     const returnUrl = location.href
     history.pushState({ panelOpen: true, returnUrl }, '', fileUrl)
 
-    // 3. Fetch and render main content
-    fetch(panelUrl)
-        .then((r) => {
-            if (!r.ok) throw new Error(`HTTP ${r.status}`)
-            return r.text()
-        })
-        .then((html) => {
+    // 3. Fetch and render main content.
+    // Wait for the hero animation to finish before injecting HTML so no layout
+    // or GPU texture work happens during the clip-path transition.
+    const animationDone = heroEl
+        ? new Promise((r) => setTimeout(r, 350))
+        : Promise.resolve()
+
+    const fetchDone = fetch(panelUrl).then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.text()
+    })
+
+    Promise.all([fetchDone, animationDone])
+        .then(([html]) => {
             // Guard: user closed panel or navigated away before fetch completed
-            if (!isOpen || currentFileUrl !== fileUrl) return
+            if (!isOpen || currentFileUrl !== fileUrl) {
+                dismissHero(heroEl)
+                return
+            }
 
             panelContent.innerHTML = html
             initPanelContent(panelContent)
+
+            // For image content initPanelImage dismisses the hero once the
+            // image is decoded, creating a direct crossfade. For everything
+            // else (video, text…) dismiss the hero now.
+            if (!panelContent.querySelector('img.preview')) {
+                dismissHero(heroEl)
+            }
         })
         .catch((err) => {
             console.error('Preview panel fetch error:', err)
             // Guard: user closed panel before error state renders
-            if (!isOpen || currentFileUrl !== fileUrl) return
+            if (!isOpen || currentFileUrl !== fileUrl) {
+                dismissHero(heroEl)
+                return
+            }
 
             panelContent.innerHTML = `
                 <div class="file-preview-panel-loading text-danger" role="status">
@@ -84,7 +133,18 @@ export function openPanel(fileUrl, originEl = null) {
                     <p>Failed to load preview.</p>
                     <a href="${fileUrl}" class="btn btn-sm btn-outline-secondary mt-2">Open full page</a>
                 </div>`
+            dismissHero(heroEl)
         })
+}
+
+function dismissHero(heroEl) {
+    if (!heroEl || heroEl !== currentHeroEl) return
+    heroEl.style.transition = 'opacity 0.25s ease-in-out'
+    heroEl.style.opacity = '0'
+    setTimeout(() => {
+        heroEl.remove()
+        if (currentHeroEl === heroEl) currentHeroEl = null
+    }, 250)
 }
 
 export function closePanel() {
@@ -99,7 +159,16 @@ export function closePanel() {
 function closePanelInternal() {
     isOpen = false
     currentFileUrl = null
-    panel.classList.remove('open')
+
+    // Remove any in-progress hero immediately
+    if (currentHeroEl) {
+        currentHeroEl.remove()
+        currentHeroEl = null
+    }
+
+    const origin = currentOriginEl
+    currentOriginEl = null
+
     if (panel.contains(document.activeElement)) document.activeElement.blur()
     panel.setAttribute('aria-hidden', 'true')
     backdrop.classList.remove('active')
@@ -116,23 +185,62 @@ function closePanelInternal() {
         panelSocketHandler = null
     }
 
-    // After slide-out animation: destroy map + clear content + reset card mode
-    setTimeout(() => {
-        if (!isOpen) {
-            if (panelLeafletMap) {
-                panelLeafletMap.remove()
-                panelLeafletMap = null
-            }
-            panelContent.innerHTML = loadingHtml
-            // Disable transitions before removing data-from-card so the
-            // transform: translateY(100%) reset doesn't trigger a slide-out
-            panel.style.transition = 'none'
-            delete panel.dataset.fromCard
-            panel.style.removeProperty('--panel-clip-start')
-            panel.offsetHeight // force layout before re-enabling transitions
-            panel.style.transition = ''
-        }
-    }, 360)
+    const thumbImg = origin?.isConnected ? origin.querySelector('img') : null
+
+    if (thumbImg?.complete && thumbImg.naturalWidth > 0) {
+        // Mirror the open animation: clear the panel immediately and use a
+        // hero thumbnail div for the reverse zoom so no panel content (sidebar,
+        // fixed-position elements, etc.) is visible during the animation.
+        panelCleanup()
+        panel.style.transition = 'none'
+        panel.classList.remove('open')
+        panel.offsetHeight
+        panel.style.transition = ''
+
+        const rect = origin.getBoundingClientRect()
+        const vw = window.innerWidth
+        const vh = window.innerHeight
+        const t = ((rect.top / vh) * 100).toFixed(2)
+        const r = (((vw - rect.right) / vw) * 100).toFixed(2)
+        const b = (((vh - rect.bottom) / vh) * 100).toFixed(2)
+        const l = ((rect.left / vw) * 100).toFixed(2)
+
+        const closeHero = document.createElement('div')
+        closeHero.className = 'panel-hero-thumb'
+        closeHero.style.clipPath = 'inset(0% 0% 0% 0% round 0px)'
+
+        const heroImg = document.createElement('img')
+        heroImg.src = thumbImg.src
+        heroImg.style.cssText =
+            'width:100%;height:100%;object-fit:contain;display:block'
+        closeHero.appendChild(heroImg)
+        document.body.appendChild(closeHero)
+        currentHeroEl = closeHero
+
+        closeHero.offsetHeight
+        closeHero.style.transition =
+            'clip-path 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+        closeHero.style.clipPath = `inset(${t}% ${r}% ${b}% ${l}% round 9px)`
+
+        setTimeout(() => {
+            closeHero.remove()
+            if (currentHeroEl === closeHero) currentHeroEl = null
+        }, 360)
+    } else {
+        // Standard slide-down (non-gallery open, or thumbnail not available)
+        panel.classList.remove('open')
+        setTimeout(() => {
+            if (!isOpen) panelCleanup()
+        }, 360)
+    }
+}
+
+function panelCleanup() {
+    if (panelLeafletMap) {
+        panelLeafletMap.remove()
+        panelLeafletMap = null
+    }
+    panelContent.innerHTML = loadingHtml
 }
 
 // ============================================================
@@ -213,13 +321,16 @@ function initPanelImage(container) {
     const img = container.querySelector('img.preview')
     if (!img) return
     const skeleton = container.querySelector('#img-skeleton')
+    // Capture at call time so a rapid re-open can't dismiss the wrong hero
+    const heroEl = currentHeroEl
 
     // Set image to be invisible initially to prevent layout shift
     img.style.opacity = '0'
     img.style.transition = 'opacity 0.25s ease-in-out'
 
     const onLoad = () => {
-        // Single unified fade: skeleton fades out, image fades in together
+        // Crossfade: hero fades out as the decoded image fades in together
+        dismissHero(heroEl)
         if (skeleton) {
             skeleton.style.opacity = '0'
         }
@@ -253,8 +364,9 @@ function initPanelImage(container) {
         if (img.naturalWidth === 0) onError()
         else onLoad()
     } else {
-        img.addEventListener('load', onLoad, { once: true })
-        img.addEventListener('error', onError, { once: true })
+        // decode() waits for the image to be fully decoded before the first
+        // paint, preventing the GPU texture-upload black flash on reveal.
+        img.decode().then(onLoad).catch(onError)
     }
 }
 

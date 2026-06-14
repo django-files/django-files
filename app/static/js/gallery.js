@@ -1381,10 +1381,14 @@ function initMapView() {
             })
             new FullscreenControl().addTo(galleryLeafletMap)
 
+            let arrowRedrawTimer = null
             galleryLeafletMap.on('zoomend', () => {
-                if (trackerEnabled && trackerSorted.length > 1) {
-                    drawTrackerArrows(L, trackerSorted)
-                }
+                if (!trackerEnabled || trackerSorted.length < 2) return
+                clearTimeout(arrowRedrawTimer)
+                arrowRedrawTimer = setTimeout(
+                    () => drawTrackerArrows(L, trackerSorted),
+                    150
+                )
             })
 
             fetchAndPlotAllFiles(L)

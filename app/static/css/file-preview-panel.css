@@ -53,9 +53,7 @@
     flex-direction: column;
     overflow: hidden;
     transform: translateY(100%);
-    transition:
-        transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-        clip-path 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.25);
     will-change: transform;
     contain: layout style paint;
@@ -65,15 +63,15 @@
     transform: translateY(0);
 }
 
-/* Gallery card pop-out: clip-path expands from the card's bounding rect */
-.file-preview-panel[data-from-card] {
-    transform: none;
-    clip-path: var(--panel-clip-start, inset(50% 50% 50% 50% round 10px));
-    will-change: clip-path;
-}
+/* ---- Hero thumbnail (zooms from card to full screen on open) ---- */
 
-.file-preview-panel[data-from-card].open {
-    clip-path: inset(0% 0% 0% 0% round 0px);
+.panel-hero-thumb {
+    position: fixed;
+    inset: 0;
+    z-index: 1041; /* above panel (1040) and backdrop (1039) */
+    will-change: clip-path;
+    pointer-events: none;
+    background: var(--bs-body-bg);
 }
 
 /* ---- Close button (top-left, matching preview chrome style) ---- */
