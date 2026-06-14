@@ -9,20 +9,30 @@
 
 {% block meta %}
     {% if invite %}
-        <meta name="title" content="{{ site_settings.site_title }} Invite"/>
-        <meta name="description" content="{{ invite.owner.get_name }} has invited you to join {{ site_settings.site_title }}."/>
-        <meta property="og:title" content="{{ site_settings.site_title }} Invite">
-        <meta property="og:description" content="{{ invite.owner.get_name }} has invited you to join {{ site_settings.site_title }}.">
+        {% with desc=invite.owner.get_name|add:" has invited you to join "|add:site_settings.site_title|add:"." %}
+            <meta name="description" content="{{ desc }}"/>
+            <meta property="og:title" content="{{ site_settings.site_title }} Invite">
+            <meta property="og:description" content="{{ desc }}">
+            <meta property="twitter:title" content="{{ site_settings.site_title }} Invite">
+            <meta property="twitter:description" content="{{ desc }}">
+        {% endwith %}
     {% else %}
-        <meta name="title" content="{{ site_settings.site_title }} Invite"/>
-        <meta name="description" content="Enter an invite code to join {{ site_settings.site_title }}."/>
-        <meta property="og:title" content="{{ site_settings.site_title }} Invite">
-        <meta property="og:description" content="Enter an invite code to join {{ site_settings.site_title }}.">
+        {% with desc="Enter an invite code to join "|add:site_settings.site_title|add:"." %}
+            <meta name="description" content="{{ desc }}"/>
+            <meta property="og:title" content="{{ site_settings.site_title }} Invite">
+            <meta property="og:description" content="{{ desc }}">
+            <meta property="twitter:title" content="{{ site_settings.site_title }} Invite">
+            <meta property="twitter:description" content="{{ desc }}">
+        {% endwith %}
     {% endif %}
+    <meta property="og:site_name" content="{{ site_settings.site_title }}">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="og:image" content="{{ site_settings.site_url }}{% static 'images/logo.png' %}">
     <meta name="theme-color" content="{{ site_settings.site_color }}">
+    <meta property="twitter:card" content="summary">
+    <meta property="twitter:url" content="{{ request.build_absolute_uri }}">
+    <meta property="twitter:image" content="{{ site_settings.site_url }}{% static 'images/logo.png' %}">
 {% endblock %}
 
 {% block head %}

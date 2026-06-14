@@ -16,15 +16,20 @@
 {% endblock %}
 
 {% block meta %}
-    <meta name="title" content="{{ stream.title }}"/>
-    <meta name="description" content="{{ stream.description }}"/>
+    <meta name="description" content="{{ stream.description|default:stream.title }}"/>
 
+    <meta property="og:site_name" content="{{ site_settings.site_title }}">
     <meta property="og:title" content="{{ stream.title }}">
-    <meta property="og:description" content="{{ stream.description }}">
-    <meta property="og:type" content="website">
+    <meta property="og:description" content="{{ stream.description|default:stream.title }}">
+    <meta property="og:type" content="video.other">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:image" content="{{ site_settings.site_url }}% static 'images/logo.png' %}">
+    <meta property="og:image" content="{{ site_settings.site_url }}{% static 'images/logo.png' %}">
     <meta name="theme-color" content="{{ site_settings.site_color }}">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="{{ stream.title }}">
+    <meta property="twitter:description" content="{{ stream.description|default:stream.title }}">
+    <meta property="twitter:image" content="{{ site_settings.site_url }}{% static 'images/logo.png' %}">
 {% endblock %}
 
 {% block body %}
