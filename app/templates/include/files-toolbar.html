@@ -3,13 +3,13 @@
 {# Translucent overlay matches the preview-page chrome (backdrop-blur, glass-feel). #}
 <div class="files-toolbar{% if album %} files-toolbar--album{% endif %}" id="files-toolbar" data-view="{{ view_mode }}" aria-label="Files toolbar">
     <nav class="files-toolbar-views" aria-label="Files view">
-        <a class="files-toolbar-view show-list" role="button" data-view="list" title="List" href="{% url 'home:files' %}">
+        <a class="files-toolbar-view show-list{% if view_mode == 'list' %} view-active{% endif %}" role="button" data-view="list" title="List" href="{% url 'home:files' %}">
             <i class="fa-solid fa-list" aria-hidden="true"></i><span class="files-toolbar-view-label">List</span>
         </a>
-        <a class="files-toolbar-view show-gallery" role="button" data-view="gallery" title="Gallery" href="{% url 'home:files' %}?view=gallery">
+        <a class="files-toolbar-view show-gallery{% if view_mode == 'gallery' %} view-active{% endif %}" role="button" data-view="gallery" title="Gallery" href="{% url 'home:files' %}?view=gallery">
             <i class="fa-regular fa-images" aria-hidden="true"></i><span class="files-toolbar-view-label">Gallery</span>
         </a>
-        <a class="files-toolbar-view show-map" role="button" data-view="map" title="Map" href="{% url 'home:files' %}?view=map">
+        <a class="files-toolbar-view show-map{% if view_mode == 'map' %} view-active{% endif %}" role="button" data-view="map" title="Map" href="{% url 'home:files' %}?view=map">
             <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span class="files-toolbar-view-label">Map</span>
         </a>
         <a class="files-toolbar-view show-slideshow" role="button" title="Slideshow" href="#offcanvas-bottom" data-bs-toggle="offcanvas" aria-controls="offcanvas-bottom">
@@ -17,12 +17,81 @@
         </a>
     </nav>
 
-    <button id="gallery-all-types-btn"
-            class="files-toolbar-btn d-none"
-            aria-pressed="false"
-            title="Show all file types">
-        <i class="fa-solid fa-photo-film" aria-hidden="true"></i><span class="files-toolbar-view-label">All types</span>
+    <button id="files-filter-btn"
+            class="files-toolbar-btn{% if active_types %} view-active{% endif %}"
+            aria-label="Filter file types">
+        <i class="fa-solid fa-filter" aria-hidden="true"></i><span class="files-toolbar-view-label" id="files-filter-label">Filter</span>
     </button>
+    <template id="files-filter-popup-tpl">
+        <div style="min-width:175px">
+            <div class="d-flex flex-column gap-1">
+                <button type="button" class="btn btn-sm text-start w-100 files-filter-opt" data-type="all">
+                    <i class="fa-solid fa-layer-group me-1"></i> All
+                </button>
+                <button type="button" class="btn btn-sm text-start w-100 files-filter-opt" data-type="image">
+                    <i class="fa-regular fa-image me-1"></i> Images
+                </button>
+                <button type="button" class="btn btn-sm text-start w-100 files-filter-opt" data-type="video">
+                    <i class="fa-solid fa-film me-1"></i> Videos
+                </button>
+                <button type="button" class="btn btn-sm text-start w-100 files-filter-opt" data-type="audio">
+                    <i class="fa-solid fa-music me-1"></i> Audio
+                </button>
+                <button type="button" class="btn btn-sm text-start w-100 files-filter-opt" data-type="document">
+                    <i class="fa-regular fa-file-lines me-1"></i> Documents
+                </button>
+                <button type="button" class="btn btn-sm text-start w-100 files-filter-opt" data-type="text">
+                    <i class="fa-solid fa-code me-1"></i> Text / Code
+                </button>
+                <button type="button" class="btn btn-sm text-start w-100 files-filter-opt" data-type="archive">
+                    <i class="fa-solid fa-file-zipper me-1"></i> Archives
+                </button>
+                <button type="button" class="btn btn-sm text-start w-100 files-filter-opt" data-type="executable">
+                    <i class="fa-solid fa-microchip me-1"></i> Executables
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <button id="gallery-sort-btn"
+            class="files-toolbar-btn{% if view_mode != 'gallery' %} d-none{% endif %}{% if ordering != '-created' %} view-active{% endif %}"
+            aria-label="Sort gallery">
+        <i class="fa-solid {% if ordering|slice:':1' == '-' or not ordering %}fa-arrow-down-wide-short{% else %}fa-arrow-up-wide-short{% endif %}" aria-hidden="true"></i><span class="files-toolbar-view-label" id="gallery-sort-label">{{ ordering_label }}</span>
+    </button>
+    <template id="gallery-sort-popup-tpl">
+        <div style="min-width:220px">
+            <div class="d-flex flex-column gap-2">
+                <div class="d-flex align-items-center justify-content-between gap-2 px-1">
+                    <span class="small text-nowrap"><i class="fa-regular fa-clock me-1"></i> Upload Date</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Upload date sort direction">
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="-created">Newest</button>
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="created">Oldest</button>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between gap-2 px-1">
+                    <span class="small text-nowrap"><i class="fa-solid fa-font me-1"></i> Name</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Name sort direction">
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="name">A→Z</button>
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="-name">Z→A</button>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between gap-2 px-1">
+                    <span class="small text-nowrap"><i class="fa-solid fa-database me-1"></i> Size</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Size sort direction">
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="-size">Largest</button>
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="size">Smallest</button>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between gap-2 px-1">
+                    <span class="small text-nowrap"><i class="fa-solid fa-camera me-1"></i> Taken</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Taken date sort direction">
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="-exif_date">Newest</button>
+                        <button type="button" class="btn btn-outline-secondary" data-ordering="exif_date">Oldest</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
 
     <button id="map-tracker-btn"
             class="files-toolbar-btn d-none"
@@ -55,16 +124,14 @@
         <span class="files-toolbar-count text-body-secondary small text-nowrap" id="dt-file-count-wrapper">
             <span class="files-toolbar-count-label">Showing</span>
             <strong id="total-files-count">0</strong>
+            <span class="d-none text-body-secondary" id="bulk-selected-count-inline"> &bull; <strong>0</strong> selected</span>
         </span>
         <button id="gallery-select-all-btn"
-                class="files-toolbar-btn d-none"
+                class="files-toolbar-btn{% if view_mode != 'gallery' %} d-none{% endif %}"
                 aria-pressed="false"
                 title="Select all">
             <i class="fa-regular fa-square-check" aria-hidden="true"></i><span class="files-toolbar-view-label">Select all</span>
         </button>
-        <span class="files-toolbar-count small text-nowrap d-none" id="bulk-selected-count">
-            <strong>0</strong> selected
-        </span>
         {% include 'files/bulk-menu.html' %}
     </div>
 

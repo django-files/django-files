@@ -31,8 +31,12 @@ if (showMap) showMap.onclick = changeView
 
 let params = new URL(document.location.toString()).searchParams
 
-const GALLERY_ALL_TYPES_KEY = 'galleryShowAllTypes'
-let showAllTypes = localStorage.getItem(GALLERY_ALL_TYPES_KEY) === 'true'
+let activeTypes = new Set(
+    (params.get('types') || '')
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+)
 
 let nextPage = 1
 let fileData = []
@@ -41,6 +45,11 @@ let filesDataTable
 let selectedFileIds = []
 let scrollObserver = null
 let gallerySearchTerm = ''
+let galleryOrdering = params.get('ordering') || '-created'
+
+function getActiveTypesParam() {
+    return activeTypes.size > 0 ? [...activeTypes].join(',') : null
+}
 
 // Cache touch detection once — isTouchDevice() is called on every hover otherwise
 const isTouch =
@@ -145,6 +154,37 @@ if (albumPrivateToggle) {
     })
 }
 
+function setToolbarBtnVisible(btn, visible) {
+    if (!btn) return
+    btn.dataset.collapseIntent = visible ? '' : '1'
+    if (visible) {
+        // No-op if already fully visible (avoids flash on repeated applyView calls)
+        if (
+            !btn.classList.contains('d-none') &&
+            !btn.classList.contains('is-collapsing')
+        )
+            return
+        btn.classList.add('is-collapsing') // collapsed starting point
+        btn.classList.remove('d-none') // enter flex layout at width 0
+        requestAnimationFrame(() => {
+            btn.classList.remove('is-collapsing') // slide + fade in
+        })
+    } else {
+        // No-op if already fully hidden
+        if (btn.classList.contains('d-none')) return
+        btn.classList.add('is-collapsing') // slide + fade out
+        const onEnd = (e) => {
+            if (e.propertyName !== 'max-width') return
+            btn.removeEventListener('transitionend', onEnd)
+            if (btn.dataset.collapseIntent === '1') {
+                btn.classList.add('d-none') // remove from flex layout after slide
+                btn.classList.remove('is-collapsing')
+            }
+        }
+        btn.addEventListener('transitionend', onEnd)
+    }
+}
+
 function applyView(view) {
     const container = mapContainer.parentElement
     if (!container) {
@@ -172,29 +212,22 @@ function applyView(view) {
     else active = showList
     active?.classList.add('view-active')
 
-    const galleryTypesBtn = document.getElementById('gallery-all-types-btn')
-    if (galleryTypesBtn)
-        galleryTypesBtn.classList.toggle('d-none', view !== 'gallery')
-
-    const gallerySelectAllBtn = document.getElementById(
-        'gallery-select-all-btn'
+    setToolbarBtnVisible(
+        document.getElementById('gallery-sort-btn'),
+        view === 'gallery'
     )
-    if (gallerySelectAllBtn)
-        gallerySelectAllBtn.classList.toggle('d-none', view !== 'gallery')
-
-    const trackerBtn = document.getElementById('map-tracker-btn')
-    if (trackerBtn)
-        trackerBtn.classList.toggle(
-            'd-none',
-            view !== 'map' || !params.get('album')
-        )
-
-    const kmlExportBtn = document.getElementById('map-kml-export-btn')
-    if (kmlExportBtn)
-        kmlExportBtn.classList.toggle(
-            'd-none',
-            view !== 'map' || !params.get('album') || !trackerEnabled
-        )
+    setToolbarBtnVisible(
+        document.getElementById('gallery-select-all-btn'),
+        view === 'gallery'
+    )
+    setToolbarBtnVisible(
+        document.getElementById('map-tracker-btn'),
+        view === 'map' && !!params.get('album')
+    )
+    setToolbarBtnVisible(
+        document.getElementById('map-kml-export-btn'),
+        view === 'map' && !!params.get('album') && trackerEnabled
+    )
 }
 
 function detectInitialView() {
@@ -214,34 +247,211 @@ function filterGallery() {
     }
 }
 
-function initGalleryTypesBtn() {
-    const btn = document.getElementById('gallery-all-types-btn')
+const TYPE_LABELS = {
+    image: 'Images',
+    video: 'Videos',
+    audio: 'Audio',
+    document: 'Documents',
+    text: 'Text / Code',
+    archive: 'Archives',
+    executable: 'Executables',
+}
+
+function syncFilterBtn() {
+    const btn = document.getElementById('files-filter-btn')
+    const label = document.getElementById('files-filter-label')
     if (!btn) return
-
-    const label = btn.querySelector('.files-toolbar-view-label')
-    const syncBtn = () => {
-        btn.classList.toggle('view-active', showAllTypes)
-        btn.setAttribute('aria-pressed', showAllTypes ? 'true' : 'false')
-        btn.title = showAllTypes
-            ? 'Showing all file types — click to show only images & videos'
-            : 'Showing images & videos only — click to show all file types'
-        if (label)
-            label.textContent = showAllTypes ? 'All Types' : 'Images & Videos'
-    }
-    syncBtn()
-
-    btn.addEventListener('click', () => {
-        showAllTypes = !showAllTypes
-        localStorage.setItem(
-            GALLERY_ALL_TYPES_KEY,
-            showAllTypes ? 'true' : 'false'
-        )
-        syncBtn()
-        if (params.get('view') === 'gallery') {
-            galleryContainer.replaceChildren()
-            renderGalleryChunked(fileData, 20, () => filterGallery())
+    const active = activeTypes.size > 0
+    btn.classList.toggle('view-active', active)
+    if (label) {
+        if (!active) {
+            label.textContent = 'Filter'
+        } else if (activeTypes.size === 1) {
+            label.textContent = TYPE_LABELS[[...activeTypes][0]] ?? 'Filter'
+        } else {
+            label.textContent = `${activeTypes.size} types`
         }
+    }
+}
+
+function syncFilterPopoverState(popoverBody) {
+    popoverBody.querySelectorAll('.files-filter-opt').forEach((btn) => {
+        const t = btn.dataset.type
+        const active = t === 'all' ? activeTypes.size === 0 : activeTypes.has(t)
+        btn.classList.toggle('btn-secondary', active)
+        btn.classList.toggle('btn-outline-secondary', !active)
     })
+}
+
+function attachPopoverClickOutside(btn, tip, popover) {
+    const onClickOutside = (e) => {
+        if (
+            !btn.contains(e.target) &&
+            !tip.closest('.popover')?.contains(e.target)
+        ) {
+            popover.hide()
+        }
+    }
+    document.addEventListener('click', onClickOutside)
+    btn.addEventListener(
+        'hidden.bs.popover',
+        () => document.removeEventListener('click', onClickOutside),
+        { once: true }
+    )
+}
+
+function initFilterBtn() {
+    const btn = document.getElementById('files-filter-btn')
+    const tpl = document.getElementById('files-filter-popup-tpl')
+    if (!btn || !tpl) return
+
+    syncFilterBtn()
+
+    const popover = new bootstrap.Popover(btn, {
+        html: true,
+        content: () => {
+            const clone = tpl.content.cloneNode(true)
+            syncFilterPopoverState(clone)
+            return clone
+        },
+        trigger: 'click',
+        placement: 'bottom',
+        customClass: 'files-filter-popover',
+    })
+
+    btn.addEventListener('shown.bs.popover', () => {
+        const tip = document.querySelector(
+            '.files-filter-popover .popover-body'
+        )
+        if (!tip) return
+
+        tip.querySelectorAll('.files-filter-opt').forEach((optBtn) => {
+            optBtn.addEventListener('click', () => {
+                const t = optBtn.dataset.type
+                if (t === 'all') {
+                    activeTypes.clear()
+                } else if (activeTypes.has(t)) {
+                    activeTypes.delete(t)
+                } else {
+                    activeTypes.add(t)
+                }
+                syncFilterPopoverState(tip)
+                applyTypeFilter()
+            })
+        })
+
+        attachPopoverClickOutside(btn, tip, popover)
+    })
+}
+
+async function resetAndReload() {
+    fileData = []
+    nextPage = 1
+    fetchLock = false
+    hideSkeletons()
+    galleryContainer.replaceChildren()
+    if (filesDataTable) filesDataTable.clear().draw()
+    await addNodes()
+}
+
+async function applyTypeFilter() {
+    const typesStr = [...activeTypes].join(',')
+    if (typesStr) {
+        params.set('types', typesStr)
+    } else {
+        params.delete('types')
+    }
+    history.replaceState(null, '', '/files/?' + params)
+    syncFilterBtn()
+
+    await resetAndReload()
+
+    if ((params.get('view') || 'list') === 'map') {
+        if (galleryLeafletMap) {
+            galleryLeafletMap.remove()
+            galleryLeafletMap = null
+            mapInitialised = false
+        }
+        document.getElementById('map-container').innerHTML = ''
+        initMapView()
+    }
+}
+
+const SORT_LABELS = {
+    '-created': 'Sort',
+    created: 'Upload Date',
+    name: 'Name',
+    '-name': 'Name',
+    '-size': 'Size',
+    size: 'Size',
+    '-exif_date': 'Taken',
+    exif_date: 'Taken',
+}
+
+function syncSortBtn() {
+    const btn = document.getElementById('gallery-sort-btn')
+    const label = document.getElementById('gallery-sort-label')
+    if (!btn) return
+    btn.classList.toggle('view-active', galleryOrdering !== '-created')
+    if (label) label.textContent = SORT_LABELS[galleryOrdering] ?? 'Sort'
+    const icon = btn.querySelector('i')
+    if (icon) {
+        const isDesc = galleryOrdering.startsWith('-')
+        icon.className = `fa-solid ${isDesc ? 'fa-arrow-down-wide-short' : 'fa-arrow-up-wide-short'}`
+    }
+}
+
+function syncSortPopoverState(popoverBody) {
+    popoverBody.querySelectorAll('[data-ordering]').forEach((btn) => {
+        const active = btn.dataset.ordering === galleryOrdering
+        btn.classList.toggle('btn-secondary', active)
+        btn.classList.toggle('btn-outline-secondary', !active)
+    })
+}
+
+function initGallerySortBtn() {
+    const btn = document.getElementById('gallery-sort-btn')
+    const tpl = document.getElementById('gallery-sort-popup-tpl')
+    if (!btn || !tpl) return
+
+    syncSortBtn()
+
+    const popover = new bootstrap.Popover(btn, {
+        html: true,
+        content: () => {
+            const clone = tpl.content.cloneNode(true)
+            syncSortPopoverState(clone)
+            return clone
+        },
+        trigger: 'click',
+        placement: 'bottom',
+        customClass: 'gallery-sort-popover',
+    })
+
+    btn.addEventListener('shown.bs.popover', () => {
+        const tip = document.querySelector(
+            '.gallery-sort-popover .popover-body'
+        )
+        if (!tip) return
+
+        tip.querySelectorAll('[data-ordering]').forEach((optBtn) => {
+            optBtn.addEventListener('click', () => {
+                setGalleryOrdering(optBtn.dataset.ordering)
+                popover.hide()
+            })
+        })
+
+        attachPopoverClickOutside(btn, tip, popover)
+    })
+}
+
+async function setGalleryOrdering(ordering) {
+    if (ordering === galleryOrdering) return
+    galleryOrdering = ordering
+    params.set('ordering', ordering)
+    history.replaceState(null, '', '/files/?' + params)
+    syncSortBtn()
+    await resetAndReload()
 }
 
 function initGallerySelectAllBtn() {
@@ -323,7 +533,8 @@ async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
     initToolbar('files-toolbar', filesDataTable)
-    initGalleryTypesBtn()
+    initFilterBtn()
+    initGallerySortBtn()
     initGallerySelectAllBtn()
     initTrackerBtn()
     initKMLExportBtn()
@@ -350,7 +561,11 @@ async function initGallery() {
     setupScrollObserver()
     filesDataTable.on('select', function (_e, dt, _type, _indexes) {
         const n = filesDataTable.rows({ selected: true }).count()
-        document.getElementById('bulk-actions').disabled = false
+        const bulkActions = document.getElementById('bulk-actions')
+        if (bulkActions) {
+            bulkActions.disabled = false
+            bulkActions.classList.add('bulk-actions--active')
+        }
         updateBulkCount(n)
         let checkbox = document.getElementById(`file-${dt.data().id}`)
         if (checkbox) {
@@ -359,7 +574,11 @@ async function initGallery() {
     })
     filesDataTable.on('deselect', function (_e, _dt, _type, _indexes) {
         const n = filesDataTable.rows({ selected: true }).count()
-        document.getElementById('bulk-actions').disabled = n === 0
+        const bulkActions = document.getElementById('bulk-actions')
+        if (bulkActions) {
+            bulkActions.disabled = n === 0
+            bulkActions.classList.toggle('bulk-actions--active', n > 0)
+        }
         updateBulkCount(n)
     })
     filesDataTable?.columns.adjust().draw()
@@ -444,7 +663,13 @@ async function addNodes() {
     fetchLock = true
     showSkeletons()
 
-    const data = await fetchFiles(nextPage, 50, params.get('album'))
+    const data = await fetchFiles(
+        nextPage,
+        50,
+        params.get('album'),
+        galleryOrdering,
+        getActiveTypesParam()
+    )
     slideshowCallback(data)
     nextPage = data.next
     fileData.push(...data.files)
@@ -473,10 +698,8 @@ function addGalleryFile(file, top = false) {
         addGalleryVideo(file, top)
     } else if (imageExtensions.test(file.name)) {
         addGalleryImage(file, top)
-    } else if (showAllTypes) {
-        addGalleryGeneric(file, top)
     } else {
-        console.debug(`Skipping non-media: ${file.name}`)
+        addGalleryGeneric(file, top)
     }
 }
 
@@ -543,6 +766,8 @@ function showLabelsAlways(outer) {
 
 function getFileTypeIcon(mime) {
     if (!mime) return 'fa-file'
+    if (mime.startsWith('image/')) return 'fa-file-image'
+    if (mime.startsWith('video/')) return 'fa-file-video'
     if (mime.startsWith('audio/')) return 'fa-file-audio'
     if (mime.startsWith('text/')) return 'fa-file-lines'
     if (mime === 'application/pdf') return 'fa-file-pdf'
@@ -562,6 +787,13 @@ function getFileTypeIcon(mime) {
     return 'fa-file'
 }
 
+function buildNoThumbPlaceholder(mime) {
+    const el = document.createElement('div')
+    el.className = 'gallery-no-thumb'
+    el.innerHTML = `<i class="fa-solid ${getFileTypeIcon(mime)}"></i>`
+    return el
+}
+
 function addGalleryGeneric(file, top = false) {
     const maxThumbSize = 256
     const { outer, inner } = buildGalleryCard(file, top)
@@ -576,11 +808,7 @@ function addGalleryGeneric(file, top = false) {
     link.target = '_blank'
     link.style.cssText = 'position:absolute;inset:0;display:block'
 
-    const placeholder = document.createElement('div')
-    placeholder.className = 'img-error-placeholder'
-    placeholder.innerHTML = `<i class="fa-solid ${getFileTypeIcon(file.mime)}"></i>`
-
-    link.appendChild(placeholder)
+    link.appendChild(buildNoThumbPlaceholder(file.mime))
     inner.prepend(link)
     showLabelsAlways(outer)
 }
@@ -631,10 +859,7 @@ function addGalleryImage(file, top = false) {
             img.style.display = 'none'
             inner.style.minWidth = `${img.width || maxThumbSize}px`
             inner.style.minHeight = `${img.height || maxThumbSize}px`
-            const placeholder = document.createElement('div')
-            placeholder.className = 'img-error-placeholder'
-            placeholder.innerHTML = '<i class="fa-solid fa-file-image"></i>'
-            link.appendChild(placeholder)
+            link.appendChild(buildNoThumbPlaceholder(file.mime))
             link.style.cssText = 'position:absolute;inset:0;display:block'
             showLabelsAlways(outer)
         },
@@ -662,12 +887,9 @@ function revealVideoThumb(src, img, skeleton) {
     img.src = src
 }
 
-function showVideoThumbError(skeleton, inner) {
+function showVideoThumbError(skeleton, inner, mime) {
     skeleton.remove()
-    const placeholder = document.createElement('div')
-    placeholder.className = 'img-error-placeholder'
-    placeholder.innerHTML = '<i class="fa-solid fa-file-video"></i>'
-    inner.appendChild(placeholder)
+    inner.appendChild(buildNoThumbPlaceholder(mime))
     showLabelsAlways(inner.parentElement)
 }
 
@@ -677,7 +899,15 @@ function showVideoThumbError(skeleton, inner) {
  * and fade the skeleton out. Falls back to a static icon after exhausting
  * retries.
  */
-function pollVideoThumb(src, img, skeleton, inner, retries = 10, delay = 1000) {
+function pollVideoThumb(
+    src,
+    img,
+    skeleton,
+    inner,
+    mime,
+    retries = 10,
+    delay = 1000
+) {
     const maxDelay = 30000
     const retry = () => {
         if (retries > 0) {
@@ -686,11 +916,12 @@ function pollVideoThumb(src, img, skeleton, inner, retries = 10, delay = 1000) {
                 img,
                 skeleton,
                 inner,
+                mime,
                 retries - 1,
                 Math.min(delay * 2, maxDelay)
             )
         } else {
-            showVideoThumbError(skeleton, inner)
+            showVideoThumbError(skeleton, inner, mime)
         }
     }
 
@@ -749,9 +980,9 @@ function addGalleryVideo(file, top = false) {
     inner.prepend(playBtn, skeleton, link)
 
     if (file.thumb) {
-        pollVideoThumb(file.thumb, img, skeleton, inner)
+        pollVideoThumb(file.thumb, img, skeleton, inner, file.mime)
     } else {
-        showVideoThumbError(skeleton, inner)
+        showVideoThumbError(skeleton, inner, file.mime)
     }
 }
 
@@ -848,6 +1079,9 @@ function changeView(event) {
     } else if (view === 'map') {
         initMapView()
     } else {
+        // Disconnect before clearing so the sentinel doesn't fire mid-rebuild
+        scrollObserver?.disconnect()
+        scrollObserver = null
         galleryContainer.replaceChildren()
         renderGalleryChunked(fileData, 20, () => {
             filterGallery()
@@ -858,7 +1092,9 @@ function changeView(event) {
                     window.scrollY <=
                     0
             ) {
-                addNodes()
+                addNodes() // addNodes calls setupScrollObserver on completion
+            } else {
+                setupScrollObserver() // content fills viewport; re-arm for future scrolls
             }
         })
     }
@@ -1255,7 +1491,13 @@ async function fetchAndPlotAllFiles(L) {
     trackerFiles = []
 
     while (page) {
-        const data = await fetchFiles(page, 100, album)
+        const data = await fetchFiles(
+            page,
+            100,
+            album,
+            galleryOrdering,
+            getActiveTypesParam()
+        )
         page = data.next
 
         for (const file of data.files) {

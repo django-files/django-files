@@ -38,6 +38,16 @@ from webpush.models import PushInformation
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
+_ORDERING_LABELS = {
+    "created": "Upload Date",
+    "-created": "Upload Date",
+    "name": "Name",
+    "-name": "Name",
+    "size": "Size",
+    "-size": "Size",
+    "exif_date": "Taken",
+    "-exif_date": "Taken",
+}
 _404_TEMPLATE = "error/404.html"
 
 CODE_MIMES = frozenset(
@@ -271,7 +281,16 @@ def files_view(request):
     view_mode = request.GET.get("view", "list")
     if view_mode not in {"list", "gallery", "map"}:
         view_mode = "list"
-    ctx = {"full_context": False, "view_mode": view_mode}
+    ordering = request.GET.get("ordering", "-created")
+    active_types = request.GET.get("types", "")
+    ordering_label = _ORDERING_LABELS.get(ordering, "Sort")
+    ctx = {
+        "full_context": False,
+        "view_mode": view_mode,
+        "ordering": ordering,
+        "ordering_label": ordering_label,
+        "active_types": active_types,
+    }
     if album:
         try:
             album = int(album)

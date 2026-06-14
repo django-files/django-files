@@ -1,10 +1,11 @@
 import io
 import json
 import logging
+import operator
 import os
 import random
 from datetime import datetime
-from functools import wraps
+from functools import reduce, wraps
 from typing import Any, BinaryIO, Callable, List, Optional, Union
 from urllib.parse import parse_qs, urlparse
 
@@ -25,7 +26,7 @@ from django.core import serializers
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.signing import TimestampSigner
-from django.db.models import Count, QuerySet
+from django.db.models import Count, Q, QuerySet
 from django.db.models.fields.json import KeyTextTransform
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
@@ -62,6 +63,60 @@ from settings.models import SiteSettings
 from webpush.models import PushInformation
 
 signer = TimestampSigner()
+
+_ARCHIVE_MIMES = [
+    "application/zip",
+    "application/x-tar",
+    "application/gzip",
+    "application/x-gzip",
+    "application/x-bzip2",
+    "application/x-7z-compressed",
+    "application/x-rar-compressed",
+    "application/vnd.rar",
+    "application/x-xz",
+    "application/x-lzma",
+    "application/x-compress",
+    "application/x-iso9660-image",
+    "application/x-apple-diskimage",
+]
+_DOCUMENT_MIMES = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/rtf",
+    "application/vnd.oasis.opendocument.text",
+    "application/vnd.oasis.opendocument.spreadsheet",
+    "application/vnd.oasis.opendocument.presentation",
+]
+# Match on substrings rather than enumerating every variant — PE alone has
+# application/x-msdownload, application/x-dosexec, application/vnd.microsoft.portable-executable, etc.
+_EXECUTABLE_Q = (
+    Q(mime__icontains="executable")  # x-executable, portable-executable, x-ms-dos-executable
+    | Q(mime__icontains="msdownload")  # x-msdownload
+    | Q(mime__icontains="mach-binary")  # x-mach-binary (macOS)
+    | Q(mime__icontains="dosexec")  # x-dosexec
+    | Q(
+        mime__in=[
+            "application/vnd.android.package-archive",  # .apk
+            "application/x-deb",
+            "application/x-debian-package",
+            "application/x-rpm",
+        ]
+    )
+)
+_TYPE_Q = {
+    "image": Q(mime__startswith="image/"),
+    "video": Q(mime__startswith="video/"),
+    "audio": Q(mime__startswith="audio/"),
+    "text": Q(mime__startswith="text/"),
+    "document": Q(mime__in=_DOCUMENT_MIMES),
+    "archive": Q(mime__in=_ARCHIVE_MIMES),
+    "executable": _EXECUTABLE_Q,
+}
 
 
 log = logging.getLogger("app")
@@ -512,20 +567,23 @@ def files_view(request, page, count=25):
     log.debug("user: %s", user)
     if album := request.GET.get("album"):
         q = Files.objects.filtered_request(request, albums__id=album).select_related("user").prefetch_related("albums")
+    elif user == "0":
+        # this grabs files for ALL users, user parameter only is accepted for superusers
+        q = Files.objects.filtered_request(request).select_related("user").prefetch_related("albums")
     elif user:
-        if user == "0":
-            # this grabs files for ALL users, user parameter only is accepted for superusers
-            q = Files.objects.filtered_request(request).select_related("user").prefetch_related("albums")
-        else:
-            q = (
-                Files.objects.filtered_request(request, user_id=int(user))
-                .select_related("user")
-                .prefetch_related("albums")
-            )
+        q = (
+            Files.objects.filtered_request(request, user_id=int(user))
+            .select_related("user")
+            .prefetch_related("albums")
+        )
     else:
         return JsonResponse({"error": "Not Authenticated"}, status=401)
     if mime := request.GET.get("mime"):
         q = q.filter(mime__startswith=mime)
+    if type_param := request.GET.get("type"):
+        type_qs = [_TYPE_Q[ts] for t in type_param.split(",") if (ts := t.strip()) in _TYPE_Q]
+        if type_qs:
+            q = q.filter(reduce(operator.or_, type_qs))
     ordering_param = (request.GET.get("ordering") or "").lstrip("-")
     if ordering_param == "exif_date":
         q = q.annotate(_exif_date=KeyTextTransform("DateTimeOriginal", "exif"))
