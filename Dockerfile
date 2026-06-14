@@ -52,9 +52,10 @@ COPY --from=nginx-base /usr/sbin/nginx /usr/sbin/nginx
 COPY --from=nginx-base /etc/nginx /etc/nginx
 COPY --from=nginx-base /stat.xsl /stat.xsl
 
+# runtime libs only — dev packages and pkg-config belong in the build stage, not here
 RUN apt-get -y update  &&\
     apt-get -y install --no-install-recommends \
-        libmagic-dev libmariadb-dev-compat pkg-config \
+        libmagic1 libmariadb3 \
         redis-server supervisor libssl3 zlib1g libpcre2-8-0  &&\
     groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin/nologin app  &&\
     groupadd -g 101 nginx  &&  useradd -r -d /var/cache/nginx -M -u 101 -g 101 -s /usr/sbin/nologin nginx  &&\
