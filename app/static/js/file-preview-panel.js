@@ -385,12 +385,12 @@ function buildIconHero(srcIcon, reverse = false) {
     heroEl.style.transition = 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
     heroIcon.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
 
-    if (!reverse) {
-        heroEl.style.opacity = '1'
-        heroIcon.style.transform = 'translate(-50%, -50%)'
-    } else {
+    if (reverse) {
         heroEl.style.opacity = '0'
         heroIcon.style.transform = cardTransform
+    } else {
+        heroEl.style.opacity = '1'
+        heroIcon.style.transform = 'translate(-50%, -50%)'
     }
 
     return heroEl

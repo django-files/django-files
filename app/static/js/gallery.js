@@ -51,7 +51,7 @@ let galleryThumbSize = Math.max(
     96,
     Math.min(
         416,
-        parseInt(localStorage.getItem('galleryThumbSize') ?? '256', 10)
+        Number.parseInt(localStorage.getItem('galleryThumbSize') ?? '256', 10)
     )
 )
 galleryContainer?.style.setProperty(
@@ -493,7 +493,7 @@ function initGallerySizeBtn() {
         if (!slider) return
         slider.value = galleryThumbSize
         slider.addEventListener('input', () => {
-            galleryThumbSize = parseInt(slider.value, 10)
+            galleryThumbSize = Number.parseInt(slider.value, 10)
             localStorage.setItem('galleryThumbSize', galleryThumbSize)
             galleryContainer.style.setProperty(
                 '--gallery-thumb-size',
