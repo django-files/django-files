@@ -23,6 +23,7 @@ FROM python:3.14-alpine
 
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV XDG_RUNTIME_DIR=/tmp
 
 COPY --from=node /work/app/static/dist/ /app/static/dist/
 COPY --from=python /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
