@@ -67,7 +67,7 @@ def generate_thumbs(user_pk: int = None, only_missing: bool = True):
         log.info("Generating thumbnail for: %s", file.name)
         try:
             thumbnail_processor(file)
-        except (ValueError, UnidentifiedImageError):
+        except ValueError, UnidentifiedImageError:
             # if we hit a file that cannot be processed ignore and continue
             log.error("Unable to process thumbnail for %s", file.name)
             continue
