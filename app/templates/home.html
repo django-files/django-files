@@ -42,30 +42,30 @@
 
     {# ── Stat cards ── #}
 
-    {% if user_stat_cards %}
     <div class="row g-3 mb-2" id="stat-cards-mine">
-        {% for card in user_stat_cards %}
-            {% include 'include/dash-stat-card.html' %}
+        {% for _ in "1234" %}
+        <div class="col-sm-6 col-xl">
+            <div class="dash-stat-card h-100 d-flex align-items-center gap-3">
+                <div class="dash-stat-icon dash-stat-skel-block" style="flex-shrink:0;"></div>
+                <div class="flex-grow-1 min-w-0 d-flex flex-column gap-2 dash-stat-text">
+                    <div class="dash-stat-skel-block" style="height:1.8rem;width:55%;"></div>
+                    <div class="dash-stat-labels">
+                        <div class="dash-stat-skel-block" style="height:0.7rem;width:60%;"></div>
+                        <div class="dash-stat-skel-block mt-1" style="height:0.7rem;width:80%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
         {% endfor %}
     </div>
-    {% endif %}
+    <div class="row g-3 mb-2 d-none" id="stat-cards-server"></div>
 
-    {% if user.is_superuser and server_stat_cards %}
-    <div class="row g-3 mb-2 d-none" id="stat-cards-server">
-        {% for card in server_stat_cards %}
-            {% include 'include/dash-stat-card.html' %}
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    {% if not stats %}
-    <div class="alert alert-secondary mb-4">
+    <div class="alert alert-secondary mb-4 d-none" id="home-no-stats-alert">
         <i class="fa-solid fa-circle-info me-2"></i>
         Stats will appear here after files are uploaded and stats are generated.
         <a class="btn btn-sm btn-outline-warning ms-3 updateStatsBtn" role="button" data-target-url="{% url 'home:update-stats' %}">
             <i class="fa-solid fa-arrows-rotate me-1"></i> Process Stats</a>
     </div>
-    {% endif %}
 
     {# ── Chart + Quick actions row ── #}
     <div class="row g-3 mb-4 mt-1">
@@ -78,51 +78,40 @@
                         <i class="fa-solid fa-chart-line opacity-75"></i> My Upload Activity
                     </span>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        {% if user.is_superuser and stats_server %}
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Chart scope" id="home-scope-toggle">
+                        {% if user.is_superuser %}
+                        <div class="btn-group btn-group-sm d-none" role="group" aria-label="Chart scope" id="home-scope-toggle">
                             <button type="button" class="btn btn-secondary active" data-scope="mine">Mine</button>
                             <button type="button" class="btn btn-outline-secondary" data-scope="server">Server</button>
                         </div>
                         {% endif %}
-                        {% if days or server_days %}
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Chart metric" id="home-chart-toggle">
+                        <div class="btn-group btn-group-sm d-none" role="group" aria-label="Chart metric" id="home-chart-toggle">
                             <button type="button" class="btn btn-secondary active" data-metric="files">Files</button>
                             <button type="button" class="btn btn-outline-secondary" data-metric="size">Size</button>
                             <button type="button" class="btn btn-outline-secondary" data-metric="shorts">Shorts</button>
                         </div>
-                        {% endif %}
-                        {% if stats %}
-                        {% with stats=stats|first %}
-                        <span class="text-muted" style="font-size:0.78rem;">Updated: {{ stats.updated_at|localtime }}</span>
-                        {% endwith %}
-                        {% endif %}
+                        <span class="text-muted d-none" style="font-size:0.78rem;" id="home-stats-updated"></span>
                         <a class="btn btn-sm btn-outline-secondary" href="{% url 'home:stats' %}">
                             View All <i class="fa-solid fa-arrow-right ms-1"></i></a>
                     </div>
                 </div>
-                <div class="dash-card-body">
-                    {% if days %}
-                        <div id="home-chart" style="height: 260px; width: 100%;"></div>
-                        {{ days|json_script:"home-chart-days" }}
-                        {{ chart_files|json_script:"home-chart-files" }}
-                        {{ chart_size|json_script:"home-chart-size" }}
-                        {{ chart_shorts|json_script:"home-chart-shorts" }}
-                        {% if user.is_superuser and server_days %}
-                        {{ server_days|json_script:"home-chart-server-days" }}
-                        {{ server_chart_files|json_script:"home-chart-server-files" }}
-                        {{ server_chart_size|json_script:"home-chart-server-size" }}
-                        {{ server_chart_shorts|json_script:"home-chart-server-shorts" }}
-                        {% endif %}
-                    {% else %}
-                        <div class="d-flex align-items-center justify-content-center text-muted" style="height:260px;">
-                            <div class="text-center">
-                                <i class="fa-solid fa-chart-line fa-2x mb-2 opacity-25"></i>
-                                <p class="mb-0 small">No chart data yet.</p>
-                                <a class="btn btn-sm btn-outline-warning mt-2 updateStatsBtn" role="button" data-target-url="{% url 'home:update-stats' %}">
-                                    <i class="fa-solid fa-arrows-rotate me-1"></i> Process Stats</a>
-                            </div>
+                <div class="dash-card-body" id="home-chart-body"
+                     data-stats-url="{% url 'api:stats-me' %}"
+                     {% if user.is_superuser %}data-server-stats-url="{% url 'api:stats-server' %}"{% endif %}>
+                    <div class="d-flex align-items-center justify-content-center text-muted" style="height:260px;" id="home-chart-loading">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading</span>
                         </div>
-                    {% endif %}
+                        <span class="small">Loading stats…</span>
+                    </div>
+                    <div id="home-chart" style="height: 260px; width: 100%; display:none;"></div>
+                    <div class="d-flex align-items-center justify-content-center text-muted d-none" style="height:260px;" id="home-chart-empty">
+                        <div class="text-center">
+                            <i class="fa-solid fa-chart-line fa-2x mb-2 opacity-25"></i>
+                            <p class="mb-0 small">No chart data yet.</p>
+                            <a class="btn btn-sm btn-outline-warning mt-2 updateStatsBtn" role="button" data-target-url="{% url 'home:update-stats' %}">
+                                <i class="fa-solid fa-arrows-rotate me-1"></i> Process Stats</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
