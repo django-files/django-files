@@ -73,18 +73,15 @@ export function openPanel(fileUrl, originEl = null) {
                 transform: `translate(${tx}px,${ty}px) scale(${scaleX},${scaleY})`,
             })
 
-            heroEl.style.opacity = '0'
             heroEl.appendChild(heroImg)
             document.body.appendChild(heroEl)
             currentHeroEl = heroEl
 
-            // Background fades in and image scales to display rect together
-            heroEl.getBoundingClientRect()
-            heroEl.style.transition =
-                'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+            // Hero background is opaque from frame 0 — no dark flash through
+            // the panel behind it. Only the image transform animates.
+            heroEl.getBoundingClientRect() // commit heroImg's starting transform
             heroImg.style.transition =
                 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-            heroEl.style.opacity = '1'
             heroImg.style.transform = 'none'
         } else {
             // Non-thumbnail: scale the FA icon from card centre to panel centre

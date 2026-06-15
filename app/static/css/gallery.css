@@ -38,7 +38,6 @@
     position: relative;
     background-color: transparent;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.38);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.6),
         inset 0 -1px 0 rgba(0, 0, 0, 0.1),
@@ -56,7 +55,6 @@
 }
 
 [data-bs-theme='dark'] .gallery-outer {
-    border-color: rgba(255, 255, 255, 0.12);
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.09),
         inset 0 -1px 0 rgba(0, 0, 0, 0.35),
