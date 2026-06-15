@@ -125,7 +125,7 @@ json_error_message = "Error Parsing JSON Body"
 
 def paginate_no_count(queryset, page, count):
     """Paginate without a COUNT(*) query. Returns (items, next_page_or_none)."""
-    page = max(1, int(page))
+    page = max(1, int(page) if page is not None else 1)
     offset = (page - 1) * count
     rows = list(queryset[offset : offset + count + 1])
     has_next = len(rows) > count
