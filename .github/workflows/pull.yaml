@@ -1,20 +1,22 @@
 name: "Pull"
 
 on:
-  pull_request:
+  pull_request_target:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  pull-requests: write
-
 jobs:
-  check-npm:
-    name: "Check NPM"
+  pull:
+    name: "Pull"
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
+    permissions:
+      pull-requests: write
+      issues: write
+
     steps:
       - name: "Checkout"
         uses: actions/checkout@v6 # v6.0.2

@@ -1,0 +1,84 @@
+name: "PR Agent"
+
+on:
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  pr:
+    name: "PR Agent"
+    if: ${{ github.event.sender.type != 'Bot' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: "Checkout Configs"
+        uses: actions/checkout@v6
+        with:
+          repository: django-files/configs
+          ref: master
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            pr/.pr_agent.toml
+
+      - name: "Debug event.json"
+        continue-on-error: true
+        run: cat "${GITHUB_EVENT_PATH}"
+      - name: "Debug CTX github"
+        continue-on-error: true
+        env:
+          GITHUB_CTX: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CTX"
+      - name: "Debug Environment"
+        continue-on-error: true
+        run: env
+
+      - name: "Debug"
+        continue-on-error: true
+        run: ls -lhR .
+
+      - name: "Move Config"
+        run: |
+          mv pr/.pr_agent.toml .pr_agent.toml
+          cat .pr_agent.toml
+
+      - name: "Setup Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: "Install"
+        run: |
+          pip install "pr-agent @ git+https://github.com/The-PR-Agent/pr-agent.git@main"
+
+      - name: "Run PR Agent"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: python
+        run: |
+          import os
+          os.environ['OPENAI_API_KEY'] = 'not-needed'
+
+          import litellm
+          from litellm.llms.openai.chat.gpt_transformation import OpenAIGPTConfig
+          from litellm.llms.hosted_vllm.chat.transformation import HostedVLLMChatConfig
+
+          def patched_validate(self, headers, model, messages, optional_params, litellm_params, api_key=None, api_base=None):
+              if 'content-type' not in headers and 'Content-Type' not in headers:
+                  headers['Content-Type'] = 'application/json'
+              return headers
+          OpenAIGPTConfig.validate_environment = patched_validate
+
+          def patched_provider_info(self, api_base, api_key):
+              api_base = api_base or os.environ.get("HOSTED_VLLM_API_BASE")
+              return api_base, None
+          HostedVLLMChatConfig._get_openai_compatible_provider_info = patched_provider_info
+
+          from pr_agent.servers.github_action_runner import run_action
+          import asyncio
+          asyncio.run(run_action())
