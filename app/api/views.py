@@ -519,7 +519,7 @@ def recent_view(request):
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
     try:
         # query = Files.objects.filtered_request(request).select_related("user")
-        query = Files.objects.filter(user=request.user).select_related("user")
+        query = Files.objects.filter(user=request.user).select_related("user").prefetch_related("albums")
         if album := request.GET.get("album"):
             query = query.filter(albums__id=album)
 
@@ -584,6 +584,8 @@ def files_view(request, page, count=25):
         type_qs = [_TYPE_Q[ts] for t in type_param.split(",") if (ts := t.strip()) in _TYPE_Q]
         if type_qs:
             q = q.filter(reduce(operator.or_, type_qs))
+    if request.GET.get("has_gps"):
+        q = q.filter(exif__GPSInfo__isnull=False)
     ordering_param = (request.GET.get("ordering") or "").lstrip("-")
     if ordering_param == "exif_date":
         q = q.annotate(_exif_date=KeyTextTransform("DateTimeOriginal", "exif"))
@@ -1644,9 +1646,9 @@ def streams_view(request, page=None, count=100):
     else:
         user = request.user.id
     if user == "0":
-        q = Stream.objects.all()
+        q = Stream.objects.select_related("user").all()
     else:
-        q = Stream.objects.filter(user_id=int(user))
+        q = Stream.objects.select_related("user").filter(user_id=int(user))
     q = apply_ordering(
         q,
         request,
@@ -1658,7 +1660,15 @@ def streams_view(request, page=None, count=100):
     from home.views import get_rtmp_host
 
     rtmp_host, _ = get_rtmp_host(request)
-    streams = extract_streams(page_obj.object_list, request.user.id, rtmp_host=rtmp_host)
+    stream_list = list(page_obj.object_list)
+    stream_names = [s.name for s in stream_list]
+    subscriber_counts = dict(
+        PushInformation.objects.filter(group__name__in=stream_names)
+        .values("group__name")
+        .annotate(cnt=Count("pk"))
+        .values_list("group__name", "cnt")
+    )
+    streams = extract_streams(stream_list, request.user.id, rtmp_host=rtmp_host, subscriber_counts=subscriber_counts)
     log.debug("streams: %s", streams)
     _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {

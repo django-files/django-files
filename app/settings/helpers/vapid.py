@@ -1,19 +1,26 @@
 from cryptography.hazmat.primitives import serialization
+from django.core.cache import cache
 from py_vapid import Vapid
 from py_vapid.utils import b64urlencode, num_to_bytes
 from settings.models import VAPIDKeys
 
+_VAPID_CACHE_KEY = "vapid_keys_obj"
+
 
 def get_or_create_vapid_keys():
-    result = VAPIDKeys.objects.first()
-    if result:
+    result = cache.get(_VAPID_CACHE_KEY)
+    if result is not None:
         return result
-    keys = get_vapid_keypair()
-    return VAPIDKeys.objects.create(
-        public=keys["public"],
-        private=keys["private"],
-        email="noc@hosted-domains.com",
-    )
+    result = VAPIDKeys.objects.first()
+    if not result:
+        keys = get_vapid_keypair()
+        result = VAPIDKeys.objects.create(
+            public=keys["public"],
+            private=keys["private"],
+            email="noc@hosted-domains.com",
+        )
+    cache.set(_VAPID_CACHE_KEY, result)
+    return result
 
 
 def get_vapid_keypair():

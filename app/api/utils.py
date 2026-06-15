@@ -110,7 +110,7 @@ def extract_albums(q: Albums.objects):
     return albums
 
 
-def extract_streams(q: Stream.objects, user_id: int = None, rtmp_host: str = None):
+def extract_streams(q: Stream.objects, user_id: int = None, rtmp_host: str = None, subscriber_counts: dict = None):
     site_settings = site_settings_processor(None)["site_settings"]
     streams = []
     for stream in q:
@@ -122,7 +122,10 @@ def extract_streams(q: Stream.objects, user_id: int = None, rtmp_host: str = Non
         data["ended_at"] = stream.ended_at
         data["url"] = site_settings["site_url"] + f"/live/{stream.name}/"
         data["is_owner"] = is_owner
-        data["subscriber_count"] = PushInformation.objects.filter(group__name=stream.name).count()
+        if subscriber_counts is not None:
+            data["subscriber_count"] = subscriber_counts.get(stream.name, 0)
+        else:
+            data["subscriber_count"] = PushInformation.objects.filter(group__name=stream.name).count()
         if not is_owner:
             data.pop("stream_token", None)
         elif rtmp_host:
