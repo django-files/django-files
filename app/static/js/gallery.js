@@ -243,8 +243,10 @@ function filterGallery() {
     for (const file of fileData) {
         const card = document.getElementById(`gallery-image-${file.id}`)
         if (!card) continue
-        card.style.display =
-            !term || file.name.toLowerCase().includes(term) ? '' : 'none'
+        card.classList.toggle(
+            'gallery-search-hidden',
+            !(!term || file.name.toLowerCase().includes(term))
+        )
     }
 }
 
@@ -550,7 +552,7 @@ async function initGallery() {
             gallerySearchTerm = searchInput.value
             if (params.get('view') === 'gallery') {
                 clearTimeout(filterTimer)
-                filterTimer = setTimeout(filterGallery, 200)
+                filterTimer = setTimeout(filterGallery, 300)
             }
         })
     }
@@ -621,7 +623,7 @@ $('#user').on('change', async function (_event) {
 })
 
 function showSkeletons() {
-    if (!nextPage) return
+    if (!nextPage || gallerySearchTerm.trim()) return
 
     if (params.get('view') !== 'gallery') {
         showTableSkeletons(40)
@@ -1121,6 +1123,7 @@ function handleFileNew(data, inGallery) {
 function handleFileDelete(data, inGallery) {
     const idx = fileData.findIndex((file) => file.id === data.id)
     if (idx !== -1) fileData.splice(idx, 1)
+    removeFileTableRow(data.id)
     if (inGallery) {
         $(`#gallery-image-${data.id}`).remove()
         updateNoFilesOverlay()
@@ -1130,6 +1133,7 @@ function handleFileDelete(data, inGallery) {
 function removeFileFromViews(fileId, inGallery, inMap) {
     const idx = fileData.findIndex((f) => f.id === fileId)
     if (idx !== -1) fileData.splice(idx, 1)
+    removeFileTableRow(fileId)
     if (inGallery) {
         document.getElementById(`gallery-image-${fileId}`)?.remove()
     } else if (inMap) {
@@ -1138,20 +1142,21 @@ function removeFileFromViews(fileId, inGallery, inMap) {
             marker.remove()
             mapFileMarkers.delete(fileId)
         }
-    } else {
-        removeFileTableRow(fileId)
     }
 }
 
 function addFileToViews(fileId, inGallery, inMap) {
-    fetchFile(fileId).then((file) => {
+    return fetchFile(fileId).then((file) => {
         fileData.push(file)
         if (inGallery) {
             addGalleryFile(file, true)
             updateNoFilesOverlay()
         } else if (inMap) {
             const L = globalThis.L
-            if (L && mapInitialised) addFileMapMarker(L, file)
+            if (L && mapInitialised) {
+                addFileMapMarker(L, file)
+                if (trackerEnabled) drawTrackerPolyline(L)
+            }
             updateNoFilesOverlay()
         } else {
             file['DT_RowId'] = `file-${file.id}`
@@ -1189,7 +1194,9 @@ function handleAlbumChange(data, inGallery, inMap, currentAlbum) {
         if (inGallery || inMap) updateNoFilesOverlay()
     }
     if (isAdd) {
-        for (const fileId of fileIds) addFileToViews(fileId, inGallery, inMap)
+        Promise.all(
+            fileIds.map((fileId) => addFileToViews(fileId, inGallery, inMap))
+        )
     }
 }
 

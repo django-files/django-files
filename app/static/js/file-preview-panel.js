@@ -90,7 +90,7 @@ export function openPanel(fileUrl, originEl = null) {
             // Non-thumbnail: scale the FA icon from card centre to panel centre
             const srcIcon = originEl.querySelector('.gallery-no-thumb i')
             if (srcIcon) {
-                heroEl = buildIconOpenHero(srcIcon)
+                heroEl = buildIconHero(srcIcon)
             }
         }
 
@@ -164,10 +164,14 @@ function dismissHero(heroEl) {
     if (!heroEl || heroEl !== currentHeroEl) return
     heroEl.style.transition = 'opacity 0.25s ease-in-out'
     heroEl.style.opacity = '0'
-    setTimeout(() => {
-        heroEl.remove()
-        if (currentHeroEl === heroEl) currentHeroEl = null
-    }, 250)
+    heroEl.addEventListener(
+        'transitionend',
+        () => {
+            heroEl.remove()
+            if (currentHeroEl === heroEl) currentHeroEl = null
+        },
+        { once: true }
+    )
 }
 
 export function closePanel() {
@@ -259,10 +263,14 @@ function closePanelInternal() {
         closeHero.style.opacity = '0'
         heroImg.style.transform = `translate(${tx}px,${ty}px) scale(${scaleX},${scaleY})`
 
-        setTimeout(() => {
-            closeHero.remove()
-            if (currentHeroEl === closeHero) currentHeroEl = null
-        }, 360)
+        closeHero.addEventListener(
+            'transitionend',
+            () => {
+                closeHero.remove()
+                if (currentHeroEl === closeHero) currentHeroEl = null
+            },
+            { once: true }
+        )
     } else {
         // Non-thumbnail: FA icon shrink-back animation, or plain slide-down
         const srcIcon =
@@ -274,12 +282,16 @@ function closePanelInternal() {
             panel.getBoundingClientRect()
             panel.style.transition = ''
 
-            const closeHero = buildIconCloseHero(srcIcon)
+            const closeHero = buildIconHero(srcIcon, true)
             currentHeroEl = closeHero
-            setTimeout(() => {
-                closeHero.remove()
-                if (currentHeroEl === closeHero) currentHeroEl = null
-            }, 360)
+            closeHero.addEventListener(
+                'transitionend',
+                () => {
+                    closeHero.remove()
+                    if (currentHeroEl === closeHero) currentHeroEl = null
+                },
+                { once: true }
+            )
         } else {
             // Standard slide-down (non-gallery open, or thumbnail not available)
             panel.classList.remove('open')
@@ -324,14 +336,14 @@ function imageDisplayRect(thumbImg, vw, vh) {
 // Icon hero helpers (non-thumbnail open/close animation)
 // ============================================================
 
-// Builds and starts the open animation: FA icon scales from the gallery card
-// position up to the panel's centred full-size display.
-function buildIconOpenHero(srcIcon) {
+// Builds and starts the icon hero animation (open or close).
+// reverse=false: icon scales from gallery card up to panel centre (fade in).
+// reverse=true:  icon shrinks from panel centre back to gallery card (fade out).
+function buildIconHero(srcIcon, reverse = false) {
     const iconRect = srcIcon.getBoundingClientRect()
 
     const heroEl = document.createElement('div')
     heroEl.className = 'panel-hero-thumb panel-hero-icon'
-    heroEl.style.opacity = '0'
 
     const heroIcon = document.createElement('i')
     heroIcon.className = srcIcon.className
@@ -339,7 +351,6 @@ function buildIconOpenHero(srcIcon) {
         position: 'absolute',
         top: '50%',
         left: '50%',
-        // Centre the icon; final transform is just translate(-50%,-50%)
         transform: 'translate(-50%, -50%)',
         fontSize: '10em', // matches fa-10x used in the preview panel
         lineHeight: '1',
@@ -348,75 +359,44 @@ function buildIconOpenHero(srcIcon) {
 
     heroEl.appendChild(heroIcon)
     document.body.appendChild(heroEl)
-    currentHeroEl = heroEl
 
-    // Measure the icon at its final centred position, then compute a starting
-    // transform that maps it back to where it sits in the gallery card.
+    // Measure icon at its centred position, compute the card-position offset.
     const finalRect = heroIcon.getBoundingClientRect()
-    const finalCx = finalRect.left + finalRect.width / 2
-    const finalCy = finalRect.top + finalRect.height / 2
-    const startCx = iconRect.left + iconRect.width / 2
-    const startCy = iconRect.top + iconRect.height / 2
-    const tx = (startCx - finalCx).toFixed(2)
-    const ty = (startCy - finalCy).toFixed(2)
+    const tx = (
+        iconRect.left +
+        iconRect.width / 2 -
+        (finalRect.left + finalRect.width / 2)
+    ).toFixed(2)
+    const ty = (
+        iconRect.top +
+        iconRect.height / 2 -
+        (finalRect.top + finalRect.height / 2)
+    ).toFixed(2)
     const scale = (iconRect.width / (finalRect.width || 1)).toFixed(4)
+    const cardTransform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(${scale})`
 
-    heroIcon.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(${scale})`
+    if (!reverse) {
+        // Start at card position, transparent — animate to centre, opaque
+        heroEl.style.opacity = '0'
+        heroIcon.style.transform = cardTransform
+        currentHeroEl = heroEl
+    }
+    // reverse: starts opaque at centre (default CSS) — animate to card, transparent
 
-    // Force the starting state to be painted before we kick off the transition
-    heroEl.getBoundingClientRect()
+    heroEl.getBoundingClientRect() // force paint of starting state
 
     heroEl.style.transition = 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
     heroIcon.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-    heroEl.style.opacity = '1'
-    heroIcon.style.transform = 'translate(-50%, -50%)'
+
+    if (!reverse) {
+        heroEl.style.opacity = '1'
+        heroIcon.style.transform = 'translate(-50%, -50%)'
+    } else {
+        heroEl.style.opacity = '0'
+        heroIcon.style.transform = cardTransform
+    }
 
     return heroEl
-}
-
-// Builds and starts the close animation: FA icon shrinks from panel centre back
-// to the gallery card's icon position.
-function buildIconCloseHero(srcIcon) {
-    const iconRect = srcIcon.getBoundingClientRect()
-
-    const closeHero = document.createElement('div')
-    closeHero.className = 'panel-hero-thumb panel-hero-icon'
-    // Starts opaque (the panel has just been cleared); fades out during animation
-
-    const heroIcon = document.createElement('i')
-    heroIcon.className = srcIcon.className
-    Object.assign(heroIcon.style, {
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        fontSize: '10em',
-        lineHeight: '1',
-        display: 'block',
-    })
-
-    closeHero.appendChild(heroIcon)
-    document.body.appendChild(closeHero)
-
-    // Measure starting (= final open) position, then compute target transform
-    const finalRect = heroIcon.getBoundingClientRect()
-    const finalCx = finalRect.left + finalRect.width / 2
-    const finalCy = finalRect.top + finalRect.height / 2
-    const targetCx = iconRect.left + iconRect.width / 2
-    const targetCy = iconRect.top + iconRect.height / 2
-    const tx = (targetCx - finalCx).toFixed(2)
-    const ty = (targetCy - finalCy).toFixed(2)
-    const scale = (iconRect.width / (finalRect.width || 1)).toFixed(4)
-
-    // Force starting state (hero opaque, icon at centre)
-    closeHero.getBoundingClientRect()
-
-    closeHero.style.transition = 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-    heroIcon.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-    closeHero.style.opacity = '0'
-    heroIcon.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(${scale})`
-
-    return closeHero
 }
 
 // ============================================================
@@ -524,6 +504,7 @@ function initPanelImage(container) {
     }
 
     const onError = () => {
+        dismissHero(heroEl)
         if (skeleton) skeleton.remove()
         img.style.display = 'none'
         const wrapper = img.closest('.preview-wrapper')

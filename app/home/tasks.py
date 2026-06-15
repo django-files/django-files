@@ -521,20 +521,27 @@ def delete_album_websocket(data: dict, user_id):
     async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
 
 
+def _send_websocket_event(data: dict, group: str):
+    channel_layer = get_channel_layer()
+    if channel_layer is None:
+        log.error("channel layer not configured, dropping websocket event for group %s", group)
+        return
+    try:
+        event = {"type": "websocket.send", "text": json.dumps(data)}
+        async_to_sync(channel_layer.group_send)(group, event)
+    except Exception:
+        log.exception("websocket group_send failed for group %s", group)
+
+
 @shared_task()
 def file_album_websocket(data: dict, user_id: int):
-    channel_layer = get_channel_layer()
-    event = {"type": "websocket.send", "text": json.dumps(data)}
-    async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
+    _send_websocket_event(data, f"user-{user_id}")
 
 
 @shared_task()
 def delete_stream_websocket(name: str, user_id: int):
     log.debug("delete_stream_websocket: name=%s user_id=%s", name, user_id)
-    data = {"event": "stream-delete", "name": name}
-    channel_layer = get_channel_layer()
-    event = {"type": "websocket.send", "text": json.dumps(data)}
-    async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
+    _send_websocket_event({"event": "stream-delete", "name": name}, f"user-{user_id}")
 
 
 # @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 1, "countdown": 300})
@@ -546,9 +553,7 @@ def stream_status_websocket(stream_name: str, is_live: bool, ended_at: str = Non
         data["ended_at"] = ended_at
     if started_at:
         data["started_at"] = started_at
-    channel_layer = get_channel_layer()
-    event = {"type": "websocket.send", "text": json.dumps(data)}
-    async_to_sync(channel_layer.group_send)("home", event)
+    _send_websocket_event(data, "home")
 
 
 @shared_task()

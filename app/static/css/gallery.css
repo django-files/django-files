@@ -51,6 +51,10 @@
         transform 0.2s ease;
 }
 
+.gallery-outer.gallery-search-hidden {
+    display: none;
+}
+
 [data-bs-theme='dark'] .gallery-outer {
     border-color: rgba(255, 255, 255, 0.12);
     box-shadow:
