@@ -64,38 +64,10 @@
     }
 }
 
-/* ---- Close button (top-left, matching preview chrome style) ---- */
-
-.file-preview-panel-close {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    z-index: 10;
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    margin: 0;
-    font-size: 18px;
-    line-height: 1;
-    color: currentcolor;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--preview-chrome-bg);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border: 1px solid var(--preview-border-color);
-    border-radius: 999px;
-    opacity: 0.7;
-    transition: all 0.2s ease;
-    will-change: background-color, opacity;
-}
-
-.file-preview-panel-close:hover,
-.file-preview-panel-close:focus-visible {
-    opacity: 1;
-    background: var(--preview-chrome-bg-hover);
+/* Icon-hero variant: uses the page background instead of pure black/white
+ * because non-thumbnail previews render on --bs-body-bg, not a photo canvas. */
+.panel-hero-thumb.panel-hero-icon {
+    background: var(--bs-body-bg);
 }
 
 /* ---- Loading / error state ---- */

@@ -86,6 +86,12 @@ export function openPanel(fileUrl, originEl = null) {
                 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
             heroEl.style.opacity = '1'
             heroImg.style.transform = 'none'
+        } else {
+            // Non-thumbnail: scale the FA icon from card centre to panel centre
+            const srcIcon = originEl.querySelector('.gallery-no-thumb i')
+            if (srcIcon) {
+                heroEl = buildIconOpenHero(srcIcon)
+            }
         }
 
         // Panel opens instantly behind the hero — no slide animation
@@ -258,11 +264,29 @@ function closePanelInternal() {
             if (currentHeroEl === closeHero) currentHeroEl = null
         }, 360)
     } else {
-        // Standard slide-down (non-gallery open, or thumbnail not available)
-        panel.classList.remove('open')
-        setTimeout(() => {
-            if (!isOpen) panelCleanup()
-        }, 360)
+        // Non-thumbnail: FA icon shrink-back animation, or plain slide-down
+        const srcIcon =
+            origin?.isConnected && origin.querySelector('.gallery-no-thumb i')
+        if (srcIcon) {
+            panelCleanup()
+            panel.style.transition = 'none'
+            panel.classList.remove('open')
+            panel.getBoundingClientRect()
+            panel.style.transition = ''
+
+            const closeHero = buildIconCloseHero(srcIcon)
+            currentHeroEl = closeHero
+            setTimeout(() => {
+                closeHero.remove()
+                if (currentHeroEl === closeHero) currentHeroEl = null
+            }, 360)
+        } else {
+            // Standard slide-down (non-gallery open, or thumbnail not available)
+            panel.classList.remove('open')
+            setTimeout(() => {
+                if (!isOpen) panelCleanup()
+            }, 360)
+        }
     }
 }
 
@@ -294,6 +318,105 @@ function imageDisplayRect(thumbImg, vw, vh) {
         top = 0
     }
     return { w, h, left, top }
+}
+
+// ============================================================
+// Icon hero helpers (non-thumbnail open/close animation)
+// ============================================================
+
+// Builds and starts the open animation: FA icon scales from the gallery card
+// position up to the panel's centred full-size display.
+function buildIconOpenHero(srcIcon) {
+    const iconRect = srcIcon.getBoundingClientRect()
+
+    const heroEl = document.createElement('div')
+    heroEl.className = 'panel-hero-thumb panel-hero-icon'
+    heroEl.style.opacity = '0'
+
+    const heroIcon = document.createElement('i')
+    heroIcon.className = srcIcon.className
+    Object.assign(heroIcon.style, {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        // Centre the icon; final transform is just translate(-50%,-50%)
+        transform: 'translate(-50%, -50%)',
+        fontSize: '10em', // matches fa-10x used in the preview panel
+        lineHeight: '1',
+        display: 'block',
+    })
+
+    heroEl.appendChild(heroIcon)
+    document.body.appendChild(heroEl)
+    currentHeroEl = heroEl
+
+    // Measure the icon at its final centred position, then compute a starting
+    // transform that maps it back to where it sits in the gallery card.
+    const finalRect = heroIcon.getBoundingClientRect()
+    const finalCx = finalRect.left + finalRect.width / 2
+    const finalCy = finalRect.top + finalRect.height / 2
+    const startCx = iconRect.left + iconRect.width / 2
+    const startCy = iconRect.top + iconRect.height / 2
+    const tx = (startCx - finalCx).toFixed(2)
+    const ty = (startCy - finalCy).toFixed(2)
+    const scale = (iconRect.width / (finalRect.width || 1)).toFixed(4)
+
+    heroIcon.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(${scale})`
+
+    // Force the starting state to be painted before we kick off the transition
+    heroEl.getBoundingClientRect()
+
+    heroEl.style.transition = 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+    heroIcon.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+    heroEl.style.opacity = '1'
+    heroIcon.style.transform = 'translate(-50%, -50%)'
+
+    return heroEl
+}
+
+// Builds and starts the close animation: FA icon shrinks from panel centre back
+// to the gallery card's icon position.
+function buildIconCloseHero(srcIcon) {
+    const iconRect = srcIcon.getBoundingClientRect()
+
+    const closeHero = document.createElement('div')
+    closeHero.className = 'panel-hero-thumb panel-hero-icon'
+    // Starts opaque (the panel has just been cleared); fades out during animation
+
+    const heroIcon = document.createElement('i')
+    heroIcon.className = srcIcon.className
+    Object.assign(heroIcon.style, {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        fontSize: '10em',
+        lineHeight: '1',
+        display: 'block',
+    })
+
+    closeHero.appendChild(heroIcon)
+    document.body.appendChild(closeHero)
+
+    // Measure starting (= final open) position, then compute target transform
+    const finalRect = heroIcon.getBoundingClientRect()
+    const finalCx = finalRect.left + finalRect.width / 2
+    const finalCy = finalRect.top + finalRect.height / 2
+    const targetCx = iconRect.left + iconRect.width / 2
+    const targetCy = iconRect.top + iconRect.height / 2
+    const tx = (targetCx - finalCx).toFixed(2)
+    const ty = (targetCy - finalCy).toFixed(2)
+    const scale = (iconRect.width / (finalRect.width || 1)).toFixed(4)
+
+    // Force starting state (hero opaque, icon at centre)
+    closeHero.getBoundingClientRect()
+
+    closeHero.style.transition = 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+    heroIcon.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+    closeHero.style.opacity = '0'
+    heroIcon.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(${scale})`
+
+    return closeHero
 }
 
 // ============================================================

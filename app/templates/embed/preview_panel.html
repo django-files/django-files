@@ -28,10 +28,12 @@
             </video>
         </div>
     {% elif render == 'audio' %}
-        <audio class="w-100 pt-3 mt-5" controls>
-            <source src="{{ static_url }}" type="{{ file.mime }}">
-            Your browser does not support the audio tag.
-        </audio>
+        <div class="position-absolute top-50 start-0 end-0 translate-middle-y px-3">
+            <audio class="w-100" controls>
+                <source src="{{ static_url }}" type="{{ file.mime }}">
+                Your browser does not support the audio tag.
+            </audio>
+        </div>
     {% elif file.mime == 'application/pdf' %}
         <embed src="{{ static_url }}" type="application/pdf" frameBorder="0" scrolling="auto" width="100%" class="h-100 pt-3 mt-5">
     {% elif render in 'text,code' %}
