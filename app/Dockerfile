@@ -35,6 +35,7 @@ COPY --from=python \
     /usr/local/bin/django-admin \
     /usr/local/bin/httpx \
     /usr/local/bin/qr \
+    /usr/local/bin/watchmedo \
     /usr/local/bin/
 
 RUN addgroup -g 1000 app  &&\
