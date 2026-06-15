@@ -72,7 +72,7 @@
 
         {# Activity chart #}
         <div class="col-lg-8">
-            <div class="dash-card h-100">
+            <div class="dash-card h-100 d-flex flex-column">
                 <div class="dash-card-header">
                     <span class="dash-card-title" id="home-chart-title">
                         <i class="fa-solid fa-chart-line opacity-75"></i> My Upload Activity
@@ -94,17 +94,17 @@
                             View All <i class="fa-solid fa-arrow-right ms-1"></i></a>
                     </div>
                 </div>
-                <div class="dash-card-body" id="home-chart-body"
+                <div class="dash-card-body flex-grow-1 d-flex flex-column" id="home-chart-body"
                      data-stats-url="{% url 'api:stats-me' %}"
                      {% if user.is_superuser %}data-server-stats-url="{% url 'api:stats-server' %}"{% endif %}>
-                    <div class="d-flex align-items-center justify-content-center text-muted" style="height:260px;" id="home-chart-loading">
+                    <div class="d-flex align-items-center justify-content-center text-muted flex-grow-1" id="home-chart-loading">
                         <div class="spinner-border spinner-border-sm me-2" role="status">
                             <span class="visually-hidden">Loading</span>
                         </div>
                         <span class="small">Loading stats…</span>
                     </div>
-                    <div id="home-chart" style="height: 260px; width: 100%; display:none;"></div>
-                    <div class="d-flex align-items-center justify-content-center text-muted d-none" style="height:260px;" id="home-chart-empty">
+                    <div id="home-chart" style="flex: 1 1 0%; min-height: 0; width: 100%; display:none;"></div>
+                    <div class="d-flex align-items-center justify-content-center text-muted d-none flex-grow-1" id="home-chart-empty">
                         <div class="text-center">
                             <i class="fa-solid fa-chart-line fa-2x mb-2 opacity-25"></i>
                             <p class="mb-0 small">No chart data yet.</p>
@@ -297,6 +297,30 @@
     {% include 'albums/delete-modal.html' %}
     {% include 'streams/stream-modal.html' %}
 
+    {# ── Mime Types Modal ── #}
+    <div class="modal fade" id="mime-modal" tabindex="-1" aria-labelledby="mime-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mime-modal-label">File Types</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <table class="table table-sm mime-table mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="ps-3">Type</th>
+                                <th scope="col" class="text-end">Count</th>
+                                <th scope="col" class="text-end pe-3">Size</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mime-modal-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 
@@ -310,6 +334,5 @@
     <script type="module" src="{% static 'js/albums-table.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/short-create.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/album-create.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/home-chart.js' %}"></script>
     <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}

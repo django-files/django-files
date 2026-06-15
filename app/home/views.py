@@ -22,7 +22,7 @@ from django.views.decorators.common import no_append_slash
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
-from home.models import Albums, Files, FileStats, ShortURLs, Stream
+from home.models import Albums, Files, ShortURLs, Stream
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.misc import redact_log
 from home.util.s3 import use_s3
@@ -169,24 +169,13 @@ def live_manifest_view(request, key):
 
 @cache_control(no_cache=True)
 @login_required
-@cache_page(cache_seconds, key_prefix="stats.shorts")
 @vary_on_cookie
 def stats_view(request):
     """
     View  /stats/
     """
-    log.debug("%s - home_view: is_secure: %s", request.method, request.is_secure())
-    shorts = ShortURLs.objects.get_request(request)
-    stats = FileStats.objects.get_request(request)
-    log.debug("stats: %s", stats)
-    days, files, size = [], [], []
-    for stat in reversed(stats):
-        days.append(f"{stat.created_at.month}/{stat.created_at.day}")
-        files.append(stat.stats["count"])
-        size.append(stat.stats["size"])
-    context = {"stats": stats, "days": days, "files": files, "size": size, "shorts": shorts}
-    log.debug("context: %s", context)
-    return render(request, "stats.html", context=context)
+    log.debug("%s - stats_view: is_secure: %s", request.method, request.is_secure())
+    return render(request, "stats.html")
 
 
 def files_view(request):

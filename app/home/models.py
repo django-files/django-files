@@ -6,7 +6,6 @@ from django.shortcuts import reverse
 from home.managers import (
     AlbumsManager,
     FilesManager,
-    FileStatsManager,
     ShortURLsManager,
 )
 from home.util.nginx import sign_nginx_urls
@@ -202,8 +201,6 @@ class FileStats(models.Model):
     stats = models.JSONField(verbose_name="Stats JSON", help_text="Stats JSON Data.")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created", help_text="Stats Updated Date.")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated", help_text="Stats Updated Date.")
-    objects = FileStatsManager()
-
     def __str__(self):
         return f"<FileStat(id={self.id}, user_id={self.user_id})>"
 

@@ -162,36 +162,45 @@ paths:
         "401":
           $ref: "#/components/responses/UnauthorizedError"
 
-  /stats/:
+  /stats/me/:
     get:
-      summary: Get Raw File Stats
-      description: Get Raw File Stats.
+      summary: Get Current User Stats
+      description: Returns dashboard stat cards and 90-day chart history for the authenticated user.
       tags:
         - Files
       security:
         - Authorization: []
 
-      parameters:
-        - name: amount
-          in: query
-          description: Amount of Files to Return
-          required: false
-          schema:
-            type: integer
-
       responses:
         "200":
-          description: A JSON array of File Stats
+          description: User stats and chart data
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/FileStats"
-        "400":
-          $ref: "#/components/responses/BadRequest"
+                $ref: "#/components/schemas/StatsMe"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+
+  /stats/server/:
+    get:
+      summary: Get Server-Wide Stats
+      description: Returns server-wide stat cards and 90-day aggregated chart. Superuser only.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+
+      responses:
+        "200":
+          description: Server stats and chart data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatsServer"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          description: Forbidden — superuser access required
 
   /shorts/:
     get:
@@ -321,6 +330,12 @@ paths:
               - -size
               - name
               - -name
+        - name: has_gps
+          in: query
+          description: Filter to only files that have GPS EXIF data.
+          required: false
+          schema:
+            type: boolean
 
       responses:
         "200":
@@ -455,24 +470,109 @@ components:
           format: int64
           example: 1000
 
-    FileStats:
+    StatCard:
       type: object
       properties:
-        id:
-          type: integer
-          example: 1
-        user:
-          type: integer
-          example: 1
-        stats:
-          type: object
-          example: unknown
-        created_at:
+        icon:
           type: string
-          example: unknown
+          example: fa-regular fa-folder-open
+        bg:
+          type: string
+          example: primary
+        value:
+          oneOf:
+            - type: integer
+            - type: string
+          example: 42
+        label:
+          type: string
+          example: Files
+        sublabel:
+          type: string
+          description: Optional detail line, e.g. quota usage fraction.
+          example: 1.2 GB / 10 GB
+
+    StatsChart:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            type: string
+          example: ["6/1", "6/2"]
+        files:
+          type: array
+          items:
+            type: integer
+          example: [10, 12]
+        size:
+          type: array
+          items:
+            type: integer
+          example: [1048576, 2097152]
+        shorts:
+          type: array
+          items:
+            type: integer
+          example: [3, 5]
+
+    MimeType:
+      type: object
+      properties:
+        mime:
+          type: string
+          example: image/jpeg
+        count:
+          type: integer
+          example: 42
+        size:
+          type: integer
+          format: int64
+          example: 10485760
+        human_size:
+          type: string
+          example: 10.0 MB
+
+    StatsMe:
+      type: object
+      properties:
+        has_stats:
+          type: boolean
+          example: true
         updated_at:
           type: string
-          example: unknown
+          nullable: true
+          example: "6/15 2:30 PM"
+        stat_cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatCard"
+        types:
+          type: array
+          description: Per-MIME-type file counts and sizes, sorted by count descending.
+          items:
+            $ref: "#/components/schemas/MimeType"
+        chart:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/StatsChart"
+
+    StatsServer:
+      type: object
+      properties:
+        stat_cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatCard"
+        types:
+          type: array
+          description: Server-wide per-MIME-type file counts and sizes, sorted by count descending.
+          items:
+            $ref: "#/components/schemas/MimeType"
+        chart:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/StatsChart"
 
     URL:
       type: object

@@ -16,6 +16,14 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
 }
 
+.dash-stat-card--clickable {
+    cursor: pointer;
+}
+
+.mime-table {
+    --bs-table-bg: transparent;
+}
+
 .dash-stat-icon {
     width: 42px;
     height: 42px;

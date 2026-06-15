@@ -482,13 +482,14 @@ def stats_me_view(request):
 
     updated_at = None
     stat_cards = []
+    types = []
     if stats:
         s = stats[0]
         updated_at = localtime(s.updated_at).strftime("%-m/%-d %-I:%M %p")
         album_count = Albums.objects.filter(user=request.user).count()
         stat_cards = [
-            {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": s.stats["count"], "label": "Files"},
-            {"icon": "fa-solid fa-database", "bg": "info", "value": s.stats["human_size"], "label": "Storage Used"},
+            {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": s.stats["count"], "label": "Files", "modal": "mime"},
+            {"icon": "fa-solid fa-database", "bg": "info", "value": s.stats["human_size"], "label": "Storage Used", "modal": "mime"},
             {"icon": "fa-solid fa-link", "bg": "success", "value": s.stats["shorts"], "label": "Short URLs"},
             {"icon": "fa-regular fa-images", "bg": "warning", "value": album_count, "label": "Albums"},
         ]
@@ -503,12 +504,27 @@ def stats_me_view(request):
                     "sublabel": f"{request.user.get_storage_used_human_read()} / {request.user.get_storage_quota_human_read()}",
                 }
             )
+        raw_types = s.stats.get("types", {})
+        types = sorted(
+            [
+                {
+                    "mime": mime or "unknown",
+                    "count": d["count"],
+                    "size": d["size"],
+                    "human_size": Files.get_size_of(d["size"]),
+                }
+                for mime, d in raw_types.items()
+            ],
+            key=lambda x: x["count"],
+            reverse=True,
+        )
 
     return JsonResponse(
         {
             "has_stats": bool(stats),
             "updated_at": updated_at,
             "stat_cards": stat_cards,
+            "types": types,
             "chart": (
                 {"days": days, "files": chart_files, "size": chart_size, "shorts": chart_shorts} if days else None
             ),
@@ -516,7 +532,7 @@ def stats_me_view(request):
     )
 
 
-_SERVER_STATS_CACHE_KEY = "api:server_stats_data"
+_SERVER_STATS_CACHE_KEY = "stats.server.data"
 _SERVER_STATS_CACHE_TTL = 60 * 5  # 5 minutes
 
 
@@ -542,12 +558,13 @@ def stats_server_view(request):
     total_shorts = ShortURLs.objects.count()
     total_albums = Albums.objects.count()
     stat_cards = [
-        {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": total_files, "label": "Server Files"},
+        {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": total_files, "label": "Server Files", "modal": "mime"},
         {
             "icon": "fa-solid fa-database",
             "bg": "info",
             "value": Files.get_size_of(total_size),
             "label": "Server Storage",
+            "modal": "mime",
         },
         {"icon": "fa-solid fa-link", "bg": "success", "value": total_shorts, "label": "Server Shorts"},
         {"icon": "fa-regular fa-images", "bg": "warning", "value": total_albums, "label": "Server Albums"},
@@ -585,8 +602,23 @@ def stats_server_view(request):
     chart_size = [r["total_size"] for r in server_daily]
     chart_shorts = [r["total_shorts"] for r in server_daily]
 
+    # Mime type breakdown: live query
+    server_types = list(
+        Files.objects.values("mime").annotate(count=Count("pk"), size=Sum("size")).order_by("-count")
+    )
+    types = [
+        {
+            "mime": t["mime"] or "unknown",
+            "count": t["count"],
+            "size": t["size"] or 0,
+            "human_size": Files.get_size_of(t["size"] or 0),
+        }
+        for t in server_types
+    ]
+
     data = {
         "stat_cards": stat_cards,
+        "types": types,
         "chart": (
             {"days": chart_days, "files": chart_files, "size": chart_size, "shorts": chart_shorts}
             if chart_days
