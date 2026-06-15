@@ -12,10 +12,8 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-if "test" in sys.argv or "test_coverage" in sys.argv:
-    config = Config(RepositoryEnv("test.env"))
-else:
-    config = Config(RepositoryEnv("settings.env"))
+_env_file = "test.env" if ("test" in sys.argv or "test_coverage" in sys.argv) else "settings.env"
+config = Config(RepositoryEnv(_env_file) if os.path.isfile(_env_file) else os.environ)
 
 VERSION_CHECK_URL = config("VERSION_CHECK_URL", "https://github.com/django-files/django-files/releases/latest")
 
