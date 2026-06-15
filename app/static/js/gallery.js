@@ -1105,6 +1105,16 @@ function renderGalleryChunked(files, chunkSize = 20, onComplete = null) {
     requestAnimationFrame(renderNext)
 }
 
+function syncViewCount(view) {
+    const countEl = document.getElementById('total-files-count')
+    if (!countEl) return
+    if (view === 'map') {
+        countEl.textContent = mapFileMarkers.size
+    } else {
+        countEl.textContent = filesDataTable?.rows().count() ?? 0
+    }
+}
+
 function changeView(event) {
     event.preventDefault()
     hideSkeletons()
@@ -1126,10 +1136,12 @@ function changeView(event) {
 
     applyView(view)
     globalThis.history.replaceState({}, null, newPath)
+    syncViewCount(view)
 
     if (view === 'list') {
         galleryContainer.replaceChildren()
         filesDataTable.responsive.recalc()
+        setupScrollObserver()
     } else if (view === 'map') {
         initMapView()
     } else {
@@ -1763,20 +1775,33 @@ async function fetchAndPlotAllFiles(L) {
     const allCoords = []
     trackerFiles = []
 
-    while (page) {
-        const data = await fetchFiles(
-            page,
-            100,
-            album,
-            galleryOrdering,
-            getActiveTypesParam()
-        )
-        page = data.next
+    const spinner = document.getElementById('map-loading-spinner')
+    const countEl = document.getElementById('total-files-count')
+    if (spinner) spinner.classList.remove('d-none')
+    if (countEl) countEl.textContent = '0'
 
-        for (const file of data.files) {
-            const coords = addFileMapMarker(L, file)
-            if (coords) allCoords.push(coords)
+    try {
+        while (page) {
+            const data = await fetchFiles(
+                page,
+                100,
+                album,
+                galleryOrdering,
+                getActiveTypesParam(),
+                { has_gps: 1 }
+            )
+            page = data.next
+
+            for (const file of data.files) {
+                const coords = addFileMapMarker(L, file)
+                if (coords) {
+                    allCoords.push(coords)
+                    if (countEl) countEl.textContent = allCoords.length
+                }
+            }
         }
+    } finally {
+        if (spinner) spinner.classList.add('d-none')
     }
 
     if (allCoords.length === 1) {

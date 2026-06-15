@@ -1,109 +1,109 @@
 {% extends "main.html" %}
 {% load static %}
-{% load tz %}
-{% load home_tags %}
-{% load cache %}
 {% block stats_active %}active{% endblock %}
 {% block title %}Stats{% endblock %}
 
 {% block head %}
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
     <script src="{% static 'dist/echarts/echarts.min.js' %}"></script>
 {% endblock %}
 
 {% block body %}
-<div class="container-fluid pb-3 pt-2 px-4">
+<div class="container-fluid pb-5 pt-3 px-4"
+     id="stats-page-body"
+     data-stats-url="{% url 'api:stats-me' %}"
+     {% if user.is_superuser %}data-server-stats-url="{% url 'api:stats-server' %}"{% endif %}>
 
-    <h1><i class="fa-solid fa-chart-line me-2"></i> Stats</h1>
-
-    {% if not stats %}
-        <p class="text-muted mb-0">Stats will show up here after files are uploaded and stats are generated...</p>
-    {% endif %}
-    {% with stats=stats|first  %}
-    {% if stats %}
-
-        <div class="row">
-            {% include 'include/stats-card.html' with title="Total Files" data=stats.stats.count %}
-            {% include 'include/stats-card.html' with title="Total Size" data=stats.stats.human_size %}
-            {% include 'include/stats-card.html' with title="Total Shorts" data=stats.stats.shorts %}
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <h1 class="mb-0 fs-4 fw-semibold">
+            <i class="fa-solid fa-chart-line me-2 opacity-75"></i> Stats
+        </h1>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="text-muted d-none" style="font-size:0.78rem;" id="stats-page-updated"></span>
+            {% if user.is_superuser %}
+            <div class="btn-group btn-group-sm d-none" role="group" aria-label="Stats scope" id="stats-scope-toggle">
+                <button type="button" class="btn btn-outline-secondary" data-scope="mine">Mine</button>
+                <button type="button" class="btn btn-secondary active" data-scope="server">Server</button>
+            </div>
+            {% endif %}
+            <a class="btn btn-sm btn-outline-warning updateStatsBtn" role="button"
+               data-target-url="{% url 'home:update-stats' %}">
+                <i class="fa-solid fa-arrows-rotate me-1"></i> Process Stats</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'home:index' %}">
+                <i class="fa-solid fa-arrow-left me-1"></i> Dashboard</a>
         </div>
+    </div>
 
-        {% include 'include/stats-table.html' with stats=stats count=0 %}
+    <div class="text-center text-muted py-5" id="stats-page-loading">
+        <div class="spinner-border spinner-border-sm me-2" role="status">
+            <span class="visually-hidden">Loading</span>
+        </div>
+        <span class="small">Loading stats…</span>
+    </div>
 
-    {% endif %}
+    <div class="alert alert-secondary mb-4 d-none" id="stats-page-no-stats">
+        <i class="fa-solid fa-circle-info me-2"></i>
+        Stats will appear here after files are uploaded and stats are generated.
+        <a class="btn btn-sm btn-outline-warning ms-3 updateStatsBtn" role="button"
+           data-target-url="{% url 'home:update-stats' %}">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Process Stats</a>
+    </div>
 
-    <p><a class="btn btn-sm btn-outline-warning me-2 updateStatsBtn" role="button"
-          data-target-url="{% url 'home:update-stats' %}">
-        <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>{% if stats %}
-        <span class="d-inline-block my-1">Updated: {{ stats.updated_at|localtime }}</span>{% endif %}</p>
+    <div class="alert alert-danger mb-4 d-none" id="stats-page-error">
+        <i class="fa-solid fa-circle-exclamation me-2"></i>
+        Could not load stats. Please refresh the page.
+    </div>
 
-    {% if stats %}
+    <div id="stats-page-content" class="d-none">
 
-            <div class="row">
-                <div class="col">
-                    <!-- Prepare a DOM with a defined width and height for ECharts -->
-                    <div id="stats" class="w-100" style="min-width: 340px;height: 400px;"></div>
+        {# Stat cards #}
+        <div class="row g-3 mb-4" id="stats-page-cards"></div>
+
+        {# Activity chart #}
+        <div class="dash-card mb-4" id="stats-chart-wrap">
+            <div class="dash-card-header">
+                <span class="dash-card-title">
+                    <i class="fa-solid fa-chart-line opacity-75"></i> Upload Activity
+                </span>
+                <div class="btn-group btn-group-sm" role="group" aria-label="Chart metric" id="stats-chart-toggle">
+                    <button type="button" class="btn btn-secondary active" data-metric="files">Files</button>
+                    <button type="button" class="btn btn-outline-secondary" data-metric="size">Size</button>
+                    <button type="button" class="btn btn-outline-secondary" data-metric="shorts">Shorts</button>
                 </div>
             </div>
+            <div class="dash-card-body">
+                <div id="stats-chart" style="height: 300px; width: 100%;"></div>
+            </div>
+        </div>
 
-            <!-- TODO: Use Something Else? Or Fix! -->
-            {{ days|json_script:"days" }}
-            {{ files|json_script:"files" }}
-            {{ size|json_script:"size" }}
-            <script type="text/javascript">
-                // Django Data
-                const labels = JSON.parse(document.getElementById('days').textContent);
-                console.log(labels);
-                const files = JSON.parse(document.getElementById('files').textContent);
-                console.log(files);
-                const size = JSON.parse(document.getElementById('size').textContent);
-                console.log(size);
+        {# MIME type breakdown #}
+        <div class="dash-card">
+            <div class="dash-card-header">
+                <span class="dash-card-title">
+                    <i class="fa-solid fa-file-circle-info opacity-75"></i> File Types
+                </span>
+            </div>
+            <div class="p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="ps-3">Type</th>
+                            <th scope="col" class="text-end">Count</th>
+                            <th scope="col" class="text-end pe-3">Size</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-mime-tbody">
+                        <tr><td colspan="3" class="text-center text-muted py-3 small">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                // Initialize the echarts instance based on the prepared dom
-                let chart = echarts.init(document.getElementById('stats'));
-
-                // Specify the configuration items and data for the chart
-                let option = {
-                    title: {
-                        text: 'Stats',
-                        textStyle: {
-                            color: '#fff'
-                        }
-                    },
-                    tooltip: {},
-                    legend: {
-                        data: ['Files']
-                    },
-                    xAxis: {
-                        type: 'category',
-                        data: labels
-                    },
-                    yAxis: {
-                        type: 'value'
-                    },
-                    series: [
-                        {
-                            name: 'Files',
-                            type: 'line',
-                            data: files
-                        }
-                    ]
-                };
-
-                // Display the chart using the configuration items and data just specified.
-                chart.setOption(option);
-            </script>
-
-    {% endif %}
-    {% endwith %}
+    </div>
 
 </div>
 {% endblock %}
 
 {% block tail %}
-    <script>
-        $(window).on('resize', function(){
-            if ( chart != null ){ chart.resize(); }
-        });
-    </script>
     <script type="text/javascript" src="{% static 'js/stats.js' %}"></script>
 {% endblock %}

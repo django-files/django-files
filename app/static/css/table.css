@@ -9,7 +9,7 @@
  * Keyed off dt-data-loaded (added in home.js after addFileTableRows).
  */
 #home-files-section:not(.dt-data-loaded) {
-    min-height: 1205px;
+    min-height: 480px;
 }
 
 /* Table skeleton rows — override the td overflow/max-width rules so cells show */

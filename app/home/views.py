@@ -22,7 +22,7 @@ from django.views.decorators.common import no_append_slash
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
-from home.models import Albums, Files, FileStats, ShortURLs, Stream
+from home.models import Albums, Files, ShortURLs, Stream
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.misc import redact_log
 from home.util.s3 import use_s3
@@ -85,68 +85,6 @@ def detect_cdn(request):
     return None
 
 
-def _build_chart_data(qs):
-    days, chart_files, chart_size, chart_shorts = [], [], [], []
-    for stat in reversed(qs):
-        days.append(f"{stat.created_at.month}/{stat.created_at.day}")
-        chart_files.append(stat.stats["count"])
-        chart_size.append(stat.stats["size"])
-        chart_shorts.append(stat.stats["shorts"])
-    return days, chart_files, chart_size, chart_shorts
-
-
-def _quota_bg(pct):
-    if pct > 95:
-        return "danger"
-    if pct > 85:
-        return "warning"
-    return "secondary"
-
-
-def _build_user_stat_cards(request, stats):
-    if not stats:
-        return []
-    s = stats[0]
-    album_count = Albums.objects.filter(user=request.user).count()
-    cards = [
-        {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": s.stats["count"], "label": "Files"},
-        {"icon": "fa-solid fa-database", "bg": "info", "value": s.stats["human_size"], "label": "Storage Used"},
-        {"icon": "fa-solid fa-link", "bg": "success", "value": s.stats["shorts"], "label": "Short URLs"},
-        {"icon": "fa-regular fa-images", "bg": "warning", "value": album_count, "label": "Albums"},
-    ]
-    if request.user.storage_quota:
-        pct = request.user.get_storage_usage_pct()
-        quota_label = f"My Quota &mdash; {request.user.get_storage_used_human_read()} / {request.user.get_storage_quota_human_read()}"
-        cards.append(
-            {"icon": "fa-solid fa-hard-drive", "bg": _quota_bg(pct), "value": f"{pct}%", "label": quota_label}
-        )
-    return cards
-
-
-def _build_server_stat_cards(stats_server):
-    if not stats_server:
-        return []
-    ss = stats_server[0]
-    server_album_count = Albums.objects.count()
-    cards = [
-        {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": ss.stats["count"], "label": "Server Files"},
-        {
-            "icon": "fa-solid fa-database",
-            "bg": "info",
-            "value": ss.stats["human_size"],
-            "label": "Server Storage Used",
-        },
-        {"icon": "fa-solid fa-link", "bg": "success", "value": ss.stats["shorts"], "label": "Server Shorts"},
-        {"icon": "fa-regular fa-images", "bg": "warning", "value": server_album_count, "label": "Server Albums"},
-    ]
-    site_settings = SiteSettings.objects.settings()
-    if site_settings.global_storage_quota:
-        pct = site_settings.get_global_storage_quota_usage_pct()
-        quota_label = f"System Quota &mdash; {site_settings.get_global_storage_usage_human_read()} / {site_settings.get_global_storage_quota_human_read()}"
-        cards.append({"icon": "fa-solid fa-server", "bg": _quota_bg(pct), "value": f"{pct}%", "label": quota_label})
-    return cards
-
-
 @cache_control(no_cache=True)
 @login_required
 @cache_page(cache_seconds, key_prefix="files.stats.shorts")
@@ -156,34 +94,9 @@ def home_view(request):
     View  /
     """
     log.debug("%s - home_view: is_secure: %s", request.method, request.is_secure())
-    stats = FileStats.objects.get_request(request)
-    days, chart_files, chart_size, chart_shorts = _build_chart_data(stats)
-
     context = {
-        "stats": stats,
         "full_context": True,
-        "use_simple_bulk_btn": True,
-        "days": days,
-        "chart_files": chart_files,
-        "chart_size": chart_size,
-        "chart_shorts": chart_shorts,
-        "user_stat_cards": _build_user_stat_cards(request, stats),
     }
-
-    if request.user.is_superuser:
-        stats_server = FileStats.objects.filter(user=None).order_by("-created_at")
-        server_days, server_chart_files, server_chart_size, server_chart_shorts = _build_chart_data(stats_server)
-        context.update(
-            {
-                "stats_server": stats_server,
-                "server_days": server_days,
-                "server_chart_files": server_chart_files,
-                "server_chart_size": server_chart_size,
-                "server_chart_shorts": server_chart_shorts,
-                "server_stat_cards": _build_server_stat_cards(stats_server),
-            }
-        )
-
     return render(request, "home.html", context)
 
 
@@ -193,17 +106,20 @@ def live_view(request, key):
     View  /live/:key/
     """
     log.debug("%s - live_view: is_secure: %s", request.method, request.is_secure())
-    stream = get_object_or_404(Stream, name=key)
+    stream = get_object_or_404(
+        Stream.objects.select_related("user", "user__discord", "user__github", "user__google"), name=key
+    )
     if not stream.public and not request.user.is_authenticated:
         return render(request, _404_TEMPLATE, status=404)
     is_owner = request.user.is_authenticated and (stream.user_id == request.user.id or request.user.is_superuser)
     chat_user_info = {}
     if request.user.is_authenticated:
+        avatar_user = stream.user if stream.user_id == request.user.id else request.user
         chat_user_info = {
             "user_id": request.user.id,
             "username": request.user.username,
             "display_name": request.user.get_name(),
-            "avatar_url": request.user.get_avatar_url(),
+            "avatar_url": avatar_user.get_avatar_url(),
         }
     site_url = site_settings_processor(request)["site_settings"]["site_url"]
     context = {
@@ -253,24 +169,13 @@ def live_manifest_view(request, key):
 
 @cache_control(no_cache=True)
 @login_required
-@cache_page(cache_seconds, key_prefix="stats.shorts")
 @vary_on_cookie
 def stats_view(request):
     """
     View  /stats/
     """
-    log.debug("%s - home_view: is_secure: %s", request.method, request.is_secure())
-    shorts = ShortURLs.objects.get_request(request)
-    stats = FileStats.objects.get_request(request)
-    log.debug("stats: %s", stats)
-    days, files, size = [], [], []
-    for stat in reversed(stats):
-        days.append(f"{stat.created_at.month}/{stat.created_at.day}")
-        files.append(stat.stats["count"])
-        size.append(stat.stats["size"])
-    context = {"stats": stats, "days": days, "files": files, "size": size, "shorts": shorts}
-    log.debug("context: %s", context)
-    return render(request, "stats.html", context=context)
+    log.debug("%s - stats_view: is_secure: %s", request.method, request.is_secure())
+    return render(request, "stats.html")
 
 
 def files_view(request):
@@ -297,7 +202,7 @@ def files_view(request):
         except ValueError:
             pass
         if isinstance(album, int):
-            album = get_object_or_404(Albums, id=album)
+            album = get_object_or_404(Albums.objects.select_related("user"), id=album)
         elif isinstance(album, str):
             album = get_object_or_404(Albums, name=album, password=request.GET.get("password"))
             return HttpResponseRedirect(f"{request.path}?album={album.id}")
@@ -329,7 +234,7 @@ def files_view(request):
     if not request.user.is_authenticated and (not album or album.private):
         return HttpResponseRedirect(reverse("oauth:login"))
     elif request.user.is_superuser:
-        users = CustomUser.objects.all()
+        users = list(CustomUser.objects.all().only("id", "username"))
         ctx.update({"users": users})
     log.debug("%s - gallery_view: is_secure: %s", request.method, request.is_secure())
     return render(request, "gallery.html", ctx)
@@ -359,8 +264,7 @@ def albums_view(request):
     View  /albums/
     """
     log.debug("%s - albums_view: is_secure: %s", request.method, request.is_secure())
-    albums = Albums.objects.get_request(request)
-    context = {"albums": albums}
+    context = {}
     if request.user.is_superuser:
         context["users"] = CustomUser.objects.all()
     return render(request, "albums.html", context)
@@ -760,7 +664,12 @@ def url_route_view(request, filename):
     site_url = site_settings_processor(request)["site_settings"]["site_url"]
     is_panel = bool(request.GET.get("panel"))
     log.debug("url_route_view: %s", filename)
-    file = get_object_or_404(Files, name=filename)
+    file = get_object_or_404(
+        Files.objects.select_related("user", "user__discord", "user__github", "user__google").prefetch_related(
+            "albums"
+        ),
+        name=filename,
+    )
     log.debug("file.mime: %s", file.mime)
     session_view = request.session.get(f"view_{file.name}", True)
     log.debug(f"User {request.user} has not viewed file {file.name}: {session_view}")

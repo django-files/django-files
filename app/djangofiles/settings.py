@@ -11,17 +11,8 @@ from django.contrib.messages import constants as message_constants
 from dotenv import find_dotenv, load_dotenv
 from sentry_sdk.integrations.django import DjangoIntegration
 
-VERSION_CHECK_URL = config("VERSION_CHECK_URL", "https://github.com/django-files/django-files/releases/latest")
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DEBUG = config("DEBUG", False, bool)
-print(f"DEBUG: {DEBUG}")
-
-BUILD_SHA = config("BUILD_SHA", "")
-APP_VERSION = config("APP_VERSION", f"DEV:{BUILD_SHA[:7] or 'source'}")
-
-# determine which env file to use
 if "test" in sys.argv or "test_coverage" in sys.argv:
     dotenv_path = find_dotenv("test.env", usecwd=True)
     print(f"TEST dotenv_path: {dotenv_path}")
@@ -32,6 +23,14 @@ else:
     print(f"dotenv_path: {dotenv_path}")
     env = load_dotenv(dotenv_path=dotenv_path)
     print(f"env: {env}")
+
+VERSION_CHECK_URL = config("VERSION_CHECK_URL", "https://github.com/django-files/django-files/releases/latest")
+
+DEBUG = config("DEBUG", False, bool)
+print(f"DEBUG: {DEBUG}")
+
+BUILD_SHA = config("BUILD_SHA", "")
+APP_VERSION = config("APP_VERSION", f"DEV:{BUILD_SHA[:7] or 'source'}")
 
 # determine database type and location
 database_type = config("DATABASE_TYPE", "sqlite3")
@@ -76,7 +75,6 @@ LANGUAGE_CODE = config("LANGUAGE_CODE", "en-us")
 TIME_ZONE = config("TZ", "UTC")
 USE_TZ = True
 USE_I18N = True
-USE_L10N = True
 
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", "redis://redis:6379/1")
 CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", "redis://redis:6379/1")

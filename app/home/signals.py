@@ -1,5 +1,6 @@
 import logging
 
+from api.utils import extract_albums
 from botocore.exceptions import ClientError
 from celery.signals import worker_ready
 from django.db.models.signals import post_delete, post_save, pre_delete
@@ -15,6 +16,7 @@ from home.tasks import (
     delete_album_websocket,
     delete_file_websocket,
     delete_stream_websocket,
+    new_album_websocket,
     send_success_message,
     update_album_websocket,
     update_file_websocket,
@@ -38,7 +40,7 @@ def files_delete_signal(sender, instance, **kwargs):
     except ClientError, FileNotFoundError:
         # catch a case where file was removed from s3 but not our database
         # we should probably trigger a storage recalculation in this instance
-        log.error(f"Failed decrementing storage usage on delete of {instance.file.name}.")
+        log.exception("Failed decrementing storage usage on delete of %s", instance.file.name)
     instance.thumb.delete(True)
     instance.file.delete(True)
     delete_file_websocket.apply_async(args=[data, instance.user.id], priority=0)
@@ -53,8 +55,8 @@ def files_post_save_signal(sender, instance, **kwargs):
         update_fields = list(kwargs["update_fields"]) if kwargs.get("update_fields") else []
         log.debug("update_fields: %s", update_fields)
         update_file_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
-    except Exception as error:
-        log.warning("ERROR: %s", error)
+    except Exception:
+        log.exception("files_post_save_signal failed")
 
 
 @receiver(post_save, sender=Files)
@@ -65,15 +67,19 @@ def clear_files_cache_signal(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=Albums)
-def albums_post_save_signal(sender, instance, **kwargs):
+def albums_post_save_signal(sender, instance, created, **kwargs):
     try:
-        data = model_to_dict(instance)
-        data["date"] = str(instance.date)
-        data["user_name"] = instance.user.get_name()
-        update_fields = list(kwargs["update_fields"]) if kwargs.get("update_fields") else []
-        update_album_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
-    except Exception as error:
-        log.warning("ERROR: %s", error)
+        if created:
+            data = extract_albums([instance])[0]
+            new_album_websocket.apply_async(args=[data], priority=0)
+        else:
+            data = model_to_dict(instance)
+            data["date"] = str(instance.date)
+            data["user_name"] = instance.user.get_name()
+            update_fields = list(kwargs["update_fields"]) if kwargs.get("update_fields") else []
+            update_album_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
+    except Exception:
+        log.exception("albums_post_save_signal failed")
 
 
 @receiver(post_save, sender=Albums)

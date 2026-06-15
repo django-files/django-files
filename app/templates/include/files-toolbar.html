@@ -103,7 +103,7 @@
             <div class="d-flex align-items-center gap-2 px-1 py-1">
                 <i class="fa-solid fa-grip text-secondary" style="font-size:0.7rem"></i>
                 <input type="range" class="form-range flex-grow-1" id="gallery-size-slider"
-                       min="96" max="416" step="8" value="256">
+                       min="96" max="416" step="8" value="256" aria-label="Gallery size">
                 <i class="fa-solid fa-grip text-secondary" style="font-size:1.1rem"></i>
             </div>
         </div>
@@ -140,6 +140,7 @@
         <span class="files-toolbar-count text-body-secondary small text-nowrap" id="dt-file-count-wrapper">
             <span class="files-toolbar-count-label">Showing</span>
             <strong id="total-files-count">0</strong>
+            <i id="map-loading-spinner" class="fa-solid fa-spinner fa-spin ms-1 d-none" aria-label="Loading map markers" aria-live="polite"></i>
             <span class="d-none text-body-secondary" id="bulk-selected-count-inline"> &bull; <strong>0</strong> selected</span>
         </span>
         <button id="gallery-select-all-btn"

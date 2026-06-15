@@ -363,7 +363,7 @@ function truncateName(filename) {
  * @param {object} opts
  */
 export function attachSocketTableSync(dt, opts) {
-    socket?.addEventListener('message', function (event) {
+    function onMessage(event) {
         if (event.data === 'pong') return
         let data
         try {
@@ -376,6 +376,7 @@ export function attachSocketTableSync(dt, opts) {
             if (row.node()) row.remove().draw(false)
             if (opts.countEl) opts.countEl.textContent = dt.rows().count()
         } else if (data.event === opts.newEvent) {
+            if (dt.row(`#${opts.idPrefix}-${data.id}`).node()) return
             if (opts.maxRows && dt.rows().count() >= opts.maxRows) {
                 opts.onOverflow?.()
                 return
@@ -384,5 +385,10 @@ export function attachSocketTableSync(dt, opts) {
         } else if (opts.extra?.[data.event]) {
             opts.extra[data.event](data)
         }
-    })
+    }
+
+    socket?.addEventListener('message', onMessage)
+    document.addEventListener('wsConnected', () =>
+        socket?.addEventListener('message', onMessage)
+    )
 }

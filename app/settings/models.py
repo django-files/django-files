@@ -1,8 +1,9 @@
+from django.core.cache import cache
 from django.db import models
 from home.util.misc import bytes_to_human_read
 from home.util.rand import rand_color_hex
 from home.util.time_zones import TIMEZONE_CHOICES
-from settings.managers import SiteSettingsManager
+from settings.managers import CACHE_KEY, SiteSettingsManager
 
 
 class SiteSettings(models.Model):
@@ -77,6 +78,7 @@ class SiteSettings(models.Model):
         verbose_name_plural = "Site Settings"
 
     def save(self, *args, **kwargs):
+        cache.delete(CACHE_KEY)
         if self.__class__.objects.count():
             self.pk = self.__class__.objects.first().pk
         super().save(*args, **kwargs)

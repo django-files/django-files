@@ -44,7 +44,7 @@ def site_view(request):
     site_settings = SiteSettings.objects.settings()
 
     if request.method != "POST":
-        invites = UserInvites.objects.all()
+        invites = UserInvites.objects.select_related("owner").all()
         context = {
             "site_settings": site_settings,
             "invites": invites,

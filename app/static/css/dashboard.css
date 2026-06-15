@@ -16,6 +16,14 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
 }
 
+.dash-stat-card--clickable {
+    cursor: pointer;
+}
+
+.mime-table {
+    --bs-table-bg: transparent;
+}
+
 .dash-stat-icon {
     width: 42px;
     height: 42px;
@@ -25,6 +33,13 @@
     justify-content: center;
     font-size: 1.1rem;
     flex-shrink: 0;
+}
+
+.dash-stat-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 4.3rem;
 }
 
 .dash-stat-value {
@@ -39,6 +54,13 @@
     letter-spacing: 0.06em;
     opacity: 0.6;
     font-weight: 500;
+}
+
+.dash-stat-sublabel {
+    font-size: 0.75rem;
+    opacity: 0.5;
+    font-weight: 500;
+    margin-top: 0.15rem;
 }
 
 .dash-card {
@@ -79,11 +101,35 @@
     opacity: 0.55;
 }
 
-.quota-bar-wrap {
-    border-radius: 0.75rem;
-    border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);
-    padding: 1rem 1.25rem;
-    background: var(--bs-body-bg);
+/* Skeleton shimmer blocks used inside dash-stat-card while stats load async */
+.dash-stat-skel-block {
+    border-radius: 4px;
+    position: relative;
+    background-color: var(--bs-secondary-bg, #e9ecef);
+    overflow: hidden;
+}
+
+.dash-stat-skel-block::after {
+    content: '';
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        110deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.6) 50%,
+        transparent 80%
+    );
+    animation: glisten 1.5s linear infinite;
+}
+
+[data-bs-theme='dark'] .dash-stat-skel-block::after {
+    background: linear-gradient(
+        110deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.12) 50%,
+        transparent 80%
+    );
 }
 
 /* Keep the home dash cards from growing a scroll region — let DataTables

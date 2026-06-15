@@ -25,12 +25,14 @@ export async function fetchFiles(
     count = 25,
     album = null,
     ordering = null,
-    types = null
+    types = null,
+    extraParams = {}
 ) {
     return fetchPaginated('/api/files/', page, count, {
         album,
         ordering,
         type: types,
+        ...extraParams,
     })
 }
 

@@ -4,7 +4,7 @@ import logging
 import operator
 import os
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import reduce, wraps
 from typing import Any, BinaryIO, Callable, List, Optional, Union
 from urllib.parse import parse_qs, urlparse
@@ -22,16 +22,15 @@ from api.utils import (
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.core import serializers
 from django.core.cache import cache
-from django.core.paginator import Paginator
 from django.core.signing import TimestampSigner
-from django.db.models import Count, Q, QuerySet
+from django.db.models import BigIntegerField, Count, IntegerField, Q, QuerySet, Sum
 from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Cast, TruncDate
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
-from django.utils.timezone import now
+from django.utils.timezone import localtime, now
 from django.views.decorators.cache import cache_control, cache_page
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -41,7 +40,6 @@ from home.models import Albums, Files, FileStats, ShortURLs, Stream
 from home.tasks import (
     clear_files_cache,
     clear_shorts_cache,
-    new_album_websocket,
     send_push_live,
     stream_status_websocket,
 )
@@ -123,6 +121,15 @@ log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
 
 json_error_message = "Error Parsing JSON Body"
+
+
+def paginate_no_count(queryset, page, count):
+    """Paginate without a COUNT(*) query. Returns (items, next_page_or_none)."""
+    page = max(1, int(page) if page is not None else 1)
+    offset = (page - 1) * count
+    rows = list(queryset[offset : offset + count + 1])
+    has_next = len(rows) > count
+    return rows[:count], (page + 1 if has_next else None)
 
 
 def auth_from_token(view=None, no_fail=False):
@@ -271,7 +278,7 @@ def shorten_view(request):
         if not url:
             return JsonResponse({"error": "Missing Required Value: url"}, status=400)
         log.debug("url: %s", url)
-        if not validators.url(url):
+        if not validators.url(url, simple_host=True):
             return JsonResponse({"error": "Unable to Validate URL"}, status=400)
         if max_views and not str(max_views).isdigit():
             return JsonResponse({"error": "max-views Must be an Integer"}, status=400)
@@ -310,7 +317,6 @@ def _handle_create_album(request):
     )
     site_settings = SiteSettings.objects.settings()
     full_url = site_settings.site_url + reverse("home:files") + f"?album={album.id}"
-    new_album_websocket.apply_async(args=[extract_albums([album])[0]])  # no time to de-tangle this line
     return JsonResponse({"url": full_url}, safe=False)
 
 
@@ -453,55 +459,197 @@ def invite_detail_view(request, invite_id):
     return HttpResponse(status=204)
 
 
-@csrf_exempt
-@require_http_methods(["OPTIONS", "GET"])
-@auth_from_token
-@cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix="stats")
-@vary_on_headers("Authorization")
-@vary_on_cookie
-def stats_view(request):
-    """
-    View  /api/stats/
-    """
-    log.debug("%s - stats_view: is_secure: %s", request.method, request.is_secure())
-    amount = int(request.GET.get("amount", 10))
-    log.debug("amount: %s", amount)
-    # TODO: Format Stats
-    stats = FileStats.objects.filter(user=request.user)[:amount]
-    # current = stats.first()
-    # log.debug("current.stats: %s", current.stats)
-    # data = {
-    #     "current": current.stats,
-    #     "stats": json.loads(serializers.serialize("json", stats)),
-    # }
-    # return JsonResponse(data)
-    data = serializers.serialize("json", stats)
-    return JsonResponse(json.loads(data), safe=False)
+def _quota_bg(pct):
+    if pct > 95:
+        return "danger"
+    if pct > 85:
+        return "warning"
+    return "secondary"
 
 
 @csrf_exempt
 @require_http_methods(["OPTIONS", "GET"])
 @auth_from_token
 @cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix="stats")
+@cache_page(cache_seconds, key_prefix="stats.me")
 @vary_on_headers("Authorization")
 @vary_on_cookie
-def stats_current_view(request):
+def stats_me_view(request):
     """
-    View  /api/stats/current/
+    View  /api/stats/me/  — dashboard stat cards + chart history for the current user.
     """
-    log.debug("%s - stats_view: is_secure: %s", request.method, request.is_secure())
-    stats = FileStats.objects.filter(user=request.user).first()
-    log.debug("stats: %s", stats)
-    if stats is not None:
-        data = model_to_dict(stats)
-        log.debug("data: %s", data)
-        if stats := data.get("stats"):
-            if "types" in stats:
-                del stats["types"]
-            return JsonResponse(stats)
-    return JsonResponse({})
+    stats = list(FileStats.objects.filter(user=request.user).order_by("-created_at")[:90])
+
+    days, chart_files, chart_size, chart_shorts = [], [], [], []
+    for stat in reversed(stats):
+        days.append(f"{stat.created_at.month}/{stat.created_at.day}")
+        chart_files.append(stat.stats["count"])
+        chart_size.append(stat.stats["size"])
+        chart_shorts.append(stat.stats["shorts"])
+
+    updated_at = None
+    stat_cards = []
+    types = []
+    if stats:
+        s = stats[0]
+        updated_at = localtime(s.updated_at).strftime("%-m/%-d %-I:%M %p")
+        album_count = Albums.objects.filter(user=request.user).count()
+        stat_cards = [
+            {
+                "icon": "fa-regular fa-folder-open",
+                "bg": "primary",
+                "value": s.stats["count"],
+                "label": "Files",
+                "modal": "mime",
+            },
+            {
+                "icon": "fa-solid fa-database",
+                "bg": "info",
+                "value": s.stats["human_size"],
+                "label": "Storage Used",
+                "modal": "mime",
+            },
+            {"icon": "fa-solid fa-link", "bg": "success", "value": s.stats["shorts"], "label": "Short URLs"},
+            {"icon": "fa-regular fa-images", "bg": "warning", "value": album_count, "label": "Albums"},
+        ]
+        if request.user.storage_quota:
+            pct = request.user.get_storage_usage_pct()
+            stat_cards.append(
+                {
+                    "icon": "fa-solid fa-hard-drive",
+                    "bg": _quota_bg(pct),
+                    "value": f"{pct}%",
+                    "label": "My Quota",
+                    "sublabel": f"{request.user.get_storage_used_human_read()} / {request.user.get_storage_quota_human_read()}",
+                }
+            )
+        raw_types = s.stats.get("types", {})
+        types = sorted(
+            [
+                {
+                    "mime": mime or "unknown",
+                    "count": d["count"],
+                    "size": d["size"],
+                    "human_size": Files.get_size_of(d["size"]),
+                }
+                for mime, d in raw_types.items()
+            ],
+            key=lambda x: x["count"],
+            reverse=True,
+        )
+
+    return JsonResponse(
+        {
+            "has_stats": bool(stats),
+            "updated_at": updated_at,
+            "stat_cards": stat_cards,
+            "types": types,
+            "chart": (
+                {"days": days, "files": chart_files, "size": chart_size, "shorts": chart_shorts} if days else None
+            ),
+        }
+    )
+
+
+_SERVER_STATS_CACHE_KEY = "stats.server.data"
+_SERVER_STATS_CACHE_TTL = 60 * 5  # 5 minutes
+
+
+@csrf_exempt
+@require_http_methods(["OPTIONS", "GET"])
+@auth_from_token
+def stats_server_view(request):
+    """
+    View  /api/stats/server/  — superuser-only server-wide stat cards + chart.
+    Chart is built by summing per-user FileStats snapshots per day, so it stays
+    consistent with the per-user charts and avoids the stale server-level snapshot.
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({"detail": "Forbidden"}, status=403)
+
+    cached = cache.get(_SERVER_STATS_CACHE_KEY)
+    if cached:
+        return JsonResponse(cached)
+
+    # Stat cards: live counts
+    total_files = Files.objects.count()
+    total_size = Files.objects.aggregate(t=Sum("size"))["t"] or 0
+    total_shorts = ShortURLs.objects.count()
+    total_albums = Albums.objects.count()
+    stat_cards = [
+        {
+            "icon": "fa-regular fa-folder-open",
+            "bg": "primary",
+            "value": total_files,
+            "label": "Server Files",
+            "modal": "mime",
+        },
+        {
+            "icon": "fa-solid fa-database",
+            "bg": "info",
+            "value": Files.get_size_of(total_size),
+            "label": "Server Storage",
+            "modal": "mime",
+        },
+        {"icon": "fa-solid fa-link", "bg": "success", "value": total_shorts, "label": "Server Shorts"},
+        {"icon": "fa-regular fa-images", "bg": "warning", "value": total_albums, "label": "Server Albums"},
+    ]
+    site_settings = SiteSettings.objects.settings()
+    if site_settings.global_storage_quota:
+        pct = site_settings.get_global_storage_quota_usage_pct()
+        stat_cards.append(
+            {
+                "icon": "fa-solid fa-server",
+                "bg": _quota_bg(pct),
+                "value": f"{pct}%",
+                "label": "System Quota",
+                "sublabel": f"{site_settings.get_global_storage_usage_human_read()} / {site_settings.get_global_storage_quota_human_read()}",
+            }
+        )
+
+    # Chart: sum per-user FileStats snapshots by day (avoids stale server-level snapshot)
+    cutoff_date = (now() - timedelta(days=90)).date()
+    server_daily = list(
+        FileStats.objects.filter(user__isnull=False, created_at__date__gte=cutoff_date)
+        .annotate(snap_date=TruncDate("created_at"))
+        .annotate(
+            fc=Cast(KeyTextTransform("count", "stats"), IntegerField()),
+            fs=Cast(KeyTextTransform("size", "stats"), BigIntegerField()),
+            fx=Cast(KeyTextTransform("shorts", "stats"), IntegerField()),
+        )
+        .values("snap_date")
+        .annotate(total_files=Sum("fc"), total_size=Sum("fs"), total_shorts=Sum("fx"))
+        .order_by("snap_date")
+    )
+
+    chart_days = [f"{r['snap_date'].month}/{r['snap_date'].day}" for r in server_daily]
+    chart_files = [r["total_files"] for r in server_daily]
+    chart_size = [r["total_size"] for r in server_daily]
+    chart_shorts = [r["total_shorts"] for r in server_daily]
+
+    # Mime type breakdown: live query
+    server_types = list(Files.objects.values("mime").annotate(count=Count("pk"), size=Sum("size")).order_by("-count"))
+    types = [
+        {
+            "mime": t["mime"] or "unknown",
+            "count": t["count"],
+            "size": t["size"] or 0,
+            "human_size": Files.get_size_of(t["size"] or 0),
+        }
+        for t in server_types
+    ]
+
+    data = {
+        "stat_cards": stat_cards,
+        "types": types,
+        "chart": (
+            {"days": chart_days, "files": chart_files, "size": chart_size, "shorts": chart_shorts}
+            if chart_days
+            else None
+        ),
+    }
+    cache.set(_SERVER_STATS_CACHE_KEY, data, _SERVER_STATS_CACHE_TTL)
+    return JsonResponse(data)
 
 
 @csrf_exempt
@@ -519,7 +667,7 @@ def recent_view(request):
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
     try:
         # query = Files.objects.filtered_request(request).select_related("user")
-        query = Files.objects.filter(user=request.user).select_related("user")
+        query = Files.objects.filter(user=request.user).select_related("user").prefetch_related("albums")
         if album := request.GET.get("album"):
             query = query.filter(albums__id=album)
 
@@ -584,6 +732,8 @@ def files_view(request, page, count=25):
         type_qs = [_TYPE_Q[ts] for t in type_param.split(",") if (ts := t.strip()) in _TYPE_Q]
         if type_qs:
             q = q.filter(reduce(operator.or_, type_qs))
+    if request.GET.get("has_gps"):
+        q = q.filter(exif__GPSInfo__isnull=False)
     ordering_param = (request.GET.get("ordering") or "").lstrip("-")
     if ordering_param == "exif_date":
         q = q.annotate(_exif_date=KeyTextTransform("DateTimeOriginal", "exif"))
@@ -593,11 +743,9 @@ def files_view(request, page, count=25):
         allowed={"created": "date", "size": "size", "name": "name", "exif_date": "_exif_date"},
         default="-created",
     )
-    paginator = Paginator(q, count)
-    page_obj = paginator.get_page(page)
-    files = extract_files(page_obj.object_list)
+    page_items, _next = paginate_no_count(q, page, count)
+    files = extract_files(page_items)
     # log.debug("files: %s", files)
-    _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {
         "files": files,
         "next": _next,
@@ -744,9 +892,9 @@ def albums_view(request, page=None, count=100):
     else:
         user = request.user.id
     if user == "0":
-        q = Albums.objects.filtered_request(request)
+        q = Albums.objects.filtered_request(request).select_related("user")
     else:
-        q = Albums.objects.filtered_request(request, user_id=int(user))
+        q = Albums.objects.filtered_request(request, user_id=int(user)).select_related("user")
     if search := request.GET.get("search"):
         q = q.filter(name__icontains=search)
     if (request.GET.get("ordering") or "").lstrip("-") == "files":
@@ -757,11 +905,9 @@ def albums_view(request, page=None, count=100):
         allowed={"created": "date", "name": "name", "files": "_file_count"},
         default="-created",
     )
-    paginator = Paginator(q, count)
-    page_obj = paginator.get_page(page)
-    albums = extract_albums(page_obj.object_list)
+    page_items, _next = paginate_no_count(q, page, count)
+    albums = extract_albums(page_items)
     log.debug("albums: %s", albums)
-    _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {
         "albums": albums,
         "next": _next,
@@ -1481,11 +1627,9 @@ def shorts_paginated_view(request, page=1, count=100):
             allowed={"created": "created_at", "name": "short", "views": "views"},
             default="-created",
         )
-        paginator = Paginator(query, count)
-        page_obj = paginator.get_page(page)
+        page_items, _next = paginate_no_count(query, page, count)
         site_settings = site_settings_processor(None)["site_settings"]
-        shorts_data = _build_shorts_data(page_obj.object_list, site_settings["site_url"])
-        _next = page_obj.next_page_number() if page_obj.has_next() else None
+        shorts_data = _build_shorts_data(page_items, site_settings["site_url"])
         return JsonResponse({"shorts": shorts_data, "next": _next, "count": count}, status=200)
     except ValueError as error:
         log.debug(error)
@@ -1566,12 +1710,10 @@ def users_paginated_view(request, page=1, count=50):
         return JsonResponse({"error": "Superuser required"}, status=403)
     try:
         query = CustomUser.objects.select_related("discord", "github", "google").order_by("id")
-        paginator = Paginator(query, count)
-        page_obj = paginator.get_page(page)
-        users_data = serialize_users(page_obj.object_list)
+        page_items, _next = paginate_no_count(query, page, count)
+        users_data = serialize_users(page_items)
         for user_dict in users_data:
             user_dict["name"] = user_dict.get("first_name") or user_dict.get("username", "")
-        _next = page_obj.next_page_number() if page_obj.has_next() else None
         return JsonResponse({"users": users_data, "next": _next, "count": count}, status=200)
     except ValueError as error:
         log.debug(error)
@@ -1644,23 +1786,29 @@ def streams_view(request, page=None, count=100):
     else:
         user = request.user.id
     if user == "0":
-        q = Stream.objects.all()
+        q = Stream.objects.select_related("user").all()
     else:
-        q = Stream.objects.filter(user_id=int(user))
+        q = Stream.objects.select_related("user").filter(user_id=int(user))
     q = apply_ordering(
         q,
         request,
         allowed={"created": "started_at", "name": "name", "views": "unique_views"},
         default="-created",
     )
-    paginator = Paginator(q, count)
-    page_obj = paginator.get_page(page)
+    page_items, _next = paginate_no_count(q, page, count)
     from home.views import get_rtmp_host
 
     rtmp_host, _ = get_rtmp_host(request)
-    streams = extract_streams(page_obj.object_list, request.user.id, rtmp_host=rtmp_host)
+    stream_list = page_items
+    stream_names = [s.name for s in stream_list]
+    subscriber_counts = dict(
+        PushInformation.objects.filter(group__name__in=stream_names)
+        .values("group__name")
+        .annotate(cnt=Count("pk"))
+        .values_list("group__name", "cnt")
+    )
+    streams = extract_streams(stream_list, request.user.id, rtmp_host=rtmp_host, subscriber_counts=subscriber_counts)
     log.debug("streams: %s", streams)
-    _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {
         "streams": streams,
         "next": _next,

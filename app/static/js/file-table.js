@@ -18,6 +18,8 @@ export const faCaret = document.querySelector(
 )
 export const fileLink = document.querySelector('div.d-none > .dj-file-link')
 export const totalFilesCount = document.getElementById('total-files-count')
+const filesViewContainer = document.querySelector('[data-files-view]')
+const isMapView = () => filesViewContainer?.dataset.filesView === 'map'
 
 const fileExpireModal = $('#fileExpireModal')
 const confirmDelete = $('#confirm-delete')
@@ -245,7 +247,7 @@ export function formatBytes(bytes) {
 
 function dtDraw(event) {
     console.debug('dtDraw:', event)
-    if (totalFilesCount) {
+    if (totalFilesCount && !isMapView()) {
         totalFilesCount.textContent = filesDataTable.rows().count()
     }
 }
@@ -279,7 +281,7 @@ export function removeFileTableRow(fileId) {
     const row = filesDataTable.row(`#file-${fileId}`)
     if (row.node()) {
         row.remove().draw(false)
-        if (totalFilesCount)
+        if (totalFilesCount && !isMapView())
             totalFilesCount.textContent = filesDataTable.rows().count()
     }
 }
