@@ -359,8 +359,7 @@ def albums_view(request):
     View  /albums/
     """
     log.debug("%s - albums_view: is_secure: %s", request.method, request.is_secure())
-    albums = Albums.objects.get_request(request).select_related("user")
-    context = {"albums": albums}
+    context = {}
     if request.user.is_superuser:
         context["users"] = CustomUser.objects.all()
     return render(request, "albums.html", context)
