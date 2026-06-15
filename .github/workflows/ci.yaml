@@ -4,6 +4,15 @@ on:
   workflow_dispatch:
   push:
     branches-ignore: [master]
+    paths:
+      - ".github/workflows/ci.yaml"
+      - "app/**"
+      - "nginx/**"
+      - "gulpfile.js"
+      - "package*.json"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "docker-compose-dev.yaml"
 
 concurrency:
   group: ${{ github.workflow }}

@@ -8,6 +8,16 @@
 - Main first-party apps: `home`, `api`, `oauth`, `settings`; `webpush` is vendored but active.
 - Top-level `django-files/` is runtime data for local/dev use (`db/database.sqlite3`), not source code.
 
+## Commands
+
+ALWAYS use the `npm run *` command
+
+| Command               | Purpose                                 |
+| --------------------- | --------------------------------------- |
+| `npm run postinstall` | Run `npx gulp` for pacakge.json changes |
+| `npm run lint`        | ESLint on `npx eslint app/static/js/`   |
+| `npm run prettier`    | ALWAYS RUN AFTER EDITING FILES          |
+
 ## Where behavior lives
 
 - `app/home/`: core product logic.
