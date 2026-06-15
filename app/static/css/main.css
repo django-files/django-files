@@ -651,3 +651,41 @@ html {
 .badge.file-album-active .remove-album {
     flex-shrink: 0;
 }
+
+/* Liquid-glass user menu popover */
+.user-menu-popover .popover-body {
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.72);
+    border-radius: var(--bs-popover-border-radius);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 12px 40px -8px rgba(0, 0, 0, 0.35);
+    padding: 0;
+    overflow: hidden;
+}
+
+.user-menu-popover.popover {
+    border-color: rgba(0, 0, 0, 0.15);
+    background: transparent;
+    box-shadow: none;
+}
+
+.user-menu-popover .popover-arrow::after {
+    border-bottom-color: rgba(255, 255, 255, 0.72);
+}
+
+[data-bs-theme='dark'] .user-menu-popover .popover-body {
+    background-color: rgba(20, 20, 24, 0.72);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.08) inset,
+        0 12px 40px -8px rgba(0, 0, 0, 0.6);
+}
+
+[data-bs-theme='dark'] .user-menu-popover.popover {
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-bs-theme='dark'] .user-menu-popover .popover-arrow::after {
+    border-bottom-color: rgba(20, 20, 24, 0.72);
+}

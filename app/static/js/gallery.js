@@ -47,6 +47,17 @@ let selectedFileIds = []
 let scrollObserver = null
 let gallerySearchTerm = ''
 let galleryOrdering = params.get('ordering') || '-created'
+let galleryThumbSize = Math.max(
+    96,
+    Math.min(
+        416,
+        parseInt(localStorage.getItem('galleryThumbSize') ?? '256', 10)
+    )
+)
+galleryContainer?.style.setProperty(
+    '--gallery-thumb-size',
+    galleryThumbSize + 'px'
+)
 
 function getActiveTypesParam() {
     return activeTypes.size > 0 ? [...activeTypes].join(',') : null
@@ -218,6 +229,10 @@ function applyView(view) {
         view === 'gallery'
     )
     setToolbarBtnVisible(
+        document.getElementById('gallery-size-btn'),
+        view === 'gallery'
+    )
+    setToolbarBtnVisible(
         document.getElementById('gallery-select-all-btn'),
         view === 'gallery'
     )
@@ -320,6 +335,7 @@ function initFilterBtn() {
         trigger: 'click',
         placement: 'bottom',
         customClass: 'files-filter-popover',
+        popperConfig: { strategy: 'fixed' },
     })
 
     btn.addEventListener('shown.bs.popover', () => {
@@ -430,6 +446,7 @@ function initGallerySortBtn() {
         trigger: 'click',
         placement: 'bottom',
         customClass: 'gallery-sort-popover',
+        popperConfig: { strategy: 'fixed' },
     })
 
     btn.addEventListener('shown.bs.popover', () => {
@@ -445,6 +462,44 @@ function initGallerySortBtn() {
             })
         })
 
+        attachPopoverClickOutside(btn, tip, popover)
+    })
+}
+
+function initGallerySizeBtn() {
+    const btn = document.getElementById('gallery-size-btn')
+    const tpl = document.getElementById('gallery-size-popup-tpl')
+    if (!btn || !tpl) return
+
+    const popover = new bootstrap.Popover(btn, {
+        html: true,
+        content: () => {
+            const clone = tpl.content.cloneNode(true)
+            clone.querySelector('#gallery-size-slider').value = galleryThumbSize
+            return clone
+        },
+        trigger: 'click',
+        placement: 'bottom',
+        customClass: 'gallery-size-popover',
+        popperConfig: { strategy: 'fixed' },
+    })
+
+    btn.addEventListener('shown.bs.popover', () => {
+        const tip = document.querySelector(
+            '.gallery-size-popover .popover-body'
+        )
+        if (!tip) return
+        const slider = tip.querySelector('#gallery-size-slider')
+        if (!slider) return
+        slider.value = galleryThumbSize
+        slider.addEventListener('input', () => {
+            galleryThumbSize = parseInt(slider.value, 10)
+            localStorage.setItem('galleryThumbSize', galleryThumbSize)
+            galleryContainer.style.setProperty(
+                '--gallery-thumb-size',
+                galleryThumbSize + 'px'
+            )
+        })
         attachPopoverClickOutside(btn, tip, popover)
     })
 }
@@ -483,7 +538,7 @@ function initGallerySelectAllBtn() {
         fileData
             .filter((f) => {
                 const card = document.getElementById(`gallery-image-${f.id}`)
-                return card && card.style.display !== 'none'
+                return card && !card.classList.contains('gallery-search-hidden')
             })
             .map((f) => f.id)
 
@@ -539,6 +594,7 @@ async function initGallery() {
     initToolbar('files-toolbar', filesDataTable)
     initFilterBtn()
     initGallerySortBtn()
+    initGallerySizeBtn()
     initGallerySelectAllBtn()
     initTrackerBtn()
     initKMLExportBtn()
@@ -637,8 +693,6 @@ function showSkeletons() {
         outer.classList.add('m-1')
 
         const inner = tmplInner.cloneNode(false)
-        inner.style.minWidth = '256px'
-        inner.style.minHeight = '256px'
         inner.style.aspectRatio = '1 / 1'
 
         const shimmer = document.createElement('div')
@@ -800,11 +854,9 @@ function buildNoThumbPlaceholder(mime) {
 }
 
 function addGalleryGeneric(file, top = false) {
-    const maxThumbSize = 256
     const { outer, inner } = buildGalleryCard(file, top)
 
-    inner.style.minWidth = `${maxThumbSize}px`
-    inner.style.minHeight = `${maxThumbSize}px`
+    inner.style.aspectRatio = '1 / 1'
 
     const link = document.createElement('a')
     link.classList.add('image-link')
@@ -819,7 +871,6 @@ function addGalleryGeneric(file, top = false) {
 }
 
 function addGalleryImage(file, top = false) {
-    const maxThumbSize = 256
     const { outer, inner } = buildGalleryCard(file, top)
 
     // IMAGE AND LINK
@@ -832,14 +883,14 @@ function addGalleryImage(file, top = false) {
 
     if (file.meta?.PILImageWidth && file.meta?.PILImageHeight) {
         const scale = Math.min(
-            maxThumbSize / file.meta.PILImageWidth,
-            maxThumbSize / file.meta.PILImageHeight
+            galleryThumbSize / file.meta.PILImageWidth,
+            galleryThumbSize / file.meta.PILImageHeight
         )
         img.width = Math.round(file.meta.PILImageWidth * scale)
         img.height = Math.round(file.meta.PILImageHeight * scale)
     } else {
-        img.width = maxThumbSize
-        img.height = maxThumbSize
+        img.width = galleryThumbSize
+        img.height = galleryThumbSize
     }
 
     const skeleton = document.createElement('div')
@@ -862,8 +913,7 @@ function addGalleryImage(file, top = false) {
         () => {
             skeleton.remove()
             img.style.display = 'none'
-            inner.style.minWidth = `${img.width || maxThumbSize}px`
-            inner.style.minHeight = `${img.height || maxThumbSize}px`
+            inner.style.aspectRatio = '1 / 1'
             link.appendChild(buildNoThumbPlaceholder(file.mime))
             link.style.cssText = 'position:absolute;inset:0;display:block'
             showLabelsAlways(outer)
@@ -954,7 +1004,6 @@ function pollVideoThumb(
 }
 
 function addGalleryVideo(file, top = false) {
-    const maxThumbSize = 256
     const { inner } = buildGalleryCard(file, top)
 
     const link = document.createElement('a')
@@ -973,8 +1022,8 @@ function addGalleryVideo(file, top = false) {
     // CORS mode so img and pollVideoThumb's fetch share one HTTP cache entry,
     // avoiding a second download when img.src is set after the poll succeeds.
     img.crossOrigin = 'anonymous'
-    img.width = maxThumbSize
-    img.height = maxThumbSize
+    img.width = galleryThumbSize
+    img.height = galleryThumbSize
     img.style.visibility = 'hidden'
 
     const skeleton = document.createElement('div')
