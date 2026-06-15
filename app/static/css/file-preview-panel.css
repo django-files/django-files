@@ -1,28 +1,8 @@
 /* ============================================================
  * File Preview Panel — slide-in overlay for the gallery page
- * ============================================================ */
-
-:root {
-    /* Theme-aware colors for preview chrome */
-    --preview-chrome-bg: rgba(0, 0, 0, 0.12);
-    --preview-chrome-bg-hover: rgba(0, 0, 0, 0.2);
-    --preview-text-color: currentcolor;
-    --preview-border-color: rgba(66, 69, 73, 0.3);
-}
-
-[data-bs-theme='dark'] {
-    --preview-chrome-bg: rgba(255, 255, 255, 0.08);
-    --preview-chrome-bg-hover: rgba(255, 255, 255, 0.15);
-    --preview-border-color: rgba(200, 200, 200, 0.2);
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-bs-theme='light']) {
-        --preview-chrome-bg: rgba(255, 255, 255, 0.08);
-        --preview-chrome-bg-hover: rgba(255, 255, 255, 0.15);
-        --preview-border-color: rgba(200, 200, 200, 0.2);
-    }
-}
+ * ============================================================
+ * Button chrome styles (.file-preview-panel-close) live in preview.css
+ * so they share the same rule group as the sidebar and floating buttons. */
 
 /* ---- Backdrop ---- */
 

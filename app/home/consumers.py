@@ -1093,7 +1093,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return None, self._error("File owned by another user.", **kwargs)
         return file, None
 
-    def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = None, **kwargs) -> dict:
+    def set_file_albums(
+        self, *, user_id: int = None, pk: int = None, albums: List[int] = None, **kwargs
+    ) -> Optional[dict]:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
@@ -1137,7 +1139,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         )
         return None
 
-    def remove_file_album(self, *, user_id: int = None, pk: int = None, album: int = None, **kwargs) -> dict:
+    def remove_file_album(self, *, user_id: int = None, pk: int = None, album: int = None, **kwargs) -> Optional[dict]:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
@@ -1169,7 +1171,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         album_name: str = None,
         create_if_absent: bool = True,
         **kwargs,
-    ) -> dict:
+    ) -> Optional[dict]:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
@@ -1217,7 +1219,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         album_name: str = None,
         action: str = None,
         **kwargs,
-    ) -> dict:
+    ) -> Optional[dict]:
         if not pks:
             return self._error("No file IDs specified.", **kwargs)
         if not albums and not album_name:

@@ -67,13 +67,14 @@
     color: var(--bs-body-color);
 }
 
-/* Sidebar header buttons — close, mode toggle, app, context trigger.
- * Same translucent pill treatment as .openbtn / .context-placement so the
- * whole preview chrome reads as one set. */
+/* Sidebar header buttons — close, mode toggle, app, context trigger, panel
+ * exit.  Same translucent pill treatment as .openbtn / .context-placement so
+ * the whole preview chrome reads as one set. */
 .sidebar .closebtn,
 .sidebar-mode-toggle,
 .sidebar .sidebar-app-btn,
-.sidebar .sidebar-context-btn {
+.sidebar .sidebar-context-btn,
+.file-preview-panel-close {
     position: absolute;
     top: 12px;
     display: inline-flex;
@@ -115,11 +116,18 @@
     z-index: 2;
 }
 
+.file-preview-panel-close {
+    left: 12px;
+    z-index: 10;
+}
+
 .sidebar .closebtn:hover,
 .sidebar-mode-toggle:hover,
 .sidebar .sidebar-app-btn:hover,
 .sidebar .sidebar-context-btn:hover,
-.sidebar .sidebar-context-btn[aria-expanded='true'] {
+.sidebar .sidebar-context-btn[aria-expanded='true'],
+.file-preview-panel-close:hover,
+.file-preview-panel-close:focus-visible {
     opacity: 1;
     color: var(--bs-body-color);
     background: var(--preview-chrome-bg-hover);

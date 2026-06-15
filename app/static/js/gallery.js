@@ -1104,6 +1104,102 @@ function changeView(event) {
     updateNoFilesOverlay()
 }
 
+const ALBUM_EVENTS = new Set([
+    'set-file-albums',
+    'bulk-add-file-albums',
+    'bulk-remove-file-albums',
+])
+
+function handleFileNew(data, inGallery) {
+    fileData.unshift(data)
+    if (inGallery) {
+        addGalleryFile(data, true)
+        updateNoFilesOverlay()
+    }
+}
+
+function handleFileDelete(data, inGallery) {
+    const idx = fileData.findIndex((file) => file.id === data.id)
+    if (idx !== -1) fileData.splice(idx, 1)
+    if (inGallery) {
+        $(`#gallery-image-${data.id}`).remove()
+        updateNoFilesOverlay()
+    }
+}
+
+function removeFileFromViews(fileId, inGallery, inMap) {
+    const idx = fileData.findIndex((f) => f.id === fileId)
+    if (idx !== -1) fileData.splice(idx, 1)
+    if (inGallery) {
+        document.getElementById(`gallery-image-${fileId}`)?.remove()
+    } else if (inMap) {
+        const marker = mapFileMarkers.get(fileId)
+        if (marker) {
+            marker.remove()
+            mapFileMarkers.delete(fileId)
+        }
+    } else {
+        removeFileTableRow(fileId)
+    }
+}
+
+function addFileToViews(fileId, inGallery, inMap) {
+    fetchFile(fileId).then((file) => {
+        fileData.push(file)
+        if (inGallery) {
+            addGalleryFile(file, true)
+            updateNoFilesOverlay()
+        } else if (inMap) {
+            const L = globalThis.L
+            if (L && mapInitialised) addFileMapMarker(L, file)
+            updateNoFilesOverlay()
+        } else {
+            file['DT_RowId'] = `file-${file.id}`
+            addFileTableRowsBatch([file])
+        }
+    })
+}
+
+function handleAlbumChange(data, inGallery, inMap, currentAlbum) {
+    if (!currentAlbum) return
+    const albumId = Number.parseInt(currentAlbum, 10)
+    const affectsAlbum =
+        data.event === 'set-file-albums'
+            ? (data.removed_from && albumId in data.removed_from) ||
+              (data.added_to && albumId in data.added_to)
+            : data.albums?.some((a) => a.id === albumId)
+    if (!affectsAlbum) return
+
+    const fileIds =
+        data.event === 'set-file-albums' ? [data.file_id] : data.pks || []
+    const isRemove =
+        data.event === 'bulk-remove-file-albums' ||
+        (data.event === 'set-file-albums' &&
+            data.removed_from &&
+            albumId in data.removed_from)
+    const isAdd =
+        data.event === 'bulk-add-file-albums' ||
+        (data.event === 'set-file-albums' &&
+            data.added_to &&
+            albumId in data.added_to)
+
+    if (isRemove) {
+        for (const fileId of fileIds)
+            removeFileFromViews(fileId, inGallery, inMap)
+        if (inGallery || inMap) updateNoFilesOverlay()
+    }
+    if (isAdd) {
+        for (const fileId of fileIds) addFileToViews(fileId, inGallery, inMap)
+    }
+}
+
+function handleGalleryEvent(data) {
+    if (data.event === 'set-password-file') passwordStatusChange(data)
+    else if (data.event === 'toggle-private-file') privateStatusChange(data)
+    else if (data.event === 'set-file-name') fileRename(data)
+    else if (data.event === 'set-expr-file') fileExpireChange(data)
+}
+
 socket?.addEventListener('message', function (event) {
     if (event.data === 'pong') return
     const data = JSON.parse(event.data)
@@ -1112,92 +1208,13 @@ socket?.addEventListener('message', function (event) {
     const currentAlbum = params.get('album')
 
     if (data.event === 'file-new') {
-        fileData.unshift(data)
-        if (inGallery) {
-            addGalleryFile(data, true)
-            updateNoFilesOverlay()
-        }
+        handleFileNew(data, inGallery)
     } else if (data.event === 'file-delete') {
-        const idx = fileData.findIndex((file) => file.id === data.id)
-        if (idx !== -1) fileData.splice(idx, 1)
-        if (inGallery) {
-            $(`#gallery-image-${data.id}`).remove()
-            updateNoFilesOverlay()
-        }
-    } else if (
-        data.event === 'set-file-albums' ||
-        data.event === 'bulk-add-file-albums' ||
-        data.event === 'bulk-remove-file-albums'
-    ) {
-        if (!currentAlbum) return
-        const albumId = parseInt(currentAlbum, 10)
-        const affectsAlbum =
-            data.event === 'set-file-albums'
-                ? (data.removed_from && albumId in data.removed_from) ||
-                  (data.added_to && albumId in data.added_to)
-                : data.albums?.some((a) => a.id === albumId)
-        if (!affectsAlbum) return
-
-        const fileIds =
-            data.event === 'set-file-albums' ? [data.file_id] : data.pks || []
-        const isRemove =
-            data.event === 'bulk-remove-file-albums' ||
-            (data.event === 'set-file-albums' &&
-                data.removed_from &&
-                albumId in data.removed_from)
-        const isAdd =
-            data.event === 'bulk-add-file-albums' ||
-            (data.event === 'set-file-albums' &&
-                data.added_to &&
-                albumId in data.added_to)
-
-        if (isRemove) {
-            for (const fileId of fileIds) {
-                const idx = fileData.findIndex((f) => f.id === fileId)
-                if (idx !== -1) fileData.splice(idx, 1)
-                if (inGallery) {
-                    document.getElementById(`gallery-image-${fileId}`)?.remove()
-                } else if (inMap) {
-                    const marker = mapFileMarkers.get(fileId)
-                    if (marker) {
-                        marker.remove()
-                        mapFileMarkers.delete(fileId)
-                    }
-                } else {
-                    removeFileTableRow(fileId)
-                }
-            }
-            if (inGallery || inMap) updateNoFilesOverlay()
-        }
-
-        if (isAdd) {
-            for (const fileId of fileIds) {
-                fetchFile(fileId).then((file) => {
-                    fileData.push(file)
-                    if (inGallery) {
-                        addGalleryFile(file, true)
-                        updateNoFilesOverlay()
-                    } else if (inMap) {
-                        const L = globalThis.L
-                        if (L && mapInitialised) addFileMapMarker(L, file)
-                        updateNoFilesOverlay()
-                    } else {
-                        file['DT_RowId'] = `file-${file.id}`
-                        addFileTableRowsBatch([file])
-                    }
-                })
-            }
-        }
+        handleFileDelete(data, inGallery)
+    } else if (ALBUM_EVENTS.has(data.event)) {
+        handleAlbumChange(data, inGallery, inMap, currentAlbum)
     } else if (inGallery) {
-        if (data.event === 'set-password-file') {
-            passwordStatusChange(data)
-        } else if (data.event === 'toggle-private-file') {
-            privateStatusChange(data)
-        } else if (data.event === 'set-file-name') {
-            fileRename(data)
-        } else if (data.event === 'set-expr-file') {
-            fileExpireChange(data)
-        }
+        handleGalleryEvent(data)
     }
 })
 
