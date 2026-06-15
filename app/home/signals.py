@@ -37,10 +37,10 @@ def files_delete_signal(sender, instance, **kwargs):
     data = model_to_dict(instance, exclude=["file", "info", "exif", "date", "edit", "meta", "thumb", "albums"])
     try:
         decrement_storage_usage(instance.file.size, instance.user.pk)
-    except ClientError, FileNotFoundError:
+    except (ClientError, FileNotFoundError):
         # catch a case where file was removed from s3 but not our database
         # we should probably trigger a storage recalculation in this instance
-        log.error(f"Failed decrementing storage usage on delete of {instance.file.name}.")
+        log.exception("Failed decrementing storage usage on delete of %s", instance.file.name)
     instance.thumb.delete(True)
     instance.file.delete(True)
     delete_file_websocket.apply_async(args=[data, instance.user.id], priority=0)
@@ -55,8 +55,8 @@ def files_post_save_signal(sender, instance, **kwargs):
         update_fields = list(kwargs["update_fields"]) if kwargs.get("update_fields") else []
         log.debug("update_fields: %s", update_fields)
         update_file_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
-    except Exception as error:
-        log.warning("ERROR: %s", error)
+    except Exception:
+        log.exception("files_post_save_signal failed")
 
 
 @receiver(post_save, sender=Files)
@@ -78,8 +78,8 @@ def albums_post_save_signal(sender, instance, created, **kwargs):
             data["user_name"] = instance.user.get_name()
             update_fields = list(kwargs["update_fields"]) if kwargs.get("update_fields") else []
             update_album_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
-    except Exception as error:
-        log.warning("ERROR: %s", error)
+    except Exception:
+        log.exception("albums_post_save_signal failed")
 
 
 @receiver(post_save, sender=Albums)

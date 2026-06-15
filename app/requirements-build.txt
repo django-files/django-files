@@ -21,7 +21,6 @@ packaging
 Pillow
 psycopg[binary]
 python-decouple
-python-dotenv
 python-magic
 pytimeparse2
 qrcode[pil]

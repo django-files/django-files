@@ -13,7 +13,7 @@ from channels.layers import get_channel_layer
 from decouple import config
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -40,8 +40,11 @@ def app_init():
     password = config("PASSWORD", "12345")
     oauth = bool(config("OAUTH_REDIRECT_URL", None))
     if not oauth or (username and password):
-        CustomUser.objects.create_superuser(username=username, password=password)
-        log.info("Initial User Created: %s", username)
+        if not CustomUser.objects.filter(username=username).exists():
+            CustomUser.objects.create_superuser(username=username, password=password)
+            log.info("Initial User Created: %s", username)
+        else:
+            log.info("User already exists, skipping: %s", username)
     return "app_init - finished"
 
 
@@ -59,12 +62,12 @@ def generate_thumbs(user_pk: int = None, only_missing: bool = True):
         )
     else:
         files = Files.objects.filter(user__in=users, mime__startswith="image").exclude(thumb_exclude)
-    log.info("Processing thumbnails for %d objects: %s", len(files), files)
-    for file in files:
+    log.info("Processing thumbnails for %d objects", files.count())
+    for file in files.iterator():
         log.info("Generating thumbnail for: %s", file.name)
         try:
             thumbnail_processor(file)
-        except ValueError, UnidentifiedImageError:
+        except (ValueError, UnidentifiedImageError):
             # if we hit a file that cannot be processed ignore and continue
             log.error("Unable to process thumbnail for %s", file.name)
             continue
@@ -339,23 +342,22 @@ def clear_stats_cache():
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 10})
 def refresh_gallery_static_urls_cache():
     lock_key = "gallery_refresh"
-    # Refresh cached gallery files to handle case where url signing expired
     file_count = 0
-    if acquire_lock(lock_key, 1000):
-        try:
-            log.info("----- START gallery cache refresh -----")
-            # any file that renders in a gallery: an image, or a file with a generated thumb (video/audio)
-            files = Files.objects.filter(Q(mime__startswith="image/") | ~Q(thumb=""))
-            for file in files:
-                file.get_gallery_url()
-                file_count += 1
-            log.info("----- COMPLETE gallery cache refresh -----")
-        except Exception:
-            log.exception("Error populating gallery cache")
-        finally:
-            release_lock(lock_key)
-    else:
-        log.info("Gallery cache refresh task locked skipping run.")
+    if not acquire_lock(lock_key, 1000):
+        log.info("Gallery cache refresh task locked, skipping run.")
+        return "Skipped — already running."
+    try:
+        log.info("----- START gallery cache refresh -----")
+        # any file that renders in a gallery: an image, or a file with a generated thumb (video/audio)
+        qs = Files.objects.filter(Q(mime__startswith="image/") | ~Q(thumb=""))
+        for file in qs.iterator(chunk_size=500):
+            file.get_gallery_url()
+            file_count += 1
+        log.info("----- COMPLETE gallery cache refresh -----")
+    except Exception:
+        log.exception("Error populating gallery cache")
+    finally:
+        release_lock(lock_key)
     return f"Refreshed {file_count} gallery urls in cache."
 
 
@@ -363,9 +365,8 @@ def refresh_gallery_static_urls_cache():
 def delete_expired_files():
     log.info("delete_expired_files")
     now = timezone.now()
-    files = Files.objects.exclude(expr="")
     deleted = 0
-    for file in files:
+    for file in Files.objects.exclude(expr="").iterator():
         duration = parse(file.expr)
         if duration and (now - file.date).total_seconds() > duration:
             log.info("Deleting expired file: %s", file.file.name)
@@ -378,18 +379,24 @@ def delete_expired_files():
 def process_stats():
     log.info("----- START process_stats -----")
     now = timezone.now()
-    files = Files.objects.all()
     data = {"_totals": {"types": {}, "size": 0, "count": 0, "shorts": 0}}
-    for file in files:
-        if file.user_id not in data:
-            data[file.user_id] = {"types": {}, "size": 0, "count": 0, "shorts": 0}
 
-        for bucket in (data["_totals"], data[file.user_id]):
-            bucket["count"] += 1
-            bucket["size"] += file.size
-            mime_bucket = bucket["types"].setdefault(file.mime, {"size": 0, "count": 0})
-            mime_bucket["count"] += 1
-            mime_bucket["size"] += file.size
+    # Single GROUP BY query instead of loading every file row into Python
+    for row in Files.objects.values("user_id", "mime").annotate(count=Count("id"), total_size=Sum("size")):
+        uid = row["user_id"]
+        mime = row["mime"]
+        count = row["count"]
+        size = row["total_size"] or 0
+
+        if uid not in data:
+            data[uid] = {"types": {}, "size": 0, "count": 0, "shorts": 0}
+
+        for bucket in (data["_totals"], data[uid]):
+            bucket["count"] += count
+            bucket["size"] += size
+            mime_bucket = bucket["types"].setdefault(mime, {"size": 0, "count": 0})
+            mime_bucket["count"] += count
+            mime_bucket["size"] += size
 
     for user in CustomUser.objects.annotate(shorts_count=Count("shorturls")):
         if user.id not in data:
