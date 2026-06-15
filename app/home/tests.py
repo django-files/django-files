@@ -42,7 +42,7 @@ class TestAuthViews(TestCase):
         "settings:sharex-url": 200,
         "settings:flameshot": 200,
         "api:status": 200,
-        "api:stats": 200,
+        "api:stats-me": 200,
         "api:recent": 200,
         "api:auth-methods": 200,
     }
