@@ -23,7 +23,6 @@ from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.cache import cache
-from django.core.paginator import Paginator
 from django.core.signing import TimestampSigner
 from django.db.models import BigIntegerField, Count, IntegerField, Q, QuerySet, Sum
 from django.db.models.fields.json import KeyTextTransform
@@ -122,6 +121,15 @@ log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
 
 json_error_message = "Error Parsing JSON Body"
+
+
+def paginate_no_count(queryset, page, count):
+    """Paginate without a COUNT(*) query. Returns (items, next_page_or_none)."""
+    page = max(1, int(page))
+    offset = (page - 1) * count
+    rows = list(queryset[offset : offset + count + 1])
+    has_next = len(rows) > count
+    return rows[:count], (page + 1 if has_next else None)
 
 
 def auth_from_token(view=None, no_fail=False):
@@ -451,7 +459,6 @@ def invite_detail_view(request, invite_id):
     return HttpResponse(status=204)
 
 
-
 def _quota_bg(pct):
     if pct > 95:
         return "danger"
@@ -488,8 +495,20 @@ def stats_me_view(request):
         updated_at = localtime(s.updated_at).strftime("%-m/%-d %-I:%M %p")
         album_count = Albums.objects.filter(user=request.user).count()
         stat_cards = [
-            {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": s.stats["count"], "label": "Files", "modal": "mime"},
-            {"icon": "fa-solid fa-database", "bg": "info", "value": s.stats["human_size"], "label": "Storage Used", "modal": "mime"},
+            {
+                "icon": "fa-regular fa-folder-open",
+                "bg": "primary",
+                "value": s.stats["count"],
+                "label": "Files",
+                "modal": "mime",
+            },
+            {
+                "icon": "fa-solid fa-database",
+                "bg": "info",
+                "value": s.stats["human_size"],
+                "label": "Storage Used",
+                "modal": "mime",
+            },
             {"icon": "fa-solid fa-link", "bg": "success", "value": s.stats["shorts"], "label": "Short URLs"},
             {"icon": "fa-regular fa-images", "bg": "warning", "value": album_count, "label": "Albums"},
         ]
@@ -558,7 +577,13 @@ def stats_server_view(request):
     total_shorts = ShortURLs.objects.count()
     total_albums = Albums.objects.count()
     stat_cards = [
-        {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": total_files, "label": "Server Files", "modal": "mime"},
+        {
+            "icon": "fa-regular fa-folder-open",
+            "bg": "primary",
+            "value": total_files,
+            "label": "Server Files",
+            "modal": "mime",
+        },
         {
             "icon": "fa-solid fa-database",
             "bg": "info",
@@ -603,9 +628,7 @@ def stats_server_view(request):
     chart_shorts = [r["total_shorts"] for r in server_daily]
 
     # Mime type breakdown: live query
-    server_types = list(
-        Files.objects.values("mime").annotate(count=Count("pk"), size=Sum("size")).order_by("-count")
-    )
+    server_types = list(Files.objects.values("mime").annotate(count=Count("pk"), size=Sum("size")).order_by("-count"))
     types = [
         {
             "mime": t["mime"] or "unknown",
@@ -720,11 +743,9 @@ def files_view(request, page, count=25):
         allowed={"created": "date", "size": "size", "name": "name", "exif_date": "_exif_date"},
         default="-created",
     )
-    paginator = Paginator(q, count)
-    page_obj = paginator.get_page(page)
-    files = extract_files(page_obj.object_list)
+    page_items, _next = paginate_no_count(q, page, count)
+    files = extract_files(page_items)
     # log.debug("files: %s", files)
-    _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {
         "files": files,
         "next": _next,
@@ -884,11 +905,9 @@ def albums_view(request, page=None, count=100):
         allowed={"created": "date", "name": "name", "files": "_file_count"},
         default="-created",
     )
-    paginator = Paginator(q, count)
-    page_obj = paginator.get_page(page)
-    albums = extract_albums(page_obj.object_list)
+    page_items, _next = paginate_no_count(q, page, count)
+    albums = extract_albums(page_items)
     log.debug("albums: %s", albums)
-    _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {
         "albums": albums,
         "next": _next,
@@ -1608,11 +1627,9 @@ def shorts_paginated_view(request, page=1, count=100):
             allowed={"created": "created_at", "name": "short", "views": "views"},
             default="-created",
         )
-        paginator = Paginator(query, count)
-        page_obj = paginator.get_page(page)
+        page_items, _next = paginate_no_count(query, page, count)
         site_settings = site_settings_processor(None)["site_settings"]
-        shorts_data = _build_shorts_data(page_obj.object_list, site_settings["site_url"])
-        _next = page_obj.next_page_number() if page_obj.has_next() else None
+        shorts_data = _build_shorts_data(page_items, site_settings["site_url"])
         return JsonResponse({"shorts": shorts_data, "next": _next, "count": count}, status=200)
     except ValueError as error:
         log.debug(error)
@@ -1693,12 +1710,10 @@ def users_paginated_view(request, page=1, count=50):
         return JsonResponse({"error": "Superuser required"}, status=403)
     try:
         query = CustomUser.objects.select_related("discord", "github", "google").order_by("id")
-        paginator = Paginator(query, count)
-        page_obj = paginator.get_page(page)
-        users_data = serialize_users(page_obj.object_list)
+        page_items, _next = paginate_no_count(query, page, count)
+        users_data = serialize_users(page_items)
         for user_dict in users_data:
             user_dict["name"] = user_dict.get("first_name") or user_dict.get("username", "")
-        _next = page_obj.next_page_number() if page_obj.has_next() else None
         return JsonResponse({"users": users_data, "next": _next, "count": count}, status=200)
     except ValueError as error:
         log.debug(error)
@@ -1780,12 +1795,11 @@ def streams_view(request, page=None, count=100):
         allowed={"created": "started_at", "name": "name", "views": "unique_views"},
         default="-created",
     )
-    paginator = Paginator(q, count)
-    page_obj = paginator.get_page(page)
+    page_items, _next = paginate_no_count(q, page, count)
     from home.views import get_rtmp_host
 
     rtmp_host, _ = get_rtmp_host(request)
-    stream_list = list(page_obj.object_list)
+    stream_list = page_items
     stream_names = [s.name for s in stream_list]
     subscriber_counts = dict(
         PushInformation.objects.filter(group__name__in=stream_names)
@@ -1795,7 +1809,6 @@ def streams_view(request, page=None, count=100):
     )
     streams = extract_streams(stream_list, request.user.id, rtmp_host=rtmp_host, subscriber_counts=subscriber_counts)
     log.debug("streams: %s", streams)
-    _next = page_obj.next_page_number() if page_obj.has_next() else None
     response = {
         "streams": streams,
         "next": _next,
