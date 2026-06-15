@@ -13,6 +13,8 @@ let isOpen = false
 let panelLeafletMap = null
 let currentFileUrl = null
 let panelSocketHandler = null
+let currentHeroEl = null
+let currentOriginEl = null
 
 const loadingHtml =
     '<div class="file-preview-panel-loading"><i class="fa-solid fa-spinner fa-pulse"></i></div>'
@@ -21,13 +23,83 @@ const loadingHtml =
 // Public API
 // ============================================================
 
-export function openPanel(fileUrl) {
+export function openPanel(fileUrl, originEl = null) {
     currentFileUrl = fileUrl
     const panelUrl = `${fileUrl}${fileUrl.includes('?') ? '&' : '?'}panel=1`
 
     // 1. Show panel with skeleton immediately (no layout jank)
     panelContent.innerHTML = `<div class="file-preview-panel-loading" role="status" aria-live="polite"><i class="fa-solid fa-spinner fa-pulse"></i></div>`
-    panel.classList.add('open')
+
+    // Clean up any hero left over from a rapid re-open
+    if (currentHeroEl) {
+        currentHeroEl.remove()
+        currentHeroEl = null
+    }
+    currentOriginEl = originEl
+
+    let heroEl = null
+
+    if (originEl) {
+        const thumbImg = originEl.querySelector('img')
+        if (thumbImg?.complete && thumbImg.naturalWidth > 0) {
+            const thumbRect = thumbImg.getBoundingClientRect()
+            const vw = window.innerWidth
+            const vh = window.innerHeight
+            const dst = imageDisplayRect(thumbImg, vw, vh)
+
+            // Hero is full-viewport so its background colour (black/white per
+            // dark mode) fills the whole screen — no panel grey leaking through.
+            heroEl = document.createElement('div')
+            heroEl.className = 'panel-hero-thumb'
+
+            // The <img> lives at the final display rect; a starting transform
+            // maps it to the thumbnail's position and size.
+            const scaleX = thumbRect.width / dst.w
+            const scaleY = thumbRect.height / dst.h
+            const tx = (thumbRect.left - dst.left).toFixed(2)
+            const ty = (thumbRect.top - dst.top).toFixed(2)
+
+            const heroImg = document.createElement('img')
+            heroImg.src = thumbImg.src
+            Object.assign(heroImg.style, {
+                position: 'absolute',
+                top: `${dst.top}px`,
+                left: `${dst.left}px`,
+                width: `${dst.w}px`,
+                height: `${dst.h}px`,
+                objectFit: 'cover',
+                display: 'block',
+                transformOrigin: '0 0',
+                transform: `translate(${tx}px,${ty}px) scale(${scaleX},${scaleY})`,
+            })
+
+            heroEl.appendChild(heroImg)
+            document.body.appendChild(heroEl)
+            currentHeroEl = heroEl
+
+            // Hero background is opaque from frame 0 — no dark flash through
+            // the panel behind it. Only the image transform animates.
+            heroEl.getBoundingClientRect() // commit heroImg's starting transform
+            heroImg.style.transition =
+                'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+            heroImg.style.transform = 'none'
+        } else {
+            // Non-thumbnail: scale the FA icon from card centre to panel centre
+            const srcIcon = originEl.querySelector('.gallery-no-thumb i')
+            if (srcIcon) {
+                heroEl = buildIconHero(srcIcon)
+            }
+        }
+
+        // Panel opens instantly behind the hero — no slide animation
+        panel.style.transition = 'none'
+        panel.classList.add('open')
+        panel.getBoundingClientRect()
+        panel.style.transition = ''
+    } else {
+        panel.classList.add('open')
+    }
+
     panel.removeAttribute('aria-hidden')
     backdrop.classList.add('active')
     document.body.style.overflow = 'hidden'
@@ -37,23 +109,43 @@ export function openPanel(fileUrl) {
     const returnUrl = location.href
     history.pushState({ panelOpen: true, returnUrl }, '', fileUrl)
 
-    // 3. Fetch and render main content
-    fetch(panelUrl)
-        .then((r) => {
-            if (!r.ok) throw new Error(`HTTP ${r.status}`)
-            return r.text()
-        })
-        .then((html) => {
+    // 3. Fetch and render main content.
+    // Wait for the hero animation to finish before injecting HTML so no layout
+    // or GPU texture work happens during the clip-path transition.
+    const animationDone = heroEl
+        ? new Promise((r) => setTimeout(r, 350))
+        : Promise.resolve()
+
+    const fetchDone = fetch(panelUrl).then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.text()
+    })
+
+    Promise.all([fetchDone, animationDone])
+        .then(([html]) => {
             // Guard: user closed panel or navigated away before fetch completed
-            if (!isOpen || currentFileUrl !== fileUrl) return
+            if (!isOpen || currentFileUrl !== fileUrl) {
+                dismissHero(heroEl)
+                return
+            }
 
             panelContent.innerHTML = html
             initPanelContent(panelContent)
+
+            // For image content initPanelImage dismisses the hero once the
+            // image is decoded, creating a direct crossfade. For everything
+            // else (video, text…) dismiss the hero now.
+            if (!panelContent.querySelector('img.preview')) {
+                dismissHero(heroEl)
+            }
         })
         .catch((err) => {
             console.error('Preview panel fetch error:', err)
             // Guard: user closed panel before error state renders
-            if (!isOpen || currentFileUrl !== fileUrl) return
+            if (!isOpen || currentFileUrl !== fileUrl) {
+                dismissHero(heroEl)
+                return
+            }
 
             panelContent.innerHTML = `
                 <div class="file-preview-panel-loading text-danger" role="status">
@@ -61,7 +153,22 @@ export function openPanel(fileUrl) {
                     <p>Failed to load preview.</p>
                     <a href="${fileUrl}" class="btn btn-sm btn-outline-secondary mt-2">Open full page</a>
                 </div>`
+            dismissHero(heroEl)
         })
+}
+
+function dismissHero(heroEl) {
+    if (!heroEl || heroEl !== currentHeroEl) return
+    heroEl.style.transition = 'opacity 0.25s ease-in-out'
+    heroEl.style.opacity = '0'
+    heroEl.addEventListener(
+        'transitionend',
+        () => {
+            heroEl.remove()
+            if (currentHeroEl === heroEl) currentHeroEl = null
+        },
+        { once: true }
+    )
 }
 
 export function closePanel() {
@@ -76,7 +183,16 @@ export function closePanel() {
 function closePanelInternal() {
     isOpen = false
     currentFileUrl = null
-    panel.classList.remove('open')
+
+    // Remove any in-progress hero immediately
+    if (currentHeroEl) {
+        currentHeroEl.remove()
+        currentHeroEl = null
+    }
+
+    const origin = currentOriginEl
+    currentOriginEl = null
+
     if (panel.contains(document.activeElement)) document.activeElement.blur()
     panel.setAttribute('aria-hidden', 'true')
     backdrop.classList.remove('active')
@@ -93,16 +209,191 @@ function closePanelInternal() {
         panelSocketHandler = null
     }
 
-    // After slide-out animation: destroy map + clear content
-    setTimeout(() => {
-        if (!isOpen) {
-            if (panelLeafletMap) {
-                panelLeafletMap.remove()
-                panelLeafletMap = null
-            }
-            panelContent.innerHTML = loadingHtml
+    const thumbImg = origin?.isConnected ? origin.querySelector('img') : null
+
+    if (thumbImg?.complete && thumbImg.naturalWidth > 0) {
+        // Mirror the open animation: clear the panel immediately and use a
+        // hero thumbnail div for the reverse zoom so no panel content (sidebar,
+        // fixed-position elements, etc.) is visible during the animation.
+        panelCleanup()
+        panel.style.transition = 'none'
+        panel.classList.remove('open')
+        panel.getBoundingClientRect()
+        panel.style.transition = ''
+
+        const thumbRect = thumbImg.getBoundingClientRect()
+        const vw = window.innerWidth
+        const vh = window.innerHeight
+        const dst = imageDisplayRect(thumbImg, vw, vh)
+
+        const scaleX = thumbRect.width / dst.w
+        const scaleY = thumbRect.height / dst.h
+        const tx = (thumbRect.left - dst.left).toFixed(2)
+        const ty = (thumbRect.top - dst.top).toFixed(2)
+
+        const closeHero = document.createElement('div')
+        closeHero.className = 'panel-hero-thumb'
+
+        const heroImg = document.createElement('img')
+        heroImg.src = thumbImg.src
+        Object.assign(heroImg.style, {
+            position: 'absolute',
+            top: `${dst.top}px`,
+            left: `${dst.left}px`,
+            width: `${dst.w}px`,
+            height: `${dst.h}px`,
+            objectFit: 'cover',
+            display: 'block',
+            transformOrigin: '0 0',
+        })
+
+        closeHero.appendChild(heroImg)
+        document.body.appendChild(closeHero)
+        currentHeroEl = closeHero
+
+        // Background fades out and image scales back to thumbnail together
+        closeHero.getBoundingClientRect()
+        closeHero.style.transition =
+            'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+        heroImg.style.transition =
+            'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+        closeHero.style.opacity = '0'
+        heroImg.style.transform = `translate(${tx}px,${ty}px) scale(${scaleX},${scaleY})`
+
+        closeHero.addEventListener(
+            'transitionend',
+            () => {
+                closeHero.remove()
+                if (currentHeroEl === closeHero) currentHeroEl = null
+            },
+            { once: true }
+        )
+    } else {
+        // Non-thumbnail: FA icon shrink-back animation, or plain slide-down
+        const srcIcon =
+            origin?.isConnected && origin.querySelector('.gallery-no-thumb i')
+        if (srcIcon) {
+            panelCleanup()
+            panel.style.transition = 'none'
+            panel.classList.remove('open')
+            panel.getBoundingClientRect()
+            panel.style.transition = ''
+
+            const closeHero = buildIconHero(srcIcon, true)
+            currentHeroEl = closeHero
+            closeHero.addEventListener(
+                'transitionend',
+                () => {
+                    closeHero.remove()
+                    if (currentHeroEl === closeHero) currentHeroEl = null
+                },
+                { once: true }
+            )
+        } else {
+            // Standard slide-down (non-gallery open, or thumbnail not available)
+            panel.classList.remove('open')
+            setTimeout(() => {
+                if (!isOpen) panelCleanup()
+            }, 360)
         }
-    }, 360)
+    }
+}
+
+function panelCleanup() {
+    if (panelLeafletMap) {
+        panelLeafletMap.remove()
+        panelLeafletMap = null
+    }
+    panelContent.innerHTML = loadingHtml
+}
+
+// Returns the object-fit:contain display rect for an image within the panel
+// viewport, so the hero can animate to exactly where the image will land.
+function imageDisplayRect(thumbImg, vw, vh) {
+    const imgW = thumbImg.naturalWidth || thumbImg.width || 1
+    const imgH = thumbImg.naturalHeight || thumbImg.height || 1
+    const imgAspect = imgW / imgH
+    const vpAspect = vw / vh
+    let w, h, left, top
+    if (imgAspect >= vpAspect) {
+        w = vw
+        h = vw / imgAspect
+        left = 0
+        top = (vh - h) / 2
+    } else {
+        h = vh
+        w = vh * imgAspect
+        left = (vw - w) / 2
+        top = 0
+    }
+    return { w, h, left, top }
+}
+
+// ============================================================
+// Icon hero helpers (non-thumbnail open/close animation)
+// ============================================================
+
+// Builds and starts the icon hero animation (open or close).
+// reverse=false: icon scales from gallery card up to panel centre (fade in).
+// reverse=true:  icon shrinks from panel centre back to gallery card (fade out).
+function buildIconHero(srcIcon, reverse = false) {
+    const iconRect = srcIcon.getBoundingClientRect()
+
+    const heroEl = document.createElement('div')
+    heroEl.className = 'panel-hero-thumb panel-hero-icon'
+
+    const heroIcon = document.createElement('i')
+    heroIcon.className = srcIcon.className
+    Object.assign(heroIcon.style, {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        fontSize: '10em', // matches fa-10x used in the preview panel
+        lineHeight: '1',
+        display: 'block',
+    })
+
+    heroEl.appendChild(heroIcon)
+    document.body.appendChild(heroEl)
+
+    // Measure icon at its centred position, compute the card-position offset.
+    const finalRect = heroIcon.getBoundingClientRect()
+    const tx = (
+        iconRect.left +
+        iconRect.width / 2 -
+        (finalRect.left + finalRect.width / 2)
+    ).toFixed(2)
+    const ty = (
+        iconRect.top +
+        iconRect.height / 2 -
+        (finalRect.top + finalRect.height / 2)
+    ).toFixed(2)
+    const scale = (iconRect.width / (finalRect.width || 1)).toFixed(4)
+    const cardTransform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(${scale})`
+
+    if (!reverse) {
+        // Start at card position, transparent — animate to centre, opaque
+        heroEl.style.opacity = '0'
+        heroIcon.style.transform = cardTransform
+        currentHeroEl = heroEl
+    }
+    // reverse: starts opaque at centre (default CSS) — animate to card, transparent
+
+    heroEl.getBoundingClientRect() // force paint of starting state
+
+    heroEl.style.transition = 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+    heroIcon.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+
+    if (reverse) {
+        heroEl.style.opacity = '0'
+        heroIcon.style.transform = cardTransform
+    } else {
+        heroEl.style.opacity = '1'
+        heroIcon.style.transform = 'translate(-50%, -50%)'
+    }
+
+    return heroEl
 }
 
 // ============================================================
@@ -183,13 +474,16 @@ function initPanelImage(container) {
     const img = container.querySelector('img.preview')
     if (!img) return
     const skeleton = container.querySelector('#img-skeleton')
+    // Capture at call time so a rapid re-open can't dismiss the wrong hero
+    const heroEl = currentHeroEl
 
     // Set image to be invisible initially to prevent layout shift
     img.style.opacity = '0'
     img.style.transition = 'opacity 0.25s ease-in-out'
 
     const onLoad = () => {
-        // Single unified fade: skeleton fades out, image fades in together
+        // Crossfade: hero fades out as the decoded image fades in together
+        dismissHero(heroEl)
         if (skeleton) {
             skeleton.style.opacity = '0'
         }
@@ -207,6 +501,7 @@ function initPanelImage(container) {
     }
 
     const onError = () => {
+        dismissHero(heroEl)
         if (skeleton) skeleton.remove()
         img.style.display = 'none'
         const wrapper = img.closest('.preview-wrapper')
@@ -223,8 +518,9 @@ function initPanelImage(container) {
         if (img.naturalWidth === 0) onError()
         else onLoad()
     } else {
-        img.addEventListener('load', onLoad, { once: true })
-        img.addEventListener('error', onError, { once: true })
+        // decode() waits for the image to be fully decoded before the first
+        // paint, preventing the GPU texture-upload black flash on reveal.
+        img.decode().then(onLoad).catch(onError)
     }
 }
 

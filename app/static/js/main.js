@@ -259,7 +259,7 @@ function wireToolbarSearch(inputId, dt) {
     let timer
     input.addEventListener('input', () => {
         clearTimeout(timer)
-        timer = setTimeout(() => dt.search(input.value).draw(), 200)
+        timer = setTimeout(() => dt.search(input.value).draw(), 300)
     })
 }
 

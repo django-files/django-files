@@ -5,13 +5,14 @@ import {
     faKey,
     faHourglass,
     addFileTableRowsBatch,
+    removeFileTableRow,
     formatBytes,
     showTableSkeletons,
     hideTableSkeletons,
 } from './file-table.js'
 
 import { updateBulkCount } from './bulk-actions.js'
-import { fetchFiles } from './api-fetch.js'
+import { fetchFiles, fetchFile } from './api-fetch.js'
 
 import { socket } from './socket.js'
 import { getCtxMenuContainer } from './file-context-menu.js'
@@ -46,6 +47,17 @@ let selectedFileIds = []
 let scrollObserver = null
 let gallerySearchTerm = ''
 let galleryOrdering = params.get('ordering') || '-created'
+let galleryThumbSize = Math.max(
+    96,
+    Math.min(
+        416,
+        Number.parseInt(localStorage.getItem('galleryThumbSize') ?? '256', 10)
+    )
+)
+galleryContainer?.style.setProperty(
+    '--gallery-thumb-size',
+    galleryThumbSize + 'px'
+)
 
 function getActiveTypesParam() {
     return activeTypes.size > 0 ? [...activeTypes].join(',') : null
@@ -103,7 +115,7 @@ document.addEventListener('click', (e) => {
     const galleryLink = e.target.closest('.image-link')
     if (galleryLink?.href) {
         e.preventDefault()
-        openPanel(galleryLink.href)
+        openPanel(galleryLink.href, galleryLink.closest('.gallery-outer'))
         return
     }
 
@@ -217,6 +229,10 @@ function applyView(view) {
         view === 'gallery'
     )
     setToolbarBtnVisible(
+        document.getElementById('gallery-size-btn'),
+        view === 'gallery'
+    )
+    setToolbarBtnVisible(
         document.getElementById('gallery-select-all-btn'),
         view === 'gallery'
     )
@@ -242,8 +258,10 @@ function filterGallery() {
     for (const file of fileData) {
         const card = document.getElementById(`gallery-image-${file.id}`)
         if (!card) continue
-        card.style.display =
-            !term || file.name.toLowerCase().includes(term) ? '' : 'none'
+        card.classList.toggle(
+            'gallery-search-hidden',
+            !(!term || file.name.toLowerCase().includes(term))
+        )
     }
 }
 
@@ -317,6 +335,7 @@ function initFilterBtn() {
         trigger: 'click',
         placement: 'bottom',
         customClass: 'files-filter-popover',
+        popperConfig: { strategy: 'fixed' },
     })
 
     btn.addEventListener('shown.bs.popover', () => {
@@ -371,6 +390,7 @@ async function applyTypeFilter() {
             galleryLeafletMap.remove()
             galleryLeafletMap = null
             mapInitialised = false
+            mapFileMarkers.clear()
         }
         document.getElementById('map-container').innerHTML = ''
         initMapView()
@@ -426,6 +446,7 @@ function initGallerySortBtn() {
         trigger: 'click',
         placement: 'bottom',
         customClass: 'gallery-sort-popover',
+        popperConfig: { strategy: 'fixed' },
     })
 
     btn.addEventListener('shown.bs.popover', () => {
@@ -441,6 +462,44 @@ function initGallerySortBtn() {
             })
         })
 
+        attachPopoverClickOutside(btn, tip, popover)
+    })
+}
+
+function initGallerySizeBtn() {
+    const btn = document.getElementById('gallery-size-btn')
+    const tpl = document.getElementById('gallery-size-popup-tpl')
+    if (!btn || !tpl) return
+
+    const popover = new bootstrap.Popover(btn, {
+        html: true,
+        content: () => {
+            const clone = tpl.content.cloneNode(true)
+            clone.querySelector('#gallery-size-slider').value = galleryThumbSize
+            return clone
+        },
+        trigger: 'click',
+        placement: 'bottom',
+        customClass: 'gallery-size-popover',
+        popperConfig: { strategy: 'fixed' },
+    })
+
+    btn.addEventListener('shown.bs.popover', () => {
+        const tip = document.querySelector(
+            '.gallery-size-popover .popover-body'
+        )
+        if (!tip) return
+        const slider = tip.querySelector('#gallery-size-slider')
+        if (!slider) return
+        slider.value = galleryThumbSize
+        slider.addEventListener('input', () => {
+            galleryThumbSize = Number.parseInt(slider.value, 10)
+            localStorage.setItem('galleryThumbSize', galleryThumbSize)
+            galleryContainer.style.setProperty(
+                '--gallery-thumb-size',
+                galleryThumbSize + 'px'
+            )
+        })
         attachPopoverClickOutside(btn, tip, popover)
     })
 }
@@ -479,7 +538,7 @@ function initGallerySelectAllBtn() {
         fileData
             .filter((f) => {
                 const card = document.getElementById(`gallery-image-${f.id}`)
-                return card && card.style.display !== 'none'
+                return card && !card.classList.contains('gallery-search-hidden')
             })
             .map((f) => f.id)
 
@@ -535,6 +594,7 @@ async function initGallery() {
     initToolbar('files-toolbar', filesDataTable)
     initFilterBtn()
     initGallerySortBtn()
+    initGallerySizeBtn()
     initGallerySelectAllBtn()
     initTrackerBtn()
     initKMLExportBtn()
@@ -548,7 +608,7 @@ async function initGallery() {
             gallerySearchTerm = searchInput.value
             if (params.get('view') === 'gallery') {
                 clearTimeout(filterTimer)
-                filterTimer = setTimeout(filterGallery, 200)
+                filterTimer = setTimeout(filterGallery, 300)
             }
         })
     }
@@ -609,6 +669,7 @@ $('#user').on('change', async function (_event) {
             galleryLeafletMap.remove()
             galleryLeafletMap = null
             mapInitialised = false
+            mapFileMarkers.clear()
         }
         document.getElementById('map-container').innerHTML = ''
         initMapView()
@@ -618,7 +679,7 @@ $('#user').on('change', async function (_event) {
 })
 
 function showSkeletons() {
-    if (!nextPage) return
+    if (!nextPage || gallerySearchTerm.trim()) return
 
     if (params.get('view') !== 'gallery') {
         showTableSkeletons(40)
@@ -632,8 +693,6 @@ function showSkeletons() {
         outer.classList.add('m-1')
 
         const inner = tmplInner.cloneNode(false)
-        inner.style.minWidth = '256px'
-        inner.style.minHeight = '256px'
         inner.style.aspectRatio = '1 / 1'
 
         const shimmer = document.createElement('div')
@@ -795,11 +854,9 @@ function buildNoThumbPlaceholder(mime) {
 }
 
 function addGalleryGeneric(file, top = false) {
-    const maxThumbSize = 256
     const { outer, inner } = buildGalleryCard(file, top)
 
-    inner.style.minWidth = `${maxThumbSize}px`
-    inner.style.minHeight = `${maxThumbSize}px`
+    inner.style.aspectRatio = '1 / 1'
 
     const link = document.createElement('a')
     link.classList.add('image-link')
@@ -814,7 +871,6 @@ function addGalleryGeneric(file, top = false) {
 }
 
 function addGalleryImage(file, top = false) {
-    const maxThumbSize = 256
     const { outer, inner } = buildGalleryCard(file, top)
 
     // IMAGE AND LINK
@@ -827,14 +883,14 @@ function addGalleryImage(file, top = false) {
 
     if (file.meta?.PILImageWidth && file.meta?.PILImageHeight) {
         const scale = Math.min(
-            maxThumbSize / file.meta.PILImageWidth,
-            maxThumbSize / file.meta.PILImageHeight
+            galleryThumbSize / file.meta.PILImageWidth,
+            galleryThumbSize / file.meta.PILImageHeight
         )
         img.width = Math.round(file.meta.PILImageWidth * scale)
         img.height = Math.round(file.meta.PILImageHeight * scale)
     } else {
-        img.width = maxThumbSize
-        img.height = maxThumbSize
+        img.width = galleryThumbSize
+        img.height = galleryThumbSize
     }
 
     const skeleton = document.createElement('div')
@@ -857,8 +913,7 @@ function addGalleryImage(file, top = false) {
         () => {
             skeleton.remove()
             img.style.display = 'none'
-            inner.style.minWidth = `${img.width || maxThumbSize}px`
-            inner.style.minHeight = `${img.height || maxThumbSize}px`
+            inner.style.aspectRatio = '1 / 1'
             link.appendChild(buildNoThumbPlaceholder(file.mime))
             link.style.cssText = 'position:absolute;inset:0;display:block'
             showLabelsAlways(outer)
@@ -949,7 +1004,6 @@ function pollVideoThumb(
 }
 
 function addGalleryVideo(file, top = false) {
-    const maxThumbSize = 256
     const { inner } = buildGalleryCard(file, top)
 
     const link = document.createElement('a')
@@ -968,8 +1022,8 @@ function addGalleryVideo(file, top = false) {
     // CORS mode so img and pollVideoThumb's fetch share one HTTP cache entry,
     // avoiding a second download when img.src is set after the poll succeeds.
     img.crossOrigin = 'anonymous'
-    img.width = maxThumbSize
-    img.height = maxThumbSize
+    img.width = galleryThumbSize
+    img.height = galleryThumbSize
     img.style.visibility = 'hidden'
 
     const skeleton = document.createElement('div')
@@ -1101,34 +1155,122 @@ function changeView(event) {
     updateNoFilesOverlay()
 }
 
+const ALBUM_EVENTS = new Set([
+    'set-file-albums',
+    'bulk-add-file-albums',
+    'bulk-remove-file-albums',
+])
+
+function handleFileNew(data, inGallery) {
+    fileData.unshift(data)
+    if (inGallery) {
+        addGalleryFile(data, true)
+        updateNoFilesOverlay()
+    }
+}
+
+function handleFileDelete(data, inGallery) {
+    const idx = fileData.findIndex((file) => file.id === data.id)
+    if (idx !== -1) fileData.splice(idx, 1)
+    removeFileTableRow(data.id)
+    if (inGallery) {
+        $(`#gallery-image-${data.id}`).remove()
+        updateNoFilesOverlay()
+    }
+}
+
+function removeFileFromViews(fileId, inGallery, inMap) {
+    const idx = fileData.findIndex((f) => f.id === fileId)
+    if (idx !== -1) fileData.splice(idx, 1)
+    removeFileTableRow(fileId)
+    if (inGallery) {
+        document.getElementById(`gallery-image-${fileId}`)?.remove()
+    } else if (inMap) {
+        const marker = mapFileMarkers.get(fileId)
+        if (marker) {
+            marker.remove()
+            mapFileMarkers.delete(fileId)
+        }
+    }
+}
+
+function addFileToViews(fileId, inGallery, inMap) {
+    return fetchFile(fileId).then((file) => {
+        fileData.push(file)
+        if (inGallery) {
+            addGalleryFile(file, true)
+            updateNoFilesOverlay()
+        } else if (inMap) {
+            const L = globalThis.L
+            if (L && mapInitialised) {
+                addFileMapMarker(L, file)
+                if (trackerEnabled) drawTrackerPolyline(L)
+            }
+            updateNoFilesOverlay()
+        } else {
+            file['DT_RowId'] = `file-${file.id}`
+            addFileTableRowsBatch([file])
+        }
+    })
+}
+
+function handleAlbumChange(data, inGallery, inMap, currentAlbum) {
+    if (!currentAlbum) return
+    const albumId = Number.parseInt(currentAlbum, 10)
+    const affectsAlbum =
+        data.event === 'set-file-albums'
+            ? (data.removed_from && albumId in data.removed_from) ||
+              (data.added_to && albumId in data.added_to)
+            : data.albums?.some((a) => a.id === albumId)
+    if (!affectsAlbum) return
+
+    const fileIds =
+        data.event === 'set-file-albums' ? [data.file_id] : data.pks || []
+    const isRemove =
+        data.event === 'bulk-remove-file-albums' ||
+        (data.event === 'set-file-albums' &&
+            data.removed_from &&
+            albumId in data.removed_from)
+    const isAdd =
+        data.event === 'bulk-add-file-albums' ||
+        (data.event === 'set-file-albums' &&
+            data.added_to &&
+            albumId in data.added_to)
+
+    if (isRemove) {
+        for (const fileId of fileIds)
+            removeFileFromViews(fileId, inGallery, inMap)
+        if (inGallery || inMap) updateNoFilesOverlay()
+    }
+    if (isAdd) {
+        Promise.all(
+            fileIds.map((fileId) => addFileToViews(fileId, inGallery, inMap))
+        )
+    }
+}
+
+function handleGalleryEvent(data) {
+    if (data.event === 'set-password-file') passwordStatusChange(data)
+    else if (data.event === 'toggle-private-file') privateStatusChange(data)
+    else if (data.event === 'set-file-name') fileRename(data)
+    else if (data.event === 'set-expr-file') fileExpireChange(data)
+}
+
 socket?.addEventListener('message', function (event) {
     if (event.data === 'pong') return
     const data = JSON.parse(event.data)
     const inGallery = params.get('view') === 'gallery'
+    const inMap = params.get('view') === 'map'
+    const currentAlbum = params.get('album')
 
     if (data.event === 'file-new') {
-        fileData.unshift(data)
-        if (inGallery) {
-            addGalleryFile(data, true)
-            updateNoFilesOverlay()
-        }
+        handleFileNew(data, inGallery)
     } else if (data.event === 'file-delete') {
-        const idx = fileData.findIndex((file) => file.id === data.id)
-        if (idx !== -1) fileData.splice(idx, 1)
-        if (inGallery) {
-            $(`#gallery-image-${data.id}`).remove()
-            updateNoFilesOverlay()
-        }
+        handleFileDelete(data, inGallery)
+    } else if (ALBUM_EVENTS.has(data.event)) {
+        handleAlbumChange(data, inGallery, inMap, currentAlbum)
     } else if (inGallery) {
-        if (data.event === 'set-password-file') {
-            passwordStatusChange(data)
-        } else if (data.event === 'toggle-private-file') {
-            privateStatusChange(data)
-        } else if (data.event === 'set-file-name') {
-            fileRename(data)
-        } else if (data.event === 'set-expr-file') {
-            fileExpireChange(data)
-        }
+        handleGalleryEvent(data)
     }
 })
 
@@ -1200,10 +1342,12 @@ function buildImageLabels(file, bottomLeft) {
 const mapContainer = document.getElementById('map-container')
 let galleryLeafletMap = null
 let mapInitialised = false
+const mapFileMarkers = new Map()
 let trackerFiles = []
 let trackerPolyline = null
 let trackerStartMarker = null
 let trackerEndMarker = null
+let trackerArrows = []
 let trackerEnabled = params.get('tracker') === '1'
 
 // Promise-valued cache deduplicates concurrent hovers on the same pin
@@ -1310,6 +1454,16 @@ function initMapView() {
             })
             new FullscreenControl().addTo(galleryLeafletMap)
 
+            let arrowRedrawTimer = null
+            galleryLeafletMap.on('zoomend', () => {
+                if (!trackerEnabled || trackerSorted.length < 2) return
+                clearTimeout(arrowRedrawTimer)
+                arrowRedrawTimer = setTimeout(
+                    () => drawTrackerArrows(L, trackerSorted),
+                    150
+                )
+            })
+
             fetchAndPlotAllFiles(L)
         }
         // Re-append after Leaflet builds its pane DOM so the overlay
@@ -1368,6 +1522,69 @@ function makeTrackerPin(L, icon, bg) {
     })
 }
 
+function segmentBearing(lat1, lon1, lat2, lon2) {
+    const toRad = (d) => (d * Math.PI) / 180
+    const y = Math.sin(toRad(lon2 - lon1)) * Math.cos(toRad(lat2))
+    const x =
+        Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+        Math.sin(toRad(lat1)) *
+            Math.cos(toRad(lat2)) *
+            Math.cos(toRad(lon2 - lon1))
+    return (Math.atan2(y, x) * 180) / Math.PI
+}
+
+// Desired screen-space gap between consecutive arrows (px)
+const ARROW_SPACING_PX = 60
+
+function buildArrowIcon(L, angle) {
+    return L.divIcon({
+        html: `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="12" viewBox="0 0 10 12"
+                    style="transform:rotate(${angle}deg);transform-origin:50% 50%;display:block;overflow:visible;">
+                 <path d="M5,0 L10,11 L5,7.5 L0,11 Z"
+                       fill="#e85d04" fill-opacity="0.75"
+                       stroke="rgba(255,255,255,0.55)" stroke-width="1" stroke-linejoin="round"/>
+               </svg>`,
+        className: '',
+        iconSize: [10, 12],
+        iconAnchor: [5, 6],
+    })
+}
+
+function drawTrackerArrows(L, sorted) {
+    trackerArrows.forEach((m) => m.remove())
+    trackerArrows = []
+
+    const segments = sorted.length - 1
+    if (segments < 1) return
+
+    for (let i = 0; i < segments; i++) {
+        const [lat1, lon1] = sorted[i].coords
+        const [lat2, lon2] = sorted[i + 1].coords
+
+        const p1 = galleryLeafletMap.latLngToContainerPoint([lat1, lon1])
+        const p2 = galleryLeafletMap.latLngToContainerPoint([lat2, lon2])
+        const pixelLen = Math.hypot(p2.x - p1.x, p2.y - p1.y)
+        const count = Math.floor(pixelLen / ARROW_SPACING_PX)
+        if (count < 1) continue
+
+        const angle = segmentBearing(lat1, lon1, lat2, lon2).toFixed(1)
+        const icon = buildArrowIcon(L, angle)
+
+        for (let j = 1; j <= count; j++) {
+            const t = j / (count + 1)
+            trackerArrows.push(
+                L.marker([lat1 + (lat2 - lat1) * t, lon1 + (lon2 - lon1) * t], {
+                    icon,
+                    interactive: false,
+                    keyboard: false,
+                }).addTo(galleryLeafletMap)
+            )
+        }
+    }
+}
+
+let trackerSorted = []
+
 function drawTrackerPolyline(L) {
     if (trackerPolyline) {
         trackerPolyline.remove()
@@ -1381,21 +1598,27 @@ function drawTrackerPolyline(L) {
         trackerEndMarker.remove()
         trackerEndMarker = null
     }
+    trackerArrows.forEach((m) => m.remove())
+    trackerArrows = []
+    trackerSorted = []
+
     if (!trackerEnabled || trackerFiles.length < 2) return
-    const sorted = [...trackerFiles].sort((a, b) => a.dt - b.dt)
+    trackerSorted = [...trackerFiles].sort((a, b) => a.dt - b.dt)
     trackerPolyline = L.polyline(
-        sorted.map((f) => f.coords),
+        trackerSorted.map((f) => f.coords),
         { color: '#e85d04', weight: 3, opacity: 0.75, dashArray: '6, 4' }
     ).addTo(galleryLeafletMap)
 
-    trackerStartMarker = L.marker(sorted[0].coords, {
+    drawTrackerArrows(L, trackerSorted)
+
+    trackerStartMarker = L.marker(trackerSorted[0].coords, {
         icon: makeTrackerPin(L, 'fa-solid fa-flag', '#2a9d2a'),
         zIndexOffset: 1000,
     })
         .addTo(galleryLeafletMap)
         .bindTooltip('Start', { direction: 'top' })
 
-    trackerEndMarker = L.marker(sorted.at(-1).coords, {
+    trackerEndMarker = L.marker(trackerSorted.at(-1).coords, {
         icon: makeTrackerPin(L, 'fa-solid fa-flag-checkered', '#dc3545'),
         zIndexOffset: 1000,
     })
@@ -1484,6 +1707,56 @@ function initKMLExportBtn() {
     })
 }
 
+function addFileMapMarker(L, file) {
+    const coords = gpsToDecimal(file.exif?.GPSInfo)
+    if (!coords) return null
+
+    trackerFiles.push({
+        coords,
+        dt:
+            parseExifDatetime(file.exif?.DateTimeOriginal) ||
+            new Date(file.date),
+    })
+
+    const marker = L.marker(coords)
+        .addTo(galleryLeafletMap)
+        .bindTooltip(buildMarkerTooltip(file, coords), {
+            direction: 'top',
+            offset: [-15, -13],
+        })
+        .on('click', () => {
+            openPanel(file.url)
+        })
+        .on('tooltipopen', async (e) => {
+            const el = e.tooltip.getElement()
+            if (!el) return
+            L.DomEvent.disableClickPropagation(el)
+            el.style.cursor = 'pointer'
+            L.DomEvent.on(el, 'click', (e) => {
+                L.DomEvent.stopPropagation(e)
+                openPanel(file.url)
+            })
+            const img = el.querySelector('img[data-file-id]')
+            if (!img) return
+            const blobUrl = await resolveThumbSrc(file)
+            // Guard: tooltip may have closed before the blob resolved
+            if (!img.isConnected) return
+            img.src = blobUrl
+            img.addEventListener(
+                'load',
+                () => {
+                    img.style.opacity = '1'
+                    img.parentElement
+                        ?.querySelector('.placeholder-glow')
+                        ?.remove()
+                },
+                { once: true }
+            )
+        })
+    mapFileMarkers.set(file.id, marker)
+    return coords
+}
+
 async function fetchAndPlotAllFiles(L) {
     let page = 1
     const album = params.get('album')
@@ -1501,52 +1774,8 @@ async function fetchAndPlotAllFiles(L) {
         page = data.next
 
         for (const file of data.files) {
-            const coords = gpsToDecimal(file.exif?.GPSInfo)
-            if (!coords) continue
-
-            allCoords.push(coords)
-            trackerFiles.push({
-                coords,
-                dt:
-                    parseExifDatetime(file.exif?.DateTimeOriginal) ||
-                    new Date(file.date),
-            })
-
-            L.marker(coords)
-                .addTo(galleryLeafletMap)
-                .bindTooltip(buildMarkerTooltip(file, coords), {
-                    direction: 'top',
-                    offset: [-15, -13],
-                })
-                .on('click', () => {
-                    openPanel(file.url)
-                })
-                .on('tooltipopen', async (e) => {
-                    const el = e.tooltip.getElement()
-                    if (!el) return
-                    L.DomEvent.disableClickPropagation(el)
-                    el.style.cursor = 'pointer'
-                    L.DomEvent.on(el, 'click', (e) => {
-                        L.DomEvent.stopPropagation(e)
-                        openPanel(file.url)
-                    })
-                    const img = el.querySelector('img[data-file-id]')
-                    if (!img) return
-                    const blobUrl = await resolveThumbSrc(file)
-                    // Guard: tooltip may have closed before the blob resolved
-                    if (!img.isConnected) return
-                    img.src = blobUrl
-                    img.addEventListener(
-                        'load',
-                        () => {
-                            img.style.opacity = '1'
-                            img.parentElement
-                                ?.querySelector('.placeholder-glow')
-                                ?.remove()
-                        },
-                        { once: true }
-                    )
-                })
+            const coords = addFileMapMarker(L, file)
+            if (coords) allCoords.push(coords)
         }
     }
 

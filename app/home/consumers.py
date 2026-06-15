@@ -13,7 +13,7 @@ from django.db.models import Q
 from django.forms.models import model_to_dict
 from django_redis import get_redis_connection
 from home.models import Albums, Files, Stream
-from home.tasks import version_check
+from home.tasks import file_album_websocket, version_check
 from home.util.file import process_file
 from home.util.misc import redact_log
 from home.util.storage import file_rename
@@ -1093,7 +1093,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return None, self._error("File owned by another user.", **kwargs)
         return file, None
 
-    def set_file_albums(self, *, user_id: int = None, pk: int = None, albums: List[int] = None, **kwargs) -> dict:
+    def set_file_albums(
+        self, *, user_id: int = None, pk: int = None, albums: List[int] = None, **kwargs
+    ) -> Optional[dict]:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
@@ -1128,9 +1130,16 @@ class HomeConsumer(AsyncWebsocketConsumer):
         for album_id in file_albums:
             log.debug(f"removing {pk} from {album_id}")
             file.albums.remove(Albums.objects.get(id=album_id))
-        return {"event": "set-file-albums", "file_id": pk, "added_to": added, "removed_from": file_albums}
+        file_album_websocket.apply_async(
+            args=[
+                {"event": "set-file-albums", "file_id": pk, "added_to": added, "removed_from": file_albums},
+                user_id,
+            ],
+            priority=0,
+        )
+        return None
 
-    def remove_file_album(self, *, user_id: int = None, pk: int = None, album: int = None, **kwargs) -> dict:
+    def remove_file_album(self, *, user_id: int = None, pk: int = None, album: int = None, **kwargs) -> Optional[dict]:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
@@ -1147,7 +1156,11 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return err
         album = Albums.objects.get(id=album)
         file.albums.remove(album)
-        return {"event": "set-file-albums", "file_id": pk, "removed_from": {album.id: album.name}}
+        file_album_websocket.apply_async(
+            args=[{"event": "set-file-albums", "file_id": pk, "removed_from": {album.id: album.name}}, user_id],
+            priority=0,
+        )
+        return None
 
     def add_file_album(
         self,
@@ -1158,7 +1171,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         album_name: str = None,
         create_if_absent: bool = True,
         **kwargs,
-    ) -> dict:
+    ) -> Optional[dict]:
         """
         :param user_id: Integer - self.scope['user'].id - User ID
         :param pk: Integer - File ID
@@ -1188,7 +1201,14 @@ class HomeConsumer(AsyncWebsocketConsumer):
         else:
             return self._error("Album not found.", **kwargs)
         file.albums.add(selected_album)
-        return {"event": "set-file-albums", "file_id": pk, "added_to": {selected_album.id: selected_album.name}}
+        file_album_websocket.apply_async(
+            args=[
+                {"event": "set-file-albums", "file_id": pk, "added_to": {selected_album.id: selected_album.name}},
+                user_id,
+            ],
+            priority=0,
+        )
+        return None
 
     def bulk_edit_file_albums(
         self,
@@ -1199,7 +1219,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         album_name: str = None,
         action: str = None,
         **kwargs,
-    ) -> dict:
+    ) -> Optional[dict]:
         if not pks:
             return self._error("No file IDs specified.", **kwargs)
         if not albums and not album_name:
@@ -1221,9 +1241,10 @@ class HomeConsumer(AsyncWebsocketConsumer):
             getattr(file.albums, action)(*album_objs)
             count += 1
         result = {"event": f"bulk-{action}-file-albums", "count": count}
-        if action == "add":
-            result["albums"] = [{"id": a.id, "name": a.name} for a in album_objs]
-        return result
+        result["albums"] = [{"id": a.id, "name": a.name} for a in album_objs]
+        result["pks"] = list(files.values_list("id", flat=True))
+        file_album_websocket.apply_async(args=[result, user_id], priority=0)
+        return None
 
     async def check_for_update(self, *args, **kwargs) -> dict:
         log.debug("async - check_for_update")

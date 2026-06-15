@@ -18,7 +18,8 @@
 .gallery-image {
     max-height: 512px;
     max-width: 512px;
-    width: 100%;
+    width: var(--gallery-thumb-size, 256px);
+    height: auto;
 }
 
 .text-shadow {
@@ -36,7 +37,64 @@
 
 .gallery-outer {
     position: relative;
-    background-color: var(--bs-secondary-bg);
+    background-color: transparent;
+    border-radius: 10px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+        inset 1px 0 0 rgba(255, 255, 255, 0.2),
+        inset -1px 0 0 rgba(0, 0, 0, 0.06),
+        0 4px 20px rgba(0, 0, 0, 0.1),
+        0 1px 4px rgba(0, 0, 0, 0.05);
+    transition:
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.gallery-outer.gallery-search-hidden {
+    display: none;
+}
+
+[data-bs-theme='dark'] .gallery-outer {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.09),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+        inset 1px 0 0 rgba(255, 255, 255, 0.05),
+        inset -1px 0 0 rgba(0, 0, 0, 0.2),
+        0 4px 20px rgba(0, 0, 0, 0.25),
+        0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* Elevate on hover only when no context menu is open anywhere in the gallery */
+#gallery-container:not(:has(.dt-ctx-btn[aria-expanded='true']))
+    .gallery-outer:hover {
+    z-index: 2;
+}
+
+/* Always keep the card whose menu is open above everything else */
+.gallery-outer:has(.dt-ctx-btn[aria-expanded='true']) {
+    z-index: 3;
+}
+
+.gallery-outer:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+        inset 1px 0 0 rgba(255, 255, 255, 0.28),
+        inset -1px 0 0 rgba(0, 0, 0, 0.08),
+        0 8px 32px rgba(0, 0, 0, 0.14),
+        0 2px 8px rgba(0, 0, 0, 0.07);
+}
+
+[data-bs-theme='dark'] .gallery-outer:hover {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+        inset 1px 0 0 rgba(255, 255, 255, 0.07),
+        inset -1px 0 0 rgba(0, 0, 0, 0.25),
+        0 8px 32px rgba(0, 0, 0, 0.35),
+        0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
 .image-labels {
@@ -56,6 +114,11 @@
 .gallery-inner {
     position: relative;
     overflow: hidden;
+    border-radius: 9px; /* 1px less than outer to avoid sub-pixel corner bleed */
+}
+
+.gallery-inner:not(input) {
+    min-width: var(--gallery-thumb-size, 256px);
 }
 
 .video-play-overlay {
@@ -362,8 +425,9 @@
     z-index: 400;
 }
 
-/* Liquid-glass popover — shared by sort and filter */
+/* Liquid-glass popover — shared by sort, filter, and size */
 .gallery-sort-popover .popover-body,
+.gallery-size-popover .popover-body,
 .files-filter-popover .popover-body {
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     backdrop-filter: blur(24px) saturate(180%);
@@ -375,6 +439,7 @@
 }
 
 .gallery-sort-popover.popover,
+.gallery-size-popover.popover,
 .files-filter-popover.popover {
     border-color: rgba(0, 0, 0, 0.15);
     background: transparent;
@@ -382,11 +447,13 @@
 }
 
 .gallery-sort-popover .popover-arrow::after,
+.gallery-size-popover .popover-arrow::after,
 .files-filter-popover .popover-arrow::after {
     border-bottom-color: rgba(255, 255, 255, 0.72);
 }
 
 [data-bs-theme='dark'] .gallery-sort-popover .popover-body,
+[data-bs-theme='dark'] .gallery-size-popover .popover-body,
 [data-bs-theme='dark'] .files-filter-popover .popover-body {
     background-color: rgba(20, 20, 24, 0.72);
     box-shadow:
@@ -395,11 +462,13 @@
 }
 
 [data-bs-theme='dark'] .gallery-sort-popover.popover,
+[data-bs-theme='dark'] .gallery-size-popover.popover,
 [data-bs-theme='dark'] .files-filter-popover.popover {
     border-color: rgba(255, 255, 255, 0.12);
 }
 
 [data-bs-theme='dark'] .gallery-sort-popover .popover-arrow::after,
+[data-bs-theme='dark'] .gallery-size-popover .popover-arrow::after,
 [data-bs-theme='dark'] .files-filter-popover .popover-arrow::after {
     border-bottom-color: rgba(20, 20, 24, 0.72);
 }
