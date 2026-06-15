@@ -6,14 +6,23 @@ from pathlib import Path
 import sentry_sdk
 from asgiref.sync import sync_to_async
 from celery.schedules import crontab
-from decouple import Config, Csv, RepositoryEnv
+from decouple import Csv, config
 from django.contrib.messages import constants as message_constants
+from dotenv import find_dotenv, load_dotenv
 from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-_env_file = "test.env" if ("test" in sys.argv or "test_coverage" in sys.argv) else "settings.env"
-config = Config(RepositoryEnv(_env_file) if os.path.isfile(_env_file) else os.environ)
+if "test" in sys.argv or "test_coverage" in sys.argv:
+    dotenv_path = find_dotenv("test.env", usecwd=True)
+    print(f"TEST dotenv_path: {dotenv_path}")
+    env = load_dotenv(dotenv_path=dotenv_path)
+    print(f"TEST env: {env}")
+else:
+    dotenv_path = find_dotenv("settings.env", usecwd=True) or find_dotenv(usecwd=True)
+    print(f"dotenv_path: {dotenv_path}")
+    env = load_dotenv(dotenv_path=dotenv_path)
+    print(f"env: {env}")
 
 VERSION_CHECK_URL = config("VERSION_CHECK_URL", "https://github.com/django-files/django-files/releases/latest")
 
