@@ -27,8 +27,12 @@ $('#quick-short-form').on('submit', function (event) {
         success: function (data) {
             form.trigger('reset')
             navigator.clipboard.writeText(data.url).then(
-                () => show_toast(`Short created and copied: ${data.url}`, 'success'),
-                () => show_toast(`Short created: ${data.url}`, 'success'),
+                () =>
+                    show_toast(
+                        `Short created and copied: ${data.url}`,
+                        'success'
+                    ),
+                () => show_toast(`Short created: ${data.url}`, 'success')
             )
         },
         error: messageErrorHandler,
