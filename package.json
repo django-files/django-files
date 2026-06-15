@@ -1,25 +1,31 @@
 {
   "name": "django-files",
+  "private": true,
   "description": "Django Files",
   "homepage": "https://github.com/django-files/django-files",
+  "bugs": {
+    "url": "https://github.com/django-files/django-files/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/django-files/django-files.git"
   },
-  "bugs": {
-    "url": "https://github.com/django-files/django-files/issues"
-  },
   "scripts": {
     "postinstall": "npx gulp",
-    "copy-static": "npx gulp",
-    "lint": "npx eslint app/static/js"
+    "lint": "npx eslint app/static/js",
+    "prettier": "npm run prettier:write -- --log-level error",
+    "prettier:check": "prettier --check .",
+    "prettier:write": "prettier --write ."
+  },
+  "overrides": {
+    "axios": "^1.16.0",
+    "node-domexception": "file:patches/node-domexception"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",
     "animate.css": "^4.1.1",
     "bootstrap": "^5.3.8",
     "clipboard": "^2.0.11",
-    "echarts": "^5.4.3",
     "datatables.net": "^2.3.8",
     "datatables.net-bs5": "^2.3.8",
     "datatables.net-buttons": "^3.2.6",
@@ -27,6 +33,7 @@
     "datatables.net-plugins": "^2.3.6",
     "datatables.net-responsive": "^3.0.8",
     "datatables.net-select": "^3.1.3",
+    "echarts": "^5.4.3",
     "gulp": "^5.0.1",
     "gulp-download2": "^1.1.0",
     "highlight.js": "^11.11.1",
@@ -40,10 +47,6 @@
     "swiper": "^12.1.4",
     "tsparticles": "3.0.3",
     "ua-parser-js": "^2.0.9"
-  },
-  "overrides": {
-    "node-domexception": "file:patches/node-domexception",
-    "axios": "^1.16.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
