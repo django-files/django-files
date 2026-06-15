@@ -1,5 +1,6 @@
 import logging
 
+from api.utils import extract_albums
 from botocore.exceptions import ClientError
 from celery.signals import worker_ready
 from django.db.models.signals import post_delete, post_save, pre_delete
@@ -15,6 +16,7 @@ from home.tasks import (
     delete_album_websocket,
     delete_file_websocket,
     delete_stream_websocket,
+    new_album_websocket,
     send_success_message,
     update_album_websocket,
     update_file_websocket,
@@ -65,13 +67,17 @@ def clear_files_cache_signal(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=Albums)
-def albums_post_save_signal(sender, instance, **kwargs):
+def albums_post_save_signal(sender, instance, created, **kwargs):
     try:
-        data = model_to_dict(instance)
-        data["date"] = str(instance.date)
-        data["user_name"] = instance.user.get_name()
-        update_fields = list(kwargs["update_fields"]) if kwargs.get("update_fields") else []
-        update_album_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
+        if created:
+            data = extract_albums([instance])[0]
+            new_album_websocket.apply_async(args=[data], priority=0)
+        else:
+            data = model_to_dict(instance)
+            data["date"] = str(instance.date)
+            data["user_name"] = instance.user.get_name()
+            update_fields = list(kwargs["update_fields"]) if kwargs.get("update_fields") else []
+            update_album_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
     except Exception as error:
         log.warning("ERROR: %s", error)
 

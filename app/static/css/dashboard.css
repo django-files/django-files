@@ -93,13 +93,6 @@
     opacity: 0.55;
 }
 
-.quota-bar-wrap {
-    border-radius: 0.75rem;
-    border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.1);
-    padding: 1rem 1.25rem;
-    background: var(--bs-body-bg);
-}
-
 /* Skeleton shimmer blocks used inside dash-stat-card while stats load async */
 .dash-stat-skel-block {
     border-radius: 4px;

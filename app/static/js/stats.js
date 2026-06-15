@@ -5,10 +5,9 @@ $(document).on('click', '.updateStatsBtn', function () {
         type: 'POST',
         url: $(this).attr('data-target-url'),
         headers: { 'X-CSRFToken': csrftoken },
-        success: function (data) {
-            console.log('data:', data)
-            alert('Stats Update Submitted. Page will now Reload...')
-            location.reload()
+        success: function () {
+            show_toast('Stats processing queued.', 'info')
+            document.dispatchEvent(new CustomEvent('stats:reload'))
         },
         error: messageErrorHandler,
         cache: false,

@@ -96,7 +96,6 @@ def home_view(request):
     log.debug("%s - home_view: is_secure: %s", request.method, request.is_secure())
     context = {
         "full_context": True,
-        "use_simple_bulk_btn": True,
     }
     return render(request, "home.html", context)
 
@@ -107,7 +106,9 @@ def live_view(request, key):
     View  /live/:key/
     """
     log.debug("%s - live_view: is_secure: %s", request.method, request.is_secure())
-    stream = get_object_or_404(Stream.objects.select_related("user", "user__discord", "user__github", "user__google"), name=key)
+    stream = get_object_or_404(
+        Stream.objects.select_related("user", "user__discord", "user__github", "user__google"), name=key
+    )
     if not stream.public and not request.user.is_authenticated:
         return render(request, _404_TEMPLATE, status=404)
     is_owner = request.user.is_authenticated and (stream.user_id == request.user.id or request.user.is_superuser)
@@ -674,7 +675,12 @@ def url_route_view(request, filename):
     site_url = site_settings_processor(request)["site_settings"]["site_url"]
     is_panel = bool(request.GET.get("panel"))
     log.debug("url_route_view: %s", filename)
-    file = get_object_or_404(Files.objects.select_related("user", "user__discord", "user__github", "user__google").prefetch_related("albums"), name=filename)
+    file = get_object_or_404(
+        Files.objects.select_related("user", "user__discord", "user__github", "user__google").prefetch_related(
+            "albums"
+        ),
+        name=filename,
+    )
     log.debug("file.mime: %s", file.mime)
     session_view = request.session.get(f"view_{file.name}", True)
     log.debug(f"User {request.user} has not viewed file {file.name}: {session_view}")

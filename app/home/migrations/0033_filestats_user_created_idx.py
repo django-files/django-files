@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddIndex(
             model_name="filestats",
-            index=models.Index(fields=["user", "-created_at"], name="home_filest_user_id_created_idx"),
+            index=models.Index(fields=["user", "-created_at"], name="home_filest_user_id_75c054_idx"),
         ),
     ]

@@ -211,7 +211,7 @@ class FileStats(models.Model):
         ordering = ["-created_at"]
         verbose_name = "FileStat"
         verbose_name_plural = "FileStats"
-        indexes = [models.Index(fields=["user", "-created_at"])]
+        indexes = [models.Index(fields=["user", "-created_at"], name="home_filest_user_id_75c054_idx")]
 
 
 class ShortURLs(models.Model):

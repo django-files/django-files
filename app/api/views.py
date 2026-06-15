@@ -42,7 +42,6 @@ from home.models import Albums, Files, FileStats, ShortURLs, Stream
 from home.tasks import (
     clear_files_cache,
     clear_shorts_cache,
-    new_album_websocket,
     send_push_live,
     stream_status_websocket,
 )
@@ -272,7 +271,7 @@ def shorten_view(request):
         if not url:
             return JsonResponse({"error": "Missing Required Value: url"}, status=400)
         log.debug("url: %s", url)
-        if not validators.url(url):
+        if not validators.url(url, simple_host=True):
             return JsonResponse({"error": "Unable to Validate URL"}, status=400)
         if max_views and not str(max_views).isdigit():
             return JsonResponse({"error": "max-views Must be an Integer"}, status=400)
@@ -311,7 +310,6 @@ def _handle_create_album(request):
     )
     site_settings = SiteSettings.objects.settings()
     full_url = site_settings.site_url + reverse("home:files") + f"?album={album.id}"
-    new_album_websocket.apply_async(args=[extract_albums([album])[0]])  # no time to de-tangle this line
     return JsonResponse({"url": full_url}, safe=False)
 
 
@@ -547,20 +545,24 @@ def stats_me_view(request):
         ]
         if request.user.storage_quota:
             pct = request.user.get_storage_usage_pct()
-            stat_cards.append({
-                "icon": "fa-solid fa-hard-drive",
-                "bg": _quota_bg(pct),
-                "value": f"{pct}%",
-                "label": "My Quota",
-                "sublabel": f"{request.user.get_storage_used_human_read()} / {request.user.get_storage_quota_human_read()}",
-            })
+            stat_cards.append(
+                {
+                    "icon": "fa-solid fa-hard-drive",
+                    "bg": _quota_bg(pct),
+                    "value": f"{pct}%",
+                    "label": "My Quota",
+                    "sublabel": f"{request.user.get_storage_used_human_read()} / {request.user.get_storage_quota_human_read()}",
+                }
+            )
 
     return JsonResponse(
         {
             "has_stats": bool(stats),
             "updated_at": updated_at,
             "stat_cards": stat_cards,
-            "chart": {"days": days, "files": chart_files, "size": chart_size, "shorts": chart_shorts} if days else None,
+            "chart": (
+                {"days": days, "files": chart_files, "size": chart_size, "shorts": chart_shorts} if days else None
+            ),
         }
     )
 
@@ -592,20 +594,27 @@ def stats_server_view(request):
     total_albums = Albums.objects.count()
     stat_cards = [
         {"icon": "fa-regular fa-folder-open", "bg": "primary", "value": total_files, "label": "Server Files"},
-        {"icon": "fa-solid fa-database", "bg": "info", "value": Files.get_size_of(total_size), "label": "Server Storage"},
+        {
+            "icon": "fa-solid fa-database",
+            "bg": "info",
+            "value": Files.get_size_of(total_size),
+            "label": "Server Storage",
+        },
         {"icon": "fa-solid fa-link", "bg": "success", "value": total_shorts, "label": "Server Shorts"},
         {"icon": "fa-regular fa-images", "bg": "warning", "value": total_albums, "label": "Server Albums"},
     ]
     site_settings = SiteSettings.objects.settings()
     if site_settings.global_storage_quota:
         pct = site_settings.get_global_storage_quota_usage_pct()
-        stat_cards.append({
-            "icon": "fa-solid fa-server",
-            "bg": _quota_bg(pct),
-            "value": f"{pct}%",
-            "label": "System Quota",
-            "sublabel": f"{site_settings.get_global_storage_usage_human_read()} / {site_settings.get_global_storage_quota_human_read()}",
-        })
+        stat_cards.append(
+            {
+                "icon": "fa-solid fa-server",
+                "bg": _quota_bg(pct),
+                "value": f"{pct}%",
+                "label": "System Quota",
+                "sublabel": f"{site_settings.get_global_storage_usage_human_read()} / {site_settings.get_global_storage_quota_human_read()}",
+            }
+        )
 
     # Chart: sum per-user FileStats snapshots by day (avoids stale server-level snapshot)
     cutoff_date = (now() - timedelta(days=90)).date()
@@ -629,9 +638,11 @@ def stats_server_view(request):
 
     data = {
         "stat_cards": stat_cards,
-        "chart": {"days": chart_days, "files": chart_files, "size": chart_size, "shorts": chart_shorts}
-        if chart_days
-        else None,
+        "chart": (
+            {"days": chart_days, "files": chart_files, "size": chart_size, "shorts": chart_shorts}
+            if chart_days
+            else None
+        ),
     }
     cache.set(_SERVER_STATS_CACHE_KEY, data, _SERVER_STATS_CACHE_TTL)
     return JsonResponse(data)
