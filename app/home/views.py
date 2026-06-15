@@ -297,7 +297,7 @@ def files_view(request):
         except ValueError:
             pass
         if isinstance(album, int):
-            album = get_object_or_404(Albums, id=album)
+            album = get_object_or_404(Albums.objects.select_related("user"), id=album)
         elif isinstance(album, str):
             album = get_object_or_404(Albums, name=album, password=request.GET.get("password"))
             return HttpResponseRedirect(f"{request.path}?album={album.id}")
@@ -329,7 +329,7 @@ def files_view(request):
     if not request.user.is_authenticated and (not album or album.private):
         return HttpResponseRedirect(reverse("oauth:login"))
     elif request.user.is_superuser:
-        users = CustomUser.objects.all()
+        users = list(CustomUser.objects.all().only("id", "username"))
         ctx.update({"users": users})
     log.debug("%s - gallery_view: is_secure: %s", request.method, request.is_secure())
     return render(request, "gallery.html", ctx)
@@ -359,7 +359,7 @@ def albums_view(request):
     View  /albums/
     """
     log.debug("%s - albums_view: is_secure: %s", request.method, request.is_secure())
-    albums = Albums.objects.get_request(request)
+    albums = Albums.objects.get_request(request).select_related("user")
     context = {"albums": albums}
     if request.user.is_superuser:
         context["users"] = CustomUser.objects.all()

@@ -744,9 +744,9 @@ def albums_view(request, page=None, count=100):
     else:
         user = request.user.id
     if user == "0":
-        q = Albums.objects.filtered_request(request)
+        q = Albums.objects.filtered_request(request).select_related("user")
     else:
-        q = Albums.objects.filtered_request(request, user_id=int(user))
+        q = Albums.objects.filtered_request(request, user_id=int(user)).select_related("user")
     if search := request.GET.get("search"):
         q = q.filter(name__icontains=search)
     if (request.GET.get("ordering") or "").lstrip("-") == "files":
