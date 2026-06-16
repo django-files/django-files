@@ -406,8 +406,11 @@ def process_stats():
         data["_totals"]["shorts"] += user.shorts_count
 
     for user_id, _data in data.items():
+        if user_id is None:
+            # Orphaned files (no user) — already counted in _totals, skip
+            continue
         _data["human_size"] = Files.get_size_of(_data["size"])
-        real_user_id = None if str(user_id) == "_totals" else user_id
+        real_user_id = None if user_id == "_totals" else user_id
         log.info("user_id: %s data: %s", real_user_id, _data)
         stats = FileStats.objects.filter(user_id=real_user_id, created_at__date=now).first()
         if stats:
