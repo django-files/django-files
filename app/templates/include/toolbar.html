@@ -70,11 +70,11 @@ Optional:
         {% endif %}
         {% if tb_btn_label %}
             {% if not tb_btn_auth or request.user.is_authenticated %}
-            <button class="btn btn-primary btn-sm"
+            <button class="files-toolbar-btn"
                     data-bs-toggle="modal"
                     data-bs-target="{{ tb_btn_modal }}"
                     {% if tb_btn_title %}title="{{ tb_btn_title }}"{% endif %}>
-                <i class="{{ tb_btn_icon }} me-2" aria-hidden="true"></i>{{ tb_btn_label }}
+                <i class="{{ tb_btn_icon }}" aria-hidden="true"></i><span class="files-toolbar-view-label">{{ tb_btn_label }}</span>
             </button>
             {% endif %}
         {% endif %}

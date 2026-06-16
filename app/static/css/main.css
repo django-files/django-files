@@ -248,7 +248,7 @@ html {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.3rem 0.65rem;
+    padding: 0.47rem 0.65rem;
     border-radius: 999px;
     color: var(--bs-emphasis-color);
     line-height: 1;
@@ -264,7 +264,7 @@ html {
 }
 
 .files-toolbar-btn {
-    border: 1px solid var(--bs-border-color);
+    border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.2);
     background: transparent;
     font-size: 0.875rem;
     cursor: pointer;
