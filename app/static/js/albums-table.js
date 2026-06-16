@@ -2,11 +2,13 @@ import { fetchAlbums } from './api-fetch.js'
 import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import { attachSocketTableSync, socket } from './socket.js'
 import {
+    initPopupBtn,
     noChromeLayout,
     paginatedTableDefaults,
     selectColumn,
     selectColumnDef,
     selectConfig,
+    syncPopupBtnActive,
 } from './table-defaults.js'
 
 const albumsTable = $('#albums-table')
@@ -19,6 +21,25 @@ const totalAlbumsCount = document.getElementById('total-albums-count')
 let albumsDataTable
 let loader
 let deleteModal
+
+let albumsUserLabel = null
+let albumsPrivacyLabel = null
+
+function syncAlbumsFilterBtn() {
+    const parts = [albumsPrivacyLabel, albumsUserLabel].filter(Boolean)
+    syncPopupBtnActive(
+        'albums-toolbar-filter-btn',
+        parts.length === 0 ? null : parts.length === 1 ? parts[0] : 'Filtered'
+    )
+}
+
+function syncPrivacyState(container, activeVal) {
+    container.querySelectorAll('.privacy-filter-opt').forEach((btn) => {
+        const on = btn.dataset.privacy === activeVal
+        btn.classList.toggle('btn-secondary', on)
+        btn.classList.toggle('btn-outline-secondary', !on)
+    })
+}
 
 // Dynamic name truncation — viewport-based, half-slope on the narrow home card.
 const truncator = createTruncator(isHome ? 0.02 : 0.04)
@@ -106,10 +127,82 @@ async function domContentLoaded() {
     if (!isHome) {
         initToolbar('albums-toolbar', albumsDataTable)
         attachInfiniteScroll(albumsDataTable, loader)
-        attachUserFilter(albumsDataTable, {
-            loader,
-            skeletonFn: showAlbumsSkeletons,
-        })
+
+        // Restore filter state from URL on init
+        const initParams = new URL(location.href).searchParams
+        const initUserId = initParams.get('user')
+        if (initUserId) {
+            const tpl = document.getElementById(
+                'albums-toolbar-filter-popup-tpl'
+            )
+            albumsUserLabel =
+                tpl?.content
+                    .cloneNode(true)
+                    .querySelector(`option[value="${initUserId}"]`)
+                    ?.textContent?.trim() ?? 'User'
+        }
+        const initPrivacy = initParams.get('privacy')
+        if (initPrivacy === 'public') albumsPrivacyLabel = 'Public'
+        else if (initPrivacy === 'private') albumsPrivacyLabel = 'Private'
+        syncAlbumsFilterBtn()
+
+        initPopupBtn(
+            'albums-toolbar-filter-btn',
+            'albums-toolbar-filter-popup-tpl',
+            (body) => {
+                body.querySelectorAll('.privacy-filter-opt').forEach((btn) => {
+                    btn.addEventListener('click', async () => {
+                        const val = btn.dataset.privacy
+                        albumsPrivacyLabel =
+                            val === 'public'
+                                ? 'Public'
+                                : val === 'private'
+                                  ? 'Private'
+                                  : null
+                        syncPrivacyState(body, val)
+                        syncAlbumsFilterBtn()
+                        const url = new URL(location.href)
+                        if (val === 'all') url.searchParams.delete('privacy')
+                        else url.searchParams.set('privacy', val)
+                        globalThis.history.replaceState({}, null, url.href)
+                        loader.reset()
+                        albumsDataTable.clear().draw()
+                        showAlbumsSkeletons()
+                        await loader.load()
+                        if (!albumsDataTable.rows().count())
+                            albumsDataTable.draw()
+                    })
+                })
+                body.querySelector('#user')?.addEventListener(
+                    'change',
+                    async function () {
+                        const userId = this.value
+                        albumsUserLabel = userId
+                            ? this.options[this.selectedIndex]?.text
+                            : null
+                        const url = new URL(location.href)
+                        if (userId) url.searchParams.set('user', userId)
+                        else url.searchParams.delete('user')
+                        globalThis.history.replaceState({}, null, url.href)
+                        syncAlbumsFilterBtn()
+                        loader.reset()
+                        albumsDataTable.clear().draw()
+                        showAlbumsSkeletons()
+                        await loader.load()
+                        if (!albumsDataTable.rows().count())
+                            albumsDataTable.draw()
+                    }
+                )
+            },
+            {
+                prepareContent: (clone) => {
+                    const p = new URL(location.href).searchParams
+                    syncPrivacyState(clone, p.get('privacy') ?? 'all')
+                    const sel = clone.querySelector('#user')
+                    if (sel) sel.value = p.get('user') ?? ''
+                },
+            }
+        )
         initBulkSelect(albumsDataTable)
         $('.bulk-delete').on('click', () =>
             deleteModal.open(selectedPks(albumsDataTable))

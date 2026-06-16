@@ -23,7 +23,19 @@
         <i class="fa-solid fa-filter" aria-hidden="true"></i><span class="files-toolbar-view-label" id="files-filter-label">Filter</span>
     </button>
     <template id="files-filter-popup-tpl">
-        <div style="min-width:175px">
+        <div style="min-width:190px">
+            <div class="btn-group btn-group-sm w-100 mb-2" role="group" aria-label="Privacy filter">
+                <button type="button" class="btn btn-outline-secondary privacy-filter-opt" data-privacy="all">
+                    <i class="fa-solid fa-layer-group" aria-hidden="true"></i> All
+                </button>
+                <button type="button" class="btn btn-outline-secondary privacy-filter-opt" data-privacy="public">
+                    <i class="fa-solid fa-lock-open" aria-hidden="true"></i> Public
+                </button>
+                <button type="button" class="btn btn-outline-secondary privacy-filter-opt" data-privacy="private">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i> Private
+                </button>
+            </div>
+            <hr class="my-2">
             <div class="d-flex flex-column gap-1">
                 <button type="button" class="btn btn-sm text-start w-100 files-filter-opt" data-type="all">
                     <i class="fa-solid fa-layer-group me-1"></i> All
@@ -50,6 +62,10 @@
                     <i class="fa-solid fa-microchip me-1"></i> Executables
                 </button>
             </div>
+            {% if request.user.is_superuser and not album %}
+            <hr class="my-2">
+            {% include 'include/user-select.html' %}
+            {% endif %}
         </div>
     </template>
 
@@ -141,13 +157,6 @@
         <i class="fa-solid fa-magnifying-glass files-toolbar-search-icon" aria-hidden="true"></i>
         <input type="search" id="files-toolbar-search-input" class="form-control form-control-sm"
                placeholder="Search files…" autocomplete="off">
-    </div>
-
-    {# Filter slot — additional filters can be appended here without touching layout. #}
-    <div class="files-toolbar-filters" id="files-toolbar-filters">
-        {% if request.user.is_superuser and not album %}
-            {% include 'include/user-select.html' %}
-        {% endif %}
     </div>
 
     <div class="files-toolbar-actions">

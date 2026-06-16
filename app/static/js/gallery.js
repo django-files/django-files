@@ -13,6 +13,7 @@ import {
 
 import { updateBulkCount } from './bulk-actions.js'
 import { fetchFiles, fetchFile } from './api-fetch.js'
+import { initPopupBtn } from './table-defaults.js'
 
 import { socket } from './socket.js'
 import { getCtxMenuContainer } from './file-context-menu.js'
@@ -38,6 +39,10 @@ let activeTypes = new Set(
         .map((t) => t.trim())
         .filter(Boolean)
 )
+
+let activeUser = params.get('user') || ''
+let activeUserName = ''
+let activePrivacy = params.get('privacy') || ''
 
 let nextPage = 1
 let fileData = []
@@ -283,16 +288,28 @@ function syncFilterBtn() {
     const btn = document.getElementById('files-filter-btn')
     const label = document.getElementById('files-filter-label')
     if (!btn) return
-    const active = activeTypes.size > 0
+    const typesActive = activeTypes.size > 0
+    const userActive = !!activeUser
+    const privacyActive = !!activePrivacy
+    const active = typesActive || userActive || privacyActive
     btn.classList.toggle('view-active', active)
-    if (label) {
-        if (!active) {
-            label.textContent = 'Filter'
-        } else if (activeTypes.size === 1) {
-            label.textContent = TYPE_LABELS[[...activeTypes][0]] ?? 'Filter'
-        } else {
-            label.textContent = `${activeTypes.size} types`
-        }
+    if (!label) return
+    const activeDimensions = [typesActive, userActive, privacyActive].filter(
+        Boolean
+    ).length
+    if (!active) {
+        label.textContent = 'Filter'
+    } else if (activeDimensions > 1) {
+        label.textContent = 'Filtered'
+    } else if (typesActive) {
+        label.textContent =
+            activeTypes.size === 1
+                ? (TYPE_LABELS[[...activeTypes][0]] ?? 'Filter')
+                : `${activeTypes.size} types`
+    } else if (privacyActive) {
+        label.textContent = activePrivacy === 'public' ? 'Public' : 'Private'
+    } else {
+        label.textContent = activeUserName || 'User'
     }
 }
 
@@ -305,66 +322,47 @@ function syncFilterPopoverState(popoverBody) {
     })
 }
 
-function attachPopoverClickOutside(btn, tip, popover) {
-    const onClickOutside = (e) => {
-        if (
-            !btn.contains(e.target) &&
-            !tip.closest('.popover')?.contains(e.target)
-        ) {
-            popover.hide()
-        }
-    }
-    document.addEventListener('click', onClickOutside)
-    btn.addEventListener(
-        'hidden.bs.popover',
-        () => document.removeEventListener('click', onClickOutside),
-        { once: true }
-    )
+function syncPrivacyState(container, activeVal) {
+    container.querySelectorAll('.privacy-filter-opt').forEach((btn) => {
+        const on = btn.dataset.privacy === activeVal
+        btn.classList.toggle('btn-secondary', on)
+        btn.classList.toggle('btn-outline-secondary', !on)
+    })
 }
 
-function initFilterBtn() {
-    const btn = document.getElementById('files-filter-btn')
-    const tpl = document.getElementById('files-filter-popup-tpl')
-    if (!btn || !tpl) return
-
+async function handleUserChange(userId, userName) {
+    activeUser = userId || ''
+    activeUserName = userId ? userName || 'User' : ''
+    if (userId) {
+        params.set('user', userId)
+    } else {
+        params.delete('user')
+    }
+    globalThis.history.replaceState({}, null, '/files/?' + params)
     syncFilterBtn()
 
-    const popover = new bootstrap.Popover(btn, {
-        html: true,
-        content: () => {
-            const clone = tpl.content.cloneNode(true)
-            syncFilterPopoverState(clone)
-            return clone
-        },
-        trigger: 'click',
-        placement: 'bottom',
-        customClass: 'files-filter-popover',
-        popperConfig: { strategy: 'fixed' },
-    })
+    fileData = []
+    nextPage = 1
+    fetchLock = false
+    scrollObserver?.disconnect()
+    hideSkeletons()
+    if (typeof resetSlideshow === 'function') resetSlideshow()
+    galleryContainer.replaceChildren()
+    if (filesDataTable) filesDataTable.clear().draw()
 
-    btn.addEventListener('shown.bs.popover', () => {
-        const tip = document.querySelector(
-            '.files-filter-popover .popover-body'
-        )
-        if (!tip) return
-
-        tip.querySelectorAll('.files-filter-opt').forEach((optBtn) => {
-            optBtn.addEventListener('click', () => {
-                const t = optBtn.dataset.type
-                if (t === 'all') {
-                    activeTypes.clear()
-                } else if (activeTypes.has(t)) {
-                    activeTypes.delete(t)
-                } else {
-                    activeTypes.add(t)
-                }
-                syncFilterPopoverState(tip)
-                applyTypeFilter()
-            })
-        })
-
-        attachPopoverClickOutside(btn, tip, popover)
-    })
+    const view = params.get('view') || 'list'
+    if (view === 'map') {
+        if (galleryLeafletMap) {
+            galleryLeafletMap.remove()
+            galleryLeafletMap = null
+            mapInitialised = false
+            mapFileMarkers.clear()
+        }
+        document.getElementById('map-container').innerHTML = ''
+        initMapView()
+    } else {
+        await addNodes()
+    }
 }
 
 async function resetAndReload() {
@@ -375,6 +373,17 @@ async function resetAndReload() {
     galleryContainer.replaceChildren()
     if (filesDataTable) filesDataTable.clear().draw()
     await addNodes()
+}
+
+async function applyPrivacyFilter() {
+    if (activePrivacy) {
+        params.set('privacy', activePrivacy)
+    } else {
+        params.delete('privacy')
+    }
+    history.replaceState(null, '', '/files/?' + params)
+    syncFilterBtn()
+    await resetAndReload()
 }
 
 async function applyTypeFilter() {
@@ -430,108 +439,6 @@ function syncSortPopoverState(popoverBody) {
         const active = btn.dataset.ordering === galleryOrdering
         btn.classList.toggle('btn-secondary', active)
         btn.classList.toggle('btn-outline-secondary', !active)
-    })
-}
-
-function initGallerySortBtn() {
-    const btn = document.getElementById('gallery-sort-btn')
-    const tpl = document.getElementById('gallery-sort-popup-tpl')
-    if (!btn || !tpl) return
-
-    syncSortBtn()
-
-    const popover = new bootstrap.Popover(btn, {
-        html: true,
-        content: () => {
-            const clone = tpl.content.cloneNode(true)
-            syncSortPopoverState(clone)
-            return clone
-        },
-        trigger: 'click',
-        placement: 'bottom',
-        customClass: 'gallery-sort-popover',
-        popperConfig: { strategy: 'fixed' },
-    })
-
-    btn.addEventListener('shown.bs.popover', () => {
-        const tip = document.querySelector(
-            '.gallery-sort-popover .popover-body'
-        )
-        if (!tip) return
-
-        tip.querySelectorAll('[data-ordering]').forEach((optBtn) => {
-            optBtn.addEventListener('click', () => {
-                setGalleryOrdering(optBtn.dataset.ordering)
-                popover.hide()
-            })
-        })
-
-        attachPopoverClickOutside(btn, tip, popover)
-    })
-}
-
-function initGallerySizeBtn() {
-    const btn = document.getElementById('gallery-size-btn')
-    const tpl = document.getElementById('gallery-size-popup-tpl')
-    if (!btn || !tpl) return
-
-    const popover = new bootstrap.Popover(btn, {
-        html: true,
-        content: () => {
-            const clone = tpl.content.cloneNode(true)
-            clone.querySelector('#gallery-size-slider').value = galleryThumbSize
-            return clone
-        },
-        trigger: 'click',
-        placement: 'bottom',
-        customClass: 'gallery-size-popover',
-        popperConfig: { strategy: 'fixed' },
-    })
-
-    btn.addEventListener('shown.bs.popover', () => {
-        const tip = document.querySelector(
-            '.gallery-size-popover .popover-body'
-        )
-        if (!tip) return
-
-        const slider = tip.querySelector('#gallery-size-slider')
-        if (slider) {
-            slider.value = galleryThumbSize
-            slider.addEventListener('input', () => {
-                galleryThumbSize = Number.parseInt(slider.value, 10)
-                localStorage.setItem('galleryThumbSize', galleryThumbSize)
-                galleryContainer.style.setProperty(
-                    '--gallery-thumb-size',
-                    galleryThumbSize + 'px'
-                )
-            })
-        }
-
-        const uniformRadio = tip.querySelector('#gallery-sizing-uniform')
-        const naturalRadio = tip.querySelector('#gallery-sizing-natural')
-        if (uniformRadio && naturalRadio) {
-            if (galleryNaturalSizing) naturalRadio.checked = true
-            else uniformRadio.checked = true
-
-            tip.addEventListener('change', (e) => {
-                if (!e.target.matches('input[name="gallery-sizing"]')) return
-                galleryNaturalSizing = e.target.id === 'gallery-sizing-natural'
-                localStorage.setItem(
-                    'galleryNaturalSizing',
-                    galleryNaturalSizing
-                )
-                galleryContainer.classList.add('gallery-mode-switching')
-                setTimeout(() => {
-                    galleryContainer.classList.toggle(
-                        'gallery-natural',
-                        galleryNaturalSizing
-                    )
-                    galleryContainer.classList.remove('gallery-mode-switching')
-                }, 150)
-            })
-        }
-
-        attachPopoverClickOutside(btn, tip, popover)
     })
 }
 
@@ -623,9 +530,123 @@ async function initGallery() {
     history.scrollRestoration = 'manual'
     filesDataTable = initFilesTable()
     initToolbar('files-toolbar', filesDataTable)
-    initFilterBtn()
-    initGallerySortBtn()
-    initGallerySizeBtn()
+    if (activeUser) {
+        const tpl = document.getElementById('files-filter-popup-tpl')
+        if (tpl) {
+            activeUserName =
+                tpl.content
+                    .cloneNode(true)
+                    .querySelector(`option[value="${activeUser}"]`)
+                    ?.textContent?.trim() ?? 'User'
+        }
+    }
+    syncFilterBtn()
+    syncSortBtn()
+
+    initPopupBtn(
+        'files-filter-btn',
+        'files-filter-popup-tpl',
+        (tip) => {
+            tip.querySelectorAll('.privacy-filter-opt').forEach((optBtn) => {
+                optBtn.addEventListener('click', () => {
+                    const val = optBtn.dataset.privacy
+                    activePrivacy = val === 'all' ? '' : val
+                    syncPrivacyState(tip, val)
+                    applyPrivacyFilter()
+                })
+            })
+            tip.querySelectorAll('.files-filter-opt').forEach((optBtn) => {
+                optBtn.addEventListener('click', () => {
+                    const t = optBtn.dataset.type
+                    if (t === 'all') activeTypes.clear()
+                    else if (activeTypes.has(t)) activeTypes.delete(t)
+                    else activeTypes.add(t)
+                    syncFilterPopoverState(tip)
+                    applyTypeFilter()
+                })
+            })
+            const userSelect = tip.querySelector('#user')
+            if (userSelect) {
+                userSelect.addEventListener('change', () =>
+                    handleUserChange(
+                        userSelect.value,
+                        userSelect.options[userSelect.selectedIndex]?.text
+                    )
+                )
+            }
+        },
+        {
+            prepareContent: (clone) => {
+                syncPrivacyState(clone, activePrivacy || 'all')
+                syncFilterPopoverState(clone)
+                const userSel = clone.querySelector('#user')
+                if (userSel && activeUser) userSel.value = activeUser
+            },
+        }
+    )
+    initPopupBtn(
+        'gallery-sort-btn',
+        'gallery-sort-popup-tpl',
+        (tip, popover) => {
+            tip.querySelectorAll('[data-ordering]').forEach((optBtn) => {
+                optBtn.addEventListener('click', () => {
+                    setGalleryOrdering(optBtn.dataset.ordering)
+                    popover.hide()
+                })
+            })
+        },
+        { prepareContent: syncSortPopoverState }
+    )
+    initPopupBtn(
+        'gallery-size-btn',
+        'gallery-size-popup-tpl',
+        (tip) => {
+            const slider = tip.querySelector('#gallery-size-slider')
+            if (slider) {
+                slider.addEventListener('input', () => {
+                    galleryThumbSize = Number.parseInt(slider.value, 10)
+                    localStorage.setItem('galleryThumbSize', galleryThumbSize)
+                    galleryContainer.style.setProperty(
+                        '--gallery-thumb-size',
+                        galleryThumbSize + 'px'
+                    )
+                })
+            }
+            const uniformRadio = tip.querySelector('#gallery-sizing-uniform')
+            const naturalRadio = tip.querySelector('#gallery-sizing-natural')
+            if (uniformRadio && naturalRadio) {
+                if (galleryNaturalSizing) naturalRadio.checked = true
+                else uniformRadio.checked = true
+                tip.addEventListener('change', (e) => {
+                    if (!e.target.matches('input[name="gallery-sizing"]'))
+                        return
+                    galleryNaturalSizing =
+                        e.target.id === 'gallery-sizing-natural'
+                    localStorage.setItem(
+                        'galleryNaturalSizing',
+                        galleryNaturalSizing
+                    )
+                    galleryContainer.classList.add('gallery-mode-switching')
+                    setTimeout(() => {
+                        galleryContainer.classList.toggle(
+                            'gallery-natural',
+                            galleryNaturalSizing
+                        )
+                        galleryContainer.classList.remove(
+                            'gallery-mode-switching'
+                        )
+                    }, 150)
+                })
+            }
+        },
+        {
+            prepareContent: (clone) => {
+                clone.querySelector('#gallery-size-slider').value =
+                    galleryThumbSize
+            },
+        }
+    )
+
     initGallerySelectAllBtn()
     initTrackerBtn()
     initKMLExportBtn()
@@ -674,40 +695,6 @@ async function initGallery() {
     })
     filesDataTable?.columns.adjust().draw()
 }
-
-$('#user').on('change', async function (_event) {
-    const userId = $(this).val()
-    if (userId) {
-        params.set('user', userId)
-    } else {
-        params.delete('user')
-    }
-    const newPath = '/files/?' + params
-    globalThis.history.replaceState({}, null, newPath)
-
-    fileData = []
-    nextPage = 1
-    fetchLock = false
-    scrollObserver?.disconnect()
-    hideSkeletons()
-    if (typeof resetSlideshow === 'function') resetSlideshow()
-    galleryContainer.replaceChildren()
-    if (filesDataTable) filesDataTable.clear().draw()
-
-    const view = params.get('view') || 'list'
-    if (view === 'map') {
-        if (galleryLeafletMap) {
-            galleryLeafletMap.remove()
-            galleryLeafletMap = null
-            mapInitialised = false
-            mapFileMarkers.clear()
-        }
-        document.getElementById('map-container').innerHTML = ''
-        initMapView()
-    } else {
-        await addNodes()
-    }
-})
 
 function showSkeletons() {
     if (!nextPage || gallerySearchTerm.trim()) return

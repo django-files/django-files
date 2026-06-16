@@ -15,23 +15,46 @@ Optional:
   tb_btn_title         — button title attribute (tooltip)
   tb_btn_auth          — True → only show button to authenticated users
   tb_bulk_menu         — True → render shared delete-only bulk-actions dropdown
+  tb_filter            — True → render user-select filter (superusers only)
+  tb_filter_privacy    — True → render public/private toggle in filter popup
 {% endcomment %}
 <div class="files-toolbar" id="{{ tb_id }}" aria-label="{{ tb_label }}">
     <span class="files-toolbar-title">
         <i class="{{ tb_icon }} me-2" aria-hidden="true"></i>{{ tb_title }}
     </span>
 
+    {% if tb_filter_privacy or tb_filter and request.user.is_superuser %}
+    <button id="{{ tb_id }}-filter-btn"
+            class="files-toolbar-btn"
+            aria-label="Filter">
+        <i class="fa-solid fa-filter" aria-hidden="true"></i><span class="files-toolbar-view-label">Filter</span>
+    </button>
+    <template id="{{ tb_id }}-filter-popup-tpl">
+        <div style="min-width:190px">
+            {% if tb_filter_privacy %}
+            <div class="btn-group btn-group-sm w-100{% if tb_filter and request.user.is_superuser %} mb-2{% endif %}" role="group" aria-label="Privacy filter">
+                <button type="button" class="btn btn-outline-secondary privacy-filter-opt" data-privacy="all">
+                    <i class="fa-solid fa-layer-group" aria-hidden="true"></i> All
+                </button>
+                <button type="button" class="btn btn-outline-secondary privacy-filter-opt" data-privacy="public">
+                    <i class="fa-solid fa-lock-open" aria-hidden="true"></i> Public
+                </button>
+                <button type="button" class="btn btn-outline-secondary privacy-filter-opt" data-privacy="private">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i> Private
+                </button>
+            </div>
+            {% if tb_filter and request.user.is_superuser %}<hr class="my-2">{% endif %}
+            {% endif %}
+            {% if tb_filter and request.user.is_superuser %}{% include 'include/user-select.html' %}{% endif %}
+        </div>
+    </template>
+    {% endif %}
+
     <div class="files-toolbar-search" id="{{ tb_id }}-search">
         <label class="visually-hidden" for="{{ tb_id }}-search-input">Search {{ tb_title|lower }}</label>
         <i class="fa-solid fa-magnifying-glass files-toolbar-search-icon" aria-hidden="true"></i>
         <input type="search" id="{{ tb_id }}-search-input" class="form-control form-control-sm"
                placeholder="{{ tb_search_placeholder }}" autocomplete="off">
-    </div>
-
-    <div class="files-toolbar-filters" id="{{ tb_id }}-filters">
-        {% if request.user.is_superuser %}
-            {% include 'include/user-select.html' %}
-        {% endif %}
     </div>
 
     <div class="files-toolbar-actions">

@@ -726,6 +726,8 @@ def files_view(request, page, count=25):
         )
     else:
         return JsonResponse({"error": "Not Authenticated"}, status=401)
+    if privacy := request.GET.get("privacy"):
+        q = q.filter(private=(privacy == "private"))
     if mime := request.GET.get("mime"):
         q = q.filter(mime__startswith=mime)
     if type_param := request.GET.get("type"):
@@ -897,6 +899,8 @@ def albums_view(request, page=None, count=100):
         q = Albums.objects.filtered_request(request, user_id=int(user)).select_related("user")
     if search := request.GET.get("search"):
         q = q.filter(name__icontains=search)
+    if privacy := request.GET.get("privacy"):
+        q = q.filter(private=(privacy == "private"))
     q = q.annotate(file_count=Count("files"))
     q = apply_ordering(
         q,
@@ -1788,6 +1792,8 @@ def streams_view(request, page=None, count=100):
         q = Stream.objects.select_related("user").all()
     else:
         q = Stream.objects.select_related("user").filter(user_id=int(user))
+    if privacy := request.GET.get("privacy"):
+        q = q.filter(public=(privacy == "public"))
     q = apply_ordering(
         q,
         request,

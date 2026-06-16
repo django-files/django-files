@@ -28,16 +28,24 @@ export async function fetchFiles(
     types = null,
     extraParams = {}
 ) {
+    const privacy = new URL(location.href).searchParams.get('privacy')
     return fetchPaginated('/api/files/', page, count, {
         album,
         ordering,
         type: types,
+        ...(privacy ? { privacy } : {}),
         ...extraParams,
     })
 }
 
 export async function fetchAlbums(page, count = 100) {
-    return fetchPaginated('/api/albums/', page, count)
+    const privacy = new URL(location.href).searchParams.get('privacy')
+    return fetchPaginated(
+        '/api/albums/',
+        page,
+        count,
+        privacy ? { privacy } : {}
+    )
 }
 
 export async function fetchAlbumsSearch(query = '', count = 12) {

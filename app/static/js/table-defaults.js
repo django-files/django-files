@@ -34,6 +34,79 @@ export const selectConfig = {
     selector: 'td:first-child',
 }
 
+// Generic toolbar popup button wired to a <template> via Bootstrap Popover.
+// onShown(body, popover) fires each open with the live popover body for event wiring.
+// prepareContent(clone) fires on each open with the DocumentFragment before insertion,
+// useful for syncing active states onto the clone before it's displayed.
+export function initPopupBtn(btnId, tplId, onShown, { prepareContent } = {}) {
+    const btn = document.getElementById(btnId)
+    const tpl = document.getElementById(tplId)
+    if (!btn || !tpl) return
+
+    const popoverClass = `${btnId}-popover`
+    const popover = new bootstrap.Popover(btn, {
+        html: true,
+        content: () => {
+            const clone = tpl.content.cloneNode(true)
+            prepareContent?.(clone)
+            return clone
+        },
+        trigger: 'click',
+        placement: 'bottom',
+        customClass: popoverClass,
+        popperConfig: { strategy: 'fixed' },
+    })
+
+    btn.addEventListener('shown.bs.popover', () => {
+        const body = document.querySelector(`.${popoverClass} .popover-body`)
+        if (!body) return
+        onShown?.(body, popover)
+        const onOutside = (e) => {
+            if (
+                !btn.contains(e.target) &&
+                !body.closest('.popover')?.contains(e.target)
+            )
+                popover.hide()
+        }
+        document.addEventListener('click', onOutside)
+        btn.addEventListener(
+            'hidden.bs.popover',
+            () => document.removeEventListener('click', onOutside),
+            { once: true }
+        )
+    })
+}
+
+// Toggle the active state and label of a toolbar popup button.
+// Pass null/undefined activeLabel to deactivate; pass a string to activate.
+export function syncPopupBtnActive(
+    btnId,
+    activeLabel,
+    defaultLabel = 'Filter'
+) {
+    const btn = document.getElementById(btnId)
+    if (!btn) return
+    const span = btn.querySelector('.files-toolbar-view-label')
+    btn.classList.toggle('view-active', !!activeLabel)
+    if (span) span.textContent = activeLabel ?? defaultLabel
+}
+
+// Read the current ?user= URL param, resolve the display name from the popup
+// template's <select> options, and sync the filter button active state.
+export function syncUserFilterBtn(btnId, tplId) {
+    const userId = new URL(location.href).searchParams.get('user')
+    if (!userId) {
+        syncPopupBtnActive(btnId, null)
+        return
+    }
+    const tpl = document.getElementById(tplId)
+    const label = tpl?.content
+        .cloneNode(true)
+        .querySelector(`option[value="${userId}"]`)
+        ?.textContent?.trim()
+    syncPopupBtnActive(btnId, label ?? 'User')
+}
+
 export const paginatedTableDefaults = {
     paging: false,
     order: [0, 'desc'],
