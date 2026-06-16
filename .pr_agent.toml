@@ -1,0 +1,16 @@
+[config]
+model = "hosted_vllm/big-pickle"
+fallback_models = ["hosted_vllm/big-pickle"]
+custom_model_max_tokens = 128000
+
+[github_action_config]
+auto_review = true
+auto_describe = true
+auto_improve = true
+
+[pr_reviewer]
+enable_review_labels_effort = false
+enable_review_labels_security = false
+
+[openai]
+api_base = "https://opencode.ai/zen/v1"
