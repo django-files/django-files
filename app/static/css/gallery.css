@@ -8,10 +8,24 @@
         min-width: unset !important;
         min-height: unset !important;
     }
+    /* The uniform-mode rule (width: var(--gallery-thumb-size)) appears later in this file with
+       an ID selector, so it wins on both specificity and source order — !important is required */
+    #gallery-container:not(.gallery-natural) .gallery-inner:not(input) {
+        width: 100% !important;
+    }
     .gallery-inner img {
         width: 100% !important;
         height: auto !important;
         max-height: unset !important;
+        /* natural mode: prevent max-width:512px from capping the image on wider single-column screens */
+        max-width: none !important;
+    }
+    /* Uniform mode: restore square fill. The general rule above sets height:auto !important;
+       this selector has higher specificity so its height:100% !important wins */
+    #gallery-container:not(.gallery-natural) .gallery-inner img {
+        height: 100% !important;
+        max-height: none !important;
+        object-fit: cover;
     }
 }
 
