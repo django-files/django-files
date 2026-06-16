@@ -528,6 +528,28 @@ function initGallerySelectAllBtn() {
 
 async function initGallery() {
     history.scrollRestoration = 'manual'
+
+    // Delegated hover — one listener pair for the whole gallery instead of one per card
+    if (galleryContainer) {
+        galleryContainer.addEventListener('mouseover', mouseOver)
+        galleryContainer.addEventListener('mouseout', mouseOut)
+
+        // Toggle .gallery-ctx-open on container + card for z-index management,
+        // replacing the expensive :has() CSS selector
+        galleryContainer.addEventListener('show.bs.dropdown', (e) => {
+            galleryContainer.classList.add('gallery-ctx-open')
+            e.target
+                .closest('.gallery-outer')
+                ?.classList.add('gallery-ctx-open')
+        })
+        galleryContainer.addEventListener('hidden.bs.dropdown', (e) => {
+            galleryContainer.classList.remove('gallery-ctx-open')
+            e.target
+                .closest('.gallery-outer')
+                ?.classList.remove('gallery-ctx-open')
+        })
+    }
+
     filesDataTable = initFilesTable()
     initToolbar('files-toolbar', filesDataTable)
     if (activeUser) {
@@ -752,7 +774,13 @@ async function addNodes() {
     fileData.push(...data.files)
     hideSkeletons()
     if (params.get('view') === 'gallery') {
-        data.files.forEach((file) => addGalleryFile(file))
+        const addedOuters = []
+        data.files.forEach((file) => addedOuters.push(addGalleryFile(file)))
+        requestAnimationFrame(() => {
+            for (const outer of addedOuters) {
+                if (outer) outer.classList.remove('gallery-entering')
+            }
+        })
         filterGallery()
     }
     addFileTableRowsBatch(data.files)
@@ -772,19 +800,17 @@ const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp|jxl|avif)$/i
 
 function addGalleryFile(file, top = false) {
     if (file.mime?.startsWith('video/')) {
-        addGalleryVideo(file, top)
+        return addGalleryVideo(file, top)
     } else if (imageExtensions.test(file.name)) {
-        addGalleryImage(file, top)
+        return addGalleryImage(file, top)
     } else {
-        addGalleryGeneric(file, top)
+        return addGalleryGeneric(file, top)
     }
 }
 
 function buildGalleryCard(file, top = false) {
     const outer = tmplOuter.cloneNode(false)
     outer.id = `gallery-image-${file.id}`
-    outer.addEventListener('mouseover', mouseOver)
-    outer.addEventListener('mouseout', mouseOut)
 
     const inner = tmplInner.cloneNode(true)
     outer.appendChild(inner)
@@ -815,9 +841,32 @@ function buildGalleryCard(file, top = false) {
     const toggle = tmplCtxToggle.cloneNode(true)
     ctxMenu.appendChild(toggle)
     outer.appendChild(ctxMenu)
-    const menu = getCtxMenuContainer(file)
-    menu.style.zIndex = '1'
-    ctxMenu.appendChild(menu)
+
+    // Lazy: create the full menu DOM only on first open — Bootstrap needs the
+    // .dropdown-menu shell immediately for positioning, but the <li> items
+    // can wait until the user actually opens the menu.
+    const menuShell = document.createElement('div')
+    menuShell.id = `ctx-menu-${file.id}`
+    menuShell.dataset.id = file.id
+    menuShell.dataset.dataPk = file.id
+    menuShell.className = 'dropdown fileContextDropdown ctx-menu'
+    menuShell.style.zIndex = '1'
+    const menuUl = document.createElement('ul')
+    menuUl.className = 'dropdown-menu file-context-dropdown-menu'
+    menuShell.appendChild(menuUl)
+    ctxMenu.appendChild(menuShell)
+
+    toggle.addEventListener(
+        'show.bs.dropdown',
+        () => {
+            if (menuUl.dataset.built) return
+            menuUl.dataset.built = '1'
+            const full = getCtxMenuContainer(file)
+            const fullUl = full.querySelector('ul.dropdown-menu')
+            while (fullUl.firstChild) menuUl.appendChild(fullUl.firstChild)
+        },
+        { once: false }
+    )
 
     inner.appendChild(buildGalleryCheckbox(file))
 
@@ -830,7 +879,6 @@ function buildGalleryCard(file, top = false) {
     } else {
         galleryContainer.appendChild(outer)
     }
-    requestAnimationFrame(() => outer.classList.remove('gallery-entering'))
 
     return { outer, inner }
 }
@@ -888,6 +936,7 @@ function addGalleryGeneric(file, top = false) {
     link.appendChild(buildNoThumbPlaceholder(file.mime))
     inner.prepend(link)
     showLabelsAlways(outer)
+    return outer
 }
 
 function addGalleryImage(file, top = false) {
@@ -943,6 +992,7 @@ function addGalleryImage(file, top = false) {
     img.src = file.thumb || file.raw
     link.appendChild(img)
     inner.prepend(skeleton, link)
+    return outer
 }
 
 function fadeOutSkeleton(skeleton) {
@@ -1023,7 +1073,7 @@ function pollVideoThumb(
 }
 
 function addGalleryVideo(file, top = false) {
-    const { inner } = buildGalleryCard(file, top)
+    const { outer, inner } = buildGalleryCard(file, top)
 
     const link = document.createElement('a')
     link.classList.add('image-link')
@@ -1062,6 +1112,7 @@ function addGalleryVideo(file, top = false) {
     } else {
         showVideoThumbError(skeleton, inner, file.mime)
     }
+    return outer
 }
 
 function buildGalleryCheckbox(file) {
@@ -1098,15 +1149,16 @@ function addSpan(parent, textContent) {
 
 function mouseOver(event) {
     if (isTouch) return
-    event.currentTarget._mouseEls?.forEach((el) =>
-        el.classList.remove('d-none')
-    )
+    const outer = event.target.closest('.gallery-outer')
+    if (!outer || outer.contains(event.relatedTarget)) return
+    outer._mouseEls?.forEach((el) => el.classList.remove('d-none'))
 }
 
 function mouseOut(event) {
-    // TODO: Fix mouse out detection when mousing over ctx menu
-    if (event.target.closest('a')?.classList.contains('ctx-menu')) return
-    event.currentTarget._mouseEls?.forEach((el) => {
+    if (isTouch) return
+    const outer = event.target.closest('.gallery-outer')
+    if (!outer || outer.contains(event.relatedTarget)) return
+    outer._mouseEls?.forEach((el) => {
         if (el.classList.contains('gallery-checkbox') && el.checked) return
         el.classList.add('d-none')
     })
@@ -1117,14 +1169,20 @@ function renderGalleryChunked(files, chunkSize = 20, onComplete = null) {
     let i = 0
     function renderNext() {
         const end = Math.min(i + chunkSize, files.length)
+        const chunkOuters = []
         while (i < end) {
-            addGalleryFile(files[i++])
+            const outer = addGalleryFile(files[i++])
+            if (outer) chunkOuters.push(outer)
         }
-        if (i < files.length) {
-            requestAnimationFrame(renderNext)
-        } else if (onComplete) {
-            onComplete()
-        }
+        requestAnimationFrame(() => {
+            for (const outer of chunkOuters)
+                outer.classList.remove('gallery-entering')
+            if (i < files.length) {
+                requestAnimationFrame(renderNext)
+            } else if (onComplete) {
+                onComplete()
+            }
+        })
     }
     requestAnimationFrame(renderNext)
 }
@@ -1200,7 +1258,11 @@ const ALBUM_EVENTS = new Set([
 function handleFileNew(data, inGallery) {
     fileData.unshift(data)
     if (inGallery) {
-        addGalleryFile(data, true)
+        const outer = addGalleryFile(data, true)
+        if (outer)
+            requestAnimationFrame(() =>
+                outer.classList.remove('gallery-entering')
+            )
         updateNoFilesOverlay()
     }
 }
@@ -1250,7 +1312,11 @@ function addFileToViews(fileId, inGallery, inMap) {
     return fetchFile(fileId).then((file) => {
         fileData.push(file)
         if (inGallery) {
-            addGalleryFile(file, true)
+            const outer = addGalleryFile(file, true)
+            if (outer)
+                requestAnimationFrame(() =>
+                    outer.classList.remove('gallery-entering')
+                )
             updateNoFilesOverlay()
         } else if (inMap) {
             const L = globalThis.L

@@ -134,10 +134,25 @@ export function openPanel(fileUrl, originEl = null) {
             panelContent.innerHTML = html
             initPanelContent(panelContent)
 
-            // For image content initPanelImage dismisses the hero once the
-            // image is decoded, creating a direct crossfade. For everything
-            // else (video, text…) dismiss the hero now.
-            if (!panelContent.querySelector('img.preview')) {
+            // Images: initPanelImage holds the hero until decode() completes.
+            // Videos: hold the hero until canplay fires (video frame is ready),
+            //         with a 4s fallback so a slow connection doesn't hang.
+            // Everything else (text…): dismiss immediately.
+            const video = panelContent.querySelector('video.preview')
+            if (video) {
+                video.style.opacity = '0'
+                const capturedHero = heroEl
+                let dismissed = false
+                const revealVideo = () => {
+                    if (dismissed) return
+                    dismissed = true
+                    video.style.transition = 'opacity 0.2s ease-in-out'
+                    video.style.opacity = '1'
+                    dismissHero(capturedHero)
+                }
+                video.addEventListener('canplay', revealVideo, { once: true })
+                setTimeout(revealVideo, 4000)
+            } else if (!panelContent.querySelector('img.preview')) {
                 dismissHero(heroEl)
             }
         })

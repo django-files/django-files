@@ -57,6 +57,7 @@
     position: relative;
     background-color: transparent;
     border-radius: 10px;
+    contain: layout;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.6),
         inset 0 -1px 0 rgba(0, 0, 0, 0.1),
@@ -65,7 +66,6 @@
         0 4px 20px rgba(0, 0, 0, 0.1),
         0 1px 4px rgba(0, 0, 0, 0.05);
     transition:
-        box-shadow 0.2s ease,
         transform 0.2s ease,
         opacity 0.25s ease;
 }
@@ -99,13 +99,12 @@
 }
 
 /* Elevate on hover only when no context menu is open anywhere in the gallery */
-#gallery-container:not(:has(.dt-ctx-btn[aria-expanded='true']))
-    .gallery-outer:hover {
+#gallery-container:not(.gallery-ctx-open) .gallery-outer:hover {
     z-index: 2;
 }
 
 /* Always keep the card whose menu is open above everything else */
-.gallery-outer:has(.dt-ctx-btn[aria-expanded='true']) {
+.gallery-outer.gallery-ctx-open {
     z-index: 3;
 }
 
@@ -175,21 +174,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
     transition: opacity 0.15s ease;
-    background-color: rgba(255, 255, 255, 0.3);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.6) inset,
-        0 4px 20px rgba(0, 0, 0, 0.15);
+    background-color: rgba(255, 255, 255, 0.18);
     pointer-events: none;
 }
 
 [data-bs-theme='dark'] .gallery-inner .gallery-no-thumb {
-    background-color: rgba(20, 20, 24, 0.45);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.07) inset,
-        0 4px 20px rgba(0, 0, 0, 0.5);
+    background-color: rgba(20, 20, 24, 0.35);
 }
 
 .gallery-inner .gallery-no-thumb i {
@@ -200,7 +191,7 @@
 
 .gallery-ctx {
     position: absolute;
-    top: 4px;
+    top: 6px;
     right: 4px;
 }
 
@@ -378,35 +369,21 @@
     box-shadow: 0 1px 4px rgba(0 0 0 / 30%);
 }
 
-/* Tooltip / popup — glass treatment matching .toolbar-glass-popover */
+/* Tooltip / popup — same glass surface as popovers and dropdowns */
 #map-container .leaflet-tooltip {
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
-    background-color: rgba(255, 255, 255, 0.52);
-    border-color: rgba(0, 0, 0, 0.12);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    background-color: var(--glass-bg);
+    border-color: var(--glass-border-color);
     color: var(--bs-body-color);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.5) inset,
-        0 12px 40px -8px rgba(0, 0, 0, 0.35);
+    box-shadow: var(--glass-shadow);
     padding: 0;
     white-space: normal;
     border-radius: var(--bs-popover-border-radius, 0.5rem);
 }
 
 #map-container .leaflet-tooltip::before {
-    border-top-color: rgba(0, 0, 0, 0.12);
-}
-
-[data-bs-theme='dark'] #map-container .leaflet-tooltip {
-    background-color: rgba(20, 20, 24, 0.52);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.06) inset,
-        0 12px 40px -8px rgba(0, 0, 0, 0.6);
-}
-
-[data-bs-theme='dark'] #map-container .leaflet-tooltip::before {
-    border-top-color: rgba(255, 255, 255, 0.1);
+    border-top-color: var(--glass-border-color);
 }
 
 /* Marker tooltip content */
@@ -479,17 +456,15 @@
 /* Liquid-glass popover — shared by all toolbar filter/sort/display popovers.
    Class applied via initPopupBtn() in table-defaults.js. */
 .toolbar-glass-popover .popover-body {
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
-    background-color: rgba(255, 255, 255, 0.52);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    background-color: var(--glass-bg);
     border-radius: var(--bs-popover-border-radius);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.5) inset,
-        0 12px 40px -8px rgba(0, 0, 0, 0.35);
+    box-shadow: var(--glass-shadow);
 }
 
 .toolbar-glass-popover.popover {
-    border-color: rgba(0, 0, 0, 0.12);
+    border-color: var(--glass-border-color);
     background: transparent;
     box-shadow: none;
 }
@@ -497,30 +472,15 @@
 /* Glass arrow: clip-path lets backdrop-filter apply through the triangle shape.
    The ::before/::after border-triangle technique can't receive backdrop-filter. */
 .toolbar-glass-popover .popover-arrow {
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
-    background-color: rgba(255, 255, 255, 0.52);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    background-color: var(--glass-bg);
     clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
 }
 
 .toolbar-glass-popover .popover-arrow::before,
 .toolbar-glass-popover .popover-arrow::after {
     display: none;
-}
-
-[data-bs-theme='dark'] .toolbar-glass-popover .popover-arrow {
-    background-color: rgba(20, 20, 24, 0.52);
-}
-
-[data-bs-theme='dark'] .toolbar-glass-popover .popover-body {
-    background-color: rgba(20, 20, 24, 0.52);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.06) inset,
-        0 12px 40px -8px rgba(0, 0, 0, 0.6);
-}
-
-[data-bs-theme='dark'] .toolbar-glass-popover.popover {
-    border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Contrast fixes for content inside glass popovers.

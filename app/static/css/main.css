@@ -35,31 +35,14 @@ html {
 }
 
 /* Bring Menu Above Uppy Menu */
-.dropdown-menu {
-    z-index: 1005;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-}
-
+.dropdown-menu,
 .file-context-dropdown-menu {
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-}
-
-[data-bs-theme='dark'] .dropdown-menu {
-    background-color: rgba(0 0 0 / 70%);
-}
-
-[data-bs-theme='dark'] .file-context-dropdown-menu {
-    background-color: rgba(0 0 0 / 70%);
-}
-
-[data-bs-theme='light'] .dropdown-menu {
-    background-color: rgba(200 200 200 / 70%);
-}
-
-[data-bs-theme='light'] .file-context-dropdown-menu {
-    background-color: rgba(200 200 200 / 70%);
+    z-index: 1005;
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    background-color: var(--glass-bg);
+    border-color: var(--glass-border-color);
+    box-shadow: var(--glass-shadow);
 }
 
 .hvr-grow {
@@ -152,10 +135,26 @@ html {
     --toolbar-glass-bg: rgba(0, 0, 0, 0.3);
     --toolbar-glass-border: 1px ridge rgba(66 69 73 / 100%);
     --toolbar-glass-blur: blur(6px);
+
+    /* Shared liquid-glass surface — popovers, dropdowns, map tooltips */
+    --glass-blur: blur(24px) saturate(180%);
+    --glass-bg: rgba(255, 255, 255, 0.52);
+    --glass-border-color: rgba(0, 0, 0, 0.12);
+    --glass-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 12px 40px -8px rgba(0, 0, 0, 0.35);
 }
 
 [data-bs-theme='light'] {
     --toolbar-glass-bg: rgba(255, 255, 255, 0.52);
+}
+
+[data-bs-theme='dark'] {
+    --glass-bg: rgba(20, 20, 24, 0.52);
+    --glass-border-color: rgba(255, 255, 255, 0.1);
+    --glass-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 12px 40px -8px rgba(0, 0, 0, 0.6);
 }
 
 /* backdrop-filter on the nav itself would create a CSS containing block for
