@@ -2,7 +2,7 @@
 {# Unified toolbar for /files/ — list, gallery, and map views share this chrome. #}
 {# Translucent overlay matches the preview-page chrome (backdrop-blur, glass-feel). #}
 <div class="files-toolbar{% if album %} files-toolbar--album{% endif %}" id="files-toolbar" data-view="{{ view_mode }}" aria-label="Files toolbar">
-    <nav class="files-toolbar-views" aria-label="Files view">
+    <nav class="files-toolbar-views d-inline-flex align-items-center" aria-label="Files view">
         <a class="files-toolbar-view show-list{% if view_mode == 'list' %} view-active{% endif %}" role="button" data-view="list" title="List" href="{% url 'home:files' %}">
             <i class="fa-solid fa-list" aria-hidden="true"></i><span class="files-toolbar-view-label">List</span>
         </a>
@@ -159,7 +159,7 @@
                placeholder="Search files…" autocomplete="off">
     </div>
 
-    <div class="files-toolbar-actions">
+    <div class="files-toolbar-actions d-inline-flex align-items-center ms-auto">
         <span class="files-toolbar-count text-body-secondary small text-nowrap" id="dt-file-count-wrapper">
             <span class="files-toolbar-count-label">Showing</span>
             <strong id="total-files-count">0</strong>
@@ -181,7 +181,7 @@
         <span class="files-toolbar-album-title">
             <i class="fa-regular fa-images me-2" aria-hidden="true"></i>{{ album.name }}
         </span>
-        <span class="files-toolbar-album-owner">
+        <span class="files-toolbar-album-owner d-inline-flex align-items-center text-nowrap">
             {% with album.user.get_avatar_url as avatar_url %}
             {% if avatar_url %}<img src="{{ avatar_url }}" class="rounded-circle" height="22" width="22" alt="{{ album.user.get_name }}">{% endif %}
             {% endwith %}

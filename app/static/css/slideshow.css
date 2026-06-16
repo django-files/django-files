@@ -3,13 +3,6 @@
     --swiper-pagination-fraction-color: var(--bs-primary);
 }
 
-/*main {*/
-/*    display: flex;*/
-/*    flex-direction: column;*/
-/*    overflow: hidden;*/
-/*    padding: 0 !important;*/
-/*}*/
-
 .swiper-slide {
     position: relative;
     background-color: var(--bs-black);
@@ -64,12 +57,8 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     width: 72px;
     height: 72px;
-    border-radius: 50%;
     border: none;
     background: rgba(0, 0, 0, 0.55);
     color: #fff;
@@ -110,17 +99,7 @@
 
 .swiper-pagination {
     font-weight: bold;
-    /*position: absolute;*/
-    /*bottom: 10px;*/
-    /*left: 0;*/
-    /*width: 100%;*/
-    /*text-align: center;*/
-    /*color: var(--bs-primary);*/
 }
-
-/*.custom-height {*/
-/*    height: calc(100vh - 80px) !important;*/
-/*}*/
 
 #offcanvas-bottom {
     background-color: var(--bs-black);

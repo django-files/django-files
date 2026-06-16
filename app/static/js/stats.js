@@ -149,7 +149,7 @@ $(document).on('click', '.updateStatsBtn', function () {
                     <div class="dash-stat-icon text-bg-${c.bg}">
                         <i class="${c.icon}"></i>
                     </div>
-                    <div class="flex-grow-1 min-w-0 dash-stat-text">
+                    <div class="flex-grow-1 dash-stat-text">
                         <div class="dash-stat-value">${c.value}</div>
                         <div class="dash-stat-labels">
                             <div class="dash-stat-label">${c.label}</div>
@@ -388,7 +388,7 @@ $(document).on('click', '.updateStatsBtn', function () {
                     <div class="dash-stat-icon text-bg-${c.bg}">
                         <i class="${c.icon}"></i>
                     </div>
-                    <div class="flex-grow-1 min-w-0 dash-stat-text">
+                    <div class="flex-grow-1 dash-stat-text">
                         <div class="dash-stat-value">${c.value}</div>
                         <div class="dash-stat-labels">
                             <div class="dash-stat-label">${c.label}</div>

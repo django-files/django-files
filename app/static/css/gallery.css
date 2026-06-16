@@ -53,11 +53,6 @@
         1px 1px 0 #000;
 }
 
-.text-stroke {
-    stroke: black;
-    stroke-width: 20px;
-}
-
 .gallery-outer {
     position: relative;
     background-color: transparent;
@@ -163,9 +158,6 @@
 .video-play-overlay {
     position: absolute;
     inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     pointer-events: none;
     opacity: 0.8;
 }
@@ -358,9 +350,6 @@
 
 /* Fullscreen toggle button (Leaflet custom control) */
 .map-fullscreen-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     width: 30px;
     height: 30px;
     font-size: 0.875rem;
@@ -389,40 +378,59 @@
     box-shadow: 0 1px 4px rgba(0 0 0 / 30%);
 }
 
-/* Tooltip / popup */
+/* Tooltip / popup — glass treatment matching .toolbar-glass-popover */
 #map-container .leaflet-tooltip {
-    background-color: var(--bs-body-bg);
-    border-color: var(--bs-border-color);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.52);
+    border-color: rgba(0, 0, 0, 0.12);
     color: var(--bs-body-color);
-    box-shadow: 0 2px 8px rgba(0 0 0 / 20%);
-    padding: 6px 10px;
-    border-radius: 6px;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
+        0 12px 40px -8px rgba(0, 0, 0, 0.35);
+    padding: 0;
+    white-space: normal;
+    border-radius: var(--bs-popover-border-radius, 0.5rem);
 }
 
 #map-container .leaflet-tooltip::before {
-    border-top-color: var(--bs-border-color);
+    border-top-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-bs-theme='dark'] #map-container .leaflet-tooltip {
+    background-color: rgba(20, 20, 24, 0.52);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 12px 40px -8px rgba(0, 0, 0, 0.6);
+}
+
+[data-bs-theme='dark'] #map-container .leaflet-tooltip::before {
+    border-top-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Marker tooltip content */
 .map-tooltip {
-    min-width: 150px;
-    max-width: 150px;
+    min-width: 240px;
+    max-width: 240px;
     line-height: 1.4;
+    padding-bottom: 0.5rem;
 }
 
 .map-tooltip-thumb-wrapper {
     position: relative;
-    width: 150px;
-    height: 100px;
-    border-radius: var(--bs-border-radius-sm);
-    margin-bottom: 0.3125rem;
+    width: 240px;
+    height: 160px;
+    border-radius: var(--bs-popover-border-radius, 0.5rem)
+        var(--bs-popover-border-radius, 0.5rem) 0 0;
+    margin-bottom: 0.4rem;
     overflow: hidden;
 }
 
 .map-tooltip-thumb {
     display: block;
-    width: 150px;
-    height: 100px;
+    width: 240px;
+    height: 160px;
     object-fit: cover;
     opacity: 0;
     transition: opacity 0.2s;
@@ -433,14 +441,17 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding: 0 0.75rem;
     margin-bottom: 0.125rem;
 }
 
 .map-tooltip-date {
+    padding: 0 0.75rem;
     opacity: 0.7;
 }
 
 .map-tooltip-gps {
+    padding: 0 0.75rem;
     opacity: 0.6;
     font-size: 0.8em;
 }

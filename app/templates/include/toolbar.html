@@ -30,7 +30,7 @@ Optional:
         <i class="fa-solid fa-filter" aria-hidden="true"></i><span class="files-toolbar-view-label">Filter</span>
     </button>
     <template id="{{ tb_id }}-filter-popup-tpl">
-        <div style="min-width:190px">
+        <div class="toolbar-filter-popup">
             {% if tb_filter_privacy %}
             <div class="btn-group btn-group-sm w-100{% if tb_filter and request.user.is_superuser %} mb-2{% endif %}" role="group" aria-label="Privacy filter">
                 <button type="button" class="btn btn-outline-secondary privacy-filter-opt" data-privacy="all">
@@ -57,7 +57,7 @@ Optional:
                placeholder="{{ tb_search_placeholder }}" autocomplete="off">
     </div>
 
-    <div class="files-toolbar-actions">
+    <div class="files-toolbar-actions d-inline-flex align-items-center ms-auto">
         <span class="files-toolbar-count text-body-secondary small text-nowrap" id="{{ tb_count_wrapper_id }}">
             <span class="files-toolbar-count-label">Showing</span>
             <strong id="{{ tb_count_id }}">0</strong>

@@ -1032,7 +1032,12 @@ function addGalleryVideo(file, top = false) {
     link.target = '_blank'
 
     const playBtn = document.createElement('div')
-    playBtn.classList.add('video-play-overlay')
+    playBtn.classList.add(
+        'video-play-overlay',
+        'd-flex',
+        'align-items-center',
+        'justify-content-center'
+    )
     playBtn.innerHTML =
         '<i class="fa-solid fa-circle-play fa-3x text-white"></i>'
 
@@ -1478,7 +1483,12 @@ function initMapView() {
                     const btn = L.DomUtil.create('a', '', container)
                     btn.href = '#'
                     btn.title = 'Toggle fullscreen'
-                    btn.classList.add('map-fullscreen-btn')
+                    btn.classList.add(
+                        'map-fullscreen-btn',
+                        'd-flex',
+                        'align-items-center',
+                        'justify-content-center'
+                    )
                     btn.innerHTML = '<i class="fa-solid fa-expand"></i>'
                     L.DomEvent.on(btn, 'click', (e) => {
                         L.DomEvent.preventDefault(e)
