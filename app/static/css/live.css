@@ -4,14 +4,12 @@
     --preview-chrome-bg: rgba(0, 0, 0, 0.12);
     --preview-chrome-bg-hover: rgba(0, 0, 0, 0.2);
     --preview-border-color: rgba(66, 69, 73, 0.3);
-    --preview-dropdown-bg: rgba(235, 235, 240, 0.92);
 }
 
 [data-bs-theme='dark'] {
     --preview-chrome-bg: rgba(255, 255, 255, 0.08);
     --preview-chrome-bg-hover: rgba(255, 255, 255, 0.15);
     --preview-border-color: rgba(200, 200, 200, 0.2);
-    --preview-dropdown-bg: rgba(22, 22, 28, 0.92);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,7 +17,6 @@
         --preview-chrome-bg: rgba(255, 255, 255, 0.08);
         --preview-chrome-bg-hover: rgba(255, 255, 255, 0.15);
         --preview-border-color: rgba(200, 200, 200, 0.2);
-        --preview-dropdown-bg: rgba(22, 22, 28, 0.92);
     }
 }
 
@@ -61,14 +58,6 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s 0s;
-}
-
-/* Glass dropdown matching preview chrome. */
-.file-context-dropdown-menu {
-    background: var(--preview-dropdown-bg);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border-color: var(--preview-border-color);
 }
 
 /* Fix height constraint to prevent video component height changes */

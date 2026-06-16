@@ -4,20 +4,12 @@
     --preview-chrome-bg: rgba(0, 0, 0, 0.12);
     --preview-chrome-bg-hover: rgba(0, 0, 0, 0.2);
     --preview-border-color: rgba(66, 69, 73, 0.3);
-    --preview-dropdown-bg: rgba(235, 235, 240, 0.92);
 }
 
 [data-bs-theme='dark'] {
     --preview-chrome-bg: rgba(255, 255, 255, 0.08);
     --preview-chrome-bg-hover: rgba(255, 255, 255, 0.15);
     --preview-border-color: rgba(200, 200, 200, 0.2);
-    --preview-dropdown-bg: rgba(22, 22, 28, 0.92);
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-bs-theme='light']) {
-        --preview-dropdown-bg: rgba(22, 22, 28, 0.92);
-    }
 }
 
 .sidebar {
@@ -219,15 +211,6 @@
 .context-placement[aria-expanded='true'] {
     opacity: 1;
     background: var(--preview-chrome-bg-hover);
-}
-
-/* Glass dropdown for all preview context menus — themed dark/light. */
-.file-context-dropdown-menu,
-.fileContextDropdown .dropdown-menu {
-    background: var(--preview-dropdown-bg);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border-color: var(--preview-border-color);
 }
 
 /* Sidebar when open (overlay mode) */

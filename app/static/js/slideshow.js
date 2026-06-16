@@ -122,7 +122,8 @@ function buildSlide(file) {
             poster.appendChild(img)
         }
         const playBtn = document.createElement('button')
-        playBtn.className = 'slideshow-play-btn'
+        playBtn.className =
+            'slideshow-play-btn d-flex align-items-center justify-content-center rounded-circle'
         playBtn.setAttribute('aria-label', 'Play video')
         playBtn.innerHTML = '<i class="fa-solid fa-play"></i>'
         poster.appendChild(playBtn)
