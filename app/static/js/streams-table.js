@@ -24,10 +24,10 @@ let streamsPrivacyLabel = null
 
 function syncStreamsFilterBtn() {
     const parts = [streamsPrivacyLabel, streamsUserLabel].filter(Boolean)
-    syncPopupBtnActive(
-        'streams-toolbar-filter-btn',
-        parts.length === 0 ? null : parts.length === 1 ? parts[0] : 'Filtered'
-    )
+    let filterLabel = null
+    if (parts.length === 1) filterLabel = parts[0]
+    else if (parts.length > 1) filterLabel = 'Filtered'
+    syncPopupBtnActive('streams-toolbar-filter-btn', filterLabel)
 }
 
 function syncPrivacyState(container, activeVal) {
@@ -334,12 +334,9 @@ function domContentLoaded() {
             body.querySelectorAll('.privacy-filter-opt').forEach((btn) => {
                 btn.addEventListener('click', () => {
                     const val = btn.dataset.privacy
-                    streamsPrivacyLabel =
-                        val === 'public'
-                            ? 'Public'
-                            : val === 'private'
-                              ? 'Private'
-                              : null
+                    if (val === 'public') streamsPrivacyLabel = 'Public'
+                    else if (val === 'private') streamsPrivacyLabel = 'Private'
+                    else streamsPrivacyLabel = null
                     syncPrivacyState(body, val)
                     syncStreamsFilterBtn()
                     const url = new URL(location.href)

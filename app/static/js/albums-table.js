@@ -27,10 +27,10 @@ let albumsPrivacyLabel = null
 
 function syncAlbumsFilterBtn() {
     const parts = [albumsPrivacyLabel, albumsUserLabel].filter(Boolean)
-    syncPopupBtnActive(
-        'albums-toolbar-filter-btn',
-        parts.length === 0 ? null : parts.length === 1 ? parts[0] : 'Filtered'
-    )
+    let filterLabel = null
+    if (parts.length === 1) filterLabel = parts[0]
+    else if (parts.length > 1) filterLabel = 'Filtered'
+    syncPopupBtnActive('albums-toolbar-filter-btn', filterLabel)
 }
 
 function syncPrivacyState(container, activeVal) {
@@ -153,12 +153,10 @@ async function domContentLoaded() {
                 body.querySelectorAll('.privacy-filter-opt').forEach((btn) => {
                     btn.addEventListener('click', async () => {
                         const val = btn.dataset.privacy
-                        albumsPrivacyLabel =
-                            val === 'public'
-                                ? 'Public'
-                                : val === 'private'
-                                  ? 'Private'
-                                  : null
+                        if (val === 'public') albumsPrivacyLabel = 'Public'
+                        else if (val === 'private')
+                            albumsPrivacyLabel = 'Private'
+                        else albumsPrivacyLabel = null
                         syncPrivacyState(body, val)
                         syncAlbumsFilterBtn()
                         const url = new URL(location.href)
