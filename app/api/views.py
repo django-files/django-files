@@ -24,9 +24,8 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.cache import cache
 from django.core.signing import TimestampSigner
-from django.db.models import BigIntegerField, Count, IntegerField, Q, QuerySet, Sum
+from django.db.models import Count, Max, Q, QuerySet, Sum
 from django.db.models.fields.json import KeyTextTransform
-from django.db.models.functions import Cast, TruncDate
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
@@ -561,8 +560,7 @@ _SERVER_STATS_CACHE_TTL = 60 * 5  # 5 minutes
 def stats_server_view(request):
     """
     View  /api/stats/server/  — superuser-only server-wide stat cards + chart.
-    Chart is built by summing per-user FileStats snapshots per day, so it stays
-    consistent with the per-user charts and avoids the stale server-level snapshot.
+    Chart reads the server-wide _totals FileStats snapshots (user=None).
     """
     if not request.user.is_superuser:
         return JsonResponse({"detail": "Forbidden"}, status=403)
@@ -607,25 +605,21 @@ def stats_server_view(request):
             }
         )
 
-    # Chart: sum per-user FileStats snapshots by day (avoids stale server-level snapshot)
+    # Chart: read server-wide _totals snapshots (user=None), one per UTC day.
+    # Use the latest record per day (by max pk) to handle any historical duplicates.
     cutoff_date = (now() - timedelta(days=90)).date()
-    server_daily = list(
-        FileStats.objects.filter(user__isnull=False, created_at__date__gte=cutoff_date)
-        .annotate(snap_date=TruncDate("created_at"))
-        .annotate(
-            fc=Cast(KeyTextTransform("count", "stats"), IntegerField()),
-            fs=Cast(KeyTextTransform("size", "stats"), BigIntegerField()),
-            fx=Cast(KeyTextTransform("shorts", "stats"), IntegerField()),
-        )
-        .values("snap_date")
-        .annotate(total_files=Sum("fc"), total_size=Sum("fs"), total_shorts=Sum("fx"))
-        .order_by("snap_date")
+    latest_pks = (
+        FileStats.objects.filter(user__isnull=True, created_at__date__gte=cutoff_date)
+        .values("created_at__date")
+        .annotate(latest_pk=Max("id"))
+        .values_list("latest_pk", flat=True)
     )
+    server_snapshots = list(FileStats.objects.filter(pk__in=latest_pks).order_by("created_at"))
 
-    chart_days = [f"{r['snap_date'].month}/{r['snap_date'].day}" for r in server_daily]
-    chart_files = [r["total_files"] for r in server_daily]
-    chart_size = [r["total_size"] for r in server_daily]
-    chart_shorts = [r["total_shorts"] for r in server_daily]
+    chart_days = [f"{s.created_at.month}/{s.created_at.day}" for s in server_snapshots]
+    chart_files = [s.stats["count"] for s in server_snapshots]
+    chart_size = [s.stats["size"] for s in server_snapshots]
+    chart_shorts = [s.stats["shorts"] for s in server_snapshots]
 
     # Mime type breakdown: live query
     server_types = list(Files.objects.values("mime").annotate(count=Count("pk"), size=Sum("size")).order_by("-count"))
