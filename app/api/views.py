@@ -897,12 +897,11 @@ def albums_view(request, page=None, count=100):
         q = Albums.objects.filtered_request(request, user_id=int(user)).select_related("user")
     if search := request.GET.get("search"):
         q = q.filter(name__icontains=search)
-    if (request.GET.get("ordering") or "").lstrip("-") == "files":
-        q = q.annotate(_file_count=Count("files"))
+    q = q.annotate(file_count=Count("files"))
     q = apply_ordering(
         q,
         request,
-        allowed={"created": "date", "name": "name", "files": "_file_count"},
+        allowed={"created": "date", "name": "name", "files": "file_count"},
         default="-created",
     )
     page_items, _next = paginate_no_count(q, page, count)
