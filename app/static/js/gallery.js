@@ -59,6 +59,10 @@ galleryContainer?.style.setProperty(
     galleryThumbSize + 'px'
 )
 
+let galleryNaturalSizing =
+    localStorage.getItem('galleryNaturalSizing') === 'true'
+if (galleryNaturalSizing) galleryContainer?.classList.add('gallery-natural')
+
 function getActiveTypesParam() {
     return activeTypes.size > 0 ? [...activeTypes].join(',') : null
 }
@@ -489,17 +493,44 @@ function initGallerySizeBtn() {
             '.gallery-size-popover .popover-body'
         )
         if (!tip) return
+
         const slider = tip.querySelector('#gallery-size-slider')
-        if (!slider) return
-        slider.value = galleryThumbSize
-        slider.addEventListener('input', () => {
-            galleryThumbSize = Number.parseInt(slider.value, 10)
-            localStorage.setItem('galleryThumbSize', galleryThumbSize)
-            galleryContainer.style.setProperty(
-                '--gallery-thumb-size',
-                galleryThumbSize + 'px'
-            )
-        })
+        if (slider) {
+            slider.value = galleryThumbSize
+            slider.addEventListener('input', () => {
+                galleryThumbSize = Number.parseInt(slider.value, 10)
+                localStorage.setItem('galleryThumbSize', galleryThumbSize)
+                galleryContainer.style.setProperty(
+                    '--gallery-thumb-size',
+                    galleryThumbSize + 'px'
+                )
+            })
+        }
+
+        const uniformRadio = tip.querySelector('#gallery-sizing-uniform')
+        const naturalRadio = tip.querySelector('#gallery-sizing-natural')
+        if (uniformRadio && naturalRadio) {
+            if (galleryNaturalSizing) naturalRadio.checked = true
+            else uniformRadio.checked = true
+
+            tip.addEventListener('change', (e) => {
+                if (!e.target.matches('input[name="gallery-sizing"]')) return
+                galleryNaturalSizing = e.target.id === 'gallery-sizing-natural'
+                localStorage.setItem(
+                    'galleryNaturalSizing',
+                    galleryNaturalSizing
+                )
+                galleryContainer.classList.add('gallery-mode-switching')
+                setTimeout(() => {
+                    galleryContainer.classList.toggle(
+                        'gallery-natural',
+                        galleryNaturalSizing
+                    )
+                    galleryContainer.classList.remove('gallery-mode-switching')
+                }, 150)
+            })
+        }
+
         attachPopoverClickOutside(btn, tip, popover)
     })
 }
@@ -806,11 +837,13 @@ function buildGalleryCard(file, top = false) {
     // Cache .gallery-mouse elements to avoid querySelectorAll on every hover
     outer._mouseEls = [...outer.querySelectorAll('.gallery-mouse')]
 
+    outer.classList.add('gallery-entering')
     if (top) {
         galleryContainer.insertBefore(outer, galleryContainer.firstChild)
     } else {
         galleryContainer.appendChild(outer)
     }
+    requestAnimationFrame(() => outer.classList.remove('gallery-entering'))
 
     return { outer, inner }
 }
@@ -882,12 +915,11 @@ function addGalleryImage(file, top = false) {
     const img = imageNode.cloneNode(true)
 
     if (file.meta?.PILImageWidth && file.meta?.PILImageHeight) {
-        const scale = Math.min(
-            galleryThumbSize / file.meta.PILImageWidth,
-            galleryThumbSize / file.meta.PILImageHeight
+        img.width = galleryThumbSize
+        img.height = Math.round(
+            galleryThumbSize *
+                (file.meta.PILImageHeight / file.meta.PILImageWidth)
         )
-        img.width = Math.round(file.meta.PILImageWidth * scale)
-        img.height = Math.round(file.meta.PILImageHeight * scale)
     } else {
         img.width = galleryThumbSize
         img.height = galleryThumbSize
@@ -1181,13 +1213,29 @@ function handleFileNew(data, inGallery) {
     }
 }
 
+function animateRemoveGalleryCard(id, callback) {
+    const el = document.getElementById(`gallery-image-${id}`)
+    if (!el) {
+        callback?.()
+        return
+    }
+    el.classList.add('gallery-removing')
+    el.addEventListener(
+        'transitionend',
+        () => {
+            el.remove()
+            callback?.()
+        },
+        { once: true }
+    )
+}
+
 function handleFileDelete(data, inGallery) {
     const idx = fileData.findIndex((file) => file.id === data.id)
     if (idx !== -1) fileData.splice(idx, 1)
     removeFileTableRow(data.id)
     if (inGallery) {
-        $(`#gallery-image-${data.id}`).remove()
-        updateNoFilesOverlay()
+        animateRemoveGalleryCard(data.id, updateNoFilesOverlay)
     }
 }
 
@@ -1196,7 +1244,7 @@ function removeFileFromViews(fileId, inGallery, inMap) {
     if (idx !== -1) fileData.splice(idx, 1)
     removeFileTableRow(fileId)
     if (inGallery) {
-        document.getElementById(`gallery-image-${fileId}`)?.remove()
+        animateRemoveGalleryCard(fileId)
     } else if (inMap) {
         const marker = mapFileMarkers.get(fileId)
         if (marker) {

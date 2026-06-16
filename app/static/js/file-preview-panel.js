@@ -43,8 +43,10 @@ export function openPanel(fileUrl, originEl = null) {
         const thumbImg = originEl.querySelector('img')
         if (thumbImg?.complete && thumbImg.naturalWidth > 0) {
             const thumbRect = thumbImg.getBoundingClientRect()
-            const vw = window.innerWidth
-            const vh = window.innerHeight
+            // Use panel content dimensions rather than window.innerWidth so the
+            // target rect accounts for scrollbar-gutter reservations on <html>.
+            const vw = panelContent.offsetWidth || window.innerWidth
+            const vh = panelContent.offsetHeight || window.innerHeight
             const dst = imageDisplayRect(thumbImg, vw, vh)
 
             // Hero is full-viewport so its background colour (black/white per
@@ -215,6 +217,15 @@ function closePanelInternal() {
         // Mirror the open animation: clear the panel immediately and use a
         // hero thumbnail div for the reverse zoom so no panel content (sidebar,
         // fixed-position elements, etc.) is visible during the animation.
+
+        // Capture actual image rect before clearing content — this is the
+        // pixel-perfect start position for the reverse zoom.
+        const previewImg = panelContent.querySelector('img.preview')
+        const previewRect =
+            previewImg?.complete && previewImg.naturalWidth > 0
+                ? previewImg.getBoundingClientRect()
+                : null
+
         panelCleanup()
         panel.style.transition = 'none'
         panel.classList.remove('open')
@@ -222,14 +233,21 @@ function closePanelInternal() {
         panel.style.transition = ''
 
         const thumbRect = thumbImg.getBoundingClientRect()
-        const vw = window.innerWidth
-        const vh = window.innerHeight
-        const dst = imageDisplayRect(thumbImg, vw, vh)
 
-        const scaleX = thumbRect.width / dst.w
-        const scaleY = thumbRect.height / dst.h
-        const tx = (thumbRect.left - dst.left).toFixed(2)
-        const ty = (thumbRect.top - dst.top).toFixed(2)
+        // Use actual image rect when available; fall back to computed rect so
+        // non-image panel types (video, text…) still get a close animation.
+        const vw = panelContent.offsetWidth || window.innerWidth
+        const vh = panelContent.offsetHeight || window.innerHeight
+        const dst = imageDisplayRect(thumbImg, vw, vh)
+        const startLeft = previewRect ? previewRect.left : dst.left
+        const startTop = previewRect ? previewRect.top : dst.top
+        const startW = previewRect ? previewRect.width : dst.w
+        const startH = previewRect ? previewRect.height : dst.h
+
+        const scaleX = thumbRect.width / startW
+        const scaleY = thumbRect.height / startH
+        const tx = (thumbRect.left - startLeft).toFixed(2)
+        const ty = (thumbRect.top - startTop).toFixed(2)
 
         const closeHero = document.createElement('div')
         closeHero.className = 'panel-hero-thumb'
@@ -238,10 +256,10 @@ function closePanelInternal() {
         heroImg.src = thumbImg.src
         Object.assign(heroImg.style, {
             position: 'absolute',
-            top: `${dst.top}px`,
-            left: `${dst.left}px`,
-            width: `${dst.w}px`,
-            height: `${dst.h}px`,
+            top: `${startTop}px`,
+            left: `${startLeft}px`,
+            width: `${startW}px`,
+            height: `${startH}px`,
             objectFit: 'cover',
             display: 'block',
             transformOrigin: '0 0',
@@ -482,22 +500,14 @@ function initPanelImage(container) {
     img.style.transition = 'opacity 0.25s ease-in-out'
 
     const onLoad = () => {
-        // Crossfade: hero fades out as the decoded image fades in together
-        dismissHero(heroEl)
-        if (skeleton) {
-            skeleton.style.opacity = '0'
-        }
+        // Drop the skeleton instantly while the hero is still at full opacity so
+        // the grey background can't bleed through during the hero fade-out.
+        if (skeleton) skeleton.remove()
 
         requestAnimationFrame(() => {
             img.style.opacity = '1'
+            dismissHero(heroEl)
         })
-
-        // Clean up skeleton after transition
-        if (skeleton) {
-            setTimeout(() => {
-                skeleton?.remove()
-            }, 250)
-        }
     }
 
     const onError = () => {
