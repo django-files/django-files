@@ -53,7 +53,7 @@ export function initPopupBtn(btnId, tplId, onShown, { prepareContent } = {}) {
         },
         trigger: 'click',
         placement: 'bottom',
-        customClass: popoverClass,
+        customClass: `${popoverClass} toolbar-glass-popover`,
         popperConfig: { strategy: 'fixed' },
     })
 

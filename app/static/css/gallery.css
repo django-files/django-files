@@ -469,50 +469,145 @@
     z-index: 400;
 }
 
-/* Liquid-glass popover — shared by sort, filter, and size */
-.gallery-sort-popover .popover-body,
-.gallery-size-popover .popover-body,
-.files-filter-popover .popover-body {
+/* Liquid-glass popover — shared by all toolbar filter/sort/display popovers.
+   Class applied via initPopupBtn() in table-defaults.js. */
+.toolbar-glass-popover .popover-body {
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     backdrop-filter: blur(24px) saturate(180%);
-    background-color: rgba(255, 255, 255, 0.72);
+    background-color: rgba(255, 255, 255, 0.52);
     border-radius: var(--bs-popover-border-radius);
     box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.7) inset,
+        0 1px 0 rgba(255, 255, 255, 0.5) inset,
         0 12px 40px -8px rgba(0, 0, 0, 0.35);
 }
 
-.gallery-sort-popover.popover,
-.gallery-size-popover.popover,
-.files-filter-popover.popover {
-    border-color: rgba(0, 0, 0, 0.15);
+.toolbar-glass-popover.popover {
+    border-color: rgba(0, 0, 0, 0.12);
     background: transparent;
     box-shadow: none;
 }
 
-.gallery-sort-popover .popover-arrow::after,
-.gallery-size-popover .popover-arrow::after,
-.files-filter-popover .popover-arrow::after {
-    border-bottom-color: rgba(255, 255, 255, 0.72);
+/* Glass arrow: clip-path lets backdrop-filter apply through the triangle shape.
+   The ::before/::after border-triangle technique can't receive backdrop-filter. */
+.toolbar-glass-popover .popover-arrow {
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.52);
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
 }
 
-[data-bs-theme='dark'] .gallery-sort-popover .popover-body,
-[data-bs-theme='dark'] .gallery-size-popover .popover-body,
-[data-bs-theme='dark'] .files-filter-popover .popover-body {
-    background-color: rgba(20, 20, 24, 0.72);
+.toolbar-glass-popover .popover-arrow::before,
+.toolbar-glass-popover .popover-arrow::after {
+    display: none;
+}
+
+[data-bs-theme='dark'] .toolbar-glass-popover .popover-arrow {
+    background-color: rgba(20, 20, 24, 0.52);
+}
+
+[data-bs-theme='dark'] .toolbar-glass-popover .popover-body {
+    background-color: rgba(20, 20, 24, 0.52);
     box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.08) inset,
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
         0 12px 40px -8px rgba(0, 0, 0, 0.6);
 }
 
-[data-bs-theme='dark'] .gallery-sort-popover.popover,
-[data-bs-theme='dark'] .gallery-size-popover.popover,
-[data-bs-theme='dark'] .files-filter-popover.popover {
-    border-color: rgba(255, 255, 255, 0.12);
+[data-bs-theme='dark'] .toolbar-glass-popover.popover {
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-bs-theme='dark'] .gallery-sort-popover .popover-arrow::after,
-[data-bs-theme='dark'] .gallery-size-popover .popover-arrow::after,
-[data-bs-theme='dark'] .files-filter-popover .popover-arrow::after {
-    border-bottom-color: rgba(20, 20, 24, 0.72);
+/* Contrast fixes for content inside glass popovers.
+   Bootstrap's btn-outline-secondary uses a fixed gray that loses contrast on
+   transparent backgrounds; swap it to the emphasis-color system instead.
+   JS toggles selected buttons to btn-secondary (solid gray) rather than adding
+   .active — style that class to match the Display popup's checked look. */
+.toolbar-glass-popover .popover-body .btn-secondary {
+    color: var(--bs-emphasis-color);
+    background: rgba(var(--bs-emphasis-color-rgb), 0.14);
+    border-color: rgba(var(--bs-emphasis-color-rgb), 0.4);
+    box-shadow: none;
+}
+
+.toolbar-glass-popover .popover-body .btn-secondary:hover,
+.toolbar-glass-popover .popover-body .btn-secondary:focus-visible {
+    color: var(--bs-emphasis-color);
+    background: rgba(var(--bs-emphasis-color-rgb), 0.2);
+    border-color: rgba(var(--bs-emphasis-color-rgb), 0.5);
+    box-shadow: none;
+}
+
+.toolbar-glass-popover .popover-body .btn-outline-secondary {
+    color: var(--bs-emphasis-color);
+    border-color: rgba(var(--bs-emphasis-color-rgb), 0.28);
+    background: transparent;
+}
+
+.toolbar-glass-popover .popover-body .btn-outline-secondary:hover,
+.toolbar-glass-popover .popover-body .btn-outline-secondary:focus-visible {
+    color: var(--bs-emphasis-color);
+    background: rgba(var(--bs-emphasis-color-rgb), 0.08);
+    border-color: rgba(var(--bs-emphasis-color-rgb), 0.4);
+    box-shadow: none;
+}
+
+.toolbar-glass-popover
+    .popover-body
+    .btn-check:checked
+    + .btn-outline-secondary,
+.toolbar-glass-popover .popover-body .btn-outline-secondary.active {
+    color: var(--bs-emphasis-color);
+    background: rgba(var(--bs-emphasis-color-rgb), 0.14);
+    border-color: rgba(var(--bs-emphasis-color-rgb), 0.4);
+    box-shadow: none;
+}
+
+/* Plain .btn items (file-type filter list) — ensure emphasis color, not inherited gray */
+.toolbar-glass-popover
+    .popover-body
+    .btn:not([class*='btn-outline']):not([class*='btn-primary']):not(
+        [class*='btn-secondary']
+    ) {
+    color: var(--bs-emphasis-color);
+}
+
+.toolbar-glass-popover
+    .popover-body
+    .btn:not([class*='btn-outline']):not([class*='btn-primary']):not(
+        [class*='btn-secondary']
+    ):hover,
+.toolbar-glass-popover
+    .popover-body
+    .btn:not([class*='btn-outline']):not([class*='btn-primary']):not(
+        [class*='btn-secondary']
+    ):focus-visible {
+    background: rgba(var(--bs-emphasis-color-rgb), 0.07);
+    box-shadow: none;
+}
+
+.toolbar-glass-popover
+    .popover-body
+    .btn:not([class*='btn-outline']):not([class*='btn-primary']):not(
+        [class*='btn-secondary']
+    ).active {
+    color: var(--bs-emphasis-color);
+    background: rgba(var(--bs-emphasis-color-rgb), 0.12);
+}
+
+.toolbar-glass-popover .popover-body .form-range {
+    accent-color: var(--bs-emphasis-color);
+}
+
+.toolbar-glass-popover .popover-body .form-range::-webkit-slider-thumb {
+    background-color: var(--bs-emphasis-color);
+}
+
+.toolbar-glass-popover .popover-body .form-range::-moz-range-thumb {
+    background-color: var(--bs-emphasis-color);
+    border-color: var(--bs-emphasis-color);
+}
+
+/* text-secondary is a fixed gray (#6c757d); swap to the adaptive var so it
+   reads correctly against both light and dark glass backgrounds */
+.toolbar-glass-popover .popover-body .text-secondary {
+    color: var(--bs-secondary-color) !important;
 }

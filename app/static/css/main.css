@@ -149,9 +149,13 @@ html {
 
 :root {
     --navbar-h: 40px;
-    --toolbar-glass-bg: rgba(0, 0, 0, 0.18);
+    --toolbar-glass-bg: rgba(0, 0, 0, 0.3);
     --toolbar-glass-border: 1px ridge rgba(66 69 73 / 100%);
     --toolbar-glass-blur: blur(6px);
+}
+
+[data-bs-theme='light'] {
+    --toolbar-glass-bg: rgba(255, 255, 255, 0.52);
 }
 
 /* backdrop-filter on the nav itself would create a CSS containing block for
@@ -227,7 +231,7 @@ html {
     -webkit-backdrop-filter: var(--toolbar-glass-blur);
     backdrop-filter: var(--toolbar-glass-blur);
     background: var(--toolbar-glass-bg);
-    border-bottom: var(--toolbar-glass-border);
+    border-bottom: 1px solid rgba(40 42 45 / 55%);
 }
 
 .files-toolbar-title {
