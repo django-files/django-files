@@ -1843,7 +1843,7 @@ function addFileMapMarker(L, file) {
 
     const marker = L.marker(coords)
         .addTo(galleryLeafletMap)
-        .bindTooltip(buildMarkerTooltip(file, coords), {
+        .bindTooltip(() => buildMarkerTooltip(file, coords), {
             direction: 'top',
             offset: [-15, -13],
         })
