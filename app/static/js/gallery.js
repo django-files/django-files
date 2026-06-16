@@ -1108,7 +1108,12 @@ function addGalleryVideo(file, top = false) {
     inner.prepend(playBtn, skeleton, link)
 
     if (file.thumb) {
-        pollVideoThumb(file.thumb, img, skeleton, inner, file.mime)
+        img.onerror = () => {
+            img.onload = null
+            img.onerror = null
+            pollVideoThumb(file.thumb, img, skeleton, inner, file.mime)
+        }
+        revealVideoThumb(file.thumb, img, skeleton)
     } else {
         showVideoThumbError(skeleton, inner, file.mime)
     }
