@@ -2,11 +2,13 @@ import { fetchAlbums } from './api-fetch.js'
 import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import { attachSocketTableSync, socket } from './socket.js'
 import {
+    initPopupBtn,
     noChromeLayout,
     paginatedTableDefaults,
     selectColumn,
     selectColumnDef,
     selectConfig,
+    syncPopupBtnActive,
 } from './table-defaults.js'
 
 const albumsTable = $('#albums-table')
@@ -19,6 +21,25 @@ const totalAlbumsCount = document.getElementById('total-albums-count')
 let albumsDataTable
 let loader
 let deleteModal
+
+let albumsUserLabel = null
+let albumsPrivacyLabel = null
+
+function syncAlbumsFilterBtn() {
+    const parts = [albumsPrivacyLabel, albumsUserLabel].filter(Boolean)
+    let filterLabel = null
+    if (parts.length === 1) filterLabel = parts[0]
+    else if (parts.length > 1) filterLabel = 'Filtered'
+    syncPopupBtnActive('albums-toolbar-filter-btn', filterLabel)
+}
+
+function syncPrivacyState(container, activeVal) {
+    container.querySelectorAll('.privacy-filter-opt').forEach((btn) => {
+        const on = btn.dataset.privacy === activeVal
+        btn.classList.toggle('btn-secondary', on)
+        btn.classList.toggle('btn-outline-secondary', !on)
+    })
+}
 
 // Dynamic name truncation — viewport-based, half-slope on the narrow home card.
 const truncator = createTruncator(isHome ? 0.02 : 0.04)
@@ -36,13 +57,14 @@ const dataTablesOptions = {
         { data: 'name' },
         { data: 'date' },
         { data: 'expr' },
+        { data: 'file_count' },
         { data: 'view' },
         { data: 'maxv' },
         { data: 'delete' },
     ],
     columnDefs: [
         selectColumnDef,
-        { targets: 1, width: '30px', responsivePriority: 5 },
+        { targets: 1, responsivePriority: 5 },
         {
             targets: 2,
             render: renderAlbumLink,
@@ -55,11 +77,9 @@ const dataTablesOptions = {
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
             responsivePriority: 2,
-            width: '200px',
         },
         {
             targets: 4,
-            width: '30px',
             defaultContent: '',
             className: 'expire-value text-center',
             // Expire column is the lowest-value info; hide it entirely on the
@@ -68,17 +88,23 @@ const dataTablesOptions = {
             responsivePriority: 10,
         },
         {
-            targets: [5, 6],
+            targets: 5,
             className: 'text-center',
-            width: '30px',
+            defaultContent: '0',
+            responsivePriority: 3,
+        },
+        {
+            targets: [6, 7],
+            className: 'text-center',
             responsivePriority: 4,
         },
         {
-            targets: 7,
+            targets: 8,
             orderable: false,
             render: renderDeleteBtn,
             defaultContent: '',
             className: 'text-center',
+            width: '40px',
             responsivePriority: 3,
         },
     ],
@@ -101,10 +127,80 @@ async function domContentLoaded() {
     if (!isHome) {
         initToolbar('albums-toolbar', albumsDataTable)
         attachInfiniteScroll(albumsDataTable, loader)
-        attachUserFilter(albumsDataTable, {
-            loader,
-            skeletonFn: showAlbumsSkeletons,
-        })
+
+        // Restore filter state from URL on init
+        const initParams = new URL(location.href).searchParams
+        const initUserId = initParams.get('user')
+        if (initUserId) {
+            const tpl = document.getElementById(
+                'albums-toolbar-filter-popup-tpl'
+            )
+            albumsUserLabel =
+                tpl?.content
+                    .cloneNode(true)
+                    .querySelector(`option[value="${initUserId}"]`)
+                    ?.textContent?.trim() ?? 'User'
+        }
+        const initPrivacy = initParams.get('privacy')
+        if (initPrivacy === 'public') albumsPrivacyLabel = 'Public'
+        else if (initPrivacy === 'private') albumsPrivacyLabel = 'Private'
+        syncAlbumsFilterBtn()
+
+        initPopupBtn(
+            'albums-toolbar-filter-btn',
+            'albums-toolbar-filter-popup-tpl',
+            (body) => {
+                body.querySelectorAll('.privacy-filter-opt').forEach((btn) => {
+                    btn.addEventListener('click', async () => {
+                        const val = btn.dataset.privacy
+                        if (val === 'public') albumsPrivacyLabel = 'Public'
+                        else if (val === 'private')
+                            albumsPrivacyLabel = 'Private'
+                        else albumsPrivacyLabel = null
+                        syncPrivacyState(body, val)
+                        syncAlbumsFilterBtn()
+                        const url = new URL(location.href)
+                        if (val === 'all') url.searchParams.delete('privacy')
+                        else url.searchParams.set('privacy', val)
+                        globalThis.history.replaceState({}, null, url.href)
+                        loader.reset()
+                        albumsDataTable.clear().draw()
+                        showAlbumsSkeletons()
+                        await loader.load()
+                        if (!albumsDataTable.rows().count())
+                            albumsDataTable.draw()
+                    })
+                })
+                body.querySelector('#user')?.addEventListener(
+                    'change',
+                    async function () {
+                        const userId = this.value
+                        albumsUserLabel = userId
+                            ? this.options[this.selectedIndex]?.text
+                            : null
+                        const url = new URL(location.href)
+                        if (userId) url.searchParams.set('user', userId)
+                        else url.searchParams.delete('user')
+                        globalThis.history.replaceState({}, null, url.href)
+                        syncAlbumsFilterBtn()
+                        loader.reset()
+                        albumsDataTable.clear().draw()
+                        showAlbumsSkeletons()
+                        await loader.load()
+                        if (!albumsDataTable.rows().count())
+                            albumsDataTable.draw()
+                    }
+                )
+            },
+            {
+                prepareContent: (clone) => {
+                    const p = new URL(location.href).searchParams
+                    syncPrivacyState(clone, p.get('privacy') ?? 'all')
+                    const sel = clone.querySelector('#user')
+                    if (sel) sel.value = p.get('user') ?? ''
+                },
+            }
+        )
         initBulkSelect(albumsDataTable)
         $('.bulk-delete').on('click', () =>
             deleteModal.open(selectedPks(albumsDataTable))

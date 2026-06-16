@@ -490,28 +490,6 @@ function attachInfiniteScroll(dt, loader) {
 }
 
 /**
- * Wires the toolbar's `#user` <select> to clear + re-skeleton + re-fetch.
- * Used by /shorts/ and /albums/ when a superuser switches whose rows to view.
- *
- *   attachUserFilter(dt, { loader, skeletonFn: showAlbumsSkeletons })
- */
-// eslint-disable-next-line no-unused-vars
-function attachUserFilter(dt, { loader, skeletonFn }) {
-    $('#user').on('change', async function () {
-        const userId = $(this).val()
-        const url = new URL(location.href)
-        if (userId) url.searchParams.set('user', userId)
-        else url.searchParams.delete('user')
-        globalThis.history.replaceState({}, null, url.href)
-        loader.reset()
-        dt.clear().draw()
-        skeletonFn?.()
-        await loader.load()
-        if (!dt.rows().count()) dt.draw()
-    })
-}
-
-/**
  * Generate Random String at length
  * @param {Number} length
  * @return {String}

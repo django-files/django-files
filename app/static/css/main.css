@@ -149,9 +149,13 @@ html {
 
 :root {
     --navbar-h: 40px;
-    --toolbar-glass-bg: rgba(0, 0, 0, 0.18);
+    --toolbar-glass-bg: rgba(0, 0, 0, 0.3);
     --toolbar-glass-border: 1px ridge rgba(66 69 73 / 100%);
     --toolbar-glass-blur: blur(6px);
+}
+
+[data-bs-theme='light'] {
+    --toolbar-glass-bg: rgba(255, 255, 255, 0.52);
 }
 
 /* backdrop-filter on the nav itself would create a CSS containing block for
@@ -227,7 +231,7 @@ html {
     -webkit-backdrop-filter: var(--toolbar-glass-blur);
     backdrop-filter: var(--toolbar-glass-blur);
     background: var(--toolbar-glass-bg);
-    border-bottom: var(--toolbar-glass-border);
+    border-bottom: 1px solid rgba(40 42 45 / 55%);
 }
 
 .files-toolbar-title {
@@ -248,7 +252,7 @@ html {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.3rem 0.65rem;
+    padding: 0.47rem 0.65rem;
     border-radius: 999px;
     color: var(--bs-emphasis-color);
     line-height: 1;
@@ -264,7 +268,7 @@ html {
 }
 
 .files-toolbar-btn {
-    border: 1px solid var(--bs-border-color);
+    border: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.2);
     background: transparent;
     font-size: 0.875rem;
     cursor: pointer;
@@ -474,6 +478,7 @@ html {
     display: inline-flex;
     align-items: center;
     gap: 0.75rem;
+    margin-left: auto;
 }
 
 .files-toolbar-count strong {

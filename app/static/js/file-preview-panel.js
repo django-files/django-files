@@ -43,8 +43,10 @@ export function openPanel(fileUrl, originEl = null) {
         const thumbImg = originEl.querySelector('img')
         if (thumbImg?.complete && thumbImg.naturalWidth > 0) {
             const thumbRect = thumbImg.getBoundingClientRect()
-            const vw = window.innerWidth
-            const vh = window.innerHeight
+            // Use panel content dimensions rather than window.innerWidth so the
+            // target rect accounts for scrollbar-gutter reservations on <html>.
+            const vw = panelContent.offsetWidth || window.innerWidth
+            const vh = panelContent.offsetHeight || window.innerHeight
             const dst = imageDisplayRect(thumbImg, vw, vh)
 
             // Hero is full-viewport so its background colour (black/white per
@@ -212,91 +214,109 @@ function closePanelInternal() {
     const thumbImg = origin?.isConnected ? origin.querySelector('img') : null
 
     if (thumbImg?.complete && thumbImg.naturalWidth > 0) {
-        // Mirror the open animation: clear the panel immediately and use a
-        // hero thumbnail div for the reverse zoom so no panel content (sidebar,
-        // fixed-position elements, etc.) is visible during the animation.
-        panelCleanup()
-        panel.style.transition = 'none'
-        panel.classList.remove('open')
-        panel.getBoundingClientRect()
-        panel.style.transition = ''
-
-        const thumbRect = thumbImg.getBoundingClientRect()
-        const vw = window.innerWidth
-        const vh = window.innerHeight
-        const dst = imageDisplayRect(thumbImg, vw, vh)
-
-        const scaleX = thumbRect.width / dst.w
-        const scaleY = thumbRect.height / dst.h
-        const tx = (thumbRect.left - dst.left).toFixed(2)
-        const ty = (thumbRect.top - dst.top).toFixed(2)
-
-        const closeHero = document.createElement('div')
-        closeHero.className = 'panel-hero-thumb'
-
-        const heroImg = document.createElement('img')
-        heroImg.src = thumbImg.src
-        Object.assign(heroImg.style, {
-            position: 'absolute',
-            top: `${dst.top}px`,
-            left: `${dst.left}px`,
-            width: `${dst.w}px`,
-            height: `${dst.h}px`,
-            objectFit: 'cover',
-            display: 'block',
-            transformOrigin: '0 0',
-        })
-
-        closeHero.appendChild(heroImg)
-        document.body.appendChild(closeHero)
-        currentHeroEl = closeHero
-
-        // Background fades out and image scales back to thumbnail together
-        closeHero.getBoundingClientRect()
-        closeHero.style.transition =
-            'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-        heroImg.style.transition =
-            'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
-        closeHero.style.opacity = '0'
-        heroImg.style.transform = `translate(${tx}px,${ty}px) scale(${scaleX},${scaleY})`
-
-        closeHero.addEventListener(
-            'transitionend',
-            () => {
-                closeHero.remove()
-                if (currentHeroEl === closeHero) currentHeroEl = null
-            },
-            { once: true }
-        )
+        animateCloseThumbnail(thumbImg)
     } else {
-        // Non-thumbnail: FA icon shrink-back animation, or plain slide-down
         const srcIcon =
             origin?.isConnected && origin.querySelector('.gallery-no-thumb i')
         if (srcIcon) {
-            panelCleanup()
-            panel.style.transition = 'none'
-            panel.classList.remove('open')
-            panel.getBoundingClientRect()
-            panel.style.transition = ''
-
-            const closeHero = buildIconHero(srcIcon, true)
-            currentHeroEl = closeHero
-            closeHero.addEventListener(
-                'transitionend',
-                () => {
-                    closeHero.remove()
-                    if (currentHeroEl === closeHero) currentHeroEl = null
-                },
-                { once: true }
-            )
+            animateCloseIcon(srcIcon)
         } else {
-            // Standard slide-down (non-gallery open, or thumbnail not available)
             panel.classList.remove('open')
             setTimeout(() => {
                 if (!isOpen) panelCleanup()
             }, 360)
         }
     }
+}
+
+// Mirror the open animation: hero thumbnail div zooms back to the gallery thumb.
+function animateCloseThumbnail(thumbImg) {
+    // Capture actual image rect before clearing content — pixel-perfect start
+    // position for the reverse zoom.
+    const previewImg = panelContent.querySelector('img.preview')
+    const previewRect =
+        previewImg?.complete && previewImg.naturalWidth > 0
+            ? previewImg.getBoundingClientRect()
+            : null
+
+    panelCleanup()
+    panel.style.transition = 'none'
+    panel.classList.remove('open')
+    panel.getBoundingClientRect()
+    panel.style.transition = ''
+
+    const thumbRect = thumbImg.getBoundingClientRect()
+
+    // Use actual image rect when available; fall back to computed rect so
+    // non-image panel types (video, text…) still get a close animation.
+    const vw = panelContent.offsetWidth || window.innerWidth
+    const vh = panelContent.offsetHeight || window.innerHeight
+    const dst = imageDisplayRect(thumbImg, vw, vh)
+    const startLeft = previewRect ? previewRect.left : dst.left
+    const startTop = previewRect ? previewRect.top : dst.top
+    const startW = previewRect ? previewRect.width : dst.w
+    const startH = previewRect ? previewRect.height : dst.h
+
+    const scaleX = thumbRect.width / startW
+    const scaleY = thumbRect.height / startH
+    const tx = (thumbRect.left - startLeft).toFixed(2)
+    const ty = (thumbRect.top - startTop).toFixed(2)
+
+    const closeHero = document.createElement('div')
+    closeHero.className = 'panel-hero-thumb'
+
+    const heroImg = document.createElement('img')
+    heroImg.src = thumbImg.src
+    Object.assign(heroImg.style, {
+        position: 'absolute',
+        top: `${startTop}px`,
+        left: `${startLeft}px`,
+        width: `${startW}px`,
+        height: `${startH}px`,
+        objectFit: 'cover',
+        display: 'block',
+        transformOrigin: '0 0',
+    })
+
+    closeHero.appendChild(heroImg)
+    document.body.appendChild(closeHero)
+    currentHeroEl = closeHero
+
+    // Background fades out and image scales back to thumbnail together
+    closeHero.getBoundingClientRect()
+    closeHero.style.transition = 'opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+    heroImg.style.transition = 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+    closeHero.style.opacity = '0'
+    heroImg.style.transform = `translate(${tx}px,${ty}px) scale(${scaleX},${scaleY})`
+
+    closeHero.addEventListener(
+        'transitionend',
+        () => {
+            closeHero.remove()
+            if (currentHeroEl === closeHero) currentHeroEl = null
+        },
+        { once: true }
+    )
+}
+
+// FA icon shrink-back animation for non-thumbnail gallery items.
+function animateCloseIcon(srcIcon) {
+    panelCleanup()
+    panel.style.transition = 'none'
+    panel.classList.remove('open')
+    panel.getBoundingClientRect()
+    panel.style.transition = ''
+
+    const closeHero = buildIconHero(srcIcon, true)
+    currentHeroEl = closeHero
+    closeHero.addEventListener(
+        'transitionend',
+        () => {
+            closeHero.remove()
+            if (currentHeroEl === closeHero) currentHeroEl = null
+        },
+        { once: true }
+    )
 }
 
 function panelCleanup() {
@@ -482,22 +502,14 @@ function initPanelImage(container) {
     img.style.transition = 'opacity 0.25s ease-in-out'
 
     const onLoad = () => {
-        // Crossfade: hero fades out as the decoded image fades in together
-        dismissHero(heroEl)
-        if (skeleton) {
-            skeleton.style.opacity = '0'
-        }
+        // Drop the skeleton instantly while the hero is still at full opacity so
+        // the grey background can't bleed through during the hero fade-out.
+        if (skeleton) skeleton.remove()
 
         requestAnimationFrame(() => {
             img.style.opacity = '1'
+            dismissHero(heroEl)
         })
-
-        // Clean up skeleton after transition
-        if (skeleton) {
-            setTimeout(() => {
-                skeleton?.remove()
-            }, 250)
-        }
     }
 
     const onError = () => {

@@ -2,9 +2,11 @@ import { initBulkSelect, selectedPks } from './bulk-actions.js'
 import { socket } from './socket.js'
 import { openDeleteStreamsModal } from './streams-actions.js'
 import {
+    initPopupBtn,
     selectColumn,
     selectColumnDef,
     selectConfig,
+    syncPopupBtnActive,
 } from './table-defaults.js'
 
 const streamsTable = $('#streams-table')
@@ -17,6 +19,34 @@ export const faCircle = document.querySelector('div.d-none > .fa-circle')
 export const streamLink = document.querySelector('div.d-none > .dj-stream-link')
 
 let streamsDataTable
+let streamsUserLabel = null
+let streamsPrivacyLabel = null
+
+function syncStreamsFilterBtn() {
+    const parts = [streamsPrivacyLabel, streamsUserLabel].filter(Boolean)
+    let filterLabel = null
+    if (parts.length === 1) filterLabel = parts[0]
+    else if (parts.length > 1) filterLabel = 'Filtered'
+    syncPopupBtnActive('streams-toolbar-filter-btn', filterLabel)
+}
+
+function syncPrivacyState(container, activeVal) {
+    container.querySelectorAll('.privacy-filter-opt').forEach((btn) => {
+        const on = btn.dataset.privacy === activeVal
+        btn.classList.toggle('btn-secondary', on)
+        btn.classList.toggle('btn-outline-secondary', !on)
+    })
+}
+
+function streamsAjaxUrl() {
+    const p = new URL(location.href).searchParams
+    const url = new URL('/api/streams/', location.origin)
+    const user = p.get('user')
+    if (user && user !== '0') url.searchParams.set('user', user)
+    const privacy = p.get('privacy')
+    if (privacy) url.searchParams.set('privacy', privacy)
+    return url.toString()
+}
 
 const dataTablesOptions = {
     paging: false,
@@ -281,6 +311,66 @@ function domContentLoaded() {
     showStreamsSkeletons()
     initToolbar('streams-toolbar', streamsDataTable)
     initBulkSelect(streamsDataTable)
+    // Restore filter state from URL on init
+    const initParams = new URL(location.href).searchParams
+    const initUserId = initParams.get('user')
+    if (initUserId) {
+        const tpl = document.getElementById('streams-toolbar-filter-popup-tpl')
+        streamsUserLabel =
+            tpl?.content
+                .cloneNode(true)
+                .querySelector(`option[value="${initUserId}"]`)
+                ?.textContent?.trim() ?? 'User'
+    }
+    const initPrivacy = initParams.get('privacy')
+    if (initPrivacy === 'public') streamsPrivacyLabel = 'Public'
+    else if (initPrivacy === 'private') streamsPrivacyLabel = 'Private'
+    syncStreamsFilterBtn()
+
+    initPopupBtn(
+        'streams-toolbar-filter-btn',
+        'streams-toolbar-filter-popup-tpl',
+        (body) => {
+            body.querySelectorAll('.privacy-filter-opt').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const val = btn.dataset.privacy
+                    if (val === 'public') streamsPrivacyLabel = 'Public'
+                    else if (val === 'private') streamsPrivacyLabel = 'Private'
+                    else streamsPrivacyLabel = null
+                    syncPrivacyState(body, val)
+                    syncStreamsFilterBtn()
+                    const url = new URL(location.href)
+                    if (val === 'all') url.searchParams.delete('privacy')
+                    else url.searchParams.set('privacy', val)
+                    globalThis.history.replaceState({}, null, url.href)
+                    streamsDataTable.ajax.url(streamsAjaxUrl()).load()
+                })
+            })
+            body.querySelector('#user')?.addEventListener(
+                'change',
+                function () {
+                    const userId = this.value
+                    streamsUserLabel = userId
+                        ? this.options[this.selectedIndex]?.text
+                        : null
+                    const url = new URL(location.href)
+                    if (userId) url.searchParams.set('user', userId)
+                    else url.searchParams.delete('user')
+                    globalThis.history.replaceState({}, null, url.href)
+                    syncStreamsFilterBtn()
+                    streamsDataTable.ajax.url(streamsAjaxUrl()).load()
+                }
+            )
+        },
+        {
+            prepareContent: (clone) => {
+                const p = new URL(location.href).searchParams
+                syncPrivacyState(clone, p.get('privacy') ?? 'all')
+                const sel = clone.querySelector('#user')
+                if (sel) sel.value = p.get('user') ?? ''
+            },
+        }
+    )
 
     const totalStreamsCount = document.getElementById('total-streams-count')
     if (totalStreamsCount) {
@@ -290,15 +380,6 @@ function domContentLoaded() {
                 .count()
         })
     }
-
-    $('#user').on('change', function () {
-        const userId = $(this).val()
-        let url = '/api/streams/'
-        if (userId && userId !== '0') {
-            url += `?user=${userId}`
-        }
-        streamsDataTable.ajax.url(url).load()
-    })
 
     streamsTable.on('focus', '.stream-editable', function () {
         $(this).data('original-title', $(this).text().trim())

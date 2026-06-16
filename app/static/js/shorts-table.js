@@ -1,11 +1,14 @@
 import { fetchShorts } from './api-fetch.js'
 import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import {
+    initPopupBtn,
     noChromeLayout,
     paginatedTableDefaults,
     selectColumn,
     selectColumnDef,
     selectConfig,
+    syncPopupBtnActive,
+    syncUserFilterBtn,
 } from './table-defaults.js'
 
 const shortsTable = $('#shorts-table')
@@ -100,10 +103,45 @@ async function domContentLoaded() {
     if (!isHome) {
         initToolbar('shorts-toolbar', shortsDataTable)
         attachInfiniteScroll(shortsDataTable, loader)
-        attachUserFilter(shortsDataTable, {
-            loader,
-            skeletonFn: showShortsSkeletons,
-        })
+        syncUserFilterBtn(
+            'shorts-toolbar-filter-btn',
+            'shorts-toolbar-filter-popup-tpl'
+        )
+        initPopupBtn(
+            'shorts-toolbar-filter-btn',
+            'shorts-toolbar-filter-popup-tpl',
+            (body) => {
+                body.querySelector('#user')?.addEventListener(
+                    'change',
+                    async function () {
+                        const userId = this.value
+                        const label = userId
+                            ? this.options[this.selectedIndex]?.text
+                            : null
+                        const url = new URL(location.href)
+                        if (userId) url.searchParams.set('user', userId)
+                        else url.searchParams.delete('user')
+                        globalThis.history.replaceState({}, null, url.href)
+                        syncPopupBtnActive('shorts-toolbar-filter-btn', label)
+                        loader.reset()
+                        shortsDataTable.clear().draw()
+                        showShortsSkeletons()
+                        await loader.load()
+                        if (!shortsDataTable.rows().count())
+                            shortsDataTable.draw()
+                    }
+                )
+            },
+            {
+                prepareContent: (clone) => {
+                    const sel = clone.querySelector('#user')
+                    if (sel)
+                        sel.value =
+                            new URL(location.href).searchParams.get('user') ??
+                            ''
+                },
+            }
+        )
         initBulkSelect(shortsDataTable)
         $('.bulk-delete').on('click', () =>
             deleteModal.open(selectedPks(shortsDataTable))

@@ -106,6 +106,7 @@ def extract_albums(q: Albums.objects):
         data["date"] = album.date
         data["url"] = site_settings["site_url"] + "/files/?view=gallery&album=" + str(album.id)
         data["user_name"] = album.user.get_name()
+        data["file_count"] = getattr(album, "file_count", 0)
         albums.append(data)
     return albums
 

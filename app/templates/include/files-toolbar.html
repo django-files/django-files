@@ -23,7 +23,19 @@
         <i class="fa-solid fa-filter" aria-hidden="true"></i><span class="files-toolbar-view-label" id="files-filter-label">Filter</span>
     </button>
     <template id="files-filter-popup-tpl">
-        <div style="min-width:175px">
+        <div style="min-width:190px">
+            <div class="btn-group btn-group-sm w-100 mb-2" role="group" aria-label="Privacy filter">
+                <button type="button" class="btn btn-outline-secondary privacy-filter-opt" data-privacy="all">
+                    <i class="fa-solid fa-layer-group" aria-hidden="true"></i> All
+                </button>
+                <button type="button" class="btn btn-outline-secondary privacy-filter-opt" data-privacy="public">
+                    <i class="fa-solid fa-lock-open" aria-hidden="true"></i> Public
+                </button>
+                <button type="button" class="btn btn-outline-secondary privacy-filter-opt" data-privacy="private">
+                    <i class="fa-solid fa-lock" aria-hidden="true"></i> Private
+                </button>
+            </div>
+            <hr class="my-2">
             <div class="d-flex flex-column gap-1">
                 <button type="button" class="btn btn-sm text-start w-100 files-filter-opt" data-type="all">
                     <i class="fa-solid fa-layer-group me-1"></i> All
@@ -50,6 +62,10 @@
                     <i class="fa-solid fa-microchip me-1"></i> Executables
                 </button>
             </div>
+            {% if request.user.is_superuser and not album %}
+            <hr class="my-2">
+            {% include 'include/user-select.html' %}
+            {% endif %}
         </div>
     </template>
 
@@ -95,16 +111,30 @@
 
     <button id="gallery-size-btn"
             class="files-toolbar-btn{% if view_mode != 'gallery' %} d-none{% endif %}"
-            aria-label="Gallery size">
-        <i class="fa-solid fa-maximize" aria-hidden="true"></i><span class="files-toolbar-view-label">Size</span>
+            aria-label="Gallery display">
+        <i class="fa-solid fa-sliders" aria-hidden="true"></i><span class="files-toolbar-view-label">Display</span>
     </button>
     <template id="gallery-size-popup-tpl">
-        <div style="min-width:200px">
-            <div class="d-flex align-items-center gap-2 px-1 py-1">
-                <i class="fa-solid fa-grip text-secondary" style="font-size:0.7rem"></i>
-                <input type="range" class="form-range flex-grow-1" id="gallery-size-slider"
-                       min="96" max="416" step="8" value="256" aria-label="Gallery size">
-                <i class="fa-solid fa-grip text-secondary" style="font-size:1.1rem"></i>
+        <div style="min-width:220px">
+            <div class="d-flex flex-column gap-2">
+                <div class="d-flex align-items-center justify-content-between gap-2 px-1">
+                    <span class="small text-nowrap"><i class="fa-solid fa-grip text-secondary me-1" style="font-size:0.8rem"></i> Size</span>
+                    <div class="d-flex align-items-center gap-1 flex-grow-1 justify-content-end" style="max-width:160px">
+                        <i class="fa-solid fa-grip text-secondary" style="font-size:0.65rem"></i>
+                        <input type="range" class="form-range flex-grow-1" id="gallery-size-slider"
+                               min="96" max="416" step="8" value="256" aria-label="Gallery size">
+                        <i class="fa-solid fa-grip text-secondary" style="font-size:1rem"></i>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between gap-2 px-1">
+                    <span class="small text-nowrap"><i class="fa-solid fa-table-cells-large me-1"></i> Thumbnails</span>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Thumbnail sizing">
+                        <input type="radio" class="btn-check" name="gallery-sizing" id="gallery-sizing-uniform" autocomplete="off">
+                        <label class="btn btn-outline-secondary" for="gallery-sizing-uniform">Uniform</label>
+                        <input type="radio" class="btn-check" name="gallery-sizing" id="gallery-sizing-natural" autocomplete="off">
+                        <label class="btn btn-outline-secondary" for="gallery-sizing-natural">Natural</label>
+                    </div>
+                </div>
             </div>
         </div>
     </template>
@@ -127,13 +157,6 @@
         <i class="fa-solid fa-magnifying-glass files-toolbar-search-icon" aria-hidden="true"></i>
         <input type="search" id="files-toolbar-search-input" class="form-control form-control-sm"
                placeholder="Search files…" autocomplete="off">
-    </div>
-
-    {# Filter slot — additional filters can be appended here without touching layout. #}
-    <div class="files-toolbar-filters" id="files-toolbar-filters">
-        {% if request.user.is_superuser and not album %}
-            {% include 'include/user-select.html' %}
-        {% endif %}
     </div>
 
     <div class="files-toolbar-actions">
