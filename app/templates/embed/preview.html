@@ -119,11 +119,6 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
         {% else %}
             <div class="d-flex align-items-center justify-content-center h-100 w-100"><i class="fa-10x fa-solid fa-file"></i></div>
         {% endif %}
-        {% if render == 'markdown' %}
-        <button class="files-toolbar-btn md-view-toggle" id="mdViewToggle" aria-expanded="false" title="Toggle view">
-            <i class="fa-solid fa-code" aria-hidden="true"></i><span class="files-toolbar-view-label">Source</span>
-        </button>
-        {% endif %}
         <button class="openbtn" id="openSidebar"><i class="fa-solid fa-square-caret-left"></i></button>
         <div class="context-placement" data-bs-toggle="dropdown" id="contextPlacement" title="More options">
             <i class="fa-solid fa-ellipsis"></i>

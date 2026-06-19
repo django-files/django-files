@@ -698,18 +698,9 @@ async function initCodePreview(root) {
 
 const MD_SESSION_KEY = 'mdView'
 
-async function showPanelMarkdownSource(
-    root,
-    toggleBtn,
-    rendered,
-    source,
-    codeEl
-) {
+async function loadPanelMarkdownSource(root, rendered, source, codeEl) {
     rendered.classList.add('d-none')
     source.classList.remove('d-none')
-    toggleBtn.setAttribute('aria-expanded', 'true')
-    toggleBtn.querySelector('i').className = 'fa-solid fa-eye me-1'
-    toggleBtn.querySelector('span').textContent = 'View Rendered'
 
     if (codeEl.dataset.loaded) return
     codeEl.dataset.loaded = '1'
@@ -752,47 +743,45 @@ async function showPanelMarkdownSource(
     }
 }
 
-function showPanelMarkdownRendered(toggleBtn, rendered, source) {
-    source.classList.add('d-none')
-    rendered.classList.remove('d-none')
-    toggleBtn.setAttribute('aria-expanded', 'false')
-    toggleBtn.querySelector('i').className = 'fa-solid fa-code me-1'
-    toggleBtn.querySelector('span').textContent = 'View Source'
-}
-
 async function initMarkdownToggle(root) {
-    const toggleBtn = root.querySelector('#mdViewToggle')
+    const btnRendered = root.querySelector('#mdViewRendered')
+    const btnSource = root.querySelector('#mdViewSource')
     const rendered = root.querySelector('#md-rendered')
     const source = root.querySelector('#md-source')
     const codeEl = root.querySelector('#text-preview')
 
-    if (!toggleBtn || !rendered || !source || !codeEl) return
+    if (!btnRendered || !btnSource || !rendered || !source || !codeEl) return
 
-    // Determine initial view: query param > session storage > default (rendered)
-    const qp = new URLSearchParams(location.search).get('md_view')
-    const startSource =
-        qp === 'source' ||
-        (!qp && sessionStorage.getItem(MD_SESSION_KEY) === 'source')
-
-    if (startSource) {
-        await showPanelMarkdownSource(root, toggleBtn, rendered, source, codeEl)
+    function setActive(showSource) {
+        btnRendered.classList.toggle('active', !showSource)
+        btnSource.classList.toggle('active', showSource)
     }
 
-    toggleBtn.addEventListener('click', async () => {
-        const goSource = toggleBtn.getAttribute('aria-expanded') !== 'true'
-        if (goSource) {
-            sessionStorage.setItem(MD_SESSION_KEY, 'source')
-            await showPanelMarkdownSource(
-                root,
-                toggleBtn,
-                rendered,
-                source,
-                codeEl
-            )
-        } else {
-            sessionStorage.setItem(MD_SESSION_KEY, 'rendered')
-            showPanelMarkdownRendered(toggleBtn, rendered, source)
-        }
+    // ?md_view=source|rendered overrides; anything else falls back to session > default (rendered)
+    const qp = new URLSearchParams(location.search).get('md_view')
+    const startSource =
+        qp === 'source'
+            ? true
+            : qp === 'rendered'
+              ? false
+              : sessionStorage.getItem(MD_SESSION_KEY) === 'source'
+
+    if (startSource) {
+        setActive(true)
+        await loadPanelMarkdownSource(root, rendered, source, codeEl)
+    }
+
+    btnSource.addEventListener('click', async () => {
+        sessionStorage.setItem(MD_SESSION_KEY, 'source')
+        setActive(true)
+        await loadPanelMarkdownSource(root, rendered, source, codeEl)
+    })
+
+    btnRendered.addEventListener('click', () => {
+        sessionStorage.setItem(MD_SESSION_KEY, 'rendered')
+        setActive(false)
+        source.classList.add('d-none')
+        rendered.classList.remove('d-none')
     })
 }
 

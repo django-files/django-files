@@ -361,15 +361,6 @@
     color: var(--bs-body-color);
 }
 
-/* ---- Markdown view toggle — sits between context-placement and the sidebar ---- */
-
-.md-view-toggle {
-    position: absolute;
-    top: 12px;
-    right: 108px;
-    z-index: 2;
-}
-
 /* ---- Markdown rendered content ---- */
 
 /* Override github-markdown-css background so the page theme shows through.
