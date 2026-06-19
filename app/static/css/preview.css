@@ -365,8 +365,8 @@
 
 .md-view-toggle {
     position: absolute;
-    top: 12px;
-    left: 12px;
+    bottom: 16px;
+    right: 16px;
     z-index: 2;
     display: inline-flex;
     align-items: center;
