@@ -51,7 +51,7 @@ from oauth.models import CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
-from oauth.views import post_login
+from oauth.views import post_login, pre_login
 from packaging import version
 from packaging.version import InvalidVersion
 from pytimeparse2 import parse
@@ -1059,6 +1059,9 @@ def auth_session(request):
     Exchanges a valid Bearer token for a Django session cookie so native clients
     can refresh expired WebView sessions without re-entering credentials.
     """
+    site_settings = SiteSettings.objects.settings()
+    if response := pre_login(request, request.user, site_settings):
+        return response
     login(request, request.user, backend="django.contrib.auth.backends.ModelBackend")
     post_login(request)
     return HttpResponse(status=204)
