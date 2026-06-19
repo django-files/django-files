@@ -361,15 +361,13 @@
     color: var(--bs-body-color);
 }
 
-/* ---- Markdown preview toolbar + content ---- */
+/* ---- Markdown view toggle — sits between context-placement and the sidebar ---- */
 
-.md-preview-wrap {
-    min-height: 0;
-}
-
-.md-toolbar {
-    background: var(--bs-tertiary-bg);
-    font-size: 0.8125rem;
+.md-view-toggle {
+    position: absolute;
+    top: 12px;
+    right: 108px;
+    z-index: 2;
 }
 
 /* ---- Markdown rendered content ---- */

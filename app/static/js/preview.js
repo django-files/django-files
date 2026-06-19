@@ -81,6 +81,44 @@ function domLoaded() {
     initMarkdownToggle()
 }
 
+const MD_SESSION_KEY = 'mdView'
+
+async function showMarkdownSource(toggleBtn, rendered, source, codeEl, rawUrl) {
+    rendered.classList.add('d-none')
+    source.classList.remove('d-none')
+    toggleBtn.setAttribute('aria-expanded', 'true')
+    toggleBtn.querySelector('i').className = 'fa-solid fa-eye me-1'
+    toggleBtn.querySelector('span').textContent = 'View Rendered'
+
+    if (codeEl.dataset.loaded) return
+    codeEl.dataset.loaded = '1'
+
+    try {
+        const response = await fetch(rawUrl)
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const text = await response.text()
+        codeEl.textContent = text
+
+        const theme = document.documentElement.dataset.bsTheme
+        if (theme !== 'dark') {
+            document.getElementById('code-dark')?.setAttribute('disabled', '')
+            document.getElementById('code-light')?.removeAttribute('disabled')
+        }
+
+        globalThis.hljs?.highlightElement(codeEl)
+    } catch (e) {
+        codeEl.textContent = `Error loading file: ${e.message}`
+    }
+}
+
+function showMarkdownRendered(toggleBtn, rendered, source) {
+    source.classList.add('d-none')
+    rendered.classList.remove('d-none')
+    toggleBtn.setAttribute('aria-expanded', 'false')
+    toggleBtn.querySelector('i').className = 'fa-solid fa-code me-1'
+    toggleBtn.querySelector('span').textContent = 'View Source'
+}
+
 async function initMarkdownToggle() {
     const card = document.querySelector('.card[data-render="markdown"]')
     if (!card) return
@@ -93,47 +131,31 @@ async function initMarkdownToggle() {
     if (!toggleBtn || !rendered || !source || !codeEl) return
 
     const rawUrl = card.dataset.rawUrl
-    let sourceLoaded = false
-    let isSource = false
+
+    // Determine initial view: query param > session storage > default (rendered)
+    const qp = new URLSearchParams(location.search).get('md_view')
+    const startSource =
+        qp === 'source' ||
+        (!qp && sessionStorage.getItem(MD_SESSION_KEY) === 'source')
+
+    if (startSource) {
+        await showMarkdownSource(toggleBtn, rendered, source, codeEl, rawUrl)
+    }
 
     toggleBtn.addEventListener('click', async () => {
-        isSource = !isSource
-        if (isSource) {
-            rendered.classList.add('d-none')
-            source.classList.remove('d-none')
-            toggleBtn.querySelector('i').className = 'fa-solid fa-eye me-1'
-            toggleBtn.lastChild.textContent = 'Rendered'
-            toggleBtn.classList.add('active')
-
-            if (!sourceLoaded && rawUrl) {
-                sourceLoaded = true
-                try {
-                    const response = await fetch(rawUrl)
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-                    const text = await response.text()
-                    codeEl.textContent = text
-
-                    const theme = document.documentElement.dataset.bsTheme
-                    if (theme !== 'dark') {
-                        document
-                            .getElementById('code-dark')
-                            ?.setAttribute('disabled', '')
-                        document
-                            .getElementById('code-light')
-                            ?.removeAttribute('disabled')
-                    }
-
-                    globalThis.hljs?.highlightElement(codeEl)
-                } catch (e) {
-                    codeEl.textContent = `Error loading file: ${e.message}`
-                }
-            }
+        const goSource = toggleBtn.getAttribute('aria-expanded') !== 'true'
+        if (goSource) {
+            sessionStorage.setItem(MD_SESSION_KEY, 'source')
+            await showMarkdownSource(
+                toggleBtn,
+                rendered,
+                source,
+                codeEl,
+                rawUrl
+            )
         } else {
-            source.classList.add('d-none')
-            rendered.classList.remove('d-none')
-            toggleBtn.querySelector('i').className = 'fa-solid fa-code me-1'
-            toggleBtn.lastChild.textContent = 'Source'
-            toggleBtn.classList.remove('active')
+            sessionStorage.setItem(MD_SESSION_KEY, 'rendered')
+            showMarkdownRendered(toggleBtn, rendered, source)
         }
     })
 }

@@ -696,6 +696,70 @@ async function initCodePreview(root) {
 
 // ---- Markdown view toggle (rendered ↔ source) ----
 
+const MD_SESSION_KEY = 'mdView'
+
+async function showPanelMarkdownSource(
+    root,
+    toggleBtn,
+    rendered,
+    source,
+    codeEl
+) {
+    rendered.classList.add('d-none')
+    source.classList.remove('d-none')
+    toggleBtn.setAttribute('aria-expanded', 'true')
+    toggleBtn.querySelector('i').className = 'fa-solid fa-eye me-1'
+    toggleBtn.querySelector('span').textContent = 'View Rendered'
+
+    if (codeEl.dataset.loaded) return
+    codeEl.dataset.loaded = '1'
+
+    const rawUrl = root.dataset.rawUrl
+    if (!rawUrl) return
+
+    if (!globalThis.hljs) {
+        const existingScript = document.querySelector(
+            'script[src*="highlight.min.js"]'
+        )
+        const scriptSrc =
+            existingScript?.src || '/static/highlightjs/highlight.min.js'
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script')
+            s.src = scriptSrc
+            s.onload = resolve
+            s.onerror = reject
+            document.head.appendChild(s)
+        })
+    }
+
+    try {
+        const response = await fetch(rawUrl)
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const text = await response.text()
+        codeEl.textContent = text
+
+        const theme = document.documentElement.dataset.bsTheme
+        const darkLink = document.querySelector('#panel-code-dark')
+        const lightLink = document.querySelector('#panel-code-light')
+        if (theme !== 'dark' && darkLink && lightLink) {
+            darkLink.disabled = true
+            lightLink.removeAttribute('disabled')
+        }
+
+        globalThis.hljs.highlightElement(codeEl)
+    } catch (e) {
+        codeEl.textContent = `Error loading file: ${e.message}`
+    }
+}
+
+function showPanelMarkdownRendered(toggleBtn, rendered, source) {
+    source.classList.add('d-none')
+    rendered.classList.remove('d-none')
+    toggleBtn.setAttribute('aria-expanded', 'false')
+    toggleBtn.querySelector('i').className = 'fa-solid fa-code me-1'
+    toggleBtn.querySelector('span').textContent = 'View Source'
+}
+
 async function initMarkdownToggle(root) {
     const toggleBtn = root.querySelector('#mdViewToggle')
     const rendered = root.querySelector('#md-rendered')
@@ -704,62 +768,30 @@ async function initMarkdownToggle(root) {
 
     if (!toggleBtn || !rendered || !source || !codeEl) return
 
-    const rawUrl = root.dataset.rawUrl
-    let sourceLoaded = false
-    let isSource = false
+    // Determine initial view: query param > session storage > default (rendered)
+    const qp = new URLSearchParams(location.search).get('md_view')
+    const startSource =
+        qp === 'source' ||
+        (!qp && sessionStorage.getItem(MD_SESSION_KEY) === 'source')
+
+    if (startSource) {
+        await showPanelMarkdownSource(root, toggleBtn, rendered, source, codeEl)
+    }
 
     toggleBtn.addEventListener('click', async () => {
-        isSource = !isSource
-        if (isSource) {
-            rendered.classList.add('d-none')
-            source.classList.remove('d-none')
-            toggleBtn.querySelector('i').className = 'fa-solid fa-eye me-1'
-            toggleBtn.lastChild.textContent = 'Rendered'
-            toggleBtn.classList.add('active')
-
-            if (!sourceLoaded && rawUrl) {
-                sourceLoaded = true
-                if (!globalThis.hljs) {
-                    const existingScript = document.querySelector(
-                        'script[src*="highlight.min.js"]'
-                    )
-                    const scriptSrc =
-                        existingScript?.src ||
-                        '/static/highlightjs/highlight.min.js'
-                    await new Promise((resolve, reject) => {
-                        const s = document.createElement('script')
-                        s.src = scriptSrc
-                        s.onload = resolve
-                        s.onerror = reject
-                        document.head.appendChild(s)
-                    })
-                }
-                try {
-                    const response = await fetch(rawUrl)
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-                    const text = await response.text()
-                    codeEl.textContent = text
-
-                    const theme = document.documentElement.dataset.bsTheme
-                    const darkLink = document.querySelector('#panel-code-dark')
-                    const lightLink =
-                        document.querySelector('#panel-code-light')
-                    if (theme !== 'dark' && darkLink && lightLink) {
-                        darkLink.disabled = true
-                        lightLink.removeAttribute('disabled')
-                    }
-
-                    globalThis.hljs.highlightElement(codeEl)
-                } catch (e) {
-                    codeEl.textContent = `Error loading file: ${e.message}`
-                }
-            }
+        const goSource = toggleBtn.getAttribute('aria-expanded') !== 'true'
+        if (goSource) {
+            sessionStorage.setItem(MD_SESSION_KEY, 'source')
+            await showPanelMarkdownSource(
+                root,
+                toggleBtn,
+                rendered,
+                source,
+                codeEl
+            )
         } else {
-            source.classList.add('d-none')
-            rendered.classList.remove('d-none')
-            toggleBtn.querySelector('i').className = 'fa-solid fa-code me-1'
-            toggleBtn.lastChild.textContent = 'Source'
-            toggleBtn.classList.remove('active')
+            sessionStorage.setItem(MD_SESSION_KEY, 'rendered')
+            showPanelMarkdownRendered(toggleBtn, rendered, source)
         }
     })
 }
