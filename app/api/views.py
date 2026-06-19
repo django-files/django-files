@@ -1,4 +1,5 @@
 import io
+import ipaddress
 import json
 import logging
 import operator
@@ -155,6 +156,42 @@ def auth_from_token(view=None, no_fail=False):
         return lambda func: auth_from_token(func, no_fail)
 
 
+def _parse_trusted_proxies():
+    networks = []
+    for cidr in getattr(settings, "TRUSTED_PROXIES", []):
+        try:
+            networks.append(ipaddress.ip_network(cidr.strip(), strict=False))
+        except ValueError:
+            log.warning("TRUSTED_PROXIES: invalid entry ignored: %r", cidr)
+    return networks
+
+
+_TRUSTED_PROXY_NETWORKS = _parse_trusted_proxies()
+
+
+def _client_ip(request):
+    remote = request.META.get("REMOTE_ADDR", "unknown")
+    if not _TRUSTED_PROXY_NETWORKS:
+        return remote
+    try:
+        remote_addr = ipaddress.ip_address(remote)
+    except ValueError:
+        return remote
+    if not any(remote_addr in net for net in _TRUSTED_PROXY_NETWORKS):
+        return remote
+    # Walk XFF right-to-left, skip trusted hops, return first untrusted IP.
+    xff = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    candidates = [h.strip() for h in xff.split(",") if h.strip()]
+    for candidate in reversed(candidates):
+        try:
+            addr = ipaddress.ip_address(candidate)
+        except ValueError:
+            continue
+        if not any(addr in net for net in _TRUSTED_PROXY_NETWORKS):
+            return candidate
+    return remote
+
+
 def ip_rate_limit(rate="10/m"):
     limit, period_char = rate.split("/")
     limit = int(limit)
@@ -163,8 +200,7 @@ def ip_rate_limit(rate="10/m"):
     def decorator(view):
         @wraps(view)
         def wrapper(request, *args, **kwargs):
-            forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-            ip = forwarded.split(",")[0].strip() if forwarded else request.META.get("REMOTE_ADDR", "unknown")
+            ip = _client_ip(request)
             key = f"ratelimit:{view.__name__}:{ip}"
             try:
                 count = cache.incr(key)
