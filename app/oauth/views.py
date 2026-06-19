@@ -335,6 +335,10 @@ def oauth_logout(request):
     """
     next_url = get_next_url(request)
     log.debug("oauth_logout: next_url: %s", next_url)
+    # Rotate token before session is flushed so the old token is immediately invalid.
+    user = request.user
+    if user.is_authenticated:
+        user.rotate_authorization()
     logout(request)
     request.session["login_next_url"] = next_url
     log.debug("oauth_logout: login_next_url: %s", request.session.get("login_next_url"))

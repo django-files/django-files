@@ -509,7 +509,7 @@
                                     <i class="fa-regular fa-clipboard me-1"></i> Copy</a>
                             </p>
                             <div class="p-4 bg-body-tertiary border rounded-3">
-                                <pre class="mb-0"><code id="shell-code">{% include 'scripts/shell-example.sh' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url %}</code></pre>
+                                <pre class="mb-0"><code id="shell-code">{% include 'scripts/shell-example.sh' with auth=request.session.api_token|default:"<YOUR_API_TOKEN>" expire=user.default_expire site_url=site_settings.site_url %}</code></pre>
                             </div>
                         </div>
 
@@ -521,7 +521,7 @@
                                     <i class="fa-regular fa-clipboard me-1"></i> Copy</a>
                             </p>
                             <div class="p-4 bg-body-tertiary border rounded-3">
-                                <pre class="mb-0"><code id="python-code">{% include 'scripts/python-example.py' with auth=user.authorization expire=user.default_expire site_url=site_settings.site_url %}</code></pre>
+                                <pre class="mb-0"><code id="python-code">{% include 'scripts/python-example.py' with auth=request.session.api_token|default:"<YOUR_API_TOKEN>" expire=user.default_expire site_url=site_settings.site_url %}</code></pre>
                             </div>
                         </div>
 
@@ -584,8 +584,8 @@
                     <h4 class="d-flex align-items-center gap-2"><i class="fas fa-key"></i> Authorization Token</h4>
                 </div>
                 <div class="dash-card-body">
-                    <p class="text-muted small mb-3">Treat this token like a password — do not share it.</p>
-                    <code id="primary-token" class="settings-token settings-token-blurred d-block font-monospace p-3 rounded bg-body-tertiary border mb-3">{{ user.authorization }}</code>
+                    <p class="text-muted small mb-3">Treat this token like a password — do not share it. Tokens are not stored in recoverable form; click <strong>Regenerate</strong> to issue a new one.</p>
+                    <code id="primary-token" class="settings-token settings-token-blurred d-block font-monospace p-3 rounded bg-body-tertiary border mb-3">{% if request.session.api_token %}{{ request.session.api_token }}{% else %}— rotate to reveal —{% endif %}</code>
                     <div class="d-flex gap-2 flex-wrap mt-3">
                         <a class="btn btn-outline-secondary clip" role="button" data-clipboard-target="#primary-token">
                             <i class="fa-solid fa-key me-2"></i>Copy</a>

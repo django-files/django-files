@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import timedelta
 
@@ -6,6 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils.timezone import now
 from home.models import Albums, ShortURLs, Stream
+from home.util.auth import hash_token
 from oauth.models import CustomUser
 
 log = logging.getLogger("app")
@@ -18,24 +20,23 @@ class UserApiTestCase(TestCase):
         """Set up test environment"""
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
 
-        # Create test users
         self.superuser = CustomUser.objects.create_superuser(
             username="superuser",
             email="super@test.com",
             password="12345",  # nosec
         )
+        self.superuser_token = self.superuser.rotate_authorization()
 
         self.regular_user = CustomUser.objects.create_user(
             username="regularuser",
             email="regular@test.com",
             password="12345",  # nosec
         )
+        self.regular_token = self.regular_user.rotate_authorization()
 
     def test_current_user_get_with_auth(self):
         """Test GET /api/user/ with valid authorization"""
-        response = self.client.get(
-            reverse("api:current-user"), HTTP_AUTHORIZATION=f"Bearer {self.regular_user.authorization}"
-        )
+        response = self.client.get(reverse("api:current-user"), HTTP_AUTHORIZATION=f"Bearer {self.regular_token}")
         self.assertEqual(response.status_code, 200)
 
     def test_current_user_get_without_auth(self):
@@ -43,16 +44,21 @@ class UserApiTestCase(TestCase):
         response = self.client.get(reverse("api:current-user"))
         self.assertEqual(response.status_code, 401)
 
+    def test_current_user_get_with_hash_rejected(self):
+        """Presenting the stored hash directly must be rejected (hash-of-hash mismatch)."""
+        response = self.client.get(
+            reverse("api:current-user"), HTTP_AUTHORIZATION=f"Bearer {self.regular_user.authorization}"
+        )
+        self.assertEqual(response.status_code, 401)
+
     def test_users_list_as_superuser(self):
         """Test GET /api/users/ as superuser"""
-        response = self.client.get(reverse("api:users"), HTTP_AUTHORIZATION=f"Bearer {self.superuser.authorization}")
+        response = self.client.get(reverse("api:users"), HTTP_AUTHORIZATION=f"Bearer {self.superuser_token}")
         self.assertEqual(response.status_code, 200)
 
     def test_users_list_as_regular_user_denied(self):
         """Test GET /api/users/ as regular user (should be denied)"""
-        response = self.client.get(
-            reverse("api:users"), HTTP_AUTHORIZATION=f"Bearer {self.regular_user.authorization}"
-        )
+        response = self.client.get(reverse("api:users"), HTTP_AUTHORIZATION=f"Bearer {self.regular_token}")
         self.assertEqual(response.status_code, 403)
 
 
@@ -66,7 +72,7 @@ class OrderingApiTestCase(TestCase):
             email="order@test.com",
             password="12345",  # nosec
         )
-        self.auth = self.user.authorization
+        self.auth = self.user.rotate_authorization()
 
         # Albums: names "bravo", "alpha", "charlie"; backdate to give them
         # distinct created times since `date` is auto_now_add.
@@ -148,7 +154,7 @@ class StreamLifecycleTestCase(TestCase):
             email="stream@test.com",
             password="12345",  # nosec
         )
-        self.auth = self.user.authorization
+        self.auth = self.user.rotate_authorization()
 
     def _get(self, url):
         return self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.auth}")
@@ -205,3 +211,266 @@ class StreamLifecycleTestCase(TestCase):
         self.client.login(username="streamuser", password="12345")  # nosec
         r = self.client.get(reverse("home:live", kwargs={"key": "mystream"}))
         self.assertEqual(r.status_code, 200)
+
+
+# ---------------------------------------------------------------------------
+# Auth endpoint tests
+# ---------------------------------------------------------------------------
+
+
+class BearerTokenAuthTestCase(TestCase):
+    """Tests for the hashed-at-rest Bearer token authentication scheme."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        self.user = CustomUser.objects.create_user(
+            username="authuser",
+            email="auth@test.com",
+            password="correcthorse",  # nosec
+        )
+        self.token = self.user.rotate_authorization()
+
+    # --- basic Bearer auth ---
+
+    def test_valid_bearer_token_authenticates(self):
+        r = self.client.get(reverse("api:current-user"), HTTP_AUTHORIZATION=f"Bearer {self.token}")
+        self.assertEqual(r.status_code, 200)
+
+    def test_missing_auth_header_returns_401(self):
+        r = self.client.get(reverse("api:current-user"))
+        self.assertEqual(r.status_code, 401)
+
+    def test_wrong_token_returns_401(self):
+        r = self.client.get(reverse("api:current-user"), HTTP_AUTHORIZATION="Bearer wrongtoken")
+        self.assertEqual(r.status_code, 401)
+
+    def test_stored_hash_presented_as_bearer_is_rejected(self):
+        """The DB stores HMAC(token); presenting the hash itself must fail."""
+        r = self.client.get(
+            reverse("api:current-user"),
+            HTTP_AUTHORIZATION=f"Bearer {self.user.authorization}",
+        )
+        self.assertEqual(r.status_code, 401)
+
+    def test_token_auth_without_bearer_prefix_rejected(self):
+        r = self.client.get(reverse("api:current-user"), HTTP_AUTHORIZATION=self.token)
+        self.assertEqual(r.status_code, 401)
+
+    # --- hash storage sanity ---
+
+    def test_authorization_field_is_not_plaintext(self):
+        """The stored authorization value must differ from the plaintext token."""
+        self.assertNotEqual(self.user.authorization, self.token)
+
+    def test_authorization_field_is_64_chars(self):
+        """HMAC-SHA256 hex digest is always 64 characters."""
+        self.assertEqual(len(self.user.authorization), 64)
+
+    def test_hash_is_hmac_of_plaintext(self):
+        expected = hash_token(self.token)
+        self.assertEqual(self.user.authorization, expected)
+
+
+class TokenRotationTestCase(TestCase):
+    """Tests for POST /api/token/ token rotation endpoint."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        self.user = CustomUser.objects.create_user(
+            username="rotateuser",
+            email="rotate@test.com",
+            password="12345",  # nosec
+        )
+        self.token = self.user.rotate_authorization()
+
+    def test_rotate_via_session_returns_new_plaintext(self):
+        self.client.login(username="rotateuser", password="12345")  # nosec
+        r = self.client.post(reverse("api:token"), HTTP_X_CSRFTOKEN=self.client.cookies.get("csrftoken", ""))
+        self.assertEqual(r.status_code, 200)
+        new_token = r.content.decode()
+        self.assertNotEqual(new_token, self.token)
+        self.assertEqual(len(new_token), 32)
+
+    def test_rotate_invalidates_old_token(self):
+        self.client.login(username="rotateuser", password="12345")  # nosec
+        self.client.post(reverse("api:token"))
+        # Fresh client: no session, only Bearer auth is tested.
+        from django.test import Client
+
+        c = Client()
+        r = c.get(reverse("api:current-user"), HTTP_AUTHORIZATION=f"Bearer {self.token}")
+        self.assertEqual(r.status_code, 401)
+
+    def test_rotate_new_token_authenticates(self):
+        self.client.login(username="rotateuser", password="12345")  # nosec
+        r = self.client.post(reverse("api:token"))
+        new_token = r.content.decode()
+        # Use a fresh client to ensure no session carries the auth.
+        from django.test import Client
+
+        c = Client()
+        r2 = c.get(reverse("api:current-user"), HTTP_AUTHORIZATION=f"Bearer {new_token}")
+        self.assertEqual(r2.status_code, 200)
+
+    def test_rotate_unauthenticated_returns_401(self):
+        r = self.client.post(reverse("api:token"))
+        self.assertEqual(r.status_code, 401)
+
+    def test_rotate_updates_authorization_updated_at(self):
+        before = self.user.authorization_updated_at
+        self.user.rotate_authorization()
+        self.user.refresh_from_db()
+        self.assertIsNotNone(self.user.authorization_updated_at)
+        if before:
+            self.assertGreater(self.user.authorization_updated_at, before)
+
+
+class LocalAuthForNativeClientTestCase(TestCase):
+    """Tests for POST /api/auth/token/ — the native-client login endpoint."""
+
+    def setUp(self):
+        from django.core.cache import cache as _cache
+
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        # Clear rate-limit counters so each test starts with a clean slate.
+        _cache.clear()
+        self.user = CustomUser.objects.create_user(
+            username="nativeuser",
+            email="native@test.com",
+            password="secret123",  # nosec
+        )
+
+    def test_login_with_valid_credentials_returns_token(self):
+        r = self.client.post(
+            reverse("api:auth-token"),
+            data=json.dumps({"username": "nativeuser", "password": "secret123"}),
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertIn("token", data)
+        token = data["token"]
+        self.assertEqual(len(token), 32)
+
+    def test_returned_token_authenticates_api(self):
+        r = self.client.post(
+            reverse("api:auth-token"),
+            data=json.dumps({"username": "nativeuser", "password": "secret123"}),
+            content_type="application/json",
+        )
+        token = r.json()["token"]
+        from django.test import Client
+
+        c = Client()
+        r2 = c.get(reverse("api:current-user"), HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(r2.status_code, 200)
+
+    def test_wrong_password_returns_401(self):
+        r = self.client.post(
+            reverse("api:auth-token"),
+            data=json.dumps({"username": "nativeuser", "password": "wrong"}),
+            content_type="application/json",
+        )
+        self.assertEqual(r.status_code, 401)
+
+    def test_login_token_is_not_the_stored_hash(self):
+        """The returned plaintext must differ from what is stored in the DB."""
+        r = self.client.post(
+            reverse("api:auth-token"),
+            data=json.dumps({"username": "nativeuser", "password": "secret123"}),
+            content_type="application/json",
+        )
+        token = r.json()["token"]
+        self.user.refresh_from_db()
+        self.assertNotEqual(token, self.user.authorization)
+
+    def test_session_based_call_returns_token_without_rotating(self):
+        """When called with an active session and api_token set, token is stable."""
+        login_r = self.client.post(
+            reverse("api:auth-token"),
+            data=json.dumps({"username": "nativeuser", "password": "secret123"}),
+            content_type="application/json",
+        )
+        first_token = login_r.json()["token"]
+
+        # Second call with same session (Android reAuthenticate pattern).
+        r2 = self.client.post(
+            reverse("api:auth-token"),
+            data=json.dumps({"username": "nativeuser", "password": "secret123"}),
+            content_type="application/json",
+        )
+        # Session already authenticated; returns from session, no rotation.
+        second_token = r2.json()["token"]
+        self.assertEqual(first_token, second_token)
+
+
+class AuthSessionTestCase(TestCase):
+    """Tests for POST /api/auth/session/ — Bearer token → session cookie exchange."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        self.user = CustomUser.objects.create_user(
+            username="sessionuser",
+            email="session@test.com",
+            password="12345",  # nosec
+        )
+        self.token = self.user.rotate_authorization()
+
+    def test_bearer_token_exchanges_for_session_cookie(self):
+        r = self.client.post(
+            reverse("api:auth-session"),
+            HTTP_AUTHORIZATION=f"Bearer {self.token}",
+        )
+        self.assertEqual(r.status_code, 204)
+        self.assertIn("sessionid", self.client.cookies)
+
+    def test_session_after_exchange_allows_web_access(self):
+        self.client.post(
+            reverse("api:auth-session"),
+            HTTP_AUTHORIZATION=f"Bearer {self.token}",
+        )
+        r = self.client.get(reverse("home:index"))
+        self.assertEqual(r.status_code, 200)
+
+    def test_invalid_token_rejected(self):
+        r = self.client.post(
+            reverse("api:auth-session"),
+            HTTP_AUTHORIZATION="Bearer badtoken",
+        )
+        self.assertEqual(r.status_code, 401)
+
+    def test_no_auth_header_rejected(self):
+        r = self.client.post(reverse("api:auth-session"))
+        self.assertEqual(r.status_code, 401)
+
+
+class LogoutTokenRotationTestCase(TestCase):
+    """Token must be rotated on logout so previously-leaked tokens are dead."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        self.user = CustomUser.objects.create_user(
+            username="logoutuser",
+            email="logout@test.com",
+            password="12345",  # nosec
+        )
+        self.token = self.user.rotate_authorization()
+
+    def test_token_rotated_after_logout(self):
+        self.client.login(username="logoutuser", password="12345")  # nosec
+        old_auth = self.user.authorization
+
+        self.client.post(reverse("oauth:logout"))
+
+        self.user.refresh_from_db()
+        self.assertNotEqual(self.user.authorization, old_auth)
+
+    def test_old_token_rejected_after_logout(self):
+        self.client.login(username="logoutuser", password="12345")  # nosec
+        self.client.post(reverse("oauth:logout"))
+
+        from django.test import Client
+
+        c = Client()
+        r = c.get(reverse("api:current-user"), HTTP_AUTHORIZATION=f"Bearer {self.token}")
+        self.assertEqual(r.status_code, 401)

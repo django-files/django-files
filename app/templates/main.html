@@ -160,7 +160,7 @@
                                 <i class="fa-solid fa-globe me-2"></i> Copy URL</a>
                         </li>
                         <li>
-                            <a class="dropdown-item clip" data-clipboard-text="{{ user.authorization }}" href="javascript:">
+                            <a class="dropdown-item clip" data-clipboard-text="{{ request.session.api_token }}" href="javascript:" {% if not request.session.api_token %}title="Rotate your token in Settings → Token to copy it here"{% endif %}>
                                 <i class="fa-solid fa-key me-2"></i> Copy Token</a>
                         </li>
                         <li><hr class="dropdown-divider"></li>
@@ -252,7 +252,7 @@
     </form>
     <form id="user-credentials">
         <input type="hidden" id="site-url" value="{{ site_settings.site_url }}">
-        <input type="hidden" id="auth-token" value="{{ user.authorization }}">
+        <input type="hidden" id="auth-token" value="{{ request.session.api_token }}">
     </form>
 {#    {% if stats %}#}
 {#        {% with stats=stats|first  %}#}

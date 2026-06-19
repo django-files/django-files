@@ -43,6 +43,7 @@ from home.tasks import (
     send_push_live,
     stream_status_websocket,
 )
+from home.util.auth import hash_token
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte, redact_log
 from home.util.quota import process_storage_quotas
@@ -143,9 +144,9 @@ def auth_from_token(view=None, no_fail=False):
         else:
             token = request.headers.get("Token", "")
         if token:
-            user = CustomUser.objects.filter(authorization=token)
+            user = CustomUser.objects.filter(authorization=hash_token(token)).first()
             if user:
-                request.user = user[0]
+                request.user = user
                 return view(request, *args, **kwargs)
         if not no_fail:
             return JsonResponse({"error": "Invalid Authorization"}, status=401)
@@ -1012,20 +1013,16 @@ def remote_view(request):
     return JsonResponse(response)
 
 
-@require_http_methods(["POST", "GET"])
+@require_http_methods(["POST"])
 def token_view(request):
     """
     View  /api/token/
-    GET to fetch token value
-    POST to refresh and fetch token value
+    POST to rotate the token; returns new plaintext once.
     """
     if not request.user.is_authenticated:
         return HttpResponse(status=401)
-    if request.method == "POST":
-        user = request.user
-        user.authorization = rand_string()
-        user.save()
-    return HttpResponse(request.user.authorization)
+    plaintext = request.user.rotate_authorization(request)
+    return HttpResponse(plaintext)
 
 
 @require_http_methods(["GET"])
@@ -1061,7 +1058,11 @@ def local_auth_for_native_client(request):
     log.debug("request.META: %s", request.META)
     log.debug("request.user: %s", request.user)
     if request.user.is_authenticated:
-        return JsonResponse({"token": request.user.authorization})
+        # Session still valid — return token from session if present, otherwise rotate.
+        token = request.session.get("api_token")
+        if not token:
+            token = request.user.rotate_authorization(request)
+        return JsonResponse({"token": token})
 
     data = get_json_body(request)
     if not data:
@@ -1072,7 +1073,8 @@ def local_auth_for_native_client(request):
         user = authenticate(request, username=data.get("username"), password=data.get("password"))
         if user:
             login(request, user)
-            return JsonResponse({"token": request.user.authorization})
+            token = user.rotate_authorization(request)
+            return JsonResponse({"token": token})
 
     return HttpResponse(status=401)
 
@@ -1127,7 +1129,8 @@ def auth_application(request):
         log.debug("username: %s", user.username)
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         post_login(request)
-        return JsonResponse({"token": user.authorization})
+        token = user.rotate_authorization(request)
+        return JsonResponse({"token": token})
     except Exception as error:
         log.debug("error: %s", error)
         return JsonResponse({"error": str(error)}, status=400)
@@ -1182,7 +1185,7 @@ def _resolve_stream_user(name, data):
 
     token = data.get("token", [None])[0]
     if token:
-        user = CustomUser.objects.filter(authorization=token).first()
+        user = CustomUser.objects.filter(authorization=hash_token(token)).first()
         return user, None
 
     return None, None
