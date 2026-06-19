@@ -5,6 +5,7 @@ import logging
 import operator
 import os
 import random
+import time
 from datetime import datetime, timedelta
 from functools import reduce, wraps
 from typing import Any, BinaryIO, Callable, List, Optional, Union
@@ -24,11 +25,12 @@ from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.cache import cache
+from django.core.paginator import Paginator
 from django.core.signing import TimestampSigner
 from django.db.models import Count, Max, Q, QuerySet, Sum
 from django.db.models.fields.json import KeyTextTransform
 from django.forms.models import model_to_dict
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.utils.timezone import localtime, now
 from django.views.decorators.cache import cache_control, cache_page, never_cache
@@ -43,13 +45,13 @@ from home.tasks import (
     send_push_live,
     stream_status_websocket,
 )
-from home.util.auth import hash_token
+from home.util.auth import create_api_token, hash_token
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte, redact_log
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
-from oauth.models import CustomUser, UserInvites
+from oauth.models import ApiToken, CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
@@ -142,11 +144,14 @@ def auth_from_token(view=None, no_fail=False):
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
         else:
-            token = request.headers.get("Token", "")
+            # Backward compat: older iOS clients send the raw token as the
+            # Authorization value without the Bearer scheme prefix.
+            token = auth_header or request.headers.get("Token", "")
         if token:
-            user = CustomUser.objects.filter(authorization=hash_token(token)).first()
-            if user:
-                request.user = user
+            api_token_obj = ApiToken.objects.select_related("user").filter(token_hash=hash_token(token)).first()
+            if api_token_obj and api_token_obj.is_valid():
+                cache.set(f"token_last_used:{api_token_obj.pk}", time.time(), timeout=90000)
+                request.user = api_token_obj.user
                 return view(request, *args, **kwargs)
         if not no_fail:
             return JsonResponse({"error": "Invalid Authorization"}, status=401)
@@ -1013,16 +1018,68 @@ def remote_view(request):
     return JsonResponse(response)
 
 
-@require_http_methods(["POST"])
+@login_required
 def token_view(request):
     """
-    View  /api/token/
-    POST to rotate the token; returns new plaintext once.
+    GET  /api/token/ — list this user's API tokens (paginated)
+    POST /api/token/ — create a new named token; returns plaintext once
     """
-    if not request.user.is_authenticated:
-        return HttpResponse(status=401)
-    plaintext = request.user.rotate_authorization(request)
-    return HttpResponse(plaintext)
+    if request.method == "GET":
+        page = int(request.GET.get("page", 1))
+        per_page = 20
+        qs = request.user.api_tokens.order_by("-created_at")
+        paginator = Paginator(qs, per_page)
+        pg = paginator.get_page(page)
+        tokens = [
+            {
+                "id": str(t.id),
+                "name": t.name,
+                "created_at": t.created_at.isoformat(),
+                "last_used_at": t.last_used_at.isoformat() if t.last_used_at else None,
+                "expires_at": t.expires_at.isoformat() if t.expires_at else None,
+                "created_ip": t.created_ip,
+                "user_agent": t.user_agent,
+                "is_active": t.is_active,
+            }
+            for t in pg
+        ]
+        return JsonResponse(
+            {
+                "tokens": tokens,
+                "page": pg.number,
+                "num_pages": paginator.num_pages,
+                "count": paginator.count,
+            }
+        )
+    if request.method == "POST":
+        data = get_json_body(request)
+        name = data.get("name", "")
+        expires_at = None
+        if data.get("expires_at"):
+            from django.utils.dateparse import parse_datetime
+
+            expires_at = parse_datetime(data["expires_at"])
+        plaintext = create_api_token(request.user, request, name=name, expires_at=expires_at)
+        return JsonResponse({"token": plaintext})
+    return HttpResponseNotAllowed(["GET", "POST"])
+
+
+@login_required
+def token_detail_view(request, pk):
+    """
+    PATCH  /api/token/<uuid>/ — toggle is_active for a token owned by this user
+    DELETE /api/token/<uuid>/ — hard-delete a token owned by this user
+    """
+    if request.method == "PATCH":
+        token = get_object_or_404(ApiToken, pk=pk, user=request.user)
+        token.is_active = not token.is_active
+        token.save(update_fields=["is_active"])
+        return JsonResponse({"status": "active" if token.is_active else "disabled", "is_active": token.is_active})
+    if request.method == "DELETE":
+        token = get_object_or_404(ApiToken, pk=pk, user=request.user)
+        token.delete()
+        return JsonResponse({"status": "deleted"})
+    return HttpResponseNotAllowed(["PATCH", "DELETE"])
 
 
 @require_http_methods(["GET"])
@@ -1058,10 +1115,12 @@ def local_auth_for_native_client(request):
     log.debug("request.META: %s", request.META)
     log.debug("request.user: %s", request.user)
     if request.user.is_authenticated:
-        # Session still valid — return token from session if present, otherwise rotate.
+        # Session still valid — return token from session if still active in DB.
         token = request.session.get("api_token")
+        if token and not ApiToken.objects.filter(token_hash=hash_token(token), is_active=True).exists():
+            token = None
         if not token:
-            token = request.user.rotate_authorization(request)
+            token = create_api_token(request.user, request)
         return JsonResponse({"token": token})
 
     data = get_json_body(request)
@@ -1073,7 +1132,7 @@ def local_auth_for_native_client(request):
         user = authenticate(request, username=data.get("username"), password=data.get("password"))
         if user:
             login(request, user)
-            token = user.rotate_authorization(request)
+            token = create_api_token(user, request)
             return JsonResponse({"token": token})
 
     return HttpResponse(status=401)
@@ -1129,7 +1188,7 @@ def auth_application(request):
         log.debug("username: %s", user.username)
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         post_login(request)
-        token = user.rotate_authorization(request)
+        token = create_api_token(user, request)
         return JsonResponse({"token": token})
     except Exception as error:
         log.debug("error: %s", error)
@@ -1170,10 +1229,8 @@ def session_view(request, sessionid):
 
 def _resolve_stream_user(name, data):
     """
-    Resolve the authenticated user from RTMP tcurl query params.
-    Tries stream_token (scoped, preferred) first, then falls back to the
-    legacy per-user authorization token for backwards compatibility.
-    Returns (user, stream_or_None) — stream is non-None only when stream_token auth is used.
+    Resolve the authenticated user from RTMP tcurl query params via stream_token.
+    Returns (user, stream_or_None).
     """
     stream_token = data.get("stream_token", [None])[0]
     if stream_token:
@@ -1181,13 +1238,6 @@ def _resolve_stream_user(name, data):
         if stream:
             return stream.user, stream
         log.debug("_resolve_stream_user: invalid stream_token for name=%s", name)
-        return None, None
-
-    token = data.get("token", [None])[0]
-    if token:
-        user = CustomUser.objects.filter(authorization=hash_token(token)).first()
-        return user, None
-
     return None, None
 
 

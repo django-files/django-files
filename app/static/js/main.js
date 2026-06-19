@@ -88,10 +88,11 @@ async function getSignature() {
     return data
 }
 
-function getAuthToken() {
-    const authToken = document.getElementById('auth-token').value
-    console.log('getAuthToken: authToken:', authToken)
-    Android.receiveAuthToken(authToken)
+async function getAuthToken() {
+    const response = await fetch('/api/auth/token/', { method: 'POST' })
+    const data = await response.json()
+    console.log('getAuthToken: received token')
+    Android.receiveAuthToken(data.token)
 }
 
 /**

@@ -9,6 +9,7 @@
 
 {% block head %}{{ block.super }}
     <link href="{% static 'dist/uppy/uppy.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}">
 {% endblock %}
 
 {% block main %}
@@ -577,27 +578,39 @@
 
         <hr class="my-4">
 
-        <!-- Authorization Token -->
+        <!-- API Tokens -->
         <section id="token" class="settings-section">
             <div class="dash-card">
-                <div class="dash-card-header">
-                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-key"></i> Authorization Token</h4>
+                <div class="dash-card-header pb-3">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-key"></i> API Tokens</h4>
                 </div>
                 <div class="dash-card-body">
-                    <p class="text-muted small mb-3">Treat this token like a password — do not share it. Tokens are not stored in recoverable form; click <strong>Regenerate</strong> to issue a new one.</p>
-                    <code id="primary-token" class="settings-token settings-token-blurred d-block font-monospace p-3 rounded bg-body-tertiary border mb-3">{% if request.session.api_token %}{{ request.session.api_token }}{% else %}— rotate to reveal —{% endif %}</code>
-                    <div class="d-flex gap-2 flex-wrap mt-3">
-                        <a class="btn btn-outline-secondary clip" role="button" data-clipboard-target="#primary-token">
-                            <i class="fa-solid fa-key me-2"></i>Copy</a>
-                        <a id="showTokenBtn" class="btn btn-outline-warning" role="button"
-                           data-bs-toggle="tooltip" data-bs-title="Sensitive Info">
-                            <i class="fa-solid fa-eye me-2"></i>Toggle</a>
-                        <a id="tokenRefreshBtn" class="btn btn-outline-danger" role="button">
-                            <i class="fa-solid fa-rotate me-2"></i>Regenerate</a>
+                    <p class="text-muted small mb-3">Manage your API tokens. Treat each token like a password.</p>
+                    <div class="table-toolbar mb-3">
+                        <button class="btn btn-primary btn-sm" id="btn-new-token" data-bs-toggle="modal" data-bs-target="#modal-new-token">
+                            <i class="fa-solid fa-plus me-1"></i> New Token
+                        </button>
+                        <input type="search" class="form-control form-control-sm ms-auto" id="token-search" placeholder="Search tokens..." style="max-width: 250px;">
+                    </div>
+                    <div class="table-responsive">
+                        <table id="token-table" class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Device</th>
+                                    <th>Created</th>
+                                    <th>Last Used</th>
+                                    <th>IP</th>
+                                    <th>Expires</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="token-table-body"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-
         </section>
 
         <hr class="my-4">
@@ -675,8 +688,10 @@
 {% endblock %}
 
 {% block tail %}
+    {% include 'include/datatables-scripts.html' %}
     <script type="text/javascript" src="{% static 'dist/qr-code-styling/qr-code-styling.min.js' %}"></script>
     <script type="module" src="{% static 'js/settings.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/settings-user.js' %}"></script>
     <script type="module" src="{% static 'js/avatar.js' %}"></script>
+    <script type="module" src="{% static 'js/settings-user-tokens.js' %}"></script>
 {% endblock %}

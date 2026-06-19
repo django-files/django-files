@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ObjectDoesNotExist
@@ -6,7 +7,6 @@ from django.db import models
 from django.shortcuts import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from home.util.auth import hash_token
 from home.util.misc import bytes_to_human_read
 from home.util.rand import rand_color_hex, rand_string
 from home.util.time_zones import TIMEZONE_CHOICES
@@ -18,11 +18,6 @@ def rand_invite():
     return rand_string(16)
 
 
-def _default_authorization():
-    """Generate the initial hashed authorization token for a new user."""
-    return hash_token(rand_string())
-
-
 class CustomUser(AbstractUser):
     class UploadNameFormats(models.TextChoices):
         NAME = "name", _("name")
@@ -31,9 +26,6 @@ class CustomUser(AbstractUser):
         UUID = "uuid", _("uuid")
 
     id = models.AutoField(primary_key=True)
-    # Stored as HMAC-SHA256(plaintext, SECRET_KEY) — never plaintext.
-    authorization = models.CharField(default=_default_authorization, max_length=64)
-    authorization_updated_at = models.DateTimeField(null=True, blank=True)
     timezone = models.CharField(max_length=255, choices=TIMEZONE_CHOICES, default="America/Los_Angeles")
     default_expire = models.CharField(default="", blank=True, max_length=32)
     default_color = models.CharField(default=rand_color_hex, max_length=7)
@@ -119,20 +111,6 @@ class CustomUser(AbstractUser):
 
     def get_storage_quota_human_read(self):
         return bytes_to_human_read(self.storage_quota)
-
-    def rotate_authorization(self, request=None) -> str:
-        """
-        Generate a new API token.  Stores HMAC hash; returns plaintext once.
-        If ``request`` is provided the plaintext is also stored in the session
-        so web-based flows (settings page, Android WebView bridge) can read it.
-        """
-        plaintext = rand_string()
-        self.authorization = hash_token(plaintext)
-        self.authorization_updated_at = timezone.now()
-        self.save(update_fields=["authorization", "authorization_updated_at"])
-        if request is not None and hasattr(request, "session"):
-            request.session["api_token"] = plaintext
-        return plaintext
 
     def save(self, *args, **kwargs):
         if not self.pk and self.storage_quota is None:
@@ -269,3 +247,26 @@ class Google(models.Model):
     class Meta:
         verbose_name = "Google"
         verbose_name_plural = "Googles"
+
+
+class ApiToken(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="api_tokens")
+    token_hash = models.CharField(max_length=64, unique=True, db_index=True)
+    name = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    created_ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=500, blank=True, help_text="User agent string from when the token was created.")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def is_valid(self):
+        if not self.is_active:
+            return False
+        if self.expires_at and timezone.now() > self.expires_at:
+            return False
+        return True

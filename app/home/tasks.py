@@ -17,6 +17,7 @@ from django.db.models import Count, Q, Sum
 from django.forms.models import model_to_dict
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django_redis import get_redis_connection
 from home.models import Files, FileStats, Stream
 from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
@@ -643,3 +644,30 @@ def release_lock(key):
 @worker_shutdown.connect
 def on_worker_shutdown(**kwargs):
     release_lock("gallery_refresh")
+
+
+@shared_task
+def flush_token_last_used():
+    """Write buffered last_used_at values from Redis to the ApiToken table."""
+    from datetime import datetime
+    from django.utils.timezone import timezone as dt_timezone
+    from oauth.models import ApiToken
+
+    redis = get_redis_connection("default")
+    keys = redis.keys("token_last_used:*")
+    if not keys:
+        return
+    pipe = redis.pipeline()
+    for key in keys:
+        pipe.getdel(key)
+    values = pipe.execute()
+
+    updates = []
+    for key, val in zip(keys, values, strict=False):
+        if val is None:
+            continue
+        token_id = key.decode().split(":", 1)[1]
+        ts = datetime.fromtimestamp(float(val), tz=dt_timezone.utc)
+        updates.append(ApiToken(pk=token_id, last_used_at=ts))
+    if updates:
+        ApiToken.objects.bulk_update(updates, ["last_used_at"])

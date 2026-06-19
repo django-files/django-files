@@ -3,28 +3,12 @@
 const showCodeBtn = document.getElementById('showCodeBtn')
 const hideCodeBtn = document.getElementById('hideCodeBtn')
 const cameraIcon = document.getElementById('cameraIcon')
-const showTokenBtn = document.getElementById('showTokenBtn')
 const codeDiv = document.getElementById('qrcode-div')
 const codeLink = document.getElementById('qrcode-link')
-const primaryToken = document.getElementById('primary-token')
 
 document.addEventListener('DOMContentLoaded', domContentLoaded)
 showCodeBtn.addEventListener('click', showQrCode)
 hideCodeBtn.addEventListener('click', hideQrCode)
-showTokenBtn.addEventListener('click', toggleToken)
-document.getElementById('tokenRefreshBtn').addEventListener('click', () => {
-    bootstrap.Modal.getOrCreateInstance(
-        document.getElementById('tokenRegenerateModal')
-    ).show()
-})
-document
-    .getElementById('confirmTokenRegenerateBtn')
-    .addEventListener('click', () => {
-        bootstrap.Modal.getOrCreateInstance(
-            document.getElementById('tokenRegenerateModal')
-        ).hide()
-        tokenRefresh()
-    })
 
 showCodeBtn.addEventListener('mouseover', () =>
     cameraIcon.classList.add('fa-beat')
@@ -153,28 +137,6 @@ confirmDisableLocalAuthBtn?.addEventListener('click', async () => {
         )
     }
 })
-
-function toggleToken(event) {
-    event.preventDefault()
-    console.log('toggleToken:', event)
-    primaryToken.classList.toggle('settings-token-blurred')
-}
-
-function tokenRefresh() {
-    const csrfToken = document.querySelector(
-        'input[name="csrfmiddlewaretoken"]'
-    ).value
-    fetch('/api/token/', {
-        method: 'POST',
-        headers: { 'X-CSRFToken': csrfToken },
-    })
-        .then((response) => response.text())
-        .then((token) => {
-            document.getElementById('primary-token').textContent = token
-        })
-        .then((data) => console.log('Success:', data))
-        .catch((error) => console.log('Error:', error))
-}
 
 let codeTimer
 
