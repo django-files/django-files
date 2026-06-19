@@ -49,7 +49,7 @@ jobs:
 
       - name: "Sanitize Tag"
         id: tag
-        run: echo "name=$(echo '${{ github.ref_name }}' | tr '/' '-')" >> $GITHUB_OUTPUT
+        run: echo "name=$(echo '${{ github.ref_name }}' | tr '/' '-')" >> "$GITHUB_OUTPUT"
 
       - name: "Docker Tags"
         id: dtags
