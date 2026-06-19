@@ -759,12 +759,14 @@ async function initMarkdownToggle(root) {
 
     // ?md_view=source|rendered overrides; anything else falls back to session > default (rendered)
     const qp = new URLSearchParams(location.search).get('md_view')
-    const startSource =
-        qp === 'source'
-            ? true
-            : qp === 'rendered'
-              ? false
-              : sessionStorage.getItem(MD_SESSION_KEY) === 'source'
+    let startSource
+    if (qp === 'source') {
+        startSource = true
+    } else if (qp === 'rendered') {
+        startSource = false
+    } else {
+        startSource = sessionStorage.getItem(MD_SESSION_KEY) === 'source'
+    }
 
     if (startSource) {
         setActive(true)

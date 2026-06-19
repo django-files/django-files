@@ -22,6 +22,8 @@ from oauth.models import CustomUser
 
 log = logging.getLogger("app")
 
+OCTET_STREAM = "application/octet-stream"
+
 
 def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     """
@@ -82,11 +84,11 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
         # e.g. a .md file containing Python code blocks becomes
         # text/x-script.python. For any text/* result, prefer the
         # extension-based guess when it provides a more specific type.
-        if file_mime and (file_mime.startswith("text/") or file_mime == "application/octet-stream"):
+        if file_mime and (file_mime.startswith("text/") or file_mime == OCTET_STREAM):
             guess, _ = mimetypes.guess_type(name, strict=False)
-            if guess and guess not in ["application/octet-stream"]:
+            if guess and guess != OCTET_STREAM:
                 file_mime = guess
-        file_mime = file_mime or "application/octet-stream"
+        file_mime = file_mime or OCTET_STREAM
         log.debug("file_mime: %s", file_mime)
         if file_mime in ["image/jpe", "image/jpg", "image/jpeg", "image/webp"]:
             # when handling images, if we detect an extension we need to

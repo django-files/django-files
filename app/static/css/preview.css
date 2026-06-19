@@ -344,8 +344,10 @@
 /* Override github-markdown-css background so the page theme shows through.
  * The library sets background-color via --bgColor-default; clearing it here
  * prevents a white box inside our dark-mode card. */
+/* stylelint-disable custom-property-pattern */
 #md-rendered.markdown-body {
     --bgColor-default: transparent;
+
     max-width: 960px;
     margin-inline: auto;
 }
@@ -356,6 +358,7 @@
  * of the user's OS preference. */
 [data-bs-theme='dark'] #md-rendered.markdown-body {
     color-scheme: dark;
+
     --fgColor-default: #f0f6fc;
     --fgColor-muted: #9198a1;
     --fgColor-accent: #4493f8;
@@ -404,6 +407,7 @@
     --color-prettylights-syntax-sublimelinter-gutter-mark: #3d444d;
     --focus-outlineColor: #1f6feb;
 }
+/* stylelint-enable custom-property-pattern */
 
 .ui-autocomplete {
     max-height: 300px;
