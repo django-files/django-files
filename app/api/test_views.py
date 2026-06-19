@@ -360,7 +360,7 @@ class LocalAuthForNativeClientTestCase(TestCase):
     def test_login_with_valid_credentials_returns_token(self):
         r = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "secret123"}),
+            data=json.dumps({"username": "nativeuser", "password": "secret123"}),  # nosec
             content_type="application/json",
         )
         self.assertEqual(r.status_code, 200)
@@ -372,7 +372,7 @@ class LocalAuthForNativeClientTestCase(TestCase):
     def test_returned_token_authenticates_api(self):
         r = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "secret123"}),
+            data=json.dumps({"username": "nativeuser", "password": "secret123"}),  # nosec
             content_type="application/json",
         )
         token = r.json()["token"]
@@ -385,7 +385,7 @@ class LocalAuthForNativeClientTestCase(TestCase):
     def test_wrong_password_returns_401(self):
         r = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "wrong"}),
+            data=json.dumps({"username": "nativeuser", "password": "wrong"}),  # nosec
             content_type="application/json",
         )
         self.assertEqual(r.status_code, 401)
@@ -394,7 +394,7 @@ class LocalAuthForNativeClientTestCase(TestCase):
         """The returned plaintext must differ from what is stored in the DB."""
         r = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "secret123"}),
+            data=json.dumps({"username": "nativeuser", "password": "secret123"}),  # nosec
             content_type="application/json",
         )
         token = r.json()["token"]
@@ -406,7 +406,7 @@ class LocalAuthForNativeClientTestCase(TestCase):
         """When called with an active session and api_token set, token is stable."""
         login_r = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "secret123"}),
+            data=json.dumps({"username": "nativeuser", "password": "secret123"}),  # nosec
             content_type="application/json",
         )
         first_token = login_r.json()["token"]
@@ -414,7 +414,7 @@ class LocalAuthForNativeClientTestCase(TestCase):
         # Second call with same session (Android reAuthenticate pattern).
         r2 = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "secret123"}),
+            data=json.dumps({"username": "nativeuser", "password": "secret123"}),  # nosec
             content_type="application/json",
         )
         # Session already authenticated; returns from session, no rotation.
@@ -500,8 +500,8 @@ class ApiTokenListCreateTestCase(TestCase):
 
     def setUp(self):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(username="tokenuser", password="pass")
-        self.client.login(username="tokenuser", password="pass")
+        self.user = CustomUser.objects.create_user(username="tokenuser", password="pass")  # nosec
+        self.client.login(username="tokenuser", password="pass")  # nosec
 
     def test_list_tokens_empty(self):
         response = self.client.get("/api/token/")
@@ -519,7 +519,7 @@ class ApiTokenListCreateTestCase(TestCase):
         self.assertEqual(data["count"], 2)
 
     def test_list_tokens_excludes_other_users(self):
-        other = CustomUser.objects.create_user(username="other", password="pass")
+        other = CustomUser.objects.create_user(username="other", password="pass")  # nosec
         ApiToken.objects.create(user=other, token_hash=hash_token("othertoken"), name="Other")
         response = self.client.get("/api/token/")
         data = response.json()
@@ -556,8 +556,8 @@ class ApiTokenDeleteTestCase(TestCase):
 
     def setUp(self):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(username="deluser", password="pass")
-        self.client.login(username="deluser", password="pass")
+        self.user = CustomUser.objects.create_user(username="deluser", password="pass")  # nosec
+        self.client.login(username="deluser", password="pass")  # nosec
         self.token = ApiToken.objects.create(user=self.user, token_hash=hash_token("mytoken"), name="My Token")
 
     def test_delete_token(self):
@@ -572,7 +572,7 @@ class ApiTokenDeleteTestCase(TestCase):
         self.assertFalse(self.token.is_active)
 
     def test_cannot_disable_other_users_token(self):
-        other = CustomUser.objects.create_user(username="other2", password="pass")
+        other = CustomUser.objects.create_user(username="other2", password="pass")  # nosec
         other_token = ApiToken.objects.create(user=other, token_hash=hash_token("othertoken2"), name="Other")
         response = self.client.delete(f"/api/token/{other_token.pk}/")
         self.assertEqual(response.status_code, 404)
@@ -585,7 +585,7 @@ class ApiTokenAuthTestCase(TestCase):
 
     def setUp(self):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(username="authuser", password="pass")
+        self.user = CustomUser.objects.create_user(username="authuser", password="pass")  # nosec
         self.plaintext = "testbearertoken12345678"
         self.token = ApiToken.objects.create(
             user=self.user,
@@ -611,8 +611,6 @@ class ApiTokenAuthTestCase(TestCase):
         self.assertFalse(self.token.is_valid())
 
     def test_expired_token_rejected(self):
-        from datetime import timedelta
-
         self.token.expires_at = now() - timedelta(hours=1)
         self.token.save()
         response = self.client.get(

@@ -87,7 +87,7 @@ function formatUA(uaString) {
 function renderUserAgent(data) {
     if (!data) return '<span class="text-muted">—</span>'
     const label = formatUA(data) ?? data.slice(0, 50)
-    return `<span title="${data.replace(/"/g, '&quot;')}" class="text-muted small">${label}</span>`
+    return `<span title="${data.replaceAll('"', '&quot;')}" class="text-muted small">${label}</span>`
 }
 
 function renderDate(data) {
@@ -99,7 +99,7 @@ function renderDate(data) {
 function renderLastUsed(data) {
     if (!data) return '<span class="text-muted">Never</span>'
     const date = new Date(data)
-    const hours = Math.floor((Date.now() - date) / 36e5)
+    const hours = Math.floor((Date.now() - date) / 3_600_000)
     let label
     if (hours < 1) {
         label = 'in the last hour'
@@ -324,7 +324,7 @@ function handleNewTokenSubmit() {
                     ? new Date(customDate.value).toISOString()
                     : null
             } else {
-                const days = parseInt(expirySelect.value)
+                const days = Number.parseInt(expirySelect.value, 10)
                 if (days > 0) {
                     const date = new Date()
                     date.setDate(date.getDate() + days)

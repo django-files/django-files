@@ -650,6 +650,7 @@ def on_worker_shutdown(**kwargs):
 def flush_token_last_used():
     """Write buffered last_used_at values from Redis to the ApiToken table."""
     from datetime import datetime
+
     from django.utils.timezone import timezone as dt_timezone
     from oauth.models import ApiToken
 

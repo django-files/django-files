@@ -197,7 +197,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
     def authorize(self, *, authorization: str = None, **kwargs):
         log.debug("authorize")
         api_token_obj = (
-            ApiToken.objects.select_related("user").filter(token_hash=hash_token(authorization or "")).first()
+            ApiToken.objects.select_related("user").filter(token_hash=hash_token(authorization)).first()
             if authorization
             else None
         )

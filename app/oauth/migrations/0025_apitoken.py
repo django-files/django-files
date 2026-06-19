@@ -62,7 +62,7 @@ class Migration(migrations.Migration):
                 ("last_used_at", models.DateTimeField(blank=True, null=True)),
                 ("expires_at", models.DateTimeField(blank=True, null=True)),
                 ("created_ip", models.GenericIPAddressField(blank=True, null=True)),
-                ("user_agent", models.CharField(blank=True, max_length=500)),
+                ("user_agent", models.CharField(blank=True, help_text="User agent string from when the token was created.", max_length=500)),
                 ("is_active", models.BooleanField(default=True)),
                 (
                     "user",

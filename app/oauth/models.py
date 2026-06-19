@@ -258,7 +258,9 @@ class ApiToken(models.Model):
     last_used_at = models.DateTimeField(null=True, blank=True)
     expires_at = models.DateTimeField(null=True, blank=True)
     created_ip = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.CharField(max_length=500, blank=True, help_text="User agent string from when the token was created.")
+    user_agent = models.CharField(
+        max_length=500, blank=True, help_text="User agent string from when the token was created."
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:

@@ -135,24 +135,35 @@ def paginate_no_count(queryset, page, count):
     return rows[:count], (page + 1 if has_next else None)
 
 
+def _extract_token(request):
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return auth_header[7:]
+    # Backward compat: older iOS clients send the raw token as the
+    # Authorization value without the Bearer scheme prefix.
+    return auth_header or request.headers.get("Token", "")
+
+
+def _authenticate_bearer(request):
+    token = _extract_token(request)
+    if not token:
+        return None
+    api_token_obj = ApiToken.objects.select_related("user").filter(token_hash=hash_token(token)).first()
+    if api_token_obj and api_token_obj.is_valid():
+        cache.set(f"token_last_used:{api_token_obj.pk}", time.time(), timeout=90000)
+        return api_token_obj.user
+    return None
+
+
 def auth_from_token(view=None, no_fail=False):
     @wraps(view)
     def wrapper(request, *args, **kwargs):
         if getattr(request, "user", None) and request.user.is_authenticated:
             return view(request, *args, **kwargs)
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer "):
-            token = auth_header[7:]
-        else:
-            # Backward compat: older iOS clients send the raw token as the
-            # Authorization value without the Bearer scheme prefix.
-            token = auth_header or request.headers.get("Token", "")
-        if token:
-            api_token_obj = ApiToken.objects.select_related("user").filter(token_hash=hash_token(token)).first()
-            if api_token_obj and api_token_obj.is_valid():
-                cache.set(f"token_last_used:{api_token_obj.pk}", time.time(), timeout=90000)
-                request.user = api_token_obj.user
-                return view(request, *args, **kwargs)
+        user = _authenticate_bearer(request)
+        if user is not None:
+            request.user = user
+            return view(request, *args, **kwargs)
         if not no_fail:
             return JsonResponse({"error": "Invalid Authorization"}, status=401)
         return view(request, *args, **kwargs)

@@ -26,18 +26,21 @@ def _client_ip(request):
     return request.META.get("REMOTE_ADDR")
 
 
+_UNKNOWN_DEVICE = "Unknown Device"
+
+
 def _infer_device_name(ua_string: str) -> str:
     """Return a human-readable device/browser label from a User-Agent string."""
     if not ua_string:
-        return "Unknown Device"
+        return _UNKNOWN_DEVICE
     if user_agents is None:
-        return ua_string[:50] if ua_string else "Unknown Device"
+        return ua_string[:50]
     ua = user_agents.parse(ua_string)
     if ua.is_mobile:
         return f"Django Files {ua.os.family} {ua.os.version_string}".strip()
     if ua.browser.family and ua.browser.family != "Other":
         return f"{ua.browser.family} / {ua.os.family}".strip()
-    return ua.device.family or "Unknown Device"
+    return ua.device.family or _UNKNOWN_DEVICE
 
 
 def create_api_token(user, request=None, name="", expires_at=None) -> str:
