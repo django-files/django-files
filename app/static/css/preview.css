@@ -59,13 +59,14 @@
     color: var(--bs-body-color);
 }
 
-/* Sidebar header buttons — close, mode toggle, app, context trigger.
- * Same translucent pill treatment as .openbtn / .context-placement so
- * the whole preview chrome reads as one set. */
+/* Sidebar header buttons and panel close — all share the same translucent pill
+ * treatment as .openbtn / .context-placement so the whole preview chrome reads
+ * as one set. */
 .sidebar .closebtn,
 .sidebar-mode-toggle,
 .sidebar .sidebar-app-btn,
-.sidebar .sidebar-context-btn {
+.sidebar .sidebar-context-btn,
+.file-preview-panel-close {
     position: absolute;
     top: 12px;
     display: inline-flex;
@@ -107,32 +108,9 @@
     z-index: 2;
 }
 
-/* Panel exit button — same pill appearance as sidebar chrome, but lives outside
- * .sidebar so it gets its own rule rather than being shoehorned into the group. */
 .file-preview-panel-close {
-    position: absolute;
-    top: 12px;
     left: 12px;
     z-index: 10;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    margin: 0;
-    font-size: 18px;
-    line-height: 1;
-    color: currentcolor;
-    cursor: pointer;
-    background: var(--preview-chrome-bg);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border: 1px solid var(--preview-border-color);
-    border-radius: 999px;
-    opacity: 0.7;
-    transition: all 0.2s ease;
-    will-change: background-color, opacity;
 }
 
 .sidebar .closebtn:hover,
