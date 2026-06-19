@@ -78,7 +78,11 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
         fp.seek(0)
         log.debug("fp.name: %s", fp.name)
         file_mime = magic.from_file(fp.name, mime=True)
-        if file_mime and file_mime in ["text/plain", "application/octet-stream"]:
+        # libmagic uses content analysis, which misidentifies text files —
+        # e.g. a .md file containing Python code blocks becomes
+        # text/x-script.python. For any text/* result, prefer the
+        # extension-based guess when it provides a more specific type.
+        if file_mime and (file_mime.startswith("text/") or file_mime == "application/octet-stream"):
             guess, _ = mimetypes.guess_type(name, strict=False)
             if guess and guess not in ["application/octet-stream"]:
                 file_mime = guess

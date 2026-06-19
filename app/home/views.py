@@ -700,7 +700,7 @@ def url_route_view(request, filename):
         log.debug("IMAGE")
         ctx = {**ctx, **handle_image_meta(file.exif)}
         return render(request, embed_template, context=ctx)
-    elif file.mime == "text/markdown":
+    elif file.mime == "text/markdown" or file.name.lower().endswith((".md", ".markdown")):
         log.debug("MARKDOWN")
         md_text = _read_file_text(file)
         ctx["markdown"] = markdown.markdown(md_text, extensions=["extra", "toc"])
