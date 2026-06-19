@@ -150,7 +150,7 @@ def _authenticate_bearer(request):
         return None
     api_token_obj = ApiToken.objects.select_related("user").filter(token_hash=hash_token(token)).first()
     if api_token_obj and api_token_obj.is_valid():
-        cache.set(f"token_last_used:{api_token_obj.pk}", time.time(), timeout=90000)
+        get_redis_connection("default").set(f"token_last_used:{api_token_obj.pk}", time.time(), ex=90000)
         return api_token_obj.user
     return None
 
