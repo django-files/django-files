@@ -78,6 +78,64 @@ function domLoaded() {
         }
     }
     initPreviewImage()
+    initMarkdownToggle()
+}
+
+async function initMarkdownToggle() {
+    const card = document.querySelector('.card[data-render="markdown"]')
+    if (!card) return
+
+    const toggleBtn = document.getElementById('mdViewToggle')
+    const rendered = document.getElementById('md-rendered')
+    const source = document.getElementById('md-source')
+    const codeEl = document.getElementById('text-preview')
+
+    if (!toggleBtn || !rendered || !source || !codeEl) return
+
+    const rawUrl = card.dataset.rawUrl
+    let sourceLoaded = false
+    let isSource = false
+
+    toggleBtn.addEventListener('click', async () => {
+        isSource = !isSource
+        if (isSource) {
+            rendered.classList.add('d-none')
+            source.classList.remove('d-none')
+            toggleBtn.title = 'View rendered'
+            toggleBtn.querySelector('i').className = 'fa-solid fa-eye'
+            toggleBtn.classList.add('active')
+
+            if (!sourceLoaded && rawUrl) {
+                sourceLoaded = true
+                try {
+                    const response = await fetch(rawUrl)
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+                    const text = await response.text()
+                    codeEl.textContent = text
+
+                    const theme = document.documentElement.dataset.bsTheme
+                    if (theme !== 'dark') {
+                        document
+                            .getElementById('code-dark')
+                            ?.setAttribute('disabled', '')
+                        document
+                            .getElementById('code-light')
+                            ?.removeAttribute('disabled')
+                    }
+
+                    globalThis.hljs?.highlightElement(codeEl)
+                } catch (e) {
+                    codeEl.textContent = `Error loading file: ${e.message}`
+                }
+            }
+        } else {
+            source.classList.add('d-none')
+            rendered.classList.remove('d-none')
+            toggleBtn.title = 'View source'
+            toggleBtn.querySelector('i').className = 'fa-solid fa-code'
+            toggleBtn.classList.remove('active')
+        }
+    })
 }
 
 function initPreviewImage() {

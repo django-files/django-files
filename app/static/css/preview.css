@@ -361,6 +361,107 @@
     color: var(--bs-body-color);
 }
 
+/* ---- Markdown view toggle button ---- */
+
+.md-view-toggle {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    margin: 0;
+    font-size: 18px;
+    line-height: 1;
+    color: currentcolor;
+    cursor: pointer;
+    background: var(--preview-chrome-bg);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid var(--preview-border-color);
+    border-radius: 999px;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    will-change: background-color, opacity;
+}
+
+.md-view-toggle:hover,
+.md-view-toggle.active {
+    opacity: 1;
+    background: var(--preview-chrome-bg-hover);
+    color: var(--bs-body-color);
+}
+
+/* ---- Markdown rendered content ---- */
+
+/* Override github-markdown-css background so the page theme shows through.
+ * The library sets background-color via --bgColor-default; clearing it here
+ * prevents a white box inside our dark-mode card. */
+#md-rendered.markdown-body {
+    --bgColor-default: transparent;
+    max-width: 960px;
+    margin-inline: auto;
+}
+
+/* github-markdown-css uses prefers-color-scheme for dark vars but our app
+ * toggles dark mode via [data-bs-theme="dark"] on <html>. Mirror the dark
+ * variable set here so markdown renders correctly in app dark mode regardless
+ * of the user's OS preference. */
+[data-bs-theme='dark'] #md-rendered.markdown-body {
+    color-scheme: dark;
+    --fgColor-default: #f0f6fc;
+    --fgColor-muted: #9198a1;
+    --fgColor-accent: #4493f8;
+    --fgColor-attention: #d29922;
+    --fgColor-danger: #f85149;
+    --fgColor-done: #ab7df8;
+    --fgColor-success: #3fb950;
+    --bgColor-muted: #151b23;
+    --bgColor-neutral-muted: #656c7633;
+    --bgColor-attention-muted: #bb800926;
+    --borderColor-default: #3d444d;
+    --borderColor-muted: #3d444db3;
+    --borderColor-neutral-muted: #3d444db3;
+    --borderColor-accent-emphasis: #1f6feb;
+    --borderColor-attention-emphasis: #9e6a03;
+    --borderColor-danger-emphasis: #da3633;
+    --borderColor-done-emphasis: #8957e5;
+    --borderColor-success-emphasis: #238636;
+    --color-prettylights-syntax-comment: #9198a1;
+    --color-prettylights-syntax-constant: #79c0ff;
+    --color-prettylights-syntax-constant-other-reference-link: #a5d6ff;
+    --color-prettylights-syntax-entity: #d2a8ff;
+    --color-prettylights-syntax-entity-tag: #7ee787;
+    --color-prettylights-syntax-keyword: #ff7b72;
+    --color-prettylights-syntax-markup-bold: #f0f6fc;
+    --color-prettylights-syntax-markup-heading: #1f6feb;
+    --color-prettylights-syntax-markup-italic: #f0f6fc;
+    --color-prettylights-syntax-markup-list: #f2cc60;
+    --color-prettylights-syntax-meta-diff-range: #d2a8ff;
+    --color-prettylights-syntax-string: #a5d6ff;
+    --color-prettylights-syntax-string-regexp: #7ee787;
+    --color-prettylights-syntax-variable: #ffa657;
+    --color-prettylights-syntax-storage-modifier-import: #f0f6fc;
+    --color-prettylights-syntax-brackethighlighter-angle: #9198a1;
+    --color-prettylights-syntax-brackethighlighter-unmatched: #f85149;
+    --color-prettylights-syntax-markup-deleted-bg: #67060c;
+    --color-prettylights-syntax-markup-deleted-text: #ffdcd7;
+    --color-prettylights-syntax-markup-inserted-bg: #033a16;
+    --color-prettylights-syntax-markup-inserted-text: #aff5b4;
+    --color-prettylights-syntax-markup-changed-bg: #5a1e02;
+    --color-prettylights-syntax-markup-changed-text: #ffdfb6;
+    --color-prettylights-syntax-markup-ignored-bg: #1158c7;
+    --color-prettylights-syntax-markup-ignored-text: #f0f6fc;
+    --color-prettylights-syntax-carriage-return-bg: #b62324;
+    --color-prettylights-syntax-carriage-return-text: #f0f6fc;
+    --color-prettylights-syntax-sublimelinter-gutter-mark: #3d444d;
+    --focus-outlineColor: #1f6feb;
+}
+
 .ui-autocomplete {
     max-height: 300px;
     max-width: 300px;

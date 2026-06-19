@@ -475,6 +475,10 @@ function initPanelContent(container) {
                     initCodePreview(root)
                 }
 
+                if (render === 'markdown') {
+                    initMarkdownToggle(root)
+                }
+
                 if (root.dataset.gpsLat && root.dataset.gpsLon) {
                     initPanelMapToggle(root)
                 }
@@ -492,6 +496,10 @@ function initPanelContent(container) {
 
             if (render === 'text' || render === 'code') {
                 initCodePreview(root)
+            }
+
+            if (render === 'markdown') {
+                initMarkdownToggle(root)
             }
 
             if (root.dataset.gpsLat && root.dataset.gpsLon) {
@@ -684,6 +692,76 @@ async function initCodePreview(root) {
     } catch (e) {
         codeEl.textContent = `Error loading file: ${e.message}`
     }
+}
+
+// ---- Markdown view toggle (rendered ↔ source) ----
+
+async function initMarkdownToggle(root) {
+    const toggleBtn = root.querySelector('#mdViewToggle')
+    const rendered = root.querySelector('#md-rendered')
+    const source = root.querySelector('#md-source')
+    const codeEl = root.querySelector('#text-preview')
+
+    if (!toggleBtn || !rendered || !source || !codeEl) return
+
+    const rawUrl = root.dataset.rawUrl
+    let sourceLoaded = false
+    let isSource = false
+
+    toggleBtn.addEventListener('click', async () => {
+        isSource = !isSource
+        if (isSource) {
+            rendered.classList.add('d-none')
+            source.classList.remove('d-none')
+            toggleBtn.title = 'View rendered'
+            toggleBtn.querySelector('i').className = 'fa-solid fa-eye'
+            toggleBtn.classList.add('active')
+
+            if (!sourceLoaded && rawUrl) {
+                sourceLoaded = true
+                if (!globalThis.hljs) {
+                    const existingScript = document.querySelector(
+                        'script[src*="highlight.min.js"]'
+                    )
+                    const scriptSrc =
+                        existingScript?.src ||
+                        '/static/highlightjs/highlight.min.js'
+                    await new Promise((resolve, reject) => {
+                        const s = document.createElement('script')
+                        s.src = scriptSrc
+                        s.onload = resolve
+                        s.onerror = reject
+                        document.head.appendChild(s)
+                    })
+                }
+                try {
+                    const response = await fetch(rawUrl)
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+                    const text = await response.text()
+                    codeEl.textContent = text
+
+                    const theme = document.documentElement.dataset.bsTheme
+                    const darkLink = document.querySelector('#panel-code-dark')
+                    const lightLink =
+                        document.querySelector('#panel-code-light')
+                    if (theme !== 'dark' && darkLink && lightLink) {
+                        darkLink.disabled = true
+                        lightLink.removeAttribute('disabled')
+                    }
+
+                    globalThis.hljs.highlightElement(codeEl)
+                } catch (e) {
+                    codeEl.textContent = `Error loading file: ${e.message}`
+                }
+            }
+        } else {
+            source.classList.add('d-none')
+            rendered.classList.remove('d-none')
+            toggleBtn.title = 'View source'
+            toggleBtn.querySelector('i').className = 'fa-solid fa-code'
+            toggleBtn.classList.remove('active')
+        }
+    })
 }
 
 // ---- GPS map (Leaflet is already loaded on the gallery page) ----

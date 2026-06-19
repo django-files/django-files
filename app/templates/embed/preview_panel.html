@@ -1,16 +1,19 @@
 {% load static %}
 {% load home_tags %}
 {% if gps_lat and gps_lon %}<link rel="stylesheet" href="{% static 'dist/leaflet/leaflet.css' %}">{% endif %}
-{% if render in 'text,code' %}
+{% if render in 'text,code,markdown' %}
 <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="panel-code-dark">
 <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="panel-code-light" disabled>
+{% endif %}
+{% if render == 'markdown' %}
+<link rel="stylesheet" href="{% static 'dist/github-markdown-css/github-markdown.css' %}" id="panel-github-md">
 {% endif %}
 
 <div class="preview-panel-root card h-100 border-0 rounded-0"
      data-render="{{ render }}"
      data-file-id="{{ file.id }}"
      data-file-url="{{ file.preview_uri }}"
-     {% if render in 'text,code' %}data-raw-url="{% url 'home:url-raw-redirect' file.file.name %}{% if file.password %}?password={{ file.password }}{% endif %}"{% endif %}
+     {% if render in 'text,code,markdown' %}data-raw-url="{% url 'home:url-raw-redirect' file.file.name %}{% if file.password %}?password={{ file.password }}{% endif %}"{% endif %}
      {% if gps_lat and gps_lon %}data-gps-lat="{{ gps_lat }}" data-gps-lon="{{ gps_lon }}"{% endif %}>
 
     {% if render == 'image' %}
@@ -39,7 +42,11 @@
     {% elif render in 'text,code' %}
         <pre class="pt-3 ps-3 w-100"><code id="text-preview"><i class="fas fa-spinner fa-pulse"></i></code></pre>
     {% elif render == 'markdown' %}
-        <div class="container pt-3 mt-5 px-4 overflow-auto h-100">{{ markdown|safe }}</div>
+        <div id="md-rendered" class="markdown-body overflow-auto h-100 px-4 pt-3 mt-5">{{ markdown|safe }}</div>
+        <pre id="md-source" class="pt-3 ps-3 w-100 d-none"><code id="text-preview"></code></pre>
+        <button class="md-view-toggle" id="mdViewToggle" title="View source">
+            <i class="fa-solid fa-code"></i>
+        </button>
     {% else %}
         <div class="d-flex align-items-center justify-content-center h-100 w-100"><i class="fa-10x fa-solid fa-file"></i></div>
     {% endif %}

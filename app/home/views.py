@@ -704,10 +704,8 @@ def url_route_view(request, filename):
         log.debug("MARKDOWN")
         md_text = _read_file_text(file)
         ctx["markdown"] = markdown.markdown(md_text, extensions=["extra", "toc"])
-        if is_panel:
-            ctx["render"] = "markdown"
-            return render(request, embed_template, context=ctx)
-        return render(request, "embed/markdown.html", context=ctx)
+        ctx["render"] = "markdown"
+        return render(request, embed_template, context=ctx)
     elif file.mime.startswith("text/") or file.mime in CODE_MIMES:
         log.debug("CODE")
         ctx["render"] = "code"
