@@ -1023,6 +1023,20 @@ def verify_signature(signature, max_age=600):
 
 
 @csrf_exempt
+@auth_from_token
+@require_http_methods(["POST"])
+def auth_session(request):
+    """
+    View /api/auth/session/
+    Exchanges a valid Bearer token for a Django session cookie so native clients
+    can refresh expired WebView sessions without re-entering credentials.
+    """
+    login(request, request.user)
+    post_login(request)
+    return JsonResponse({"token": request.user.authorization})
+
+
+@csrf_exempt
 @require_http_methods(["POST"])
 def auth_application(request):
     """
