@@ -6,6 +6,7 @@ import operator
 import os
 import random
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from functools import reduce, wraps
 from typing import Any, BinaryIO, Callable, List, Optional, Union
@@ -135,6 +136,16 @@ def paginate_no_count(queryset, page, count):
     return rows[:count], (page + 1 if has_next else None)
 
 
+_token_last_used_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="token-last-used")
+
+
+def _record_token_last_used(pk: str) -> None:
+    try:
+        get_redis_connection("default").hset("token_last_used", pk, time.time())
+    except Exception:
+        pass
+
+
 def _extract_token(request):
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
@@ -150,7 +161,7 @@ def _authenticate_bearer(request):
         return None
     api_token_obj = ApiToken.objects.select_related("user").filter(token_hash=hash_token(token)).first()
     if api_token_obj and api_token_obj.is_valid():
-        get_redis_connection("default").hset("token_last_used", str(api_token_obj.pk), time.time())
+        _token_last_used_pool.submit(_record_token_last_used, str(api_token_obj.pk))
         return api_token_obj.user
     return None
 
