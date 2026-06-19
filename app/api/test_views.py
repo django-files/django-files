@@ -33,7 +33,9 @@ class UserApiTestCase(TestCase):
 
     def test_current_user_get_with_auth(self):
         """Test GET /api/user/ with valid authorization"""
-        response = self.client.get(reverse("api:current-user"), HTTP_AUTHORIZATION=self.regular_user.authorization)
+        response = self.client.get(
+            reverse("api:current-user"), HTTP_AUTHORIZATION=f"Bearer {self.regular_user.authorization}"
+        )
         self.assertEqual(response.status_code, 200)
 
     def test_current_user_get_without_auth(self):
@@ -43,12 +45,14 @@ class UserApiTestCase(TestCase):
 
     def test_users_list_as_superuser(self):
         """Test GET /api/users/ as superuser"""
-        response = self.client.get(reverse("api:users"), HTTP_AUTHORIZATION=self.superuser.authorization)
+        response = self.client.get(reverse("api:users"), HTTP_AUTHORIZATION=f"Bearer {self.superuser.authorization}")
         self.assertEqual(response.status_code, 200)
 
     def test_users_list_as_regular_user_denied(self):
         """Test GET /api/users/ as regular user (should be denied)"""
-        response = self.client.get(reverse("api:users"), HTTP_AUTHORIZATION=self.regular_user.authorization)
+        response = self.client.get(
+            reverse("api:users"), HTTP_AUTHORIZATION=f"Bearer {self.regular_user.authorization}"
+        )
         self.assertEqual(response.status_code, 403)
 
 
@@ -84,7 +88,7 @@ class OrderingApiTestCase(TestCase):
         Stream.objects.create(name="mike", title="m", user=self.user, unique_views=3)
 
     def _get(self, url):
-        return self.client.get(url, HTTP_AUTHORIZATION=self.auth)
+        return self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.auth}")
 
     # ----- albums -----
 
@@ -147,7 +151,7 @@ class StreamLifecycleTestCase(TestCase):
         self.auth = self.user.authorization
 
     def _get(self, url):
-        return self.client.get(url, HTTP_AUTHORIZATION=self.auth)
+        return self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.auth}")
 
     def test_stream_list_empty(self):
         r = self._get(reverse("api:streams"))

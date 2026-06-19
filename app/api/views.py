@@ -136,12 +136,13 @@ def auth_from_token(view=None, no_fail=False):
     def wrapper(request, *args, **kwargs):
         if getattr(request, "user", None) and request.user.is_authenticated:
             return view(request, *args, **kwargs)
-        authorization = (
-            request.headers.get("Authorization") or request.headers.get("Token") or request.GET.get("token")
-        )
-        # log.debug('authorization: %s', authorization)
-        if authorization:
-            user = CustomUser.objects.filter(authorization=authorization)
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+        else:
+            token = request.headers.get("Token", "")
+        if token:
+            user = CustomUser.objects.filter(authorization=token)
             if user:
                 request.user = user[0]
                 return view(request, *args, **kwargs)
