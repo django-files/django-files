@@ -1,3 +1,5 @@
+# Trusted Proxies
+
 By default the rate limiter uses `REMOTE_ADDR` — the IP of the direct TCP connection — to identify clients. This is safe and requires no configuration.
 
 If your deployment sits behind a CDN or load balancer, `REMOTE_ADDR` will always be the CDN edge IP, causing all users to share the same rate-limit bucket. Setting `TRUSTED_PROXIES` lets the app unwrap the real client IP from `X-Forwarded-For`, but only when the request genuinely arrived from one of the listed addresses.
@@ -39,7 +41,7 @@ Because the list is large and changes often, the recommended approach is a small
 
 ```bash
 curl -s https://ip-ranges.amazonaws.com/ip-ranges.json \
-  | jq -r '[.prefixes[] | select(.service=="CLOUDFRONT") | .ip_prefix] + 
+  | jq -r '[.prefixes[] | select(.service=="CLOUDFRONT") | .ip_prefix] +
             [.ipv6_prefixes[] | select(.service=="CLOUDFRONT") | .ipv6_prefix]
             | join(",")' \
   | sed 's/^/TRUSTED_PROXIES=/' >> settings.env
