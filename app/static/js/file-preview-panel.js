@@ -713,8 +713,8 @@ async function initMarkdownToggle(root) {
         if (isSource) {
             rendered.classList.add('d-none')
             source.classList.remove('d-none')
-            toggleBtn.title = 'View rendered'
-            toggleBtn.querySelector('i').className = 'fa-solid fa-eye'
+            toggleBtn.querySelector('i').className = 'fa-solid fa-eye me-1'
+            toggleBtn.lastChild.textContent = 'Rendered'
             toggleBtn.classList.add('active')
 
             if (!sourceLoaded && rawUrl) {
@@ -757,8 +757,8 @@ async function initMarkdownToggle(root) {
         } else {
             source.classList.add('d-none')
             rendered.classList.remove('d-none')
-            toggleBtn.title = 'View source'
-            toggleBtn.querySelector('i').className = 'fa-solid fa-code'
+            toggleBtn.querySelector('i').className = 'fa-solid fa-code me-1'
+            toggleBtn.lastChild.textContent = 'Source'
             toggleBtn.classList.remove('active')
         }
     })
