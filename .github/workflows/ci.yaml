@@ -40,10 +40,16 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      tag: ${{ steps.tag.outputs.name }}
 
     steps:
       - name: "Checkout"
         uses: actions/checkout@v6
+
+      - name: "Sanitize Tag"
+        id: tag
+        run: echo "name=$(echo '${{ github.ref_name }}' | tr '/' '-')" >> $GITHUB_OUTPUT
 
       - name: "Docker Tags"
         id: dtags
@@ -79,8 +85,8 @@ jobs:
           files: docker-compose-swarm.yaml
           push: true
           set: |
-            app.tags=ghcr.io/${{ github.repository }}-app:${{ github.ref_name }}
-            nginx.tags=ghcr.io/${{ github.repository }}-nginx:${{ github.ref_name }}
+            app.tags=ghcr.io/${{ github.repository }}-app:${{ steps.tag.outputs.name }}
+            nginx.tags=ghcr.io/${{ github.repository }}-nginx:${{ steps.tag.outputs.name }}
             app.args.BUILD_SHA=${{ github.sha }}
             *.platform=linux/amd64,linux/arm64
             *.cache-from=type=gha
@@ -94,7 +100,7 @@ jobs:
     permissions:
       contents: read
     with:
-      VERSION: ${{ github.ref_name }}
+      VERSION: ${{ needs.build.outputs.tag }}
       STACK_NAME: dev_django-files_django-files
       COMPOSE_FILE: docker-compose-swarm.yaml
       CONFIG_FILE: services/${{ github.repository }}/dev/settings.env
@@ -111,7 +117,7 @@ jobs:
     permissions:
       contents: read
     with:
-      VERSION: ${{ github.ref_name }}
+      VERSION: ${{ needs.build.outputs.tag }}
       STACK_NAME: dev3_django-files_django-files
       COMPOSE_FILE: docker-compose-swarm.yaml
       CONFIG_FILE: services/django-files/django-files/dev3/settings.env
