@@ -1,4 +1,5 @@
 import io
+import ipaddress
 import json
 import logging
 import operator
@@ -30,7 +31,7 @@ from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.utils.timezone import localtime, now
-from django.views.decorators.cache import cache_control, cache_page
+from django.views.decorators.cache import cache_control, cache_page, never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
@@ -51,7 +52,7 @@ from oauth.models import CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
-from oauth.views import post_login
+from oauth.views import post_login, pre_login
 from packaging import version
 from packaging.version import InvalidVersion
 from pytimeparse2 import parse
@@ -154,6 +155,66 @@ def auth_from_token(view=None, no_fail=False):
         return wrapper
     else:
         return lambda func: auth_from_token(func, no_fail)
+
+
+def _parse_trusted_proxies():
+    networks = []
+    for cidr in getattr(settings, "TRUSTED_PROXIES", []):
+        try:
+            networks.append(ipaddress.ip_network(cidr.strip(), strict=False))
+        except ValueError:
+            log.warning("TRUSTED_PROXIES: invalid entry ignored: %r", cidr)
+    return networks
+
+
+_TRUSTED_PROXY_NETWORKS = _parse_trusted_proxies()
+
+
+def _client_ip(request):
+    remote = request.META.get("REMOTE_ADDR", "unknown")
+    if not _TRUSTED_PROXY_NETWORKS:
+        return remote
+    try:
+        remote_addr = ipaddress.ip_address(remote)
+    except ValueError:
+        return remote
+    if not any(remote_addr in net for net in _TRUSTED_PROXY_NETWORKS):
+        return remote
+    # Walk XFF right-to-left, skip trusted hops, return first untrusted IP.
+    xff = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    candidates = [h.strip() for h in xff.split(",") if h.strip()]
+    for candidate in reversed(candidates):
+        try:
+            addr = ipaddress.ip_address(candidate)
+        except ValueError:
+            continue
+        if not any(addr in net for net in _TRUSTED_PROXY_NETWORKS):
+            return candidate
+    return remote
+
+
+def ip_rate_limit(rate="10/m"):
+    limit, period_char = rate.split("/")
+    limit = int(limit)
+    period = {"s": 1, "m": 60, "h": 3600, "d": 86400}[period_char]
+
+    def decorator(view):
+        @wraps(view)
+        def wrapper(request, *args, **kwargs):
+            ip = _client_ip(request)
+            key = f"ratelimit:{view.__name__}:{ip}"
+            try:
+                count = cache.incr(key)
+            except ValueError:
+                cache.set(key, 1, period)
+                count = 1
+            if count > limit:
+                return HttpResponse(status=429)
+            return view(request, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 @csrf_exempt
@@ -988,6 +1049,7 @@ def auth_methods(request):
     return JsonResponse({"authMethods": methods, "siteName": site_settings.site_title})
 
 
+@ip_rate_limit("10/m")
 @csrf_exempt
 @require_http_methods(["POST"])
 def local_auth_for_native_client(request):
@@ -1023,6 +1085,25 @@ def verify_signature(signature, max_age=600):
     return data
 
 
+@never_cache
+@ip_rate_limit("10/m")
+@csrf_exempt
+@auth_from_token
+@require_http_methods(["POST"])
+def auth_session(request):
+    """
+    View /api/auth/session/
+    Exchanges a valid Bearer token for a Django session cookie so native clients
+    can refresh expired WebView sessions without re-entering credentials.
+    """
+    site_settings = SiteSettings.objects.settings()
+    if response := pre_login(request, request.user, site_settings):
+        return response
+    login(request, request.user, backend="django.contrib.auth.backends.ModelBackend")
+    post_login(request)
+    return HttpResponse(status=204)
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def auth_application(request):
@@ -1044,7 +1125,7 @@ def auth_application(request):
         log.debug("user_id: %s", data["user_id"])
         user = CustomUser.objects.get(id=data["user_id"])
         log.debug("username: %s", user.username)
-        login(request, user)
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         post_login(request)
         return JsonResponse({"token": user.authorization})
     except Exception as error:

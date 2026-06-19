@@ -85,6 +85,13 @@ CELERY_TIMEZONE = config("TZ", "UTC")
 DJANGO_REDIS_IGNORE_EXCEPTIONS = config("REDIS_IGNORE_EXCEPTIONS", True, bool)
 USE_X_FORWARDED_HOST = config("USE_X_FORWARDED_HOST", False, bool)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+_raw_trusted_proxies = config("TRUSTED_PROXIES", "", Csv())
+TRUSTED_PROXIES = (
+    [_raw_trusted_proxies]
+    if isinstance(_raw_trusted_proxies, str) and _raw_trusted_proxies
+    else list(_raw_trusted_proxies)
+)
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 X_FRAME_OPTIONS = "SAMEORIGIN"
