@@ -21,7 +21,6 @@ from api.utils import (
 )
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from ratelimit.decorators import ratelimit
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.cache import cache
 from django.core.signing import TimestampSigner
@@ -154,6 +153,31 @@ def auth_from_token(view=None, no_fail=False):
         return wrapper
     else:
         return lambda func: auth_from_token(func, no_fail)
+
+
+def ip_rate_limit(rate="10/m"):
+    limit, period_char = rate.split("/")
+    limit = int(limit)
+    period = {"s": 1, "m": 60, "h": 3600, "d": 86400}[period_char]
+
+    def decorator(view):
+        @wraps(view)
+        def wrapper(request, *args, **kwargs):
+            forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+            ip = (forwarded.split(",")[0].strip() if forwarded else request.META.get("REMOTE_ADDR", "unknown"))
+            key = f"ratelimit:{view.__name__}:{ip}"
+            try:
+                count = cache.incr(key)
+            except ValueError:
+                cache.set(key, 1, period)
+                count = 1
+            if count > limit:
+                return HttpResponse(status=429)
+            return view(request, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 @csrf_exempt
@@ -988,7 +1012,7 @@ def auth_methods(request):
     return JsonResponse({"authMethods": methods, "siteName": site_settings.site_title})
 
 
-@ratelimit(key="ip", rate="10/m", block=True)
+@ip_rate_limit("10/m")
 @csrf_exempt
 @require_http_methods(["POST"])
 def local_auth_for_native_client(request):
@@ -1025,7 +1049,7 @@ def verify_signature(signature, max_age=600):
 
 
 @never_cache
-@ratelimit(key="ip", rate="10/m", block=True)
+@ip_rate_limit("10/m")
 @csrf_exempt
 @auth_from_token
 @require_http_methods(["POST"])
