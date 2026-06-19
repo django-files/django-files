@@ -164,7 +164,7 @@ def ip_rate_limit(rate="10/m"):
         @wraps(view)
         def wrapper(request, *args, **kwargs):
             forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
-            ip = (forwarded.split(",")[0].strip() if forwarded else request.META.get("REMOTE_ADDR", "unknown"))
+            ip = forwarded.split(",")[0].strip() if forwarded else request.META.get("REMOTE_ADDR", "unknown")
             key = f"ratelimit:{view.__name__}:{ip}"
             try:
                 count = cache.incr(key)
