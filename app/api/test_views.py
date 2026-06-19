@@ -560,8 +560,13 @@ class ApiTokenDeleteTestCase(TestCase):
         self.client.login(username="deluser", password="pass")
         self.token = ApiToken.objects.create(user=self.user, token_hash=hash_token("mytoken"), name="My Token")
 
-    def test_disable_token(self):
+    def test_delete_token(self):
         response = self.client.delete(f"/api/token/{self.token.pk}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(ApiToken.objects.filter(pk=self.token.pk).exists())
+
+    def test_disable_token(self):
+        response = self.client.patch(f"/api/token/{self.token.pk}/")
         self.assertEqual(response.status_code, 200)
         self.token.refresh_from_db()
         self.assertFalse(self.token.is_active)

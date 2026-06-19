@@ -335,19 +335,22 @@ def oauth_logout(request):
     """
     View  /oauth/logout/
 
-    Optional POST param ``token`` (plaintext): if provided and it belongs to the
-    authenticated user, the matching ApiToken row is soft-disabled before the
-    session is flushed.  Intended for native-app logouts so clients can clean up
-    the token they created.
+    Optional POST params for native-app logouts:
+    - ``token`` (plaintext): identifies the ApiToken to clean up.
+    - ``delete_token`` (any truthy value): when present alongside ``token``,
+      the row is hard-deleted; otherwise it is soft-disabled (is_active=False).
     """
     user = request.user
     if user.is_authenticated:
         plaintext = request.POST.get("token", "").strip()
         if plaintext:
-            ApiToken.objects.filter(user=user, token_hash=hash_token(plaintext), is_active=True).update(
-                is_active=False
-            )
-            log.info("oauth_logout: revoked api token for user=%s", user.username)
+            qs = ApiToken.objects.filter(user=user, token_hash=hash_token(plaintext))
+            if request.POST.get("delete_token"):
+                qs.delete()
+                log.info("oauth_logout: deleted api token for user=%s", user.username)
+            else:
+                qs.filter(is_active=True).update(is_active=False)
+                log.info("oauth_logout: revoked api token for user=%s", user.username)
 
     next_url = get_next_url(request)
     log.debug("oauth_logout: next_url: %s", next_url)
