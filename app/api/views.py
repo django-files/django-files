@@ -21,6 +21,7 @@ from api.utils import (
 )
 from django.conf import settings
 from django.contrib.auth import authenticate, login
+from ratelimit.decorators import ratelimit
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.cache import cache
 from django.core.signing import TimestampSigner
@@ -30,7 +31,7 @@ from django.forms.models import model_to_dict
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
 from django.utils.timezone import localtime, now
-from django.views.decorators.cache import cache_control, cache_page
+from django.views.decorators.cache import cache_control, cache_page, never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
@@ -987,6 +988,7 @@ def auth_methods(request):
     return JsonResponse({"authMethods": methods, "siteName": site_settings.site_title})
 
 
+@ratelimit(key="ip", rate="10/m", block=True)
 @csrf_exempt
 @require_http_methods(["POST"])
 def local_auth_for_native_client(request):
@@ -1022,6 +1024,8 @@ def verify_signature(signature, max_age=600):
     return data
 
 
+@never_cache
+@ratelimit(key="ip", rate="10/m", block=True)
 @csrf_exempt
 @auth_from_token
 @require_http_methods(["POST"])
@@ -1031,9 +1035,9 @@ def auth_session(request):
     Exchanges a valid Bearer token for a Django session cookie so native clients
     can refresh expired WebView sessions without re-entering credentials.
     """
-    login(request, request.user)
+    login(request, request.user, backend="django.contrib.auth.backends.ModelBackend")
     post_login(request)
-    return JsonResponse({"token": request.user.authorization})
+    return HttpResponse(status=204)
 
 
 @csrf_exempt
@@ -1057,7 +1061,7 @@ def auth_application(request):
         log.debug("user_id: %s", data["user_id"])
         user = CustomUser.objects.get(id=data["user_id"])
         log.debug("username: %s", user.username)
-        login(request, user)
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         post_login(request)
         return JsonResponse({"token": user.authorization})
     except Exception as error:
