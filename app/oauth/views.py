@@ -186,7 +186,7 @@ def oauth_callback(request, oauth_provider: str = ""):
         oauth.update_profile(user)
         if response := pre_login(request, user, site_settings):
             return response
-        login(request, user)
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         post_login(request)
         messages.info(request, f"Successfully logged in via oauth. {user.username} {user.get_name()}.")
         log.debug("OAuth Login Success: %s", user)
@@ -279,7 +279,7 @@ def duo_callback(request):
             return HttpResponseRedirect(reverse("oauth:login"))
 
         user = CustomUser.objects.get(username=username)
-        login(request, user)
+        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
 
         # if 'profile' in request.session:
         #     log.debug('profile in session, updating oauth profile')
