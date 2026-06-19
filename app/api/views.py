@@ -143,7 +143,7 @@ def _record_token_last_used(pk: str) -> None:
     try:
         get_redis_connection("default").hset("token_last_used", pk, time.time())
     except Exception:
-        pass
+        log.debug("Failed to record token last_used_at for %s", pk, exc_info=True)
 
 
 def _extract_token(request):
