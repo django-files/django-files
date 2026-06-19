@@ -655,20 +655,16 @@ def flush_token_last_used():
     from oauth.models import ApiToken
 
     redis = get_redis_connection("default")
-    keys = redis.keys("token_last_used:*")
-    if not keys:
-        return
     pipe = redis.pipeline()
-    for key in keys:
-        pipe.getdel(key)
-    values = pipe.execute()
+    pipe.hgetall("token_last_used")
+    pipe.delete("token_last_used")
+    data, _ = pipe.execute()
+    if not data:
+        return
 
     updates = []
-    for key, val in zip(keys, values, strict=False):
-        if val is None:
-            continue
-        token_id = key.decode().split(":", 1)[1]
-        ts = datetime.fromtimestamp(float(val), tz=dt_timezone.utc)
-        updates.append(ApiToken(pk=token_id, last_used_at=ts))
+    for pk_bytes, ts_bytes in data.items():
+        ts = datetime.fromtimestamp(float(ts_bytes), tz=dt_timezone.utc)
+        updates.append(ApiToken(pk=pk_bytes.decode(), last_used_at=ts))
     if updates:
         ApiToken.objects.bulk_update(updates, ["last_used_at"])
