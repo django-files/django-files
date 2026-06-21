@@ -19,7 +19,7 @@ table.display > thead {
     transform: translateY(-4px);
     transition:
         opacity 0.2s ease,
-        transform 0.2s ease;
+        transform 0.3s ease;
 }
 table.display.dt-thead-ready > thead {
     opacity: 1;
