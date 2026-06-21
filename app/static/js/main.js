@@ -135,7 +135,7 @@ function show_toast(message, bsClass = 'success', delay = '6000') {
     } else {
         body.append(message)
     }
-    element.toast({ delay: parseInt(delay) })
+    element.toast({ delay: Number.parseInt(delay) })
     element.appendTo('.toast-container').toast('show')
 }
 
@@ -290,10 +290,11 @@ function initCollapsibleSearch(wrapperId, inputId) {
 // eslint-disable-next-line no-unused-vars
 async function initDataTable(dt, skeletonFn, fetchFn, emptyMsg, zeroMsg) {
     skeletonFn()
+    // Freeze auto-width so each draw(false) inside fetchFn doesn't shift columns.
+    dt.settings()[0].oFeatures.bAutoWidth = false
     await fetchFn()
     initDtLang(dt, emptyMsg, zeroMsg)
     if (!dt.rows().count()) dt.draw()
-    globalThis.dispatchEvent(new Event('resize'))
 }
 
 function initDtLang(dt, emptyMsg, zeroMsg) {
@@ -309,8 +310,11 @@ function initDtLang(dt, emptyMsg, zeroMsg) {
  * @param {Array<{w: number, h?: number}>} specs - per-column width/height
  * @param {Object<number, number[]>} varWidths - colIndex -> array of widths cycled per row
  */
-// eslint-disable-next-line no-unused-vars
 function buildSkeletonRows(tbody, count, specs, varWidths = {}) {
+    tbody
+        .querySelectorAll('td.dt-empty')
+        .forEach((cell) => cell.closest('tr')?.remove())
+    tbody.querySelectorAll('.dt-skeleton-row').forEach((el) => el.remove())
     const fragment = document.createDocumentFragment()
     for (let i = 0; i < count; i++) {
         const tr = document.createElement('tr')
@@ -533,3 +537,25 @@ $('#password-generate').on('click', async function (event) {
     await navigator.clipboard.writeText(password)
     show_toast('Password generated and copied!', 'info')
 })
+
+// Pre-populate skeleton rows before DataTables loads.
+// Tables opt in by setting data-skeleton-cols="w[:h],..." and
+// data-skeleton-rows="N" on the <table> element.  main.js runs before
+// the DataTables bundle, so these rows appear during bundle load time.
+// DataTables clears them on init (data:[] in paginatedTableDefaults),
+// and each table's showXSkeletons() re-adds precise per-column rows.
+;(function () {
+    document.querySelectorAll('[data-skeleton-cols]').forEach(function (table) {
+        const tbody = table.querySelector('tbody')
+        if (!tbody) return
+        const count = Number.parseInt(table.dataset.skeletonRows || '10', 10)
+        const specs = table.dataset.skeletonCols.split(',').map(function (c) {
+            const parts = c.split(':')
+            return {
+                w: Number.parseInt(parts[0], 10),
+                h: Number.parseInt(parts[1] || '14', 10),
+            }
+        })
+        buildSkeletonRows(tbody, count, specs)
+    })
+})()

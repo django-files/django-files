@@ -78,6 +78,83 @@ function domLoaded() {
         }
     }
     initPreviewImage()
+    initMarkdownToggle()
+}
+
+const MD_SESSION_KEY = 'mdView'
+
+async function loadMarkdownSource(rendered, source, codeEl, rawUrl) {
+    rendered.classList.add('d-none')
+    source.classList.remove('d-none')
+
+    if (codeEl.dataset.loaded) return
+    codeEl.dataset.loaded = '1'
+
+    try {
+        const response = await fetch(rawUrl)
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const text = await response.text()
+        codeEl.textContent = text
+
+        const theme = document.documentElement.dataset.bsTheme
+        if (theme !== 'dark') {
+            document.getElementById('code-dark')?.setAttribute('disabled', '')
+            document.getElementById('code-light')?.removeAttribute('disabled')
+        }
+
+        globalThis.hljs?.highlightElement(codeEl)
+    } catch (e) {
+        codeEl.textContent = `Error loading file: ${e.message}`
+    }
+}
+
+async function initMarkdownToggle() {
+    const card = document.querySelector('.card[data-render="markdown"]')
+    if (!card) return
+
+    const btnRendered = document.getElementById('mdViewRendered')
+    const btnSource = document.getElementById('mdViewSource')
+    const rendered = document.getElementById('md-rendered')
+    const source = document.getElementById('md-source')
+    const codeEl = document.getElementById('text-preview')
+
+    if (!btnRendered || !btnSource || !rendered || !source || !codeEl) return
+
+    const rawUrl = card.dataset.rawUrl
+
+    function setActive(showSource) {
+        btnRendered.classList.toggle('active', !showSource)
+        btnSource.classList.toggle('active', showSource)
+    }
+
+    // ?md_view=source|rendered overrides; anything else falls back to session > default (rendered)
+    const qp = new URLSearchParams(location.search).get('md_view')
+    let startSource
+    if (qp === 'source') {
+        startSource = true
+    } else if (qp === 'rendered') {
+        startSource = false
+    } else {
+        startSource = sessionStorage.getItem(MD_SESSION_KEY) === 'source'
+    }
+
+    if (startSource) {
+        setActive(true)
+        await loadMarkdownSource(rendered, source, codeEl, rawUrl)
+    }
+
+    btnSource.addEventListener('click', async () => {
+        sessionStorage.setItem(MD_SESSION_KEY, 'source')
+        setActive(true)
+        await loadMarkdownSource(rendered, source, codeEl, rawUrl)
+    })
+
+    btnRendered.addEventListener('click', () => {
+        sessionStorage.setItem(MD_SESSION_KEY, 'rendered')
+        setActive(false)
+        source.classList.add('d-none')
+        rendered.classList.remove('d-none')
+    })
 }
 
 function initPreviewImage() {

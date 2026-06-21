@@ -3,6 +3,58 @@
     top: 100% !important;
 }
 
+/* DataTables prepends a <colgroup> on init, shifting <thead> from first-child
+ * to second-child and triggering Bootstrap's
+ * .table > :not(:first-child) { border-top: 2px } rule.  That extra border
+ * causes the visible header jump.  Suppress it whenever a colgroup sibling
+ * precedes the thead (i.e. after DT has initialised). */
+table.display > colgroup ~ thead {
+    border-top: 0 !important;
+}
+
+/* Hide thead until column widths have settled (DT init + first data draw), then
+ * fade and slide in.  JS adds .dt-thead-ready once data is loaded and columns are final. */
+table.display > thead {
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+        opacity 0.2s ease,
+        transform 0.3s ease;
+}
+table.display.dt-thead-ready > thead {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Bootstrap defaults thead to vertical-align:bottom; DataTables overrides it
+ * to middle after init.  Pre-apply middle so the header row height is stable
+ * before and after DataTables initialises.
+ * Bootstrap also sets vertical-align:top on tbody via .table inheritance;
+ * DataTables doesn't fix this, leaving text cells top-aligned while
+ * checkbox/context-menu columns (with explicit middle) look centred.
+ * Apply middle to all cells so alignment is consistent. */
+table.display > thead > tr > th,
+table.display > thead > tr > td {
+    vertical-align: middle;
+    overflow: hidden;
+}
+
+table.display > tbody > tr > th,
+table.display > tbody > tr > td {
+    vertical-align: middle;
+}
+
+/* Collapse the DataTables empty-placeholder row when no message is set (during
+ * skeleton loading all tables set language.emptyTable to '').  Once initDtLang
+ * sets a real "No data" string the cell gains text content, stops matching
+ * :empty, and the message displays normally. */
+td.dt-empty:empty {
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 0;
+    border: none;
+}
+
 /*
  * Reserve space for the home-page files table until data is fully loaded,
  * preventing the Shorts section from shifting while rows are fetched.
@@ -16,8 +68,8 @@
 .dt-skeleton-row td {
     max-width: none;
     overflow: visible;
-    padding-top: 7px;
-    padding-bottom: 7px;
+    padding-top: 13px;
+    padding-bottom: 13px;
     vertical-align: middle;
 }
 
@@ -157,8 +209,11 @@ div.dataTables_wrapper span.select-item {
     vertical-align: middle;
 }
 
-/* Remove Bootstrap's mt-2 that DT Bootstrap5 integration bakes into the table row class. */
-[id$='-table_wrapper'] .dt-layout-table {
+/* Remove Bootstrap's mt-2 that DT Bootstrap5 integration can attach to any of
+ * the layout wrapper divs — cover all three to prevent any vertical shift. */
+[id$='-table_wrapper'] .dt-layout-row,
+[id$='-table_wrapper'] .dt-layout-table,
+[id$='-table_wrapper'] .dt-layout-full {
     margin-top: 0 !important;
 }
 
@@ -184,6 +239,13 @@ div.dataTables_wrapper span.select-item {
 
 #dt-user-select-wrapper select {
     width: auto;
+}
+
+/* Reserve full viewport height for the files table in list view so the footer
+ * is already below the fold before data arrives.  This eliminates the footer
+ * layout shift when rows load and push the page taller. */
+[data-files-view='list'] #files-table-section {
+    min-height: calc(100dvh - var(--toolbar-h, 48px));
 }
 
 /* ---- Toolbar-integrated table sections ---- */

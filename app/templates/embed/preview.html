@@ -70,13 +70,18 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
     {% if gps_lat and gps_lon %}
         <link rel="stylesheet" href="{% static 'dist/leaflet/leaflet.css' %}">
     {% endif %}
+    {% if render == 'markdown' %}
+        <link rel="stylesheet" href="{% static 'dist/github-markdown-css/github-markdown.css' %}">
+    {% endif %}
 {% endblock %}
 
 {% block nav1color %}{{ file.user.nav_color_1|default:"#130e36" }}{% endblock %}
 {% block nav2color %}{{ file.user.nav_color_2|default:"#1e1c21" }}{% endblock %}
 
 {% block body %}
-    <div class="card h-100 border-0 rounded-0">
+    <div class="card h-100 border-0 rounded-0"
+         data-render="{{ render }}"
+         {% if render == 'markdown' %}data-raw-url="{% url 'home:url-raw-redirect' file.file.name %}{% if file.password %}?password={{ file.password }}{% endif %}"{% endif %}>
         {% if render == 'image' %}
             <div class="preview-wrapper">
                 <div class="img-skeleton" id="img-skeleton"></div>
@@ -105,6 +110,12 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
             <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
             <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
             <pre class="pt-3 ps-3 w-100"><code id="text-preview"><i class="fas fa-spinner fa-pulse"></i></code></pre>
+        {% elif render == 'markdown' %}
+            <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-dark.min.css' %}" id="code-dark">
+            <link rel="stylesheet" href="{% static 'highlightjs/stackoverflow-light.min.css' %}" id="code-light" disabled>
+            <script src="{% static 'highlightjs/highlight.min.js' %}"></script>
+            <div id="md-rendered" class="markdown-body overflow-auto h-100 px-4 py-3">{{ markdown|safe }}<!-- //NOSONAR --></div>
+            <pre id="md-source" class="pt-3 ps-3 w-100 d-none"><code id="text-preview"></code></pre>
         {% else %}
             <div class="d-flex align-items-center justify-content-center h-100 w-100"><i class="fa-10x fa-solid fa-file"></i></div>
         {% endif %}

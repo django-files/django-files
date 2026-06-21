@@ -2,6 +2,7 @@ import { initBulkSelect, selectedPks } from './bulk-actions.js'
 import { socket } from './socket.js'
 import { openDeleteStreamsModal } from './streams-actions.js'
 import {
+    dtRevealThead,
     initPopupBtn,
     selectColumn,
     selectColumnDef,
@@ -163,6 +164,7 @@ const dataTablesOptions = {
         const dt = this.api()
         initDtLang(dt, 'No streams available', 'No matching streams found')
         if (dt.rows().count() === 0) dt.draw()
+        dtRevealThead(dt)
     },
 }
 
@@ -282,7 +284,7 @@ const _streamSkeletonTitleWidths = [160, 200, 130, 185, 150, 175]
 // Column widths [px] matching the 11 header columns:
 // checkbox, name, title, owner, status, started, ended, views, pw, public, actions
 const _streamSkeletonSpecs = [
-    { w: 18, h: 18 },
+    { w: 18 },
     { w: 0 }, // name — varied per row
     { w: 0 }, // title — varied per row
     { w: 80 },

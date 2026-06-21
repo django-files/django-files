@@ -5,7 +5,6 @@
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}" />
-    <script src="{% static 'dist/echarts/echarts.min.js' %}"></script>
 {% endblock %}
 
 {% block body %}
@@ -105,5 +104,6 @@
 {% endblock %}
 
 {% block tail %}
-    <script type="text/javascript" src="{% static 'js/stats.js' %}"></script>
+    <script defer src="{% static 'dist/echarts/echarts.min.js' %}"></script>
+    <script defer src="{% static 'js/stats.js' %}"></script>
 {% endblock %}

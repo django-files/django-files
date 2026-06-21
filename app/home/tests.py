@@ -168,7 +168,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
             else:
                 if view == "Gallery":
                     log.debug("GALLERY")
-                    page.locator('a[href="/files/"]').first.click()
+                    page.goto(f"{self.live_server_url}/files/")
                     page.locator('a[href="/files/?view=gallery"]').first.click()
                 elif view == "Stats":
                     log.debug("STATS")

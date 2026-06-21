@@ -2,6 +2,7 @@ import { fetchAlbums } from './api-fetch.js'
 import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import { attachSocketTableSync, socket } from './socket.js'
 import {
+    dtRevealThead,
     initPopupBtn,
     noChromeLayout,
     paginatedTableDefaults,
@@ -255,6 +256,7 @@ async function domContentLoaded() {
             : 'No albums available',
         'No matching albums found'
     )
+    dtRevealThead(albumsDataTable)
 }
 
 function renderDeleteBtn(data, type, row, _meta) {
@@ -287,7 +289,7 @@ const _albumSkeletonNameWidths = [140, 175, 110, 195, 130, 160, 105, 155]
 // Column widths [px] matching the 8 header columns:
 // select, id, name, date, expire, views, maxviews, delete
 const _albumSkeletonSpecs = [
-    { w: 18, h: 18 },
+    { w: 18 },
     { w: 24 },
     { w: 0 }, // name — varied per row
     { w: 128 },

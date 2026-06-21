@@ -13,7 +13,11 @@ import {
 
 import { updateBulkCount } from './bulk-actions.js'
 import { fetchFiles, fetchFile } from './api-fetch.js'
-import { initPopupBtn } from './table-defaults.js'
+import {
+    initPopupBtn,
+    dtFreezeAutoWidth,
+    dtRevealThead,
+} from './table-defaults.js'
 
 import { socket } from './socket.js'
 import { getCtxMenuContainer } from './file-context-menu.js'
@@ -48,6 +52,7 @@ let nextPage = 1
 let fileData = []
 let fetchLock = false
 let filesDataTable
+let dtFirstRevealDone = false
 let selectedFileIds = []
 let scrollObserver = null
 let gallerySearchTerm = ''
@@ -783,7 +788,12 @@ async function addNodes() {
         })
         filterGallery()
     }
+    if (!dtFirstRevealDone) dtFreezeAutoWidth(filesDataTable)
     addFileTableRowsBatch(data.files)
+    if (!dtFirstRevealDone) {
+        dtFirstRevealDone = true
+        dtRevealThead(filesDataTable)
+    }
     fetchLock = false
     updateNoFilesOverlay()
 

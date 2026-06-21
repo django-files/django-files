@@ -1,5 +1,9 @@
 import { fetchUsers } from './api-fetch.js'
-import { noChromeLayout, paginatedTableDefaults } from './table-defaults.js'
+import {
+    dtRevealThead,
+    noChromeLayout,
+    paginatedTableDefaults,
+} from './table-defaults.js'
 
 const usersTable = $('#users-table')
 
@@ -118,6 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         'No users found',
         'No matching users found'
     )
+    dtRevealThead(usersDataTable)
     while (nextPage) {
         await addUserRows()
     }

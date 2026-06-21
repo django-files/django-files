@@ -22,6 +22,6 @@
 
 {% block tail %}
     {% include 'include/datatables-scripts.html' %}
-    <script type="text/javascript" src="{% static 'js/album-create.js' %}"></script>
+    <script defer src="{% static 'js/album-create.js' %}"></script>
     <script type="module" src="{% static 'js/albums-table.js' %}"></script>
 {% endblock %}

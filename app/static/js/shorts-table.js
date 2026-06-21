@@ -1,6 +1,7 @@
 import { fetchShorts } from './api-fetch.js'
 import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import {
+    dtRevealThead,
     initPopupBtn,
     noChromeLayout,
     paginatedTableDefaults,
@@ -169,6 +170,7 @@ async function domContentLoaded() {
             : 'No short URLs available',
         'No matching short URLs found'
     )
+    dtRevealThead(shortsDataTable)
 }
 
 function renderShortLink(data, type, row) {
@@ -203,8 +205,8 @@ const _shortSkeletonUrlWidths = isHome
 // /shorts/: select, short, url, views, max, actions
 // home:    select, short, url, actions (views/max also hidden)
 const _shortSkeletonSpecs = isHome
-    ? [{ w: 18, h: 18 }, { w: 60 }, { w: 0 }, { w: 40 }]
-    : [{ w: 18, h: 18 }, { w: 60 }, { w: 0 }, { w: 24 }, { w: 24 }, { w: 50 }]
+    ? [{ w: 18 }, { w: 60 }, { w: 0 }, { w: 40 }]
+    : [{ w: 18 }, { w: 60 }, { w: 0 }, { w: 24 }, { w: 24 }, { w: 50 }]
 
 function showShortsSkeletons(count = isHome ? MAX_HOME_SHORTS : 8) {
     const tbody = document.querySelector('#shorts-table tbody')

@@ -301,15 +301,15 @@
 {% endblock %}
 
 {% block js %}
-    <script type="text/javascript" src="{% static 'dist/jquery/jquery.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/bootstrap/bootstrap.bundle.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/clipboard/clipboard.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dist/ua-parser-js/ua-parser.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/main.js' %}"></script>
+    <script defer src="{% static 'dist/jquery/jquery.min.js' %}"></script>
+    <script defer src="{% static 'dist/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script defer src="{% static 'dist/clipboard/clipboard.min.js' %}"></script>
+    <script defer src="{% static 'dist/ua-parser-js/ua-parser.min.js' %}"></script>
+    <script defer src="{% static 'js/main.js' %}"></script>
     {% if request.user.is_authenticated %}
         <script type="module" src="{% static 'js/socket.js' %}"></script>
-        <script type="text/javascript" src="{% static 'js/user.js' %}"></script>
-        <script type="text/javascript" src="{% static 'js/keybinds.js' %}"></script>
+        <script defer src="{% static 'js/user.js' %}"></script>
+        <script defer src="{% static 'js/keybinds.js' %}"></script>
     {% endif %}
 {% endblock %}
 

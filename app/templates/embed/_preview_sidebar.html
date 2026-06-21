@@ -82,6 +82,18 @@
             </row>
         {% endif %}
 
+        {% if render == 'markdown' %}
+        <h6>View</h6>
+        <div class="btn-group btn-group-sm w-100 mb-3" role="group" aria-label="Markdown view">
+            <button type="button" class="btn btn-outline-secondary active" id="mdViewRendered">
+                <i class="fa-solid fa-eye me-1" aria-hidden="true"></i>Rendered
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="mdViewSource">
+                <i class="fa-solid fa-code me-1" aria-hidden="true"></i>Source
+            </button>
+        </div>
+        {% endif %}
+
         {% if full_context %}
         <row class="pt-3">
             <h6 class="pt-3">Albums</h6>

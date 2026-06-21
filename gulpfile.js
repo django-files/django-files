@@ -55,6 +55,16 @@ gulp.task('jquery-ui', () => {
         .pipe(gulp.dest('app/static/dist/jquery-ui'))
 })
 
+gulp.task('github-markdown-css', () => {
+    return gulp
+        .src([
+            'node_modules/github-markdown-css/github-markdown.css',
+            'node_modules/github-markdown-css/github-markdown-light.css',
+            'node_modules/github-markdown-css/github-markdown-dark.css',
+        ])
+        .pipe(gulp.dest('app/static/dist/github-markdown-css'))
+})
+
 gulp.task('fontawesome', () => {
     return gulp
         .src(
@@ -159,6 +169,7 @@ gulp.task(
         'datatables',
         'echarts',
         'fontawesome',
+        'github-markdown-css',
         'js-cookie',
         'jquery',
         'jquery-ui',

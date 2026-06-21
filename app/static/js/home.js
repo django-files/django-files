@@ -6,6 +6,7 @@ import {
     showTableSkeletons,
 } from './file-table.js'
 
+import { dtFreezeAutoWidth, dtRevealThead } from './table-defaults.js'
 import { fetchFiles } from './api-fetch.js'
 import { socket } from './socket.js'
 
@@ -56,6 +57,7 @@ async function initHome() {
             .querySelector('.files-truncation-warning')
             .classList.remove('d-none')
     }
+    dtFreezeAutoWidth(filesDataTable)
     addFileTableRows(files)
     document
         .getElementById('home-files-section')
@@ -75,7 +77,7 @@ async function initHome() {
             bulkActions.classList.toggle('bulk-actions--active', n > 0)
         }
     })
-    filesDataTable?.columns.adjust().draw()
+    dtRevealThead(filesDataTable)
 }
 
 // file-table.js registers its socket listener at import time, so it fires first:

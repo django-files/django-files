@@ -475,6 +475,10 @@ function initPanelContent(container) {
                     initCodePreview(root)
                 }
 
+                if (render === 'markdown') {
+                    initMarkdownToggle(root)
+                }
+
                 if (root.dataset.gpsLat && root.dataset.gpsLon) {
                     initPanelMapToggle(root)
                 }
@@ -492,6 +496,10 @@ function initPanelContent(container) {
 
             if (render === 'text' || render === 'code') {
                 initCodePreview(root)
+            }
+
+            if (render === 'markdown') {
+                initMarkdownToggle(root)
             }
 
             if (root.dataset.gpsLat && root.dataset.gpsLon) {
@@ -684,6 +692,99 @@ async function initCodePreview(root) {
     } catch (e) {
         codeEl.textContent = `Error loading file: ${e.message}`
     }
+}
+
+// ---- Markdown view toggle (rendered ↔ source) ----
+
+const MD_SESSION_KEY = 'mdView'
+
+async function loadPanelMarkdownSource(root, rendered, source, codeEl) {
+    rendered.classList.add('d-none')
+    source.classList.remove('d-none')
+
+    if (codeEl.dataset.loaded) return
+    codeEl.dataset.loaded = '1'
+
+    const rawUrl = root.dataset.rawUrl
+    if (!rawUrl) return
+
+    if (!globalThis.hljs) {
+        const existingScript = document.querySelector(
+            'script[src*="highlight.min.js"]'
+        )
+        const scriptSrc =
+            existingScript?.src || '/static/highlightjs/highlight.min.js'
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script')
+            s.src = scriptSrc
+            s.onload = resolve
+            s.onerror = reject
+            document.head.appendChild(s)
+        })
+    }
+
+    try {
+        const response = await fetch(rawUrl)
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const text = await response.text()
+        codeEl.textContent = text
+
+        const theme = document.documentElement.dataset.bsTheme
+        const darkLink = document.querySelector('#panel-code-dark')
+        const lightLink = document.querySelector('#panel-code-light')
+        if (theme !== 'dark' && darkLink && lightLink) {
+            darkLink.disabled = true
+            lightLink.removeAttribute('disabled')
+        }
+
+        globalThis.hljs.highlightElement(codeEl)
+    } catch (e) {
+        codeEl.textContent = `Error loading file: ${e.message}`
+    }
+}
+
+async function initMarkdownToggle(root) {
+    const btnRendered = root.querySelector('#mdViewRendered')
+    const btnSource = root.querySelector('#mdViewSource')
+    const rendered = root.querySelector('#md-rendered')
+    const source = root.querySelector('#md-source')
+    const codeEl = root.querySelector('#text-preview')
+
+    if (!btnRendered || !btnSource || !rendered || !source || !codeEl) return
+
+    function setActive(showSource) {
+        btnRendered.classList.toggle('active', !showSource)
+        btnSource.classList.toggle('active', showSource)
+    }
+
+    // ?md_view=source|rendered overrides; anything else falls back to session > default (rendered)
+    const qp = new URLSearchParams(location.search).get('md_view')
+    let startSource
+    if (qp === 'source') {
+        startSource = true
+    } else if (qp === 'rendered') {
+        startSource = false
+    } else {
+        startSource = sessionStorage.getItem(MD_SESSION_KEY) === 'source'
+    }
+
+    if (startSource) {
+        setActive(true)
+        await loadPanelMarkdownSource(root, rendered, source, codeEl)
+    }
+
+    btnSource.addEventListener('click', async () => {
+        sessionStorage.setItem(MD_SESSION_KEY, 'source')
+        setActive(true)
+        await loadPanelMarkdownSource(root, rendered, source, codeEl)
+    })
+
+    btnRendered.addEventListener('click', () => {
+        sessionStorage.setItem(MD_SESSION_KEY, 'rendered')
+        setActive(false)
+        source.classList.add('d-none')
+        rendered.classList.remove('d-none')
+    })
 }
 
 // ---- GPS map (Leaflet is already loaded on the gallery page) ----
