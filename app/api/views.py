@@ -49,6 +49,7 @@ from home.tasks import (
 from home.util.auth import create_api_token, hash_token
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte, redact_log
+from home.util.nginx import sign_hls_cookie
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
@@ -1443,6 +1444,28 @@ def stream_ping_view(request, name):
     redis.zadd(key, {session_key: int(now().timestamp())})
     redis.expire(key, 60)
     return HttpResponse()
+
+
+@require_http_methods(["GET"])
+def stream_hls_token_view(request, name):
+    """
+    View /stream/hls-token/:name/
+
+    Re-issues the hls_sig/hls_exp cookies so long-running viewers can keep
+    fetching segments past the original signing TTL. Mirrors the public/private
+    gate enforced by home.views.live_view.
+    """
+    stream = Stream.objects.filter(name=name).only("name", "public").first()
+    if not stream:
+        return JsonResponse({"detail": "not found"}, status=404)
+    if not stream.public and not request.user.is_authenticated:
+        return JsonResponse({"detail": "forbidden"}, status=403)
+    sig, exp = sign_hls_cookie(stream.name)
+    ttl = settings.HLS_SIGNED_URL_TTL_SECONDS
+    response = JsonResponse({"exp": exp})
+    response.set_cookie("hls_sig", sig, max_age=ttl, path="/hls", httponly=True, samesite="Lax")
+    response.set_cookie("hls_exp", str(exp), max_age=ttl, path="/hls", httponly=True, samesite="Lax")
+    return response
 
 
 def stream_viewers_view(request, name):

@@ -6,8 +6,12 @@ const streamName = window.location.pathname.split('/')[2]
 
 let checkInterval
 let pingInterval
+let hlsRefreshTimeout
 let player
 let lastSubscriberCount = null
+
+const HLS_REFRESH_MIN_MS = 60 * 1000
+const HLS_REFRESH_FALLBACK_MS = 30 * 60 * 1000
 
 const SUBSCRIBER_POLL_BASE_MS = 5 * 60 * 1000 // 5 minutes
 const SUBSCRIBER_POLL_JITTER_MS = 60 * 1000 // ± 1 minute
@@ -40,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     checkSubscribers()
     scheduleSubscriberCheck()
+    scheduleHlsRefresh(HLS_REFRESH_FALLBACK_MS)
     player.on('play', () => {
         console.log('%c player.on: play', 'color: Lime')
         // noinspection JSIgnoredPromiseFromCall
@@ -54,6 +59,37 @@ document.addEventListener('DOMContentLoaded', () => {
         window.openSidebar()
     })
 })
+
+function scheduleHlsRefresh(delayMs) {
+    clearTimeout(hlsRefreshTimeout)
+    hlsRefreshTimeout = setTimeout(refreshHlsToken, delayMs)
+}
+
+async function refreshHlsToken() {
+    if (!streamName) return
+    try {
+        const response = await fetch(`/api/stream/hls-token/${streamName}/`, {
+            credentials: 'same-origin',
+        })
+        if (!response.ok) {
+            scheduleHlsRefresh(HLS_REFRESH_FALLBACK_MS)
+            return
+        }
+        const { exp } = await response.json()
+        const nowSec = Math.floor(Date.now() / 1000)
+        // Refresh at half the remaining TTL; clamp so we don't spin if the server
+        // returns a short window, and don't sleep past the fallback.
+        const remainingMs = Math.max(0, (exp - nowSec) * 1000)
+        const next = Math.min(
+            HLS_REFRESH_FALLBACK_MS,
+            Math.max(HLS_REFRESH_MIN_MS, Math.floor(remainingMs / 2))
+        )
+        scheduleHlsRefresh(next)
+    } catch (error) {
+        console.error('refreshHlsToken failed:', error)
+        scheduleHlsRefresh(HLS_REFRESH_FALLBACK_MS)
+    }
+}
 
 async function pingServer() {
     console.log(`pingServer: ${streamName}:`, player)

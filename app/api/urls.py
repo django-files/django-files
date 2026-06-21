@@ -53,6 +53,7 @@ urlpatterns = [
     path("stream/create/", views.stream_create_view, name="stream-create"),
     path("stream/<str:name>/rotate-token/", views.stream_rotate_token_view, name="stream-rotate-token"),
     path("stream/ping/<str:name>/", views.stream_ping_view, name="stream-ping"),
+    path("stream/hls-token/<str:name>/", views.stream_hls_token_view, name="stream-hls-token"),
     path("stream/viewers/<str:name>/", views.stream_viewers_view, name="stream-viewers"),
     path("stream/subscribers/<str:name>/", views.stream_subscribers_view, name="stream-subscribers"),
     path("stream/commands/<str:name>/", views.stream_commands_view, name="stream-commands"),

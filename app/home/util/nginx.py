@@ -32,3 +32,13 @@ def sign_hls_cookie(stream_name: str, ttl_seconds: int = None) -> tuple[str, int
     base64_hash = base64.urlsafe_b64encode(link_hash)
     str_hash = base64_hash.decode("utf-8").rstrip("=")
     return str_hash, expiry
+
+
+def set_hls_cookies(response, stream_name: str) -> int:
+    # Attach hls_sig/hls_exp cookies to `response` so subsequent /hls/ requests pass
+    # the nginx secure_link check. Scoped to /hls + httponly. Returns expiry epoch.
+    sig, exp = sign_hls_cookie(stream_name)
+    ttl = settings.HLS_SIGNED_URL_TTL_SECONDS
+    response.set_cookie("hls_sig", sig, max_age=ttl, path="/hls", httponly=True, samesite="Lax")
+    response.set_cookie("hls_exp", str(exp), max_age=ttl, path="/hls", httponly=True, samesite="Lax")
+    return exp
