@@ -295,24 +295,6 @@ async function initDataTable(dt, skeletonFn, fetchFn, emptyMsg, zeroMsg) {
     await fetchFn()
     initDtLang(dt, emptyMsg, zeroMsg)
     if (!dt.rows().count()) dt.draw()
-    // One hidden measurement pass: re-enable auto-width, adjust, then slide in.
-    // dt-thead-ready is added inside the RAF so the header is invisible throughout
-    // the measurement phase and animates in from its settled position.
-    const table = dt.table().node()
-    const thead = table.querySelector(':scope > thead')
-    thead.style.opacity = '0'
-    thead.style.transform = 'translateY(-4px)'
-    thead.style.transition = 'none'
-    dt.settings()[0].oFeatures.bAutoWidth = true
-    dt.columns.adjust()
-    requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-            table.classList.add('dt-thead-ready')
-            thead.style.opacity = ''
-            thead.style.transform = ''
-            thead.style.transition = ''
-        })
-    )
 }
 
 function initDtLang(dt, emptyMsg, zeroMsg) {

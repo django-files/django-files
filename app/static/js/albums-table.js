@@ -2,6 +2,7 @@ import { fetchAlbums } from './api-fetch.js'
 import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import { attachSocketTableSync, socket } from './socket.js'
 import {
+    dtRevealThead,
     initPopupBtn,
     noChromeLayout,
     paginatedTableDefaults,
@@ -255,6 +256,7 @@ async function domContentLoaded() {
             : 'No albums available',
         'No matching albums found'
     )
+    dtRevealThead(albumsDataTable)
 }
 
 function renderDeleteBtn(data, type, row, _meta) {

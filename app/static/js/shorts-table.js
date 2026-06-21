@@ -1,6 +1,7 @@
 import { fetchShorts } from './api-fetch.js'
 import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import {
+    dtRevealThead,
     initPopupBtn,
     noChromeLayout,
     paginatedTableDefaults,
@@ -169,6 +170,7 @@ async function domContentLoaded() {
             : 'No short URLs available',
         'No matching short URLs found'
     )
+    dtRevealThead(shortsDataTable)
 }
 
 function renderShortLink(data, type, row) {
