@@ -113,6 +113,12 @@ def live_view(request, key):
     if not stream.public and not request.user.is_authenticated:
         return render(request, _404_TEMPLATE, status=404)
     is_owner = request.user.is_authenticated and (stream.user_id == request.user.id or request.user.is_superuser)
+    if stream.password and not is_owner:
+        supplied = request.GET.get("password")
+        if supplied != stream.password:
+            if supplied is not None:
+                messages.warning(request, "Invalid Password!")
+            return render(request, "embed/password.html", context={"stream": stream}, status=403)
     chat_user_info = {}
     if request.user.is_authenticated:
         avatar_user = stream.user if stream.user_id == request.user.id else request.user
@@ -601,6 +607,18 @@ def check_password_album_ajax(request, pk):
     log.info("check_password_album_ajax: %s", pk)
     file = get_object_or_404(Albums, pk=pk)
     if file.password != request.POST.get("password"):
+        return HttpResponse(status=401)
+    return HttpResponse(status=200)
+
+
+@require_http_methods(["POST"])
+def check_password_stream_ajax(request, name):
+    """
+    View  /ajax/check_password/stream/<str:name>/
+    """
+    log.debug("check_password_stream_ajax: %s", name)
+    stream = get_object_or_404(Stream, name=name)
+    if stream.password != request.POST.get("password"):
         return HttpResponse(status=401)
     return HttpResponse(status=200)
 

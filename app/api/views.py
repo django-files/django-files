@@ -49,7 +49,7 @@ from home.tasks import (
 from home.util.auth import create_api_token, hash_token
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte, redact_log
-from home.util.nginx import sign_hls_cookie
+from home.util.nginx import sign_hls_cookie, verify_hls_cookie
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
@@ -1454,14 +1454,28 @@ def stream_hls_token_view(request, name):
 
     Re-issues the hls_sig/hls_exp cookies so any viewer — anonymous on a public
     stream, session-authenticated user, or native client with a user API token —
-    can keep fetching segments past the original signing TTL. Only private
-    streams require an authenticated user.
+    can keep fetching segments past the original signing TTL.
+
+    Gates:
+      - private stream: requires authenticated user (session or bearer token).
+      - password-protected stream: requires either ?password=... matching, OR a
+        still-valid hls_sig/hls_exp cookie pair (rolling refresh — the existing
+        cookie is itself proof that the original password check passed).
     """
-    stream = Stream.objects.filter(name=name).only("name", "public").first()
+    stream = Stream.objects.filter(name=name).only("name", "public", "password", "user_id").first()
     if not stream:
         return JsonResponse({"detail": "not found"}, status=404)
-    if not stream.public and not request.user.is_authenticated:
-        return JsonResponse({"detail": "forbidden"}, status=403)
+    is_owner = request.user.is_authenticated and (request.user.id == stream.user_id or request.user.is_superuser)
+    if not is_owner:
+        if not stream.public and not request.user.is_authenticated:
+            return JsonResponse({"detail": "forbidden"}, status=403)
+        if stream.password:
+            supplied = request.GET.get("password")
+            existing_ok = verify_hls_cookie(
+                stream.name, request.COOKIES.get("hls_sig"), request.COOKIES.get("hls_exp")
+            )
+            if supplied != stream.password and not existing_ok:
+                return JsonResponse({"detail": "password required"}, status=403)
     sig, exp = sign_hls_cookie(stream.name)
     ttl = settings.HLS_SIGNED_URL_TTL_SECONDS
     response = JsonResponse({"exp": exp})

@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import hmac
 import time
 
 from django.conf import settings
@@ -33,6 +34,27 @@ def sign_hls_cookie(stream_name: str, ttl_seconds: int = None) -> tuple[str, int
     base64_hash = base64.urlsafe_b64encode(link_hash)
     str_hash = base64_hash.decode("utf-8").rstrip("=")
     return str_hash, expiry
+
+
+def verify_hls_cookie(stream_name: str, sig: str | None, exp: str | None) -> bool:
+    # Treat a still-valid hls_sig/hls_exp pair as proof that the bearer already
+    # passed the original auth/password gate, so refreshes can be granted without
+    # re-asking for the password.
+    if not sig or not exp:
+        return False
+    try:
+        exp_int = int(exp)
+    except TypeError, ValueError:
+        return False
+    if exp_int < int(time.time()):
+        return False
+    secure_link = "{name}{expiry} {key}".format(name=stream_name, expiry=exp_int, key=settings.SECRET_KEY).encode(
+        encoding="utf-8"
+    )
+    expected = (
+        base64.urlsafe_b64encode(hashlib.md5(secure_link).digest()).decode("utf-8").rstrip("=")  # nosec  # NOSONAR
+    )
+    return hmac.compare_digest(expected, sig)
 
 
 def set_hls_cookies(response, stream_name: str) -> int:

@@ -44,6 +44,7 @@ urlpatterns = [
     path("ajax/delete/hook/<int:pk>/", views.delete_hook_ajax, name="delete-hook"),
     path("ajax/check_password/file/<int:pk>/", views.check_password_file_ajax, name="check-password-file"),
     path("ajax/check_password/album/<int:pk>/", views.check_password_album_ajax, name="check-password-album"),
+    path("ajax/check_password/stream/<str:name>/", views.check_password_stream_ajax, name="check-password-stream"),
     path("u/<path:filename>", views.url_route_view, name="url-route"),
     path("raw/<path:filename>", views.raw_redirect_view, name="url-raw-redirect"),
 ]
