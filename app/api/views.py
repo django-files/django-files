@@ -1447,13 +1447,15 @@ def stream_ping_view(request, name):
 
 
 @require_http_methods(["GET"])
+@auth_from_token(no_fail=True)
 def stream_hls_token_view(request, name):
     """
     View /stream/hls-token/:name/
 
-    Re-issues the hls_sig/hls_exp cookies so long-running viewers can keep
-    fetching segments past the original signing TTL. Mirrors the public/private
-    gate enforced by home.views.live_view.
+    Re-issues the hls_sig/hls_exp cookies so any viewer — anonymous on a public
+    stream, session-authenticated user, or native client with a user API token —
+    can keep fetching segments past the original signing TTL. Only private
+    streams require an authenticated user.
     """
     stream = Stream.objects.filter(name=name).only("name", "public").first()
     if not stream:

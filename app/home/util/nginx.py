@@ -28,6 +28,7 @@ def sign_hls_cookie(stream_name: str, ttl_seconds: int = None) -> tuple[str, int
     secure_link = "{name}{expiry} {key}".format(name=stream_name, expiry=expiry, key=settings.SECRET_KEY).encode(
         encoding="utf-8"
     )
+    # MD5 is mandated by nginx's secure_link_md5 directive; not a free algorithm choice. NOSONAR
     link_hash = hashlib.md5(secure_link).digest()  # nosec
     base64_hash = base64.urlsafe_b64encode(link_hash)
     str_hash = base64_hash.decode("utf-8").rstrip("=")
