@@ -27,6 +27,7 @@ from settings.models import SiteSettings
 signer = TimestampSigner()
 
 log = logging.getLogger("app")
+_PLACEHOLDER_TOKEN = "<YOUR_API_TOKEN>"  # nosec
 cache_seconds = 60 * 60 * 4
 SESSION_AUTH_REQUIRED = "Session authentication required."
 
@@ -206,7 +207,7 @@ def gen_sharex(request):
         "RequestMethod": "POST",
         "RequestURL": request.build_absolute_uri(reverse("api:upload")),
         "Headers": {
-            "Authorization": request.user.authorization,
+            "Authorization": request.session.get("api_token", _PLACEHOLDER_TOKEN),
             "Expires-At": request.user.default_expire,
         },
         "Body": "MultipartFormData",
@@ -234,7 +235,7 @@ def gen_sharex_url(request):
         "RequestMethod": "POST",
         "RequestURL": request.build_absolute_uri(reverse("api:shorten")),
         "Headers": {
-            "Authorization": request.user.authorization,
+            "Authorization": request.session.get("api_token", _PLACEHOLDER_TOKEN),
         },
         "Body": "JSON",
         "URL": "{json:url}",
@@ -253,7 +254,10 @@ def gen_flameshot(request):
     """
     View  /settings/flameshot/
     """
-    context = {"site_url": request.build_absolute_uri(reverse("home:upload")), "token": request.user.authorization}
+    context = {
+        "site_url": request.build_absolute_uri(reverse("home:upload")),
+        "token": request.session.get("api_token", _PLACEHOLDER_TOKEN),
+    }
     log.debug("context: %s", context)
     message = render_to_string("scripts/flameshot.sh", context, request)
     response = HttpResponse(message)

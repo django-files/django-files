@@ -14,9 +14,10 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from home.templatetags.home_tags import is_mobile
+from home.util.auth import create_api_token, hash_token
 from home.util.requests import CustomSchemeRedirect
 from oauth.forms import LoginForm
-from oauth.models import CustomUser, DiscordWebhooks, UserInvites
+from oauth.models import ApiToken, CustomUser, DiscordWebhooks, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
@@ -190,10 +191,11 @@ def oauth_callback(request, oauth_provider: str = ""):
         post_login(request)
         messages.info(request, f"Successfully logged in via oauth. {user.username} {user.get_name()}.")
         log.debug("OAuth Login Success: %s", user)
+        token = create_api_token(user, request) if native_auth else ""
         url = get_login_redirect_url(
             request,
             native_auth=native_auth,
-            token=user.authorization,
+            token=token,
             session_key=request.session.session_key,
         )
         log.debug("url: %s", url)
@@ -332,13 +334,29 @@ def get_duo_client(request):
 def oauth_logout(request):
     """
     View  /oauth/logout/
+
+    Optional POST params for native-app logouts:
+    - ``token`` (plaintext): identifies the ApiToken to clean up.
+    - ``delete_token`` (any truthy value): when present alongside ``token``,
+      the row is hard-deleted; otherwise it is soft-disabled (is_active=False).
     """
+    user = request.user
+    if user.is_authenticated:
+        plaintext = request.POST.get("token", "").strip()
+        if plaintext:
+            qs = ApiToken.objects.filter(user=user, token_hash=hash_token(plaintext))
+            if request.POST.get("delete_token"):
+                qs.delete()
+                log.info("oauth_logout: deleted api token for user=%s", user.username)
+            else:
+                qs.filter(is_active=True).update(is_active=False)
+                log.info("oauth_logout: revoked api token for user=%s", user.username)
+
     next_url = get_next_url(request)
     log.debug("oauth_logout: next_url: %s", next_url)
     logout(request)
     request.session["login_next_url"] = next_url
     log.debug("oauth_logout: login_next_url: %s", request.session.get("login_next_url"))
-    # if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles iOS"):
     if is_mobile(request):
         return CustomSchemeRedirect("djangofiles://logout")
     messages.info(request, "Successfully logged out.")

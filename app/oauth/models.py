@@ -1,4 +1,5 @@
 import datetime
+import uuid
 
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ObjectDoesNotExist
@@ -25,7 +26,6 @@ class CustomUser(AbstractUser):
         UUID = "uuid", _("uuid")
 
     id = models.AutoField(primary_key=True)
-    authorization = models.CharField(default=rand_string, max_length=32)
     timezone = models.CharField(max_length=255, choices=TIMEZONE_CHOICES, default="America/Los_Angeles")
     default_expire = models.CharField(default="", blank=True, max_length=32)
     default_color = models.CharField(default=rand_color_hex, max_length=7)
@@ -247,3 +247,28 @@ class Google(models.Model):
     class Meta:
         verbose_name = "Google"
         verbose_name_plural = "Googles"
+
+
+class ApiToken(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="api_tokens")
+    token_hash = models.CharField(max_length=64, unique=True, db_index=True)
+    name = models.CharField(max_length=200, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    created_ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(
+        max_length=500, blank=True, help_text="User agent string from when the token was created."
+    )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def is_valid(self):
+        if not self.is_active:
+            return False
+        if self.expires_at and timezone.now() > self.expires_at:
+            return False
+        return True

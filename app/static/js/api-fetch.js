@@ -62,6 +62,13 @@ export async function fetchUsers(page, count = 50) {
     return fetchPaginated('/api/users/', page, count)
 }
 
+export async function fetchTokens(page) {
+    const url = new URL(`${globalThis.location.origin}/api/token/`)
+    if (page) url.searchParams.append('page', page)
+    const response = await fetch(url)
+    return await response.json()
+}
+
 export async function fetchFile(id) {
     let url = `${globalThis.location.origin}/api/file/${id}`
     const response = await fetch(url)

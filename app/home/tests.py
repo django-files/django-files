@@ -50,7 +50,6 @@ class TestAuthViews(TestCase):
     def setUp(self):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
         self.user = CustomUser.objects.create_superuser(username="testuser", password="12345")
-        log.info("self.user.authorization: %s", self.user.authorization)
         login = self.client.login(username="testuser", password="12345")
         log.info("login: %s", login)
 
@@ -85,7 +84,6 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         call_command("loaddata", "settings/fixtures/discord.json", verbosity=0)
         # cls.user = CustomUser.objects.create_superuser(username='testuser', password='12345')
         cls.user = CustomUser.objects.get(pk=1)
-        log.info("cls.user.authorization: %s", cls.user.authorization)
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         cls.playwright = sync_playwright().start()
         cls.browser = cls.playwright.chromium.launch()
@@ -375,7 +373,6 @@ class FilesTestCase(TestCase):
     def setUp(self):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
         self.user = CustomUser.objects.create_superuser(username="testuser", password="12345")
-        log.info("self.user.authorization: %s", self.user.authorization)
         login = self.client.login(username="testuser", password="12345")
         log.info("login: %s", login)
         site_settings = SiteSettings.objects.settings()

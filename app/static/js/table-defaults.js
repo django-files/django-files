@@ -23,7 +23,9 @@ export const selectColumn = { data: null }
 export const selectColumnDef = {
     targets: 0,
     orderable: true,
-    render: DataTable.render.select(),
+    get render() {
+        return DataTable.render.select()
+    },
     width: '32px',
     responsivePriority: 2,
     className: 'dt-select-col',

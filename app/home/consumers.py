@@ -14,10 +14,11 @@ from django.forms.models import model_to_dict
 from django_redis import get_redis_connection
 from home.models import Albums, Files, Stream
 from home.tasks import file_album_websocket, version_check
+from home.util.auth import hash_token
 from home.util.file import process_file
 from home.util.misc import redact_log
 from home.util.storage import file_rename
-from oauth.models import CustomUser
+from oauth.models import ApiToken, CustomUser
 from pytimeparse2 import parse
 from settings.models import SiteSettings
 
@@ -77,14 +78,15 @@ class HomeConsumer(AsyncWebsocketConsumer):
             # from the Authorization header so the iOS client (which sends the
             # API token as an HTTP header on the WS upgrade) joins the user group.
             headers = dict(self.scope.get("headers", []))
-            token = headers.get(b"authorization", b"").decode()
+            raw_token = headers.get(b"authorization", b"").decode()
+            token = raw_token.removeprefix("Bearer ").strip()
             if token:
-                auth_user = await database_sync_to_async(
-                    lambda: CustomUser.objects.filter(authorization=token).first()
+                api_token_obj = await database_sync_to_async(
+                    lambda: ApiToken.objects.select_related("user").filter(token_hash=hash_token(token)).first()
                 )()
-                if auth_user:
-                    self.scope["user"] = auth_user
-                    user = auth_user
+                if api_token_obj and api_token_obj.is_valid():
+                    self.scope["user"] = api_token_obj.user
+                    user = api_token_obj.user
         if hasattr(user, "id") and user.id:
             await self.channel_layer.group_add(f"user-{user.id}", self.channel_name)
         session = self.scope.get("session")
@@ -194,12 +196,17 @@ class HomeConsumer(AsyncWebsocketConsumer):
 
     def authorize(self, *, authorization: str = None, **kwargs):
         log.debug("authorize")
-        user = CustomUser.objects.filter(authorization=authorization)
-        if not user:
+        api_token_obj = (
+            ApiToken.objects.select_related("user").filter(token_hash=hash_token(authorization)).first()
+            if authorization
+            else None
+        )
+        if not api_token_obj or not api_token_obj.is_valid():
             return self._error("Invalid Authorization.")
-        self.scope["user"] = user[0]
-        async_to_sync(self.channel_layer.group_add)(f"user-{self.scope['user'].id}", self.channel_name)
-        return {"username": user[0].username, "first_name": user[0].first_name}
+        user = api_token_obj.user
+        self.scope["user"] = user
+        async_to_sync(self.channel_layer.group_add)(f"user-{user.id}", self.channel_name)
+        return {"username": user.username, "first_name": user.first_name}
 
     def paste_text(self, *, user_id: int = None, text_data: str = None, **kwargs):
         log.debug("paste_text")

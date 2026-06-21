@@ -172,6 +172,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "home.tasks.refresh_gallery_static_urls_cache",
         "schedule": crontab(minute="0", hour="9,21"),
     },
+    "flush-token-last-used": {
+        "task": "home.tasks.flush_token_last_used",
+        "schedule": crontab(minute=0),
+    },
 }
 
 
