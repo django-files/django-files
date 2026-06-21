@@ -290,10 +290,29 @@ function initCollapsibleSearch(wrapperId, inputId) {
 // eslint-disable-next-line no-unused-vars
 async function initDataTable(dt, skeletonFn, fetchFn, emptyMsg, zeroMsg) {
     skeletonFn()
+    // Freeze auto-width so each draw(false) inside fetchFn doesn't shift columns.
+    dt.settings()[0].oFeatures.bAutoWidth = false
     await fetchFn()
     initDtLang(dt, emptyMsg, zeroMsg)
     if (!dt.rows().count()) dt.draw()
-    globalThis.dispatchEvent(new Event('resize'))
+    // One hidden measurement pass: re-enable auto-width, adjust, then slide in.
+    // dt-thead-ready is added inside the RAF so the header is invisible throughout
+    // the measurement phase and animates in from its settled position.
+    const table = dt.table().node()
+    const thead = table.querySelector(':scope > thead')
+    thead.style.opacity = '0'
+    thead.style.transform = 'translateY(-4px)'
+    thead.style.transition = 'none'
+    dt.settings()[0].oFeatures.bAutoWidth = true
+    dt.columns.adjust()
+    requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+            table.classList.add('dt-thead-ready')
+            thead.style.opacity = ''
+            thead.style.transform = ''
+            thead.style.transition = ''
+        })
+    )
 }
 
 function initDtLang(dt, emptyMsg, zeroMsg) {
@@ -309,8 +328,11 @@ function initDtLang(dt, emptyMsg, zeroMsg) {
  * @param {Array<{w: number, h?: number}>} specs - per-column width/height
  * @param {Object<number, number[]>} varWidths - colIndex -> array of widths cycled per row
  */
-// eslint-disable-next-line no-unused-vars
 function buildSkeletonRows(tbody, count, specs, varWidths = {}) {
+    tbody
+        .querySelectorAll('td.dt-empty')
+        .forEach((cell) => cell.closest('tr')?.remove())
+    tbody.querySelectorAll('.dt-skeleton-row').forEach((el) => el.remove())
     const fragment = document.createDocumentFragment()
     for (let i = 0; i < count; i++) {
         const tr = document.createElement('tr')
@@ -533,3 +555,31 @@ $('#password-generate').on('click', async function (event) {
     await navigator.clipboard.writeText(password)
     show_toast('Password generated and copied!', 'info')
 })
+
+// Pre-populate skeleton rows before DataTables loads.
+// Tables opt in by setting data-skeleton-cols="w[:h],..." and
+// data-skeleton-rows="N" on the <table> element.  main.js runs before
+// the DataTables bundle, so these rows appear during bundle load time.
+// DataTables clears them on init (data:[] in paginatedTableDefaults),
+// and each table's showXSkeletons() re-adds precise per-column rows.
+;(function () {
+    document.querySelectorAll('[data-skeleton-cols]').forEach(function (table) {
+        const tbody = table.querySelector('tbody')
+        if (!tbody) return
+        const count = parseInt(
+            table.getAttribute('data-skeleton-rows') || '10',
+            10
+        )
+        const specs = table
+            .getAttribute('data-skeleton-cols')
+            .split(',')
+            .map(function (c) {
+                const parts = c.split(':')
+                return {
+                    w: parseInt(parts[0], 10),
+                    h: parseInt(parts[1] || '14', 10),
+                }
+            })
+        buildSkeletonRows(tbody, count, specs)
+    })
+})()

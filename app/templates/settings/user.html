@@ -594,7 +594,8 @@
                         <input type="search" class="form-control form-control-sm ms-auto" id="token-search" placeholder="Search tokens..." style="max-width: 250px;">
                     </div>
                     <div class="table-responsive">
-                        <table id="token-table" class="table table-hover">
+                        <table id="token-table" class="table table-hover"
+                               data-skeleton-cols="120,100,80,80,100,80,60,50" data-skeleton-rows="5">
                             <thead>
                                 <tr>
                                     <th>Name</th>
@@ -690,9 +691,9 @@
 
 {% block tail %}
     {% include 'include/datatables-scripts.html' %}
-    <script type="text/javascript" src="{% static 'dist/qr-code-styling/qr-code-styling.min.js' %}"></script>
+    <script defer src="{% static 'dist/qr-code-styling/qr-code-styling.min.js' %}"></script>
     <script type="module" src="{% static 'js/settings.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/settings-user.js' %}"></script>
+    <script defer src="{% static 'js/settings-user.js' %}"></script>
     <script type="module" src="{% static 'js/avatar.js' %}"></script>
     <script type="module" src="{% static 'js/settings-user-tokens.js' %}"></script>
 {% endblock %}

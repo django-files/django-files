@@ -29,6 +29,7 @@ let filesDataTable
 const truncator = createTruncator()
 
 const dataTablesOptions = {
+    data: [],
     paging: false,
     layout: noChromeLayout,
     order: [1, 'desc'],
@@ -310,7 +311,7 @@ export function renameFileRow(data) {
 const skeletonNameWidths = [130, 165, 210, 145, 180, 195, 120, 155, 200, 140]
 
 const _fileSkeletonSpecs = [
-    { w: 18, h: 18 },
+    { w: 18 },
     { w: 24 },
     { w: 0 }, // name — varied per row
     { w: 58 },
@@ -331,7 +332,7 @@ export function showTableSkeletons(count = 10) {
     // Remove the default DataTables empty placeholder row, plus any stale
     // skeleton rows from a previous load cycle, so only the current shimmer
     // rows remain while new rows are fetched.
-    tbody.querySelectorAll('td.dataTables_empty').forEach((cell) => {
+    tbody.querySelectorAll('td.dt-empty').forEach((cell) => {
         cell.closest('tr')?.remove()
     })
     tbody.querySelectorAll('.dt-skeleton-row').forEach((el) => el.remove())

@@ -110,6 +110,7 @@ export function syncUserFilterBtn(btnId, tplId) {
 }
 
 export const paginatedTableDefaults = {
+    data: [],
     paging: false,
     order: [0, 'desc'],
     responsive: { details: false },
@@ -126,4 +127,32 @@ export const paginatedTableDefaults = {
         [10, 25, 50, 100, 250, -1],
         [10, 25, 50, 100, 250, 'All'],
     ],
+}
+
+// Freeze DataTables' auto-width measurement during the initial bulk row insertion
+// so column widths don't shift while headers are visible.  Call before adding rows.
+export function dtFreezeAutoWidth(dt) {
+    dt.settings()[0].oFeatures.bAutoWidth = false
+}
+
+// Re-enable auto-width, do one hidden measurement, then slide the thead in.
+// Adds dt-thead-ready inside the RAF so the header is invisible throughout
+// the measurement phase and animates in from its settled position.
+// Call after all initial rows have been added.
+export function dtRevealThead(dt) {
+    const table = dt.table().node()
+    const thead = table.querySelector(':scope > thead')
+    thead.style.opacity = '0'
+    thead.style.transform = 'translateY(-4px)'
+    thead.style.transition = 'none'
+    dt.settings()[0].oFeatures.bAutoWidth = true
+    dt.columns.adjust()
+    requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+            table.classList.add('dt-thead-ready')
+            thead.style.opacity = ''
+            thead.style.transform = ''
+            thead.style.transition = ''
+        })
+    )
 }

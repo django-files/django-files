@@ -132,6 +132,14 @@ html {
 
 :root {
     --navbar-h: 40px;
+
+    /* Computed from .files-toolbar: padding-top(0.65rem) + tallest button
+     * (0.47rem×2 + 1rem line-height = 1.94rem) + padding-bottom(0.5rem) +
+     * border-bottom(1px).  JS observeToolbarHeight() overrides this on the
+     * container element with the measured value, but setting it here means
+     * the first paint uses the correct value and no reflow shift occurs. */
+    --toolbar-h: calc(3.09rem + 2px);
+
     --toolbar-glass-bg: rgba(0, 0, 0, 0.3);
     --toolbar-glass-border: 1px ridge rgba(66 69 73 / 100%);
     --toolbar-glass-blur: blur(6px);

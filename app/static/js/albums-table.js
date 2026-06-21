@@ -287,7 +287,7 @@ const _albumSkeletonNameWidths = [140, 175, 110, 195, 130, 160, 105, 155]
 // Column widths [px] matching the 8 header columns:
 // select, id, name, date, expire, views, maxviews, delete
 const _albumSkeletonSpecs = [
-    { w: 18, h: 18 },
+    { w: 18 },
     { w: 24 },
     { w: 0 }, // name — varied per row
     { w: 128 },
