@@ -135,7 +135,7 @@ function show_toast(message, bsClass = 'success', delay = '6000') {
     } else {
         body.append(message)
     }
-    element.toast({ delay: parseInt(delay) })
+    element.toast({ delay: Number.parseInt(delay) })
     element.appendTo('.toast-container').toast('show')
 }
 
@@ -548,20 +548,14 @@ $('#password-generate').on('click', async function (event) {
     document.querySelectorAll('[data-skeleton-cols]').forEach(function (table) {
         const tbody = table.querySelector('tbody')
         if (!tbody) return
-        const count = parseInt(
-            table.getAttribute('data-skeleton-rows') || '10',
-            10
-        )
-        const specs = table
-            .getAttribute('data-skeleton-cols')
-            .split(',')
-            .map(function (c) {
-                const parts = c.split(':')
-                return {
-                    w: parseInt(parts[0], 10),
-                    h: parseInt(parts[1] || '14', 10),
-                }
-            })
+        const count = Number.parseInt(table.dataset.skeletonRows || '10', 10)
+        const specs = table.dataset.skeletonCols.split(',').map(function (c) {
+            const parts = c.split(':')
+            return {
+                w: Number.parseInt(parts[0], 10),
+                h: Number.parseInt(parts[1] || '14', 10),
+            }
+        })
         buildSkeletonRows(tbody, count, specs)
     })
 })()
