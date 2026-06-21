@@ -103,6 +103,8 @@ AWS_S3_FILE_OVERWRITE = config("AWS_S3_FILE_OVERWRITE", False, bool)
 SIGNED_URL_TTL_SECONDS = config("SIGNED_URL_TTL_SECONDS", 14400, int)
 SIGNED_DOWNLOAD_URL_TTL_SECONDS = config("SIGNED_DOWNLOAD_URL_TTL_SECONDS", 900, int)
 SIGNED_META_URL_TTL_SECONDS = config("SIGNED_META_URL_TTL_SECONDS", 86400, int)
+# TTL for HLS access cookies (manifest + segment fetches for a single viewing session).
+HLS_SIGNED_URL_TTL_SECONDS = config("HLS_SIGNED_URL_TTL_SECONDS", 21600, int)
 # Fraction of the signing TTL we keep a generated URL in the server-side cache,
 # so any cached URL we serve still has >= (1 - ratio) of its signing window left.
 SIGNED_URL_REFRESH_RATIO = config("SIGNED_URL_REFRESH_RATIO", 0.5, float)

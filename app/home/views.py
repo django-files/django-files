@@ -25,6 +25,7 @@ from django.views.decorators.vary import vary_on_cookie
 from home.models import Albums, Files, ShortURLs, Stream
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.misc import redact_log
+from home.util.nginx import sign_hls_cookie
 from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
 from oauth.forms import UserForm
@@ -141,7 +142,14 @@ def live_view(request, key):
         context["rtmp_host_is_custom"] = rtmp_host_is_custom
         context["cdn_detected"] = None if rtmp_host_is_custom else detect_cdn(request)
         context["stream_token"] = stream.stream_token
-    return render(request, "live.html", context)
+    response = render(request, "live.html", context)
+    sig, exp = sign_hls_cookie(stream.name)
+    ttl = django_settings.HLS_SIGNED_URL_TTL_SECONDS
+    # Scope to /hls so the cookie rides along with manifest + segment fetches but is
+    # not sent on unrelated requests. httponly so JS can't exfiltrate it.
+    response.set_cookie("hls_sig", sig, max_age=ttl, path="/hls", httponly=True, samesite="Lax")
+    response.set_cookie("hls_exp", str(exp), max_age=ttl, path="/hls", httponly=True, samesite="Lax")
+    return response
 
 
 @vary_on_cookie
