@@ -77,6 +77,41 @@ ports:
 
 **Home network** — if the server is behind a home router, forward TCP port 1935 to the server's local IP in your router's port forwarding settings. OBS should use your public IP or DDNS hostname if external, otherwise may use your django-files server's private ip.
 
+## Private Streams and Passwords
+
+Two independent gates control who can watch a stream. They compose:
+
+| Setting        | Who can watch                                             |
+| -------------- | --------------------------------------------------------- |
+| `public=true`  | Anyone with the link                                      |
+| `public=false` | Only signed-in users                                      |
+| `password` set | Viewer must enter the password (in addition to the above) |
+
+When a viewer first loads `/live/<name>/`, the server issues a short-lived signed cookie that authorizes the HLS manifest and segment fetches at the CDN/nginx layer. Without it, direct requests to `/hls/...` return `403`. The cookie auto-refreshes in the background so long viewing sessions don't drop.
+
+### Setting or changing the password
+
+Owners can set a password on the stream page or pass it on the OBS Server URL:
+
+```text
+rtmp://your-domain.com/live?token=YOUR_AUTH_TOKEN&password=hunter2
+```
+
+Share the password out-of-band with viewers — they'll be prompted for it on first load.
+
+### Watching from a native client
+
+Native clients (e.g. the Django Files mobile app, custom players) call:
+
+```text
+GET /api/stream/hls-token/<stream-name>/?password=<password>
+Authorization: Bearer <YOUR_AUTH_TOKEN>
+```
+
+- `Authorization` is only required for private streams; public streams accept anonymous calls.
+- `?password=…` is only required when the stream has a password set.
+- The response sets `hls_sig` / `hls_exp` cookies that the player must include on subsequent `/hls/...` fetches. The same endpoint refreshes them — call it again at roughly half the cookie TTL.
+
 ## Finding Your Auth Token
 
 Go to **Settings → Account** in the web UI. Your authorization token is listed there. Keep it secret — anyone with your token can stream to your account.
