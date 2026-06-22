@@ -63,16 +63,7 @@
 /* Fix height constraint to prevent video component height changes */
 html,
 body {
-    height: 100vh;
     overflow: hidden;
-    padding-top: var(--navbar-h);
-}
-
-@supports (padding-top: env(safe-area-inset-top)) {
-    html,
-    body {
-        padding-top: calc(var(--navbar-h) + env(safe-area-inset-top));
-    }
 }
 
 main {
