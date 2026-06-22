@@ -28,14 +28,29 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v6
 
-      - name: "Docker Tags"
+      - name: "Expand Override Tags"
+        id: override
+        run: |
+          tags=""
+          if [ -n "${{ inputs.tags }}" ]; then
+            tags=$(printf 'type=raw,value=%s\n' $(echo "${{ inputs.tags }}" | tr ',' ' '))
+          fi
+          {
+            echo "tags<<EOF"
+            echo "$tags"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: "Docker Meta"
         id: tags
-        uses: cssnr/docker-tags-action@v2
-        continue-on-error: true
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
         with:
+          images: ${{ env.REGISTRY }}/${{ env.USER }}/${{ env.REPO }}
           tags: |
-            ${{ inputs.tags }}
-            ${{ github.event.release.prerelease && env.PRE_TAG || '' }}
+            type=raw,value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' && github.event.release.tag_name != '' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+            type=raw,value=${{ env.PRE_TAG }},enable=${{ github.event_name == 'release' && github.event.release.prerelease }}
+            ${{ steps.override.outputs.tags }}
 
       - name: "Debug Docker Tags"
         continue-on-error: true
