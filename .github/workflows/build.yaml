@@ -30,10 +30,12 @@ jobs:
 
       - name: "Expand Override Tags"
         id: override
+        env:
+          INPUT_TAGS: ${{ inputs.tags }}
         run: |
           tags=""
-          if [ -n "${{ inputs.tags }}" ]; then
-            tags=$(printf 'type=raw,value=%s\n' $(echo "${{ inputs.tags }}" | tr ',' ' '))
+          if [ -n "$INPUT_TAGS" ]; then
+            tags=$(printf 'type=raw,value=%s\n' $(echo "$INPUT_TAGS" | tr ',' ' '))
           fi
           {
             echo "tags<<EOF"
@@ -54,10 +56,14 @@ jobs:
 
       - name: "Debug Docker Tags"
         continue-on-error: true
+        env:
+          INPUT_TAGS: ${{ inputs.tags }}
+          META_TAGS: ${{ steps.tags.outputs.tags }}
+          META_LABELS: ${{ steps.tags.outputs.labels }}
         run: |
-          echo inputs.tags: '${{ inputs.tags }}'
-          echo -e "tags:\n${{ steps.tags.outputs.tags }}"
-          echo -e "labels:\n${{ steps.tags.outputs.labels }}"
+          echo "inputs.tags: $INPUT_TAGS"
+          printf 'tags:\n%s\n' "$META_TAGS"
+          printf 'labels:\n%s\n' "$META_LABELS"
 
       - name: "Set App Version"
         run: |

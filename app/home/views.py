@@ -101,6 +101,29 @@ def home_view(request):
     return render(request, "home.html", context)
 
 
+def _stream_password_gate(request, stream, is_owner):
+    if not stream.password or is_owner:
+        return None
+    supplied = request.GET.get("password")
+    if supplied == stream.password:
+        return None
+    if supplied is not None:
+        messages.warning(request, "Invalid Password!")
+    return render(request, "embed/password.html", context={"stream": stream}, status=403)
+
+
+def _chat_user_info(request, stream):
+    if not request.user.is_authenticated:
+        return {}
+    avatar_user = stream.user if stream.user_id == request.user.id else request.user
+    return {
+        "user_id": request.user.id,
+        "username": request.user.username,
+        "display_name": request.user.get_name(),
+        "avatar_url": avatar_user.get_avatar_url(),
+    }
+
+
 @vary_on_cookie
 def live_view(request, key):
     """
@@ -113,21 +136,9 @@ def live_view(request, key):
     if not stream.public and not request.user.is_authenticated:
         return render(request, _404_TEMPLATE, status=404)
     is_owner = request.user.is_authenticated and (stream.user_id == request.user.id or request.user.is_superuser)
-    if stream.password and not is_owner:
-        supplied = request.GET.get("password")
-        if supplied != stream.password:
-            if supplied is not None:
-                messages.warning(request, "Invalid Password!")
-            return render(request, "embed/password.html", context={"stream": stream}, status=403)
-    chat_user_info = {}
-    if request.user.is_authenticated:
-        avatar_user = stream.user if stream.user_id == request.user.id else request.user
-        chat_user_info = {
-            "user_id": request.user.id,
-            "username": request.user.username,
-            "display_name": request.user.get_name(),
-            "avatar_url": avatar_user.get_avatar_url(),
-        }
+    if gate := _stream_password_gate(request, stream, is_owner):
+        return gate
+    chat_user_info = _chat_user_info(request, stream)
     site_url = site_settings_processor(request)["site_settings"]["site_url"]
     context = {
         "key": key,
