@@ -21,6 +21,19 @@ Required context: stream, rtmp_url.
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>
+            <a role="button" class="dropdown-item stream-copy-vlc-url-btn"
+               data-stream-name="{{ stream.name }}"
+               data-enabled="{{ stream.playback_token|yesno:'true,false' }}">
+                <i class="fa-solid fa-{% if stream.playback_token %}link{% else %}link-slash{% endif %} fa-fw me-2 link-info"></i>{% if stream.playback_token %}Copy Raw Link{% else %}Enable Raw Link{% endif %}</a>
+        </li>
+        <li class="stream-disable-vlc-url-item {% if not stream.playback_token %}d-none{% endif %}"
+            data-stream-name="{{ stream.name }}">
+            <a role="button" class="dropdown-item stream-disable-vlc-url-btn"
+               data-stream-name="{{ stream.name }}">
+                <i class="fa-solid fa-ban fa-fw me-2"></i>Disable Raw Link</a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
             <a role="button" class="dropdown-item stream-toggle-public-btn"
                data-stream-name="{{ stream.name }}"
                data-public="{{ stream.public|yesno:'true,false' }}">

@@ -52,6 +52,18 @@ urlpatterns = [
     path("stream/done/", views.stream_done_view, name="stream-done"),
     path("stream/create/", views.stream_create_view, name="stream-create"),
     path("stream/<str:name>/rotate-token/", views.stream_rotate_token_view, name="stream-rotate-token"),
+    path(
+        "stream/<str:name>/enable-playback-token/",
+        views.stream_enable_playback_token_view,
+        name="stream-enable-playback-token",
+    ),
+    path(
+        "stream/<str:name>/disable-playback-token/",
+        views.stream_disable_playback_token_view,
+        name="stream-disable-playback-token",
+    ),
+    path("stream/<str:name>/vlc-url/", views.stream_vlc_url_view, name="stream-vlc-url"),
+    path("stream/hls-auth/", views.stream_hls_auth_view, name="stream-hls-auth"),
     path("stream/ping/<str:name>/", views.stream_ping_view, name="stream-ping"),
     path("stream/hls-token/<str:name>/", views.stream_hls_token_view, name="stream-hls-token"),
     path("stream/viewers/<str:name>/", views.stream_viewers_view, name="stream-viewers"),

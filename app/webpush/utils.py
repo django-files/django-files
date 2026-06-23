@@ -15,7 +15,13 @@ def send_notification_to_user(user, payload, ttl=0):
 def send_notification_to_group(group_name, payload, ttl=0, exclude_user_id=None):
     from .models import Group
 
-    push_infos = Group.objects.get(name=group_name).webpush_info.select_related("subscription")
+    # Group rows are created lazily when a user saves a push subscription, so a
+    # group with no subscribers simply doesn't exist yet — treat that as a no-op
+    # instead of crashing the Celery task.
+    group = Group.objects.filter(name=group_name).first()
+    if group is None:
+        return
+    push_infos = group.webpush_info.select_related("subscription")
 
     # Exclude the current user from receiving notifications if they are part of the target group.
     # This prevents users from receiving redundant notifications when they trigger an event themselves.

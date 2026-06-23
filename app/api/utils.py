@@ -129,7 +129,13 @@ def extract_streams(q: Stream.objects, user_id: int = None, rtmp_host: str = Non
             data["subscriber_count"] = PushInformation.objects.filter(group__name=stream.name).count()
         if not is_owner:
             data.pop("stream_token", None)
-        elif rtmp_host:
-            data["rtmp_url"] = f"rtmp://{rtmp_host}/live?stream_token={stream.stream_token}"
+            data.pop("playback_token", None)
+        else:
+            # Don't ship the raw playback_token in row payloads; the VLC URL is
+            # fetched on demand via /api/stream/<name>/vlc-url/. Expose only the
+            # enabled bit so the menu can render the right action.
+            data["playback_enabled"] = bool(data.pop("playback_token", ""))
+            if rtmp_host:
+                data["rtmp_url"] = f"rtmp://{rtmp_host}/live?stream_token={stream.stream_token}"
         streams.append(data)
     return streams

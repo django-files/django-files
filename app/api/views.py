@@ -5,6 +5,7 @@ import logging
 import operator
 import os
 import random
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -1381,6 +1382,11 @@ def stream_create_view(request):
     name = request.POST.get("name", "").strip()
     if not name:
         return JsonResponse({"error": "Stream name is required."}, status=400)
+    if not re.match(r"^[A-Za-z0-9_-]{1,64}$", name):
+        return JsonResponse(
+            {"error": "Stream name must be 1–64 chars of letters, numbers, hyphen, or underscore."},
+            status=400,
+        )
     title = request.POST.get("title", "").strip() or name
     description = request.POST.get("description", "").strip()
 
@@ -1408,6 +1414,107 @@ def stream_rotate_token_view(request, name):
     stream.stream_token = rand_string()
     stream.save(update_fields=["stream_token"])
     return JsonResponse({"name": stream.name, "stream_token": stream.stream_token})
+
+
+def _vlc_url_for(request, stream):
+    site_url = site_settings_processor(request)["site_settings"].get("site_url")
+    base = site_url.rstrip("/") if site_url else request.build_absolute_uri("/").rstrip("/")
+    return f"{base}/hls-token/{stream.name}.m3u8?token={stream.playback_token}"
+
+
+@require_http_methods(["POST"])
+@login_required
+def stream_enable_playback_token_view(request, name):
+    """
+    View /api/stream/<name>/enable-playback-token/
+    Generates (or regenerates) the per-stream playback_token used by native
+    players via /hls-token/. Owner only. Calling on an already-enabled stream
+    rotates the token and invalidates every previously-issued raw link.
+    """
+    stream = Stream.objects.filter(name=name).first()
+    if not stream:
+        return JsonResponse({"error": "Stream not found."}, status=404)
+    if stream.user_id != request.user.id and not request.user.is_superuser:
+        return JsonResponse({"error": "Forbidden."}, status=403)
+    stream.playback_token = rand_string()
+    stream.save(update_fields=["playback_token"])
+    return JsonResponse(
+        {
+            "name": stream.name,
+            "playback_token": stream.playback_token,
+            "enabled": True,
+            "url": _vlc_url_for(request, stream),
+        }
+    )
+
+
+@require_http_methods(["POST"])
+@login_required
+def stream_disable_playback_token_view(request, name):
+    """
+    View /api/stream/<name>/disable-playback-token/
+    Clears the playback_token, disabling /hls-token/ playback for this stream.
+    Owner only. Existing raw links immediately stop working (after nginx auth
+    cache TTL expires for already-validated tokens).
+    """
+    stream = Stream.objects.filter(name=name).first()
+    if not stream:
+        return JsonResponse({"error": "Stream not found."}, status=404)
+    if stream.user_id != request.user.id and not request.user.is_superuser:
+        return JsonResponse({"error": "Forbidden."}, status=403)
+    stream.playback_token = ""
+    stream.save(update_fields=["playback_token"])
+    return JsonResponse({"name": stream.name, "playback_token": "", "enabled": False})
+
+
+@require_http_methods(["GET"])
+@login_required
+def stream_vlc_url_view(request, name):
+    """
+    View /api/stream/<name>/vlc-url/
+
+    Owner-only. Returns an absolute /hls-token/<name>.m3u8?token=<playback_token>
+    "raw link" for HLS players (VLC, ffmpeg, hls.js standalone, etc.) that can't
+    carry browser cookies. The link is valid until the owner rotates or disables
+    the token. Returns 409 if raw-link playback has not been enabled on this
+    stream.
+
+    playback_token is independent of stream_token (RTMP ingest), so leaking a
+    raw link never grants the ability to publish to the stream.
+    """
+    stream = Stream.objects.filter(name=name).only("name", "user_id", "playback_token").first()
+    # Return 404 for both missing and non-owner so this endpoint can't be used
+    # to enumerate which private stream names exist.
+    if not stream or (stream.user_id != request.user.id and not request.user.is_superuser):
+        return JsonResponse({"error": "Stream not found."}, status=404)
+    if not stream.playback_token:
+        return JsonResponse({"error": "Raw-link playback is disabled.", "enabled": False}, status=409)
+    return JsonResponse({"name": stream.name, "url": _vlc_url_for(request, stream), "enabled": True})
+
+
+@require_http_methods(["GET", "HEAD"])
+def stream_hls_auth_view(request):
+    """
+    View /api/stream/hls-auth/?name=<name>&token=<token>
+
+    Internal endpoint hit by nginx's auth_request for /hls-token/ requests.
+    Returns 204 if the supplied playback_token matches the named stream and the
+    stream has native-player playback enabled (token non-empty); else 403.
+
+    Meant to be reached only via nginx's internal subrequest (loopback). Empty
+    tokens are explicitly rejected so a disabled stream cannot be matched by a
+    request that also omits its token (defense in depth — the lookup below
+    already requires a non-empty value to match a non-empty column).
+
+    Nginx caches the response keyed by (token, name) so Django is hit at most
+    once per cache window per viewer, not per segment.
+    """
+    name = request.GET.get("name") or ""
+    token = request.GET.get("token") or ""
+    if not name or not token:
+        return HttpResponse(status=403)
+    ok = Stream.objects.filter(name=name, playback_token=token).exists()
+    return HttpResponse(status=204 if ok else 403)
 
 
 @csrf_exempt

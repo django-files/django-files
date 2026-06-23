@@ -83,6 +83,114 @@ export function openDeleteStreamsModal(names) {
     }
 }
 
+async function copyVlcUrlForStream(btn, name) {
+    try {
+        const res = await fetch(
+            `/api/stream/${encodeURIComponent(name)}/vlc-url/`
+        )
+        if (!res.ok) {
+            if (typeof show_toast === 'function')
+                show_toast('Failed to fetch raw link.', 'danger', '4000')
+            return false
+        }
+        const { url } = await res.json()
+        if (!url) return false
+        await navigator.clipboard.writeText(url)
+        const icon = btn.querySelector('i')
+        if (icon) {
+            const orig = icon.className
+            icon.className = 'fa-solid fa-check fa-fw me-2'
+            setTimeout(() => {
+                icon.className = orig
+            }, 2000)
+        }
+        if (typeof show_toast === 'function')
+            show_toast('Raw link copied to clipboard.', 'info', '3000')
+        return true
+    } catch {
+        if (typeof show_toast === 'function')
+            show_toast('Failed to copy raw link.', 'danger', '4000')
+        return false
+    }
+}
+
+async function onCopyVlcUrl(btn) {
+    const name = btn.dataset.streamName
+    if (!name) return
+    const enabled = btn.dataset.enabled === 'true'
+    if (enabled) {
+        await copyVlcUrlForStream(btn, name)
+        return
+    }
+    // Disabled → enable (mint a fresh token), then copy.
+    try {
+        const res = await fetch(
+            `/api/stream/${encodeURIComponent(name)}/enable-playback-token/`,
+            { method: 'POST', headers: { 'X-CSRFToken': csrfToken() } }
+        )
+        if (!res.ok) {
+            if (typeof show_toast === 'function')
+                show_toast('Failed to enable raw link.', 'danger', '4000')
+            return
+        }
+        const { url } = await res.json()
+        if (url) {
+            await navigator.clipboard.writeText(url)
+            if (typeof show_toast === 'function')
+                show_toast('Raw link enabled and copied.', 'success', '4000')
+        }
+        syncVlcButtons(name, true)
+    } catch {
+        if (typeof show_toast === 'function')
+            show_toast('Failed to enable raw link.', 'danger', '4000')
+    }
+}
+
+async function onDisableVlcUrl(btn) {
+    const name = btn.dataset.streamName
+    if (!name) return
+    try {
+        const res = await fetch(
+            `/api/stream/${encodeURIComponent(name)}/disable-playback-token/`,
+            { method: 'POST', headers: { 'X-CSRFToken': csrfToken() } }
+        )
+        if (!res.ok) {
+            if (typeof show_toast === 'function')
+                show_toast('Failed to disable raw link.', 'danger', '4000')
+            return
+        }
+        syncVlcButtons(name, false)
+        if (typeof show_toast === 'function')
+            show_toast('Raw link disabled.', 'info', '3000')
+    } catch {
+        if (typeof show_toast === 'function')
+            show_toast('Failed to disable raw link.', 'danger', '4000')
+    }
+}
+
+function syncVlcButtons(name, enabled) {
+    const copySel = `.stream-copy-vlc-url-btn[data-stream-name="${CSS.escape(name)}"]`
+    document.querySelectorAll(copySel).forEach((btn) => {
+        btn.dataset.enabled = enabled ? 'true' : 'false'
+        const icon = btn.querySelector('i')
+        if (icon) {
+            icon.className = `fa-solid fa-${enabled ? 'link' : 'link-slash'} fa-fw me-2 link-info`
+        }
+        const label = enabled ? 'Copy Raw Link' : 'Enable Raw Link'
+        const textNode = [...btn.childNodes].find(
+            (n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()
+        )
+        if (textNode) textNode.textContent = label
+        else btn.append(label)
+    })
+    // The "Disable Raw Link" wrapper <li> is always rendered; show/hide it so a
+    // newly-enabled stream gets the action without needing a re-render.
+    const disableSel = `.stream-disable-vlc-url-item[data-stream-name="${CSS.escape(name)}"]`
+    document.querySelectorAll(disableSel).forEach((li) => {
+        li.classList.toggle('d-none', !enabled)
+    })
+}
+
 async function onCopyRtmp(btn) {
     const url = btn.dataset.rtmpUrl
     if (!url) return
@@ -163,6 +271,8 @@ function onDelete(btn) {
 const HANDLERS = {
     'stream-copy-rtmp-btn': onCopyRtmp,
     'stream-rotate-token-btn': onRotateToken,
+    'stream-copy-vlc-url-btn': onCopyVlcUrl,
+    'stream-disable-vlc-url-btn': onDisableVlcUrl,
     'stream-toggle-public-btn': onTogglePublic,
     'stream-delete-btn': onDelete,
 }

@@ -10,6 +10,15 @@ import {
     syncPopupBtnActive,
 } from './table-defaults.js'
 
+function escapeHtmlAttr(v) {
+    return String(v ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+}
+
 const streamsTable = $('#streams-table')
 
 export const faKey = document.querySelector('div.d-none > .fa-key')
@@ -195,7 +204,7 @@ function getStreamLink(data, type, row) {
 function getStreamTitle(data, type, row) {
     if (type === 'display') {
         if (row.is_owner) {
-            return `<span class="stream-editable rounded-1 text-break d-inline-block align-middle" contenteditable="true" data-stream-name="${row.name}">${data}</span>`
+            return `<span class="stream-editable rounded-1 text-break d-inline-block align-middle" contenteditable="true" data-stream-name="${escapeHtmlAttr(row.name)}">${escapeHtmlAttr(data)}</span>`
         }
         return `<span class="text-break">${data}</span>`
     }
@@ -247,15 +256,28 @@ function getActions(data, type, row) {
     if (type === 'display') {
         const publicIcon = row.public ? 'lock' : 'globe'
         const publicLabel = row.public ? 'Make Private' : 'Make Public'
+        const vlcEnabled = !!row.playback_enabled
+        const vlcLabel = vlcEnabled ? 'Copy Raw Link' : 'Enable Raw Link'
+        const vlcIcon = vlcEnabled ? 'link' : 'link-slash'
+        const safeName = escapeHtmlAttr(row.name)
+        const vlcDisableItem = `<li class="stream-disable-vlc-url-item ${vlcEnabled ? '' : 'd-none'}" data-stream-name="${safeName}">
+                <a class="dropdown-item stream-disable-vlc-url-btn" role="button" data-stream-name="${safeName}">
+                    <i class="fa-solid fa-ban me-2"></i>Disable Raw Link
+                </a></li>`
         const ownerItems = row.is_owner
-            ? `<li><a class="dropdown-item stream-copy-rtmp-btn" role="button" data-stream-name="${row.name}" data-rtmp-url="${row.rtmp_url || ''}">
+            ? `<li><a class="dropdown-item stream-copy-rtmp-btn" role="button" data-stream-name="${safeName}" data-rtmp-url="${escapeHtmlAttr(row.rtmp_url)}">
                     <i class="fa-solid fa-satellite-dish me-2"></i>Copy RTMP URL
                 </a></li>
-                <li><a class="dropdown-item stream-rotate-token-btn" role="button" data-stream-name="${row.name}">
+                <li><a class="dropdown-item stream-rotate-token-btn" role="button" data-stream-name="${safeName}">
                     <i class="fa-solid fa-arrows-rotate me-2"></i>Regenerate Token
                 </a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item stream-toggle-public-btn" role="button" data-stream-name="${row.name}" data-public="${row.public}">
+                <li><a class="dropdown-item stream-copy-vlc-url-btn" role="button" data-stream-name="${safeName}" data-enabled="${escapeHtmlAttr(vlcEnabled)}">
+                    <i class="fa-solid fa-${vlcIcon} me-2"></i>${vlcLabel}
+                </a></li>
+                ${vlcDisableItem}
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item stream-toggle-public-btn" role="button" data-stream-name="${safeName}" data-public="${escapeHtmlAttr(row.public)}">
                     <i class="fa-solid fa-${publicIcon} me-2"></i>${publicLabel}
                 </a></li>
                 <li><hr class="dropdown-divider"></li>`
@@ -267,7 +289,7 @@ function getActions(data, type, row) {
                 </button>
                 <ul class="dropdown-menu">
                     ${ownerItems}
-                    <li><a class="dropdown-item stream-delete-btn link-danger" role="button" data-hook-id="${row.name}">
+                    <li><a class="dropdown-item stream-delete-btn link-danger" role="button" data-hook-id="${safeName}">
                         <i class="fa-regular fa-trash-can me-2"></i>Delete
                     </a></li>
                 </ul>
