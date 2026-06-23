@@ -33,13 +33,14 @@ jobs:
         env:
           INPUT_TAGS: ${{ inputs.tags }}
         run: |
-          tags=""
-          if [ -n "$INPUT_TAGS" ]; then
-            tags=$(printf 'type=raw,value=%s\n' $(echo "$INPUT_TAGS" | tr ',' ' '))
-          fi
           {
             echo "tags<<EOF"
-            echo "$tags"
+            if [ -n "$INPUT_TAGS" ]; then
+              IFS=',' read -ra parts <<< "$INPUT_TAGS"
+              for t in "${parts[@]}"; do
+                printf 'type=raw,value=%s\n' "$t"
+              done
+            fi
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
