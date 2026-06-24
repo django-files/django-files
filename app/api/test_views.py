@@ -263,18 +263,18 @@ class HlsAuthRequestTestCase(TestCase):
     def test_valid_token_allows_private_stream(self):
         self.private_stream.playback_token = "tok-abc"  # nosec B105
         self.private_stream.save(update_fields=["playback_token"])
-        r = self._auth(name="priv", token="tok-abc")
+        r = self._auth(name="priv", token="tok-abc")  # nosec B106
         self.assertEqual(r.status_code, 204)
 
     def test_wrong_token_rejected(self):
         self.private_stream.playback_token = "tok-abc"  # nosec B105
         self.private_stream.save(update_fields=["playback_token"])
-        r = self._auth(name="priv", token="tok-xyz")
+        r = self._auth(name="priv", token="tok-xyz")  # nosec B106
         self.assertEqual(r.status_code, 403)
 
     def test_empty_token_does_not_match_disabled_stream(self):
         # private_stream.playback_token defaults to "" — empty must not match empty.
-        r = self._auth(name="priv", token="")
+        r = self._auth(name="priv", token="")  # nosec B106
         self.assertEqual(r.status_code, 403)
 
     def test_valid_cookie_allows_private_stream(self):
