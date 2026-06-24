@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 default="",
                 help_text="Per-stream raw-link token used by HLS players (VLC, ffmpeg, etc.) "
-                "to fetch the stream via /hls-token/. Empty = raw-link playback disabled. "
+                "to fetch the stream via /hls/?token=. Empty = raw-link playback disabled. "
                 "Independent of stream_token (RTMP ingest).",
                 max_length=32,
                 verbose_name="Playback Token",

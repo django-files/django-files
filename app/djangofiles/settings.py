@@ -54,6 +54,9 @@ print(f"SITE_URL: {SITE_URL}")
 RTMP_HOST = config("RTMP_HOST", "")
 print(f"RTMP_HOST: {RTMP_HOST}")
 
+RTMP_PORT = config("RTMP_PORT", 1935, int)
+print(f"RTMP_PORT: {RTMP_PORT}")
+
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", "*", Csv())
 SESSION_COOKIE_AGE = config("SESSION_COOKIE_AGE", 3600 * 24 * 7 * 4, int)
 SESSION_MOBILE_AGE = config("SESSION_MOBILE_AGE", 3600 * 24 * 7 * 26, int)

@@ -34,6 +34,7 @@ from django.db.models.fields.json import KeyTextTransform
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.utils.crypto import constant_time_compare
 from django.utils.timezone import localtime, now
 from django.views.decorators.cache import cache_control, cache_page, never_cache
 from django.views.decorators.csrf import csrf_exempt
@@ -1421,7 +1422,7 @@ def stream_rotate_token_view(request, name):
 def _vlc_url_for(request, stream):
     site_url = site_settings_processor(request)["site_settings"].get("site_url")
     base = site_url.rstrip("/") if site_url else request.build_absolute_uri("/").rstrip("/")
-    return f"{base}/hls-token/{stream.name}.m3u8?token={stream.playback_token}"
+    return f"{base}/hls/{stream.name}.m3u8?token={stream.playback_token}"
 
 
 @require_http_methods(["POST"])
@@ -1430,7 +1431,7 @@ def stream_enable_playback_token_view(request, name):
     """
     View /api/stream/<name>/enable-playback-token/
     Generates (or regenerates) the per-stream playback_token used by native
-    players via /hls-token/. Owner only. Calling on an already-enabled stream
+    players via /hls/?token=. Owner only. Calling on an already-enabled stream
     rotates the token and invalidates every previously-issued raw link.
     """
     stream = Stream.objects.filter(name=name).first()
@@ -1455,7 +1456,7 @@ def stream_enable_playback_token_view(request, name):
 def stream_disable_playback_token_view(request, name):
     """
     View /api/stream/<name>/disable-playback-token/
-    Clears the playback_token, disabling /hls-token/ playback for this stream.
+    Clears the playback_token, disabling raw-link playback for this stream.
     Owner only. Existing raw links immediately stop working (after nginx auth
     cache TTL expires for already-validated tokens).
     """
@@ -1478,7 +1479,7 @@ def stream_vlc_url_view(request, name):
     """
     View /api/stream/<name>/vlc-url/
 
-    Owner-only. Returns an absolute /hls-token/<name>.m3u8?token=<playback_token>
+    Owner-only. Returns an absolute /hls/<name>.m3u8?token=<playback_token>
     "raw link" for HLS players (VLC, ffmpeg, hls.js standalone, etc.) that can't
     carry browser cookies. The link is valid until the owner rotates or disables
     the token. Returns 409 if raw-link playback has not been enabled on this
@@ -1500,26 +1501,42 @@ def stream_vlc_url_view(request, name):
 @require_http_methods(["GET", "HEAD"])
 def stream_hls_auth_view(request):
     """
-    View /api/stream/hls-auth/?name=<name>&token=<token>
+    View /api/stream/hls-auth/?name=<name>&token=<token>&sig=<sig>&exp=<exp>
 
-    Internal endpoint hit by nginx's auth_request for /hls-token/ requests.
-    Returns 204 if the supplied playback_token matches the named stream and the
-    stream has native-player playback enabled (token non-empty); else 403.
+    Internal endpoint hit by nginx's auth_request for every /hls/ request.
+    Returns 204 if any of the following holds, else 403:
 
-    Meant to be reached only via nginx's internal subrequest (loopback). Empty
-    tokens are explicitly rejected so a disabled stream cannot be matched by a
-    request that also omits its token (defense in depth — the lookup below
-    already requires a non-empty value to match a non-empty column).
+      1. The hls_sig/hls_exp cookie pair (forwarded as ?sig/?exp) is a valid
+         signature for the stream. Cookies are issued by live_view only after
+         the viewer passes the auth + password gate, so a valid cookie proves
+         the bearer already cleared those checks.
+      2. ?token matches the stream's non-empty playback_token (owner-issued
+         raw link for native players like VLC / ffmpeg).
+      3. The stream is public AND not password-protected — public streams
+         keep working without any auth, matching the pre-signing behavior.
 
-    Nginx caches the response keyed by (token, name) so Django is hit at most
-    once per cache window per viewer, not per segment.
+    Meant to be reached only via nginx's internal subrequest (loopback);
+    nginx returns 404 for direct external hits on /api/stream/hls-auth/.
+    Nginx caches the response keyed by (name, token, sig, exp) so Django is
+    hit at most once per cache window per distinct auth bundle — public-stream
+    viewers all share a single cache entry.
     """
     name = request.GET.get("name") or ""
-    token = request.GET.get("token") or ""
-    if not name or not token:
+    if not name:
         return HttpResponse(status=403)
-    ok = Stream.objects.filter(name=name, playback_token=token).exists()
-    return HttpResponse(status=204 if ok else 403)
+    stream = Stream.objects.filter(name=name).only("public", "password", "playback_token").first()
+    if not stream:
+        return HttpResponse(status=403)
+    sig = request.GET.get("sig") or ""
+    exp = request.GET.get("exp") or ""
+    if verify_hls_cookie(name, sig, exp):
+        return HttpResponse(status=204)
+    token = request.GET.get("token") or ""
+    if token and stream.playback_token and constant_time_compare(token, stream.playback_token):
+        return HttpResponse(status=204)
+    if stream.public and not stream.password:
+        return HttpResponse(status=204)
+    return HttpResponse(status=403)
 
 
 @csrf_exempt
@@ -1530,13 +1547,14 @@ def stream_ingest_view(request):
     View /stream/ingest/
     Returns the RTMP ingest host for this server, derived the same way
     the web UI does (RTMP_HOST env var → site_url hostname → request host).
-    The port is always 1935 server-side; clients may override it locally.
+    The port comes from the RTMP_PORT env var (default 1935); clients may
+    override it locally.
     """
     from home.views import get_rtmp_host
 
     site_settings = SiteSettings.objects.settings()
     rtmp_host, _ = get_rtmp_host(request, site_settings)
-    return JsonResponse({"rtmp_host": rtmp_host, "rtmp_port": 1935})
+    return JsonResponse({"rtmp_host": rtmp_host, "rtmp_port": settings.RTMP_PORT})
 
 
 def stream_ping_view(request, name):
