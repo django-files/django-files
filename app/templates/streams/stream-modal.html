@@ -81,14 +81,14 @@
 </div>
 <script>
 (function () {
-    const rtmpHost = '{{ rtmp_host|escapejs }}'
+    const rtmpAuthority = '{{ rtmp_authority|default:rtmp_host|escapejs }}'
     const cdnDetected = '{{ cdn_detected|default:"" }}'
     const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
     let currentStreamName = ''
     let currentStreamToken = ''
 
     function buildServerUrl(token) {
-        let url = `rtmp://${rtmpHost}/live?stream_token=${token}`
+        let url = `rtmp://${rtmpAuthority}/live?stream_token=${token}`
         const title = document.getElementById('streamSetupTitle')?.value.trim()
         if (title) url += `&title=${encodeURIComponent(title)}`
         return url

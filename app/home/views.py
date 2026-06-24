@@ -25,6 +25,7 @@ from django.views.decorators.vary import vary_on_cookie
 from home.models import Albums, Files, ShortURLs, Stream
 from home.tasks import clear_shorts_cache, process_stats
 from home.util.misc import redact_log
+from home.util.nginx import set_hls_cookies
 from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
 from oauth.forms import UserForm
@@ -76,6 +77,12 @@ def get_rtmp_host(request, site_settings=None):
     return request.get_host().split(":")[0], False
 
 
+def rtmp_authority(host):
+    """host:port string for RTMP URLs; omits :1935 (the default RTMP port)."""
+    port = django_settings.RTMP_PORT
+    return f"{host}:{port}" if port != 1935 else host
+
+
 def detect_cdn(request):
     """Return CDN name if a known CDN proxy is detected via request headers, else None."""
     if request.META.get("HTTP_CF_RAY"):
@@ -94,10 +101,41 @@ def home_view(request):
     View  /
     """
     log.debug("%s - home_view: is_secure: %s", request.method, request.is_secure())
+    # home.html embeds the Go Live modal, which expects rtmp_host/rtmp_authority/
+    # cdn_detected. Populate them here so the modal can render without a live stream.
+    site_settings = SiteSettings.objects.settings()
+    rtmp_host, rtmp_host_is_custom = get_rtmp_host(request, site_settings)
     context = {
         "full_context": True,
+        "rtmp_host": rtmp_host,
+        "rtmp_authority": rtmp_authority(rtmp_host),
+        "rtmp_host_is_custom": rtmp_host_is_custom,
+        "cdn_detected": None if rtmp_host_is_custom else detect_cdn(request),
     }
     return render(request, "home.html", context)
+
+
+def _stream_password_gate(request, stream, is_owner):
+    if not stream.password or is_owner:
+        return None
+    supplied = request.GET.get("password")
+    if supplied == stream.password:
+        return None
+    if supplied is not None:
+        messages.warning(request, "Invalid Password!")
+    return render(request, "embed/password.html", context={"stream": stream}, status=403)
+
+
+def _chat_user_info(request, stream):
+    if not request.user.is_authenticated:
+        return {}
+    avatar_user = stream.user if stream.user_id == request.user.id else request.user
+    return {
+        "user_id": request.user.id,
+        "username": request.user.username,
+        "display_name": request.user.get_name(),
+        "avatar_url": avatar_user.get_avatar_url(),
+    }
 
 
 @vary_on_cookie
@@ -112,15 +150,9 @@ def live_view(request, key):
     if not stream.public and not request.user.is_authenticated:
         return render(request, _404_TEMPLATE, status=404)
     is_owner = request.user.is_authenticated and (stream.user_id == request.user.id or request.user.is_superuser)
-    chat_user_info = {}
-    if request.user.is_authenticated:
-        avatar_user = stream.user if stream.user_id == request.user.id else request.user
-        chat_user_info = {
-            "user_id": request.user.id,
-            "username": request.user.username,
-            "display_name": request.user.get_name(),
-            "avatar_url": avatar_user.get_avatar_url(),
-        }
+    if gate := _stream_password_gate(request, stream, is_owner):
+        return gate
+    chat_user_info = _chat_user_info(request, stream)
     site_url = site_settings_processor(request)["site_settings"]["site_url"]
     context = {
         "key": key,
@@ -138,10 +170,20 @@ def live_view(request, key):
         site_settings = SiteSettings.objects.settings()
         rtmp_host, rtmp_host_is_custom = get_rtmp_host(request, site_settings)
         context["rtmp_host"] = rtmp_host
+        context["rtmp_authority"] = rtmp_authority(rtmp_host)
         context["rtmp_host_is_custom"] = rtmp_host_is_custom
         context["cdn_detected"] = None if rtmp_host_is_custom else detect_cdn(request)
         context["stream_token"] = stream.stream_token
-    return render(request, "live.html", context)
+    elif stream.playback_token:
+        # Viewer has already passed the access gate above (private-stream auth and/or
+        # _stream_password_gate) — surface the raw HLS link so they can copy it from
+        # the context menu. Owners get this from the API endpoint; embedding here
+        # keeps the viewer flow gate-free.
+        base = site_url.rstrip("/") if site_url else request.build_absolute_uri("/").rstrip("/")
+        context["viewer_vlc_url"] = f"{base}/hls/{stream.name}.m3u8?token={stream.playback_token}"
+    response = render(request, "live.html", context)
+    set_hls_cookies(response, stream.name)
+    return response
 
 
 @vary_on_cookie
@@ -282,12 +324,14 @@ def streams_view(request):
     site_settings = SiteSettings.objects.settings()
     rtmp_host, rtmp_host_is_custom = get_rtmp_host(request, site_settings)
     cdn_detected = None if rtmp_host_is_custom else detect_cdn(request)
+    authority = rtmp_authority(rtmp_host)
     if request.user.is_superuser:
         users = CustomUser.objects.all()
         context = {
             "users": users,
             "full_context": True,
             "rtmp_host": rtmp_host,
+            "rtmp_authority": authority,
             "rtmp_host_is_custom": rtmp_host_is_custom,
             "cdn_detected": cdn_detected,
         }
@@ -295,6 +339,7 @@ def streams_view(request):
         context = {
             "full_context": True,
             "rtmp_host": rtmp_host,
+            "rtmp_authority": authority,
             "rtmp_host_is_custom": rtmp_host_is_custom,
             "cdn_detected": cdn_detected,
         }
@@ -598,6 +643,18 @@ def check_password_album_ajax(request, pk):
     log.info("check_password_album_ajax: %s", pk)
     file = get_object_or_404(Albums, pk=pk)
     if file.password != request.POST.get("password"):
+        return HttpResponse(status=401)
+    return HttpResponse(status=200)
+
+
+@require_http_methods(["POST"])
+def check_password_stream_ajax(request, name):
+    """
+    View  /ajax/check_password/stream/<str:name>/
+    """
+    log.debug("check_password_stream_ajax: %s", name)
+    stream = get_object_or_404(Stream, name=name)
+    if stream.password != request.POST.get("password"):
         return HttpResponse(status=401)
     return HttpResponse(status=200)
 

@@ -1,0 +1,19 @@
+{% comment %}
+Minimal context menu shown to non-owner viewers when the owner has enabled
+raw-link playback on the stream. The single action — Copy Raw Link — reuses
+the existing stream-copy-vlc-url-btn handler but with data-static-url set so
+the JS skips the owner-only API call.
+
+Required context: stream, viewer_vlc_url.
+{% endcomment %}
+<div class="dropdown stream-ctx-menu" data-stream-name="{{ stream.name }}">
+    <ul class="dropdown-menu file-context-dropdown-menu dropdown-menu-end">
+        <li>
+            <a role="button" class="dropdown-item stream-copy-vlc-url-btn"
+               data-stream-name="{{ stream.name }}"
+               data-enabled="true"
+               data-static-url="{{ viewer_vlc_url }}">
+                <i class="fa-solid fa-link fa-fw me-2 link-info"></i>Copy Raw Link</a>
+        </li>
+    </ul>
+</div>

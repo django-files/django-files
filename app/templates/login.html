@@ -108,6 +108,6 @@
     {{ site_settings.background_picture|json_script:"background_picture" }}
     {{ site_settings.tsparticles_enabled|json_script:"tsparticles_enabled" }}
     {{ site_settings.tsparticles_config|json_script:"tsparticles_config" }}
-    <script type="text/javascript" src="{% static 'dist/tsparticles/tsparticles.bundle.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/login.js' %}"></script>
+    <script defer src="{% static 'dist/tsparticles/tsparticles.bundle.min.js' %}"></script>
+    <script defer src="{% static 'js/login.js' %}"></script>
 {% endblock %}

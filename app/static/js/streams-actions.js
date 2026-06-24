@@ -5,6 +5,13 @@
 
 import { socket } from './socket.js'
 import { wireDeleteModal } from './bulk-actions.js'
+import {
+    flashCopiedIcon,
+    openPasswordModal,
+    setMenuLabel,
+    wireClickDelegation,
+    wirePasswordModal,
+} from './ctx-menu-shared.js'
 
 const csrfToken = () => /csrftoken=([^;]+)/.exec(document.cookie)?.[1] || ''
 
@@ -81,6 +88,115 @@ export function openDeleteStreamsModal(names) {
     else if (names.length && confirm(`Delete ${names.length} stream(s)?`)) {
         socket.send(JSON.stringify({ method: 'delete-streams', pks: names }))
     }
+}
+
+async function copyRawLinkToClipboard(btn, url) {
+    try {
+        await navigator.clipboard.writeText(url)
+        flashCopiedIcon(btn)
+        if (typeof show_toast === 'function')
+            show_toast('Raw link copied to clipboard.', 'info', '3000')
+        return true
+    } catch {
+        if (typeof show_toast === 'function')
+            show_toast('Failed to copy raw link.', 'danger', '4000')
+        return false
+    }
+}
+
+async function fetchOwnerVlcUrl(name) {
+    const res = await fetch(`/api/stream/${encodeURIComponent(name)}/vlc-url/`)
+    if (!res.ok) {
+        if (typeof show_toast === 'function')
+            show_toast('Failed to fetch raw link.', 'danger', '4000')
+        return null
+    }
+    const { url } = await res.json()
+    return url || null
+}
+
+async function copyVlcUrlForStream(btn, name) {
+    // Non-owner viewers get the URL baked into data-static-url server-side (the
+    // viewer already passed the access gate when live_view rendered the page).
+    // Owners hit the API instead so a freshly-rotated token is reflected without
+    // a reload.
+    const staticUrl = btn.dataset.staticUrl
+    if (staticUrl) return copyRawLinkToClipboard(btn, staticUrl)
+    const url = await fetchOwnerVlcUrl(name)
+    if (!url) return false
+    return copyRawLinkToClipboard(btn, url)
+}
+
+async function onCopyVlcUrl(btn) {
+    const name = btn.dataset.streamName
+    if (!name) return
+    const enabled = btn.dataset.enabled === 'true'
+    if (enabled) {
+        await copyVlcUrlForStream(btn, name)
+        return
+    }
+    // Disabled → enable (mint a fresh token), then copy.
+    try {
+        const res = await fetch(
+            `/api/stream/${encodeURIComponent(name)}/enable-playback-token/`,
+            { method: 'POST', headers: { 'X-CSRFToken': csrfToken() } }
+        )
+        if (!res.ok) {
+            if (typeof show_toast === 'function')
+                show_toast('Failed to enable raw link.', 'danger', '4000')
+            return
+        }
+        const { url } = await res.json()
+        if (url) {
+            await navigator.clipboard.writeText(url)
+            if (typeof show_toast === 'function')
+                show_toast('Raw link enabled and copied.', 'success', '4000')
+        }
+        syncVlcButtons(name, true)
+    } catch {
+        if (typeof show_toast === 'function')
+            show_toast('Failed to enable raw link.', 'danger', '4000')
+    }
+}
+
+async function onDisableVlcUrl(btn) {
+    const name = btn.dataset.streamName
+    if (!name) return
+    try {
+        const res = await fetch(
+            `/api/stream/${encodeURIComponent(name)}/disable-playback-token/`,
+            { method: 'POST', headers: { 'X-CSRFToken': csrfToken() } }
+        )
+        if (!res.ok) {
+            if (typeof show_toast === 'function')
+                show_toast('Failed to disable raw link.', 'danger', '4000')
+            return
+        }
+        syncVlcButtons(name, false)
+        if (typeof show_toast === 'function')
+            show_toast('Raw link disabled.', 'info', '3000')
+    } catch {
+        if (typeof show_toast === 'function')
+            show_toast('Failed to disable raw link.', 'danger', '4000')
+    }
+}
+
+function syncVlcButtons(name, enabled) {
+    const copySel = `.stream-copy-vlc-url-btn[data-stream-name="${CSS.escape(name)}"]`
+    document.querySelectorAll(copySel).forEach((btn) => {
+        btn.dataset.enabled = enabled ? 'true' : 'false'
+        const icon = btn.querySelector('i')
+        if (icon) {
+            icon.className = `fa-solid fa-${enabled ? 'link' : 'link-slash'} fa-fw me-2 link-info`
+        }
+        setMenuLabel(btn, enabled ? 'Copy Raw Link' : 'Enable Raw Link')
+    })
+    // The "Disable Raw Link" wrapper <li> is always rendered; show/hide it so a
+    // newly-enabled stream gets the action without needing a re-render.
+    const disableSel = `.stream-disable-vlc-url-item[data-stream-name="${CSS.escape(name)}"]`
+    document.querySelectorAll(disableSel).forEach((li) => {
+        li.classList.toggle('d-none', !enabled)
+    })
 }
 
 async function onCopyRtmp(btn) {
@@ -160,21 +276,55 @@ function onDelete(btn) {
     openDeleteStreamsModal([name])
 }
 
-const HANDLERS = {
-    'stream-copy-rtmp-btn': onCopyRtmp,
-    'stream-rotate-token-btn': onRotateToken,
-    'stream-toggle-public-btn': onTogglePublic,
-    'stream-delete-btn': onDelete,
+function onSetPassword(btn) {
+    const name = btn.dataset.streamName
+    if (!name) return
+    openPasswordModal({
+        modalId: 'streamPasswordModal',
+        keyField: 'name',
+        keyValue: name,
+        currentValueSelector: 'input[name=current-stream-password]',
+        btn,
+    })
 }
 
-document.addEventListener('click', function (event) {
-    for (const [cls, handler] of Object.entries(HANDLERS)) {
-        const btn = event.target.closest(`.${cls}`)
-        if (btn) {
-            handler(btn)
-            return
-        }
-    }
+wirePasswordModal({
+    modalId: 'streamPasswordModal',
+    formId: 'modal-stream-password-form',
+    inputId: 'stream-password-input',
+    unmaskId: 'stream-password-unmask',
+    copyId: 'stream-password-copy',
+    generateId: 'stream-password-generate',
+    keyField: 'name',
+    method: 'set_stream_password',
+    onSubmitted: ({ key, password }) => {
+        const name = String(key)
+        document
+            .querySelectorAll(
+                `.stream-ctx-menu[data-stream-name="${CSS.escape(name)}"] input[name=current-stream-password]`
+            )
+            .forEach((el) => {
+                el.value = password
+            })
+        document
+            .querySelectorAll(
+                `.stream-set-password-btn[data-stream-name="${CSS.escape(name)}"]`
+            )
+            .forEach((el) => {
+                el.dataset.hasPassword = password ? 'true' : 'false'
+                setMenuLabel(el, password ? 'Change Password' : 'Set Password')
+            })
+    },
+})
+
+wireClickDelegation({
+    'stream-copy-rtmp-btn': onCopyRtmp,
+    'stream-rotate-token-btn': onRotateToken,
+    'stream-copy-vlc-url-btn': onCopyVlcUrl,
+    'stream-disable-vlc-url-btn': onDisableVlcUrl,
+    'stream-toggle-public-btn': onTogglePublic,
+    'stream-set-password-btn': onSetPassword,
+    'stream-delete-btn': onDelete,
 })
 
 // When the live view triggers a delete, redirect once the websocket confirms it.
@@ -231,11 +381,6 @@ function syncPublicToggleButtons(name, isPublic) {
         if (icon) {
             icon.className = `fa-solid fa-${isPublic ? 'lock' : 'globe'} fa-fw me-2`
         }
-        const label = isPublic ? 'Make Private' : 'Make Public'
-        const textNode = [...btn.childNodes].find(
-            (n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()
-        )
-        if (textNode) textNode.textContent = label
-        else btn.append(label)
+        setMenuLabel(btn, isPublic ? 'Make Private' : 'Make Public')
     })
 }

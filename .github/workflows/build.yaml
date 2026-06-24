@@ -28,21 +28,43 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v6
 
-      - name: "Docker Tags"
+      - name: "Expand Override Tags"
+        id: override
+        env:
+          INPUT_TAGS: ${{ inputs.tags }}
+        run: |
+          {
+            echo "tags<<EOF"
+            if [ -n "$INPUT_TAGS" ]; then
+              IFS=',' read -ra parts <<< "$INPUT_TAGS"
+              for t in "${parts[@]}"; do
+                printf 'type=raw,value=%s\n' "$t"
+              done
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: "Docker Meta"
         id: tags
-        uses: cssnr/docker-tags-action@v2
-        continue-on-error: true
+        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
         with:
+          images: ${{ env.REGISTRY }}/${{ env.USER }}/${{ env.REPO }}
           tags: |
-            ${{ inputs.tags }}
-            ${{ github.event.release.prerelease && env.PRE_TAG || '' }}
+            type=raw,value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' && github.event.release.tag_name != '' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && !github.event.release.prerelease }}
+            type=raw,value=${{ env.PRE_TAG }},enable=${{ github.event_name == 'release' && github.event.release.prerelease }}
+            ${{ steps.override.outputs.tags }}
 
       - name: "Debug Docker Tags"
         continue-on-error: true
+        env:
+          INPUT_TAGS: ${{ inputs.tags }}
+          META_TAGS: ${{ steps.tags.outputs.tags }}
+          META_LABELS: ${{ steps.tags.outputs.labels }}
         run: |
-          echo inputs.tags: '${{ inputs.tags }}'
-          echo -e "tags:\n${{ steps.tags.outputs.tags }}"
-          echo -e "labels:\n${{ steps.tags.outputs.labels }}"
+          echo "inputs.tags: $INPUT_TAGS"
+          printf 'tags:\n%s\n' "$META_TAGS"
+          printf 'labels:\n%s\n' "$META_LABELS"
 
       - name: "Set App Version"
         run: |

@@ -270,6 +270,15 @@ class Stream(models.Model):
         verbose_name="Stream Token",
         help_text="Per-stream RTMP authentication token. Scoped only to this stream.",
     )
+    playback_token = models.CharField(
+        default="",
+        blank=True,
+        max_length=32,
+        verbose_name="Playback Token",
+        help_text="Per-stream raw-link token used by HLS players (VLC, ffmpeg, etc.) "
+        "to fetch the stream via /hls/?token=. Empty = raw-link playback disabled. "
+        "Independent of stream_token (RTMP ingest).",
+    )
 
     def __str__(self):
         return f"<Stream(name={self.name}, title={self.title}, user_id={self.user_id})>"

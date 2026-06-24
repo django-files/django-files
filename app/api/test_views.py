@@ -216,6 +216,90 @@ class StreamLifecycleTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
 
 
+class HlsAuthRequestTestCase(TestCase):
+    """
+    Covers the nginx auth_request gate (GET /api/stream/hls-auth/) which decides
+    every /hls/ request. Each test exercises one of the three accepted auth
+    bundles or one of the rejection paths.
+    """
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        self.user = CustomUser.objects.create_user(
+            username="hlsuser",
+            email="hls@test.com",
+            password="12345",  # nosec  # NOSONAR
+        )
+        self.public_stream = Stream.objects.create(name="pub", title="Pub", user=self.user, public=True)
+        self.private_stream = Stream.objects.create(name="priv", title="Priv", user=self.user, public=False)
+        self.password_stream = Stream.objects.create(
+            name="locked", title="Locked", user=self.user, public=True, password="hunter2"  # nosec  # NOSONAR
+        )
+
+    def _auth(self, **params):
+        return self.client.get(reverse("api:stream-hls-auth"), params)
+
+    def test_public_stream_allowed_anonymously(self):
+        r = self._auth(name="pub")
+        self.assertEqual(r.status_code, 204)
+
+    def test_missing_name_rejected(self):
+        r = self._auth()
+        self.assertEqual(r.status_code, 403)
+
+    def test_unknown_stream_rejected(self):
+        r = self._auth(name="does-not-exist")
+        self.assertEqual(r.status_code, 403)
+
+    def test_private_stream_rejects_anonymous(self):
+        r = self._auth(name="priv")
+        self.assertEqual(r.status_code, 403)
+
+    def test_password_protected_public_stream_rejects_bare_request(self):
+        # Public + password must NOT be allowed by the "public" shortcut.
+        r = self._auth(name="locked")
+        self.assertEqual(r.status_code, 403)
+
+    def test_valid_token_allows_private_stream(self):
+        self.private_stream.playback_token = "tok-abc"  # nosec B105
+        self.private_stream.save(update_fields=["playback_token"])
+        r = self._auth(name="priv", token="tok-abc")  # nosec B106
+        self.assertEqual(r.status_code, 204)
+
+    def test_wrong_token_rejected(self):
+        self.private_stream.playback_token = "tok-abc"  # nosec B105
+        self.private_stream.save(update_fields=["playback_token"])
+        r = self._auth(name="priv", token="tok-xyz")  # nosec B106
+        self.assertEqual(r.status_code, 403)
+
+    def test_empty_token_does_not_match_disabled_stream(self):
+        # private_stream.playback_token defaults to "" — empty must not match empty.
+        r = self._auth(name="priv", token="")  # nosec B106
+        self.assertEqual(r.status_code, 403)
+
+    def test_valid_cookie_allows_private_stream(self):
+        from home.util.nginx import sign_hls_cookie
+
+        sig, exp = sign_hls_cookie("priv")
+        r = self._auth(name="priv", sig=sig, exp=str(exp))
+        self.assertEqual(r.status_code, 204)
+
+    def test_cookie_for_other_stream_rejected(self):
+        from home.util.nginx import sign_hls_cookie
+
+        sig, exp = sign_hls_cookie("pub")
+        r = self._auth(name="priv", sig=sig, exp=str(exp))
+        self.assertEqual(r.status_code, 403)
+
+    def test_valid_cookie_bypasses_password_gate(self):
+        # Cookie issuance at live_view implies the password gate was passed.
+        from home.util.nginx import sign_hls_cookie
+
+        sig, exp = sign_hls_cookie("locked")
+        r = self._auth(name="locked", sig=sig, exp=str(exp))
+        self.assertEqual(r.status_code, 204)
+
+
 # ---------------------------------------------------------------------------
 # Auth endpoint tests
 # ---------------------------------------------------------------------------

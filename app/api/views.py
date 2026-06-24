@@ -5,6 +5,7 @@ import logging
 import operator
 import os
 import random
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -33,6 +34,7 @@ from django.db.models.fields.json import KeyTextTransform
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.utils.crypto import constant_time_compare
 from django.utils.timezone import localtime, now
 from django.views.decorators.cache import cache_control, cache_page, never_cache
 from django.views.decorators.csrf import csrf_exempt
@@ -49,6 +51,7 @@ from home.tasks import (
 from home.util.auth import create_api_token, hash_token
 from home.util.file import process_file
 from home.util.misc import anytobool, human_read_to_byte, redact_log
+from home.util.nginx import sign_hls_cookie, verify_hls_cookie
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
@@ -125,6 +128,8 @@ log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
 
 json_error_message = "Error Parsing JSON Body"
+STREAM_NOT_FOUND_ERROR = "Stream not found."
+FORBIDDEN_ERROR = "Forbidden."
 
 
 def paginate_no_count(queryset, page, count):
@@ -395,13 +400,26 @@ def shorten_view(request):
 def _handle_create_album(request):
     data = get_json_body(request)
     log.debug("data: %s", data)
+    # Honor the per-user "Default Private" / "Auto Password" toggles when the
+    # caller didn't pass an explicit value. data_or_header treats missing keys
+    # as the supplied default, so check the raw sources first to detect omission.
+    has_private = "private" in data or "private" in request.headers
+    has_password = "password" in data or "password" in request.headers
+    private = (
+        data_or_header(request, data, "private", False, cast=bool)
+        if has_private
+        else request.user.default_file_private
+    )
+    password = data_or_header(request, data, "password") if has_password else ""
+    if not has_password and request.user.default_file_password:
+        password = rand_string()
     album = Albums.objects.create(
         user=request.user,
         name=data_or_header(request, data, "name"),
         maxv=data_or_header(request, data, "max-views", 0, cast=int),
         info=data_or_header(request, data, "description"),
-        password=data_or_header(request, data, "password"),
-        private=data_or_header(request, data, "private", False, cast=bool),
+        password=password,
+        private=private,
         expr=data_or_header(request, data, "expire"),
     )
     site_settings = SiteSettings.objects.settings()
@@ -993,7 +1011,7 @@ def albums_view(request, page=None, count=100):
         default="-created",
     )
     page_items, _next = paginate_no_count(q, page, count)
-    albums = extract_albums(page_items)
+    albums = extract_albums(page_items, user_id=request.user.id)
     log.debug("albums: %s", albums)
     response = {
         "albums": albums,
@@ -1380,13 +1398,22 @@ def stream_create_view(request):
     name = request.POST.get("name", "").strip()
     if not name:
         return JsonResponse({"error": "Stream name is required."}, status=400)
+    if not re.match(r"^[A-Za-z0-9_-]{1,64}$", name):
+        return JsonResponse(
+            {"error": "Stream name must be 1–64 chars of letters, numbers, hyphen, or underscore."},
+            status=400,
+        )
     title = request.POST.get("title", "").strip() or name
     description = request.POST.get("description", "").strip()
+    # Honor the per-user "Default Private" / "Auto Password" toggles on first
+    # create only. Stream.public is the inverse of private, so flip the bit.
+    defaults = {"user": request.user, "title": title, "description": description}
+    if request.user.default_file_private:
+        defaults["public"] = False
+    if request.user.default_file_password:
+        defaults["password"] = rand_string()
 
-    stream, created = Stream.objects.get_or_create(
-        name=name,
-        defaults={"user": request.user, "title": title, "description": description},
-    )
+    stream, created = Stream.objects.get_or_create(name=name, defaults=defaults)
     if not created and stream.user != request.user:
         return JsonResponse({"error": "Stream name already taken."}, status=409)
     return JsonResponse({"name": stream.name, "stream_token": stream.stream_token})
@@ -1401,12 +1428,132 @@ def stream_rotate_token_view(request, name):
     """
     stream = Stream.objects.filter(name=name).first()
     if not stream:
-        return JsonResponse({"error": "Stream not found."}, status=404)
+        return JsonResponse({"error": STREAM_NOT_FOUND_ERROR}, status=404)
     if stream.user != request.user and not request.user.is_superuser:
-        return JsonResponse({"error": "Forbidden."}, status=403)
+        return JsonResponse({"error": FORBIDDEN_ERROR}, status=403)
     stream.stream_token = rand_string()
     stream.save(update_fields=["stream_token"])
     return JsonResponse({"name": stream.name, "stream_token": stream.stream_token})
+
+
+def _vlc_url_for(request, stream):
+    site_url = site_settings_processor(request)["site_settings"].get("site_url")
+    base = site_url.rstrip("/") if site_url else request.build_absolute_uri("/").rstrip("/")
+    return f"{base}/hls/{stream.name}.m3u8?token={stream.playback_token}"
+
+
+@require_http_methods(["POST"])
+@login_required
+def stream_enable_playback_token_view(request, name):
+    """
+    View /api/stream/<name>/enable-playback-token/
+    Generates (or regenerates) the per-stream playback_token used by native
+    players via /hls/?token=. Owner only. Calling on an already-enabled stream
+    rotates the token and invalidates every previously-issued raw link.
+    """
+    stream = Stream.objects.filter(name=name).first()
+    if not stream:
+        return JsonResponse({"error": STREAM_NOT_FOUND_ERROR}, status=404)
+    if stream.user_id != request.user.id and not request.user.is_superuser:
+        return JsonResponse({"error": FORBIDDEN_ERROR}, status=403)
+    stream.playback_token = rand_string()
+    stream.save(update_fields=["playback_token"])
+    return JsonResponse(
+        {
+            "name": stream.name,
+            "playback_token": stream.playback_token,
+            "enabled": True,
+            "url": _vlc_url_for(request, stream),
+        }
+    )
+
+
+@require_http_methods(["POST"])
+@login_required
+def stream_disable_playback_token_view(request, name):
+    """
+    View /api/stream/<name>/disable-playback-token/
+    Clears the playback_token, disabling raw-link playback for this stream.
+    Owner only. Existing raw links immediately stop working (after nginx auth
+    cache TTL expires for already-validated tokens).
+    """
+    stream = Stream.objects.filter(name=name).first()
+    if not stream:
+        return JsonResponse({"error": STREAM_NOT_FOUND_ERROR}, status=404)
+    if stream.user_id != request.user.id and not request.user.is_superuser:
+        return JsonResponse({"error": FORBIDDEN_ERROR}, status=403)
+    # Empty string is the documented "disabled" sentinel for playback_token, not
+    # a hardcoded credential — bandit's B105 fires on any "" assigned to a name
+    # containing "token", so suppress on both the assignment and the echo back.
+    stream.playback_token = ""  # nosec B105
+    stream.save(update_fields=["playback_token"])
+    return JsonResponse({"name": stream.name, "playback_token": "", "enabled": False})  # nosec B105
+
+
+@require_http_methods(["GET"])
+@login_required
+def stream_vlc_url_view(request, name):
+    """
+    View /api/stream/<name>/vlc-url/
+
+    Owner-only. Returns an absolute /hls/<name>.m3u8?token=<playback_token>
+    "raw link" for HLS players (VLC, ffmpeg, hls.js standalone, etc.) that can't
+    carry browser cookies. The link is valid until the owner rotates or disables
+    the token. Returns 409 if raw-link playback has not been enabled on this
+    stream.
+
+    playback_token is independent of stream_token (RTMP ingest), so leaking a
+    raw link never grants the ability to publish to the stream.
+    """
+    stream = Stream.objects.filter(name=name).only("name", "user_id", "playback_token").first()
+    # Return 404 for both missing and non-owner so this endpoint can't be used
+    # to enumerate which private stream names exist.
+    if not stream or (stream.user_id != request.user.id and not request.user.is_superuser):
+        return JsonResponse({"error": STREAM_NOT_FOUND_ERROR}, status=404)
+    if not stream.playback_token:
+        return JsonResponse({"error": "Raw-link playback is disabled.", "enabled": False}, status=409)
+    return JsonResponse({"name": stream.name, "url": _vlc_url_for(request, stream), "enabled": True})
+
+
+@require_http_methods(["GET", "HEAD"])
+def stream_hls_auth_view(request):
+    """
+    View /api/stream/hls-auth/?name=<name>&token=<token>&sig=<sig>&exp=<exp>
+
+    Internal endpoint hit by nginx's auth_request for every /hls/ request.
+    Returns 204 if any of the following holds, else 403:
+
+      1. The hls_sig/hls_exp cookie pair (forwarded as ?sig/?exp) is a valid
+         signature for the stream. Cookies are issued by live_view only after
+         the viewer passes the auth + password gate, so a valid cookie proves
+         the bearer already cleared those checks.
+      2. ?token matches the stream's non-empty playback_token (owner-issued
+         raw link for native players like VLC / ffmpeg).
+      3. The stream is public AND not password-protected — public streams
+         keep working without any auth, matching the pre-signing behavior.
+
+    Meant to be reached only via nginx's internal subrequest (loopback);
+    nginx returns 404 for direct external hits on /api/stream/hls-auth/.
+    Nginx caches the response keyed by (name, token, sig, exp) so Django is
+    hit at most once per cache window per distinct auth bundle — public-stream
+    viewers all share a single cache entry.
+    """
+    name = request.GET.get("name") or ""
+    if not name:
+        return HttpResponse(status=403)
+    stream = Stream.objects.filter(name=name).only("public", "password", "playback_token").first()
+    if not stream:
+        return HttpResponse(status=403)
+    sig = request.GET.get("sig") or ""
+    exp = request.GET.get("exp") or ""
+    if verify_hls_cookie(name, sig, exp):
+        return HttpResponse(status=204)
+    token = request.GET.get("token") or ""
+    if token and stream.playback_token and constant_time_compare(token, stream.playback_token):
+        return HttpResponse(status=204)
+    if stream.public and not stream.password:
+        return HttpResponse(status=204)
+    return HttpResponse(status=403)
 
 
 @csrf_exempt
@@ -1417,13 +1564,14 @@ def stream_ingest_view(request):
     View /stream/ingest/
     Returns the RTMP ingest host for this server, derived the same way
     the web UI does (RTMP_HOST env var → site_url hostname → request host).
-    The port is always 1935 server-side; clients may override it locally.
+    The port comes from the RTMP_PORT env var (default 1935); clients may
+    override it locally.
     """
     from home.views import get_rtmp_host
 
     site_settings = SiteSettings.objects.settings()
     rtmp_host, _ = get_rtmp_host(request, site_settings)
-    return JsonResponse({"rtmp_host": rtmp_host, "rtmp_port": 1935})
+    return JsonResponse({"rtmp_host": rtmp_host, "rtmp_port": settings.RTMP_PORT})
 
 
 def stream_ping_view(request, name):
@@ -1443,6 +1591,44 @@ def stream_ping_view(request, name):
     redis.zadd(key, {session_key: int(now().timestamp())})
     redis.expire(key, 60)
     return HttpResponse()
+
+
+@require_http_methods(["GET"])
+@auth_from_token(no_fail=True)
+def stream_hls_token_view(request, name):
+    """
+    View /stream/hls-token/:name/
+
+    Re-issues the hls_sig/hls_exp cookies so any viewer — anonymous on a public
+    stream, session-authenticated user, or native client with a user API token —
+    can keep fetching segments past the original signing TTL.
+
+    Gates:
+      - private stream: requires authenticated user (session or bearer token).
+      - password-protected stream: requires either ?password=... matching, OR a
+        still-valid hls_sig/hls_exp cookie pair (rolling refresh — the existing
+        cookie is itself proof that the original password check passed).
+    """
+    stream = Stream.objects.filter(name=name).only("name", "public", "password", "user_id").first()
+    if not stream:
+        return JsonResponse({"detail": "not found"}, status=404)
+    is_owner = request.user.is_authenticated and (request.user.id == stream.user_id or request.user.is_superuser)
+    if not is_owner:
+        if not stream.public and not request.user.is_authenticated:
+            return JsonResponse({"detail": "forbidden"}, status=403)
+        if stream.password:
+            supplied = request.GET.get("password")
+            existing_ok = verify_hls_cookie(
+                stream.name, request.COOKIES.get("hls_sig"), request.COOKIES.get("hls_exp")
+            )
+            if supplied != stream.password and not existing_ok:
+                return JsonResponse({"detail": "password required"}, status=403)
+    sig, exp = sign_hls_cookie(stream.name)
+    ttl = settings.HLS_SIGNED_URL_TTL_SECONDS
+    response = JsonResponse({"exp": exp})
+    response.set_cookie("hls_sig", sig, max_age=ttl, path="/hls", httponly=True, samesite="Lax")
+    response.set_cookie("hls_exp", str(exp), max_age=ttl, path="/hls", httponly=True, samesite="Lax")
+    return response
 
 
 def stream_viewers_view(request, name):
@@ -1488,7 +1674,7 @@ def stream_commands_view(request, name):
     log.debug("stream_commands_view: name=%s user=%s", name, request.user)
     stream = Stream.objects.filter(name=name).first()
     if not stream:
-        return JsonResponse({"error": "Stream not found."}, status=404)
+        return JsonResponse({"error": STREAM_NOT_FOUND_ERROR}, status=404)
 
     user = request.user
     is_authenticated = bool(getattr(user, "is_authenticated", False) and user.pk)
@@ -1963,7 +2149,13 @@ def streams_view(request, page=None, count=100):
         .annotate(cnt=Count("pk"))
         .values_list("group__name", "cnt")
     )
-    streams = extract_streams(stream_list, request.user.id, rtmp_host=rtmp_host, subscriber_counts=subscriber_counts)
+    streams = extract_streams(
+        stream_list,
+        request.user.id,
+        rtmp_host=rtmp_host,
+        rtmp_port=settings.RTMP_PORT,
+        subscriber_counts=subscriber_counts,
+    )
     log.debug("streams: %s", streams)
     response = {
         "streams": streams,

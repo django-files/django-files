@@ -28,6 +28,7 @@ _ERR_NO_STREAM_NAME = "No stream name provided."
 _ERR_STREAM_NOT_FOUND = "Stream not found."
 _ERR_STREAM_OWNED_BY_OTHER = "Stream owned by another user."
 _ERR_SESSION_NOT_READY = "Session not ready."
+_ERR_ALBUM_NOT_FOUND = "Album not found."
 _WS_SEND = "websocket.send"
 
 # Explicit allowlist of methods callable via WebSocket.
@@ -39,6 +40,7 @@ _ALLOWED_METHODS = frozenset(
         "delete_files",
         "delete_albums",
         "private_albums",
+        "set_album_password",
         "toggle_private_file",
         "private_files",
         "private_streams",
@@ -48,6 +50,7 @@ _ALLOWED_METHODS = frozenset(
         "delete_streams",
         "set_stream_title",
         "set_stream_description",
+        "set_stream_password",
         "set_stream_live_chat",
         "set_stream_anonymous_chat",
         "join_stream_chat",
@@ -254,7 +257,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if len(albums) > 0:
             albums.delete()
         else:
-            return self._error("Album not found.", **kwargs)
+            return self._error(_ERR_ALBUM_NOT_FOUND, **kwargs)
 
     def private_albums(self, *, user_id: int = None, pks: List[int] = None, private: bool, **kwargs) -> None:
         log.debug("private_albums: user_id=%s pks=%s private=%s", user_id, pks, private)
@@ -264,6 +267,23 @@ class HomeConsumer(AsyncWebsocketConsumer):
         for a in albums:
             a.private = private
             a.save(update_fields=["private"])  # triggers post_save signal → album-update WS broadcast
+
+    def set_album_password(self, *, user_id: int = None, pk: int = None, password: str = None, **kwargs) -> dict:
+        # Owner-gated; superusers may also pass any pk. The plaintext is emitted
+        # only via the user-scoped album-update broadcast (see signals), which
+        # itself filters to owner-only consumers.
+        log.debug("set_album_password: user_id=%s pk=%s", user_id, pk)
+        if pk is None:
+            return self._error("No album pk provided.", **kwargs)
+        album = Albums.objects.filter(pk=pk).first()
+        if not album:
+            return self._error(_ERR_ALBUM_NOT_FOUND, **kwargs)
+        if user_id and album.user_id != user_id:
+            requester = self.scope["user"]
+            if not getattr(requester, "is_superuser", False):
+                return self._error("Album owned by another user.", **kwargs)
+        album.password = password or ""
+        album.save(update_fields=["password"])  # triggers post_save signal → album-update WS broadcast
 
     def toggle_private_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
         """
@@ -452,6 +472,30 @@ class HomeConsumer(AsyncWebsocketConsumer):
         await database_sync_to_async(stream.save)()
         data = {"event": "set-stream-description", "name": name, "description": description}
         await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
+
+    async def set_stream_password(self, *, user_id: int = None, name: str = None, password: str = None, **kwargs):
+        # The plaintext password is broadcast only to the owner's own user group, not the
+        # public stream/home channel — viewers only learn that a password exists, never its value.
+        log.debug("set_stream_password: user_id=%s, name=%s", user_id, name)
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        stream = await self._fetch_stream(name)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        if err:
+            return err
+        stream.password = password or ""
+        await database_sync_to_async(stream.save)(update_fields=["password"])
+        has_password = bool(stream.password)
+        # Public broadcast: just the boolean — anyone listening on `home` learns the flag flipped.
+        public_data = {"event": "set-stream-password", "name": name, "has_password": has_password}
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(public_data)})
+        # Owner-scoped echo with the value so the owner's other tabs can refresh their UI
+        # without re-fetching the stream row.
+        if user_id:
+            owner_data = {**public_data, "password": stream.password}
+            await self.channel_layer.group_send(f"user-{user_id}", {"type": _WS_SEND, "text": json.dumps(owner_data)})
 
     # -------------------------------------------------------------------------
     # Chat identity helpers (no I/O — safe to call in async context)
@@ -1206,7 +1250,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         elif create_if_absent and album_name:
             selected_album = Albums.objects.create(user_id=user_id, name=album_name)
         else:
-            return self._error("Album not found.", **kwargs)
+            return self._error(_ERR_ALBUM_NOT_FOUND, **kwargs)
         file.albums.add(selected_album)
         file_album_websocket.apply_async(
             args=[

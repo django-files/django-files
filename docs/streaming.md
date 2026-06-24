@@ -1,67 +1,66 @@
 # Streaming with OBS
 
-This app accepts live streams over RTMP. Streams are created automatically the first time you connect with a given stream key.
+This app accepts live streams over RTMP. Each stream you publish to is authenticated by a **per-stream token** that the app mints for you ahead of time.
 
 ## Requirements
 
 - [OBS Studio](https://obsproject.com/) (or any RTMP-compatible encoder)
-- Your **auth token** — find it on your account settings page under "Authorization Token"
-- The server's **RTMP URL** — your site admin can provide this (format: `rtmp://your-domain.com/live`)
+- The server's RTMP host — your site admin can provide this, or you can read it off the Go Live modal (see below). Default port is **1935**.
+
+## Creating a stream and getting its server URL
+
+Stream tokens are scoped to a single stream and must exist before you publish — RTMP `on_publish` is rejected if the supplied `stream_token` doesn't match an existing stream row.
+
+In the web UI:
+
+1. Click **Go Live** in the navbar.
+2. Enter a **Stream Name** — letters, numbers, hyphens, and underscores, up to 64 characters. This becomes the URL slug at `/live/<name>/`.
+3. Click **Create / Get Token**. The modal then shows:
+   - The **Stream Token** (per-stream — leaking it never exposes your account)
+   - A ready-to-paste **RTMP Server URL** of the form `rtmp://<host>/live?stream_token=<token>`
+4. Optionally set a **Title** — it will be appended to the server URL as `&title=…`.
+
+Use the **Rotate** button to invalidate the current token and mint a new one if it ever leaks.
 
 ## OBS Setup
 
-1. Open OBS and go to **Settings → Stream**
-2. Set **Service** to `Custom...`
-3. Set **Server** to:
+1. Open OBS and go to **Settings → Stream**.
+2. Set **Service** to `Custom...`.
+3. Set **Server** to the RTMP Server URL from the Go Live modal:
 
    ```text
-   rtmp://your-domain.com/live?token=YOUR_AUTH_TOKEN
+   rtmp://your-domain.com/live?stream_token=YOUR_STREAM_TOKEN
    ```
 
-4. Set **Stream Key** to:
+4. Set **Stream Key** to your stream name (e.g. `my-stream`).
+5. Click **OK**, then **Start Streaming**.
 
-   ```text
-   your-stream-name
-   ```
-
-   Replace `your-stream-name` with any short identifier (letters, numbers, hyphens). This becomes the stream's URL slug.
-
-5. Click **OK**, then click **Start Streaming** in OBS.
-
-The stream page will be available at `https://your-domain.com/live/your-stream-name/` once you connect.
-
-## Setting a Title and Description
-
-Optional metadata is passed as query parameters on the **Server URL**. OBS sends the full server URL to the server on connect, so params there are available at stream start:
-
-```text
-rtmp://your-domain.com/live?token=YOUR_AUTH_TOKEN&title=My+Stream+Title&description=Stream+description+here
-```
-
-You can also edit the title and description live from the stream page after connecting.
+The stream page will be available at `https://your-domain.com/live/<name>/` while you're connected.
 
 ## Optional Parameters
 
-All optional parameters are appended to the Server URL (after the token):
+Optional metadata is appended as query params on the **Server URL**. OBS sends the full server URL to the server on `on_publish`, so anything passed here is applied at stream start (and re-applied on every reconnect, overwriting any edits made via the web UI).
 
-| Parameter      | Type    | Description                                  |
-| -------------- | ------- | -------------------------------------------- |
-| `title`        | string  | Stream title shown on the stream page        |
-| `description`  | string  | Short description shown below the title      |
-| `public`       | boolean | `true` makes the stream publicly visible     |
-| `viewer_limit` | integer | Maximum number of concurrent viewers allowed |
+| Parameter      | Type    | Description                                          |
+| -------------- | ------- | ---------------------------------------------------- |
+| `title`        | string  | Stream title shown on the stream page                |
+| `description`  | string  | Short description shown below the title              |
+| `public`       | boolean | `true` makes the stream visible to anyone            |
+| `viewer_limit` | integer | Maximum number of concurrent viewers (0 = unlimited) |
 
-Example with all options:
+Example:
 
 ```text
-rtmp://your-domain.com/live?token=YOUR_AUTH_TOKEN&title=My+Stream&description=Tune+in&public=true&viewer_limit=100
+rtmp://your-domain.com/live?stream_token=YOUR_STREAM_TOKEN&title=My+Stream&description=Tune+in&public=true&viewer_limit=100
 ```
+
+> Setting a **password** is not supported via the RTMP query string — set it from the stream page after publishing (see below).
 
 ## Resuming a Stream
 
-You can reuse any stream key to resume a previous stream.
+You can reuse a stream name (and its `stream_token`) to resume a previous stream. The `started_at` timestamp resets each time you reconnect.
 
-Note that having the title and description set in your URL will OVERWRITE any change made to the title and description in Django Files when a stream starts or restarts.
+If you have `title` / `description` baked into the OBS server URL, those values overwrite any web-UI edits each time you reconnect — leave them out of the URL if you want to edit metadata from the stream page.
 
 ## Network Setup
 
@@ -75,10 +74,59 @@ ports:
   - '1935:1935'
 ```
 
-**Home network** — if the server is behind a home router, forward TCP port 1935 to the server's local IP in your router's port forwarding settings. OBS should use your public IP or DDNS hostname if external, otherwise may use your django-files server's private ip.
+**Home network** — if the server is behind a home router, forward TCP port 1935 to the server's local IP. OBS should use your public IP or DDNS hostname externally, or the server's private IP on the LAN.
 
-## Finding Your Auth Token
+## Private Streams and Passwords
 
-Go to **Settings → Account** in the web UI. Your authorization token is listed there. Keep it secret — anyone with your token can stream to your account.
+Two independent gates control who can watch a stream. They compose:
 
-The stream page for any stream you own also has a **Copy OBS Server URL** button that copies the server URL (with your token) for easy pasting into OBS.
+| Setting        | Who can watch                                             |
+| -------------- | --------------------------------------------------------- |
+| `public=true`  | Anyone with the link                                      |
+| `public=false` | Only signed-in users                                      |
+| `password` set | Viewer must enter the password (in addition to the above) |
+
+Access to `/hls/...` is decided by nginx via an `auth_request` subrequest into Django. The request is allowed if **any** of the following holds:
+
+1. The viewer's `hls_sig` / `hls_exp` cookies validate — these are issued when the viewer loads `/live/<name>/` and prove they passed the auth + password gate. The cookies auto-refresh in the background so long viewing sessions don't drop.
+2. The request carries `?token=<playback_token>` matching the stream's owner-issued raw-link token (see "Watching from a native client" below).
+3. The stream is **public and not password-protected** — anonymous direct requests to `/hls/...` keep working with no token or cookie.
+
+Private streams and password-protected streams require option 1 or 2.
+
+### Setting or changing the password
+
+Set the password from the **stream page** (owners see an extra controls panel) or from the **Streams** table context menu. Share the password out-of-band with viewers — they'll be prompted for it on first load.
+
+### Watching from a native client
+
+There are two options depending on what the player can do:
+
+**1. Cookie-based** (for clients that can carry cookies across requests, e.g. the Django Files mobile app):
+
+```text
+GET /api/stream/hls-token/<stream-name>/?password=<password>
+Authorization: Bearer <YOUR_API_TOKEN>
+```
+
+- `Authorization` is only required for private streams; public streams accept anonymous calls.
+- `?password=…` is only required when the stream has a password set.
+- The response sets `hls_sig` / `hls_exp` cookies that the player must include on subsequent `/hls/...` fetches. The same endpoint refreshes them — call it again at roughly half the cookie TTL.
+
+**2. Raw link** (for players that can't carry cookies — VLC, ffmpeg, generic HLS players):
+
+On the **Streams** table, open the row's context menu and click **Enable Raw Link** — this mints a `playback_token` for that stream. Click **Copy Raw Link** to copy a URL of the form:
+
+```text
+https://your-domain.com/hls/<stream-name>.m3u8?token=<playback_token>
+```
+
+Paste that into any HLS player. **Disable Raw Link** clears the token and immediately invalidates every previously-issued raw link (after the nginx auth cache TTL elapses for already-validated tokens). Re-enabling rotates the token.
+
+The `playback_token` is independent of the RTMP `stream_token`, so leaking a raw link never grants ingest access.
+
+## API Tokens
+
+Bearer authentication for the JSON API (uploads, stream management, mobile clients) uses **API Tokens** managed under **Settings → Account → API Tokens**. Each token has a name, optional expiry, and can be disabled or deleted individually. Tokens are stored hashed at rest — the plaintext is shown only once at creation.
+
+Treat each token like a password. API tokens are **not** accepted for RTMP publishing — that flow uses the per-stream `stream_token` described above.

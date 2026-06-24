@@ -20,3 +20,8 @@ app/static/debug_toolbar/
 app/static/django_extensions/
 .venv/
 .sonarlint/connectedMode.json
+*.mypy_cache
+.mcp.json
+.claude/settings.json
+.claude/hooks/sonar-secrets/build-scripts/pretool-secrets.sh
+.claude/hooks/sonar-secrets/build-scripts/prompt-secrets.sh

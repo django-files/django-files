@@ -1,4 +1,4 @@
-FROM ghcr.io/django-files/docker-nginx:1.29.7
+FROM ghcr.io/django-files/docker-nginx:1.31.2
 
 COPY record.conf /opt/nginx/
 COPY nginx.conf raw-mime.types /etc/nginx/

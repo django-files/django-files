@@ -63,9 +63,7 @@
 /* Fix height constraint to prevent video component height changes */
 html,
 body {
-    height: 100vh;
     overflow: hidden;
-    padding-top: 30px;
 }
 
 main {

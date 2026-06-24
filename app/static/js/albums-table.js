@@ -15,7 +15,6 @@ import {
 const albumsTable = $('#albums-table')
 const isHome = !!albumsTable.data('home')
 const MAX_HOME_ALBUMS = 10
-const deleteAlbumButton = document.querySelector('.delete-album-btn')
 const albumLink = document.querySelector('div.d-none > .dj-album-link')
 const totalAlbumsCount = document.getElementById('total-albums-count')
 
@@ -102,7 +101,7 @@ const dataTablesOptions = {
         {
             targets: 8,
             orderable: false,
-            render: renderDeleteBtn,
+            render: renderActions,
             defaultContent: '',
             className: 'text-center',
             width: '40px',
@@ -259,11 +258,57 @@ async function domContentLoaded() {
     dtRevealThead(albumsDataTable)
 }
 
-function renderDeleteBtn(data, type, row, _meta) {
-    let deleteBtn = deleteAlbumButton.cloneNode(true)
-    deleteBtn.setAttribute('data-hook-id', row.id)
-    deleteBtn.addEventListener('click', handleDeleteClick)
-    return deleteBtn
+function escapeHtmlAttr(v) {
+    return String(v ?? '').replace(
+        /[&<>"']/g,
+        (c) =>
+            ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;',
+            })[c]
+    )
+}
+
+function renderActions(data, type, row, _meta) {
+    if (type !== 'display') return data
+    const id = escapeHtmlAttr(row.id)
+    const isPrivate = !!row.private
+    const privateIcon = isPrivate ? 'globe' : 'lock'
+    const privateLabel = isPrivate ? 'Make Public' : 'Make Private'
+    const hasPassword = !!row.password || !!row.has_password
+    const passwordLabel = hasPassword ? 'Change Password' : 'Set Password'
+    // Treat missing is_owner (older payloads without the flag) as owner.
+    const isOwner = row.is_owner === undefined ? true : !!row.is_owner
+    const ownerItems = isOwner
+        ? `<li><a class="dropdown-item album-toggle-private-btn" role="button" data-album-id="${id}" data-private="${escapeHtmlAttr(isPrivate)}">
+                <i class="fa-solid fa-${privateIcon} me-2"></i>${privateLabel}
+            </a></li>
+            <li><a class="dropdown-item album-set-password-btn" role="button" data-album-id="${id}" data-has-password="${escapeHtmlAttr(hasPassword)}">
+                <i class="fa-solid fa-key me-2"></i>${passwordLabel}
+            </a></li>
+            <li><hr class="dropdown-divider"></li>`
+        : ''
+    return `
+        <div class="dropdown album-ctx-menu" data-album-id="${id}">
+            <input type="hidden" name="current-album-password" value="${escapeHtmlAttr(row.password || '')}">
+            <button class="dt-ctx-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More options">
+                <i class="fa-solid fa-ellipsis"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item album-copy-link-btn" role="button" data-album-id="${id}" data-album-url="${escapeHtmlAttr(row.url)}">
+                    <i class="fa-solid fa-link me-2"></i>Copy Link
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                ${ownerItems}
+                <li><a class="dropdown-item album-delete-btn link-danger" role="button" data-hook-id="${id}">
+                    <i class="fa-regular fa-trash-can me-2"></i>Delete
+                </a></li>
+            </ul>
+        </div>
+    `
 }
 
 function renderAlbumLink(data, type, row, _meta) {
@@ -317,6 +362,9 @@ export function updateAlbumRow(data) {
         .draw(false)
 }
 
-function handleDeleteClick(_event) {
-    deleteModal.open([$(this).data('hook-id')])
-}
+// albums-actions.js dispatches this when a ctx-menu Delete is clicked — it
+// can't open the modal itself because the wired instance lives in this module.
+document.addEventListener('album-ctx-delete', function (e) {
+    const pk = e.detail?.pk
+    if (pk != null && deleteModal) deleteModal.open([pk])
+})
