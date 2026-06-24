@@ -93,36 +93,8 @@ function flashCopiedIcon(btn) {
     }, 2000)
 }
 
-async function copyVlcUrlForStream(btn, name) {
-    // Non-owner viewers get the URL baked into data-static-url server-side (the
-    // viewer already passed the access gate when live_view rendered the page).
-    // Owners hit the API instead so a freshly-rotated token is reflected without
-    // a reload.
-    const staticUrl = btn.dataset.staticUrl
-    if (staticUrl) {
-        try {
-            await navigator.clipboard.writeText(staticUrl)
-            flashCopiedIcon(btn)
-            if (typeof show_toast === 'function')
-                show_toast('Raw link copied to clipboard.', 'info', '3000')
-            return true
-        } catch {
-            if (typeof show_toast === 'function')
-                show_toast('Failed to copy raw link.', 'danger', '4000')
-            return false
-        }
-    }
+async function copyRawLinkToClipboard(btn, url) {
     try {
-        const res = await fetch(
-            `/api/stream/${encodeURIComponent(name)}/vlc-url/`
-        )
-        if (!res.ok) {
-            if (typeof show_toast === 'function')
-                show_toast('Failed to fetch raw link.', 'danger', '4000')
-            return false
-        }
-        const { url } = await res.json()
-        if (!url) return false
         await navigator.clipboard.writeText(url)
         flashCopiedIcon(btn)
         if (typeof show_toast === 'function')
@@ -133,6 +105,29 @@ async function copyVlcUrlForStream(btn, name) {
             show_toast('Failed to copy raw link.', 'danger', '4000')
         return false
     }
+}
+
+async function fetchOwnerVlcUrl(name) {
+    const res = await fetch(`/api/stream/${encodeURIComponent(name)}/vlc-url/`)
+    if (!res.ok) {
+        if (typeof show_toast === 'function')
+            show_toast('Failed to fetch raw link.', 'danger', '4000')
+        return null
+    }
+    const { url } = await res.json()
+    return url || null
+}
+
+async function copyVlcUrlForStream(btn, name) {
+    // Non-owner viewers get the URL baked into data-static-url server-side (the
+    // viewer already passed the access gate when live_view rendered the page).
+    // Owners hit the API instead so a freshly-rotated token is reflected without
+    // a reload.
+    const staticUrl = btn.dataset.staticUrl
+    if (staticUrl) return copyRawLinkToClipboard(btn, staticUrl)
+    const url = await fetchOwnerVlcUrl(name)
+    if (!url) return false
+    return copyRawLinkToClipboard(btn, url)
 }
 
 async function onCopyVlcUrl(btn) {
@@ -376,7 +371,7 @@ document
         const bytes = new Uint8Array(12)
         crypto.getRandomValues(bytes)
         const input = document.getElementById('stream-password-input')
-        input.value = btoa(String.fromCharCode(...bytes))
+        input.value = btoa(String.fromCodePoint(...bytes))
             .replace(/[+/=]/g, '')
             .slice(0, 16)
         input.type = 'text'
