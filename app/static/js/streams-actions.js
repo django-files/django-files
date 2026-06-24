@@ -5,6 +5,13 @@
 
 import { socket } from './socket.js'
 import { wireDeleteModal } from './bulk-actions.js'
+import {
+    flashCopiedIcon,
+    openPasswordModal,
+    setMenuLabel,
+    wireClickDelegation,
+    wirePasswordModal,
+} from './ctx-menu-shared.js'
 
 const csrfToken = () => /csrftoken=([^;]+)/.exec(document.cookie)?.[1] || ''
 
@@ -81,16 +88,6 @@ export function openDeleteStreamsModal(names) {
     else if (names.length && confirm(`Delete ${names.length} stream(s)?`)) {
         socket.send(JSON.stringify({ method: 'delete-streams', pks: names }))
     }
-}
-
-function flashCopiedIcon(btn) {
-    const icon = btn.querySelector('i')
-    if (!icon) return
-    const orig = icon.className
-    icon.className = 'fa-solid fa-check fa-fw me-2'
-    setTimeout(() => {
-        icon.className = orig
-    }, 2000)
 }
 
 async function copyRawLinkToClipboard(btn, url) {
@@ -192,12 +189,7 @@ function syncVlcButtons(name, enabled) {
         if (icon) {
             icon.className = `fa-solid fa-${enabled ? 'link' : 'link-slash'} fa-fw me-2 link-info`
         }
-        const label = enabled ? 'Copy Raw Link' : 'Enable Raw Link'
-        const textNode = [...btn.childNodes].find(
-            (n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()
-        )
-        if (textNode) textNode.textContent = label
-        else btn.append(label)
+        setMenuLabel(btn, enabled ? 'Copy Raw Link' : 'Enable Raw Link')
     })
     // The "Disable Raw Link" wrapper <li> is always rendered; show/hide it so a
     // newly-enabled stream gets the action without needing a re-render.
@@ -287,37 +279,26 @@ function onDelete(btn) {
 function onSetPassword(btn) {
     const name = btn.dataset.streamName
     if (!name) return
-    const modalEl = document.getElementById('streamPasswordModal')
-    if (!modalEl) return
-    // Pre-fill with the stream's current password (if any) so "Change Password"
-    // shows the existing value the same way the file/album password modals do.
-    // Falls back to walking up to the ctx-menu wrapper which carries the hidden
-    // input, since the table renders rows without that wrapper.
-    const current =
-        btn
-            .closest('.stream-ctx-menu')
-            ?.querySelector('input[name=current-stream-password]')?.value || ''
-    modalEl.querySelector('input[name=name]').value = name
-    const input = modalEl.querySelector('input[name=password]')
-    input.value = current
-    input.type = 'text'
-    bootstrap.Modal.getOrCreateInstance(modalEl).show()
+    openPasswordModal({
+        modalId: 'streamPasswordModal',
+        keyField: 'name',
+        keyValue: name,
+        currentValueSelector: 'input[name=current-stream-password]',
+        btn,
+    })
 }
 
-document
-    .getElementById('modal-stream-password-form')
-    ?.addEventListener('submit', function (event) {
-        event.preventDefault()
-        const form = event.currentTarget
-        const name = form.elements.name.value
-        const password = form.elements.password.value
-        if (!name) return
-        socket.send(
-            JSON.stringify({ method: 'set_stream_password', name, password })
-        )
-        // Mirror the new value into the hidden input that ctxSetPassword reads,
-        // so reopening the modal in the same session shows the latest value
-        // without waiting for a websocket round-trip.
+wirePasswordModal({
+    modalId: 'streamPasswordModal',
+    formId: 'modal-stream-password-form',
+    inputId: 'stream-password-input',
+    unmaskId: 'stream-password-unmask',
+    copyId: 'stream-password-copy',
+    generateId: 'stream-password-generate',
+    keyField: 'name',
+    method: 'set_stream_password',
+    onSubmitted: ({ key, password }) => {
+        const name = String(key)
         document
             .querySelectorAll(
                 `.stream-ctx-menu[data-stream-name="${CSS.escape(name)}"] input[name=current-stream-password]`
@@ -325,59 +306,18 @@ document
             .forEach((el) => {
                 el.value = password
             })
-        // Refresh the menu item label between Set/Change.
         document
             .querySelectorAll(
                 `.stream-set-password-btn[data-stream-name="${CSS.escape(name)}"]`
             )
             .forEach((el) => {
                 el.dataset.hasPassword = password ? 'true' : 'false'
-                const textNode = [...el.childNodes].find(
-                    (n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()
-                )
-                if (textNode)
-                    textNode.textContent = password
-                        ? 'Change Password'
-                        : 'Set Password'
+                setMenuLabel(el, password ? 'Change Password' : 'Set Password')
             })
-        const modalEl = document.getElementById('streamPasswordModal')
-        if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).hide()
-    })
+    },
+})
 
-document
-    .getElementById('stream-password-unmask')
-    ?.addEventListener('click', function () {
-        const input = document.getElementById('stream-password-input')
-        input.type = input.type === 'password' ? 'text' : 'password'
-    })
-
-document
-    .getElementById('stream-password-copy')
-    ?.addEventListener('click', async function () {
-        const input = document.getElementById('stream-password-input')
-        if (!input.value) return
-        try {
-            await navigator.clipboard.writeText(input.value)
-            if (typeof show_toast === 'function')
-                show_toast('Password copied to clipboard.', 'info', '3000')
-        } catch {
-            /* clipboard denied */
-        }
-    })
-
-document
-    .getElementById('stream-password-generate')
-    ?.addEventListener('click', function () {
-        const bytes = new Uint8Array(12)
-        crypto.getRandomValues(bytes)
-        const input = document.getElementById('stream-password-input')
-        input.value = btoa(String.fromCodePoint(...bytes))
-            .replace(/[+/=]/g, '')
-            .slice(0, 16)
-        input.type = 'text'
-    })
-
-const HANDLERS = {
+wireClickDelegation({
     'stream-copy-rtmp-btn': onCopyRtmp,
     'stream-rotate-token-btn': onRotateToken,
     'stream-copy-vlc-url-btn': onCopyVlcUrl,
@@ -385,16 +325,6 @@ const HANDLERS = {
     'stream-toggle-public-btn': onTogglePublic,
     'stream-set-password-btn': onSetPassword,
     'stream-delete-btn': onDelete,
-}
-
-document.addEventListener('click', function (event) {
-    for (const [cls, handler] of Object.entries(HANDLERS)) {
-        const btn = event.target.closest(`.${cls}`)
-        if (btn) {
-            handler(btn)
-            return
-        }
-    }
 })
 
 // When the live view triggers a delete, redirect once the websocket confirms it.
@@ -451,11 +381,6 @@ function syncPublicToggleButtons(name, isPublic) {
         if (icon) {
             icon.className = `fa-solid fa-${isPublic ? 'lock' : 'globe'} fa-fw me-2`
         }
-        const label = isPublic ? 'Make Private' : 'Make Public'
-        const textNode = [...btn.childNodes].find(
-            (n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()
-        )
-        if (textNode) textNode.textContent = label
-        else btn.append(label)
+        setMenuLabel(btn, isPublic ? 'Make Private' : 'Make Public')
     })
 }

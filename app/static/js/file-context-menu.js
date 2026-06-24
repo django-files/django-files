@@ -1,13 +1,13 @@
 import { socket } from './socket.js'
 import { fetchFile } from './api-fetch.js'
 import { initAlbumSelector, initBulkAlbumSelector } from './album-selector.js'
+import { openPasswordModal, wirePasswordModal } from './ctx-menu-shared.js'
 
 // JS for Context Menu
 
 console.debug('LOADING: file-context-menu.js')
 
 const fileExpireModal = $('#fileExpireModal')
-const filePasswordModal = $('#filePasswordModal')
 const fileDeleteModal = $('#fileDeleteModal')
 const fileRenameModal = $('#fileRenameModal')
 const fileAlbumModal = $('#fileAlbumModal')
@@ -46,24 +46,24 @@ $('#modal-expire-form').on('submit', function (event) {
     })
 })
 
-// Password Form
-// TODO: Cleanup Password Forms
+// Password Form — wiring lives in ctx-menu-shared.js so files/streams/albums
+// share one implementation. Autofocus on open is handled by openPasswordModal.
 
-filePasswordModal.on('shown.bs.modal', function (event) {
-    console.debug('filePasswordModal: shown.bs.modal:', event)
-    $(this).find('input').trigger('focus').trigger('select')
-})
-
-$('#modal-password-form').on('submit', function (event) {
-    console.debug('#modal-password-form: submit:', event)
-    event.preventDefault()
-    const data = genData($(this), 'set-password-file')
-    console.debug('data:', data)
-    socket.send(JSON.stringify(data))
-    $(`.ctx-menu[data-id="${data.pk}"] input[name=current-file-password]`).val(
-        data.password
-    )
-    filePasswordModal.modal('hide')
+wirePasswordModal({
+    modalId: 'filePasswordModal',
+    formId: 'modal-file-password-form',
+    inputId: 'file-password-input',
+    unmaskId: 'file-password-unmask',
+    copyId: 'file-password-copy',
+    generateId: 'file-password-generate',
+    keyField: 'pk',
+    castKey: (v) => Number.parseInt(v),
+    method: 'set-password-file',
+    onSubmitted: ({ key, password }) => {
+        $(`.ctx-menu[data-id="${key}"] input[name=current-file-password]`).val(
+            password
+        )
+    },
 })
 
 // Delete File Form
@@ -131,14 +131,18 @@ export function ctxSetPrivate(event) {
 export function ctxSetPassword(event) {
     const pk = getPrimaryKey(event)
     console.debug(`ctxSetPassword: pk: ${pk}`, event)
-    filePasswordModal.find('input[name=pk]').val(pk)
-    const input = $(
-        `.ctx-menu[data-id="${pk}"] input[name=current-file-password]`
-    )
-    const password = input.val().toString().trim()
-    console.debug(`password: ${password}`)
-    filePasswordModal.find('input[name=password]').val(password)
-    filePasswordModal.modal('show')
+    const btn = event.currentTarget || event.target
+    openPasswordModal({
+        modalId: 'filePasswordModal',
+        keyField: 'pk',
+        keyValue: pk,
+        currentValueSelector: 'input[name=current-file-password]',
+        // File ctx menus wrap items in .ctx-menu (their hidden state-mirrors
+        // live on that element), not the bootstrap .dropdown wrapper used by
+        // stream/album menus.
+        wrapperSelector: '.ctx-menu',
+        btn,
+    })
 }
 
 export function ctxDeleteFile(event) {

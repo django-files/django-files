@@ -1,17 +1,16 @@
 // Click delegation for album context-menu actions emitted by albums-table.js.
-// Mirrors streams-actions.js so both surfaces stay consistent.
+// Mirrors streams-actions.js so both surfaces stay consistent. Shared helpers
+// (clipboard feedback, label flips, password-modal wiring, click delegation)
+// live in ctx-menu-shared.js.
 
 import { socket } from './socket.js'
-
-function flashCopiedIcon(btn) {
-    const icon = btn.querySelector('i')
-    if (!icon) return
-    const orig = icon.className
-    icon.className = 'fa-solid fa-check fa-fw me-2'
-    setTimeout(() => {
-        icon.className = orig
-    }, 2000)
-}
+import {
+    flashCopiedIcon,
+    openPasswordModal,
+    setMenuLabel,
+    wireClickDelegation,
+    wirePasswordModal,
+} from './ctx-menu-shared.js'
 
 async function onCopyLink(btn) {
     const url = btn.dataset.albumUrl
@@ -44,89 +43,37 @@ function onTogglePrivate(btn) {
 function onSetPassword(btn) {
     const pk = btn.dataset.albumId
     if (!pk) return
-    const modalEl = document.getElementById('albumPasswordModal')
-    if (!modalEl) return
-    const current =
-        btn
-            .closest('.album-ctx-menu')
-            ?.querySelector('input[name=current-album-password]')?.value || ''
-    modalEl.querySelector('input[name=pk]').value = pk
-    const input = modalEl.querySelector('input[name=password]')
-    input.value = current
-    input.type = 'text'
-    bootstrap.Modal.getOrCreateInstance(modalEl).show()
+    openPasswordModal({
+        modalId: 'albumPasswordModal',
+        keyField: 'pk',
+        keyValue: pk,
+        currentValueSelector: 'input[name=current-album-password]',
+        btn,
+    })
 }
 
-document
-    .getElementById('modal-album-password-form')
-    ?.addEventListener('submit', function (event) {
-        event.preventDefault()
-        const form = event.currentTarget
-        const pk = Number.parseInt(form.elements.pk.value)
-        const password = form.elements.password.value
-        if (!pk) return
-        socket.send(
-            JSON.stringify({ method: 'set_album_password', pk, password })
-        )
-        // Optimistically sync the in-DOM hidden input + menu label between
-        // Set/Change without waiting on the websocket roundtrip.
+wirePasswordModal({
+    modalId: 'albumPasswordModal',
+    formId: 'modal-album-password-form',
+    inputId: 'album-password-input',
+    unmaskId: 'album-password-unmask',
+    copyId: 'album-password-copy',
+    generateId: 'album-password-generate',
+    keyField: 'pk',
+    castKey: (v) => Number.parseInt(v),
+    method: 'set_album_password',
+    onSubmitted: ({ key, password }) => {
+        const id = String(key)
         document
             .querySelectorAll(
-                `.album-ctx-menu[data-album-id="${CSS.escape(String(pk))}"] input[name=current-album-password]`
+                `.album-ctx-menu[data-album-id="${CSS.escape(id)}"] input[name=current-album-password]`
             )
             .forEach((el) => {
                 el.value = password
             })
-        document
-            .querySelectorAll(
-                `.album-set-password-btn[data-album-id="${CSS.escape(String(pk))}"]`
-            )
-            .forEach((el) => {
-                el.dataset.hasPassword = password ? 'true' : 'false'
-                const textNode = [...el.childNodes].find(
-                    (n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()
-                )
-                if (textNode)
-                    textNode.textContent = password
-                        ? 'Change Password'
-                        : 'Set Password'
-            })
-        const modalEl = document.getElementById('albumPasswordModal')
-        if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).hide()
-    })
-
-document
-    .getElementById('album-password-unmask')
-    ?.addEventListener('click', function () {
-        const input = document.getElementById('album-password-input')
-        input.type = input.type === 'password' ? 'text' : 'password'
-    })
-
-document
-    .getElementById('album-password-copy')
-    ?.addEventListener('click', async function () {
-        const input = document.getElementById('album-password-input')
-        if (!input.value) return
-        try {
-            await navigator.clipboard.writeText(input.value)
-            if (typeof show_toast === 'function')
-                show_toast('Password copied to clipboard.', 'info', '3000')
-        } catch {
-            /* clipboard denied */
-        }
-    })
-
-document
-    .getElementById('album-password-generate')
-    ?.addEventListener('click', function () {
-        const bytes = new Uint8Array(12)
-        crypto.getRandomValues(bytes)
-        const input = document.getElementById('album-password-input')
-        input.value = btoa(String.fromCodePoint(...bytes))
-            .replace(/[+/=]/g, '')
-            .slice(0, 16)
-        input.type = 'text'
-    })
+        syncPasswordButtons(id, !!password)
+    },
+})
 
 function onDelete(btn) {
     // The delete handler is owned by albums-table.js (it holds the wired
@@ -139,25 +86,15 @@ function onDelete(btn) {
     )
 }
 
-const HANDLERS = {
+wireClickDelegation({
     'album-copy-link-btn': onCopyLink,
     'album-toggle-private-btn': onTogglePrivate,
     'album-set-password-btn': onSetPassword,
     'album-delete-btn': onDelete,
-}
-
-document.addEventListener('click', function (event) {
-    for (const [cls, handler] of Object.entries(HANDLERS)) {
-        const btn = event.target.closest(`.${cls}`)
-        if (btn) {
-            handler(btn)
-            return
-        }
-    }
 })
 
-// Optimistic toggle for "Make Private/Public" — the album-update WS broadcast
-// will reconcile, but flip the icon/label immediately so the menu feels live.
+// Optimistic reconciliation against the album-update WS broadcast — flips
+// icons/labels on all rendered rows when the server confirms a change.
 socket?.addEventListener('message', function (event) {
     if (event.data === 'pong') return
     let data
@@ -182,12 +119,7 @@ function syncPrivateButtons(id, isPrivate) {
         if (icon) {
             icon.className = `fa-solid fa-${isPrivate ? 'globe' : 'lock'} fa-fw me-2`
         }
-        const label = isPrivate ? 'Make Public' : 'Make Private'
-        const textNode = [...btn.childNodes].find(
-            (n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()
-        )
-        if (textNode) textNode.textContent = label
-        else btn.append(label)
+        setMenuLabel(btn, isPrivate ? 'Make Public' : 'Make Private')
     })
 }
 
@@ -195,12 +127,6 @@ function syncPasswordButtons(id, hasPassword) {
     const sel = `.album-set-password-btn[data-album-id="${CSS.escape(String(id))}"]`
     document.querySelectorAll(sel).forEach((btn) => {
         btn.dataset.hasPassword = hasPassword ? 'true' : 'false'
-        const textNode = [...btn.childNodes].find(
-            (n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()
-        )
-        if (textNode)
-            textNode.textContent = hasPassword
-                ? 'Change Password'
-                : 'Set Password'
+        setMenuLabel(btn, hasPassword ? 'Change Password' : 'Set Password')
     })
 }
