@@ -61,7 +61,7 @@
                     <i class="fa-solid fa-ellipsis"></i>
                     <button class="file-context-dropdown my-0 py-0" type="button" aria-expanded="false" hidden></button>
                 </div>
-                {% include 'streams/ctx-menu.html' with rtmp_url='rtmp://'|add:rtmp_host|add:'/live?stream_token='|add:stream_token %}
+                {% include 'streams/ctx-menu.html' with rtmp_url='rtmp://'|add:rtmp_authority|add:'/live?stream_token='|add:stream_token %}
                 {% endif %}
 
                 <div id="preview-sidebar" class="sidebar d-flex flex-column h-100" data-no-auto-close="true">
@@ -70,7 +70,7 @@
                     <button class="sidebar-context-btn" id="sidebarStreamContext" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Stream options">
                         <i class="fa-solid fa-ellipsis"></i>
                     </button>
-                    {% include 'streams/ctx-menu.html' with rtmp_url='rtmp://'|add:rtmp_host|add:'/live?stream_token='|add:stream_token %}
+                    {% include 'streams/ctx-menu.html' with rtmp_url='rtmp://'|add:rtmp_authority|add:'/live?stream_token='|add:stream_token %}
                     {% endif %}
                     {% is_ios_browser request as ios %}
                     {% if ios %}

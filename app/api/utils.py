@@ -111,7 +111,13 @@ def extract_albums(q: Albums.objects):
     return albums
 
 
-def extract_streams(q: Stream.objects, user_id: int = None, rtmp_host: str = None, subscriber_counts: dict = None):
+def extract_streams(
+    q: Stream.objects,
+    user_id: int = None,
+    rtmp_host: str = None,
+    rtmp_port: int = None,
+    subscriber_counts: dict = None,
+):
     site_settings = site_settings_processor(None)["site_settings"]
     streams = []
     for stream in q:
@@ -136,6 +142,7 @@ def extract_streams(q: Stream.objects, user_id: int = None, rtmp_host: str = Non
             # enabled bit so the menu can render the right action.
             data["playback_enabled"] = bool(data.pop("playback_token", ""))
             if rtmp_host:
-                data["rtmp_url"] = f"rtmp://{rtmp_host}/live?stream_token={stream.stream_token}"
+                authority = f"{rtmp_host}:{rtmp_port}" if rtmp_port and rtmp_port != 1935 else rtmp_host
+                data["rtmp_url"] = f"rtmp://{authority}/live?stream_token={stream.stream_token}"
         streams.append(data)
     return streams

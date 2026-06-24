@@ -77,6 +77,12 @@ def get_rtmp_host(request, site_settings=None):
     return request.get_host().split(":")[0], False
 
 
+def rtmp_authority(host):
+    """host:port string for RTMP URLs; omits :1935 (the default RTMP port)."""
+    port = django_settings.RTMP_PORT
+    return f"{host}:{port}" if port != 1935 else host
+
+
 def detect_cdn(request):
     """Return CDN name if a known CDN proxy is detected via request headers, else None."""
     if request.META.get("HTTP_CF_RAY"):
@@ -156,6 +162,7 @@ def live_view(request, key):
         site_settings = SiteSettings.objects.settings()
         rtmp_host, rtmp_host_is_custom = get_rtmp_host(request, site_settings)
         context["rtmp_host"] = rtmp_host
+        context["rtmp_authority"] = rtmp_authority(rtmp_host)
         context["rtmp_host_is_custom"] = rtmp_host_is_custom
         context["cdn_detected"] = None if rtmp_host_is_custom else detect_cdn(request)
         context["stream_token"] = stream.stream_token
@@ -302,12 +309,14 @@ def streams_view(request):
     site_settings = SiteSettings.objects.settings()
     rtmp_host, rtmp_host_is_custom = get_rtmp_host(request, site_settings)
     cdn_detected = None if rtmp_host_is_custom else detect_cdn(request)
+    authority = rtmp_authority(rtmp_host)
     if request.user.is_superuser:
         users = CustomUser.objects.all()
         context = {
             "users": users,
             "full_context": True,
             "rtmp_host": rtmp_host,
+            "rtmp_authority": authority,
             "rtmp_host_is_custom": rtmp_host_is_custom,
             "cdn_detected": cdn_detected,
         }
@@ -315,6 +324,7 @@ def streams_view(request):
         context = {
             "full_context": True,
             "rtmp_host": rtmp_host,
+            "rtmp_authority": authority,
             "rtmp_host_is_custom": rtmp_host_is_custom,
             "cdn_detected": cdn_detected,
         }

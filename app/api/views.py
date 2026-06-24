@@ -2132,7 +2132,13 @@ def streams_view(request, page=None, count=100):
         .annotate(cnt=Count("pk"))
         .values_list("group__name", "cnt")
     )
-    streams = extract_streams(stream_list, request.user.id, rtmp_host=rtmp_host, subscriber_counts=subscriber_counts)
+    streams = extract_streams(
+        stream_list,
+        request.user.id,
+        rtmp_host=rtmp_host,
+        rtmp_port=settings.RTMP_PORT,
+        subscriber_counts=subscriber_counts,
+    )
     log.debug("streams: %s", streams)
     response = {
         "streams": streams,
