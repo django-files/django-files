@@ -81,7 +81,6 @@
 </div>
 <script>
 (function () {
-    const rtmpHost = '{{ rtmp_host|escapejs }}'
     const rtmpAuthority = '{{ rtmp_authority|default:rtmp_host|escapejs }}'
     const cdnDetected = '{{ cdn_detected|default:"" }}'
     const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''

@@ -264,6 +264,8 @@ function getActions(data, type, row) {
                 <a class="dropdown-item stream-disable-vlc-url-btn" role="button" data-stream-name="${safeName}">
                     <i class="fa-solid fa-ban me-2"></i>Disable Raw Link
                 </a></li>`
+        const hasPassword = !!row.password
+        const passwordLabel = hasPassword ? 'Change Password' : 'Set Password'
         const ownerItems = row.is_owner
             ? `<li><a class="dropdown-item stream-copy-rtmp-btn" role="button" data-stream-name="${safeName}" data-rtmp-url="${escapeHtmlAttr(row.rtmp_url)}">
                     <i class="fa-solid fa-satellite-dish me-2"></i>Copy RTMP URL
@@ -280,10 +282,14 @@ function getActions(data, type, row) {
                 <li><a class="dropdown-item stream-toggle-public-btn" role="button" data-stream-name="${safeName}" data-public="${escapeHtmlAttr(row.public)}">
                     <i class="fa-solid fa-${publicIcon} me-2"></i>${publicLabel}
                 </a></li>
+                <li><a class="dropdown-item stream-set-password-btn" role="button" data-stream-name="${safeName}" data-has-password="${escapeHtmlAttr(hasPassword)}">
+                    <i class="fa-solid fa-key me-2"></i>${passwordLabel}
+                </a></li>
                 <li><hr class="dropdown-divider"></li>`
             : ''
         return `
-            <div class="dropdown">
+            <div class="dropdown stream-ctx-menu" data-stream-name="${safeName}">
+                <input type="hidden" name="current-stream-password" value="${escapeHtmlAttr(row.password || '')}">
                 <button class="dt-ctx-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More options">
                     <i class="fa-solid fa-ellipsis"></i>
                 </button>

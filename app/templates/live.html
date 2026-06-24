@@ -62,6 +62,12 @@
                     <button class="file-context-dropdown my-0 py-0" type="button" aria-expanded="false" hidden></button>
                 </div>
                 {% include 'streams/ctx-menu.html' with rtmp_url='rtmp://'|add:rtmp_authority|add:'/live?stream_token='|add:stream_token %}
+                {% elif viewer_vlc_url %}
+                <div class="context-placement" data-bs-toggle="dropdown" id="streamContextPlacement" title="Stream options">
+                    <i class="fa-solid fa-ellipsis"></i>
+                    <button class="file-context-dropdown my-0 py-0" type="button" aria-expanded="false" hidden></button>
+                </div>
+                {% include 'streams/ctx-menu-viewer.html' %}
                 {% endif %}
 
                 <div id="preview-sidebar" class="sidebar d-flex flex-column h-100" data-no-auto-close="true">
@@ -71,6 +77,11 @@
                         <i class="fa-solid fa-ellipsis"></i>
                     </button>
                     {% include 'streams/ctx-menu.html' with rtmp_url='rtmp://'|add:rtmp_authority|add:'/live?stream_token='|add:stream_token %}
+                    {% elif viewer_vlc_url %}
+                    <button class="sidebar-context-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Stream options">
+                        <i class="fa-solid fa-ellipsis"></i>
+                    </button>
+                    {% include 'streams/ctx-menu-viewer.html' %}
                     {% endif %}
                     {% is_ios_browser request as ios %}
                     {% if ios %}
@@ -174,6 +185,7 @@
             {% if is_owner %}
             {% include 'streams/delete-modal.html' %}
             {% include 'streams/regenerate-token-modal.html' %}
+            {% include 'streams/password-modal.html' %}
             {% endif %}
 {% endblock %}
 
@@ -185,9 +197,10 @@
     <script type="text/javascript" src="{% static 'js/live.js' %}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.23.3/video.min.js" integrity="sha512-QXzWUAUJ/b0OrNag2iCdwVdNenAvB3Id/xI41L32aOv4RffUDBmbyHZPoNF8HYmdZuWeC3nR/J2IwMoSDGM0eQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="text/javascript" src="{% static 'dist/js-cookie/js.cookie.min.js' %}"></script>
-    {% if is_owner %}
+    {% if is_owner or viewer_vlc_url %}
     <script type="module" src="{% static 'js/streams-actions.js' %}"></script>
-    {% if cdn_detected %}
+    {% endif %}
+    {% if is_owner and cdn_detected %}
     <script>
     document.addEventListener('click', function (e) {
         if (e.target.closest('.stream-copy-rtmp-btn')) {
@@ -195,7 +208,6 @@
         }
     })
     </script>
-    {% endif %}
     {% endif %}
     {% if stream.live_chat or is_owner %}
     {{ chat_user_info|json_script:"chat-user-info" }}

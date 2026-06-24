@@ -101,8 +101,16 @@ def home_view(request):
     View  /
     """
     log.debug("%s - home_view: is_secure: %s", request.method, request.is_secure())
+    # home.html embeds the Go Live modal, which expects rtmp_host/rtmp_authority/
+    # cdn_detected. Populate them here so the modal can render without a live stream.
+    site_settings = SiteSettings.objects.settings()
+    rtmp_host, rtmp_host_is_custom = get_rtmp_host(request, site_settings)
     context = {
         "full_context": True,
+        "rtmp_host": rtmp_host,
+        "rtmp_authority": rtmp_authority(rtmp_host),
+        "rtmp_host_is_custom": rtmp_host_is_custom,
+        "cdn_detected": None if rtmp_host_is_custom else detect_cdn(request),
     }
     return render(request, "home.html", context)
 
@@ -166,6 +174,13 @@ def live_view(request, key):
         context["rtmp_host_is_custom"] = rtmp_host_is_custom
         context["cdn_detected"] = None if rtmp_host_is_custom else detect_cdn(request)
         context["stream_token"] = stream.stream_token
+    elif stream.playback_token:
+        # Viewer has already passed the access gate above (private-stream auth and/or
+        # _stream_password_gate) — surface the raw HLS link so they can copy it from
+        # the context menu. Owners get this from the API endpoint; embedding here
+        # keeps the viewer flow gate-free.
+        base = site_url.rstrip("/") if site_url else request.build_absolute_uri("/").rstrip("/")
+        context["viewer_vlc_url"] = f"{base}/hls/{stream.name}.m3u8?token={stream.playback_token}"
     response = render(request, "live.html", context)
     set_hls_cookies(response, stream.name)
     return response

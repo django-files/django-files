@@ -48,6 +48,7 @@ _ALLOWED_METHODS = frozenset(
         "delete_streams",
         "set_stream_title",
         "set_stream_description",
+        "set_stream_password",
         "set_stream_live_chat",
         "set_stream_anonymous_chat",
         "join_stream_chat",
@@ -452,6 +453,30 @@ class HomeConsumer(AsyncWebsocketConsumer):
         await database_sync_to_async(stream.save)()
         data = {"event": "set-stream-description", "name": name, "description": description}
         await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
+
+    async def set_stream_password(self, *, user_id: int = None, name: str = None, password: str = None, **kwargs):
+        # The plaintext password is broadcast only to the owner's own user group, not the
+        # public stream/home channel — viewers only learn that a password exists, never its value.
+        log.debug("set_stream_password: user_id=%s, name=%s", user_id, name)
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        stream = await self._fetch_stream(name)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        if err:
+            return err
+        stream.password = password or ""
+        await database_sync_to_async(stream.save)(update_fields=["password"])
+        has_password = bool(stream.password)
+        # Public broadcast: just the boolean — anyone listening on `home` learns the flag flipped.
+        public_data = {"event": "set-stream-password", "name": name, "has_password": has_password}
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(public_data)})
+        # Owner-scoped echo with the value so the owner's other tabs can refresh their UI
+        # without re-fetching the stream row.
+        if user_id:
+            owner_data = {**public_data, "password": stream.password}
+            await self.channel_layer.group_send(f"user-{user_id}", {"type": _WS_SEND, "text": json.dumps(owner_data)})
 
     # -------------------------------------------------------------------------
     # Chat identity helpers (no I/O — safe to call in async context)

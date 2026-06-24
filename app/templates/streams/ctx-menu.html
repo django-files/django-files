@@ -6,7 +6,8 @@ delegate handlers globally for both contexts.
 
 Required context: stream, rtmp_url.
 {% endcomment %}
-<div class="dropdown stream-ctx-menu">
+<div class="dropdown stream-ctx-menu" data-stream-name="{{ stream.name }}">
+    <input type="hidden" name="current-stream-password" value="{{ stream.password|default:'' }}">
     <ul class="dropdown-menu file-context-dropdown-menu dropdown-menu-end">
         <li>
             <a role="button" class="dropdown-item stream-copy-rtmp-btn"
@@ -38,6 +39,12 @@ Required context: stream, rtmp_url.
                data-stream-name="{{ stream.name }}"
                data-public="{{ stream.public|yesno:'true,false' }}">
                 <i class="fa-solid fa-{% if stream.public %}lock{% else %}globe{% endif %} fa-fw me-2"></i>{% if stream.public %}Make Private{% else %}Make Public{% endif %}</a>
+        </li>
+        <li>
+            <a role="button" class="dropdown-item stream-set-password-btn"
+               data-stream-name="{{ stream.name }}"
+               data-has-password="{{ stream.password|yesno:'true,false' }}">
+                <i class="fa-solid fa-key fa-fw me-2"></i>{% if stream.password %}Change Password{% else %}Set Password{% endif %}</a>
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>

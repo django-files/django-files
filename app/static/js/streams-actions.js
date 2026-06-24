@@ -83,7 +83,35 @@ export function openDeleteStreamsModal(names) {
     }
 }
 
+function flashCopiedIcon(btn) {
+    const icon = btn.querySelector('i')
+    if (!icon) return
+    const orig = icon.className
+    icon.className = 'fa-solid fa-check fa-fw me-2'
+    setTimeout(() => {
+        icon.className = orig
+    }, 2000)
+}
+
 async function copyVlcUrlForStream(btn, name) {
+    // Non-owner viewers get the URL baked into data-static-url server-side (the
+    // viewer already passed the access gate when live_view rendered the page).
+    // Owners hit the API instead so a freshly-rotated token is reflected without
+    // a reload.
+    const staticUrl = btn.dataset.staticUrl
+    if (staticUrl) {
+        try {
+            await navigator.clipboard.writeText(staticUrl)
+            flashCopiedIcon(btn)
+            if (typeof show_toast === 'function')
+                show_toast('Raw link copied to clipboard.', 'info', '3000')
+            return true
+        } catch {
+            if (typeof show_toast === 'function')
+                show_toast('Failed to copy raw link.', 'danger', '4000')
+            return false
+        }
+    }
     try {
         const res = await fetch(
             `/api/stream/${encodeURIComponent(name)}/vlc-url/`
@@ -96,14 +124,7 @@ async function copyVlcUrlForStream(btn, name) {
         const { url } = await res.json()
         if (!url) return false
         await navigator.clipboard.writeText(url)
-        const icon = btn.querySelector('i')
-        if (icon) {
-            const orig = icon.className
-            icon.className = 'fa-solid fa-check fa-fw me-2'
-            setTimeout(() => {
-                icon.className = orig
-            }, 2000)
-        }
+        flashCopiedIcon(btn)
         if (typeof show_toast === 'function')
             show_toast('Raw link copied to clipboard.', 'info', '3000')
         return true
@@ -268,12 +289,106 @@ function onDelete(btn) {
     openDeleteStreamsModal([name])
 }
 
+function onSetPassword(btn) {
+    const name = btn.dataset.streamName
+    if (!name) return
+    const modalEl = document.getElementById('streamPasswordModal')
+    if (!modalEl) return
+    // Pre-fill with the stream's current password (if any) so "Change Password"
+    // shows the existing value the same way the file/album password modals do.
+    // Falls back to walking up to the ctx-menu wrapper which carries the hidden
+    // input, since the table renders rows without that wrapper.
+    const current =
+        btn
+            .closest('.stream-ctx-menu')
+            ?.querySelector('input[name=current-stream-password]')?.value || ''
+    modalEl.querySelector('input[name=name]').value = name
+    const input = modalEl.querySelector('input[name=password]')
+    input.value = current
+    input.type = 'text'
+    bootstrap.Modal.getOrCreateInstance(modalEl).show()
+}
+
+document
+    .getElementById('modal-stream-password-form')
+    ?.addEventListener('submit', function (event) {
+        event.preventDefault()
+        const form = event.currentTarget
+        const name = form.elements.name.value
+        const password = form.elements.password.value
+        if (!name) return
+        socket.send(
+            JSON.stringify({ method: 'set_stream_password', name, password })
+        )
+        // Mirror the new value into the hidden input that ctxSetPassword reads,
+        // so reopening the modal in the same session shows the latest value
+        // without waiting for a websocket round-trip.
+        document
+            .querySelectorAll(
+                `.stream-ctx-menu[data-stream-name="${CSS.escape(name)}"] input[name=current-stream-password]`
+            )
+            .forEach((el) => {
+                el.value = password
+            })
+        // Refresh the menu item label between Set/Change.
+        document
+            .querySelectorAll(
+                `.stream-set-password-btn[data-stream-name="${CSS.escape(name)}"]`
+            )
+            .forEach((el) => {
+                el.dataset.hasPassword = password ? 'true' : 'false'
+                const textNode = [...el.childNodes].find(
+                    (n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim()
+                )
+                if (textNode)
+                    textNode.textContent = password
+                        ? 'Change Password'
+                        : 'Set Password'
+            })
+        const modalEl = document.getElementById('streamPasswordModal')
+        if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).hide()
+    })
+
+document
+    .getElementById('stream-password-unmask')
+    ?.addEventListener('click', function () {
+        const input = document.getElementById('stream-password-input')
+        input.type = input.type === 'password' ? 'text' : 'password'
+    })
+
+document
+    .getElementById('stream-password-copy')
+    ?.addEventListener('click', async function () {
+        const input = document.getElementById('stream-password-input')
+        if (!input.value) return
+        try {
+            await navigator.clipboard.writeText(input.value)
+            if (typeof show_toast === 'function')
+                show_toast('Password copied to clipboard.', 'info', '3000')
+        } catch {
+            /* clipboard denied */
+        }
+    })
+
+document
+    .getElementById('stream-password-generate')
+    ?.addEventListener('click', function () {
+        const bytes = new Uint8Array(12)
+        crypto.getRandomValues(bytes)
+        const input = document.getElementById('stream-password-input')
+        input.value = btoa(String.fromCharCode(...bytes))
+            .replace(/[+/=]/g, '')
+            .slice(0, 16)
+        input.type = 'text'
+    })
+
 const HANDLERS = {
     'stream-copy-rtmp-btn': onCopyRtmp,
     'stream-rotate-token-btn': onRotateToken,
     'stream-copy-vlc-url-btn': onCopyVlcUrl,
     'stream-disable-vlc-url-btn': onDisableVlcUrl,
     'stream-toggle-public-btn': onTogglePublic,
+    'stream-set-password-btn': onSetPassword,
     'stream-delete-btn': onDelete,
 }
 

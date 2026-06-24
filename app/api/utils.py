@@ -111,6 +111,30 @@ def extract_albums(q: Albums.objects):
     return albums
 
 
+def _apply_owner_fields(data, stream, rtmp_host, rtmp_port):
+    # Don't ship the raw playback_token in row payloads; the VLC URL is
+    # fetched on demand via /api/stream/<name>/vlc-url/. Expose only the
+    # enabled bit so the menu can render the right action.
+    data["playback_enabled"] = bool(data.pop("playback_token", ""))
+    if rtmp_host:
+        authority = f"{rtmp_host}:{rtmp_port}" if rtmp_port and rtmp_port != 1935 else rtmp_host
+        data["rtmp_url"] = f"rtmp://{authority}/live?stream_token={stream.stream_token}"
+
+
+def _strip_owner_fields(data):
+    # Non-owners (e.g. superusers browsing all streams) should not see the raw
+    # password value either. The boolean state is enough for UI.
+    data.pop("stream_token", None)
+    data.pop("playback_token", None)
+    data["has_password"] = bool(data.pop("password", ""))
+
+
+def _resolve_subscriber_count(name: str, subscriber_counts):
+    if subscriber_counts is not None:
+        return subscriber_counts.get(name, 0)
+    return PushInformation.objects.filter(group__name=name).count()
+
+
 def extract_streams(
     q: Stream.objects,
     user_id: int = None,
@@ -129,20 +153,10 @@ def extract_streams(
         data["ended_at"] = stream.ended_at
         data["url"] = site_settings["site_url"] + f"/live/{stream.name}/"
         data["is_owner"] = is_owner
-        if subscriber_counts is not None:
-            data["subscriber_count"] = subscriber_counts.get(stream.name, 0)
+        data["subscriber_count"] = _resolve_subscriber_count(stream.name, subscriber_counts)
+        if is_owner:
+            _apply_owner_fields(data, stream, rtmp_host, rtmp_port)
         else:
-            data["subscriber_count"] = PushInformation.objects.filter(group__name=stream.name).count()
-        if not is_owner:
-            data.pop("stream_token", None)
-            data.pop("playback_token", None)
-        else:
-            # Don't ship the raw playback_token in row payloads; the VLC URL is
-            # fetched on demand via /api/stream/<name>/vlc-url/. Expose only the
-            # enabled bit so the menu can render the right action.
-            data["playback_enabled"] = bool(data.pop("playback_token", ""))
-            if rtmp_host:
-                authority = f"{rtmp_host}:{rtmp_port}" if rtmp_port and rtmp_port != 1935 else rtmp_host
-                data["rtmp_url"] = f"rtmp://{authority}/live?stream_token={stream.stream_token}"
+            _strip_owner_fields(data)
         streams.append(data)
     return streams
