@@ -105,7 +105,7 @@ socket?.addEventListener('message', function (event) {
     }
     if (data.event === 'album-update' && data.id != null) {
         syncPrivateButtons(data.id, !!data.private)
-        if (Object.prototype.hasOwnProperty.call(data, 'password')) {
+        if (Object.hasOwn(data, 'password')) {
             syncPasswordButtons(data.id, !!data.password)
         }
     }

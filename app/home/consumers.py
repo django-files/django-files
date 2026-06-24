@@ -28,6 +28,7 @@ _ERR_NO_STREAM_NAME = "No stream name provided."
 _ERR_STREAM_NOT_FOUND = "Stream not found."
 _ERR_STREAM_OWNED_BY_OTHER = "Stream owned by another user."
 _ERR_SESSION_NOT_READY = "Session not ready."
+_ERR_ALBUM_NOT_FOUND = "Album not found."
 _WS_SEND = "websocket.send"
 
 # Explicit allowlist of methods callable via WebSocket.
@@ -256,7 +257,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if len(albums) > 0:
             albums.delete()
         else:
-            return self._error("Album not found.", **kwargs)
+            return self._error(_ERR_ALBUM_NOT_FOUND, **kwargs)
 
     def private_albums(self, *, user_id: int = None, pks: List[int] = None, private: bool, **kwargs) -> None:
         log.debug("private_albums: user_id=%s pks=%s private=%s", user_id, pks, private)
@@ -276,7 +277,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             return self._error("No album pk provided.", **kwargs)
         album = Albums.objects.filter(pk=pk).first()
         if not album:
-            return self._error("Album not found.", **kwargs)
+            return self._error(_ERR_ALBUM_NOT_FOUND, **kwargs)
         if user_id and album.user_id != user_id:
             requester = self.scope["user"]
             if not getattr(requester, "is_superuser", False):
@@ -1249,7 +1250,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         elif create_if_absent and album_name:
             selected_album = Albums.objects.create(user_id=user_id, name=album_name)
         else:
-            return self._error("Album not found.", **kwargs)
+            return self._error(_ERR_ALBUM_NOT_FOUND, **kwargs)
         file.albums.add(selected_album)
         file_album_websocket.apply_async(
             args=[

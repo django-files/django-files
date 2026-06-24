@@ -280,16 +280,17 @@ function renderActions(data, type, row, _meta) {
     const privateLabel = isPrivate ? 'Make Public' : 'Make Private'
     const hasPassword = !!row.password || !!row.has_password
     const passwordLabel = hasPassword ? 'Change Password' : 'Set Password'
-    const ownerItems =
-        row.is_owner !== false
-            ? `<li><a class="dropdown-item album-toggle-private-btn" role="button" data-album-id="${id}" data-private="${escapeHtmlAttr(isPrivate)}">
+    // Treat missing is_owner (older payloads without the flag) as owner.
+    const isOwner = row.is_owner === undefined ? true : !!row.is_owner
+    const ownerItems = isOwner
+        ? `<li><a class="dropdown-item album-toggle-private-btn" role="button" data-album-id="${id}" data-private="${escapeHtmlAttr(isPrivate)}">
                 <i class="fa-solid fa-${privateIcon} me-2"></i>${privateLabel}
             </a></li>
             <li><a class="dropdown-item album-set-password-btn" role="button" data-album-id="${id}" data-has-password="${escapeHtmlAttr(hasPassword)}">
                 <i class="fa-solid fa-key me-2"></i>${passwordLabel}
             </a></li>
             <li><hr class="dropdown-divider"></li>`
-            : ''
+        : ''
     return `
         <div class="dropdown album-ctx-menu" data-album-id="${id}">
             <input type="hidden" name="current-album-password" value="${escapeHtmlAttr(row.password || '')}">
