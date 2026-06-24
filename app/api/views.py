@@ -1464,9 +1464,12 @@ def stream_disable_playback_token_view(request, name):
         return JsonResponse({"error": STREAM_NOT_FOUND_ERROR}, status=404)
     if stream.user_id != request.user.id and not request.user.is_superuser:
         return JsonResponse({"error": FORBIDDEN_ERROR}, status=403)
-    stream.playback_token = ""
+    # Empty string is the documented "disabled" sentinel for playback_token, not
+    # a hardcoded credential — bandit's B105 fires on any "" assigned to a name
+    # containing "token", so suppress on both the assignment and the echo back.
+    stream.playback_token = ""  # nosec B105
     stream.save(update_fields=["playback_token"])
-    return JsonResponse({"name": stream.name, "playback_token": "", "enabled": False})
+    return JsonResponse({"name": stream.name, "playback_token": "", "enabled": False})  # nosec B105
 
 
 @require_http_methods(["GET"])
