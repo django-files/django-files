@@ -20,3 +20,4 @@ app/static/debug_toolbar/
 app/static/django_extensions/
 .venv/
 .sonarlint/connectedMode.json
+*.mypy_cache
