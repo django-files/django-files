@@ -98,15 +98,23 @@ def extract_files(q: Files.objects):
     return files
 
 
-def extract_albums(q: Albums.objects):
+def extract_albums(q: Albums.objects, user_id: int = None):
+    # user_id=None preserves the legacy signal-path behavior (broadcast to the
+    # owner-scoped group), where every recipient is implicitly the owner.
     site_settings = site_settings_processor(None)["site_settings"]
     albums = []
     for album in q:
+        is_owner = user_id is None or album.user_id == user_id
         data = model_to_dict(album)
         data["date"] = album.date
         data["url"] = site_settings["site_url"] + "/files/?view=gallery&album=" + str(album.id)
         data["user_name"] = album.user.get_name()
         data["file_count"] = getattr(album, "file_count", 0)
+        data["is_owner"] = is_owner
+        if not is_owner:
+            # Don't leak the raw password value to e.g. superusers browsing
+            # someone else's albums.
+            data["has_password"] = bool(data.pop("password", ""))
         albums.append(data)
     return albums
 

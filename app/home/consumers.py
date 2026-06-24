@@ -39,6 +39,7 @@ _ALLOWED_METHODS = frozenset(
         "delete_files",
         "delete_albums",
         "private_albums",
+        "set_album_password",
         "toggle_private_file",
         "private_files",
         "private_streams",
@@ -265,6 +266,23 @@ class HomeConsumer(AsyncWebsocketConsumer):
         for a in albums:
             a.private = private
             a.save(update_fields=["private"])  # triggers post_save signal → album-update WS broadcast
+
+    def set_album_password(self, *, user_id: int = None, pk: int = None, password: str = None, **kwargs) -> dict:
+        # Owner-gated; superusers may also pass any pk. The plaintext is emitted
+        # only via the user-scoped album-update broadcast (see signals), which
+        # itself filters to owner-only consumers.
+        log.debug("set_album_password: user_id=%s pk=%s", user_id, pk)
+        if pk is None:
+            return self._error("No album pk provided.", **kwargs)
+        album = Albums.objects.filter(pk=pk).first()
+        if not album:
+            return self._error("Album not found.", **kwargs)
+        if user_id and album.user_id != user_id:
+            requester = self.scope["user"]
+            if not getattr(requester, "is_superuser", False):
+                return self._error("Album owned by another user.", **kwargs)
+        album.password = password or ""
+        album.save(update_fields=["password"])  # triggers post_save signal → album-update WS broadcast
 
     def toggle_private_file(self, *, user_id: int = None, pk: int = None, **kwargs) -> dict:
         """

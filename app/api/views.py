@@ -400,13 +400,26 @@ def shorten_view(request):
 def _handle_create_album(request):
     data = get_json_body(request)
     log.debug("data: %s", data)
+    # Honor the per-user "Default Private" / "Auto Password" toggles when the
+    # caller didn't pass an explicit value. data_or_header treats missing keys
+    # as the supplied default, so check the raw sources first to detect omission.
+    has_private = "private" in data or "private" in request.headers
+    has_password = "password" in data or "password" in request.headers
+    private = (
+        data_or_header(request, data, "private", False, cast=bool)
+        if has_private
+        else request.user.default_file_private
+    )
+    password = data_or_header(request, data, "password") if has_password else ""
+    if not has_password and request.user.default_file_password:
+        password = rand_string()
     album = Albums.objects.create(
         user=request.user,
         name=data_or_header(request, data, "name"),
         maxv=data_or_header(request, data, "max-views", 0, cast=int),
         info=data_or_header(request, data, "description"),
-        password=data_or_header(request, data, "password"),
-        private=data_or_header(request, data, "private", False, cast=bool),
+        password=password,
+        private=private,
         expr=data_or_header(request, data, "expire"),
     )
     site_settings = SiteSettings.objects.settings()
@@ -998,7 +1011,7 @@ def albums_view(request, page=None, count=100):
         default="-created",
     )
     page_items, _next = paginate_no_count(q, page, count)
-    albums = extract_albums(page_items)
+    albums = extract_albums(page_items, user_id=request.user.id)
     log.debug("albums: %s", albums)
     response = {
         "albums": albums,
@@ -1392,11 +1405,15 @@ def stream_create_view(request):
         )
     title = request.POST.get("title", "").strip() or name
     description = request.POST.get("description", "").strip()
+    # Honor the per-user "Default Private" / "Auto Password" toggles on first
+    # create only. Stream.public is the inverse of private, so flip the bit.
+    defaults = {"user": request.user, "title": title, "description": description}
+    if request.user.default_file_private:
+        defaults["public"] = False
+    if request.user.default_file_password:
+        defaults["password"] = rand_string()
 
-    stream, created = Stream.objects.get_or_create(
-        name=name,
-        defaults={"user": request.user, "title": title, "description": description},
-    )
+    stream, created = Stream.objects.get_or_create(name=name, defaults=defaults)
     if not created and stream.user != request.user:
         return JsonResponse({"error": "Stream name already taken."}, status=409)
     return JsonResponse({"name": stream.name, "stream_token": stream.stream_token})

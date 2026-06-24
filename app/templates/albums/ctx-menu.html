@@ -1,0 +1,38 @@
+{% comment %}
+Album context menu — rendered per-row by albums-table.js. The classes and
+data attributes must match what getActions() emits there, so albums-actions.js
+can delegate handlers globally. This template is here for server-side renders
+(if/when added); the JS path renders the same DOM inline.
+
+Required context: album.
+{% endcomment %}
+<div class="dropdown album-ctx-menu" data-album-id="{{ album.id }}">
+    <input type="hidden" name="current-album-password" value="{{ album.password|default:'' }}">
+    <ul class="dropdown-menu file-context-dropdown-menu dropdown-menu-end">
+        <li>
+            <a role="button" class="dropdown-item album-copy-link-btn"
+               data-album-id="{{ album.id }}"
+               data-album-url="{{ album.url|default_if_none:'' }}">
+                <i class="fa-solid fa-link fa-fw me-2 link-info"></i>Copy Link</a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a role="button" class="dropdown-item album-toggle-private-btn"
+               data-album-id="{{ album.id }}"
+               data-private="{{ album.private|yesno:'true,false' }}">
+                <i class="fa-solid fa-{% if album.private %}globe{% else %}lock{% endif %} fa-fw me-2"></i>{% if album.private %}Make Public{% else %}Make Private{% endif %}</a>
+        </li>
+        <li>
+            <a role="button" class="dropdown-item album-set-password-btn"
+               data-album-id="{{ album.id }}"
+               data-has-password="{{ album.password|yesno:'true,false' }}">
+                <i class="fa-solid fa-key fa-fw me-2"></i>{% if album.password %}Change Password{% else %}Set Password{% endif %}</a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a role="button" class="dropdown-item album-delete-btn link-danger"
+               data-hook-id="{{ album.id }}">
+                <i class="fa-regular fa-trash-can fa-fw me-2"></i>Delete</a>
+        </li>
+    </ul>
+</div>

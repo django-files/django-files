@@ -178,8 +178,8 @@
                                 <div class="form-check form-switch fs-5 mt-2">
                                     <input class="form-check-input" type="checkbox" id="default_file_private" name="default_file_private" {{ request.user.default_file_private|if_true:"checked" }}>
                                     <label class="form-check-label" for="default_file_private">
-                                        Private Files
-                                        <span data-bs-toggle="tooltip" data-bs-title="New uploads are private by default and only visible to you or admins.">
+                                        Default Private
+                                        <span data-bs-toggle="tooltip" data-bs-title="New files, albums, and streams default to private when not specified.">
                                             <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
                                         </span>
                                     </label>
@@ -187,8 +187,8 @@
                                 <div class="form-check form-switch fs-5 mt-2">
                                     <input class="form-check-input" type="checkbox" id="default_file_password" name="default_file_password" {{ request.user.default_file_password|if_true:"checked" }}>
                                     <label class="form-check-label" for="default_file_password">
-                                        Password Protected Files
-                                        <span data-bs-toggle="tooltip" data-bs-title="New uploads require a password to view by default.">
+                                        Auto Password
+                                        <span data-bs-toggle="tooltip" data-bs-title="Generate a random password on new files, albums, and streams.">
                                             <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
                                         </span>
                                     </label>
