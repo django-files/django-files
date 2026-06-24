@@ -127,6 +127,8 @@ log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
 
 json_error_message = "Error Parsing JSON Body"
+STREAM_NOT_FOUND_ERROR = "Stream not found."
+FORBIDDEN_ERROR = "Forbidden."
 
 
 def paginate_no_count(queryset, page, count):
@@ -1408,9 +1410,9 @@ def stream_rotate_token_view(request, name):
     """
     stream = Stream.objects.filter(name=name).first()
     if not stream:
-        return JsonResponse({"error": "Stream not found."}, status=404)
+        return JsonResponse({"error": STREAM_NOT_FOUND_ERROR}, status=404)
     if stream.user != request.user and not request.user.is_superuser:
-        return JsonResponse({"error": "Forbidden."}, status=403)
+        return JsonResponse({"error": FORBIDDEN_ERROR}, status=403)
     stream.stream_token = rand_string()
     stream.save(update_fields=["stream_token"])
     return JsonResponse({"name": stream.name, "stream_token": stream.stream_token})
@@ -1433,9 +1435,9 @@ def stream_enable_playback_token_view(request, name):
     """
     stream = Stream.objects.filter(name=name).first()
     if not stream:
-        return JsonResponse({"error": "Stream not found."}, status=404)
+        return JsonResponse({"error": STREAM_NOT_FOUND_ERROR}, status=404)
     if stream.user_id != request.user.id and not request.user.is_superuser:
-        return JsonResponse({"error": "Forbidden."}, status=403)
+        return JsonResponse({"error": FORBIDDEN_ERROR}, status=403)
     stream.playback_token = rand_string()
     stream.save(update_fields=["playback_token"])
     return JsonResponse(
@@ -1459,9 +1461,9 @@ def stream_disable_playback_token_view(request, name):
     """
     stream = Stream.objects.filter(name=name).first()
     if not stream:
-        return JsonResponse({"error": "Stream not found."}, status=404)
+        return JsonResponse({"error": STREAM_NOT_FOUND_ERROR}, status=404)
     if stream.user_id != request.user.id and not request.user.is_superuser:
-        return JsonResponse({"error": "Forbidden."}, status=403)
+        return JsonResponse({"error": FORBIDDEN_ERROR}, status=403)
     stream.playback_token = ""
     stream.save(update_fields=["playback_token"])
     return JsonResponse({"name": stream.name, "playback_token": "", "enabled": False})
@@ -1486,7 +1488,7 @@ def stream_vlc_url_view(request, name):
     # Return 404 for both missing and non-owner so this endpoint can't be used
     # to enumerate which private stream names exist.
     if not stream or (stream.user_id != request.user.id and not request.user.is_superuser):
-        return JsonResponse({"error": "Stream not found."}, status=404)
+        return JsonResponse({"error": STREAM_NOT_FOUND_ERROR}, status=404)
     if not stream.playback_token:
         return JsonResponse({"error": "Raw-link playback is disabled.", "enabled": False}, status=409)
     return JsonResponse({"name": stream.name, "url": _vlc_url_for(request, stream), "enabled": True})
@@ -1634,7 +1636,7 @@ def stream_commands_view(request, name):
     log.debug("stream_commands_view: name=%s user=%s", name, request.user)
     stream = Stream.objects.filter(name=name).first()
     if not stream:
-        return JsonResponse({"error": "Stream not found."}, status=404)
+        return JsonResponse({"error": STREAM_NOT_FOUND_ERROR}, status=404)
 
     user = request.user
     is_authenticated = bool(getattr(user, "is_authenticated", False) and user.pk)
