@@ -14,7 +14,7 @@ body.preview-navbar-hidden .navbar {
 }
 
 body.preview-navbar-hidden {
-    padding-top: env(safe-area-inset-top, 0px) !important;
+    padding-top: env(safe-area-inset-top, 0) !important;
 }
 
 /* Invisible hot-zone at the very top — pointer-events off by default,

@@ -67,8 +67,8 @@ html {
 /* Glass offcanvas — only when it's actually a side panel (mobile).
  * On desktop Bootstrap overrides background/border with !important anyway,
  * and backdrop-filter inside the expanded inline nav causes compositing issues. */
-@media (max-width: 767.98px) {
-    #offcanvasNavbar {
+@media (width <= 767.98px) {
+    [id='offcanvasNavbar'] {
         background: rgba(20, 20, 24, 0.72);
         backdrop-filter: blur(20px) saturate(180%);
         -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -76,12 +76,12 @@ html {
         box-shadow: var(--glass-shadow);
     }
 
-    [data-bs-theme='light'] #offcanvasNavbar {
+    [data-bs-theme='light'] [id='offcanvasNavbar'] {
         background: rgba(245, 245, 250, 0.78);
     }
 
     @media (prefers-color-scheme: light) {
-        :root:not([data-bs-theme='dark']) #offcanvasNavbar {
+        :root:not([data-bs-theme='dark']) [id='offcanvasNavbar'] {
             background: rgba(245, 245, 250, 0.78);
         }
     }
@@ -203,7 +203,7 @@ html {
     /* Use top instead of transform so the navbar never creates a CSS containing
      * block for position:fixed children (the offcanvas). transform would trap
      * the offcanvas inside the navbar's coordinate space. */
-    top: var(--navbar-offset, 0px);
+    top: var(--navbar-offset, 0);
 }
 
 body.navbar-snapping .navbar {
