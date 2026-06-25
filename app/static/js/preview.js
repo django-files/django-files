@@ -59,6 +59,56 @@ function toggleSidebarMode() {
     applySidebarMode(next)
 }
 
+// ---- Navbar auto-hide for preview page ----
+
+const NAVBAR_IDLE_MS = 2000
+let navbarHideTimer = null
+
+function showPreviewNavbar() {
+    clearTimeout(navbarHideTimer)
+    document.body.classList.remove('preview-navbar-hidden')
+    navbarHideTimer = setTimeout(
+        () => document.body.classList.add('preview-navbar-hidden'),
+        NAVBAR_IDLE_MS
+    )
+}
+
+function hidePreviewNavbarNow() {
+    clearTimeout(navbarHideTimer)
+    navbarHideTimer = setTimeout(
+        () => document.body.classList.add('preview-navbar-hidden'),
+        NAVBAR_IDLE_MS
+    )
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const pullTab = document.getElementById('previewNavbarTab')
+    const navbar = document.querySelector('.navbar')
+    const toggler = document.querySelector('.navbar-toggler')
+
+    // If the native hamburger is visible, mobile mode: hide the navbar immediately
+    // and show a floating hamburger instead of the auto-hide / pull-tab flow.
+    const mobileNav = toggler && getComputedStyle(toggler).display !== 'none'
+
+    if (mobileNav) {
+        document.body.classList.add(
+            'preview-navbar-hidden',
+            'preview-mobile-nav'
+        )
+        return
+    }
+
+    pullTab?.addEventListener('mouseenter', showPreviewNavbar)
+    pullTab?.addEventListener('click', showPreviewNavbar)
+    navbar?.addEventListener('mouseenter', showPreviewNavbar)
+    navbar?.addEventListener('mouseleave', hidePreviewNavbarNow)
+
+    // Start the idle timer on load
+    hidePreviewNavbarNow()
+})
+
+// ---- End navbar auto-hide ----
+
 function domLoaded() {
     // Insert mode toggle button into sidebar
     const closebtn = document.getElementById('closeSidebar')

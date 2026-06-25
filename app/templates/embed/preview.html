@@ -79,6 +79,15 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
 {% block nav2color %}{{ file.user.nav_color_2|default:"#1e1c21" }}{% endblock %}
 
 {% block body %}
+    <button class="navbar-pull-tab" id="previewNavbarTab" aria-label="Show navigation">
+        <img src="{% static 'images/logo.png' %}" width="16" height="16" alt="logo">
+        <i class="fa-solid fa-caret-down"></i>
+    </button>
+    <button class="preview-floating-hamburger" id="previewFloatingHamburger"
+            type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"
+            aria-controls="offcanvasNavbar" aria-label="Toggle navigation">
+        <i class="fa-solid fa-bars"></i>
+    </button>
     <div class="card h-100 border-0 rounded-0"
          data-render="{{ render }}"
          {% if render == 'markdown' %}data-raw-url="{% url 'home:url-raw-redirect' file.file.name %}{% if file.password %}?password={{ file.password }}{% endif %}"{% endif %}>
