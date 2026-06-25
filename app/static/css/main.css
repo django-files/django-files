@@ -64,21 +64,26 @@ html {
     --bs-offcanvas-width: 260px;
 }
 
-#offcanvasNavbar {
-    background: rgba(20, 20, 24, 0.72);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-left: 1px solid var(--glass-border-color);
-    box-shadow: var(--glass-shadow);
-}
+/* Glass offcanvas — only when it's actually a side panel (mobile).
+ * On desktop Bootstrap overrides background/border with !important anyway,
+ * and backdrop-filter inside the expanded inline nav causes compositing issues. */
+@media (max-width: 767.98px) {
+    #offcanvasNavbar {
+        background: rgba(20, 20, 24, 0.72);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-left: 1px solid var(--glass-border-color);
+        box-shadow: var(--glass-shadow);
+    }
 
-[data-bs-theme='light'] #offcanvasNavbar {
-    background: rgba(245, 245, 250, 0.78);
-}
-
-@media (prefers-color-scheme: light) {
-    :root:not([data-bs-theme='dark']) #offcanvasNavbar {
+    [data-bs-theme='light'] #offcanvasNavbar {
         background: rgba(245, 245, 250, 0.78);
+    }
+
+    @media (prefers-color-scheme: light) {
+        :root:not([data-bs-theme='dark']) #offcanvasNavbar {
+            background: rgba(245, 245, 250, 0.78);
+        }
     }
 }
 
@@ -195,11 +200,14 @@ html {
         var(--nav-color-1, #130e36) 0%,
         var(--nav-color-2, #1e1c21) 100%
     );
-    transform: translateY(var(--navbar-offset, 0px));
+    /* Use top instead of transform so the navbar never creates a CSS containing
+     * block for position:fixed children (the offcanvas). transform would trap
+     * the offcanvas inside the navbar's coordinate space. */
+    top: var(--navbar-offset, 0px);
 }
 
 body.navbar-snapping .navbar {
-    transition: transform 0.2s ease;
+    transition: top 0.2s ease;
 }
 
 .navbar::before {

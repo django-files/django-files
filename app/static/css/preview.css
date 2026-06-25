@@ -2,7 +2,7 @@
 /* preview.css is only loaded on the preview page, so these rules don't bleed. */
 
 .navbar {
-    transition: transform 0.3s ease;
+    transition: top 0.3s ease;
 }
 
 body {
@@ -10,7 +10,7 @@ body {
 }
 
 body.preview-navbar-hidden .navbar {
-    transform: translateY(-100%);
+    top: -200px;
 }
 
 body.preview-navbar-hidden {
