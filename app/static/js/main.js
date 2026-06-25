@@ -20,6 +20,50 @@ if (backToTop) {
     })
 }
 
+let navScrollY = 0
+let navOffset = 0
+let navSnapTimer = null
+
+globalThis.addEventListener(
+    'scroll',
+    () => {
+        const scrollY =
+            document.documentElement.scrollTop || document.body.scrollTop
+        const navbar = document.querySelector('.navbar')
+        if (!navbar) return
+
+        const navH = navbar.offsetHeight
+        const delta = scrollY - navScrollY
+        navScrollY = scrollY
+
+        if (scrollY <= 0) {
+            navOffset = 0
+        } else {
+            navOffset = Math.max(-navH, Math.min(0, navOffset - delta))
+        }
+        document.documentElement.style.setProperty(
+            '--navbar-offset',
+            `${navOffset}px`
+        )
+
+        clearTimeout(navSnapTimer)
+        navSnapTimer = setTimeout(() => {
+            const snapping = navOffset < -navH / 2 ? -navH : 0
+            document.body.classList.add('navbar-snapping')
+            navOffset = snapping
+            document.documentElement.style.setProperty(
+                '--navbar-offset',
+                `${snapping}px`
+            )
+            setTimeout(
+                () => document.body.classList.remove('navbar-snapping'),
+                220
+            )
+        }, 100)
+    },
+    { passive: true }
+)
+
 if (typeof ClipboardJS !== 'undefined') {
     const clipboard = new ClipboardJS('.clip')
     clipboard.on('success', function (e) {
