@@ -639,6 +639,25 @@
                         </button>
                     </div>
 
+                    {% if site_settings.passkey_auth and site_settings.site_url %}
+                    <hr>
+
+                    <div class="mb-4" id="passkeys">
+                        <h6 class="fw-medium mb-1">Passkeys</h6>
+                        <p class="text-muted small mb-2">
+                            Sign in without a password using Face ID, Touch ID, Windows Hello, or a hardware security key.
+                        </p>
+                        <ul class="list-group mb-3" id="passkey-list">
+                            <li class="list-group-item text-muted small" id="passkey-empty">Loading passkeys&hellip;</li>
+                        </ul>
+                        <button type="button" class="btn btn-outline-primary" id="addPasskeyBtn"
+                                data-bs-toggle="modal" data-bs-target="#modal-new-passkey">
+                            <i class="fa-solid fa-fingerprint me-2"></i>Add Passkey
+                        </button>
+                        <div id="passkey-error" class="text-danger small mt-2 d-none" role="alert"></div>
+                    </div>
+                    {% endif %}
+
                     <hr>
 
                     <div>
@@ -696,4 +715,7 @@
     <script defer src="{% static 'js/settings-user.js' %}"></script>
     <script type="module" src="{% static 'js/avatar.js' %}"></script>
     <script type="module" src="{% static 'js/settings-user-tokens.js' %}"></script>
+    {% if site_settings.passkey_auth and site_settings.site_url %}
+        <script type="module" src="{% static 'js/settings-user-passkeys.js' %}"></script>
+    {% endif %}
 {% endblock %}

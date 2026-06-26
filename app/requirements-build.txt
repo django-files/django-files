@@ -29,6 +29,7 @@ sentry-sdk
 ua-parser
 uvicorn[standard]
 validators
+webauthn
 
 
 # Development

@@ -29,6 +29,9 @@ class SiteSettings(models.Model):
         default=False, verbose_name="Two-Factor", help_text="Require Two-Factor Authentication"
     )
     duo_auth = models.BooleanField(default=False, verbose_name="Duo AUth", help_text="Require Duo Authentication")
+    passkey_auth = models.BooleanField(
+        default=True, verbose_name="Passkeys", help_text="Allow passkey (WebAuthn) login and registration"
+    )
     oauth_redirect_url = models.URLField(max_length=128, blank=True, null=True)
     discord_client_id = models.CharField(max_length=32, blank=True, default="")
     discord_client_secret = models.CharField(max_length=128, blank=True, default="")

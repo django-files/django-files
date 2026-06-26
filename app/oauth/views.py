@@ -1,4 +1,5 @@
 import base64
+import json
 import logging
 from typing import Union
 
@@ -8,16 +9,25 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from home.templatetags.home_tags import is_mobile
-from home.util.auth import create_api_token, hash_token
+from home.util.auth import _client_ip, _infer_device_name, create_api_token, hash_token
 from home.util.requests import CustomSchemeRedirect
+from oauth import passkeys
 from oauth.forms import LoginForm
-from oauth.models import ApiToken, CustomUser, DiscordWebhooks, UserInvites
+from oauth.models import (
+    ApiToken,
+    CustomUser,
+    DiscordWebhooks,
+    PasskeyCredential,
+    UserInvites,
+)
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
@@ -28,6 +38,7 @@ from oauth.providers.helpers import (
 )
 from settings.models import SiteSettings
 from ua_parser import parse
+from webauthn.helpers import bytes_to_base64url
 
 log = logging.getLogger("app")
 
@@ -252,6 +263,148 @@ def post_login(request):
             request.session.set_expiry(settings.SESSION_MOBILE_AGE)
     except Exception as error:
         log.warning("Error Parsing User Agent: %s", error)
+
+
+# ---------------------------------------------------------------------------
+# Passkeys (WebAuthn)
+# ---------------------------------------------------------------------------
+
+
+def _passkeys_enabled(site_settings):
+    return bool(site_settings.passkey_auth and site_settings.site_url)
+
+
+@login_required
+@require_http_methods(["POST"])
+def passkey_register_begin(request):
+    """
+    View  /oauth/passkey/register/begin
+    """
+    site_settings = SiteSettings.objects.settings()
+    if not _passkeys_enabled(site_settings):
+        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
+    try:
+        options = passkeys.begin_registration(
+            request.session, request.user, site_settings, request.user.passkeys.all()
+        )
+    except passkeys.PasskeyConfigError as error:
+        return JsonResponse({"error": str(error)}, status=400)
+    return HttpResponse(options, content_type="application/json")
+
+
+@login_required
+@require_http_methods(["POST"])
+def passkey_register_complete(request):
+    """
+    View  /oauth/passkey/register/complete
+    """
+    site_settings = SiteSettings.objects.settings()
+    if not _passkeys_enabled(site_settings):
+        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
+    body = json.loads(request.body.decode() or "{}")
+    name = (body.pop("name", "") or "").strip()
+    try:
+        verification = passkeys.finish_registration(request.session, site_settings, body)
+    except Exception:
+        log.exception("passkey_register_complete: verification failed")
+        return JsonResponse({"error": "Passkey registration failed."}, status=400)
+    credential_id = bytes_to_base64url(verification.credential_id)
+    if PasskeyCredential.objects.filter(credential_id=credential_id).exists():
+        return JsonResponse({"error": "This passkey is already registered."}, status=400)
+    ua = request.META.get("HTTP_USER_AGENT", "")[:500]
+    passkey = PasskeyCredential.objects.create(
+        user=request.user,
+        credential_id=credential_id,
+        public_key=bytes_to_base64url(verification.credential_public_key),
+        sign_count=verification.sign_count,
+        name=name or _infer_device_name(ua),
+        transports=body.get("response", {}).get("transports") or [],
+        created_ip=_client_ip(request),
+        user_agent=ua,
+    )
+    log.info("passkey registered for user=%s id=%s", request.user.username, passkey.id)
+    return JsonResponse({"id": passkey.id, "name": passkey.name}, status=200)
+
+
+@login_required
+@require_http_methods(["GET"])
+def passkey_list(request):
+    """
+    View  /oauth/passkey/list
+    """
+    data = [
+        {
+            "id": p.id,
+            "name": p.name,
+            "created_at": p.created_at.isoformat(),
+            "last_used_at": p.last_used_at.isoformat() if p.last_used_at else None,
+            "created_ip": p.created_ip,
+            "user_agent": p.user_agent,
+        }
+        for p in request.user.passkeys.all()
+    ]
+    return JsonResponse({"passkeys": data})
+
+
+@login_required
+@require_http_methods(["POST", "DELETE"])
+def passkey_delete(request, pk):
+    """
+    View  /oauth/passkey/<pk>/delete
+    """
+    deleted, _ = PasskeyCredential.objects.filter(user=request.user, pk=pk).delete()
+    if not deleted:
+        return JsonResponse({"error": "Passkey not found."}, status=404)
+    log.info("passkey deleted for user=%s id=%s", request.user.username, pk)
+    return JsonResponse({"deleted": True})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def passkey_auth_begin(request):
+    """
+    View  /oauth/passkey/auth/begin
+    """
+    site_settings = SiteSettings.objects.settings()
+    if not _passkeys_enabled(site_settings):
+        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
+    try:
+        options = passkeys.begin_authentication(request.session, site_settings)
+    except passkeys.PasskeyConfigError as error:
+        return JsonResponse({"error": str(error)}, status=400)
+    return HttpResponse(options, content_type="application/json")
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def passkey_auth_complete(request):
+    """
+    View  /oauth/passkey/auth/complete
+    """
+    site_settings = SiteSettings.objects.settings()
+    if not _passkeys_enabled(site_settings):
+        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
+    body = json.loads(request.body.decode() or "{}")
+    credential = PasskeyCredential.objects.filter(credential_id=body.get("id")).select_related("user").first()
+    if not credential:
+        log.warning("passkey_auth_complete: unknown credential id")
+        return JsonResponse({"error": "Unknown passkey."}, status=401)
+    try:
+        verification = passkeys.finish_authentication(request.session, site_settings, body, credential)
+    except Exception:
+        log.exception("passkey_auth_complete: verification failed")
+        return JsonResponse({"error": "Passkey authentication failed."}, status=401)
+    credential.sign_count = verification.new_sign_count
+    credential.last_used_at = timezone.now()
+    credential.save(update_fields=["sign_count", "last_used_at"])
+    user = credential.user
+    request.session["login_redirect_url"] = get_next_url(request)
+    if response := pre_login(request, user, site_settings):
+        return response
+    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    post_login(request)
+    messages.info(request, f"Successfully logged in as {user.username}.")
+    return JsonResponse({"redirect": get_login_redirect_url(request)})
 
 
 def duo_callback(request):

@@ -74,6 +74,7 @@ def site_view(request):
     site_settings.oauth_reg = form.cleaned_data["oauth_reg"]
     site_settings.local_auth = form.cleaned_data["local_auth"]
     site_settings.duo_auth = form.cleaned_data["duo_auth"]
+    site_settings.passkey_auth = form.cleaned_data["passkey_auth"]
     site_settings.site_animations = form.cleaned_data["site_animations"]
     site_settings.tsparticles_enabled = form.cleaned_data["tsparticles_enabled"]
     site_settings.global_storage_quota = form.cleaned_data["global_storage_quota"]

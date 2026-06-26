@@ -87,6 +87,13 @@
                 <span class="flex-grow-1 text-center">Google Login</span>
             </a>
             {% endif %}
+            {% if site_settings.passkey_auth and site_settings.site_url %}
+                <button class="btn btn-lg btn-success opacity-75 d-flex align-items-center hvr-grow" id="passkey-login" type="button">
+                    <i class="fa-solid fa-fingerprint position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                    <span class="flex-grow-1 text-center">Passkey Login</span>
+                </button>
+                <div id="passkeyFeedback" class="invalid-feedback text-center d-none" role="alert"></div>
+            {% endif %}
             {% is_mobile request as mobile %}
             {% if mobile %}
                 <a class="btn btn-lg btn-light opacity-75 d-flex align-items-center hvr-grow" href="djangofiles://serverlist">
@@ -110,4 +117,7 @@
     {{ site_settings.tsparticles_config|json_script:"tsparticles_config" }}
     <script defer src="{% static 'dist/tsparticles/tsparticles.bundle.min.js' %}"></script>
     <script defer src="{% static 'js/login.js' %}"></script>
+    {% if site_settings.passkey_auth and site_settings.site_url %}
+        <script type="module" src="{% static 'js/passkey-login.js' %}"></script>
+    {% endif %}
 {% endblock %}
