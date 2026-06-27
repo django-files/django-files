@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from oauth import passkeys
-from oauth.models import CustomUser, PasskeyCredential
+from oauth.models import CustomUser, PasskeyCredential, UserInvites
 from settings.models import SiteSettings
 
 log = logging.getLogger("app")
@@ -81,6 +81,17 @@ class PasskeyViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 401)
 
+    def test_auth_complete_rejects_inactive_user(self):
+        self.user.is_active = False
+        self.user.save()
+        PasskeyCredential.objects.create(user=self.user, credential_id="inactive-cred", public_key="pk")
+        response = self.client.post(
+            reverse("oauth:passkey-auth-complete"),
+            data=json.dumps({"id": "inactive-cred"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
+
     def test_endpoints_gated_when_disabled(self):
         site = SiteSettings.objects.settings()
         site.passkey_auth = False
@@ -119,3 +130,60 @@ class PasskeyViewTest(TestCase):
         response = self.client.post(reverse("oauth:passkey-delete", kwargs={"pk": cred.pk}))
         self.assertEqual(response.status_code, 404)
         self.assertTrue(PasskeyCredential.objects.filter(pk=cred.pk).exists())
+
+
+class PasskeyInviteTest(TestCase):
+    """Passkey account creation via the invite flow."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        site = SiteSettings.objects.settings()
+        site.site_url = "https://example.com"
+        site.passkey_auth = True
+        site.save()
+        self.owner = CustomUser.objects.create_superuser(
+            username="owner",
+            email="owner@test.com",
+            password="12345",  # nosec  # NOSONAR
+        )
+        self.invite = UserInvites.objects.create(owner=self.owner, max_uses=1)
+
+    def _begin_url(self, code):
+        return reverse("oauth:passkey-invite-begin", kwargs={"invite": code})
+
+    def _post(self, url, payload):
+        return self.client.post(url, data=json.dumps(payload), content_type="application/json")
+
+    def test_begin_returns_options(self):
+        response = self._post(self._begin_url(self.invite.invite), {"username": "newuser"})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        self.assertIn("challenge", data)
+        self.assertEqual(data["rp"]["id"], "example.com")
+        self.assertEqual(self.client.session["passkey_invite_username"], "newuser")
+
+    def test_begin_invalid_invite(self):
+        response = self._post(self._begin_url("nope"), {"username": "newuser"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_begin_requires_username(self):
+        response = self._post(self._begin_url(self.invite.invite), {})
+        self.assertEqual(response.status_code, 400)
+
+    def test_begin_username_taken(self):
+        CustomUser.objects.create_user(username="taken", password="12345")  # nosec  # NOSONAR
+        response = self._post(self._begin_url(self.invite.invite), {"username": "taken"})
+        self.assertEqual(response.status_code, 400)
+
+    def test_complete_without_session(self):
+        url = reverse("oauth:passkey-invite-complete", kwargs={"invite": self.invite.invite})
+        response = self._post(url, {"id": "x"})
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(CustomUser.objects.filter(username="newuser").exists())
+
+    def test_disabled_when_passkeys_off(self):
+        site = SiteSettings.objects.settings()
+        site.passkey_auth = False
+        site.save()
+        response = self._post(self._begin_url(self.invite.invite), {"username": "newuser"})
+        self.assertEqual(response.status_code, 400)

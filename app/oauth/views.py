@@ -10,6 +10,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
@@ -389,6 +390,12 @@ def passkey_auth_complete(request):
     if not credential:
         log.warning("passkey_auth_complete: unknown credential id")
         return JsonResponse({"error": "Unknown passkey."}, status=401)
+    user = credential.user
+    # login() does not enforce is_active (only authenticate() does); enforce it
+    # here so a disabled account cannot authenticate via passkey.
+    if not user.is_active:
+        log.warning("passkey_auth_complete: rejected inactive user=%s", user.username)
+        return JsonResponse({"error": "This account is disabled."}, status=403)
     try:
         verification = passkeys.finish_authentication(request.session, site_settings, body, credential)
     except Exception:
@@ -397,7 +404,6 @@ def passkey_auth_complete(request):
     credential.sign_count = verification.new_sign_count
     credential.last_used_at = timezone.now()
     credential.save(update_fields=["sign_count", "last_used_at"])
-    user = credential.user
     request.session["login_redirect_url"] = get_next_url(request)
     if response := pre_login(request, user, site_settings):
         return response
@@ -405,6 +411,116 @@ def passkey_auth_complete(request):
     post_login(request)
     messages.info(request, f"Successfully logged in as {user.username}.")
     return JsonResponse({"redirect": get_login_redirect_url(request)})
+
+
+def _valid_invite_or_none(invite_code):
+    invite = UserInvites.objects.get_invite(invite_code)
+    if not invite or not invite.is_valid():
+        return None
+    return invite
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def passkey_invite_begin(request, invite):
+    """
+    View  /oauth/passkey/invite/<invite>/begin
+    Start passkey registration for a new account created via an invite.
+    """
+    site_settings = SiteSettings.objects.settings()
+    if not _passkeys_enabled(site_settings):
+        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
+    if request.user.is_authenticated:
+        return JsonResponse({"error": "Already authenticated."}, status=400)
+    if not _valid_invite_or_none(invite):
+        return JsonResponse({"error": "Invite is invalid or expired."}, status=400)
+    body = json.loads(request.body.decode() or "{}")
+    username = (body.get("username") or "").strip()
+    if not username:
+        return JsonResponse({"error": "Username is required."}, status=400)
+    if CustomUser.objects.filter(username=username).exists():
+        return JsonResponse({"error": "The chosen username is not available."}, status=400)
+    try:
+        options = passkeys.begin_invite_registration(request.session, username, site_settings)
+    except passkeys.PasskeyConfigError as error:
+        return JsonResponse({"error": str(error)}, status=400)
+    request.session["passkey_invite_username"] = username
+    request.session["passkey_invite_code"] = invite
+    return HttpResponse(options, content_type="application/json")
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def passkey_invite_complete(request, invite):
+    """
+    View  /oauth/passkey/invite/<invite>/complete
+    Verify the attestation, then create the account, consume the invite, and log in.
+    """
+    site_settings = SiteSettings.objects.settings()
+    if not _passkeys_enabled(site_settings):
+        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
+    if request.user.is_authenticated:
+        return JsonResponse({"error": "Already authenticated."}, status=400)
+    invite_obj = _valid_invite_or_none(invite)
+    if not invite_obj:
+        return JsonResponse({"error": "Invite is invalid or expired."}, status=400)
+    username = request.session.get("passkey_invite_username")
+    if not username or request.session.get("passkey_invite_code") != invite:
+        return JsonResponse({"error": "Registration session expired. Please try again."}, status=400)
+    if CustomUser.objects.filter(username=username).exists():
+        return JsonResponse({"error": "The chosen username is not available."}, status=400)
+
+    body = json.loads(request.body.decode() or "{}")
+    name = (body.pop("name", "") or "").strip()
+    try:
+        verification = passkeys.finish_invite_registration(request.session, site_settings, body)
+    except Exception:
+        log.exception("passkey_invite_complete: verification failed")
+        return JsonResponse({"error": "Passkey registration failed."}, status=400)
+    credential_id = bytes_to_base64url(verification.credential_id)
+    if PasskeyCredential.objects.filter(credential_id=credential_id).exists():
+        return JsonResponse({"error": "This passkey is already registered."}, status=400)
+
+    ua = request.META.get("HTTP_USER_AGENT", "")[:500]
+    try:
+        with transaction.atomic():
+            # Lock the invite row so concurrent completes cannot both consume a
+            # single-use (or super_user) invite and mint multiple accounts.
+            # select_for_update is a no-op on SQLite but enforced on Postgres/MySQL.
+            invite_locked = UserInvites.objects.select_for_update().filter(pk=invite_obj.pk).first()
+            if not invite_locked or not invite_locked.is_valid():
+                return JsonResponse({"error": "Invite is invalid or expired."}, status=400)
+            if CustomUser.objects.filter(username=username).exists():
+                return JsonResponse({"error": "The chosen username is not available."}, status=400)
+
+            create_user = (
+                CustomUser.objects.create_superuser if invite_locked.super_user else CustomUser.objects.create_user
+            )
+            user = create_user(username=username, password=None, storage_quota=invite_locked.storage_quota)
+            invite_locked.use_invite(user.id)
+            PasskeyCredential.objects.create(
+                user=user,
+                credential_id=credential_id,
+                public_key=bytes_to_base64url(verification.credential_public_key),
+                sign_count=verification.sign_count,
+                name=name or _infer_device_name(ua),
+                transports=body.get("response", {}).get("transports") or [],
+                created_ip=_client_ip(request),
+                user_agent=ua,
+            )
+    except IntegrityError:
+        # Username/credential uniqueness lost a race; the whole txn rolled back.
+        log.exception("passkey_invite_complete: integrity error creating account")
+        return JsonResponse({"error": "The chosen username is not available."}, status=400)
+
+    request.session.pop("passkey_invite_username", None)
+    request.session.pop("passkey_invite_code", None)
+    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    post_login(request)
+    request.session["login_redirect_url"] = reverse("settings:user")
+    messages.info(request, f"Welcome to Django Files {user.get_name()}.")
+    log.info("passkey invite signup: created user=%s (super=%s)", user.username, invite_obj.super_user)
+    return JsonResponse({"redirect": reverse("settings:user")})
 
 
 def duo_callback(request):

@@ -18,4 +18,6 @@ urlpatterns = [
     path("passkey/<int:pk>/delete", views.passkey_delete, name="passkey-delete"),
     path("passkey/auth/begin", views.passkey_auth_begin, name="passkey-auth-begin"),
     path("passkey/auth/complete", views.passkey_auth_complete, name="passkey-auth-complete"),
+    path("passkey/invite/<str:invite>/begin", views.passkey_invite_begin, name="passkey-invite-begin"),
+    path("passkey/invite/<str:invite>/complete", views.passkey_invite_complete, name="passkey-invite-complete"),
 ]

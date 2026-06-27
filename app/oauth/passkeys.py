@@ -6,6 +6,7 @@ in the session. Views in :mod:`oauth.views` stay small by delegating here.
 """
 
 import logging
+import uuid
 from urllib.parse import urlparse
 
 from webauthn import (
@@ -27,6 +28,7 @@ log = logging.getLogger("app")
 
 REG_CHALLENGE_KEY = "passkey_reg_challenge"
 AUTH_CHALLENGE_KEY = "passkey_auth_challenge"
+INVITE_CHALLENGE_KEY = "passkey_invite_challenge"
 
 
 class PasskeyConfigError(Exception):
@@ -79,6 +81,44 @@ def finish_registration(session, site_settings, body):
     challenge_b64 = session.pop(REG_CHALLENGE_KEY, None)
     if not challenge_b64:
         raise PasskeyConfigError("No registration challenge in session; restart the ceremony.")
+    return verify_registration_response(
+        credential=body,
+        expected_challenge=base64url_to_bytes(challenge_b64),
+        expected_origin=origin,
+        expected_rp_id=rp_id,
+        require_user_verification=False,
+    )
+
+
+def begin_invite_registration(session, username, site_settings):
+    """Generate registration options for a brand-new (not yet created) invitee.
+
+    The account does not exist yet, so an ephemeral user handle is used. The
+    real ``CustomUser`` is only created once the attestation verifies, which
+    avoids leaving orphaned accounts behind when a ceremony is cancelled.
+    """
+    rp_id, rp_name, _ = get_rp(site_settings)
+    options = generate_registration_options(
+        rp_id=rp_id,
+        rp_name=rp_name,
+        user_id=uuid.uuid4().bytes,
+        user_name=username,
+        user_display_name=username,
+        authenticator_selection=AuthenticatorSelectionCriteria(
+            resident_key=ResidentKeyRequirement.PREFERRED,
+            user_verification=UserVerificationRequirement.PREFERRED,
+        ),
+    )
+    session[INVITE_CHALLENGE_KEY] = bytes_to_base64url(options.challenge)
+    return options_to_json(options)
+
+
+def finish_invite_registration(session, site_settings, body):
+    """Verify an invitee's attestation response. Returns a ``VerifiedRegistration``."""
+    rp_id, _, origin = get_rp(site_settings)
+    challenge_b64 = session.pop(INVITE_CHALLENGE_KEY, None)
+    if not challenge_b64:
+        raise PasskeyConfigError("No invite challenge in session; restart the ceremony.")
     return verify_registration_response(
         credential=body,
         expected_challenge=base64url_to_bytes(challenge_b64),
