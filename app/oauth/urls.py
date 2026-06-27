@@ -10,6 +10,7 @@ urlpatterns = [
     path("google/", views.oauth_google, name="google"),
     path("webhook/", views.oauth_webhook, name="webhook"),
     path("logout/", views.oauth_logout, name="logout"),
+    path("username/", views.oauth_username, name="username"),
     path("callback/<str:oauth_provider>", views.oauth_callback, name="callback"),
     path("duo/", views.duo_callback, name="duo"),
     path("passkey/register/begin", views.passkey_register_begin, name="passkey-register-begin"),

@@ -1,11 +1,14 @@
 import json
 import logging
+import types
 
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from oauth import passkeys
-from oauth.models import CustomUser, PasskeyCredential, UserInvites
+from oauth.models import CustomUser, Discord, PasskeyCredential, UserInvites
+from oauth.providers.helpers import create_oauth_user, get_or_create_user
 from settings.models import SiteSettings
 
 log = logging.getLogger("app")
@@ -187,3 +190,105 @@ class PasskeyInviteTest(TestCase):
         site.save()
         response = self._post(self._begin_url(self.invite.invite), {"username": "newuser"})
         self.assertEqual(response.status_code, 400)
+
+
+class OAuthUserCreationTest(TestCase):
+    """get_or_create_user / create_oauth_user: no username-based account adoption."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        site = SiteSettings.objects.settings()
+        site.oauth_reg = True
+        site.save()
+
+    @staticmethod
+    def _req():
+        return types.SimpleNamespace(session={})
+
+    def test_creates_new_user_with_free_username(self):
+        req = self._req()
+        user = get_or_create_user(req, "discord-1", "alice", "discord")
+        self.assertIsNotNone(user)
+        self.assertEqual(user.username, "alice")
+        self.assertTrue(req.session.get("oauth_new_user"))
+
+    def test_does_not_adopt_logged_in_account(self):
+        existing = CustomUser.objects.create_user(username="bob", password="12345")  # nosec  # NOSONAR
+        existing.last_login = timezone.now()
+        existing.save()
+        user = get_or_create_user(self._req(), "discord-2", "bob", "discord")
+        self.assertIsNotNone(user)
+        self.assertNotEqual(user.pk, existing.pk)
+        self.assertNotEqual(user.username, "bob")
+
+    def test_does_not_adopt_never_logged_in_account(self):
+        # Account-takeover fix: a pre-created, never-logged-in local account must
+        # NOT be claimable by a matching OAuth handle.
+        existing = CustomUser.objects.create(username="carol")
+        self.assertIsNone(existing.last_login)
+        user = get_or_create_user(self._req(), "discord-3", "carol", "discord")
+        self.assertIsNotNone(user)
+        self.assertNotEqual(user.pk, existing.pk)
+        self.assertNotEqual(user.username, "carol")
+
+    def test_returns_none_when_registration_disabled(self):
+        site = SiteSettings.objects.settings()
+        site.oauth_reg = False
+        site.save()
+        user = get_or_create_user(self._req(), "discord-4", "dave", "discord")
+        self.assertIsNone(user)
+
+    def test_existing_by_provider_id_returned(self):
+        u = CustomUser.objects.create_user(username="erin", password="12345")  # nosec  # NOSONAR
+        Discord.objects.create(user=u, id="discord-5")
+        user = get_or_create_user(self._req(), "discord-5", "whatever", "discord")
+        self.assertEqual(user.pk, u.pk)
+
+    def test_create_oauth_user_suffixes_on_collision(self):
+        CustomUser.objects.create_user(username="frank", password="12345")  # nosec  # NOSONAR
+        user = create_oauth_user("frank", "Frank")
+        self.assertIsNotNone(user)
+        self.assertNotEqual(user.username, "frank")
+        self.assertEqual(user.first_name, "Frank")
+
+
+class OAuthUsernameViewTest(TestCase):
+    """The post-signup username interstitial."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        self.user = CustomUser.objects.create_user(username="auto1234", password="12345")  # nosec  # NOSONAR
+
+    def test_requires_login(self):
+        response = self.client.get(reverse("oauth:username"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_get_renders(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("oauth:username"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_changes_username_and_display_name(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("oauth:username"), {"username": "chosen", "first_name": "Chosen One", "next": "/"}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, "chosen")
+        self.assertEqual(self.user.first_name, "Chosen One")
+
+    def test_post_rejects_taken_username(self):
+        CustomUser.objects.create_user(username="taken", password="12345")  # nosec  # NOSONAR
+        self.client.force_login(self.user)
+        response = self.client.post(reverse("oauth:username"), {"username": "taken", "next": "/"})
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, "auto1234")
+
+    def test_skip_keeps_username(self):
+        self.client.force_login(self.user)
+        response = self.client.post(reverse("oauth:username"), {"skip": "1", "username": "ignored", "next": "/"})
+        self.assertEqual(response.status_code, 302)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, "auto1234")

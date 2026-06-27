@@ -15,6 +15,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import HttpResponseRedirect, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from home.templatetags.home_tags import is_mobile
@@ -94,6 +95,76 @@ def oauth_show(request):
         log.debug("CustomSchemeRedirect: djangofiles://logout")
         return CustomSchemeRedirect("djangofiles://logout")
     return render(request, "login.html", {"local": site_settings.get_local_auth()})
+
+
+def _safe_redirect_target(request, candidate):
+    """Return candidate if it points at this host, else the home page."""
+    if candidate and url_has_allowed_host_and_scheme(
+        candidate, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return candidate
+    return reverse("home:index")
+
+
+def _username_taken(username, user):
+    return CustomUser.objects.filter(username=username).exclude(pk=user.pk).exists()
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def oauth_username(request):
+    """
+    View  /oauth/username/
+    Interstitial shown after first OAuth signup so the user can personalize the
+    auto-generated login handle (and display name). Decoupled from display name:
+    leaving things as-is keeps the generated username. Safe to revisit later.
+    """
+    default_next = _safe_redirect_target(request, request.session.get("login_redirect_url"))
+    if request.method == "GET":
+        return render(
+            request,
+            "oauth_username.html",
+            {"next": default_next, "username": request.user.username, "first_name": request.user.first_name},
+        )
+
+    next_url = _safe_redirect_target(request, request.POST.get("next") or default_next)
+    request.session.pop("login_redirect_url", None)
+    if request.POST.get("skip"):
+        return redirect(next_url)
+
+    username = (request.POST.get("username") or "").strip()
+    display_name = (request.POST.get("first_name") or "").strip()
+    error = None
+    if not username:
+        error = "Username is required."
+    elif len(username) > 150:
+        error = "Username is too long."
+    elif _username_taken(username, request.user):
+        error = "That username is already taken."
+    if error:
+        return render(
+            request,
+            "oauth_username.html",
+            {"next": next_url, "username": username, "first_name": display_name, "error": error},
+        )
+
+    try:
+        request.user.username = username
+        request.user.first_name = display_name
+        request.user.save(update_fields=["username", "first_name"])
+    except IntegrityError:
+        return render(
+            request,
+            "oauth_username.html",
+            {
+                "next": next_url,
+                "username": username,
+                "first_name": display_name,
+                "error": "That username is already taken.",
+            },
+        )
+    messages.info(request, "Username saved.")
+    return redirect(next_url)
 
 
 def oauth_discord(request):
@@ -203,6 +274,11 @@ def oauth_callback(request, oauth_provider: str = ""):
         post_login(request)
         messages.info(request, f"Successfully logged in via oauth. {user.username} {user.get_name()}.")
         log.debug("OAuth Login Success: %s", user)
+        # New web signups land on an interstitial to personalize their generated
+        # username; the originally intended destination stays in login_redirect_url.
+        if not native_auth and request.session.pop("oauth_new_user", False):
+            return HttpResponseRedirect(reverse("oauth:username"))
+        request.session.pop("oauth_new_user", None)
         token = create_api_token(user, request) if native_auth else ""
         url = get_login_redirect_url(
             request,
