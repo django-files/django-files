@@ -44,6 +44,14 @@ from webauthn.helpers import bytes_to_base64url
 
 log = logging.getLogger("app")
 
+TEMPLATE_OAUTH_USERNAME = "oauth_username.html"
+SETTINGS_USER_URL = "settings:user"
+MODEL_BACKEND = "django.contrib.auth.backends.ModelBackend"
+PASSKEYS_NOT_ENABLED = "Passkeys are not enabled."
+CONTENT_TYPE_JSON = "application/json"
+INVITE_INVALID = "Invite is invalid or expired."
+USERNAME_NOT_AVAILABLE = "The chosen username is not available."
+
 provider_map = {
     "github": GithubOauth,
     "discord": DiscordOauth,
@@ -123,7 +131,7 @@ def oauth_username(request):
     if request.method == "GET":
         return render(
             request,
-            "oauth_username.html",
+            TEMPLATE_OAUTH_USERNAME,
             {"next": default_next, "username": request.user.username, "first_name": request.user.first_name},
         )
 
@@ -144,7 +152,7 @@ def oauth_username(request):
     if error:
         return render(
             request,
-            "oauth_username.html",
+            TEMPLATE_OAUTH_USERNAME,
             {"next": next_url, "username": username, "first_name": display_name, "error": error},
         )
 
@@ -155,7 +163,7 @@ def oauth_username(request):
     except IntegrityError:
         return render(
             request,
-            "oauth_username.html",
+            TEMPLATE_OAUTH_USERNAME,
             {
                 "next": next_url,
                 "username": username,
@@ -210,7 +218,7 @@ def _apply_invite(request, user, invite):
         user.storage_quota = invite.storage_quota
     user.save()
     invite.use_invite(user.id)
-    request.session["login_redirect_url"] = reverse("settings:user")
+    request.session["login_redirect_url"] = reverse(SETTINGS_USER_URL)
     log.info("oauth_callback: invite used by user: %s", user)
 
 
@@ -270,7 +278,7 @@ def oauth_callback(request, oauth_provider: str = ""):
         oauth.update_profile(user)
         if response := pre_login(request, user, site_settings):
             return response
-        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        login(request, user, backend=MODEL_BACKEND)
         post_login(request)
         messages.info(request, f"Successfully logged in via oauth. {user.username} {user.get_name()}.")
         log.debug("OAuth Login Success: %s", user)
@@ -359,14 +367,14 @@ def passkey_register_begin(request):
     """
     site_settings = SiteSettings.objects.settings()
     if not _passkeys_enabled(site_settings):
-        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
+        return JsonResponse({"error": PASSKEYS_NOT_ENABLED}, status=400)
     try:
         options = passkeys.begin_registration(
             request.session, request.user, site_settings, request.user.passkeys.all()
         )
     except passkeys.PasskeyConfigError as error:
         return JsonResponse({"error": str(error)}, status=400)
-    return HttpResponse(options, content_type="application/json")
+    return HttpResponse(options, content_type=CONTENT_TYPE_JSON)
 
 
 @login_required
@@ -377,7 +385,7 @@ def passkey_register_complete(request):
     """
     site_settings = SiteSettings.objects.settings()
     if not _passkeys_enabled(site_settings):
-        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
+        return JsonResponse({"error": PASSKEYS_NOT_ENABLED}, status=400)
     body = json.loads(request.body.decode() or "{}")
     name = (body.pop("name", "") or "").strip()
     try:
@@ -444,12 +452,12 @@ def passkey_auth_begin(request):
     """
     site_settings = SiteSettings.objects.settings()
     if not _passkeys_enabled(site_settings):
-        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
+        return JsonResponse({"error": PASSKEYS_NOT_ENABLED}, status=400)
     try:
         options = passkeys.begin_authentication(request.session, site_settings)
     except passkeys.PasskeyConfigError as error:
         return JsonResponse({"error": str(error)}, status=400)
-    return HttpResponse(options, content_type="application/json")
+    return HttpResponse(options, content_type=CONTENT_TYPE_JSON)
 
 
 @csrf_exempt
@@ -460,7 +468,7 @@ def passkey_auth_complete(request):
     """
     site_settings = SiteSettings.objects.settings()
     if not _passkeys_enabled(site_settings):
-        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
+        return JsonResponse({"error": PASSKEYS_NOT_ENABLED}, status=400)
     body = json.loads(request.body.decode() or "{}")
     credential = PasskeyCredential.objects.filter(credential_id=body.get("id")).select_related("user").first()
     if not credential:
@@ -483,7 +491,7 @@ def passkey_auth_complete(request):
     request.session["login_redirect_url"] = get_next_url(request)
     if response := pre_login(request, user, site_settings):
         return response
-    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    login(request, user, backend=MODEL_BACKEND)
     post_login(request)
     messages.info(request, f"Successfully logged in as {user.username}.")
     return JsonResponse({"redirect": get_login_redirect_url(request)})
@@ -505,24 +513,41 @@ def passkey_invite_begin(request, invite):
     """
     site_settings = SiteSettings.objects.settings()
     if not _passkeys_enabled(site_settings):
-        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
+        return JsonResponse({"error": PASSKEYS_NOT_ENABLED}, status=400)
     if request.user.is_authenticated:
         return JsonResponse({"error": "Already authenticated."}, status=400)
     if not _valid_invite_or_none(invite):
-        return JsonResponse({"error": "Invite is invalid or expired."}, status=400)
+        return JsonResponse({"error": INVITE_INVALID}, status=400)
     body = json.loads(request.body.decode() or "{}")
     username = (body.get("username") or "").strip()
     if not username:
         return JsonResponse({"error": "Username is required."}, status=400)
     if CustomUser.objects.filter(username=username).exists():
-        return JsonResponse({"error": "The chosen username is not available."}, status=400)
+        return JsonResponse({"error": USERNAME_NOT_AVAILABLE}, status=400)
     try:
         options = passkeys.begin_invite_registration(request.session, username, site_settings)
     except passkeys.PasskeyConfigError as error:
         return JsonResponse({"error": str(error)}, status=400)
     request.session["passkey_invite_username"] = username
     request.session["passkey_invite_code"] = invite
-    return HttpResponse(options, content_type="application/json")
+    return HttpResponse(options, content_type=CONTENT_TYPE_JSON)
+
+
+def _passkey_invite_complete_preflight(request, invite, site_settings):
+    """Validate the invite/session state. Returns (error_response, invite_obj, username)."""
+    if not _passkeys_enabled(site_settings):
+        return JsonResponse({"error": PASSKEYS_NOT_ENABLED}, status=400), None, None
+    if request.user.is_authenticated:
+        return JsonResponse({"error": "Already authenticated."}, status=400), None, None
+    invite_obj = _valid_invite_or_none(invite)
+    if not invite_obj:
+        return JsonResponse({"error": INVITE_INVALID}, status=400), None, None
+    username = request.session.get("passkey_invite_username")
+    if not username or request.session.get("passkey_invite_code") != invite:
+        return JsonResponse({"error": "Registration session expired. Please try again."}, status=400), None, None
+    if CustomUser.objects.filter(username=username).exists():
+        return JsonResponse({"error": USERNAME_NOT_AVAILABLE}, status=400), None, None
+    return None, invite_obj, username
 
 
 @csrf_exempt
@@ -533,18 +558,9 @@ def passkey_invite_complete(request, invite):
     Verify the attestation, then create the account, consume the invite, and log in.
     """
     site_settings = SiteSettings.objects.settings()
-    if not _passkeys_enabled(site_settings):
-        return JsonResponse({"error": "Passkeys are not enabled."}, status=400)
-    if request.user.is_authenticated:
-        return JsonResponse({"error": "Already authenticated."}, status=400)
-    invite_obj = _valid_invite_or_none(invite)
-    if not invite_obj:
-        return JsonResponse({"error": "Invite is invalid or expired."}, status=400)
-    username = request.session.get("passkey_invite_username")
-    if not username or request.session.get("passkey_invite_code") != invite:
-        return JsonResponse({"error": "Registration session expired. Please try again."}, status=400)
-    if CustomUser.objects.filter(username=username).exists():
-        return JsonResponse({"error": "The chosen username is not available."}, status=400)
+    error, invite_obj, username = _passkey_invite_complete_preflight(request, invite, site_settings)
+    if error:
+        return error
 
     body = json.loads(request.body.decode() or "{}")
     name = (body.pop("name", "") or "").strip()
@@ -565,9 +581,9 @@ def passkey_invite_complete(request, invite):
             # select_for_update is a no-op on SQLite but enforced on Postgres/MySQL.
             invite_locked = UserInvites.objects.select_for_update().filter(pk=invite_obj.pk).first()
             if not invite_locked or not invite_locked.is_valid():
-                return JsonResponse({"error": "Invite is invalid or expired."}, status=400)
+                return JsonResponse({"error": INVITE_INVALID}, status=400)
             if CustomUser.objects.filter(username=username).exists():
-                return JsonResponse({"error": "The chosen username is not available."}, status=400)
+                return JsonResponse({"error": USERNAME_NOT_AVAILABLE}, status=400)
 
             create_user = (
                 CustomUser.objects.create_superuser if invite_locked.super_user else CustomUser.objects.create_user
@@ -587,16 +603,16 @@ def passkey_invite_complete(request, invite):
     except IntegrityError:
         # Username/credential uniqueness lost a race; the whole txn rolled back.
         log.exception("passkey_invite_complete: integrity error creating account")
-        return JsonResponse({"error": "The chosen username is not available."}, status=400)
+        return JsonResponse({"error": USERNAME_NOT_AVAILABLE}, status=400)
 
     request.session.pop("passkey_invite_username", None)
     request.session.pop("passkey_invite_code", None)
-    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    login(request, user, backend=MODEL_BACKEND)
     post_login(request)
-    request.session["login_redirect_url"] = reverse("settings:user")
+    request.session["login_redirect_url"] = reverse(SETTINGS_USER_URL)
     messages.info(request, f"Welcome to Django Files {user.get_name()}.")
     log.info("passkey invite signup: created user=%s (super=%s)", user.username, invite_obj.super_user)
-    return JsonResponse({"redirect": reverse("settings:user")})
+    return JsonResponse({"redirect": reverse(SETTINGS_USER_URL)})
 
 
 def duo_callback(request):
@@ -626,7 +642,7 @@ def duo_callback(request):
             return HttpResponseRedirect(reverse("oauth:login"))
 
         user = CustomUser.objects.get(username=username)
-        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        login(request, user, backend=MODEL_BACKEND)
 
         # if 'profile' in request.session:
         #     log.debug('profile in session, updating oauth profile')

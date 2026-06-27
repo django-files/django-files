@@ -6,18 +6,21 @@ export function bufferToBase64url(buffer) {
     const bytes = new Uint8Array(buffer)
     let str = ''
     for (const byte of bytes) {
-        str += String.fromCharCode(byte)
+        str += String.fromCodePoint(byte)
     }
-    return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    return btoa(str)
+        .replaceAll('+', '-')
+        .replaceAll('/', '_')
+        .replaceAll('=', '')
 }
 
 export function base64urlToBuffer(value) {
-    const padded = value.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = value.replaceAll('-', '+').replaceAll('_', '/')
     const padLen = (4 - (padded.length % 4)) % 4
     const binary = atob(padded + '='.repeat(padLen))
     const bytes = new Uint8Array(binary.length)
     for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i)
+        bytes[i] = binary.codePointAt(i)
     }
     return bytes.buffer
 }
@@ -88,7 +91,7 @@ export function serializeAuthentication(credential) {
 
 export function passkeysSupported() {
     return (
-        typeof window.PublicKeyCredential !== 'undefined' &&
-        typeof navigator.credentials !== 'undefined'
+        window.PublicKeyCredential !== undefined &&
+        navigator.credentials !== undefined
     )
 }
