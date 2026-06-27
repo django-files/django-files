@@ -59,71 +59,85 @@
     {% if invite %}
         <p class="text-center"><strong>{{ invite.owner.get_name }}</strong> invited you to join.</p>
 
-        <div class="d-grid gap-2 mt-3">
-            {% if site_settings.discord_client_id %}
-                <a class="btn btn-lg btn-primary opacity-75 d-flex align-items-center hvr-grow login position-relative" href="{% url 'home:invite-oauth' invite=invite.invite provider='discord' %}">
-                    <i class="fa-brands fa-discord position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
-                    <span class="flex-grow-1 text-center">Create with Discord</span>
-                </a>
-            {% endif %}
-            {% if site_settings.github_client_id %}
-                <a class="btn btn-lg btn-dark opacity-75 d-flex align-items-center hvr-grow login position-relative" href="{% url 'home:invite-oauth' invite=invite.invite provider='github' %}">
-                    <i class="fa-brands fa-github position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
-                    <span class="flex-grow-1 text-center">Create with GitHub</span>
-                </a>
-            {% endif %}
-            {% if site_settings.google_client_id %}
-                <a class="btn btn-lg btn-info opacity-75 d-flex align-items-center hvr-grow login position-relative" href="{% url 'home:invite-oauth' invite=invite.invite provider='google' %}">
-                    <i class="fa-brands fa-google position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
-                    <span class="flex-grow-1 text-center">Create with Google</span>
-                </a>
-            {% endif %}
-        </div>
-
         {% if site_settings.local_auth or site_settings.passkey_auth and site_settings.site_url %}
-            {% if site_settings.discord_client_id or site_settings.github_client_id or site_settings.google_client_id %}
+            <form name="inviteForm" id="inviteForm" method="post" action="{% url 'home:invite' invite=invite.invite %}"
+                  data-invite="{{ invite.invite }}">
+                {% csrf_token %}
+
+                <div class="form-floating mb-2 mt-3">
+                    <input type="text" id="username" class="form-control" name="username" autocomplete="username" placeholder="Username" aria-describedby="username-label" required autofocus>
+                    <label for="username" id="username-label">Username</label>
+                    <div id="username-invalid" class="invalid-feedback"></div>
+                </div>
+
+                <div id="passkeyFeedback" class="invalid-feedback text-center mb-2 d-none" role="alert"></div>
+
+                <div class="d-grid gap-2 mt-3">
+                    {% if site_settings.passkey_auth and site_settings.site_url %}
+                    <button class="btn btn-lg btn-success opacity-75 d-flex align-items-center hvr-grow position-relative" type="button" id="passkey-create">
+                        <i class="fa-solid fa-fingerprint position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                        <span class="flex-grow-1 text-center">Create with Passkey</span>
+                    </button>
+                    {% endif %}
+                    {% if site_settings.local_auth %}
+                    <button class="btn btn-lg btn-secondary opacity-75 d-flex align-items-center hvr-grow position-relative" type="button" id="use-password">
+                        <i class="fa-solid fa-key position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                        <span class="flex-grow-1 text-center">Use Password</span>
+                    </button>
+                    {% endif %}
+                </div>
+
+                {% if site_settings.local_auth %}
+                <div id="password-fields" class="d-none mt-2">
+                    <div class="form-floating mb-2">
+                        <input type="password" id="password" class="form-control" name="password" autocomplete="new-password" placeholder="Password" aria-describedby="password-label">
+                        <label for="password" id="password-label">Password</label>
+                        <div id="password-invalid" class="invalid-feedback"></div>
+                    </div>
+                    <div class="form-floating mb-2">
+                        <input type="password" id="confirm_password" class="form-control" name="confirm_password" autocomplete="new-password" placeholder="Confirm Password" aria-describedby="confirm-password-label">
+                        <label for="confirm_password" id="confirm-password-label">Confirm Password</label>
+                        <div id="confirm_password-invalid" class="invalid-feedback"></div>
+                    </div>
+                    <div class="d-grid">
+                        <button class="btn btn-lg btn-secondary opacity-75 d-flex align-items-center hvr-grow position-relative" type="submit" id="create-account">
+                            <i class="fa-solid fa-user-plus position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                            <span class="flex-grow-1 text-center">Create Account</span>
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </form>
+        {% endif %}
+
+        {% if site_settings.discord_client_id or site_settings.github_client_id or site_settings.google_client_id %}
+            {% if site_settings.local_auth or site_settings.passkey_auth and site_settings.site_url %}
                 <div class="d-flex align-items-center justify-content-center small mt-3">
                     <hr class="my-0 ms-2 w-100">
                     <span class="mx-2">OR</span>
                     <hr class="my-0 me-2 w-100">
                 </div>
             {% endif %}
-
-            <form name="inviteForm" id="inviteForm" method="post" action="{% url 'home:invite' invite=invite.invite %}"
-                  data-invite="{{ invite.invite }}">
-                {% csrf_token %}
-
-                <div id="local-inputs" class="mt-3">
-                    <div class="form-floating mb-2 ">
-                        <input type="text" id="username" class="form-control" name="username" autocomplete="username" placeholder="Username" aria-describedby="username-label" required autofocus>
-                        <label for="username" id="username-label">Username</label>
-                    </div>
-
-                    {% if site_settings.local_auth %}
-                    <div class="form-floating mb-2 ">
-                        <input type="password" id="password" class="form-control" name="password" autocomplete="current-password" placeholder="Password" aria-describedby="password-label" required>
-                        <label for="password" id="password-label">Password</label>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <div id="passwordFeedback" class="invalid-feedback text-center mb-2" aria-describedby="Username or Password feedback.">
-                    Invalid Username or Password.
-                </div>
-
-                <div id="passkeyFeedback" class="invalid-feedback text-center mb-2 d-none" role="alert"></div>
-
-                <div class="d-grid gap-2 mt-4">
-                    {% if site_settings.local_auth %}
-                    <button class="btn btn-lg btn-secondary opacity-75 d-flex align-items-center hvr-grow" type="submit">
-                        <i class="fa-solid fa-user-plus position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i> <span class="w-100 text-center">Create Account</span></button>
-                    {% endif %}
-                    {% if site_settings.passkey_auth and site_settings.site_url %}
-                    <button class="btn btn-lg btn-success opacity-75 d-flex align-items-center hvr-grow" type="button" id="passkey-create">
-                        <i class="fa-solid fa-fingerprint position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i> <span class="w-100 text-center">Create with Passkey</span></button>
-                    {% endif %}
-                </div>
-            </form>
+            <div class="d-grid gap-2 mt-3">
+                {% if site_settings.discord_client_id %}
+                    <a class="btn btn-lg btn-primary opacity-75 d-flex align-items-center hvr-grow login position-relative" href="{% url 'home:invite-oauth' invite=invite.invite provider='discord' %}">
+                        <i class="fa-brands fa-discord position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                        <span class="flex-grow-1 text-center">Create with Discord</span>
+                    </a>
+                {% endif %}
+                {% if site_settings.github_client_id %}
+                    <a class="btn btn-lg btn-dark opacity-75 d-flex align-items-center hvr-grow login position-relative" href="{% url 'home:invite-oauth' invite=invite.invite provider='github' %}">
+                        <i class="fa-brands fa-github position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                        <span class="flex-grow-1 text-center">Create with GitHub</span>
+                    </a>
+                {% endif %}
+                {% if site_settings.google_client_id %}
+                    <a class="btn btn-lg btn-info opacity-75 d-flex align-items-center hvr-grow login position-relative" href="{% url 'home:invite-oauth' invite=invite.invite provider='google' %}">
+                        <i class="fa-brands fa-google position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                        <span class="flex-grow-1 text-center">Create with Google</span>
+                    </a>
+                {% endif %}
+            </div>
         {% endif %}
     {% else %}
         <p class="lead text-center">
@@ -161,9 +175,10 @@
     {{ site_settings.background_picture|json_script:"background_picture" }}
     {{ site_settings.tsparticles_enabled|json_script:"tsparticles_enabled" }}
     {{ site_settings.tsparticles_config|json_script:"tsparticles_config" }}
-    <script type="text/javascript" src="{% static 'dist/tsparticles/tsparticles.bundle.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/login.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/invite.js' %}"></script>
+    <script defer src="{% static 'dist/tsparticles/tsparticles.bundle.min.js' %}"></script>
+    <script defer src="{% static 'js/login.js' %}"></script>
+    <script defer src="{% static 'js/password-match.js' %}"></script>
+    <script defer src="{% static 'js/invite.js' %}"></script>
     {% if site_settings.passkey_auth and site_settings.site_url %}
         <script type="module" src="{% static 'js/passkey-invite.js' %}"></script>
     {% endif %}

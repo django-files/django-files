@@ -80,5 +80,10 @@ async function createWithPasskey() {
 }
 
 if (button) {
-    button.addEventListener('click', createWithPasskey)
+    // Hide the passkey option entirely on clients without WebAuthn support.
+    if (passkeysSupported()) {
+        button.addEventListener('click', createWithPasskey)
+    } else {
+        button.classList.add('d-none')
+    }
 }
