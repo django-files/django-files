@@ -70,3 +70,12 @@ async function authenticate() {
 if (button) {
     button.addEventListener('click', authenticate)
 }
+
+// Auto-start the ceremony when the page is opened via ?autopasskey=1 (e.g. a
+// native client that deep-linked here specifically for passkey login).
+// Requires a user gesture proxy: most browsers permit navigator.credentials.get
+// without one if the navigation that opened the page was itself user-initiated,
+// which is the case for the in-app web auth session.
+if (button && new URLSearchParams(window.location.search).get('autopasskey') === '1') {
+    authenticate()
+}

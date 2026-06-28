@@ -1139,7 +1139,14 @@ def auth_methods(request):
     # backend to hand off via djangofiles:// after auth_complete. Gate on the
     # same precondition the ceremony itself enforces (passkey_auth + site_url).
     if site_settings.passkey_auth and site_settings.site_url:
-        methods.append({"name": "passkey", "url": site_url + reverse("oauth:login") + "?state=iOSApp"})
+        # autopasskey=1 tells the login page's JS to fire the ceremony on load
+        # so the user doesn't have to tap a second button inside the webview.
+        methods.append(
+            {
+                "name": "passkey",
+                "url": site_url + reverse("oauth:login") + "?state=iOSApp&autopasskey=1",
+            }
+        )
     if site_settings.discord_client_id:
         methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings) + state_string})
     if site_settings.github_client_id:
