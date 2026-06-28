@@ -1,0 +1,118 @@
+{% extends "main.html" %}
+{% load static %}
+{% load home_tags %}
+{% block title %}Setup{% endblock %}
+
+{% block htmltag %}data-bs-theme="dark"{% endblock %}
+{% block themejs %}{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block body %}
+
+<div id="tsparticles"></div>
+
+<video id="bgvid" class="d-none" playsinline autoplay muted loop>
+    <source src="{{ site_settings.background_video }}" type="video/mp4" id="bgvidsrc">
+    <track kind="captions">
+</video>
+
+<div class="d-flex flex-column align-items-center h-100 py-2">
+<div id="login-outer" class="rounded rounded-4 m-auto p-4 animate__animated animate__backInDown animate__fast">
+    <div class="text-center mb-3">
+        <img height="96" width="96" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
+        <h4 class="text-center mt-2">Welcome to {{ site_settings.site_title }}</h4>
+        <p class="text-muted small mb-0">Create the administrator account to finish setup.</p>
+    </div>
+
+    <form method="post" action="{% url 'settings:welcome' %}" id="setup-form">
+        {% csrf_token %}
+
+        {% if error %}
+            <div class="alert alert-danger py-2 text-center" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <div class="form-floating mb-2">
+            <input type="text" id="username" class="form-control" name="username" autocomplete="username"
+                   placeholder="Username" value="{{ username }}" maxlength="128" required autofocus>
+            <label for="username">Admin Username</label>
+        </div>
+
+        <div class="form-floating mb-2">
+            <input class="form-control" list="timezoneOptions" id="timezone" name="timezone"
+                   placeholder="Timezone" value="{{ timezone }}">
+            <label for="timezone">Timezone</label>
+            <datalist id="timezoneOptions">
+                {% for tz in timezones %}
+                    <option value="{{ tz }}"></option>
+                {% endfor %}
+            </datalist>
+        </div>
+
+        <div class="form-floating mb-2">
+            <input type="text" id="site_url" class="form-control" name="site_url"
+                   placeholder="Site URL" value="{{ site_url }}">
+            <label for="site_url">Site URL</label>
+        </div>
+
+        <div id="passkeyFeedback" class="invalid-feedback text-center mb-2 d-none" role="alert"></div>
+
+        {% if site_settings.passkey_auth %}
+            <div class="d-grid gap-2 mt-3">
+                <button class="btn btn-lg btn-success opacity-75 d-flex align-items-center hvr-grow position-relative" type="button" id="passkey-create">
+                    <i class="fa-solid fa-fingerprint position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                    <span class="flex-grow-1 text-center">Create with Passkey</span>
+                </button>
+                <button class="btn btn-lg btn-secondary opacity-75 d-flex align-items-center hvr-grow position-relative" type="button" id="use-password">
+                    <i class="fa-solid fa-key position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                    <span class="flex-grow-1 text-center">Use Password</span>
+                </button>
+            </div>
+        {% endif %}
+
+        <div id="password-fields" class="{% if site_settings.passkey_auth %}d-none {% endif %}mt-2">
+            <div class="form-floating mb-2">
+                <input type="password" id="password" class="form-control" name="password" autocomplete="new-password"
+                       placeholder="Password" minlength="6" maxlength="128" aria-describedby="password-invalid" required>
+                <label for="password">Password</label>
+                <div id="password-invalid" class="invalid-feedback"></div>
+            </div>
+            <div class="form-floating mb-2">
+                <input type="password" id="confirm_password" class="form-control" name="confirm_password"
+                       autocomplete="new-password" placeholder="Confirm Password" minlength="6" maxlength="128"
+                       aria-describedby="confirm_password-invalid" required>
+                <label for="confirm_password">Confirm Password</label>
+                <div id="confirm_password-invalid" class="invalid-feedback"></div>
+            </div>
+            <div class="d-grid">
+                <button class="btn btn-lg btn-success opacity-75 d-flex align-items-center hvr-grow position-relative" type="submit">
+                    <i class="fa-solid fa-check position-absolute start-0 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                    <span class="flex-grow-1 text-center">Complete Setup</span>
+                </button>
+            </div>
+        </div>
+    </form>
+</div> <!-- login-outer -->
+</div> <!-- d-flex -->
+{% endblock %}
+
+{% block backtotop %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block tail %}
+    {{ site_settings.login_background|json_script:"login_background" }}
+    {{ site_settings.background_picture|json_script:"background_picture" }}
+    {{ site_settings.tsparticles_enabled|json_script:"tsparticles_enabled" }}
+    {{ site_settings.tsparticles_config|json_script:"tsparticles_config" }}
+    <script defer src="{% static 'dist/tsparticles/tsparticles.bundle.min.js' %}"></script>
+    <script defer src="{% static 'js/login.js' %}"></script>
+    <script defer src="{% static 'js/password-match.js' %}"></script>
+    <script defer src="{% static 'js/setup.js' %}"></script>
+    {% if site_settings.passkey_auth %}
+        <script type="module" src="{% static 'js/passkey-setup.js' %}"></script>
+    {% endif %}
+{% endblock %}

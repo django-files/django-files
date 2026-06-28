@@ -21,4 +21,6 @@ urlpatterns = [
     path("passkey/auth/complete", views.passkey_auth_complete, name="passkey-auth-complete"),
     path("passkey/invite/<str:invite>/begin", views.passkey_invite_begin, name="passkey-invite-begin"),
     path("passkey/invite/<str:invite>/complete", views.passkey_invite_complete, name="passkey-invite-complete"),
+    path("passkey/setup/begin", views.passkey_setup_begin, name="passkey-setup-begin"),
+    path("passkey/setup/complete", views.passkey_setup_complete, name="passkey-setup-complete"),
 ]

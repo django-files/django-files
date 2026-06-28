@@ -292,3 +292,167 @@ class OAuthUsernameViewTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.user.refresh_from_db()
         self.assertEqual(self.user.username, "auto1234")
+
+
+class FirstRunSetupTest(TestCase):
+    """First-run bootstrap: create the initial admin only while none exists."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+
+    def test_login_redirects_to_setup_when_no_admin(self):
+        response = self.client.get(reverse("oauth:login"))
+        self.assertRedirects(response, reverse("settings:welcome"), fetch_redirect_response=False)
+
+    def test_setup_page_renders_when_no_admin(self):
+        response = self.client.get(reverse("settings:welcome"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_bootstrap_creates_superuser_and_logs_in(self):
+        response = self.client.post(
+            reverse("settings:welcome"),
+            {
+                "username": "admin",
+                "password": "a-Str0ng-pass!",
+                "confirm_password": "a-Str0ng-pass!",
+                "timezone": "UTC",
+                "site_url": "https://files.example.com",
+            },
+        )
+        self.assertRedirects(response, reverse("settings:site"), fetch_redirect_response=False)
+        user = CustomUser.objects.get(username="admin")
+        self.assertTrue(user.is_superuser)
+        self.assertTrue(user.is_staff)
+        self.assertFalse(SiteSettings.objects.settings().show_setup)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), user.pk)
+
+    def test_bootstrap_rejects_password_mismatch(self):
+        response = self.client.post(
+            reverse("settings:welcome"),
+            {"username": "admin", "password": "a-Str0ng-pass!", "confirm_password": "nope", "timezone": "UTC"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(CustomUser.objects.filter(username="admin").exists())
+
+    def test_bootstrap_rejects_weak_password(self):
+        # Passes the form's min_length=6 but fails AUTH_PASSWORD_VALIDATORS.
+        response = self.client.post(
+            reverse("settings:welcome"),
+            {
+                "username": "admin",
+                "password": "123456",
+                "confirm_password": "123456",
+                "timezone": "UTC",
+            },  # nosec  # NOSONAR
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(CustomUser.objects.filter(username="admin").exists())
+
+    def test_gate_closed_once_admin_exists(self):
+        CustomUser.objects.create_superuser(username="root", password="a-Str0ng-pass!")  # nosec  # NOSONAR
+        # Anonymous visitors can no longer reach the bootstrap form...
+        response = self.client.get(reverse("settings:welcome"))
+        self.assertRedirects(response, reverse("oauth:login"), fetch_redirect_response=False)
+        # ...nor mint a second admin through it.
+        response = self.client.post(
+            reverse("settings:welcome"),
+            {"username": "evil", "password": "a-Str0ng-pass!", "timezone": "UTC"},  # nosec  # NOSONAR
+        )
+        self.assertRedirects(response, reverse("oauth:login"), fetch_redirect_response=False)
+        self.assertFalse(CustomUser.objects.filter(username="evil").exists())
+
+    def test_setup_page_shows_passkey_option_without_site_url(self):
+        # Passkey option must appear on first run even though site_url is unset;
+        # the RP is derived from the request origin.
+        site = SiteSettings.objects.settings()
+        site.site_url = ""
+        site.passkey_auth = True
+        site.save()
+        response = self.client.get(reverse("settings:welcome"))
+        self.assertContains(response, "Create with Passkey")
+        self.assertContains(response, "passkey-setup.js")
+
+
+class PasskeySetupTest(TestCase):
+    """First-run passkey registration for the initial admin."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        # No site_url: first-run setup derives the RP from the request origin.
+        site = SiteSettings.objects.settings()
+        site.site_url = ""
+        site.passkey_auth = True
+        site.save()
+
+    def test_begin_returns_options(self):
+        response = self.client.post(
+            reverse("oauth:passkey-setup-begin"),
+            data=json.dumps({"username": "admin", "timezone": "UTC"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        self.assertIn("challenge", data)
+        # RP id comes from the request host (Django test client uses "testserver").
+        self.assertEqual(data["rp"]["id"], "testserver")
+        self.assertEqual(self.client.session["passkey_setup_username"], "admin")
+
+    def test_begin_preserves_browser_port(self):
+        # A proxy may hide the port from the server, so the browser-supplied
+        # origin (matching host, custom port) is trusted for the RP origin.
+        response = self.client.post(
+            reverse("oauth:passkey-setup-begin"),
+            data=json.dumps({"username": "admin", "origin": "http://testserver:9000"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.client.session["passkey_setup_origin"], "http://testserver:9000")
+        self.assertEqual(json.loads(response.content)["rp"]["id"], "testserver")
+
+    def test_begin_ignores_foreign_origin(self):
+        response = self.client.post(
+            reverse("oauth:passkey-setup-begin"),
+            data=json.dumps({"username": "admin", "origin": "http://evil.example.com"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        # Foreign host rejected; falls back to the request host.
+        self.assertEqual(self.client.session["passkey_setup_origin"], "http://testserver")
+
+    def test_begin_requires_username(self):
+        response = self.client.post(
+            reverse("oauth:passkey-setup-begin"),
+            data=json.dumps({}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_begin_gated_when_admin_exists(self):
+        CustomUser.objects.create_superuser(username="root", password="a-Str0ng-pass!")  # nosec  # NOSONAR
+        response = self.client.post(
+            reverse("oauth:passkey-setup-begin"),
+            data=json.dumps({"username": "admin"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(CustomUser.objects.filter(username="admin").exists())
+
+    def test_complete_without_session(self):
+        response = self.client.post(
+            reverse("oauth:passkey-setup-complete"),
+            data=json.dumps({"id": "x"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(CustomUser.objects.filter(is_superuser=True).exists())
+
+    def test_disabled_when_passkeys_off(self):
+        site = SiteSettings.objects.settings()
+        site.passkey_auth = False
+        site.save()
+        response = self.client.post(
+            reverse("oauth:passkey-setup-begin"),
+            data=json.dumps({"username": "admin"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)

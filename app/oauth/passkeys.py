@@ -29,10 +29,20 @@ log = logging.getLogger("app")
 REG_CHALLENGE_KEY = "passkey_reg_challenge"
 AUTH_CHALLENGE_KEY = "passkey_auth_challenge"
 INVITE_CHALLENGE_KEY = "passkey_invite_challenge"
+SETUP_CHALLENGE_KEY = "passkey_setup_challenge"
 
 
 class PasskeyConfigError(Exception):
     """Raised when the site is not configured for WebAuthn (no usable site_url)."""
+
+
+def _rp_from_url(url, site_title):
+    """Return ``(rp_id, rp_name, expected_origin)`` parsed from a URL/origin."""
+    parsed = urlparse(url)
+    if not parsed.hostname:
+        raise PasskeyConfigError(f"Could not derive a hostname from: {url}")
+    # netloc keeps any custom port so the origin matches what the browser sends.
+    return parsed.hostname, (site_title or "Django Files"), f"{parsed.scheme}://{parsed.netloc}"
 
 
 def get_rp(site_settings):
@@ -44,13 +54,44 @@ def get_rp(site_settings):
     site_url = site_settings.site_url
     if not site_url:
         raise PasskeyConfigError("site_url must be set to use passkeys.")
-    parsed = urlparse(site_url)
-    if not parsed.hostname:
-        raise PasskeyConfigError(f"Could not derive a hostname from site_url: {site_url}")
-    rp_id = parsed.hostname
-    origin = f"{parsed.scheme}://{parsed.netloc}"
-    rp_name = site_settings.site_title or "Django Files"
-    return rp_id, rp_name, origin
+    return _rp_from_url(site_url, site_settings.site_title)
+
+
+def begin_setup_registration(session, username, origin, site_title):
+    """Registration options for the first-run admin, RP derived from the request.
+
+    site_url is not configured yet during first-run setup, so the RP is taken
+    from the origin the admin is actually visiting (host plus any custom port).
+    """
+    rp_id, rp_name, _ = _rp_from_url(origin, site_title)
+    options = generate_registration_options(
+        rp_id=rp_id,
+        rp_name=rp_name,
+        user_id=uuid.uuid4().bytes,
+        user_name=username,
+        user_display_name=username,
+        authenticator_selection=AuthenticatorSelectionCriteria(
+            resident_key=ResidentKeyRequirement.PREFERRED,
+            user_verification=UserVerificationRequirement.PREFERRED,
+        ),
+    )
+    session[SETUP_CHALLENGE_KEY] = bytes_to_base64url(options.challenge)
+    return options_to_json(options)
+
+
+def finish_setup_registration(session, origin, site_title, body):
+    """Verify the first-run admin's attestation against the request origin."""
+    rp_id, _, expected_origin = _rp_from_url(origin, site_title)
+    challenge_b64 = session.pop(SETUP_CHALLENGE_KEY, None)
+    if not challenge_b64:
+        raise PasskeyConfigError("No setup challenge in session; restart the ceremony.")
+    return verify_registration_response(
+        credential=body,
+        expected_challenge=base64url_to_bytes(challenge_b64),
+        expected_origin=expected_origin,
+        expected_rp_id=rp_id,
+        require_user_verification=False,
+    )
 
 
 def begin_registration(session, user, site_settings, existing_credentials):

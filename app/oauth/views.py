@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 from typing import Union
+from urllib.parse import urlparse
 
 import duo_universal
 from decouple import config
@@ -29,6 +30,7 @@ from oauth.models import (
     DiscordWebhooks,
     PasskeyCredential,
     UserInvites,
+    superuser_exists,
 )
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
@@ -51,6 +53,10 @@ PASSKEYS_NOT_ENABLED = "Passkeys are not enabled."
 CONTENT_TYPE_JSON = "application/json"
 INVITE_INVALID = "Invite is invalid or expired."
 USERNAME_NOT_AVAILABLE = "The chosen username is not available."
+USERNAME_REQUIRED = "Username is required."
+PASSKEY_REG_FAILED = "Passkey registration failed."
+PASSKEY_ALREADY_REGISTERED = "This passkey is already registered."
+SETUP_COMPLETE = "Setup has already been completed."
 
 provider_map = {
     "github": GithubOauth,
@@ -92,6 +98,12 @@ def oauth_show(request):
         next_url = get_next_url(request)
         log.debug("request.user.is_authenticated: %s", next_url)
         return HttpResponseRedirect(next_url)
+
+    # First run: with no admin yet there is nothing to log in as, so send the
+    # visitor to the setup wizard to create the initial superuser.
+    if not superuser_exists():
+        log.debug("oauth_show: no superuser, redirecting to first-run setup")
+        return HttpResponseRedirect(reverse("settings:welcome"))
 
     if "next" in request.GET:
         log.debug("setting login_next_url to: %s", request.GET.get("next"))
@@ -144,7 +156,7 @@ def oauth_username(request):
     display_name = (request.POST.get("first_name") or "").strip()
     error = None
     if not username:
-        error = "Username is required."
+        error = USERNAME_REQUIRED
     elif len(username) > 150:
         error = "Username is too long."
     elif _username_taken(username, request.user):
@@ -359,6 +371,26 @@ def _passkeys_enabled(site_settings):
     return bool(site_settings.passkey_auth and site_settings.site_url)
 
 
+def _setup_origin(request, client_origin):
+    """Resolve the WebAuthn origin for first-run setup.
+
+    A reverse proxy (e.g. nginx mapping a custom host port to :80) hides the real
+    port from ``request.get_host()``, so trust the browser-supplied origin -- but
+    only when its hostname matches the request host, to avoid an attacker pinning
+    the RP to a foreign domain.
+    """
+    server_origin = f"{request.scheme}://{request.get_host()}"
+    request_host = request.get_host().split(":")[0]
+    if client_origin:
+        try:
+            parsed = urlparse(client_origin)
+        except ValueError:
+            parsed = None
+        if parsed and parsed.hostname == request_host and parsed.scheme and parsed.netloc:
+            return f"{parsed.scheme}://{parsed.netloc}"
+    return server_origin
+
+
 @login_required
 @require_http_methods(["POST"])
 def passkey_register_begin(request):
@@ -392,10 +424,10 @@ def passkey_register_complete(request):
         verification = passkeys.finish_registration(request.session, site_settings, body)
     except Exception:
         log.exception("passkey_register_complete: verification failed")
-        return JsonResponse({"error": "Passkey registration failed."}, status=400)
+        return JsonResponse({"error": PASSKEY_REG_FAILED}, status=400)
     credential_id = bytes_to_base64url(verification.credential_id)
     if PasskeyCredential.objects.filter(credential_id=credential_id).exists():
-        return JsonResponse({"error": "This passkey is already registered."}, status=400)
+        return JsonResponse({"error": PASSKEY_ALREADY_REGISTERED}, status=400)
     ua = request.META.get("HTTP_USER_AGENT", "")[:500]
     passkey = PasskeyCredential.objects.create(
         user=request.user,
@@ -521,7 +553,7 @@ def passkey_invite_begin(request, invite):
     body = json.loads(request.body.decode() or "{}")
     username = (body.get("username") or "").strip()
     if not username:
-        return JsonResponse({"error": "Username is required."}, status=400)
+        return JsonResponse({"error": USERNAME_REQUIRED}, status=400)
     if CustomUser.objects.filter(username=username).exists():
         return JsonResponse({"error": USERNAME_NOT_AVAILABLE}, status=400)
     try:
@@ -568,10 +600,10 @@ def passkey_invite_complete(request, invite):
         verification = passkeys.finish_invite_registration(request.session, site_settings, body)
     except Exception:
         log.exception("passkey_invite_complete: verification failed")
-        return JsonResponse({"error": "Passkey registration failed."}, status=400)
+        return JsonResponse({"error": PASSKEY_REG_FAILED}, status=400)
     credential_id = bytes_to_base64url(verification.credential_id)
     if PasskeyCredential.objects.filter(credential_id=credential_id).exists():
-        return JsonResponse({"error": "This passkey is already registered."}, status=400)
+        return JsonResponse({"error": PASSKEY_ALREADY_REGISTERED}, status=400)
 
     ua = request.META.get("HTTP_USER_AGENT", "")[:500]
     try:
@@ -613,6 +645,112 @@ def passkey_invite_complete(request, invite):
     messages.info(request, f"Welcome to Django Files {user.get_name()}.")
     log.info("passkey invite signup: created user=%s (super=%s)", user.username, invite_obj.super_user)
     return JsonResponse({"redirect": reverse(SETTINGS_USER_URL)})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def passkey_setup_begin(request):
+    """
+    View  /oauth/passkey/setup/begin
+    First-run setup: start passkey registration for the initial admin account.
+    """
+    site_settings = SiteSettings.objects.settings()
+    # site_url is not configured yet on first run, so gate on passkey_auth alone
+    # and derive the RP from the origin the admin is visiting (incl. custom port).
+    if not site_settings.passkey_auth:
+        return JsonResponse({"error": PASSKEYS_NOT_ENABLED}, status=400)
+    if superuser_exists():
+        return JsonResponse({"error": SETUP_COMPLETE}, status=400)
+    body = json.loads(request.body.decode() or "{}")
+    username = (body.get("username") or "").strip()
+    if not username:
+        return JsonResponse({"error": USERNAME_REQUIRED}, status=400)
+    if CustomUser.objects.filter(username=username).exists():
+        return JsonResponse({"error": USERNAME_NOT_AVAILABLE}, status=400)
+    origin = _setup_origin(request, (body.get("origin") or "").strip())
+    try:
+        options = passkeys.begin_setup_registration(request.session, username, origin, site_settings.site_title)
+    except passkeys.PasskeyConfigError as error:
+        return JsonResponse({"error": str(error)}, status=400)
+    request.session["passkey_setup_username"] = username
+    request.session["passkey_setup_timezone"] = (body.get("timezone") or "").strip()
+    request.session["passkey_setup_origin"] = origin
+    return HttpResponse(options, content_type=CONTENT_TYPE_JSON)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def passkey_setup_complete(request):
+    """
+    View  /oauth/passkey/setup/complete
+    First-run setup: verify the attestation, create the initial superuser, log in.
+    """
+    site_settings = SiteSettings.objects.settings()
+    if not site_settings.passkey_auth:
+        return JsonResponse({"error": PASSKEYS_NOT_ENABLED}, status=400)
+    if superuser_exists():
+        return JsonResponse({"error": SETUP_COMPLETE}, status=400)
+    username = request.session.get("passkey_setup_username")
+    if not username:
+        return JsonResponse({"error": "Registration session expired. Please try again."}, status=400)
+    if CustomUser.objects.filter(username=username).exists():
+        return JsonResponse({"error": USERNAME_NOT_AVAILABLE}, status=400)
+
+    body = json.loads(request.body.decode() or "{}")
+    name = (body.pop("name", "") or "").strip()
+    # Persist site_url to the origin the passkey was bound to (incl. custom port)
+    # so future passkey logins derive the same RP ID.
+    origin = request.session.pop("passkey_setup_origin", "") or f"{request.scheme}://{request.get_host()}"
+    try:
+        verification = passkeys.finish_setup_registration(request.session, origin, site_settings.site_title, body)
+    except Exception:
+        log.exception("passkey_setup_complete: verification failed")
+        return JsonResponse({"error": PASSKEY_REG_FAILED}, status=400)
+    credential_id = bytes_to_base64url(verification.credential_id)
+    if PasskeyCredential.objects.filter(credential_id=credential_id).exists():
+        return JsonResponse({"error": PASSKEY_ALREADY_REGISTERED}, status=400)
+
+    ua = request.META.get("HTTP_USER_AGENT", "")[:500]
+    tz = request.session.pop("passkey_setup_timezone", "")
+    try:
+        with transaction.atomic():
+            # Re-check inside the transaction so two concurrent setups cannot both
+            # pass the gate and create separate admin accounts.
+            if superuser_exists():
+                return JsonResponse({"error": SETUP_COMPLETE}, status=409)
+            if CustomUser.objects.filter(username=username).exists():
+                return JsonResponse({"error": USERNAME_NOT_AVAILABLE}, status=400)
+            user = CustomUser.objects.create_superuser(username=username, password=None)
+            if tz:
+                user.timezone = tz
+                user.save(update_fields=["timezone"])
+            PasskeyCredential.objects.create(
+                user=user,
+                credential_id=credential_id,
+                public_key=bytes_to_base64url(verification.credential_public_key),
+                sign_count=verification.sign_count,
+                name=name or _infer_device_name(ua),
+                transports=body.get("response", {}).get("transports") or [],
+                created_ip=_client_ip(request),
+                user_agent=ua,
+            )
+            site_settings.show_setup = False
+            if tz:
+                site_settings.timezone = tz
+            # Bind site_url to the origin the passkey was registered against.
+            site_settings.site_url = origin
+            site_settings.save()
+    except IntegrityError:
+        log.exception("passkey_setup_complete: integrity error creating admin")
+        return JsonResponse({"error": USERNAME_NOT_AVAILABLE}, status=400)
+
+    request.session.pop("passkey_setup_username", None)
+    login(request, user, backend=MODEL_BACKEND)
+    post_login(request)
+    request.session["login_redirect_url"] = reverse("settings:site")
+    messages.info(request, f"Welcome to Django Files {user.get_name()}.")
+    log.info("first-run passkey setup: created initial superuser=%s", user.username)
+    return JsonResponse({"redirect": reverse("settings:site")})
 
 
 def duo_callback(request):

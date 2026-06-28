@@ -18,6 +18,16 @@ def rand_invite():
     return rand_string(16)
 
 
+def superuser_exists() -> bool:
+    """True once at least one superuser account exists.
+
+    Used as the security gate for the first-run setup flow: the unauthenticated
+    bootstrap path is only reachable while this returns False. Once an admin
+    exists the setup page can no longer mint one.
+    """
+    return CustomUser.objects.filter(is_superuser=True).exists()
+
+
 class CustomUser(AbstractUser):
     class UploadNameFormats(models.TextChoices):
         NAME = "name", _("name")

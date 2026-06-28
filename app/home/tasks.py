@@ -37,10 +37,13 @@ VIDEO_MIME_PREFIX = "video/"
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 10, "countdown": 1})
 def app_init():
     log.info("app_init")
-    username = config("USERNAME", "admin")
-    password = config("PASSWORD", "12345")
-    oauth = bool(config("OAUTH_REDIRECT_URL", None))
-    if not oauth or (username and password):
+    # Only seed an admin when USERNAME/PASSWORD are explicitly configured (for
+    # headless/automated deploys). With no config, leave the DB admin-less so the
+    # first-run setup wizard creates the initial superuser. Never fall back to
+    # default credentials -- that shipped a known admin/12345 on every deploy.
+    username = config("USERNAME", "")
+    password = config("PASSWORD", "")
+    if username and password:
         if not CustomUser.objects.filter(username=username).exists():
             CustomUser.objects.create_superuser(username=username, password=password)
             log.info("Initial User Created: %s", username)
