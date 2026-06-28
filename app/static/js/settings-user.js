@@ -37,29 +37,11 @@ changePasswordBtn?.addEventListener('click', () => {
     bootstrap.Modal.getOrCreateInstance(passwordChangeModalEl).show()
 })
 
-const newPasswordInput = document.getElementById('new_password')
-const confirmPasswordInput = document.getElementById('confirm_new_password')
-const confirmFeedback = document.getElementById('confirm_new_password-invalid')
-
-function checkPasswordMatch() {
-    if (!confirmPasswordInput) return
-    if (!confirmPasswordInput.value) {
-        confirmPasswordInput.classList.remove('is-invalid')
-        if (confirmFeedback) confirmFeedback.textContent = ''
-        return
-    }
-    if (confirmPasswordInput.value === newPasswordInput.value) {
-        confirmPasswordInput.classList.remove('is-invalid')
-        if (confirmFeedback) confirmFeedback.textContent = ''
-    } else {
-        confirmPasswordInput.classList.add('is-invalid')
-        if (confirmFeedback)
-            confirmFeedback.textContent = 'Passwords do not match.'
-    }
-}
-
-confirmPasswordInput?.addEventListener('input', checkPasswordMatch)
-newPasswordInput?.addEventListener('input', checkPasswordMatch)
+setupPasswordMatch(
+    document.getElementById('new_password'),
+    document.getElementById('confirm_new_password'),
+    document.getElementById('confirm_new_password-invalid')
+)
 
 passwordChangeForm?.addEventListener('submit', async (event) => {
     event.preventDefault()

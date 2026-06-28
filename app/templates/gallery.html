@@ -37,10 +37,13 @@
     <link rel="stylesheet" href="{% static 'css/preview.css' %}" />
 {% endblock %}
 
+{% block under_nav %}
+{% include 'include/files-toolbar.html' %}
+{% endblock %}
+
 {% block body %}
 
     <div class="container-fluid pb-3 pt-2" data-files-view="{{ view_mode }}">
-        {% include 'include/files-toolbar.html' %}
         {% include 'files/table.html'%}
         <div id="gallery-container" class="d-flex justify-content-center align-items-center flex-wrap{% if view_mode != 'gallery' %} d-none{% endif %}"></div>
         <div id="map-container" class="d-none"></div>

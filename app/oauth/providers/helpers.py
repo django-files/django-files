@@ -1,12 +1,51 @@
 import logging
+import secrets
+import uuid
 from typing import Optional
 
 from decouple import Csv, config
+from django.db import IntegrityError, transaction
 from django.urls import reverse
 from oauth.models import CustomUser
 from settings.models import SiteSettings
 
 log = logging.getLogger("app")
+
+# AbstractUser.username is max_length=150; keep headroom for a uniqueness suffix.
+_USERNAME_MAX = 150
+_USERNAME_BASE_MAX = 140
+
+
+def _candidate_usernames(base: str):
+    """Yield login-handle candidates for a new account, most-preferred first.
+
+    The provider handle is offered as-is, then numerically suffixed, with a
+    random hex fallback. The DB unique constraint is the real arbiter — these
+    are only candidates fed to an atomic create-with-retry.
+    """
+    base = (base or "").strip()[:_USERNAME_BASE_MAX] or "user"
+    yield base
+    for _ in range(50):
+        yield f"{base}{secrets.randbelow(9000) + 1000}"
+    yield f"{base[:_USERNAME_BASE_MAX]}-{uuid.uuid4().hex[:8]}"
+
+
+def create_oauth_user(base_username: str, first_name: str = "") -> Optional[CustomUser]:
+    """Create a new OAuth user with a guaranteed-unique username.
+
+    Never adopts an existing account; the provider handle becomes the login
+    handle only when free, otherwise a unique variant is generated. Concurrent
+    signups racing for the same handle are resolved by the unique constraint
+    (``IntegrityError`` -> next candidate).
+    """
+    for candidate in _candidate_usernames(base_username):
+        try:
+            with transaction.atomic():
+                return CustomUser.objects.create(username=candidate[:_USERNAME_MAX], first_name=first_name or "")
+        except IntegrityError:
+            continue
+    log.error("create_oauth_user: exhausted username candidates for base=%s", base_username)
+    return None
 
 
 def get_or_create_user(
@@ -15,7 +54,7 @@ def get_or_create_user(
     log.debug("_id: %s %s", _id, type(_id))
     log.debug("username %s", username)
 
-    # get user by Oauth Provider ID
+    # get user by Oauth Provider ID (the stable identity link)
     if provider == "google":
         # google id is too long to be an in or big int field so we handle it separately
         # passing google ids to other filters throws a SQL error
@@ -33,36 +72,30 @@ def get_or_create_user(
         log.debug(user)
         return user[0]
 
-    # user is connecting to oauth, get user from session claim
+    # authenticated user explicitly linking a provider to their own account
+    # (set by redirect_login when request.user.is_authenticated). This is the
+    # ONLY path that attaches an OAuth identity to a pre-existing account.
     if request.session.get("oauth_claim_username"):
-        username = request.session["oauth_claim_username"]
+        claim_username = request.session["oauth_claim_username"]
         del request.session["oauth_claim_username"]
-        log.info("OAuth Used oauth_claim_username: %s", username)
-        if user := CustomUser.objects.filter(username=username):
+        log.info("OAuth Used oauth_claim_username: %s", claim_username)
+        if user := CustomUser.objects.filter(username=claim_username):
             return user[0]
+        # claim target vanished; do NOT fall through to account creation/adoption
+        log.warning("oauth_claim_username target not found: %s", claim_username)
+        return None
 
-    # get user by username and check if the user has logged in or not
-    user = CustomUser.objects.filter(username=username)
-    if user:
-        log.debug("got user by Username")
-        log.debug(user)
-        if user[0].last_login:
-            # local user exists but has already logged in
-            log.warning("Hijacking Attempt BLOCKED! Connect account via Settings page.")
-            return None
-        # local user matching oauth username exist and has never logged in
-        log.info("User %s claimed by OAuth ID: %s", user[0].id, _id)
-        return user[0]
-
-    # # no matching accounts found, if registration is enabled, create user
-    # if is_super_id(_id):
-    #     log.info('%s SUPERUSER by oauth_reg with id: %s', username, _id)
-    #     return CustomUser.objects.create(username=username, is_staff=True, is_superuser=True)
-
-    # no matching accounts found, if registration is enabled, create user
+    # No account adoption by username match (that was an account-takeover vector:
+    # anyone could register a matching provider handle to claim a pre-created,
+    # never-logged-in local account). New signups always get a fresh account.
     if SiteSettings.objects.settings().oauth_reg or is_super_id(_id) or allow_invite_create:
-        log.info("%s created by oauth_reg/invite with id: %s", username, _id)
-        return CustomUser.objects.create(username=username, first_name=first_name)
+        new_user = create_oauth_user(username, first_name)
+        if new_user:
+            # Signal oauth_callback to route the user through the username
+            # interstitial so they can personalize their generated handle.
+            request.session["oauth_new_user"] = True
+            log.info("created OAuth user handle=%s (from=%s) for id=%s", new_user.username, username, _id)
+        return new_user
 
     log.debug("User does not exist locally and oauth_reg is off: %s", _id)
     return None

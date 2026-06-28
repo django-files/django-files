@@ -18,6 +18,16 @@ def rand_invite():
     return rand_string(16)
 
 
+def superuser_exists() -> bool:
+    """True once at least one superuser account exists.
+
+    Used as the security gate for the first-run setup flow: the unauthenticated
+    bootstrap path is only reachable while this returns False. Once an admin
+    exists the setup page can no longer mint one.
+    """
+    return CustomUser.objects.filter(is_superuser=True).exists()
+
+
 class CustomUser(AbstractUser):
     class UploadNameFormats(models.TextChoices):
         NAME = "name", _("name")
@@ -247,6 +257,33 @@ class Google(models.Model):
     class Meta:
         verbose_name = "Google"
         verbose_name_plural = "Googles"
+
+
+class PasskeyCredential(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="passkeys")
+    credential_id = models.CharField(max_length=512, unique=True, db_index=True, help_text="Base64url credential id.")
+    public_key = models.TextField(help_text="Base64url COSE public key.")
+    sign_count = models.PositiveBigIntegerField(default=0)
+    name = models.CharField(max_length=200, blank=True, help_text="User supplied label, e.g. 'MacBook Touch ID'.")
+    transports = models.JSONField(default=list, blank=True, help_text="Authenticator transports hint.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+    created_ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(
+        max_length=500, blank=True, help_text="User agent string from when the passkey was registered."
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Passkey"
+        verbose_name_plural = "Passkeys"
+
+    def __str__(self):
+        return self.name or self.credential_id[:16]
+
+    def __repr__(self):
+        return f"<PasskeyCredential(id={self.id}, user={self.user_id}, name={self.name})>"
 
 
 class ApiToken(models.Model):

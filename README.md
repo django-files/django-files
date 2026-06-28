@@ -53,9 +53,29 @@ Django Files is a Django-based web application with a Celery task queue, built u
 
 For Extra Options See: [Variables](#variables)
 
-### Login Credentials
+### First-Run Setup
 
-You **should** override the default credentials with environment variables or settings.env. You will be prompted to set your password on first login.
+Django Files ships with **no default credentials**. The first time you open the app
+in a browser, you are guided through a one-time setup wizard to create the initial
+administrator account. You can secure it with either:
+
+- a **password**, or
+- a **passkey** (WebAuthn) if your browser supports it and you are accessing the
+  site over `https://` (or `http://localhost`).
+
+The setup page only appears while no administrator exists; once one is created it is
+permanently disabled.
+
+**Headless / automated deploys:** you can pre-seed the admin instead of using the
+wizard by setting the `USERNAME` and `PASSWORD` environment variables (see
+[Variables](#variables)). When both are set, the account is created on startup and
+you are prompted to personalize it on first login. Leave them unset to use the
+wizard.
+
+> Passkeys derive their identity from the site's URL/origin. Make sure `SITE_URL`
+> matches the address (including any custom port) you actually use to reach the
+> app, or your passkeys will not validate. During first-run setup the origin is
+> detected automatically from your browser.
 
 ### 🔧 Quick Start with Docker
 
@@ -130,7 +150,8 @@ Django Files is packed with features for seamless file management and sharing. M
 
 ### 🔒 Authentication & Security
 
-- Multi-user support with local & OAuth authentication options
+- Multi-user support with local, passkey (WebAuthn), & OAuth authentication options
+- Passwordless login and signup with passkeys (including invite & first-run setup)
 - Invite system for user onboarding
 - OAuth configuration via Django Admin (no restart required)
 
@@ -274,8 +295,8 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 | ------------------------------- | --------------------------------- | ---------------------------------------------------- |
 | SECRET                          | App Secret                        | `JYGTKLztZxVdu5NXuhXGaSkLJosiiQyBhFJ4LAHrJ5YHigQqq7` |
 | SITE_URL                        | Site URL                          | `https://example.com`                                |
-| USERNAME                        | Local Username                    | `admin`                                              |
-| PASSWORD                        | Local Password                    | `PSZX7TgiSg6aB6sZ`                                   |
+| USERNAME                        | Seed admin username (optional)    | `admin`                                              |
+| PASSWORD                        | Seed admin password (optional)    | `PSZX7TgiSg6aB6sZ`                                   |
 | SUPER_USERS                     | oAuth Sup User IDs                | `111150265075298304,111148006983614464`              |
 | DISCORD_CLIENT_ID               | Discord Client ID                 | `1135676900124135484`                                |
 | DISCORD_CLIENT_SECRET           | Discord Secret                    | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |

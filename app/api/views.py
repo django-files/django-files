@@ -1134,6 +1134,19 @@ def auth_methods(request):
     site_url = site_settings.site_url if site_settings.site_url else f"{request.scheme}://{request.get_host()}"
     if site_settings.local_auth:
         methods.append({"name": "local", "url": site_url + reverse("oauth:login")})
+    # Passkey login runs entirely in the login page's WebAuthn flow; native
+    # clients open the page in a web auth session and ?state=iOSApp tells the
+    # backend to hand off via djangofiles:// after auth_complete. Gate on the
+    # same precondition the ceremony itself enforces (passkey_auth + site_url).
+    if site_settings.passkey_auth and site_settings.site_url:
+        # autopasskey=1 tells the login page's JS to fire the ceremony on load
+        # so the user doesn't have to tap a second button inside the webview.
+        methods.append(
+            {
+                "name": "passkey",
+                "url": site_url + reverse("oauth:login") + "?state=iOSApp&autopasskey=1",
+            }
+        )
     if site_settings.discord_client_id:
         methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings) + state_string})
     if site_settings.github_client_id:

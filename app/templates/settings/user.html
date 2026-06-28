@@ -47,7 +47,7 @@
             <!-- Profile -->
             <section id="profile" class="settings-section">
                 <div class="dash-card">
-                    <div class="dash-card-header">
+                    <div class="dash-card-header pb-3">
                         <h4 class="d-flex align-items-center gap-2"><i class="fas fa-user"></i> Profile</h4>
                     </div>
                     <div class="dash-card-body">
@@ -150,7 +150,7 @@
             <!-- Preferences -->
             <section id="preferences" class="settings-section">
                 <div class="dash-card">
-                    <div class="dash-card-header">
+                    <div class="dash-card-header pb-3">
                         <h4 class="d-flex align-items-center gap-2"><i class="fas fa-sliders"></i> Preferences</h4>
                     </div>
                     <div class="dash-card-body">
@@ -216,7 +216,7 @@
             <!-- Appearance -->
             <section id="appearance" class="settings-section">
                 <div class="dash-card">
-                    <div class="dash-card-header">
+                    <div class="dash-card-header pb-3">
                         <h4 class="d-flex align-items-center gap-2"><i class="fas fa-palette"></i> Appearance</h4>
                     </div>
                     <div class="dash-card-body">
@@ -269,7 +269,7 @@
         <!-- Connected Accounts -->
         <section id="connected" class="settings-section">
             <div class="dash-card">
-                <div class="dash-card-header">
+                <div class="dash-card-header pb-3">
                     <h4 class="d-flex align-items-center gap-2"><i class="fas fa-plug"></i> Connected Accounts</h4>
                 </div>
                 <div class="dash-card-body">
@@ -385,7 +385,7 @@
         <!-- Clients -->
         <section id="clients" class="settings-section">
             <div class="dash-card">
-                <div class="dash-card-header">
+                <div class="dash-card-header pb-3">
                     <h4 class="d-flex align-items-center gap-2"><i class="fas fa-mobile-screen"></i> Clients</h4>
                 </div>
                 <div class="dash-card-body">
@@ -429,7 +429,7 @@
         <!-- Upload Methods -->
         <section id="upload" class="settings-section">
             <div class="dash-card">
-                <div class="dash-card-header">
+                <div class="dash-card-header pb-3">
                     <h4 class="d-flex align-items-center gap-2"><i class="fas fa-cloud-arrow-up"></i> Upload Methods</h4>
                 </div>
                 <div class="dash-card-body">
@@ -620,7 +620,7 @@
         <!-- Security -->
         <section id="security" class="settings-section">
             <div class="dash-card">
-                <div class="dash-card-header">
+                <div class="dash-card-header pb-3">
                     <h4 class="d-flex align-items-center gap-2"><i class="fas fa-shield-halved"></i> Security</h4>
                 </div>
                 <div class="dash-card-body">
@@ -638,6 +638,25 @@
                             {% if user.has_usable_password %}Change Password{% else %}Set Password{% endif %}
                         </button>
                     </div>
+
+                    {% if site_settings.passkey_auth and site_settings.site_url %}
+                    <hr>
+
+                    <div class="mb-4" id="passkeys">
+                        <h6 class="fw-medium mb-1">Passkeys</h6>
+                        <p class="text-muted small mb-2">
+                            Sign in without a password using Face ID, Touch ID, Windows Hello, or a hardware security key.
+                        </p>
+                        <ul class="list-group mb-3" id="passkey-list">
+                            <li class="list-group-item text-muted small" id="passkey-empty">Loading passkeys&hellip;</li>
+                        </ul>
+                        <button type="button" class="btn btn-outline-primary" id="addPasskeyBtn"
+                                data-bs-toggle="modal" data-bs-target="#modal-new-passkey">
+                            <i class="fa-solid fa-fingerprint me-2"></i>Add Passkey
+                        </button>
+                        <div id="passkey-error" class="text-danger small mt-2 d-none" role="alert"></div>
+                    </div>
+                    {% endif %}
 
                     <hr>
 
@@ -665,7 +684,7 @@
         <!-- Danger Zone -->
         <section id="danger-zone" class="settings-section">
             <div class="dash-card border-danger">
-                <div class="dash-card-header">
+                <div class="dash-card-header pb-3">
                     <h4 class="d-flex align-items-center gap-2 text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h4>
                 </div>
                 <div class="dash-card-body">
@@ -693,7 +712,11 @@
     {% include 'include/datatables-scripts.html' %}
     <script defer src="{% static 'dist/qr-code-styling/qr-code-styling.min.js' %}"></script>
     <script type="module" src="{% static 'js/settings.js' %}"></script>
+    <script defer src="{% static 'js/password-match.js' %}"></script>
     <script defer src="{% static 'js/settings-user.js' %}"></script>
     <script type="module" src="{% static 'js/avatar.js' %}"></script>
     <script type="module" src="{% static 'js/settings-user-tokens.js' %}"></script>
+    {% if site_settings.passkey_auth and site_settings.site_url %}
+        <script type="module" src="{% static 'js/settings-user-passkeys.js' %}"></script>
+    {% endif %}
 {% endblock %}

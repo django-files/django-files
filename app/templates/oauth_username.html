@@ -1,0 +1,42 @@
+{% extends "login_base.html" %}
+{% load static %}
+{% block title %}Choose a Username{% endblock %}
+
+{% block card %}
+    <div class="text-center mb-3">
+        <img height="96" width="96" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
+        <h4 class="text-center mt-2">Welcome to {{ site_settings.site_title }}</h4>
+        <p class="text-muted small mb-0">Pick a username to sign in with. You can keep the suggested one.</p>
+    </div>
+
+    <form method="post" action="{% url 'oauth:username' %}" id="username-form">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        {% if error %}
+            <div class="alert alert-danger py-2 text-center" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <div class="form-floating mb-2">
+            <input type="text" id="username" class="form-control" name="username" autocomplete="username"
+                   placeholder="Username" value="{{ username }}" maxlength="150" required autofocus>
+            <label for="username">Username</label>
+        </div>
+
+        <div class="form-floating mb-2">
+            <input type="text" id="first_name" class="form-control" name="first_name" autocomplete="nickname"
+                   placeholder="Display Name" value="{{ first_name }}" maxlength="150">
+            <label for="first_name">Display Name (optional)</label>
+        </div>
+
+        <div class="d-grid gap-2 mt-3">
+            <button class="btn btn-lg btn-success opacity-75 d-flex align-items-center hvr-grow" type="submit">
+                <i class="fa-solid fa-check position-absolute start-1 ms-2 animate__animated animate__rubberBand animate__delay-1s"></i>
+                <span class="w-100 text-center">Save Username</span>
+            </button>
+            <button class="btn btn-outline-secondary d-flex align-items-center hvr-grow" type="submit" name="skip" value="1" formnovalidate>
+                <span class="w-100 text-center">Keep suggested username</span>
+            </button>
+        </div>
+    </form>
+{% endblock %}

@@ -11,10 +11,13 @@
     <link rel="stylesheet" href="{% static 'css/stream.css' %}" />
 {% endblock %}
 
+{% block under_nav %}
+{% include 'include/streams-toolbar.html' %}
+{% endblock %}
+
 {% block body %}
 
     <div class="container-fluid pb-3 pt-2" data-streams-view="list">
-        {% include 'include/streams-toolbar.html' %}
         {% include 'streams/table.html'%}
     </div>
 

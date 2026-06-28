@@ -14,13 +14,14 @@ from django.contrib.sessions.backends.cache import SessionStore
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.signing import TimestampSigner
+from django.db import IntegrityError, transaction
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render, reverse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from home.util.misc import redact_log
-from oauth.models import CustomUser, DiscordWebhooks, UserInvites
+from oauth.models import CustomUser, DiscordWebhooks, UserInvites, superuser_exists
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
 
@@ -30,6 +31,9 @@ log = logging.getLogger("app")
 _PLACEHOLDER_TOKEN = "<YOUR_API_TOKEN>"  # nosec
 cache_seconds = 60 * 60 * 4
 SESSION_AUTH_REQUIRED = "Session authentication required."
+SETTINGS_SITE_URL = "settings:site"
+SETUP_TEMPLATE = "settings/setup.html"
+USERNAME_TAKEN = "That username is already taken."
 
 
 @csrf_exempt
@@ -74,6 +78,7 @@ def site_view(request):
     site_settings.oauth_reg = form.cleaned_data["oauth_reg"]
     site_settings.local_auth = form.cleaned_data["local_auth"]
     site_settings.duo_auth = form.cleaned_data["duo_auth"]
+    site_settings.passkey_auth = form.cleaned_data["passkey_auth"]
     site_settings.site_animations = form.cleaned_data["site_animations"]
     site_settings.tsparticles_enabled = form.cleaned_data["tsparticles_enabled"]
     site_settings.global_storage_quota = form.cleaned_data["global_storage_quota"]
@@ -152,45 +157,136 @@ def user_view(request):
 
 
 @csrf_exempt
-@login_required
+@require_http_methods(["GET", "POST"])
 def welcome_view(request):
     """
     View  /settings/welcome/
+
+    First-run setup wizard. While no superuser exists yet, an anonymous visitor
+    may create the initial admin account here (bootstrap). Once an admin exists
+    the view reverts to its login-required behavior and only personalizes the
+    currently authenticated account -- the bootstrap path can never mint a second
+    admin.
     """
     site_settings = SiteSettings.objects.settings()
 
+    # First run: no admin exists yet. Show the standalone glass-card setup page
+    # so an anonymous visitor can create the initial superuser.
+    if not superuser_exists():
+        return _first_run_setup(request, site_settings)
+
+    # Security gate: once an admin exists this is an authenticated-only page that
+    # merely personalizes the current account -- it can never mint a second admin.
+    if not request.user.is_authenticated:
+        return redirect("oauth:login")
     if not site_settings.show_setup:
-        return redirect("settings:site")
+        return redirect(SETTINGS_SITE_URL)
 
     if request.method == "POST":
-        form = WelcomeForm(request.POST)
-        if not form.is_valid():
-            log.debug(form.errors)
-            return JsonResponse(form.errors, status=400)
-
-        if not request.session.get("oauth_provider") and not form.cleaned_data["password"]:
-            return JsonResponse({"password": "This Field is Required."}, status=400)  # nosec B105
-
-        site_settings.show_setup = False
-        site_settings.save()
-        user = CustomUser.objects.get(pk=request.user.pk)
-        user.username = form.cleaned_data["username"]
-        log.debug("username: %s", form.cleaned_data["username"])
-        user.set_password(form.cleaned_data["password"])
-        user.timezone = form.cleaned_data["timezone"]
-        user.save()
-        if request.user.is_superuser and form.cleaned_data["site_url"]:
-            site_settings = SiteSettings.objects.settings()
-            site_settings.site_url = form.cleaned_data["site_url"]
-            site_settings.timezone = form.cleaned_data["timezone"]
-            site_settings.save()
-        login(request, user)
-        request.session["login_redirect_url"] = reverse("settings:site")
-        messages.info(request, f"Welcome to Django Files {request.user.get_name()}.")
-        return HttpResponse(status=200)
+        return _welcome_post(request, site_settings)
 
     context = {"timezones": sorted(zoneinfo.available_timezones())}
     return render(request, "settings/welcome.html", context)
+
+
+def _welcome_post(request, site_settings):
+    """Authenticated first-run personalization (AJAX modal flow)."""
+    form = WelcomeForm(request.POST)
+    if not form.is_valid():
+        log.debug(form.errors)
+        return JsonResponse(form.errors, status=400)
+    if not request.session.get("oauth_provider") and not form.cleaned_data["password"]:
+        return JsonResponse({"password": "This Field is Required."}, status=400)  # nosec B105
+
+    site_settings.show_setup = False
+    site_settings.save()
+    user = CustomUser.objects.get(pk=request.user.pk)
+    user.username = form.cleaned_data["username"]
+    log.debug("username: %s", form.cleaned_data["username"])
+    user.set_password(form.cleaned_data["password"])
+    user.timezone = form.cleaned_data["timezone"]
+    user.save()
+    if request.user.is_superuser and form.cleaned_data["site_url"]:
+        site_settings.site_url = form.cleaned_data["site_url"]
+        site_settings.timezone = form.cleaned_data["timezone"]
+        site_settings.save()
+    login(request, user)
+    request.session["login_redirect_url"] = reverse(SETTINGS_SITE_URL)
+    messages.info(request, f"Welcome to Django Files {request.user.get_name()}.")
+    return HttpResponse(status=200)
+
+
+def _first_run_setup(request, site_settings):
+    """Create the initial superuser on first run via the glass-card setup page."""
+    timezones = sorted(zoneinfo.available_timezones())
+    if request.method == "GET":
+        # Leave site_url/timezone for the client to fill from the browser (real
+        # origin incl. port, and the client's IANA timezone); the server may sit
+        # behind a proxy that hides the port and cannot know the client's tz.
+        context = {
+            "timezones": timezones,
+            "timezone": site_settings.timezone,
+            "site_url": site_settings.site_url or "",
+            "username": "",
+            "error": None,
+        }
+        return render(request, SETUP_TEMPLATE, context)
+
+    form = WelcomeForm(request.POST)
+    confirm = request.POST.get("confirm_password") or ""
+    context = {
+        "timezones": timezones,
+        "username": request.POST.get("username", ""),
+        "site_url": request.POST.get("site_url", ""),
+        "timezone": request.POST.get("timezone") or site_settings.timezone,
+    }
+    if error := _setup_form_error(form, confirm):
+        return render(request, SETUP_TEMPLATE, {**context, "error": error}, status=400)
+
+    username = form.cleaned_data["username"]
+    try:
+        with transaction.atomic():
+            # Re-check inside the transaction so two concurrent first-run requests
+            # cannot both pass the gate and create separate admin accounts.
+            if superuser_exists():
+                error = "Setup has already been completed. Please log in."
+                return render(request, SETUP_TEMPLATE, {**context, "error": error}, status=409)
+            if CustomUser.objects.filter(username=username).exists():
+                error = "That username is already taken."
+                return render(request, SETUP_TEMPLATE, {**context, "error": error}, status=400)
+            user = CustomUser.objects.create_superuser(username=username, password=form.cleaned_data["password"])
+            user.timezone = form.cleaned_data["timezone"]
+            user.save(update_fields=["timezone"])
+            site_settings.show_setup = False
+            site_settings.timezone = form.cleaned_data["timezone"]
+            if form.cleaned_data["site_url"]:
+                site_settings.site_url = form.cleaned_data["site_url"]
+            site_settings.save()
+    except IntegrityError:
+        log.exception("first-run setup: race creating initial superuser")
+        return render(request, SETUP_TEMPLATE, {**context, "error": USERNAME_TAKEN}, status=400)
+
+    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    request.session["login_redirect_url"] = reverse(SETTINGS_SITE_URL)
+    messages.info(request, f"Welcome to Django Files {user.get_name()}.")
+    log.info("first-run setup: created initial superuser=%s", user.username)
+    return redirect(SETTINGS_SITE_URL)
+
+
+def _setup_form_error(form, confirm):
+    """Validate the first-run setup form. Returns an error string or None."""
+    if not form.is_valid():
+        return next(iter(form.errors.values()))[0]
+    password = form.cleaned_data["password"]
+    if not password:
+        return "Password is required."
+    if password != confirm:
+        return "Passwords do not match."
+    try:
+        validate_password(password)
+    except ValidationError as error:
+        return " ".join(error.messages)
+    return None
 
 
 @login_required

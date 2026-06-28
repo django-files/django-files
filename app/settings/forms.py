@@ -26,6 +26,7 @@ class SiteSettingsForm(forms.Form):
     pub_album = forms.IntegerField(required=False)
     two_factor = forms.BooleanField(required=False)
     duo_auth = forms.BooleanField(required=False)
+    passkey_auth = forms.BooleanField(required=False)
     site_animations = forms.BooleanField(required=False)
     s3_bucket_name = forms.CharField(max_length=128, required=False)
     global_storage_quota = forms.CharField(max_length=128, required=False)

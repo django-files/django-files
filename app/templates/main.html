@@ -48,7 +48,7 @@
 
 {% block navbar %}
 <header>
-<nav class="navbar fixed-top navbar-expand-{% if not request.user.is_authenticated %}sm{% else %}md{% endif %} navbar-dark" aria-label="Main Navigation"
+<nav class="navbar navbar-expand-{% if not request.user.is_authenticated %}sm{% else %}md{% endif %} navbar-dark" aria-label="Main Navigation"
      style="--nav-color-1: {% block nav1color %}{{ user.nav_color_1|default:"#130e36" }}{% endblock %}; --nav-color-2: {% block nav2color %}{{ user.nav_color_2|default:"#1e1c21" }}{% endblock %};">
 <div class="container-fluid">
     <a class="navbar-brand" href="{% url 'home:index' %}">
@@ -187,6 +187,7 @@
     </div> <!-- offcanvas -->
 </div> <!-- nav-container -->
 </nav>
+{% block under_nav %}{% endblock %}
 </header>
 {% endblock %}
 

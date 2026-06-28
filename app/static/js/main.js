@@ -282,10 +282,12 @@ function debounce(fn, timeout = 250) {
 
 function observeToolbarHeight(toolbarId, cssVar) {
     const toolbar = document.getElementById(toolbarId)
-    const container = toolbar?.parentElement
-    if (!toolbar || !container) return
+    if (!toolbar) return
     const sync = () =>
-        container.style.setProperty(cssVar, `${toolbar.offsetHeight}px`)
+        document.documentElement.style.setProperty(
+            cssVar,
+            `${toolbar.offsetHeight}px`
+        )
     sync()
     new ResizeObserver(sync).observe(toolbar)
 }

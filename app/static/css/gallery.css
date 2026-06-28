@@ -210,18 +210,18 @@
 }
 
 .gallery-ctx .dt-ctx-btn {
-    background: rgba(0 0 0 / 52%);
+    background: var(--preview-chrome-bg);
     -webkit-backdrop-filter: var(--toolbar-glass-blur);
     backdrop-filter: var(--toolbar-glass-blur);
-    border-color: rgba(255 255 255 / 15%);
-    color: #fff;
+    border-color: var(--preview-border-color);
+    color: var(--bs-emphasis-color);
     opacity: 0.85;
 }
 
 .gallery-ctx .dt-ctx-btn:hover,
 .gallery-ctx .dt-ctx-btn[aria-expanded='true'] {
-    background: rgba(0 0 0 / 72%);
-    color: #fff;
+    background: var(--preview-chrome-bg-hover);
+    color: var(--bs-emphasis-color);
     opacity: 1;
 }
 

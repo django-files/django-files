@@ -190,6 +190,38 @@
     </div>
 </div>
 
+<div class="modal fade" id="modal-new-passkey" tabindex="-1"
+     aria-labelledby="modal-new-passkey-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="new-passkey-form">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal-new-passkey-label">
+                        <i class="fa-solid fa-fingerprint me-2"></i>Add Passkey
+                    </h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="passkey-name" class="form-label fw-medium">Passkey Name</label>
+                        <input type="text" class="form-control" id="passkey-name" name="name"
+                               placeholder="e.g. MacBook Touch ID, YubiKey" maxlength="200">
+                        <small class="text-muted">A label to help you identify this passkey. Leave blank to auto-detect from your device.</small>
+                    </div>
+                    <div id="new-passkey-error" class="text-danger small d-none" role="alert"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="confirm-new-passkey-btn">
+                        <i class="fa-solid fa-fingerprint me-2"></i>Create Passkey
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modal-delete-token" tabindex="-1"
      aria-labelledby="modal-delete-token-label" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
