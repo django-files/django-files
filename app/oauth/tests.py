@@ -332,7 +332,7 @@ class FirstRunSetupTest(TestCase):
     def test_bootstrap_rejects_password_mismatch(self):
         response = self.client.post(
             reverse("settings:welcome"),
-            {"username": "admin", "password": TEST_PW, "confirm_password": "nope", "timezone": "UTC"},
+            {"username": "admin", "password": TEST_PW, "confirm_password": TEST_PW + "x", "timezone": "UTC"},
         )
         self.assertEqual(response.status_code, 400)
         self.assertFalse(CustomUser.objects.filter(username="admin").exists())
