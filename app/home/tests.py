@@ -80,11 +80,9 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         if not os.path.isdir(cls.screenshots):
             os.mkdir(cls.screenshots)
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        call_command("loaddata", "settings/fixtures/customuser.json", verbosity=0)
+        cls.user = CustomUser.objects.create_superuser(username="testuser", password=TEST_PASSWORD)
         call_command("loaddata", "settings/fixtures/webhooks.json", verbosity=0)
         call_command("loaddata", "settings/fixtures/discord.json", verbosity=0)
-        # cls.user = CustomUser.objects.create_superuser(username='testuser', password='12345')
-        cls.user = CustomUser.objects.get(pk=1)
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         cls.playwright = sync_playwright().start()
         cls.browser = cls.playwright.chromium.launch()
