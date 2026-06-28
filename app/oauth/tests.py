@@ -370,7 +370,7 @@ class FirstRunSetupTest(TestCase):
         site.passkey_auth = True
         site.save()
         response = self.client.get(reverse("settings:welcome"))
-        self.assertContains(response, "Create with Passkey")
+        self.assertContains(response, "Use Passkey")
         self.assertContains(response, "passkey-setup.js")
 
 

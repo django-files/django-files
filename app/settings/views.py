@@ -220,10 +220,13 @@ def _first_run_setup(request, site_settings):
     """Create the initial superuser on first run via the glass-card setup page."""
     timezones = sorted(zoneinfo.available_timezones())
     if request.method == "GET":
+        # Leave site_url/timezone for the client to fill from the browser (real
+        # origin incl. port, and the client's IANA timezone); the server may sit
+        # behind a proxy that hides the port and cannot know the client's tz.
         context = {
             "timezones": timezones,
             "timezone": site_settings.timezone,
-            "site_url": site_settings.site_url or f"{request.scheme}://{request.get_host()}",
+            "site_url": site_settings.site_url or "",
             "username": "",
             "error": None,
         }
