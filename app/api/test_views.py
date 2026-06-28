@@ -6,6 +6,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from django.utils.timezone import now
+from djangofiles.test_utils import TEST_PASSWORD, WRONG_PASSWORD
 from home.models import Albums, ShortURLs, Stream
 from home.util.auth import create_api_token, hash_token
 from oauth.models import ApiToken, CustomUser
@@ -23,14 +24,14 @@ class UserApiTestCase(TestCase):
         self.superuser = CustomUser.objects.create_superuser(
             username="superuser",
             email="super@test.com",
-            password="12345",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
         self.superuser_token = create_api_token(self.superuser, name="Test Token")
 
         self.regular_user = CustomUser.objects.create_user(
             username="regularuser",
             email="regular@test.com",
-            password="12345",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
         self.regular_token = create_api_token(self.regular_user, name="Test Token")
 
@@ -73,7 +74,7 @@ class OrderingApiTestCase(TestCase):
         self.user = CustomUser.objects.create_user(
             username="orderuser",
             email="order@test.com",
-            password="12345",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
         self.auth = create_api_token(self.user, name="Test Token")
 
@@ -155,7 +156,7 @@ class StreamLifecycleTestCase(TestCase):
         self.user = CustomUser.objects.create_user(
             username="streamuser",
             email="stream@test.com",
-            password="12345",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
         self.auth = create_api_token(self.user, name="Test Token")
 
@@ -170,7 +171,7 @@ class StreamLifecycleTestCase(TestCase):
         self.assertEqual(data["streams"], [])
 
     def test_create_stream(self):
-        self.client.login(username="streamuser", password="12345")  # nosec  # NOSONAR
+        self.client.login(username="streamuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         r = self.client.post(
             reverse("api:stream-create"),
             data={"name": "teststream", "title": "Test Stream"},
@@ -181,14 +182,14 @@ class StreamLifecycleTestCase(TestCase):
         self.assertIn("stream_token", data)
 
     def test_create_stream_idempotent(self):
-        self.client.login(username="streamuser", password="12345")  # nosec  # NOSONAR
+        self.client.login(username="streamuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         self.client.post(reverse("api:stream-create"), data={"name": "mystream", "title": "My Stream"})
         r = self.client.post(reverse("api:stream-create"), data={"name": "mystream", "title": "My Stream"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["name"], "mystream")
 
     def test_create_stream_missing_name(self):
-        self.client.login(username="streamuser", password="12345")  # nosec  # NOSONAR
+        self.client.login(username="streamuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         r = self.client.post(reverse("api:stream-create"), data={"title": "No Name"})
         self.assertEqual(r.status_code, 400)
 
@@ -211,7 +212,7 @@ class StreamLifecycleTestCase(TestCase):
 
     def test_open_private_stream_page_authenticated(self):
         Stream.objects.create(name="mystream", title="Mine", user=self.user, public=False)
-        self.client.login(username="streamuser", password="12345")  # nosec  # NOSONAR
+        self.client.login(username="streamuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         r = self.client.get(reverse("home:live", kwargs={"key": "mystream"}))
         self.assertEqual(r.status_code, 200)
 
@@ -228,7 +229,7 @@ class HlsAuthRequestTestCase(TestCase):
         self.user = CustomUser.objects.create_user(
             username="hlsuser",
             email="hls@test.com",
-            password="12345",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
         self.public_stream = Stream.objects.create(name="pub", title="Pub", user=self.user, public=True)
         self.private_stream = Stream.objects.create(name="priv", title="Priv", user=self.user, public=False)
@@ -313,7 +314,7 @@ class BearerTokenAuthTestCase(TestCase):
         self.user = CustomUser.objects.create_user(
             username="authuser",
             email="auth@test.com",
-            password="correcthorse",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,
         )
         self.token = create_api_token(self.user, name="Test Token")
 
@@ -376,12 +377,12 @@ class TokenRotationTestCase(TestCase):
         self.user = CustomUser.objects.create_user(
             username="rotateuser",
             email="rotate@test.com",
-            password="12345",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
         self.token = create_api_token(self.user, name="Test Token")
 
     def test_create_via_session_returns_new_plaintext(self):
-        self.client.login(username="rotateuser", password="12345")  # nosec  # NOSONAR
+        self.client.login(username="rotateuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         r = self.client.post(reverse("api:token"), HTTP_X_CSRFTOKEN=self.client.cookies.get("csrftoken", ""))
         self.assertEqual(r.status_code, 200)
         new_token = r.json()["token"]
@@ -389,7 +390,7 @@ class TokenRotationTestCase(TestCase):
         self.assertEqual(len(new_token), 32)
 
     def test_create_new_token_does_not_invalidate_old(self):
-        self.client.login(username="rotateuser", password="12345")  # nosec  # NOSONAR
+        self.client.login(username="rotateuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         initial_count = ApiToken.objects.filter(user=self.user).count()
         self.client.post(reverse("api:token"))
         # Fresh client: no session, only Bearer auth is tested.
@@ -403,7 +404,7 @@ class TokenRotationTestCase(TestCase):
         self.assertEqual(new_count, initial_count + 1)
 
     def test_create_new_token_authenticates(self):
-        self.client.login(username="rotateuser", password="12345")  # nosec  # NOSONAR
+        self.client.login(username="rotateuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         r = self.client.post(reverse("api:token"))
         new_token = r.json()["token"]
         # Use a fresh client to ensure no session carries the auth.
@@ -419,7 +420,7 @@ class TokenRotationTestCase(TestCase):
 
     def test_create_adds_new_api_token(self):
         initial_count = ApiToken.objects.filter(user=self.user).count()
-        self.client.login(username="rotateuser", password="12345")  # nosec  # NOSONAR
+        self.client.login(username="rotateuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         self.client.post(reverse("api:token"))
         self.user.refresh_from_db()
         new_count = ApiToken.objects.filter(user=self.user).count()
@@ -438,13 +439,13 @@ class LocalAuthForNativeClientTestCase(TestCase):
         self.user = CustomUser.objects.create_user(
             username="nativeuser",
             email="native@test.com",
-            password="secret123",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
 
     def test_login_with_valid_credentials_returns_token(self):
         r = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "secret123"}),  # nosec  # NOSONAR
+            data=json.dumps({"username": "nativeuser", "password": TEST_PASSWORD}),  # nosec  # NOSONAR
             content_type="application/json",
         )
         self.assertEqual(r.status_code, 200)
@@ -456,7 +457,7 @@ class LocalAuthForNativeClientTestCase(TestCase):
     def test_returned_token_authenticates_api(self):
         r = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "secret123"}),  # nosec  # NOSONAR
+            data=json.dumps({"username": "nativeuser", "password": TEST_PASSWORD}),  # nosec  # NOSONAR
             content_type="application/json",
         )
         token = r.json()["token"]
@@ -469,7 +470,7 @@ class LocalAuthForNativeClientTestCase(TestCase):
     def test_wrong_password_returns_401(self):
         r = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "wrong"}),  # nosec  # NOSONAR
+            data=json.dumps({"username": "nativeuser", "password": WRONG_PASSWORD}),  # nosec  # NOSONAR
             content_type="application/json",
         )
         self.assertEqual(r.status_code, 401)
@@ -478,7 +479,7 @@ class LocalAuthForNativeClientTestCase(TestCase):
         """The returned plaintext must differ from what is stored in the DB."""
         r = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "secret123"}),  # nosec  # NOSONAR
+            data=json.dumps({"username": "nativeuser", "password": TEST_PASSWORD}),  # nosec  # NOSONAR
             content_type="application/json",
         )
         token = r.json()["token"]
@@ -490,7 +491,7 @@ class LocalAuthForNativeClientTestCase(TestCase):
         """When called with an active session and api_token set, token is stable."""
         login_r = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "secret123"}),  # nosec  # NOSONAR
+            data=json.dumps({"username": "nativeuser", "password": TEST_PASSWORD}),  # nosec  # NOSONAR
             content_type="application/json",
         )
         first_token = login_r.json()["token"]
@@ -498,7 +499,7 @@ class LocalAuthForNativeClientTestCase(TestCase):
         # Second call with same session (Android reAuthenticate pattern).
         r2 = self.client.post(
             reverse("api:auth-token"),
-            data=json.dumps({"username": "nativeuser", "password": "secret123"}),  # nosec  # NOSONAR
+            data=json.dumps({"username": "nativeuser", "password": TEST_PASSWORD}),  # nosec  # NOSONAR
             content_type="application/json",
         )
         # Session already authenticated; returns from session, no rotation.
@@ -514,7 +515,7 @@ class AuthSessionTestCase(TestCase):
         self.user = CustomUser.objects.create_user(
             username="sessionuser",
             email="session@test.com",
-            password="12345",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
         self.token = create_api_token(self.user, name="Test Token")
 
@@ -554,13 +555,13 @@ class LogoutTokenRotationTestCase(TestCase):
         self.user = CustomUser.objects.create_user(
             username="logoutuser",
             email="logout@test.com",
-            password="12345",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
         self.token = create_api_token(self.user, name="Test Token")
 
     def test_token_remains_active_after_logout(self):
         """Logout must leave ApiToken rows untouched."""
-        self.client.login(username="logoutuser", password="12345")  # nosec  # NOSONAR
+        self.client.login(username="logoutuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         self.client.post(reverse("oauth:logout"))
 
         token_obj = ApiToken.objects.filter(user=self.user).first()
@@ -569,7 +570,7 @@ class LogoutTokenRotationTestCase(TestCase):
 
     def test_bearer_token_still_works_after_logout(self):
         """A Bearer token must remain valid after its owner logs out of the web session."""
-        self.client.login(username="logoutuser", password="12345")  # nosec  # NOSONAR
+        self.client.login(username="logoutuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         self.client.post(reverse("oauth:logout"))
 
         from django.test import Client
@@ -584,8 +585,8 @@ class ApiTokenListCreateTestCase(TestCase):
 
     def setUp(self):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(username="tokenuser", password="pass")  # nosec  # NOSONAR
-        self.client.login(username="tokenuser", password="pass")  # nosec  # NOSONAR
+        self.user = CustomUser.objects.create_user(username="tokenuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
+        self.client.login(username="tokenuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
 
     def test_list_tokens_empty(self):
         response = self.client.get("/api/token/")
@@ -603,7 +604,7 @@ class ApiTokenListCreateTestCase(TestCase):
         self.assertEqual(data["count"], 2)
 
     def test_list_tokens_excludes_other_users(self):
-        other = CustomUser.objects.create_user(username="other", password="pass")  # nosec  # NOSONAR
+        other = CustomUser.objects.create_user(username="other", password=TEST_PASSWORD)  # nosec  # NOSONAR
         ApiToken.objects.create(user=other, token_hash=hash_token("othertoken"), name="Other")
         response = self.client.get("/api/token/")
         data = response.json()
@@ -640,8 +641,8 @@ class ApiTokenDeleteTestCase(TestCase):
 
     def setUp(self):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(username="deluser", password="pass")  # nosec  # NOSONAR
-        self.client.login(username="deluser", password="pass")  # nosec  # NOSONAR
+        self.user = CustomUser.objects.create_user(username="deluser", password=TEST_PASSWORD)  # nosec  # NOSONAR
+        self.client.login(username="deluser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         self.token = ApiToken.objects.create(user=self.user, token_hash=hash_token("mytoken"), name="My Token")
 
     def test_delete_token(self):
@@ -656,7 +657,7 @@ class ApiTokenDeleteTestCase(TestCase):
         self.assertFalse(self.token.is_active)
 
     def test_cannot_disable_other_users_token(self):
-        other = CustomUser.objects.create_user(username="other2", password="pass")  # nosec  # NOSONAR
+        other = CustomUser.objects.create_user(username="other2", password=TEST_PASSWORD)  # nosec  # NOSONAR
         other_token = ApiToken.objects.create(user=other, token_hash=hash_token("othertoken2"), name="Other")
         response = self.client.delete(f"/api/token/{other_token.pk}/")
         self.assertEqual(response.status_code, 404)
@@ -669,7 +670,7 @@ class ApiTokenAuthTestCase(TestCase):
 
     def setUp(self):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(username="authuser", password="pass")  # nosec  # NOSONAR
+        self.user = CustomUser.objects.create_user(username="authuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
         self.plaintext = "testbearertoken12345678"
         self.token = ApiToken.objects.create(
             user=self.user,

@@ -9,6 +9,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
+from djangofiles.test_utils import TEST_PASSWORD
 from home.models import Files, ShortURLs
 from home.tasks import (
     app_init,
@@ -49,8 +50,8 @@ class TestAuthViews(TestCase):
 
     def setUp(self):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_superuser(username="testuser", password="12345")
-        login = self.client.login(username="testuser", password="12345")
+        self.user = CustomUser.objects.create_superuser(username="testuser", password=TEST_PASSWORD)
+        login = self.client.login(username="testuser", password=TEST_PASSWORD)
         log.info("login: %s", login)
 
     def test_views_with_auth(self):
@@ -148,7 +149,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         page.locator("text=Django Files")
         page.wait_for_timeout(timeout=750)
         page.fill("[name=username]", "testuser")
-        page.fill("[name=password]", "12345")
+        page.fill("[name=password]", TEST_PASSWORD)
         self.screenshot(page, "Login")
 
         page.locator("#login-button").click()
@@ -372,8 +373,8 @@ class FilesTestCase(TestCase):
 
     def setUp(self):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_superuser(username="testuser", password="12345")
-        login = self.client.login(username="testuser", password="12345")
+        self.user = CustomUser.objects.create_superuser(username="testuser", password=TEST_PASSWORD)
+        login = self.client.login(username="testuser", password=TEST_PASSWORD)
         log.info("login: %s", login)
         site_settings = SiteSettings.objects.settings()
         log.info("site_settings: %s", site_settings)

@@ -1,11 +1,16 @@
 from django.test import TestCase
 from django.urls import reverse
+from djangofiles.test_utils import TEST_PASSWORD
+from oauth.models import CustomUser
 
 
 class TestViews(TestCase):
     """Test General Views"""
 
     def setUp(self):
+        # An administrator must exist, otherwise oauth:login redirects (302) to the
+        # first-run setup wizard instead of rendering the login page.
+        CustomUser.objects.create_superuser(username="admin", password=TEST_PASSWORD)
         self.views = {
             "health_check": 200,
             "flush_cache": 302,

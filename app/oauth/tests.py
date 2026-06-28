@@ -6,15 +6,13 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from djangofiles.test_utils import TEST_PASSWORD, WEAK_PASSWORD, WRONG_PASSWORD
 from oauth import passkeys
 from oauth.models import CustomUser, Discord, PasskeyCredential, UserInvites
 from oauth.providers.helpers import create_oauth_user, get_or_create_user
 from settings.models import SiteSettings
 
 log = logging.getLogger("app")
-
-# Test-only credential used across the first-run/setup tests.
-TEST_PW = "a-Str0ng-pass!"  # nosec  # NOSONAR
 
 
 class PasskeyConfigTest(TestCase):
@@ -53,7 +51,7 @@ class PasskeyViewTest(TestCase):
         self.user = CustomUser.objects.create_user(
             username="passkeyuser",
             email="passkey@test.com",
-            password="12345",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
 
     def _login(self):
@@ -129,7 +127,7 @@ class PasskeyViewTest(TestCase):
         other = CustomUser.objects.create_user(
             username="other",
             email="other@test.com",
-            password="12345",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
         cred = PasskeyCredential.objects.create(user=other, credential_id="xyz", public_key="pk")
         self._login()
@@ -150,7 +148,7 @@ class PasskeyInviteTest(TestCase):
         self.owner = CustomUser.objects.create_superuser(
             username="owner",
             email="owner@test.com",
-            password="12345",  # nosec  # NOSONAR
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
         self.invite = UserInvites.objects.create(owner=self.owner, max_uses=1)
 
@@ -177,7 +175,7 @@ class PasskeyInviteTest(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_begin_username_taken(self):
-        CustomUser.objects.create_user(username="taken", password="12345")  # nosec  # NOSONAR
+        CustomUser.objects.create_user(username="taken", password=TEST_PASSWORD)  # nosec  # NOSONAR
         response = self._post(self._begin_url(self.invite.invite), {"username": "taken"})
         self.assertEqual(response.status_code, 400)
 
@@ -216,7 +214,7 @@ class OAuthUserCreationTest(TestCase):
         self.assertTrue(req.session.get("oauth_new_user"))
 
     def test_does_not_adopt_logged_in_account(self):
-        existing = CustomUser.objects.create_user(username="bob", password="12345")  # nosec  # NOSONAR
+        existing = CustomUser.objects.create_user(username="bob", password=TEST_PASSWORD)  # nosec  # NOSONAR
         existing.last_login = timezone.now()
         existing.save()
         user = get_or_create_user(self._req(), "discord-2", "bob", "discord")
@@ -242,13 +240,13 @@ class OAuthUserCreationTest(TestCase):
         self.assertIsNone(user)
 
     def test_existing_by_provider_id_returned(self):
-        u = CustomUser.objects.create_user(username="erin", password="12345")  # nosec  # NOSONAR
+        u = CustomUser.objects.create_user(username="erin", password=TEST_PASSWORD)  # nosec  # NOSONAR
         Discord.objects.create(user=u, id="discord-5")
         user = get_or_create_user(self._req(), "discord-5", "whatever", "discord")
         self.assertEqual(user.pk, u.pk)
 
     def test_create_oauth_user_suffixes_on_collision(self):
-        CustomUser.objects.create_user(username="frank", password="12345")  # nosec  # NOSONAR
+        CustomUser.objects.create_user(username="frank", password=TEST_PASSWORD)  # nosec  # NOSONAR
         user = create_oauth_user("frank", "Frank")
         self.assertIsNotNone(user)
         self.assertNotEqual(user.username, "frank")
@@ -260,7 +258,7 @@ class OAuthUsernameViewTest(TestCase):
 
     def setUp(self):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(username="auto1234", password="12345")  # nosec  # NOSONAR
+        self.user = CustomUser.objects.create_user(username="auto1234", password=TEST_PASSWORD)  # nosec  # NOSONAR
 
     def test_requires_login(self):
         response = self.client.get(reverse("oauth:username"))
@@ -282,7 +280,7 @@ class OAuthUsernameViewTest(TestCase):
         self.assertEqual(self.user.first_name, "Chosen One")
 
     def test_post_rejects_taken_username(self):
-        CustomUser.objects.create_user(username="taken", password="12345")  # nosec  # NOSONAR
+        CustomUser.objects.create_user(username="taken", password=TEST_PASSWORD)  # nosec  # NOSONAR
         self.client.force_login(self.user)
         response = self.client.post(reverse("oauth:username"), {"username": "taken", "next": "/"})
         self.assertEqual(response.status_code, 200)
@@ -316,8 +314,8 @@ class FirstRunSetupTest(TestCase):
             reverse("settings:welcome"),
             {
                 "username": "admin",
-                "password": TEST_PW,
-                "confirm_password": TEST_PW,
+                "password": TEST_PASSWORD,
+                "confirm_password": TEST_PASSWORD,
                 "timezone": "UTC",
                 "site_url": "https://files.example.com",
             },
@@ -332,7 +330,7 @@ class FirstRunSetupTest(TestCase):
     def test_bootstrap_rejects_password_mismatch(self):
         response = self.client.post(
             reverse("settings:welcome"),
-            {"username": "admin", "password": TEST_PW, "confirm_password": TEST_PW + "x", "timezone": "UTC"},
+            {"username": "admin", "password": TEST_PASSWORD, "confirm_password": WRONG_PASSWORD, "timezone": "UTC"},
         )
         self.assertEqual(response.status_code, 400)
         self.assertFalse(CustomUser.objects.filter(username="admin").exists())
@@ -343,8 +341,8 @@ class FirstRunSetupTest(TestCase):
             reverse("settings:welcome"),
             {
                 "username": "admin",
-                "password": "123456",
-                "confirm_password": "123456",
+                "password": WEAK_PASSWORD,
+                "confirm_password": WEAK_PASSWORD,
                 "timezone": "UTC",
             },  # nosec  # NOSONAR
         )
@@ -352,14 +350,14 @@ class FirstRunSetupTest(TestCase):
         self.assertFalse(CustomUser.objects.filter(username="admin").exists())
 
     def test_gate_closed_once_admin_exists(self):
-        CustomUser.objects.create_superuser(username="root", password=TEST_PW)
+        CustomUser.objects.create_superuser(username="root", password=TEST_PASSWORD)
         # Anonymous visitors can no longer reach the bootstrap form...
         response = self.client.get(reverse("settings:welcome"))
         self.assertRedirects(response, reverse("oauth:login"), fetch_redirect_response=False)
         # ...nor mint a second admin through it.
         response = self.client.post(
             reverse("settings:welcome"),
-            {"username": "evil", "password": TEST_PW, "timezone": "UTC"},  # nosec  # NOSONAR
+            {"username": "evil", "password": TEST_PASSWORD, "timezone": "UTC"},  # nosec  # NOSONAR
         )
         self.assertRedirects(response, reverse("oauth:login"), fetch_redirect_response=False)
         self.assertFalse(CustomUser.objects.filter(username="evil").exists())
@@ -431,7 +429,7 @@ class PasskeySetupTest(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_begin_gated_when_admin_exists(self):
-        CustomUser.objects.create_superuser(username="root", password=TEST_PW)
+        CustomUser.objects.create_superuser(username="root", password=TEST_PASSWORD)
         response = self.client.post(
             reverse("oauth:passkey-setup-begin"),
             data=json.dumps({"username": "admin"}),
