@@ -108,6 +108,11 @@ def oauth_show(request):
     if "next" in request.GET:
         log.debug("setting login_next_url to: %s", request.GET.get("next"))
         request.session["login_next_url"] = request.GET.get("next")
+    # Persist ?state=iOSApp from a native client opening the login page in a web
+    # auth session so AJAX ceremonies (passkey) can later return a native-scheme
+    # redirect with a token. Cleared after consumption in those views.
+    if request.GET.get("state"):
+        request.session["native_auth_state"] = request.GET.get("state")
     # if request.META.get("HTTP_USER_AGENT", "").startswith("DjangoFiles iOS"):
     if is_mobile(request, "ios"):
         # If a native app is redirect to login in the app web view,
@@ -526,6 +531,20 @@ def passkey_auth_complete(request):
     login(request, user, backend=MODEL_BACKEND)
     post_login(request)
     messages.info(request, f"Successfully logged in as {user.username}.")
+    # Native client (e.g. iOS web auth session): hand off via the djangofiles://
+    # scheme with a freshly minted token so the app can store it directly,
+    # mirroring oauth_callback's native-auth handoff.
+    native_state = request.session.pop("native_auth_state", None)
+    if native_state == "iOSApp":
+        token = create_api_token(user, request)
+        return JsonResponse({
+            "redirect": get_login_redirect_url(
+                request,
+                native_auth=True,
+                token=token,
+                session_key=request.session.session_key or "",
+            )
+        })
     return JsonResponse({"redirect": get_login_redirect_url(request)})
 
 
