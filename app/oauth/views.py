@@ -537,14 +537,16 @@ def passkey_auth_complete(request):
     native_state = request.session.pop("native_auth_state", None)
     if native_state == "iOSApp":
         token = create_api_token(user, request)
-        return JsonResponse({
-            "redirect": get_login_redirect_url(
-                request,
-                native_auth=True,
-                token=token,
-                session_key=request.session.session_key or "",
-            )
-        })
+        return JsonResponse(
+            {
+                "redirect": get_login_redirect_url(
+                    request,
+                    native_auth=True,
+                    token=token,
+                    session_key=request.session.session_key or "",
+                )
+            }
+        )
     return JsonResponse({"redirect": get_login_redirect_url(request)})
 
 
