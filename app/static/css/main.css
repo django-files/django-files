@@ -188,6 +188,21 @@ html {
         0 12px 40px -8px rgba(0, 0, 0, 0.6);
 }
 
+/* Preview chrome — floating buttons, sidebar pills, context triggers.
+   Always light-tinted in light mode, dark-tinted in dark mode (matching
+   the liquid-glass surface pattern of --glass-*). */
+:root {
+    --preview-chrome-bg: rgba(255, 255, 255, 0.48);
+    --preview-chrome-bg-hover: rgba(255, 255, 255, 0.7);
+    --preview-border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-bs-theme='dark'] {
+    --preview-chrome-bg: rgba(20, 20, 24, 0.48);
+    --preview-chrome-bg-hover: rgba(20, 20, 24, 0.7);
+    --preview-border-color: rgba(255, 255, 255, 0.1);
+}
+
 /* backdrop-filter on the nav itself would create a CSS containing block for
    position:fixed children (the offcanvas), trapping it inside the navbar.
    The blur lives on ::before instead; position:fixed on the navbar already
