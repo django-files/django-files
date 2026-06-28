@@ -203,10 +203,22 @@ html {
     --preview-border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* backdrop-filter on the nav itself would create a CSS containing block for
-   position:fixed children (the offcanvas), trapping it inside the navbar.
-   The blur lives on ::before instead; position:fixed on the navbar already
-   establishes a containing block for the pseudo-element. */
+/* Fixed wrapper for navbar + floating toolbar so they always move as one unit.
+   Uses top instead of transform so the navbar never creates a CSS containing
+   block for position:fixed children (the offcanvas). transform would trap
+   the offcanvas inside the navbar's coordinate space. */
+header {
+    position: fixed;
+    top: var(--navbar-offset, 0);
+    left: 0;
+    right: 0;
+    z-index: 1030;
+}
+
+body.navbar-snapping header {
+    transition: top 0.2s ease;
+}
+
 .navbar {
     --bs-navbar-padding-y: 0.1rem;
 
@@ -215,14 +227,6 @@ html {
         var(--nav-color-1, #130e36) 0%,
         var(--nav-color-2, #1e1c21) 100%
     );
-    /* Use top instead of transform so the navbar never creates a CSS containing
-     * block for position:fixed children (the offcanvas). transform would trap
-     * the offcanvas inside the navbar's coordinate space. */
-    top: var(--navbar-offset, 0);
-}
-
-body.navbar-snapping .navbar {
-    transition: top 0.2s ease;
 }
 
 .navbar::before {
@@ -251,7 +255,7 @@ body.navbar-snapping .navbar {
         padding-top: calc(var(--navbar-h) + env(safe-area-inset-top));
     }
 
-    .navbar {
+    header {
         padding-top: env(safe-area-inset-top, 0);
     }
 
@@ -270,14 +274,7 @@ body.navbar-snapping .navbar {
    its compositing layer, preventing their own backdrop-filter from seeing through
    to the page. The blur lives on ::before instead (same pattern as .navbar). */
 .files-toolbar {
-    position: fixed;
-    top: calc(
-        var(--navbar-h, 52px) + var(--navbar-offset, 0px) +
-            env(safe-area-inset-top, 0px)
-    );
-    left: 0;
-    right: 0;
-    z-index: 1020;
+    position: relative;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -289,10 +286,6 @@ body.navbar-snapping .navbar {
     margin: 0;
     background: var(--toolbar-glass-bg);
     border-bottom: 1px solid rgba(40 42 45 / 55%);
-}
-
-body.navbar-snapping .files-toolbar {
-    transition: top 0.2s ease;
 }
 
 .files-toolbar::before {

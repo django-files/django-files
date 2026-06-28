@@ -9,9 +9,12 @@
     <link rel="stylesheet" href="{% static 'css/table.css' %}" />
 {% endblock %}
 
+{% block under_nav %}
+{% include 'include/shorts-toolbar.html' %}
+{% endblock %}
+
 {% block body %}
 <div class="container-fluid pb-3 pt-2" data-shorts-view="list">
-    {% include 'include/shorts-toolbar.html' %}
     <table class="display responsive nowrap table table-hover table-responsive mb-0 w-100" id="shorts-table"
            data-skeleton-cols="18,60,160,24,24,50" data-skeleton-rows="8">
         <caption class="visually-hidden">List of Short URLs</caption>
