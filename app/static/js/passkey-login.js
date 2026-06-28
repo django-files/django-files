@@ -76,6 +76,9 @@ if (button) {
 // Requires a user gesture proxy: most browsers permit navigator.credentials.get
 // without one if the navigation that opened the page was itself user-initiated,
 // which is the case for the in-app web auth session.
-if (button && new URLSearchParams(window.location.search).get('autopasskey') === '1') {
+if (
+    button &&
+    new URLSearchParams(window.location.search).get('autopasskey') === '1'
+) {
     authenticate()
 }
