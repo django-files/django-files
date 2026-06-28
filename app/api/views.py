@@ -1134,6 +1134,10 @@ def auth_methods(request):
     site_url = site_settings.site_url if site_settings.site_url else f"{request.scheme}://{request.get_host()}"
     if site_settings.local_auth:
         methods.append({"name": "local", "url": site_url + reverse("oauth:login")})
+    # Native passkey login only works when the RP origin is known (site_url),
+    # so advertise the method on the same gate the ceremony itself enforces.
+    if site_settings.passkey_auth and site_settings.site_url:
+        methods.append({"name": "passkey", "url": site_url + reverse("oauth:passkey-auth-begin")})
     if site_settings.discord_client_id:
         methods.append({"name": "discord", "url": DiscordOauth.get_login_url(site_settings) + state_string})
     if site_settings.github_client_id:
