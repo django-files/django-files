@@ -31,6 +31,9 @@ log = logging.getLogger("app")
 _PLACEHOLDER_TOKEN = "<YOUR_API_TOKEN>"  # nosec
 cache_seconds = 60 * 60 * 4
 SESSION_AUTH_REQUIRED = "Session authentication required."
+SETTINGS_SITE_URL = "settings:site"
+SETUP_TEMPLATE = "settings/setup.html"
+USERNAME_TAKEN = "That username is already taken."
 
 
 @csrf_exempt
@@ -177,7 +180,7 @@ def welcome_view(request):
     if not request.user.is_authenticated:
         return redirect("oauth:login")
     if not site_settings.show_setup:
-        return redirect("settings:site")
+        return redirect(SETTINGS_SITE_URL)
 
     if request.method == "POST":
         return _welcome_post(request, site_settings)
@@ -208,7 +211,7 @@ def _welcome_post(request, site_settings):
         site_settings.timezone = form.cleaned_data["timezone"]
         site_settings.save()
     login(request, user)
-    request.session["login_redirect_url"] = reverse("settings:site")
+    request.session["login_redirect_url"] = reverse(SETTINGS_SITE_URL)
     messages.info(request, f"Welcome to Django Files {request.user.get_name()}.")
     return HttpResponse(status=200)
 
@@ -224,7 +227,7 @@ def _first_run_setup(request, site_settings):
             "username": "",
             "error": None,
         }
-        return render(request, "settings/setup.html", context)
+        return render(request, SETUP_TEMPLATE, context)
 
     form = WelcomeForm(request.POST)
     confirm = request.POST.get("confirm_password") or ""
@@ -235,7 +238,7 @@ def _first_run_setup(request, site_settings):
         "timezone": request.POST.get("timezone") or site_settings.timezone,
     }
     if error := _setup_form_error(form, confirm):
-        return render(request, "settings/setup.html", {**context, "error": error}, status=400)
+        return render(request, SETUP_TEMPLATE, {**context, "error": error}, status=400)
 
     username = form.cleaned_data["username"]
     try:
@@ -244,10 +247,10 @@ def _first_run_setup(request, site_settings):
             # cannot both pass the gate and create separate admin accounts.
             if superuser_exists():
                 error = "Setup has already been completed. Please log in."
-                return render(request, "settings/setup.html", {**context, "error": error}, status=409)
+                return render(request, SETUP_TEMPLATE, {**context, "error": error}, status=409)
             if CustomUser.objects.filter(username=username).exists():
                 error = "That username is already taken."
-                return render(request, "settings/setup.html", {**context, "error": error}, status=400)
+                return render(request, SETUP_TEMPLATE, {**context, "error": error}, status=400)
             user = CustomUser.objects.create_superuser(username=username, password=form.cleaned_data["password"])
             user.timezone = form.cleaned_data["timezone"]
             user.save(update_fields=["timezone"])
@@ -258,15 +261,13 @@ def _first_run_setup(request, site_settings):
             site_settings.save()
     except IntegrityError:
         log.exception("first-run setup: race creating initial superuser")
-        return render(
-            request, "settings/setup.html", {**context, "error": "That username is already taken."}, status=400
-        )
+        return render(request, SETUP_TEMPLATE, {**context, "error": USERNAME_TAKEN}, status=400)
 
     login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-    request.session["login_redirect_url"] = reverse("settings:site")
+    request.session["login_redirect_url"] = reverse(SETTINGS_SITE_URL)
     messages.info(request, f"Welcome to Django Files {user.get_name()}.")
     log.info("first-run setup: created initial superuser=%s", user.username)
-    return redirect("settings:site")
+    return redirect(SETTINGS_SITE_URL)
 
 
 def _setup_form_error(form, confirm):

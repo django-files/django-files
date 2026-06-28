@@ -13,6 +13,9 @@ from settings.models import SiteSettings
 
 log = logging.getLogger("app")
 
+# Test-only credential used across the first-run/setup tests.
+TEST_PW = "a-Str0ng-pass!"  # nosec  # NOSONAR
+
 
 class PasskeyConfigTest(TestCase):
     """RP derivation from SiteSettings.site_url."""
@@ -313,8 +316,8 @@ class FirstRunSetupTest(TestCase):
             reverse("settings:welcome"),
             {
                 "username": "admin",
-                "password": "a-Str0ng-pass!",
-                "confirm_password": "a-Str0ng-pass!",
+                "password": TEST_PW,
+                "confirm_password": TEST_PW,
                 "timezone": "UTC",
                 "site_url": "https://files.example.com",
             },
@@ -329,7 +332,7 @@ class FirstRunSetupTest(TestCase):
     def test_bootstrap_rejects_password_mismatch(self):
         response = self.client.post(
             reverse("settings:welcome"),
-            {"username": "admin", "password": "a-Str0ng-pass!", "confirm_password": "nope", "timezone": "UTC"},
+            {"username": "admin", "password": TEST_PW, "confirm_password": "nope", "timezone": "UTC"},
         )
         self.assertEqual(response.status_code, 400)
         self.assertFalse(CustomUser.objects.filter(username="admin").exists())
@@ -349,14 +352,14 @@ class FirstRunSetupTest(TestCase):
         self.assertFalse(CustomUser.objects.filter(username="admin").exists())
 
     def test_gate_closed_once_admin_exists(self):
-        CustomUser.objects.create_superuser(username="root", password="a-Str0ng-pass!")  # nosec  # NOSONAR
+        CustomUser.objects.create_superuser(username="root", password=TEST_PW)
         # Anonymous visitors can no longer reach the bootstrap form...
         response = self.client.get(reverse("settings:welcome"))
         self.assertRedirects(response, reverse("oauth:login"), fetch_redirect_response=False)
         # ...nor mint a second admin through it.
         response = self.client.post(
             reverse("settings:welcome"),
-            {"username": "evil", "password": "a-Str0ng-pass!", "timezone": "UTC"},  # nosec  # NOSONAR
+            {"username": "evil", "password": TEST_PW, "timezone": "UTC"},  # nosec  # NOSONAR
         )
         self.assertRedirects(response, reverse("oauth:login"), fetch_redirect_response=False)
         self.assertFalse(CustomUser.objects.filter(username="evil").exists())
@@ -428,7 +431,7 @@ class PasskeySetupTest(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_begin_gated_when_admin_exists(self):
-        CustomUser.objects.create_superuser(username="root", password="a-Str0ng-pass!")  # nosec  # NOSONAR
+        CustomUser.objects.create_superuser(username="root", password=TEST_PW)
         response = self.client.post(
             reverse("oauth:passkey-setup-begin"),
             data=json.dumps({"username": "admin"}),

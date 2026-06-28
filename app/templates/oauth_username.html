@@ -1,28 +1,8 @@
-{% extends "main.html" %}
+{% extends "login_base.html" %}
 {% load static %}
-{% load home_tags %}
 {% block title %}Choose a Username{% endblock %}
 
-{% block htmltag %}data-bs-theme="dark"{% endblock %}
-{% block themejs %}{% endblock %}
-
-{% block head %}
-    <link rel="stylesheet" href="{% static 'css/login.css' %}">
-{% endblock %}
-
-{% block navbar %}{% endblock %}
-
-{% block body %}
-
-<div id="tsparticles"></div>
-
-<video id="bgvid" class="d-none" playsinline autoplay muted loop>
-    <source src="{{ site_settings.background_video }}" type="video/mp4" id="bgvidsrc">
-    <track kind="captions">
-</video>
-
-<div class="d-flex flex-column align-items-center h-100 py-2">
-<div id="login-outer" class="rounded rounded-4 m-auto p-4 animate__animated animate__backInDown animate__fast">
+{% block card %}
     <div class="text-center mb-3">
         <img height="96" width="96" src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_title }}">
         <h4 class="text-center mt-2">Welcome to {{ site_settings.site_title }}</h4>
@@ -59,18 +39,4 @@
             </button>
         </div>
     </form>
-</div> <!-- login-outer -->
-</div> <!-- d-flex -->
-{% endblock %}
-
-{% block backtotop %}{% endblock %}
-{% block footer %}{% endblock %}
-
-{% block tail %}
-    {{ site_settings.login_background|json_script:"login_background" }}
-    {{ site_settings.background_picture|json_script:"background_picture" }}
-    {{ site_settings.tsparticles_enabled|json_script:"tsparticles_enabled" }}
-    {{ site_settings.tsparticles_config|json_script:"tsparticles_config" }}
-    <script defer src="{% static 'dist/tsparticles/tsparticles.bundle.min.js' %}"></script>
-    <script defer src="{% static 'js/login.js' %}"></script>
 {% endblock %}

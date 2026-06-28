@@ -678,6 +678,20 @@ def passkey_setup_begin(request):
     return HttpResponse(options, content_type=CONTENT_TYPE_JSON)
 
 
+def _passkey_setup_preflight(request, site_settings):
+    """Validate first-run passkey setup state. Returns (error_response, username)."""
+    if not site_settings.passkey_auth:
+        return JsonResponse({"error": PASSKEYS_NOT_ENABLED}, status=400), None
+    if superuser_exists():
+        return JsonResponse({"error": SETUP_COMPLETE}, status=400), None
+    username = request.session.get("passkey_setup_username")
+    if not username:
+        return JsonResponse({"error": "Registration session expired. Please try again."}, status=400), None
+    if CustomUser.objects.filter(username=username).exists():
+        return JsonResponse({"error": USERNAME_NOT_AVAILABLE}, status=400), None
+    return None, username
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def passkey_setup_complete(request):
@@ -686,15 +700,9 @@ def passkey_setup_complete(request):
     First-run setup: verify the attestation, create the initial superuser, log in.
     """
     site_settings = SiteSettings.objects.settings()
-    if not site_settings.passkey_auth:
-        return JsonResponse({"error": PASSKEYS_NOT_ENABLED}, status=400)
-    if superuser_exists():
-        return JsonResponse({"error": SETUP_COMPLETE}, status=400)
-    username = request.session.get("passkey_setup_username")
-    if not username:
-        return JsonResponse({"error": "Registration session expired. Please try again."}, status=400)
-    if CustomUser.objects.filter(username=username).exists():
-        return JsonResponse({"error": USERNAME_NOT_AVAILABLE}, status=400)
+    error, username = _passkey_setup_preflight(request, site_settings)
+    if error:
+        return error
 
     body = json.loads(request.body.decode() or "{}")
     name = (body.pop("name", "") or "").strip()
