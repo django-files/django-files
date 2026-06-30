@@ -108,7 +108,7 @@ html {
 }
 
 /* Reset glass when offcanvas is expanded inline inside navbar-expand-md (desktop) */
-@media (min-width: 768px) {
+@media (width >= 768px) {
     .navbar-expand-md [id='offcanvasNavbar'] {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
@@ -282,7 +282,7 @@ body.navbar-snapping header {
     }
 
     body.no-top-navbar {
-        padding-top: env(safe-area-inset-top, 0px);
+        padding-top: env(safe-area-inset-top, 0);
     }
 
     header {

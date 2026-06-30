@@ -66,14 +66,11 @@ body.no-top-navbar table.display > thead .dt-column-header {
 /* Sticky header — locks below the floating toolbar when scrolling.
  * --toolbar-h is set per-page by observeToolbarHeight() in main.js.
  * -1px offset overlaps the toolbar's border-bottom to close the sub-pixel seam.
+ * z-index: 3 keeps thead above the z-index: 2 .dt-blur-strip so cell text renders on top.
  * Scoped to toolbar pages only; homepage tables scroll normally. */
 body.no-top-navbar table.display > thead {
     position: sticky;
     top: calc(var(--toolbar-h, 48px) - 1px);
-}
-
-/* On toolbar pages the thead must sit above the z-index: 2 .dt-blur-strip. */
-body.no-top-navbar table.display > thead {
     z-index: 3;
 }
 

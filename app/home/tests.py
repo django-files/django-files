@@ -171,11 +171,18 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                     page.locator('a[href="/files/?view=gallery"]').first.click()
                 elif view == "Stats":
                     log.debug("STATS")
+                    if not page.locator("#navbarDropdown").first.is_visible():
+                        page.locator('[aria-label="Navigation"]').first.click()
+                        page.wait_for_timeout(timeout=300)
                     page.locator("#navbarDropdown").first.click()
                     page.locator('a[href="/stats/"]').first.click()
                 else:
                     log.debug("OTHER OTHER OTHER: %s", view)
-                    page.locator(".nav-link").locator(f"text={view}").first.click()
+                    nav_link = page.locator(".nav-link").locator(f"text={view}").first
+                    if not nav_link.is_visible():
+                        page.locator('[aria-label="Navigation"]').first.click()
+                        page.wait_for_timeout(timeout=300)
+                    nav_link.click()
 
             if view == "Upload":
                 page.wait_for_timeout(timeout=750)
