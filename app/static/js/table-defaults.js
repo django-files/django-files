@@ -153,6 +153,19 @@ export function dtRevealThead(dt) {
             thead.style.opacity = ''
             thead.style.transform = ''
             thead.style.transition = ''
+            observeTheadHeight(thead)
         })
     )
+}
+
+// Track thead height so the toolbar's ::before can extend its blur downward
+// to cover the sticky DT header zone (see .files-toolbar::before in main.css).
+function observeTheadHeight(thead) {
+    const sync = () =>
+        document.documentElement.style.setProperty(
+            '--dt-thead-h',
+            `${thead.offsetHeight}px`
+        )
+    sync()
+    new ResizeObserver(sync).observe(thead)
 }
