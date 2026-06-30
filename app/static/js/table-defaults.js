@@ -138,6 +138,9 @@ export function dtFreezeAutoWidth(dt) {
 // Re-enable auto-width, do one hidden measurement, then slide the thead in.
 // Adds dt-thead-ready inside the RAF so the header is invisible throughout
 // the measurement phase and animates in from its settled position.
+// Also inserts a .dt-blur-strip sibling div before the DT wrapper: backdrop-filter
+// doesn't work on display:table-* elements, so this non-table div provides the
+// glass blur at the same sticky position as the thead (z-index 2 vs thead z-index 3).
 // Call after all initial rows have been added.
 export function dtRevealThead(dt) {
     const table = dt.table().node()
@@ -153,6 +156,26 @@ export function dtRevealThead(dt) {
             thead.style.opacity = ''
             thead.style.transform = ''
             thead.style.transition = ''
+
+            const container =
+                table.closest('.dt-container') ?? table.parentElement
+            if (
+                container &&
+                !container.previousElementSibling?.classList.contains(
+                    'dt-blur-strip'
+                )
+            ) {
+                const strip = document.createElement('div')
+                strip.className = 'dt-blur-strip'
+                strip.setAttribute('aria-hidden', 'true')
+                const updateH = (h) =>
+                    strip.style.setProperty('--dt-thead-h', `${h}px`)
+                updateH(thead.offsetHeight)
+                container.before(strip)
+                new ResizeObserver(([entry]) =>
+                    updateH(entry.contentRect.height)
+                ).observe(thead)
+            }
         })
     )
 }

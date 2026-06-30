@@ -33,25 +33,52 @@ table.display.dt-thead-ready > thead {
  * DataTables doesn't fix this, leaving text cells top-aligned while
  * checkbox/context-menu columns (with explicit middle) look centred.
  * Apply middle to all cells so alignment is consistent.
- * background-color extends the toolbar's glass surface — cells are text-only,
- * the actual backdrop blur is handled by the toolbar's ::before (see main.css). */
+ * background is transparent — the sibling .dt-blur-strip div provides the
+ * glass backdrop (backdrop-filter doesn't work on display:table-* elements). */
 table.display > thead > tr > th,
 table.display > thead > tr > td {
     vertical-align: middle;
     overflow: hidden;
     padding-top: 0.35rem;
     padding-bottom: 0.35rem;
-    background-color: var(--glass-bg);
-    border-bottom: 1px solid var(--glass-border-color);
+    background: transparent !important;
+    border-bottom: none;
 }
 
 /* Sticky header — locks below the floating toolbar when scrolling.
  * --toolbar-h is set per-page by observeToolbarHeight() in main.js.
- * -1px offset overlaps the toolbar's border-bottom to close the sub-pixel seam. */
+ * -1px offset overlaps the toolbar's border-bottom to close the sub-pixel seam.
+ * z-index: 3 keeps thead text above the z-index: 2 .dt-blur-strip sibling. */
 table.display > thead {
     position: sticky;
     top: calc(var(--toolbar-h, 48px) - 1px);
+    z-index: 3;
+}
+
+/* Glass backdrop for sticky table headers.
+ * backdrop-filter doesn't work on display:table-* elements, so this non-table
+ * div is inserted as a preceding sibling of the DT wrapper by dtRevealThead().
+ * height: 0 means it takes no flow space, so DT layout reflows can't shift it.
+ * The ::before pseudo-element provides the visible glass panel at thead height.
+ * z-index: 2 keeps the whole strip stacking context below the thead (z-index: 3)
+ * so cell text always renders above the blur. */
+.dt-blur-strip {
+    position: sticky;
+    top: calc(var(--toolbar-h, 48px) - 1px);
     z-index: 2;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.dt-blur-strip::before {
+    content: '';
+    display: block;
+    height: var(--dt-thead-h, 45px);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    background: var(--glass-bg);
+    border-bottom: 1px solid var(--glass-border-color);
 }
 
 table.display > tbody > tr > th,
