@@ -33,14 +33,14 @@ table.display.dt-thead-ready > thead {
  * DataTables doesn't fix this, leaving text cells top-aligned while
  * checkbox/context-menu columns (with explicit middle) look centred.
  * Apply middle to all cells so alignment is consistent. */
-/* position:relative + isolation:isolate on each cell lets ::before sit at
- * z-index:-1 within the cell's own stacking context. The ::before is a real
- * block box (unlike the th/td which is display:table-cell) so backdrop-filter
- * works there and blurs tbody rows scrolling behind the sticky header. */
+/* The ::before is a real block box (unlike th/td which is display:table-cell)
+ * so backdrop-filter works there. No z-index:-1 / isolation:isolate — that
+ * combination creates a compositing boundary that prevents the filter from
+ * seeing through to the scrolling tbody. Instead, cell direct children get
+ * position:relative so they paint after ::before in DOM order and sit on top. */
 table.display > thead > tr > th,
 table.display > thead > tr > td {
     position: relative;
-    isolation: isolate;
     vertical-align: middle;
     overflow: hidden;
     padding-top: 0.35rem;
@@ -57,7 +57,13 @@ table.display > thead > tr > td::before {
     -webkit-backdrop-filter: var(--glass-blur);
     backdrop-filter: var(--glass-blur);
     pointer-events: none;
-    z-index: -1;
+}
+
+/* Lift cell content above the glass ::before (same stacking context,
+ * position:relative means it paints after the absolute ::before). */
+table.display > thead > tr > th > *,
+table.display > thead > tr > td > * {
+    position: relative;
 }
 
 /* Sticky header — locks below the floating toolbar when scrolling.
