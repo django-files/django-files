@@ -88,6 +88,8 @@ body.no-top-navbar table.display > thead {
     height: 0;
     overflow: visible;
     pointer-events: none;
+    /* Correct default for no-top-navbar thead: padding-top(0.5rem) + line-height:1 content(1rem) + padding-bottom(0) + measured 5px extra */
+    --dt-thead-h: calc(1rem + 0.5rem + 5px);
 }
 
 .dt-blur-strip::before {
@@ -120,9 +122,21 @@ table.display > tbody > tr > td {
 
 /* Extra top padding on the first data row only, so there's visual breathing
  * room between the compact glass header and the table content. */
-body.no-top-navbar table.display > tbody > tr:first-child > th,
-body.no-top-navbar table.display > tbody > tr:first-child > td {
+body.no-top-navbar
+    table.display
+    > tbody
+    > tr:first-child:not(.dt-skeleton-row)
+    > th,
+body.no-top-navbar
+    table.display
+    > tbody
+    > tr:first-child:not(.dt-skeleton-row)
+    > td {
     padding-top: 1.1rem !important;
+}
+
+body.no-top-navbar table.display > tbody > tr:first-child.dt-skeleton-row > td {
+    padding-top: calc(0.3rem + 10px) !important;
 }
 
 /* Collapse the DataTables empty-placeholder row when no message is set (during
@@ -145,12 +159,14 @@ td.dt-empty:empty {
     min-height: 480px;
 }
 
-/* Table skeleton rows — override the td overflow/max-width rules so cells show */
-.dt-skeleton-row td {
+/* Table skeleton rows — override the td overflow/max-width rules so cells show.
+ * Needs table.display in the selector to beat the specificity of
+ * table.display > tbody > tr > td (specificity 14) that sets padding-top/bottom. */
+table.display .dt-skeleton-row td {
     max-width: none;
     overflow: visible;
-    padding-top: 13px;
-    padding-bottom: 13px;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
     vertical-align: middle;
 }
 

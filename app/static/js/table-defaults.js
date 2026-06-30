@@ -145,9 +145,18 @@ export function dtFreezeAutoWidth(dt) {
 export function dtRevealThead(dt) {
     const table = dt.table().node()
     const thead = table.querySelector(':scope > thead')
+    const tbody = table.querySelector(':scope > tbody')
+
+    // Hide tbody immediately to mask the skeleton→real row height shift;
+    // it fades back in after column measurement below.
     thead.style.opacity = '0'
     thead.style.transform = 'translateY(-4px)'
     thead.style.transition = 'none'
+    if (tbody) {
+        tbody.style.opacity = '0'
+        tbody.style.transition = 'none'
+    }
+
     dt.settings()[0].oFeatures.bAutoWidth = true
     dt.columns.adjust()
     requestAnimationFrame(() =>
@@ -157,22 +166,32 @@ export function dtRevealThead(dt) {
             thead.style.transform = ''
             thead.style.transition = ''
 
-            const container =
-                table.closest('.dt-container') ?? table.parentElement
-            if (
-                document.body.classList.contains('no-top-navbar') &&
-                container &&
-                !container.previousElementSibling?.classList.contains(
-                    'dt-blur-strip'
+            if (tbody) {
+                tbody.style.transition = 'opacity 0.35s ease'
+                tbody.style.opacity = '1'
+                tbody.addEventListener(
+                    'transitionend',
+                    () => {
+                        tbody.style.transition = ''
+                        tbody.style.opacity = ''
+                    },
+                    { once: true }
                 )
-            ) {
-                const strip = document.createElement('div')
-                strip.className = 'dt-blur-strip'
-                strip.setAttribute('aria-hidden', 'true')
+            }
+
+            if (document.body.classList.contains('no-top-navbar')) {
+                const container =
+                    table.closest('.dt-container') ?? table.parentElement
+                let strip = container?.previousElementSibling
+                if (!strip?.classList.contains('dt-blur-strip')) {
+                    strip = document.createElement('div')
+                    strip.className = 'dt-blur-strip'
+                    strip.setAttribute('aria-hidden', 'true')
+                    container?.before(strip)
+                }
                 const updateH = (h) =>
                     strip.style.setProperty('--dt-thead-h', `${h}px`)
                 updateH(thead.offsetHeight)
-                container.before(strip)
                 new ResizeObserver(([entry]) =>
                     updateH(entry.contentRect.height)
                 ).observe(thead)

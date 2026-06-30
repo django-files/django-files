@@ -339,6 +339,13 @@ async function initDataTable(dt, skeletonFn, fetchFn, emptyMsg, zeroMsg) {
     // Freeze auto-width so each draw(false) inside fetchFn doesn't shift columns.
     dt.settings()[0].oFeatures.bAutoWidth = false
     await fetchFn()
+    // Hide tbody before DT redraws real rows so the skeleton→real swap is invisible.
+    // dtRevealThead (called by the caller after us) fades it back in.
+    const tbody = dt.table().node().querySelector(':scope > tbody')
+    if (tbody) {
+        tbody.style.opacity = '0'
+        tbody.style.transition = 'none'
+    }
     initDtLang(dt, emptyMsg, zeroMsg)
     if (!dt.rows().count()) dt.draw()
 }

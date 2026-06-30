@@ -777,6 +777,18 @@ async function addNodes() {
     slideshowCallback(data)
     nextPage = data.next
     fileData.push(...data.files)
+    // Hide tbody before removing skeletons so the layout shift is invisible.
+    // dtRevealThead will fade it back in after column measurement.
+    if (!dtFirstRevealDone) {
+        const tbody = filesDataTable
+            ?.table()
+            .node()
+            ?.querySelector(':scope > tbody')
+        if (tbody) {
+            tbody.style.opacity = '0'
+            tbody.style.transition = 'none'
+        }
+    }
     hideSkeletons()
     if (params.get('view') === 'gallery') {
         const addedOuters = []
