@@ -326,12 +326,7 @@ body.no-top-navbar .files-toolbar {
 .files-toolbar::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    /* Extend blur downward to cover the sticky DT thead. --dt-thead-h is set by
-     * dtRevealThead() in table-defaults.js via ResizeObserver after DT init. */
-    bottom: calc(-1 * var(--dt-thead-h, 0px));
+    inset: 0;
     -webkit-backdrop-filter: var(--glass-blur);
     backdrop-filter: var(--glass-blur);
     pointer-events: none;
