@@ -33,8 +33,11 @@ table.display.dt-thead-ready > thead {
  * DataTables doesn't fix this, leaving text cells top-aligned while
  * checkbox/context-menu columns (with explicit middle) look centred.
  * Apply middle to all cells so alignment is consistent. */
+/* Cells sit at z-index:2 within thead's stacking context, above the glass ::before. */
 table.display > thead > tr > th,
 table.display > thead > tr > td {
+    position: relative;
+    z-index: 2;
     vertical-align: middle;
     overflow: hidden;
     padding-top: 0.35rem;
@@ -42,9 +45,11 @@ table.display > thead > tr > td {
     border-bottom: 1px solid var(--glass-border-color);
 }
 
-/* Glass surface on the row, not the cells. tr { position: relative } makes it
- * the containing block for ::before. display:table-row has no overflow:hidden
- * so the compositing layer can see through to the scrolling tbody. */
+/* Glass surface on the row. tr { position: relative } makes it the containing
+ * block for ::before without forming its own stacking context (no z-index set).
+ * ::before at z-index:1 stays inside thead's stacking context so the compositor
+ * updates it on every scroll frame — z-index:-1 would drop it below the sticky
+ * layer and produce a frozen snapshot. */
 table.display > thead > tr {
     position: relative;
 }
@@ -53,6 +58,7 @@ table.display > thead > tr::before {
     content: '';
     position: absolute;
     inset: 0;
+    z-index: 1;
     background: var(--glass-bg);
     -webkit-backdrop-filter: var(--glass-blur);
     backdrop-filter: var(--glass-blur);
