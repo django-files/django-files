@@ -44,10 +44,11 @@
     {% endif %}
     {% block head %}{% endblock %}
 </head>
-<body class="d-flex flex-column h-100">
+<body class="d-flex flex-column h-100{% block body_class %}{% endblock %}">
 
 {% block navbar %}
 <header>
+{% block navbar_inner %}
 <nav class="navbar navbar-expand-{% if not request.user.is_authenticated %}sm{% else %}md{% endif %} navbar-dark" aria-label="Main Navigation"
      style="--nav-color-1: {% block nav1color %}{{ user.nav_color_1|default:"#130e36" }}{% endblock %}; --nav-color-2: {% block nav2color %}{{ user.nav_color_2|default:"#1e1c21" }}{% endblock %};">
 <div class="container-fluid">
@@ -57,136 +58,10 @@
         <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
-        <div class="offcanvas-header">
-            <img src="{% static 'images/logo.png' %}" width="30" height="30" alt="logo">
-            <h5 class="offcanvas-title ms-2" id="offcanvasNavbarLabel">Django Files</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-
-        {% if request.user.is_authenticated %}
-        <ul class="navbar-nav flex-grow-1">
-            <li class="nav-item">
-                <a class="nav-link {% block home_active %}{% endblock %}" href="{% url 'home:index' %}">
-                    <i class="fa-solid fa-house-laptop me-2 d-md-none"></i> Home</a>
-            </li>
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fa-solid fa-upload me-2 d-md-none"></i> Upload</a>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a class="dropdown-item {% block uppy_active %}{% endblock %}" href="{% url 'home:uppy' %}">
-                            <i class="fa-solid fa-upload me-2"></i> Files</a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item {% block paste_active %}{% endblock %}" href="{% url 'home:paste' %}">
-                            <i class="fa-regular fa-file-lines me-2"></i> Text</a>
-                    </li>
-                </ul>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% block files_active %}{% endblock %}" href="{% url 'home:files' %}">
-                    <i class="fa-regular fa-folder-open me-2 d-md-none"></i> Files</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% block albums_active %}{% endblock %}" href="{% url 'home:albums' %}">
-                    <i class="fa-regular fa-images me-2 d-md-none"></i> Albums</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% block streams_active %}{% endblock %}" href="{% url 'home:streams' %}">
-                    <i class="fa-solid fa-video me-2 d-md-none"></i> Streams</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% block shorts_active %}{% endblock %}" href="{% url 'home:shorts' %}">
-                    <i class="fa-solid fa-link me-2 d-md-none"></i> Shorts</a>
-            </li>
-            {% is_mobile request as mobile %}
-            {% if mobile %}
-                <li class="nav-item">
-                    <a class="nav-link" href="djangofiles://serverlist">
-                        <i class="fa-brands {% if mobile.android %}fa-android{% else %}fa-apple{% endif %} me-2 d-md-none"></i>
-                        Servers</a>
-                </li>
-            {% endif %}
-            <li id="mobileAuthNav" class="nav-item d-none">
-                <a class="nav-link" href="">
-                    <i class="fa-solid fa-mobile-screen me-2 d-md-none"></i> Mobile Auth</a>
-            </li>
-        </ul> <!-- navbar-nav flex-grow-1 -->
-        {% else %}<ul class="navbar-nav flex-grow-1"></ul>{% endif %}
-
-        <ul class="navbar-nav flex-grow-0">
-
-            <li class="nav-item dropdown">
-                <a class="nav-link" id="bd-theme-disabled" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 56px;">
-                    <i id="theme-icon" class="fa-solid fa-circle-half-stroke fa-lg" style="min-width: 20px;"></i> <i class="fa-solid fa-caret-down fa-xs mx-1"></i>
-                    <span class="d-md-none me-2">Theme</span></a>
-                <ul class="dropdown-menu auto dropdown-menu-end" aria-labelledby="bd-theme-disabled">
-                    <li><button class="dropdown-item" data-bs-theme-value="dark" aria-pressed="false">
-                        <i class="fa-regular fa-moon" style="min-width: 16px;"></i> <span class="ms-3">Dark</span></button></li>
-                    <li><button class="dropdown-item" data-bs-theme-value="light" aria-pressed="false">
-                        <i class="fa-solid fa-sun" style="min-width: 16px;"></i> <span class="ms-3">Light</span></button></li>
-                    <li><button class="dropdown-item" data-bs-theme-value="auto" aria-pressed="false">
-                        <i class="fa-solid fa-circle-half-stroke" style="min-width: 16px;"></i> <span class="ms-3">Auto</span></button></li>
-                </ul>
-            </li>
-
-            {% if not request.user.is_authenticated %}
-                <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="btn btn-outline-info" role="button">
-                    Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
-            {% else %}
-                <li class="nav-item dropdown">
-                    <a class="nav-link" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img src="{{ user.get_avatar_url }}" class="rounded-circle me-2 d-inline-block d-md-none"
-                             height="20" width="20" alt="P">
-                        {{ user.get_name|truncatechars:16 }} <i class="fas fa-angle-down mx-1"></i>
-                        <img src="{{ user.get_avatar_url }}" class="rounded-circle mx-2 d-none d-md-inline-block float-end"
-                             height="30" width="30" alt="P" style="margin-top: -2px;"></a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                        <li>
-                            <a class="dropdown-item {% block user_active_dd %}{% endblock %}" href="{% url 'settings:user' %}">
-                                <i class="fas fa-user-circle me-2"></i> User Settings</a>
-                        </li>
-                        {% if request.user.is_superuser %}
-                            <li>
-                                <a class="dropdown-item {% block site_active_dd %}{% endblock %}" href="{% url 'settings:site' %}">
-                                    <i class="fa-solid fa-gears me-2"></i> Site Settings</a>
-                            </li>
-                        {% endif %}
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item clip" data-clipboard-text="{{ site_settings.site_url }}" href="javascript:">
-                                <i class="fa-solid fa-globe me-2"></i> Copy URL</a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item clip" data-clipboard-text="{{ request.session.api_token }}" href="javascript:" {% if not request.session.api_token %}title="Rotate your token in Settings → Token to copy it here"{% endif %}>
-                                <i class="fa-solid fa-key me-2"></i> Copy Token</a>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item {% block stats_active %}{% endblock %}" href="{% url 'home:stats' %}">
-                                <i class="fa-solid fa-chart-line me-2"></i> Stats</a>
-                        </li>
-                        {% if request.user.is_superuser %}
-                            <li>
-                                <a class="dropdown-item text-warning" href="{% url 'admin:settings_sitesettings_change' 1 %}">
-                                    <i class="fa-solid fa-plane-departure me-2"></i> Admin</a>
-                            </li>
-                        {% endif %}
-                        <div class="dropdown-divider"></div>
-                        <li>
-                            <a class="dropdown-item log-out text-danger" role="button">
-                                <i class="fas fa-sign-out-alt me-2"></i> Log Out</a>
-                        </li>
-                    </ul>
-                </li>
-            {% endif %}
-        </ul> <!-- navbar-nav flex-grow-0 -->
-        </div> <!-- offcanvas-body -->
-    </div> <!-- offcanvas -->
-</div> <!-- nav-container -->
+    {% include 'include/nav-offcanvas.html' %}
+</div>
 </nav>
+{% endblock %}
 {% block under_nav %}{% endblock %}
 </header>
 {% endblock %}
@@ -208,7 +83,7 @@
 </main>
 
 {% block backtotop %}
-    <button type="button" class="btn btn-secondary btn-floating opacity-50" id="back-to-top">
+    <button type="button" id="back-to-top" aria-label="Back to top">
         <i class="fas fa-arrow-up"></i>
     </button>
 {% endblock %}
@@ -218,7 +93,7 @@
 {% endblock %}
 
 {% if request.user.is_authenticated %}
-    <div id="keybinds-modal" class="modal" tabindex="-1">
+    <div id="keybinds-modal" class="modal fade" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -228,25 +103,31 @@
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-xs-12 col-sm-6">
-                            <p><kbd>A</kbd> Upload Files</p>
+                            <p><kbd>A</kbd> Albums</p>
                             <p><kbd>S</kbd> User Settings</p>
                             {% if request.user.is_superuser %}
                                 <p><kbd>D</kbd> Site Settings</p>
                             {% endif %}
                             <p><kbd>F</kbd> Files</p>
+                            <p><kbd>G</kbd> Gallery View</p>
                             <p><kbd>H</kbd> Home</p>
+                            <p><kbd>M</kbd> Map View</p>
                         </div>
                         <div class="col-xs-12 col-sm-6">
                             <p><kbd>R</kbd> Short URL's</p>
                             <p><kbd>T</kbd> Upload Text</p>
+                            <p><kbd>U</kbd> Upload Files</p>
                             <p><kbd>X</kbd> ShareX Files Uploader</p>
                             <p><kbd>Z</kbd> or <kbd>K</kbd> Keyboard Shortcuts</p>
+                            <p><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>V</kbd> Upload Clipboard</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    {% include 'include/file-upload-modals.html' %}
     <form id="log-out" action="{% url 'oauth:logout' %}" method="POST">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">

@@ -75,14 +75,10 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
     {% endif %}
 {% endblock %}
 
-{% block nav1color %}{{ file.user.nav_color_1|default:"#130e36" }}{% endblock %}
-{% block nav2color %}{{ file.user.nav_color_2|default:"#1e1c21" }}{% endblock %}
+{% block body_class %} no-top-navbar{% endblock %}
+{% block navbar %}{% include 'include/nav-offcanvas.html' %}{% endblock %}
 
 {% block body %}
-    <button class="navbar-pull-tab" id="previewNavbarTab" aria-label="Show navigation">
-        <img src="{% static 'images/logo.png' %}" width="16" height="16" alt="logo">
-        <i class="fa-solid fa-caret-down"></i>
-    </button>
     <button class="preview-floating-hamburger" id="previewFloatingHamburger"
             type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar"
             aria-controls="offcanvasNavbar" aria-label="Toggle navigation">

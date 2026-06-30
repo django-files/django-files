@@ -2,8 +2,9 @@
 {% load static %}
 {% load home_tags %}
 {% load cache %}
-{% block streams_active %}active{% endblock %}
 {% block title %}Streams{% endblock %}
+{% block body_class %} no-top-navbar{% endblock %}
+{% block navbar_inner %}{% include 'include/nav-offcanvas.html' %}{% endblock %}
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />

@@ -1,8 +1,9 @@
 {% extends "main.html" %}
 {% load static %}
 {% load home_tags %}
-{% block shorts_active %}active{% endblock %}
 {% block title %}Shorts{% endblock %}
+{% block body_class %} no-top-navbar{% endblock %}
+{% block navbar_inner %}{% include 'include/nav-offcanvas.html' %}{% endblock %}
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />
@@ -15,8 +16,9 @@
 
 {% block body %}
 <div class="container-fluid pb-3 pt-2" data-shorts-view="list">
+    <div class="dt-blur-strip" aria-hidden="true"></div>
     <table class="display responsive nowrap table table-hover table-responsive mb-0 w-100" id="shorts-table"
-           data-skeleton-cols="18,60,160,24,24,50" data-skeleton-rows="8">
+           data-skeleton-cols="18,60,160,24,24,50:30" data-skeleton-rows="8">
         <caption class="visually-hidden">List of Short URLs</caption>
         <thead>
             <tr>

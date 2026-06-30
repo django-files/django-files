@@ -322,7 +322,7 @@ const _fileSkeletonSpecs = [
     { w: 14 },
     { w: 14 },
     { w: 28 },
-    { w: 18 },
+    { w: 18, h: 30 }, // ctx-btn column — drives row to real row height
 ]
 
 export function showTableSkeletons(count = 10) {

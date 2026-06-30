@@ -138,13 +138,25 @@ export function dtFreezeAutoWidth(dt) {
 // Re-enable auto-width, do one hidden measurement, then slide the thead in.
 // Adds dt-thead-ready inside the RAF so the header is invisible throughout
 // the measurement phase and animates in from its settled position.
+// Also inserts a .dt-blur-strip sibling div before the DT wrapper: backdrop-filter
+// doesn't work on display:table-* elements, so this non-table div provides the
+// glass blur at the same sticky position as the thead (z-index 2 vs thead z-index 3).
 // Call after all initial rows have been added.
 export function dtRevealThead(dt) {
     const table = dt.table().node()
     const thead = table.querySelector(':scope > thead')
+    const tbody = table.querySelector(':scope > tbody')
+
+    // Hide tbody immediately to mask the skeleton→real row height shift;
+    // it fades back in after column measurement below.
     thead.style.opacity = '0'
     thead.style.transform = 'translateY(-4px)'
     thead.style.transition = 'none'
+    if (tbody) {
+        tbody.style.opacity = '0'
+        tbody.style.transition = 'none'
+    }
+
     dt.settings()[0].oFeatures.bAutoWidth = true
     dt.columns.adjust()
     requestAnimationFrame(() =>
@@ -153,6 +165,37 @@ export function dtRevealThead(dt) {
             thead.style.opacity = ''
             thead.style.transform = ''
             thead.style.transition = ''
+
+            if (tbody) {
+                tbody.style.transition = 'opacity 0.35s ease'
+                tbody.style.opacity = '1'
+                tbody.addEventListener(
+                    'transitionend',
+                    () => {
+                        tbody.style.transition = ''
+                        tbody.style.opacity = ''
+                    },
+                    { once: true }
+                )
+            }
+
+            if (document.body.classList.contains('no-top-navbar')) {
+                const container =
+                    table.closest('.dt-container') ?? table.parentElement
+                let strip = container?.previousElementSibling
+                if (!strip?.classList.contains('dt-blur-strip')) {
+                    strip = document.createElement('div')
+                    strip.className = 'dt-blur-strip'
+                    strip.setAttribute('aria-hidden', 'true')
+                    container?.before(strip)
+                }
+                const updateH = (h) =>
+                    strip.style.setProperty('--dt-thead-h', `${h}px`)
+                updateH(thead.offsetHeight)
+                new ResizeObserver(([entry]) =>
+                    updateH(entry.contentRect.height)
+                ).observe(thead)
+            }
         })
     )
 }

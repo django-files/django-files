@@ -37,11 +37,106 @@ table.display > thead > tr > th,
 table.display > thead > tr > td {
     vertical-align: middle;
     overflow: hidden;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    background-color: var(--glass-bg);
+    border-bottom: 1px solid var(--glass-border-color);
+}
+
+/* Toolbar pages: transparent cells so .dt-blur-strip provides the glass backdrop.
+ * backdrop-filter doesn't work on display:table-* elements, so a sibling div
+ * inserted by dtRevealThead() handles the blur.  Compact padding keeps the
+ * header bar slim.  line-height: 1.2 trims half-leading below text without
+ * causing first-row clipping. */
+body.no-top-navbar table.display > thead > tr > th,
+body.no-top-navbar table.display > thead > tr > td {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0 !important;
+    background: transparent !important;
+    border-bottom: none;
+}
+
+/* Tighten the flex container's line-height so the line box matches the visible
+ * glyph height — removes the half-leading below the baseline that makes the
+ * text appear to ride high with extra space underneath. */
+body.no-top-navbar table.display > thead .dt-column-header {
+    line-height: 1;
+}
+
+/* Sticky header — locks below the floating toolbar when scrolling.
+ * --toolbar-h is set per-page by observeToolbarHeight() in main.js.
+ * -1px offset overlaps the toolbar's border-bottom to close the sub-pixel seam.
+ * z-index: 3 keeps thead above the z-index: 2 .dt-blur-strip so cell text renders on top.
+ * Scoped to toolbar pages only; homepage tables scroll normally. */
+body.no-top-navbar table.display > thead {
+    position: sticky;
+    top: calc(var(--toolbar-h, 48px) - 1px);
+    z-index: 3;
+}
+
+/* Glass backdrop for sticky table headers.
+ * backdrop-filter doesn't work on display:table-* elements, so this non-table
+ * div is inserted as a preceding sibling of the DT wrapper by dtRevealThead().
+ * height: 0 means it takes no flow space, so DT layout reflows can't shift it.
+ * The ::before pseudo-element provides the visible glass panel at thead height.
+ * z-index: 2 keeps the whole strip stacking context below the thead (z-index: 3)
+ * so cell text always renders above the blur. */
+.dt-blur-strip {
+    position: sticky;
+    top: calc(var(--toolbar-h, 48px) - 1px);
+    z-index: 2;
+    height: 0;
+    overflow: visible;
+    pointer-events: none;
+    /* Correct default for no-top-navbar thead: padding-top(0.5rem) + line-height:1 content(1rem) + padding-bottom(0) + measured 5px extra */
+    --dt-thead-h: calc(1rem + 0.5rem + 5px);
+}
+
+.dt-blur-strip::before {
+    content: '';
+    display: block;
+    /* Extend 8px upward into the toolbar's blur zone so the two backdrop-filter
+     * kernels overlap — eliminates the refraction seam at the toolbar/header boundary.
+     * The toolbar (higher z-index, fixed) visually covers the overlapping 8px. */
+    margin-top: -8px;
+    height: calc(var(--dt-thead-h, 45px) + 8px);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    background: var(--glass-bg);
+    border-bottom: 1px solid var(--glass-border-color);
+}
+
+/* Bootstrap's .table > :not(:first-child) adds border-top: 2px solid to tbody
+ * because DT inserts a colgroup + thead before it, making it a non-first-child.
+ * This renders as a gray bar between the header and the first data row. */
+table.display > tbody {
+    border-top: 0 !important;
 }
 
 table.display > tbody > tr > th,
 table.display > tbody > tr > td {
     vertical-align: middle;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+
+/* Extra top padding on the first data row only, so there's visual breathing
+ * room between the compact glass header and the table content. */
+body.no-top-navbar
+    table.display
+    > tbody
+    > tr:first-child:not(.dt-skeleton-row)
+    > th,
+body.no-top-navbar
+    table.display
+    > tbody
+    > tr:first-child:not(.dt-skeleton-row)
+    > td {
+    padding-top: 1.1rem !important;
+}
+
+body.no-top-navbar table.display > tbody > tr:first-child.dt-skeleton-row > td {
+    padding-top: calc(0.3rem + 10px) !important;
 }
 
 /* Collapse the DataTables empty-placeholder row when no message is set (during
@@ -64,12 +159,14 @@ td.dt-empty:empty {
     min-height: 480px;
 }
 
-/* Table skeleton rows — override the td overflow/max-width rules so cells show */
-.dt-skeleton-row td {
+/* Table skeleton rows — override the td overflow/max-width rules so cells show.
+ * Needs table.display in the selector to beat the specificity of
+ * table.display > tbody > tr > td (specificity 14) that sets padding-top/bottom. */
+table.display .dt-skeleton-row td {
     max-width: none;
     overflow: visible;
-    padding-top: 13px;
-    padding-bottom: 13px;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
     vertical-align: middle;
 }
 

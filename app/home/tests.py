@@ -98,6 +98,24 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         self.count += 1
         page.screenshot(path=f"{self.screenshots}/{self.count:0>{2}}_{name}.png")
 
+    def _ensure_nav_open(self, page):
+        """Open the offcanvas nav on toolbar pages where the top navbar is hidden."""
+        toggle = page.locator('[aria-label="Navigation"]').first
+        if toggle.is_visible():
+            toggle.click()
+            page.wait_for_timeout(timeout=300)
+
+    def _nav_link_click(self, page, text):
+        link = page.locator(".nav-link").locator(f"text={text}").first
+        if not link.is_visible():
+            self._ensure_nav_open(page)
+        link.click()
+
+    def _nav_dropdown_click(self, page):
+        if not page.locator("#navbarDropdown").first.is_visible():
+            self._ensure_nav_open(page)
+        page.locator("#navbarDropdown").first.click()
+
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -171,11 +189,11 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                     page.locator('a[href="/files/?view=gallery"]').first.click()
                 elif view == "Stats":
                     log.debug("STATS")
-                    page.locator("#navbarDropdown").first.click()
+                    self._nav_dropdown_click(page)
                     page.locator('a[href="/stats/"]').first.click()
                 else:
                     log.debug("OTHER OTHER OTHER: %s", view)
-                    page.locator(".nav-link").locator(f"text={view}").first.click()
+                    self._nav_link_click(page, view)
 
             if view == "Upload":
                 page.wait_for_timeout(timeout=750)
@@ -235,7 +253,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 flush_template_cache()
                 page.reload()
                 self.screenshot(page, f"{view}")
-                page.get_by_label("Main Navigation").get_by_role("link", name="Files").click()
+                self._nav_link_click(page, "Files")
                 page.wait_for_timeout(timeout=350)
                 page.locator(".ctx-menu").first.click()
                 page.locator(".ctx-album").first.click()
@@ -246,12 +264,12 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 page.wait_for_timeout(timeout=500)
                 page.locator("#fileAlbumModal .btn-close").click()
                 page.locator("#fileAlbumModal").wait_for(state="hidden")
-                page.get_by_label("Main Navigation").get_by_role("link", name="Albums").click()
+                self._nav_link_click(page, "Albums")
                 page.get_by_text("My Cool Pictures").click()
                 page.wait_for_timeout(timeout=500)
                 self.screenshot(page, "Album-view")
 
-        page.locator("#navbarDropdown").click()
+        self._nav_dropdown_click(page)
         page.locator("text=User Settings").first.click()
         self.screenshot(page, "Settings-User")
 

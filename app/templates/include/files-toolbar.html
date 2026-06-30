@@ -2,6 +2,14 @@
 {# Unified toolbar for /files/ — list, gallery, and map views share this chrome. #}
 {# Translucent overlay matches the preview-page chrome (backdrop-blur, glass-feel). #}
 <div class="files-toolbar{% if album %} files-toolbar--album{% endif %}" id="files-toolbar" data-view="{{ view_mode }}" aria-label="Files toolbar">
+    <button class="files-toolbar-btn"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#offcanvasNavbar"
+            aria-controls="offcanvasNavbar"
+            aria-label="Navigation">
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
     <nav class="files-toolbar-views d-inline-flex align-items-center" aria-label="Files view">
         <a class="files-toolbar-view show-list{% if view_mode == 'list' %} view-active{% endif %}" role="button" data-view="list" title="List" href="{% url 'home:files' %}">
             <i class="fa-solid fa-list" aria-hidden="true"></i><span class="files-toolbar-view-label">List</span>
