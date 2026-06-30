@@ -37,6 +37,22 @@ table.display > thead > tr > th,
 table.display > thead > tr > td {
     vertical-align: middle;
     overflow: hidden;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    background-color: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-border-color);
+}
+
+/* Sticky header — locks below the floating toolbar when scrolling.
+ * --toolbar-h is set per-page by observeToolbarHeight() in main.js.
+ * z-index keeps it above tbody rows; glass surface on th/td above
+ * ensures scrolling rows blur through rather than cutting through cleanly. */
+table.display > thead {
+    position: sticky;
+    top: var(--toolbar-h, 48px);
+    z-index: 2;
 }
 
 table.display > tbody > tr > th,

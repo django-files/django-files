@@ -61,26 +61,26 @@
 
     <ul class="navbar-nav flex-grow-0">
 
-        <li class="nav-item dropdown">
-            <a class="nav-link" id="bd-theme-disabled" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 56px;">
-                <i id="theme-icon" class="fa-solid fa-circle-half-stroke fa-lg" style="min-width: 20px;"></i> <i class="fa-solid fa-caret-down fa-xs mx-1"></i>
-                <span class="d-md-none me-2">Theme</span></a>
-            <ul class="dropdown-menu auto dropdown-menu-end" aria-labelledby="bd-theme-disabled">
-                <li><button class="dropdown-item" data-bs-theme-value="dark" aria-pressed="false">
-                    <i class="fa-regular fa-moon" style="min-width: 16px;"></i> <span class="ms-3">Dark</span></button></li>
-                <li><button class="dropdown-item" data-bs-theme-value="light" aria-pressed="false">
-                    <i class="fa-solid fa-sun" style="min-width: 16px;"></i> <span class="ms-3">Light</span></button></li>
-                <li><button class="dropdown-item" data-bs-theme-value="auto" aria-pressed="false">
-                    <i class="fa-solid fa-circle-half-stroke" style="min-width: 16px;"></i> <span class="ms-3">Auto</span></button></li>
-            </ul>
-        </li>
-
         {% if not request.user.is_authenticated %}
+            <li class="nav-item dropdown">
+                <a class="nav-link" id="bd-theme-disabled" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 56px;">
+                    <i id="theme-icon" class="fa-solid fa-circle-half-stroke fa-lg" style="min-width: 20px;"></i> <i class="fa-solid fa-caret-down fa-xs mx-1"></i>
+                    <span class="d-md-none me-2">Theme</span></a>
+                <ul class="dropdown-menu auto dropdown-menu-end" aria-labelledby="bd-theme-disabled">
+                    <li><button class="dropdown-item" data-bs-theme-value="dark" aria-pressed="false">
+                        <i class="fa-regular fa-moon" style="min-width: 16px;"></i> <span class="ms-3">Dark</span></button></li>
+                    <li><button class="dropdown-item" data-bs-theme-value="light" aria-pressed="false">
+                        <i class="fa-solid fa-sun" style="min-width: 16px;"></i> <span class="ms-3">Light</span></button></li>
+                    <li><button class="dropdown-item" data-bs-theme-value="auto" aria-pressed="false">
+                        <i class="fa-solid fa-circle-half-stroke" style="min-width: 16px;"></i> <span class="ms-3">Auto</span></button></li>
+                </ul>
+            </li>
             <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="btn btn-outline-info" role="button">
                 Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
         {% else %}
             <li class="nav-item dropdown">
-                <a class="nav-link d-inline-flex align-items-center gap-2" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <a class="nav-link d-inline-flex align-items-center gap-2" id="navbarDropdown" role="button"
+                   data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                     <img src="{{ user.get_avatar_url }}" class="rounded-circle"
                          height="24" width="24" alt="P">
                     {{ user.get_name|truncatechars:16 }} <i class="fas fa-angle-down ms-1"></i></a>
@@ -115,7 +115,25 @@
                                 <i class="fa-solid fa-plane-departure me-2"></i> Admin</a>
                         </li>
                     {% endif %}
-                    <div class="dropdown-divider"></div>
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="px-3 py-1">
+                        <div class="d-flex align-items-center gap-2 mb-2 text-body-secondary small">
+                            <i id="theme-icon" class="fa-solid fa-circle-half-stroke fa-fw"></i>
+                            <span>Theme</span>
+                        </div>
+                        <div class="btn-group btn-group-sm w-100" role="group" aria-label="Theme">
+                            <button class="btn btn-outline-secondary" data-bs-theme-value="dark" aria-pressed="false">
+                                <i class="fa-regular fa-moon me-1"></i>Dark
+                            </button>
+                            <button class="btn btn-outline-secondary" data-bs-theme-value="light" aria-pressed="false">
+                                <i class="fa-solid fa-sun me-1"></i>Light
+                            </button>
+                            <button class="btn btn-outline-secondary" data-bs-theme-value="auto" aria-pressed="false">
+                                <i class="fa-solid fa-circle-half-stroke me-1"></i>Auto
+                            </button>
+                        </div>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
                     <li>
                         <a class="dropdown-item log-out text-danger" role="button">
                             <i class="fas fa-sign-out-alt me-2"></i> Log Out</a>
