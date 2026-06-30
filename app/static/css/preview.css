@@ -43,11 +43,11 @@ body.no-top-navbar .preview-floating-hamburger {
     width: 360px;
     min-width: 360px;
     height: 100%;
-    background: rgba(220, 220, 225, 0.72);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border: 1px solid var(--preview-border-color);
-    border-right: none;
+    background: rgba(20, 20, 24, 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-left: 1px solid var(--glass-border-color);
+    box-shadow: var(--glass-shadow);
     overflow: hidden;
     transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     padding-top: 60px;
@@ -59,17 +59,13 @@ body.no-top-navbar .preview-floating-hamburger {
     will-change: right;
 }
 
-[data-bs-theme='dark'] .sidebar {
-    background: rgba(0, 0, 0, 0.65);
-}
-
 [data-bs-theme='light'] .sidebar {
-    background: rgba(220, 220, 225, 0.72);
+    background: rgba(245, 245, 250, 0.78);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root:not([data-bs-theme='light']) .sidebar {
-        background: rgba(0, 0, 0, 0.65);
+@media (prefers-color-scheme: light) {
+    :root:not([data-bs-theme='dark']) .sidebar {
+        background: rgba(245, 245, 250, 0.78);
     }
 }
 

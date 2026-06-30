@@ -315,12 +315,7 @@ body.navbar-snapping header {
     padding: 0.35rem 1rem 0.3rem;
     margin: 0;
     background: var(--glass-bg);
-}
-
-/* On toolbar pages (no-top-navbar) the sticky DT header immediately below
- * provides the visual separator — drop the toolbar border to keep them seamless. */
-body.no-top-navbar .files-toolbar {
-    border-bottom: none;
+    border-bottom: 1px solid var(--glass-border-color);
 }
 
 .files-toolbar::before {

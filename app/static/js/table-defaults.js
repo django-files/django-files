@@ -160,6 +160,7 @@ export function dtRevealThead(dt) {
             const container =
                 table.closest('.dt-container') ?? table.parentElement
             if (
+                document.body.classList.contains('no-top-navbar') &&
                 container &&
                 !container.previousElementSibling?.classList.contains(
                     'dt-blur-strip'
