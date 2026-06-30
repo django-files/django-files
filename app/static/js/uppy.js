@@ -75,7 +75,10 @@ const uppy = new Uppy({ debug: false, autoProceed: false })
 
 uppy.on('file-added', (file) => {
     console.debug('file-added:', file)
-    fileUploadModal.modal('show')
+    const uppyEl = document.getElementById('uppy')
+    if (fileUploadModal.length && fileUploadModal[0].contains(uppyEl)) {
+        fileUploadModal.modal('show')
+    }
 })
 
 uppy.on('complete', (fileCount) => {
