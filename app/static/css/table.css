@@ -39,20 +39,21 @@ table.display > thead > tr > td {
     overflow: hidden;
     padding-top: 0.35rem;
     padding-bottom: 0.35rem;
-    background-color: var(--glass-bg);
-    -webkit-backdrop-filter: var(--glass-blur);
-    backdrop-filter: var(--glass-blur);
+    background-color: transparent;
     border-bottom: 1px solid var(--glass-border-color);
 }
 
 /* Sticky header — locks below the floating toolbar when scrolling.
  * --toolbar-h is set per-page by observeToolbarHeight() in main.js.
- * z-index keeps it above tbody rows; glass surface on th/td above
- * ensures scrolling rows blur through rather than cutting through cleanly. */
+ * Glass surface lives here (position:sticky creates the compositing layer).
+ * -1px offset overlaps the toolbar's border-bottom to close the sub-pixel seam. */
 table.display > thead {
     position: sticky;
-    top: var(--toolbar-h, 48px);
+    top: calc(var(--toolbar-h, 48px) - 1px);
     z-index: 2;
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
 }
 
 table.display > tbody > tr > th,
