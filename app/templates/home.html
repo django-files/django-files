@@ -27,8 +27,9 @@
             <button type="button" class="btn btn-primary btn-sm"
                     data-bs-toggle="modal" data-bs-target="#fileUploadModal">
                 <i class="fa-solid fa-upload me-1"></i> Upload Files</button>
-            <a class="btn btn-outline-secondary btn-sm" href="{% url 'home:paste' %}">
-                <i class="fa-regular fa-file-lines me-1"></i> Upload Text</a>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#clipboardUploadModal" data-clipboard-mode="text">
+                <i class="fa-regular fa-file-lines me-1"></i> Upload Text</button>
             <button type="button" class="btn btn-outline-secondary btn-sm"
                     data-bs-toggle="modal" data-bs-target="#create-short-modal">
                 <i class="fa-solid fa-link me-1"></i> Create Short</button>
@@ -150,8 +151,9 @@
                             <button type="button" class="btn btn-sm btn-outline-primary"
                                     data-bs-toggle="modal" data-bs-target="#fileUploadModal">
                                 <i class="fa-solid fa-file-arrow-up me-2"></i> Upload Files</button>
-                            <a class="btn btn-sm btn-outline-secondary" href="{% url 'home:paste' %}">
-                                <i class="fa-regular fa-file-lines me-2"></i> Paste / Upload Text</a>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal" data-bs-target="#clipboardUploadModal" data-clipboard-mode="text">
+                                <i class="fa-regular fa-file-lines me-2"></i> Paste / Upload Text</button>
                         </div>
                     </div>
 
@@ -286,7 +288,6 @@
 
     </div>
 
-    {% include 'files/file-upload-modal.html' %}
     {% include 'files/ctx-menu.html' %}
     {% include 'files/ctx-modals.html' %}
     {% include 'shorts/create-modal.html' %}

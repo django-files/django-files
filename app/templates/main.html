@@ -93,7 +93,7 @@
 {% endblock %}
 
 {% if request.user.is_authenticated %}
-    <div id="keybinds-modal" class="modal" tabindex="-1">
+    <div id="keybinds-modal" class="modal fade" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -103,25 +103,31 @@
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-xs-12 col-sm-6">
-                            <p><kbd>A</kbd> Upload Files</p>
+                            <p><kbd>A</kbd> Albums</p>
                             <p><kbd>S</kbd> User Settings</p>
                             {% if request.user.is_superuser %}
                                 <p><kbd>D</kbd> Site Settings</p>
                             {% endif %}
                             <p><kbd>F</kbd> Files</p>
+                            <p><kbd>G</kbd> Gallery View</p>
                             <p><kbd>H</kbd> Home</p>
+                            <p><kbd>M</kbd> Map View</p>
                         </div>
                         <div class="col-xs-12 col-sm-6">
                             <p><kbd>R</kbd> Short URL's</p>
                             <p><kbd>T</kbd> Upload Text</p>
+                            <p><kbd>U</kbd> Upload Files</p>
                             <p><kbd>X</kbd> ShareX Files Uploader</p>
                             <p><kbd>Z</kbd> or <kbd>K</kbd> Keyboard Shortcuts</p>
+                            <p><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>V</kbd> Upload Clipboard</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    {% include 'include/file-upload-modals.html' %}
     <form id="log-out" action="{% url 'oauth:logout' %}" method="POST">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
