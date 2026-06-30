@@ -19,6 +19,14 @@ Optional:
   tb_filter_privacy    — True → render public/private toggle in filter popup
 {% endcomment %}
 <div class="files-toolbar" id="{{ tb_id }}" aria-label="{{ tb_label }}">
+    <button class="files-toolbar-btn"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#offcanvasNavbar"
+            aria-controls="offcanvasNavbar"
+            aria-label="Navigation">
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
     <span class="files-toolbar-title">
         <i class="{{ tb_icon }} me-2" aria-hidden="true"></i>{{ tb_title }}
     </span>

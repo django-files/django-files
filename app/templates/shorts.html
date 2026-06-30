@@ -1,8 +1,9 @@
 {% extends "main.html" %}
 {% load static %}
 {% load home_tags %}
-{% block shorts_active %}active{% endblock %}
 {% block title %}Shorts{% endblock %}
+{% block body_class %} no-top-navbar{% endblock %}
+{% block navbar_inner %}{% include 'include/nav-offcanvas.html' %}{% endblock %}
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'dist/datatables/dataTables.bootstrap5.min.css' %}" />

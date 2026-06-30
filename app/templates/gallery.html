@@ -2,8 +2,9 @@
 {% load static %}
 {% load home_tags %}
 {% load cache %}
-{% block files_active %}active{% endblock %}
 {% block title %}{% if album %}{{ album.name }}{% else %}Files{% endif %}{% endblock %}
+{% block body_class %} no-top-navbar{% endblock %}
+{% block navbar_inner %}{% include 'include/nav-offcanvas.html' %}{% endblock %}
 
 {% if album %}
     {% block meta %}
