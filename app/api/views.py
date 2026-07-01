@@ -804,6 +804,28 @@ def recent_view(request):
 @cache_page(cache_seconds, key_prefix="files")
 @vary_on_headers("Authorization")
 @vary_on_cookie
+def _files_base_queryset(request, user, album):
+    qs = Files.objects.filtered_request
+    prefetch = ("albums", "tags")
+    if album:
+        return qs(request, albums__id=album).select_related("user").prefetch_related(*prefetch)
+    if user == "0":
+        # grabs files for ALL users; user parameter only accepted for superusers
+        return qs(request).select_related("user").prefetch_related(*prefetch)
+    if user:
+        return qs(request, user_id=int(user)).select_related("user").prefetch_related(*prefetch)
+    return None
+
+
+def _apply_search_filter(q, request):
+    search = request.GET.get("search")
+    if not search:
+        return q
+    if request.GET.get("name_only"):
+        return q.filter(name__icontains=search)
+    return q.filter(Q(name__icontains=search) | Q(tags__tag__icontains=search)).distinct()
+
+
 def files_view(request, page, count=25):
     """
     View  /api/files/{page}/{count}/
@@ -815,28 +837,10 @@ def files_view(request, page, count=25):
     elif request.user.is_authenticated:
         user = request.user.id
     log.debug("user: %s", user)
-    if album := request.GET.get("album"):
-        q = (
-            Files.objects.filtered_request(request, albums__id=album)
-            .select_related("user")
-            .prefetch_related("albums", "tags")
-        )
-    elif user == "0":
-        # this grabs files for ALL users, user parameter only is accepted for superusers
-        q = Files.objects.filtered_request(request).select_related("user").prefetch_related("albums", "tags")
-    elif user:
-        q = (
-            Files.objects.filtered_request(request, user_id=int(user))
-            .select_related("user")
-            .prefetch_related("albums", "tags")
-        )
-    else:
+    q = _files_base_queryset(request, user, request.GET.get("album"))
+    if q is None:
         return JsonResponse({"error": "Not Authenticated"}, status=401)
-    if search := request.GET.get("search"):
-        if request.GET.get("name_only"):
-            q = q.filter(name__icontains=search)
-        else:
-            q = q.filter(Q(name__icontains=search) | Q(tags__tag__icontains=search)).distinct()
+    q = _apply_search_filter(q, request)
     if privacy := request.GET.get("privacy"):
         q = q.filter(private=(privacy == "private"))
     if mime := request.GET.get("mime"):

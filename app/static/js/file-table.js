@@ -73,7 +73,7 @@ const dataTablesOptions = {
                         : ''
                     return `${data || ''} ${tags}`
                 }
-                return getFileLink(data, type, row, meta)
+                return getFileLink(data, type, row, meta).outerHTML
             },
             defaultContent: '',
             type: 'html',
