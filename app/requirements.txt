@@ -18,7 +18,7 @@ httpx
 markdown
 mysqlclient
 packaging
-defusedxml
+defusedxml  # indirect dep: Pillow.Image.getxmp() requires it to parse XMP from images
 Pillow
 psycopg[binary]
 python-decouple
