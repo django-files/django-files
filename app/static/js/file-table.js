@@ -165,19 +165,24 @@ function updateTableTagBadges() {
     const term = filesDataTable.search().toLowerCase()
     filesDataTable.rows({ search: 'applied' }).every(function () {
         const node = this.node()
-        if (!node) return
-        const cell = node.querySelector('td.dt-name-col')
+        const cell = node?.querySelector('td.dt-name-col')
         if (!cell) return
         cell.querySelector('.dt-tag-match')?.remove()
-        if (!term) return
-        const data = this.data()
-        if (!Array.isArray(data.tags) || !data.tags.length) return
-        const match = data.tags.find((t) => t.toLowerCase().includes(term))
-        if (!match) return
-        const badge = document.createElement('span')
-        badge.className = 'badge rounded-pill ps-2 file-tag ms-1 dt-tag-match'
-        badge.textContent = match
-        ;(cell.querySelector('.dj-file-link') ?? cell).appendChild(badge)
+        if (term) {
+            const data = this.data()
+            const match =
+                Array.isArray(data.tags) &&
+                data.tags.find((t) => t.toLowerCase().includes(term))
+            if (match) {
+                const badge = document.createElement('span')
+                badge.className =
+                    'badge rounded-pill ps-2 file-tag ms-1 dt-tag-match'
+                badge.textContent = match
+                ;(cell.querySelector('.dj-file-link') ?? cell).appendChild(
+                    badge
+                )
+            }
+        }
     })
 }
 
