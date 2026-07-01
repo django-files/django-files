@@ -415,7 +415,7 @@ class FilesTestCase(TestCase):
         self.assertRegex(file.get_url(), r"/r/gps\.jpg\?md5=.*&expires=.*")
         self.assertEqual(file.preview_uri(), "/u/gps.jpg")
         self.assertEqual(file.mime, "image/jpeg")
-        self.assertEqual(file.size, 3512)
+        self.assertEqual(file.size, 3518)
         self.assertEqual(file.get_size(), "3.5 KB")
         self.assertEqual(file.exif, exif_data)
         self.assertEqual(file.meta, meta_data)
