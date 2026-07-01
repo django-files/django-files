@@ -76,10 +76,14 @@
         {% endif %}
 
         {% if tags %}
-            <row>
-                <h6>Tags</h6>
-                {% for tag in tags %}<span class="badge rounded-pill text-bg-secondary ps-2 ms-1">{{ tag }}</span>{% endfor %}
-            </row>
+        <row class="pt-3">
+            <h6 class="pt-3">Tags</h6>
+            <div class="tag-container">
+                {% for tag in tags %}
+                    <span class="badge rounded-pill text-bg-info ps-2 file-tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+        </row>
         {% endif %}
 
         {% if render == 'markdown' %}

@@ -18,6 +18,7 @@ httpx
 markdown
 mysqlclient
 packaging
+defusedxml
 Pillow
 psycopg[binary]
 python-decouple
