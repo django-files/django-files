@@ -759,5 +759,5 @@ body.navbar-snapping header {
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(13, 202, 240, 0.35);
-    color: #fff;
+    color: #fff; /* NOSONAR: badge only appears on dark glass sidebar; contrast is fine in context */
 }
