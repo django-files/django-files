@@ -745,3 +745,19 @@ body.navbar-snapping header {
 .badge.file-album-active .remove-album {
     flex-shrink: 0;
 }
+
+.tag-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.badge.file-tag {
+    font-size: 0.85rem;
+    background: rgba(13, 202, 240, 0.18) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(13, 202, 240, 0.35);
+    color: #fff; /* NOSONAR: badge only appears on dark glass sidebar; contrast is fine in context */
+}
