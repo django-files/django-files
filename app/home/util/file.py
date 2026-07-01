@@ -17,6 +17,7 @@ from home.util.image import ImageProcessor, thumbnail_processor
 from home.util.misc import anytobool
 from home.util.quota import increment_storage_usage
 from home.util.rand import rand_string
+from home.util.tags import sync_file_tags
 from home.util.video import video_metadata_processor
 from oauth.models import CustomUser
 
@@ -120,6 +121,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     log.debug("file.file.name: %s", file.file.name)
     file.name = file.file.name
     file.save()
+    sync_file_tags(file)
 
     if albums:
         if albums.isnumeric():

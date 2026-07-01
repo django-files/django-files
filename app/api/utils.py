@@ -94,6 +94,7 @@ def extract_files(q: Files.objects):
         albums = list(file.albums.all())
         data["albums"] = [a.id for a in albums]
         data["albums_details"] = [{"id": a.id, "name": a.name} for a in albums]
+        data["tags"] = list(file.tags.values_list("tag", flat=True))
         files.append(data)
     return files
 

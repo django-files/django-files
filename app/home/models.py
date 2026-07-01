@@ -195,6 +195,20 @@ class Files(models.Model):
         return "/raw/" + self.name + "?thumb=true"
 
 
+class FileTag(models.Model):
+    file = models.ForeignKey(Files, on_delete=models.CASCADE, related_name="tags")
+    tag = models.CharField(max_length=255)
+
+    class Meta:
+        unique_together = ["file", "tag"]
+        indexes = [models.Index(fields=["tag"])]
+        verbose_name = "File Tag"
+        verbose_name_plural = "File Tags"
+
+    def __str__(self):
+        return f"<FileTag(file={self.file_id} tag={self.tag!r})>"
+
+
 class FileStats(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, blank=True, null=True, on_delete=models.CASCADE)

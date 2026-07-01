@@ -66,7 +66,15 @@ const dataTablesOptions = {
         {
             target: 2,
             responsivePriority: 1,
-            render: getFileLink,
+            render: (data, type, row, meta) => {
+                if (type === 'filter') {
+                    const tags = Array.isArray(row.tags)
+                        ? row.tags.join(' ')
+                        : ''
+                    return `${data || ''} ${tags}`
+                }
+                return getFileLink(data, type, row, meta)
+            },
             defaultContent: '',
             type: 'html',
             className: 'dt-name-col',
@@ -152,12 +160,34 @@ const dataTablesOptions = {
     },
 }
 
+function updateTableTagBadges() {
+    if (!filesDataTable) return
+    const term = filesDataTable.search().toLowerCase()
+    filesDataTable.rows({ search: 'applied' }).every(function () {
+        const node = this.node()
+        if (!node) return
+        const cell = node.querySelector('td.dt-name-col')
+        if (!cell) return
+        cell.querySelector('.dt-tag-match')?.remove()
+        if (!term) return
+        const data = this.data()
+        if (!Array.isArray(data.tags) || !data.tags.length) return
+        const match = data.tags.find((t) => t.toLowerCase().includes(term))
+        if (!match) return
+        const badge = document.createElement('span')
+        badge.className = 'badge rounded-pill ps-2 file-tag ms-1 dt-tag-match'
+        badge.textContent = match
+        ;(cell.querySelector('.dj-file-link') ?? cell).appendChild(badge)
+    })
+}
+
 export function initFilesTable(search = true, ordering = true, info = true) {
     dataTablesOptions.searching = search
     dataTablesOptions.ordering = ordering
     dataTablesOptions.info = info
     filesDataTable = filesTable.DataTable(dataTablesOptions)
     filesDataTable.on('draw.dt', debounce(dtDraw, 150))
+    filesDataTable.on('draw.dt', updateTableTagBadges)
     truncator.attach(filesDataTable)
     attachSocketTableSync(filesDataTable, {
         newEvent: 'file-new',

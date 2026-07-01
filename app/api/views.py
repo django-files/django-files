@@ -769,7 +769,7 @@ def recent_view(request):
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
     try:
         # query = Files.objects.filtered_request(request).select_related("user")
-        query = Files.objects.filter(user=request.user).select_related("user").prefetch_related("albums")
+        query = Files.objects.filter(user=request.user).select_related("user").prefetch_related("albums", "tags")
         if album := request.GET.get("album"):
             query = query.filter(albums__id=album)
 
@@ -816,18 +816,27 @@ def files_view(request, page, count=25):
         user = request.user.id
     log.debug("user: %s", user)
     if album := request.GET.get("album"):
-        q = Files.objects.filtered_request(request, albums__id=album).select_related("user").prefetch_related("albums")
+        q = (
+            Files.objects.filtered_request(request, albums__id=album)
+            .select_related("user")
+            .prefetch_related("albums", "tags")
+        )
     elif user == "0":
         # this grabs files for ALL users, user parameter only is accepted for superusers
-        q = Files.objects.filtered_request(request).select_related("user").prefetch_related("albums")
+        q = Files.objects.filtered_request(request).select_related("user").prefetch_related("albums", "tags")
     elif user:
         q = (
             Files.objects.filtered_request(request, user_id=int(user))
             .select_related("user")
-            .prefetch_related("albums")
+            .prefetch_related("albums", "tags")
         )
     else:
         return JsonResponse({"error": "Not Authenticated"}, status=401)
+    if search := request.GET.get("search"):
+        if request.GET.get("name_only"):
+            q = q.filter(name__icontains=search)
+        else:
+            q = q.filter(Q(name__icontains=search) | Q(tags__tag__icontains=search)).distinct()
     if privacy := request.GET.get("privacy"):
         q = q.filter(private=(privacy == "private"))
     if mime := request.GET.get("mime"):
