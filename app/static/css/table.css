@@ -79,7 +79,7 @@ body.no-top-navbar table.display > thead {
  * The ::before pseudo-element provides the visible glass panel at thead height.
  * z-index: 2 keeps the whole strip stacking context below the thead (z-index: 3)
  * so cell text always renders above the blur. */
-.dt-blur-strip {
+body.no-top-navbar .dt-blur-strip {
     position: sticky;
     top: calc(var(--toolbar-h, 48px) - 1px);
     z-index: 2;
@@ -90,7 +90,7 @@ body.no-top-navbar table.display > thead {
     --dt-thead-h: calc(1rem + 0.5rem + 5px);
 }
 
-.dt-blur-strip::before {
+body.no-top-navbar .dt-blur-strip::before {
     content: '';
     display: block;
     /* Extend 8px upward into the toolbar's blur zone so the two backdrop-filter

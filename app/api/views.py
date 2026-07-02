@@ -797,13 +797,6 @@ def recent_view(request):
         return JsonResponse({"error": f"{error}"}, status=400)
 
 
-@csrf_exempt
-@require_http_methods(["OPTIONS", "GET"])
-@auth_from_token(no_fail=True)
-@cache_control(no_cache=True)
-@cache_page(cache_seconds, key_prefix="files")
-@vary_on_headers("Authorization")
-@vary_on_cookie
 def _files_base_queryset(request, user, album):
     qs = Files.objects.filtered_request
     prefetch = ("albums", "tags")
@@ -826,6 +819,13 @@ def _apply_search_filter(q, request):
     return q.filter(Q(name__icontains=search) | Q(tags__tag__icontains=search)).distinct()
 
 
+@csrf_exempt
+@require_http_methods(["OPTIONS", "GET"])
+@auth_from_token(no_fail=True)
+@cache_control(no_cache=True)
+@cache_page(cache_seconds, key_prefix="files")
+@vary_on_headers("Authorization")
+@vary_on_cookie
 def files_view(request, page, count=25):
     """
     View  /api/files/{page}/{count}/
