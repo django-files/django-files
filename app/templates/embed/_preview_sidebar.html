@@ -92,7 +92,8 @@
                 <span class="badge rounded-pill file-tag addto-tag-group">
                     <button class="btn p-0 addto-tag"><i class="fa-solid fa-plus"></i></button>
                     <span class="tag-add-container d-none">
-                        <input name="add-tag-input" class="tag-search-input" autocomplete="off" placeholder="Add tag…" maxlength="255">
+                        <label for="tag-input-{{ file.id }}" class="visually-hidden">Add tag</label>
+                        <input id="tag-input-{{ file.id }}" name="add-tag-input" class="tag-search-input" autocomplete="off" placeholder="Add tag…" maxlength="255">
                     </span>
                 </span>
             </div>
