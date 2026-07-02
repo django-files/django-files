@@ -132,9 +132,7 @@
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
     </form>
-    <form id="user-credentials">
-        <input type="hidden" id="site-url" value="{{ site_settings.site_url }}">
-    </form>
+
 {#    {% if stats %}#}
 {#        {% with stats=stats|first  %}#}
 {#            <form id="stats-form">#}

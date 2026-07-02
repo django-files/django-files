@@ -78,7 +78,8 @@
             <a href="{% url 'oauth:login' %}?next={{ request.path }}" class="btn btn-outline-info" role="button">
                 Log In <i class="fas fa-sign-in-alt ms-2"></i></a>
         {% else %}
-            <li class="nav-item dropdown">
+            {# Dropdown — shown in top navbar context (non-toolbar pages at md+) #}
+            <li class="nav-item dropdown nav-user-dropdown">
                 <a class="nav-link d-inline-flex align-items-center gap-2" id="navbarDropdown" role="button"
                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                     <img src="{{ user.get_avatar_url }}" class="rounded-circle"
@@ -95,15 +96,6 @@
                                 <i class="fa-solid fa-gears me-2"></i> Site Settings</a>
                         </li>
                     {% endif %}
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item clip" data-clipboard-text="{{ site_settings.site_url }}" href="javascript:">
-                            <i class="fa-solid fa-globe me-2"></i> Copy URL</a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item clip" data-clipboard-text="{{ request.session.api_token }}" href="javascript:" {% if not request.session.api_token %}title="Rotate your token in Settings → Token to copy it here"{% endif %}>
-                            <i class="fa-solid fa-key me-2"></i> Copy Token</a>
-                    </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <a class="dropdown-item{% if request.resolver_match.view_name == 'home:stats' %} active{% endif %}" href="{% url 'home:stats' %}">
@@ -139,6 +131,49 @@
                             <i class="fas fa-sign-out-alt me-2"></i> Log Out</a>
                     </li>
                 </ul>
+            </li>
+
+            {# Flat user section — shown only in sidebar context (toolbar pages) #}
+            <li class="nav-user-flat">
+                <hr class="my-2">
+                {% if request.user.is_superuser %}
+                    <a class="nav-link{% if request.resolver_match.view_name == 'settings:site' %} active{% endif %}" href="{% url 'settings:site' %}">
+                        <i class="fa-solid fa-gears me-2"></i> Site Settings</a>
+                {% endif %}
+                <a class="nav-link{% if request.resolver_match.view_name == 'home:stats' %} active{% endif %}" href="{% url 'home:stats' %}">
+                    <i class="fa-solid fa-chart-line me-2"></i> Stats</a>
+                {% if request.user.is_superuser %}
+                    <a class="nav-link text-warning" href="{% url 'admin:settings_sitesettings_change' 1 %}">
+                        <i class="fa-solid fa-plane-departure me-2"></i> Admin</a>
+                {% endif %}
+                <hr class="my-2">
+                <div class="px-1 py-1">
+                    <div class="d-flex align-items-center gap-2 mb-2 text-body-secondary small">
+                        <i class="fa-solid fa-circle-half-stroke fa-fw"></i>
+                        <span>Theme</span>
+                    </div>
+                    <div class="btn-group btn-group-sm w-100" role="group" aria-label="Theme">
+                        <button class="btn btn-outline-secondary" data-bs-theme-value="dark" aria-pressed="false">
+                            <i class="fa-regular fa-moon me-1"></i>Dark
+                        </button>
+                        <button class="btn btn-outline-secondary" data-bs-theme-value="light" aria-pressed="false">
+                            <i class="fa-solid fa-sun me-1"></i>Light
+                        </button>
+                        <button class="btn btn-outline-secondary" data-bs-theme-value="auto" aria-pressed="false">
+                            <i class="fa-solid fa-circle-half-stroke me-1"></i>Auto
+                        </button>
+                    </div>
+                </div>
+                <hr class="my-2">
+                <div class="nav-user-profile-row">
+                    <a class="nav-link d-inline-flex align-items-center gap-2 flex-grow-1 py-0{% if request.resolver_match.view_name == 'settings:user' %} active{% endif %}" href="{% url 'settings:user' %}">
+                        <img src="{{ user.get_avatar_url }}" class="rounded-circle" height="28" width="28" alt="P">
+                        {{ user.get_name|truncatechars:20 }}
+                    </a>
+                    <button class="btn btn-link text-danger log-out p-1" title="Log Out" aria-label="Log Out">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
             </li>
         {% endif %}
     </ul>
