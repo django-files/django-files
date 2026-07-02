@@ -191,7 +191,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 elif view == "Stats":
                     log.debug("STATS")
                     self._nav_dropdown_click(page)
-                    page.locator('a[href="/stats/"]').first.click()
+                    page.locator('a[href="/stats/"]').filter(visible=True).first.click()
                 else:
                     log.debug("OTHER OTHER OTHER: %s", view)
                     self._nav_link_click(page, view)
@@ -271,7 +271,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 self.screenshot(page, "Album-view")
 
         self._nav_dropdown_click(page)
-        page.locator("text=User Settings").first.click()
+        page.locator('a[href="/settings/user/"]').filter(visible=True).first.click()
         self.screenshot(page, "Settings-User")
 
         page.locator("#show_exif_preview").click()
