@@ -85,10 +85,11 @@ const EVENT_HANDLERS = {
     'album-new': messageAlbumNew,
     'album-update': messageAlbumUpdate,
     message: messageToast,
-    // handled contextually by the album modal; suppress the unhandled-event warning
+    // handled contextually by the preview sidebar; suppress the unhandled-event warning
     'bulk-add-file-albums': () => {},
     'bulk-remove-file-albums': () => {},
     'set-file-albums': () => {},
+    'set-file-tags': () => {},
 }
 
 function initListener() {

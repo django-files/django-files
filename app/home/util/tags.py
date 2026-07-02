@@ -22,19 +22,24 @@ def extract_xmp_tags(exif: dict) -> list:
 
 
 def sync_file_tags(file) -> None:
-    """Sync FileTag rows for *file* to match the XMP tags in file.exif."""
+    """Sync FileTag rows for *file* to match the XMP tags in file.exif.
+
+    Only removes rows that were previously XMP-synced (xmp=True) and are no
+    longer present in the image metadata. User-added tags (xmp=False) are
+    never touched by this function.
+    """
     from home.models import FileTag
 
     try:
         tags = extract_xmp_tags(file.exif)
-        existing = set(FileTag.objects.filter(file=file).values_list("tag", flat=True))
-        new_tags = set(tags) - existing
-        removed = existing - set(tags)
+        xmp_existing = set(FileTag.objects.filter(file=file, xmp=True).values_list("tag", flat=True))
+        new_tags = set(tags) - xmp_existing
+        removed = xmp_existing - set(tags)
         if removed:
-            FileTag.objects.filter(file=file, tag__in=removed).delete()
+            FileTag.objects.filter(file=file, tag__in=removed, xmp=True).delete()
         if new_tags:
             FileTag.objects.bulk_create(
-                [FileTag(file=file, tag=t) for t in new_tags],
+                [FileTag(file=file, tag=t, xmp=True) for t in new_tags],
                 ignore_conflicts=True,
             )
         log.debug("sync_file_tags: file=%s added=%d removed=%d", file.pk, len(new_tags), len(removed))

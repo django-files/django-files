@@ -2,6 +2,7 @@
 
 import { socket } from './socket.js'
 import { initAlbumSelector } from './album-selector.js'
+import { initTagSelector } from './tag-selector.js'
 
 document.addEventListener('DOMContentLoaded', domLoaded)
 window.addEventListener('resize', checkSize)
@@ -259,6 +260,8 @@ socket?.addEventListener('message', function (event) {
         renameFile(data)
     } else if (data.event === 'set-file-albums') {
         handleAlbumBadges(data)
+    } else if (data.event === 'set-file-tags') {
+        handleTagUpdate(data)
     } else if (data.event === 'set-stream-title') {
         handleStreamTitleUpdate(data)
     } else if (data.event === 'set-stream-description') {
@@ -352,6 +355,12 @@ if (streamDescEdit) {
 // Album Badges Section
 const handleAlbumBadges = initAlbumSelector(document, socket)
 // End Album Badges Section
+////////////////////////////
+
+////////////////////////////
+// Tag Badges Section
+const handleTagUpdate = initTagSelector(document, socket)
+// End Tag Badges Section
 ////////////////////////////
 
 ////////////////////////////

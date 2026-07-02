@@ -198,6 +198,7 @@ class Files(models.Model):
 class FileTag(models.Model):
     file = models.ForeignKey(Files, on_delete=models.CASCADE, related_name="tags")
     tag = models.CharField(max_length=255)
+    xmp = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ["file", "tag"]

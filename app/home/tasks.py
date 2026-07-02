@@ -556,6 +556,11 @@ def file_album_websocket(data: dict, user_id: int):
 
 
 @shared_task()
+def file_tag_websocket(data: dict, user_id: int):
+    _send_websocket_event(data, f"user-{user_id}")
+
+
+@shared_task()
 def delete_stream_websocket(name: str, user_id: int):
     log.debug("delete_stream_websocket: name=%s user_id=%s", name, user_id)
     _send_websocket_event({"event": "stream-delete", "name": name}, f"user-{user_id}")

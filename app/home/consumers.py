@@ -12,8 +12,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.db.models import Q
 from django.forms.models import model_to_dict
 from django_redis import get_redis_connection
-from home.models import Albums, Files, Stream
-from home.tasks import file_album_websocket, version_check
+from home.models import Albums, FileTag, Files, Stream
+from home.tasks import file_album_websocket, file_tag_websocket, version_check
 from home.util.auth import hash_token
 from home.util.file import process_file
 from home.util.misc import redact_log
@@ -63,6 +63,8 @@ _ALLOWED_METHODS = frozenset(
         "remove_file_album",
         "add_file_album",
         "bulk_edit_file_albums",
+        "add_file_tag",
+        "remove_file_tag",
         "check_for_update",
     }
 )
@@ -1295,6 +1297,37 @@ class HomeConsumer(AsyncWebsocketConsumer):
         result["albums"] = [{"id": a.id, "name": a.name} for a in album_objs]
         result["pks"] = list(files.values_list("id", flat=True))
         file_album_websocket.apply_async(args=[result, user_id], priority=0)
+        return None
+
+    def add_file_tag(self, *, user_id: int = None, pk: int = None, tag: str = None, **kwargs) -> Optional[dict]:
+        log.debug("add_file_tag: user_id=%s pk=%s tag=%s", user_id, pk, tag)
+        if not tag or not tag.strip():
+            return self._error("No tag specified.", **kwargs)
+        tag = tag.strip()
+        file, err = self._check_file_permission(pk, user_id, **kwargs)
+        if err:
+            return err
+        FileTag.objects.get_or_create(file=file, tag=tag, defaults={"xmp": False})
+        file_tag_websocket.apply_async(
+            args=[{"event": "set-file-tags", "file_id": pk, "added": [tag]}, user_id],
+            priority=0,
+        )
+        return None
+
+    def remove_file_tag(self, *, user_id: int = None, pk: int = None, tag: str = None, **kwargs) -> Optional[dict]:
+        log.debug("remove_file_tag: user_id=%s pk=%s tag=%s", user_id, pk, tag)
+        if not tag:
+            return self._error("No tag specified.", **kwargs)
+        file, err = self._check_file_permission(pk, user_id, **kwargs)
+        if err:
+            return err
+        deleted, _ = FileTag.objects.filter(file=file, tag=tag, xmp=False).delete()
+        if not deleted:
+            return self._error("Tag not found or cannot remove XMP-sourced tags.", **kwargs)
+        file_tag_websocket.apply_async(
+            args=[{"event": "set-file-tags", "file_id": pk, "removed": [tag]}, user_id],
+            priority=0,
+        )
         return None
 
     async def check_for_update(self, *args, **kwargs) -> dict:

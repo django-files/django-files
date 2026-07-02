@@ -754,10 +754,42 @@ body.navbar-snapping header {
 }
 
 .badge.file-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.3rem;
     font-size: 0.85rem;
     background: rgba(13, 202, 240, 0.18) !important;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(13, 202, 240, 0.35);
     color: #fff; /* NOSONAR: badge only appears on dark glass sidebar; contrast is fine in context */
+}
+
+.badge.file-tag-active .remove-tag {
+    color: #fff; /* NOSONAR */
+    flex-shrink: 0;
+}
+
+.addto-tag-group {
+    position: relative;
+    font-size: 0.85rem;
+    background: rgba(13, 202, 240, 0.12) !important;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(13, 202, 240, 0.35);
+    color: #fff; /* NOSONAR */
+}
+
+.addto-tag-group .tag-search-input {
+    width: 7rem;
+    border: none;
+    background: transparent;
+    color: inherit;
+    outline: none;
+    padding: 0 0.15rem;
+    font-size: inherit;
+}
+
+.addto-tag-group .tag-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.65);
 }
