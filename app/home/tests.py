@@ -114,7 +114,8 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
     def _nav_dropdown_click(self, page):
         if not page.locator("#navbarDropdown").first.is_visible():
             self._ensure_nav_open(page)
-        page.locator("#navbarDropdown").first.click()
+        if page.locator("#navbarDropdown").first.is_visible():
+            page.locator("#navbarDropdown").first.click()
 
     @classmethod
     def tearDownClass(cls):
