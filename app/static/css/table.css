@@ -39,8 +39,6 @@ table.display > thead > tr > td {
     overflow: hidden;
     padding-top: 0.35rem;
     padding-bottom: 0.35rem;
-    background-color: var(--glass-bg);
-    border-bottom: 1px solid var(--glass-border-color);
 }
 
 /* Toolbar pages: transparent cells so .dt-blur-strip provides the glass backdrop.
