@@ -361,7 +361,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         # LOGOUT HAPPENS HERE
         page.goto(f"{self.live_server_url}/")
         page.locator("#navbarDropdown").click()
-        page.locator(".log-out").click()
+        page.locator(".log-out").filter(visible=True).click()
         page.wait_for_timeout(timeout=750)
         self.screenshot(page, "Logout")
 
