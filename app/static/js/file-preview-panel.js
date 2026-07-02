@@ -2,6 +2,7 @@
 
 import { socket } from './socket.js'
 import { initAlbumSelector } from './album-selector.js'
+import { initTagSelector } from './tag-selector.js'
 import { initContextMenu } from './file-context-menu.js'
 
 const panel = document.getElementById('file-preview-panel')
@@ -470,6 +471,7 @@ function initPanelContent(container) {
                 if (!isOpen) return
                 initPanelSidebar(container)
                 const handleAlbumBadges = initPanelAlbums(container)
+                const handleTagUpdate = initPanelTags(container)
 
                 if (render === 'text' || render === 'code') {
                     initCodePreview(root)
@@ -483,7 +485,7 @@ function initPanelContent(container) {
                     initPanelMapToggle(root)
                 }
 
-                initPanelSocket(root, handleAlbumBadges)
+                initPanelSocket(root, handleAlbumBadges, handleTagUpdate)
             },
             { timeout: 1000 }
         )
@@ -493,6 +495,7 @@ function initPanelContent(container) {
             if (!isOpen) return
             initPanelSidebar(container)
             const handleAlbumBadges = initPanelAlbums(container)
+            const handleTagUpdate = initPanelTags(container)
 
             if (render === 'text' || render === 'code') {
                 initCodePreview(root)
@@ -506,7 +509,7 @@ function initPanelContent(container) {
                 initPanelMapToggle(root)
             }
 
-            initPanelSocket(root, handleAlbumBadges)
+            initPanelSocket(root, handleAlbumBadges, handleTagUpdate)
         }, 0)
     }
 }
@@ -646,6 +649,12 @@ function initPanelSidebar(container) {
 
 function initPanelAlbums(container) {
     return initAlbumSelector(container, socket)
+}
+
+// ---- Tag selector ----
+
+function initPanelTags(container) {
+    return initTagSelector(container, socket)
 }
 
 // ---- Text / code preview ----
@@ -848,7 +857,7 @@ function initPanelMapToggle(root) {
 
 // ---- WebSocket: live rename inside panel ----
 
-function initPanelSocket(root, handleAlbumBadges) {
+function initPanelSocket(root, handleAlbumBadges, handleTagUpdate) {
     if (!socket) return
 
     const fileId = String(root.dataset.fileId)
@@ -873,6 +882,11 @@ function initPanelSocket(root, handleAlbumBadges) {
             String(data.file_id) === fileId
         ) {
             handleAlbumBadges?.(data)
+        } else if (
+            data.event === 'set-file-tags' &&
+            String(data.file_id) === fileId
+        ) {
+            handleTagUpdate?.(data)
         }
     }
 

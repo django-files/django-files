@@ -75,7 +75,30 @@
             </p>
         {% endif %}
 
-        {% if tags %}
+        {% if full_context %}
+        <row class="pt-3">
+            <h6 class="pt-3">Tags</h6>
+            <div class="tag-container position-relative" id="tags-file-{{ file.id }}">
+                {% for ft in file.tags.all %}
+                    <span class="badge rounded-pill ps-2 file-tag file-tag-active" data-tag="{{ ft.tag }}"{% if ft.xmp %} title="XMP tag (read-only)"{% endif %}>
+                        {{ ft.tag }}
+                        {% if not ft.xmp %}
+                        <button class="btn p-0 mt-0 ms-1 remove-tag" data-tag="{{ ft.tag }}">
+                            <i class="fa-solid fa-xmark text-small"></i>
+                        </button>
+                        {% endif %}
+                    </span>
+                {% endfor %}
+                <span class="badge rounded-pill file-tag addto-tag-group">
+                    <button class="btn p-0 addto-tag"><i class="fa-solid fa-plus"></i></button>
+                    <span class="tag-add-container d-none">
+                        <label for="tag-input-{{ file.id }}" class="visually-hidden">Add tag</label>
+                        <input id="tag-input-{{ file.id }}" name="add-tag-input" class="tag-search-input" autocomplete="off" placeholder="Add tag…" maxlength="255">
+                    </span>
+                </span>
+            </div>
+        </row>
+        {% elif tags %}
         <row class="pt-3">
             <h6 class="pt-3">Tags</h6>
             <div class="tag-container">
