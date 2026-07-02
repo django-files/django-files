@@ -12,7 +12,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.db.models import Q
 from django.forms.models import model_to_dict
 from django_redis import get_redis_connection
-from home.models import Albums, FileTag, Files, Stream
+from home.models import Albums, Files, FileTag, Stream
 from home.tasks import file_album_websocket, file_tag_websocket, version_check
 from home.util.auth import hash_token
 from home.util.file import process_file
