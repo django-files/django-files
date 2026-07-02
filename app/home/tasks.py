@@ -21,6 +21,7 @@ from django_redis import get_redis_connection
 from home.models import Files, FileStats, Stream
 from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
+from home.util.tags import sync_file_tags
 from home.util.video import video_metadata_processor, video_thumbnail_processor
 from oauth.models import CustomUser, DiscordWebhooks
 from packaging import version
@@ -152,6 +153,7 @@ def _extract_video_metadata(file: Files, strip_gps: bool) -> bool:
         file.exif = exif
         file.meta = meta
         file.save(update_fields=["exif", "meta"])
+        sync_file_tags(file)
         log.info("_extract_video_metadata: saved metadata for %s", file.name)
         return True
     except Exception:
@@ -188,6 +190,7 @@ def _backfill_single_video(file, max_bytes: int) -> bool:
         file.exif = {**file.exif, **v_exif}
         file.meta = {**file.meta, **v_meta}
         file.save(update_fields=["exif", "meta"])
+        sync_file_tags(file)
         log.info("backfill_video_gps: pk=%s GPS saved", file.pk)
         return True
 

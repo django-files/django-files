@@ -272,10 +272,30 @@ function filterGallery() {
     for (const file of fileData) {
         const card = document.getElementById(`gallery-image-${file.id}`)
         if (!card) continue
+        const nameMatch = file.name.toLowerCase().includes(term)
+        const tagMatch =
+            Array.isArray(file.tags) &&
+            file.tags.some((t) => t.toLowerCase().includes(term))
         card.classList.toggle(
             'gallery-search-hidden',
-            !(!term || file.name.toLowerCase().includes(term))
+            !(!term || nameMatch || tagMatch)
         )
+        const labels = card.querySelector('.image-labels')
+        if (labels) {
+            labels.querySelector('.gallery-tag-match')?.remove()
+            if (term && tagMatch) {
+                const matchTag = file.tags.find((t) =>
+                    t.toLowerCase().includes(term)
+                )
+                if (matchTag) {
+                    const badge = document.createElement('span')
+                    badge.className =
+                        'badge rounded-pill ps-2 file-tag gallery-tag-match'
+                    badge.textContent = matchTag
+                    labels.appendChild(badge)
+                }
+            }
+        }
     }
 }
 

@@ -4,6 +4,7 @@ from home.models import (
     Albums,
     Files,
     FileStats,
+    FileTag,
     ShortURLs,
     Stream,
     StreamDiscordWebhooks,
@@ -17,6 +18,30 @@ admin.site.site_header = "Django Files Administration"
 class AlbumAdmin(admin.ModelAdmin):
     model = Albums
     list_display = ("id", "name")
+
+
+class FileTagInline(admin.TabularInline):
+    model = FileTag
+    extra = 0
+    fields = ("tag",)
+
+
+@admin.register(FileTag)
+class FileTagAdmin(admin.ModelAdmin):
+    model = FileTag
+    list_display = ("id", "tag", "file_link", "file_user")
+    list_filter = ("file__user",)
+    search_fields = ("tag", "file__name", "file__user__username")
+    ordering = ("tag",)
+    raw_id_fields = ("file",)
+
+    @admin.display(description="File")
+    def file_link(self, obj):
+        return format_html('<a href="{0}">{1}</a>', obj.file.get_gallery_url(), obj.file.name)
+
+    @admin.display(description="User")
+    def file_user(self, obj):
+        return obj.file.user
 
 
 @admin.register(Files)
@@ -36,6 +61,7 @@ class FilesAdmin(admin.ModelAdmin):
         "expr",
         "mime",
     )
+    inlines = [FileTagInline]
     readonly_fields = ("id", "show_file", "size", "user", "date", "avatar")
     search_fields = (
         "id",
