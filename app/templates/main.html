@@ -115,6 +115,7 @@
                         </div>
                         <div class="col-xs-12 col-sm-6">
                             <p><kbd>R</kbd> Short URL's</p>
+                            <p><kbd>V</kbd> Streams</p>
                             <p><kbd>T</kbd> Upload Text</p>
                             <p><kbd>U</kbd> Upload Files</p>
                             <p><kbd>X</kbd> ShareX Files Uploader</p>
@@ -132,9 +133,7 @@
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
     </form>
-    <form id="user-credentials">
-        <input type="hidden" id="site-url" value="{{ site_settings.site_url }}">
-    </form>
+
 {#    {% if stats %}#}
 {#        {% with stats=stats|first  %}#}
 {#            <form id="stats-form">#}

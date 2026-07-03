@@ -180,6 +180,19 @@ if (albumPrivateToggle) {
     })
 }
 
+const albumRow = document.querySelector('.files-toolbar-album-row')
+if (albumRow) {
+    albumRow.addEventListener(
+        'wheel',
+        (e) => {
+            if (e.deltaY === 0) return
+            e.preventDefault()
+            albumRow.scrollLeft += e.deltaY + e.deltaX
+        },
+        { passive: false }
+    )
+}
+
 function setToolbarBtnVisible(btn, visible) {
     if (!btn) return
     btn.dataset.collapseIntent = visible ? '' : '1'

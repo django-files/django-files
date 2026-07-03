@@ -118,6 +118,104 @@ html {
     }
 }
 
+/* Sidebar nav item hover — pill highlight on the glass surface.
+ * Scoped to sidebar-only contexts so the inline top navbar is never touched:
+ * 1. toolbar pages (body.no-top-navbar) — offcanvas is always a side drawer
+ * 2. non-toolbar pages below md — offcanvas opens as a drawer */
+body.no-top-navbar [id='offcanvasNavbar'] .nav-link {
+    border-radius: 0.375rem;
+    padding-inline: 0.75rem;
+    transition: background-color 0.15s ease;
+}
+
+@media (width < 768px) {
+    [id='offcanvasNavbar'] .nav-link {
+        border-radius: 0.375rem;
+        padding-inline: 0.75rem;
+        transition: background-color 0.15s ease;
+    }
+}
+
+body.no-top-navbar [id='offcanvasNavbar'] .nav-link:hover,
+.nav-user-profile-row .log-out:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+@media (width < 768px) {
+    [id='offcanvasNavbar'] .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+}
+
+[data-bs-theme='light']
+    body.no-top-navbar
+    [id='offcanvasNavbar']
+    .nav-link:hover,
+[data-bs-theme='light'] .nav-user-profile-row .log-out:hover,
+:root:not([data-bs-theme='dark'])
+    body.no-top-navbar
+    [id='offcanvasNavbar']
+    .nav-link:hover,
+:root:not([data-bs-theme='dark']) .nav-user-profile-row .log-out:hover {
+    background-color: rgba(0, 0, 0, 0.07);
+}
+
+@media (width < 768px) {
+    [data-bs-theme='light'] [id='offcanvasNavbar'] .nav-link:hover,
+    :root:not([data-bs-theme='dark']) [id='offcanvasNavbar'] .nav-link:hover {
+        background-color: rgba(0, 0, 0, 0.07);
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-bs-theme='dark'])
+        body.no-top-navbar
+        [id='offcanvasNavbar']
+        .nav-link:hover,
+    :root:not([data-bs-theme='dark']) .nav-user-profile-row .log-out:hover {
+        background-color: rgba(0, 0, 0, 0.07);
+    }
+}
+
+@media (prefers-color-scheme: light) and (width < 768px) {
+    :root:not([data-bs-theme='dark']) [id='offcanvasNavbar'] .nav-link:hover {
+        background-color: rgba(0, 0, 0, 0.07);
+    }
+}
+
+/* Sidebar vs top-navbar user section toggle.
+ * Toolbar pages add .no-top-navbar to <body>; on those pages the offcanvas is
+ * always a side drawer so the flat list is shown and the dropdown is hidden.
+ * On regular navbar pages the offcanvas can expand inline at desktop widths,
+ * so the dropdown is shown and the flat section is hidden. */
+.nav-user-flat {
+    display: none;
+}
+
+body.no-top-navbar .nav-user-dropdown {
+    display: none;
+}
+
+body.no-top-navbar .nav-user-flat {
+    display: block;
+}
+
+body.no-top-navbar .offcanvas-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-user-profile-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.nav-user-profile-row .log-out {
+    border-radius: 0.375rem;
+    transition: background-color 0.15s ease;
+}
+
 /* TODO: CONFIRM THIS REMOVAL: */
 /*body {*/
 /*    padding-top: 37px;*/
@@ -413,10 +511,21 @@ body.navbar-snapping header {
     opacity: 1;
 }
 
-/* Hide labels on narrow screens — icons only */
-@media (width <= 575.98px) {
+/* Hide labels and count on narrow screens — icons only */
+@media (width <= 767.98px) {
     .files-toolbar-view-label {
         display: none;
+    }
+    .files-toolbar-count {
+        display: none;
+    }
+    #album-private-toggle span {
+        display: none;
+    }
+    #album-private-toggle {
+        flex-shrink: 0;
+        min-width: 0;
+        overflow: visible;
     }
 }
 
@@ -445,6 +554,15 @@ body.navbar-snapping header {
         inset 0 1px 0 rgba(255, 255, 255, 0.14),
         inset 0 -1px 0 rgba(0, 0, 0, 0.08),
         0 0 8px rgba(var(--bs-primary-rgb), 0.18);
+}
+
+.files-toolbar-btn.view-active:hover,
+.files-toolbar-btn.view-active:focus-visible {
+    background: rgba(var(--bs-primary-rgb), 0.25);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+        0 0 12px rgba(var(--bs-primary-rgb), 0.28);
 }
 
 .files-toolbar-btn.bulk-actions--active {
@@ -587,6 +705,13 @@ body.navbar-snapping header {
     border-top: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.08);
     padding-top: 0.4rem;
     min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.files-toolbar-album-row::-webkit-scrollbar {
+    display: none;
 }
 
 /* Shared text-truncation for album title and info */
@@ -605,13 +730,17 @@ body.navbar-snapping header {
 
 .files-toolbar-album-owner {
     gap: 0.35rem;
-    flex-shrink: 1;
+    flex-shrink: 0;
     opacity: 0.85;
     font-size: 0.875rem;
+    white-space: nowrap;
 }
 
 .files-toolbar-album-info {
-    flex-shrink: 1;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
 }
 
 .files-toolbar-album-meta {

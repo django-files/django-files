@@ -111,6 +111,7 @@ export function syncUserFilterBtn(btnId, tplId) {
 
 export const paginatedTableDefaults = {
     data: [],
+    info: false,
     paging: false,
     order: [0, 'desc'],
     responsive: { details: false },

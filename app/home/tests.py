@@ -114,7 +114,8 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
     def _nav_dropdown_click(self, page):
         if not page.locator("#navbarDropdown").first.is_visible():
             self._ensure_nav_open(page)
-        page.locator("#navbarDropdown").first.click()
+        if page.locator("#navbarDropdown").first.is_visible():
+            page.locator("#navbarDropdown").first.click()
 
     @classmethod
     def tearDownClass(cls):
@@ -190,7 +191,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 elif view == "Stats":
                     log.debug("STATS")
                     self._nav_dropdown_click(page)
-                    page.locator('a[href="/stats/"]').first.click()
+                    page.locator('a[href="/stats/"]').filter(visible=True).first.click()
                 else:
                     log.debug("OTHER OTHER OTHER: %s", view)
                     self._nav_link_click(page, view)
@@ -270,7 +271,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
                 self.screenshot(page, "Album-view")
 
         self._nav_dropdown_click(page)
-        page.locator("text=User Settings").first.click()
+        page.locator('a[href="/settings/user/"]').filter(visible=True).first.click()
         self.screenshot(page, "Settings-User")
 
         page.locator("#show_exif_preview").click()
@@ -360,7 +361,7 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         # LOGOUT HAPPENS HERE
         page.goto(f"{self.live_server_url}/")
         page.locator("#navbarDropdown").click()
-        page.locator(".log-out").click()
+        page.locator(".log-out").filter(visible=True).click()
         page.wait_for_timeout(timeout=750)
         self.screenshot(page, "Logout")
 

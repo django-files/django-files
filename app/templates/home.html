@@ -24,18 +24,20 @@
             <div class="dash-welcome-sub">{{ site_settings.site_title }} dashboard</div>
         </div>
         <div class="d-flex gap-2 flex-wrap">
-            <button type="button" class="btn btn-primary btn-sm"
+            <button type="button" class="files-toolbar-btn view-active"
                     data-bs-toggle="modal" data-bs-target="#fileUploadModal">
-                <i class="fa-solid fa-upload me-1"></i> Upload Files</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
+                <i class="fa-solid fa-upload"></i> Upload Files</button>
+            <button type="button" class="files-toolbar-btn"
                     data-bs-toggle="modal" data-bs-target="#clipboardUploadModal" data-clipboard-mode="text">
-                <i class="fa-regular fa-file-lines me-1"></i> Upload Text</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    data-bs-toggle="modal" data-bs-target="#create-short-modal">
-                <i class="fa-solid fa-link me-1"></i> Create Short</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
+                <i class="fa-regular fa-file-lines"></i> Upload Text</button>
+            <button type="button" class="files-toolbar-btn"
                     data-bs-toggle="modal" data-bs-target="#create-album-modal">
-                <i class="fa-regular fa-images me-1"></i> Create Album</button>
+                <i class="fa-regular fa-images"></i> Create Album</button>
+            {% if request.user.is_authenticated %}
+            <button type="button" class="files-toolbar-btn"
+                    data-bs-toggle="modal" data-bs-target="#streamSetupModal">
+                <i class="fa-solid fa-video"></i> Go Live</button>
+            {% endif %}
         </div>
     </div>
 
@@ -102,7 +104,7 @@
                         </div>
                         <span class="small">Loading stats…</span>
                     </div>
-                    <div id="home-chart" style="flex: 1 1 0%; min-height: 0; width: 100%; display:none;"></div>
+                    <div id="home-chart" style="flex: 1 1 0%; min-height: 280px; width: 100%; display:none;"></div>
                     <div class="d-flex align-items-center justify-content-center text-muted d-none flex-grow-1" id="home-chart-empty">
                         <div class="text-center">
                             <i class="fa-solid fa-chart-line fa-2x mb-2 opacity-25"></i>
@@ -142,45 +144,16 @@
 
                     <hr class="my-0 opacity-10">
 
-                    {# Upload shortcuts #}
-                    <div>
-                        <div class="small fw-semibold opacity-75 mb-2">
-                            <i class="fa-solid fa-upload me-1"></i> Upload
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                    data-bs-toggle="modal" data-bs-target="#fileUploadModal">
-                                <i class="fa-solid fa-file-arrow-up me-2"></i> Upload Files</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                    data-bs-toggle="modal" data-bs-target="#clipboardUploadModal" data-clipboard-mode="text">
-                                <i class="fa-regular fa-file-lines me-2"></i> Paste / Upload Text</button>
-                        </div>
-                    </div>
-
-                    <hr class="my-0 opacity-10">
-
-                    {# Streaming #}
-                    {% if request.user.is_authenticated %}
-                    <div>
-                        <div class="small fw-semibold opacity-75 mb-2">
-                            <i class="fa-solid fa-satellite-dish me-1"></i> Streaming
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                    data-bs-toggle="modal" data-bs-target="#streamSetupModal">
-                                <i class="fa-solid fa-video me-2"></i> Go Live</button>
-                        </div>
-                    </div>
-
-                    <hr class="my-0 opacity-10">
-                    {% endif %}
-
                     {# Stats update #}
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <a class="btn btn-sm btn-outline-warning updateStatsBtn" role="button" data-target-url="{% url 'home:update-stats' %}">
-                            <i class="fa-solid fa-arrows-rotate me-1"></i> Process Stats</a>
-                        <a class="btn btn-sm btn-outline-light" href="{% url 'home:stats' %}">
-                            <i class="fa-solid fa-chart-bar me-1"></i> Full Stats</a>
+                        <a class="files-toolbar-btn updateStatsBtn" role="button" data-target-url="{% url 'home:update-stats' %}">
+                            <i class="fa-solid fa-arrows-rotate"></i> Process Stats</a>
+                        <a class="files-toolbar-btn" href="{% url 'home:stats' %}">
+                            <i class="fa-solid fa-chart-bar"></i> Full Stats</a>
+                        {% if user.is_superuser %}
+                        <button type="button" class="files-toolbar-btn" id="flush-cache">
+                            <i class="fa-solid fa-broom"></i> Flush Cache</button>
+                        {% endif %}
                     </div>
 
                 </div>
@@ -267,7 +240,6 @@
                         <thead>
                             <tr>
                                 <th scope="col"></th>
-                                <th scope="col">ID</th>
                                 <th scope="col">Album Name</th>
                                 <th scope="col">Date</th>
                                 <th scope="col">Expire</th>

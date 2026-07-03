@@ -388,6 +388,11 @@ th.dt-select-col {
     vertical-align: middle;
 }
 
+table.display > thead > tr > th.dt-select-col,
+table.display > thead > tr > td.dt-select-col {
+    overflow: visible;
+}
+
 /* Push list/gallery content past the floating toolbar. Map peeks through.
  * clip (not hidden) prevents scroll without creating a scroll container, so
  * position:fixed dropdowns still escape the boundary.

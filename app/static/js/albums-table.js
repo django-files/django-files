@@ -49,11 +49,10 @@ document.addEventListener('DOMContentLoaded', domContentLoaded)
 const dataTablesOptions = {
     ...paginatedTableDefaults,
     ...(isHome && { layout: noChromeLayout }),
-    order: [1, 'desc'],
+    order: [2, 'desc'],
     select: selectConfig,
     columns: [
         selectColumn,
-        { data: 'id' },
         { data: 'name' },
         { data: 'date' },
         { data: 'expr' },
@@ -64,22 +63,21 @@ const dataTablesOptions = {
     ],
     columnDefs: [
         selectColumnDef,
-        { targets: 1, responsivePriority: 5 },
         {
-            targets: 2,
+            targets: 1,
             render: renderAlbumLink,
             defaultContent: '',
             responsivePriority: 1,
         },
         {
             name: 'date',
-            targets: 3,
+            targets: 2,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
             responsivePriority: 2,
         },
         {
-            targets: 4,
+            targets: 3,
             defaultContent: '',
             className: 'expire-value text-center',
             // Expire column is the lowest-value info; hide it entirely on the
@@ -88,18 +86,18 @@ const dataTablesOptions = {
             responsivePriority: 10,
         },
         {
-            targets: 5,
+            targets: 4,
             className: 'text-center',
             defaultContent: '0',
             responsivePriority: 3,
         },
         {
-            targets: [6, 7],
+            targets: [5, 6],
             className: 'text-center',
             responsivePriority: 4,
         },
         {
-            targets: 8,
+            targets: 7,
             orderable: false,
             render: renderActions,
             defaultContent: '',
