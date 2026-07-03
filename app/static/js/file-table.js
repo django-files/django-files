@@ -32,7 +32,7 @@ const dataTablesOptions = {
     data: [],
     paging: false,
     layout: noChromeLayout,
-    order: [1, 'desc'],
+    order: [4, 'desc'],
     responsive: {
         details: false,
     },
@@ -44,7 +44,6 @@ const dataTablesOptions = {
     ],
     columns: [
         selectColumn,
-        { data: 'id', name: 'id' },
         { data: 'name' },
         { data: 'size' },
         { data: 'mime' },
@@ -58,13 +57,7 @@ const dataTablesOptions = {
     columnDefs: [
         selectColumnDef,
         {
-            targets: 1,
-            width: '15px',
-            responsivePriority: 8,
-            defaultContent: '',
-        },
-        {
-            target: 2,
+            target: 1,
             responsivePriority: 1,
             render: (data, type, row, meta) => {
                 if (type === 'filter') {
@@ -83,14 +76,14 @@ const dataTablesOptions = {
             className: 'dt-name-col',
         },
         {
-            targets: 3,
+            targets: 2,
             render: formatBytes,
             defaultContent: '',
             responsivePriority: 9,
             width: '150px',
         },
         {
-            targets: 4,
+            targets: 3,
             defaultContent: '',
             responsivePriority: 10,
             width: '80px',
@@ -98,7 +91,7 @@ const dataTablesOptions = {
         },
         {
             name: 'date',
-            targets: 5,
+            targets: 4,
             render: DataTable.render.datetime('DD MMM YYYY, kk:mm'),
             defaultContent: '',
             responsivePriority: 10,
@@ -106,7 +99,7 @@ const dataTablesOptions = {
             className: 'text-nowrap',
         },
         {
-            targets: 6,
+            targets: 5,
             render: getExifDate,
             defaultContent: '',
             responsivePriority: 6,
@@ -114,35 +107,35 @@ const dataTablesOptions = {
             className: 'text-nowrap',
         },
         {
-            targets: 7,
+            targets: 6,
             width: '15px',
             defaultContent: '',
             className: 'expire-value text-center',
             responsivePriority: 10,
         },
         {
-            targets: 8,
+            targets: 7,
             width: '15px',
             render: getPwIcon,
             defaultContent: '',
             responsivePriority: 4,
         },
         {
-            targets: 9,
+            targets: 8,
             width: '15px',
             responsivePriority: 4,
             render: getPrivateIcon,
             defaultContent: '',
         },
         {
-            targets: 10,
+            targets: 9,
             width: '15px',
             defaultContent: '',
             responsivePriority: 8,
             className: 'text-center',
         },
         {
-            targets: 11,
+            targets: 10,
             orderable: false,
             width: '50px',
             responsivePriority: 3,

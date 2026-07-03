@@ -556,6 +556,15 @@ body.navbar-snapping header {
         0 0 8px rgba(var(--bs-primary-rgb), 0.18);
 }
 
+.files-toolbar-btn.view-active:hover,
+.files-toolbar-btn.view-active:focus-visible {
+    background: rgba(var(--bs-primary-rgb), 0.25);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+        0 0 12px rgba(var(--bs-primary-rgb), 0.28);
+}
+
 .files-toolbar-btn.bulk-actions--active {
     background: rgba(var(--bs-primary-rgb), 0.12);
     border-color: rgba(var(--bs-primary-rgb), 0.35);

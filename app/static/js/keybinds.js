@@ -11,6 +11,7 @@ const keyLocations = {
     KeyS: '/settings/user/',
     KeyT: '/paste/',
     KeyU: '/uppy/',
+    KeyV: '/streams/',
     KeyX: '/settings/sharex/',
     KeyY: '/admin/settings/sitesettings/1/change/',
 }

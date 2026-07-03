@@ -107,6 +107,10 @@
                                 <i class="fa-solid fa-plane-departure me-2"></i> Admin</a>
                         </li>
                     {% endif %}
+                    <li>
+                        <a class="dropdown-item" role="button" data-bs-toggle="modal" data-bs-target="#keybinds-modal">
+                            <i class="fa-solid fa-keyboard me-2"></i> Keyboard Shortcuts</a>
+                    </li>
                     <li><hr class="dropdown-divider"></li>
                     <li class="px-3 py-1">
                         <div class="d-flex align-items-center gap-2 mb-2 text-body-secondary small">
@@ -136,6 +140,8 @@
             {# Flat user section — shown only in sidebar context (toolbar pages) #}
             <li class="nav-user-flat">
                 <hr class="my-2">
+                <a class="nav-link" role="button" data-bs-toggle="modal" data-bs-target="#keybinds-modal">
+                    <i class="fa-solid fa-keyboard me-2"></i> Keyboard Shortcuts</a>
                 {% if request.user.is_superuser %}
                     <a class="nav-link{% if request.resolver_match.view_name == 'settings:site' %} active{% endif %}" href="{% url 'settings:site' %}">
                         <i class="fa-solid fa-gears me-2"></i> Site Settings</a>
