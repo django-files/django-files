@@ -519,6 +519,14 @@ body.navbar-snapping header {
     .files-toolbar-count {
         display: none;
     }
+    #album-private-toggle span {
+        display: none;
+    }
+    #album-private-toggle {
+        flex-shrink: 0;
+        min-width: 0;
+        overflow: visible;
+    }
 }
 
 .files-toolbar-btn:disabled {
@@ -688,6 +696,13 @@ body.navbar-snapping header {
     border-top: 1px solid rgba(var(--bs-emphasis-color-rgb), 0.08);
     padding-top: 0.4rem;
     min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.files-toolbar-album-row::-webkit-scrollbar {
+    display: none;
 }
 
 /* Shared text-truncation for album title and info */
@@ -706,13 +721,17 @@ body.navbar-snapping header {
 
 .files-toolbar-album-owner {
     gap: 0.35rem;
-    flex-shrink: 1;
+    flex-shrink: 0;
     opacity: 0.85;
     font-size: 0.875rem;
+    white-space: nowrap;
 }
 
 .files-toolbar-album-info {
-    flex-shrink: 1;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
 }
 
 .files-toolbar-album-meta {
