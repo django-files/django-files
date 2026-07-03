@@ -343,7 +343,6 @@ const skeletonNameWidths = [130, 165, 210, 145, 180, 195, 120, 155, 200, 140]
 
 const _fileSkeletonSpecs = [
     { w: 18 },
-    { w: 24 },
     { w: 0 }, // name — varied per row
     { w: 58 },
     { w: 60 },
@@ -369,7 +368,7 @@ export function showTableSkeletons(count = 10) {
     tbody.querySelectorAll('.dt-skeleton-row').forEach((el) => el.remove())
 
     buildSkeletonRows(tbody, count, _fileSkeletonSpecs, {
-        2: skeletonNameWidths,
+        1: skeletonNameWidths,
     })
 }
 

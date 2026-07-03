@@ -330,23 +330,23 @@ function renderAlbumLink(data, type, row, _meta) {
 const _albumSkeletonNameWidths = [140, 175, 110, 195, 130, 160, 105, 155]
 
 // Column widths [px] matching the 8 header columns:
-// select, id, name, date, expire, views, maxviews, delete
+// select, name, date, expire, file_count, views, maxviews, ctx-btn
 const _albumSkeletonSpecs = [
     { w: 18 },
-    { w: 24 },
     { w: 0 }, // name — varied per row
     { w: 128 },
     { w: 14 },
     { w: 20 },
     { w: 20 },
     { w: 20 },
+    { w: 22, h: 30 }, // ctx-btn column — drives row to real row height
 ]
 
 function showAlbumsSkeletons(count = 10) {
     const tbody = document.querySelector('#albums-table tbody')
     if (!tbody) return
     buildSkeletonRows(tbody, count, _albumSkeletonSpecs, {
-        2: _albumSkeletonNameWidths,
+        1: _albumSkeletonNameWidths,
     })
 }
 
