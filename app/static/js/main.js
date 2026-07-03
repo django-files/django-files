@@ -386,6 +386,29 @@ function buildSkeletonRows(tbody, count, specs, varWidths = {}) {
         fragment.appendChild(tr)
     }
     tbody.appendChild(fragment)
+
+    // Mirror DataTables responsive column hiding onto skeleton tds.
+    // DataTables hides columns with inline style="display:none" on <th> elements;
+    // skeleton rows are never processed by DT, so without this their tds for
+    // hidden columns remain visible and inflate the table width on narrow viewports,
+    // pushing the ctx-btn column out of view.
+    const theadThs = tbody
+        .closest('table')
+        ?.querySelectorAll(':scope > thead > tr > th')
+    if (theadThs) {
+        const hiddenIdxs = []
+        theadThs.forEach((th, i) => {
+            if (th.style.display === 'none') hiddenIdxs.push(i)
+        })
+        if (hiddenIdxs.length) {
+            tbody.querySelectorAll('.dt-skeleton-row').forEach((tr) => {
+                hiddenIdxs.forEach((colIdx) => {
+                    const td = tr.children[colIdx]
+                    if (td) td.style.display = 'none'
+                })
+            })
+        }
+    }
 }
 
 /**
@@ -541,7 +564,7 @@ function createPaginatedLoader(dt, opts) {
 function attachInfiniteScroll(dt, loader) {
     const handle = debounce(async (event) => {
         await pageScroll(event, loader.nextPage, loader.load)
-        dt?.columns.adjust().draw()
+        dt?.columns.adjust().draw(false)
     })
     document.addEventListener('scroll', handle)
     window.addEventListener('resize', handle)
