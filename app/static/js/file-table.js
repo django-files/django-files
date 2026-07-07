@@ -346,9 +346,9 @@ const _fileSkeletonSpecs = [
     { w: 18 },
     { w: 0 }, // name — flexible slot, absorbs leftover row width
     { w: 58 },
-    { w: 76 }, // mime
+    { w: 88 }, // mime
     { w: 112 }, // date
-    { w: 118 }, // exif date
+    { w: 138 }, // exif date
     { w: 14 },
     { w: 14 },
     { w: 14 },
