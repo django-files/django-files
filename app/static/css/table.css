@@ -157,15 +157,27 @@ td.dt-empty:empty {
     min-height: 480px;
 }
 
-/* Table skeleton rows — override the td overflow/max-width rules so cells show.
+/* Table skeleton rows — a single td spans all visible columns per row.
+ * max-width: 0 keeps the cell from contributing any content width to the
+ * auto table layout, so skeleton rows can never shift real column widths.
  * Needs table.display in the selector to beat the specificity of
  * table.display > tbody > tr > td (specificity 14) that sets padding-top/bottom. */
 table.display .dt-skeleton-row td {
-    max-width: none;
-    overflow: visible;
+    max-width: 0;
+    overflow: hidden;
     padding-top: 0.3rem;
     padding-bottom: 0.3rem;
     vertical-align: middle;
+}
+
+/* Spreads the shimmer blocks across the row, approximating the real column
+ * layout (first block left, ctx-btn block at the right edge). Blocks shrink
+ * on narrow viewports instead of forcing the row wider. */
+.dt-skeleton-track {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
 }
 
 .dt-skeleton-cell {
@@ -174,6 +186,8 @@ table.display .dt-skeleton-row td {
     background-color: var(--bs-secondary-bg, #e9ecef);
     overflow: hidden;
     height: 14px;
+    flex: 0 1 auto;
+    min-width: 4px;
 }
 
 .dt-skeleton-cell::after {

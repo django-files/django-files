@@ -368,48 +368,66 @@ function buildSkeletonRows(tbody, count, specs, varWidths = {}) {
         .querySelectorAll('td.dt-empty')
         .forEach((cell) => cell.closest('tr')?.remove())
     tbody.querySelectorAll('.dt-skeleton-row').forEach((el) => el.remove())
+    const colSpan = visibleColumnCount(tbody.closest('table'))
     const fragment = document.createDocumentFragment()
     for (let i = 0; i < count; i++) {
         const tr = document.createElement('tr')
         tr.className = 'dt-skeleton-row'
+        const td = document.createElement('td')
+        td.colSpan = colSpan
+        const track = document.createElement('div')
+        track.className = 'dt-skeleton-track'
         specs.forEach(({ w, h = 14 }, colIndex) => {
-            const td = document.createElement('td')
             const cell = document.createElement('div')
             cell.className = 'dt-skeleton-cell'
             const widths = varWidths[colIndex]
             const width = widths ? widths[i % widths.length] : w
             cell.style.width = `${width}px`
             cell.style.height = `${h}px`
-            td.appendChild(cell)
-            tr.appendChild(td)
+            track.appendChild(cell)
         })
+        td.appendChild(track)
+        tr.appendChild(td)
         fragment.appendChild(tr)
     }
     tbody.appendChild(fragment)
-
-    // Mirror DataTables responsive column hiding onto skeleton tds.
-    // DataTables hides columns with inline style="display:none" on <th> elements;
-    // skeleton rows are never processed by DT, so without this their tds for
-    // hidden columns remain visible and inflate the table width on narrow viewports,
-    // pushing the ctx-btn column out of view.
-    const theadThs = tbody
-        .closest('table')
-        ?.querySelectorAll(':scope > thead > tr > th')
-    if (theadThs) {
-        const hiddenIdxs = []
-        theadThs.forEach((th, i) => {
-            if (th.style.display === 'none') hiddenIdxs.push(i)
-        })
-        if (hiddenIdxs.length) {
-            tbody.querySelectorAll('.dt-skeleton-row').forEach((tr) => {
-                hiddenIdxs.forEach((colIdx) => {
-                    const td = tr.children[colIdx]
-                    if (td) td.style.display = 'none'
-                })
-            })
-        }
-    }
 }
+
+// Skeleton rows use a single td spanning every visible column (with
+// max-width: 0 in table.css) so they are geometrically inert: they can never
+// add phantom columns or feed fake content widths into the browser's table
+// layout. DataTables responsive hides columns through several mechanisms
+// (inline styles, the dtr-hidden class, header colspan adjustments), so
+// per-column skeleton tds can't reliably track it — a spanning cell sidesteps
+// the problem entirely.
+function visibleColumnCount(table) {
+    const ths = table?.querySelectorAll(':scope > thead > tr > th')
+    let span = 0
+    ths?.forEach((th) => {
+        if (getComputedStyle(th).display !== 'none') span += 1
+    })
+    return span || 1
+}
+
+// Responsive may hide/show columns while skeletons are on screen; re-sync
+// colspans after the resize settles so stale skeleton rows can't extend the
+// column grid past the real rows.
+window.addEventListener(
+    'resize',
+    debounce(() => {
+        const tables = new Set()
+        document
+            .querySelectorAll('tr.dt-skeleton-row')
+            .forEach((tr) => tables.add(tr.closest('table')))
+        tables.forEach((table) => {
+            const span = visibleColumnCount(table)
+            table
+                .querySelectorAll(':scope > tbody > .dt-skeleton-row > td')
+                .forEach((td) => (td.colSpan = span))
+        })
+    }, 250),
+    { passive: true }
+)
 
 /**
  * Submit a modal form as JSON via jQuery AJAX.
