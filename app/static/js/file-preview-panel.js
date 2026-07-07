@@ -438,6 +438,7 @@ function buildIconHero(srcIcon, reverse = false) {
 
 panelClose?.addEventListener('click', closePanelInternal)
 backdrop?.addEventListener('click', closePanelInternal)
+document.addEventListener('preview-panel:close', closePanelInternal)
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && isOpen) closePanelInternal()

@@ -75,7 +75,9 @@ function domLoaded() {
 
     if (window.innerWidth >= sidebarMaxWidth) {
         if (!Cookies.get('previewSidebar')) {
-            openSidebar()
+            requestAnimationFrame(() =>
+                requestAnimationFrame(() => openSidebar())
+            )
         }
     }
     initPreviewImage()
