@@ -14,6 +14,8 @@ $('#closeSidebar').on('click', closeSidebarCallback)
 
 const sidebarMaxWidth = 768
 const noAutoClose = previewSidebar[0]?.dataset.noAutoClose === 'true'
+const sidebarCookieKey =
+    previewSidebar[0]?.dataset.cookieKey || 'previewSidebar'
 let sidebarOpen = false
 
 function getSidebarMode() {
@@ -74,7 +76,7 @@ function domLoaded() {
     applySidebarMode(getSidebarMode())
 
     if (window.innerWidth >= sidebarMaxWidth) {
-        if (!Cookies.get('previewSidebar')) {
+        if (!Cookies.get(sidebarCookieKey)) {
             requestAnimationFrame(() =>
                 requestAnimationFrame(() => openSidebar())
             )
@@ -209,7 +211,7 @@ function initPreviewImage() {
 function checkSize() {
     if (window.innerWidth >= sidebarMaxWidth) {
         if (!sidebarOpen) {
-            if (!Cookies.get('previewSidebar')) {
+            if (!Cookies.get(sidebarCookieKey)) {
                 openSidebar()
             }
         }
@@ -220,12 +222,12 @@ function checkSize() {
 
 function openSidebarCallback() {
     openSidebar()
-    Cookies.remove('previewSidebar')
+    Cookies.remove(sidebarCookieKey)
 }
 
 function closeSidebarCallback() {
     closeSidebar()
-    Cookies.set('previewSidebar', 'disabled', { expires: 365 })
+    Cookies.set(sidebarCookieKey, 'disabled', { expires: 365 })
 }
 
 function openSidebar() {
@@ -248,6 +250,9 @@ function closeSidebar() {
 
 window.openSidebar = openSidebar
 window.closeSidebar = closeSidebar
+window.tryOpenSidebar = () => {
+    if (!Cookies.get(sidebarCookieKey)) openSidebar()
+}
 
 function renameFile(data) {
     let fileName = document.getElementsByClassName('card-title')[0]

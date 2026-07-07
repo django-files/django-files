@@ -90,6 +90,17 @@ const EVENT_HANDLERS = {
     'bulk-remove-file-albums': () => {},
     'set-file-albums': () => {},
     'set-file-tags': () => {},
+    // handled by chat.js; suppress the unhandled-event warning
+    'chat-message': () => {},
+    'chat-history': () => {},
+    'chat-viewers': () => {},
+    'chat-viewer-joined': () => {},
+    'chat-viewer-left': () => {},
+    'chat-settings': () => {},
+    'chat-retry': () => {},
+    'chat-name-set': () => {},
+    'chat-message-cleanup': () => {},
+    'chat-banned': () => {},
 }
 
 function initListener() {

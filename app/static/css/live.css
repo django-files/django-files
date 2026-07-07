@@ -1,46 +1,5 @@
-/* Live page specific styles - fixed sidebar layout */
+/* Live page specific styles */
 
-/* Context menu pill button — same chrome as openbtn/closebtn. */
-.context-placement {
-    position: absolute;
-    top: 12px;
-    right: 60px;
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    line-height: 1;
-    color: currentcolor;
-    cursor: pointer;
-    background: var(--preview-chrome-bg);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border: 1px solid var(--preview-border-color);
-    border-radius: 999px;
-    opacity: 0.7;
-    z-index: 10;
-    transition:
-        opacity 0.2s 0.2s,
-        background-color 0.2s;
-    will-change: opacity, background-color;
-}
-
-.context-placement:hover,
-.context-placement[aria-expanded='true'] {
-    opacity: 1;
-    background: var(--preview-chrome-bg-hover);
-}
-
-.sidebar-open .context-placement {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s 0s;
-}
-
-/* Fix height constraint to prevent video component height changes */
 html,
 body {
     overflow: hidden;
@@ -53,167 +12,24 @@ main {
 .live-container {
     height: 100%;
     position: relative;
-    transition: padding-right 0.5s ease;
+    transition: padding-right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .live-container.sidebar-push-open {
-    padding-right: 350px;
+    padding-right: 360px;
 }
 
-/* Sidebar - overlays the video so internal content is never crushed */
-#preview-sidebar.sidebar {
-    position: absolute !important;
-    right: 0;
-    top: 0;
-    height: 100%;
-    width: 350px;
-    min-width: 350px;
-    overflow: hidden;
-    transform: translateX(100%);
-    transition: transform 0.5s ease;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border-top-left-radius: 9px;
-    border-bottom-left-radius: 9px;
-    border-top: 1px ridge rgba(66 69 73 / 100%);
-    border-left: 1px ridge rgba(66 69 73 / 100%);
-    border-bottom: 1px ridge rgba(66 69 73 / 100%);
-}
-
-/* Sidebar when open (overlay mode) */
-#preview-sidebar.sidebar.open {
-    transform: translateX(0);
-}
-
-/* Sidebar base styles */
-.sidebar {
-    width: 0;
-    top: 0;
-    right: 0;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    overflow: hidden;
-    transition: 0.5s;
-    padding-top: 40px;
-    border-top-right-radius: 9px;
-    border-bottom-right-radius: 9px;
-    border-top: 1px ridge rgba(66 69 73 / 100%);
-    border-right: 1px ridge rgba(66 69 73 / 100%);
-    border-bottom: 1px ridge rgba(66 69 73 / 100%);
-    z-index: 11;
-}
-
-.sidebar > a {
-    padding: 8px 8px 8px 32px;
-    color: var(--bs-secondary-color);
-    transition: color 0.2s ease;
-}
-
-.sidebar > a:hover {
-    color: var(--bs-body-color);
-}
-
-/* Sidebar header buttons — pill style matching the preview sidebar chrome. */
-.sidebar .closebtn,
-.sidebar-mode-toggle,
-.sidebar .sidebar-app-btn,
-.sidebar .sidebar-context-btn {
-    position: absolute;
-    top: 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    margin: 0;
-    font-size: 1rem;
-    line-height: 1;
-    color: currentcolor;
-    cursor: pointer;
-    text-decoration: none;
-    background: var(--preview-chrome-bg);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border: 1px solid var(--preview-border-color);
-    border-radius: 999px;
-    opacity: 0.7;
-    transition: all 0.2s ease;
-    will-change: background-color, opacity;
-}
-
-.sidebar .closebtn {
-    right: 12px;
-}
-
-.sidebar-mode-toggle {
-    right: 60px;
-}
-
-.sidebar .sidebar-app-btn {
-    right: 108px;
-}
-
-.sidebar .sidebar-context-btn {
-    left: 12px;
-    z-index: 2;
-}
-
-.sidebar .closebtn:hover,
-.sidebar-mode-toggle:hover,
-.sidebar .sidebar-app-btn:hover,
-.sidebar .sidebar-context-btn:hover,
-.sidebar .sidebar-context-btn[aria-expanded='true'] {
-    opacity: 1;
-    color: var(--bs-body-color);
-    background: var(--preview-chrome-bg-hover);
-}
-
-/* Open button — tab anchored to the right edge, matching preview chrome. */
-.openbtn {
-    position: absolute;
-    top: 12px;
-    right: 0;
-    height: 38px;
-    padding: 0 16px 0 18px;
-    font-size: 1rem;
-    line-height: 1;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: currentcolor;
-    background: var(--preview-chrome-bg);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border: 1px solid var(--preview-border-color);
-    border-right: none;
-    border-radius: 999px 0 0 999px;
-    opacity: 0.7;
-    transition: all 0.2s ease;
+/* Elevate chrome above video.js player overlays */
+.openbtn,
+.context-placement {
     z-index: 10;
 }
 
-.openbtn:hover {
-    opacity: 1;
-    background: var(--preview-chrome-bg-hover);
+#preview-sidebar.sidebar {
+    z-index: 11;
 }
 
-[data-bs-theme='dark'] .sidebar {
-    background-color: rgba(0, 0, 0, 0.65);
-}
-
-[data-bs-theme='light'] .sidebar {
-    background-color: rgba(220, 220, 225, 0.72);
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-bs-theme='light']) .sidebar {
-        background-color: rgba(0, 0, 0, 0.65);
-    }
-}
-
-/* Sidebar card styling */
+/* Sidebar card sizing with chat present */
 .sidebar-card {
     overflow-y: hidden;
     max-height: calc(100vh - 120px);
