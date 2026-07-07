@@ -370,11 +370,14 @@ div.dataTables_wrapper span.select-item {
 /*
  * Hide every DT layout row that isn't the table itself, plus the DT search,
  * info, paging, and length controls (belt-and-braces alongside the row rule).
+ * .dt-autosize must stay visible: it's the zero-height sentinel DataTables
+ * watches with a ResizeObserver to drive columns.adjust() + responsive
+ * recalc — hiding it freezes column visibility at its load-time state.
  */
 :is(#files-table-section, #streams-table-section) .table-narrow-msg,
 :is(#files-table-section, #streams-table-section)
     .dt-container
-    > *:not(.dt-layout-table),
+    > *:not(.dt-layout-table, .dt-autosize),
 :is(#files-table-section, #streams-table-section) .dt-search,
 :is(#files-table-section, #streams-table-section) .dt-info,
 :is(#files-table-section, #streams-table-section) .dt-paging,
