@@ -197,9 +197,9 @@ function renderActions(_data, type, row) {
     return ''
 }
 
-const _shortSkeletonUrlWidths = isHome
-    ? [90, 120, 80, 130, 100, 110]
-    : [180, 220, 150, 240, 170, 200]
+// Shimmer width as a % of the flexible url slot — percentages scale with the
+// container, so one array covers both the home card and the full page
+const _shortSkeletonUrlWidths = [62, 76, 52, 84, 58, 70]
 
 // Visible columns differ by mode (id is the always-hidden ordering column):
 // /shorts/: select, short, url, views, max, actions

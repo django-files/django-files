@@ -326,14 +326,14 @@ function renderAlbumLink(data, type, row, _meta) {
     return albumLinkElem
 }
 
-// Varied name-column widths so skeleton rows look realistic
-const _albumSkeletonNameWidths = [140, 175, 110, 195, 130, 160, 105, 155]
+// Shimmer width as a % of the flexible name slot, cycled per row
+const _albumSkeletonNameWidths = [66, 82, 55, 92, 62, 76, 52, 73]
 
 // Column widths [px] matching the 8 header columns:
 // select, name, date, expire, file_count, views, maxviews, ctx-btn
 const _albumSkeletonSpecs = [
     { w: 18 },
-    { w: 0 }, // name — varied per row
+    { w: 0 }, // name — flexible slot, absorbs leftover row width
     { w: 128 },
     { w: 14 },
     { w: 20 },

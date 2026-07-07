@@ -170,14 +170,21 @@ table.display .dt-skeleton-row td {
     vertical-align: middle;
 }
 
-/* Spreads the shimmer blocks across the row, approximating the real column
- * layout (first block left, ctx-btn block at the right edge). Blocks shrink
- * on narrow viewports instead of forcing the row wider. */
+/* Lays the shimmer blocks out like real columns: fixed blocks are locked at
+ * their px width (flex-shrink: 0) with a constant gap so they align vertically
+ * across rows, while .dt-skeleton-flex slots (w: 0 in the specs) grow like the
+ * real fill column, pushing the trailing blocks (ctx-btn) to the right edge.
+ * Narrow viewports drop whole blocks via data-col visibility (mirroring
+ * DataTables responsive) instead of shrinking them. */
 .dt-skeleton-track {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 1rem;
+}
+
+.dt-skeleton-flex {
+    flex: 1 1 auto;
+    min-width: 40px;
 }
 
 .dt-skeleton-cell {
@@ -186,8 +193,7 @@ table.display .dt-skeleton-row td {
     background-color: var(--bs-secondary-bg, #e9ecef);
     overflow: hidden;
     height: 14px;
-    flex: 0 1 auto;
-    min-width: 4px;
+    flex: 0 0 auto;
 }
 
 .dt-skeleton-cell::after {

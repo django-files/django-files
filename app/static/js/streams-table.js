@@ -305,16 +305,16 @@ function getActions(data, type, row) {
     return data
 }
 
-// Varied widths for name and title columns so skeleton rows look realistic
-const _streamSkeletonNameWidths = [110, 140, 95, 155, 120, 145]
-const _streamSkeletonTitleWidths = [160, 200, 130, 185, 150, 175]
+// Shimmer width as a % of each flexible slot, cycled per row
+const _streamSkeletonNameWidths = [55, 70, 48, 78, 60, 73]
+const _streamSkeletonTitleWidths = [64, 80, 52, 74, 60, 70]
 
 // Column widths [px] matching the 11 header columns:
 // checkbox, name, title, owner, status, started, ended, views, pw, public, actions
 const _streamSkeletonSpecs = [
     { w: 18 },
-    { w: 0 }, // name — varied per row
-    { w: 0 }, // title — varied per row
+    { w: 0 }, // name — flexible slot
+    { w: 0 }, // title — flexible slot
     { w: 80 },
     { w: 58 },
     { w: 112 },
