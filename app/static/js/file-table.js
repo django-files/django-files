@@ -86,7 +86,7 @@ const dataTablesOptions = {
             targets: 3,
             defaultContent: '',
             responsivePriority: 10,
-            width: '80px',
+            width: '110px',
             className: 'text-nowrap',
         },
         {
@@ -103,7 +103,7 @@ const dataTablesOptions = {
             render: getExifDate,
             defaultContent: '',
             responsivePriority: 6,
-            width: '155px',
+            width: '175px',
             className: 'text-nowrap',
         },
         {
@@ -346,9 +346,9 @@ const _fileSkeletonSpecs = [
     { w: 18 },
     { w: 0 }, // name — flexible slot, absorbs leftover row width
     { w: 58 },
-    { w: 88 }, // mime
+    { w: 60 }, // mime
     { w: 112 }, // date
-    { w: 138 }, // exif date
+    { w: 100 }, // exif date
     { w: 14 },
     { w: 14 },
     { w: 14 },
