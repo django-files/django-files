@@ -86,7 +86,7 @@ const dataTablesOptions = {
             targets: 3,
             defaultContent: '',
             responsivePriority: 10,
-            width: '80px',
+            width: '110px',
             className: 'text-nowrap',
         },
         {
@@ -103,7 +103,7 @@ const dataTablesOptions = {
             render: getExifDate,
             defaultContent: '',
             responsivePriority: 6,
-            width: '155px',
+            width: '175px',
             className: 'text-nowrap',
         },
         {
@@ -338,16 +338,17 @@ export function renameFileRow(data) {
     fileName.innerHTML = data.name
 }
 
-// Varied name-column widths so rows look realistic rather than uniform
-const skeletonNameWidths = [130, 165, 210, 145, 180, 195, 120, 155, 200, 140]
+// Shimmer width as a % of the flexible name slot, cycled per row so names
+// look organic without shifting the fixed blocks out of column alignment
+const skeletonNameWidths = [62, 78, 95, 68, 85, 92, 58, 73, 94, 66]
 
 const _fileSkeletonSpecs = [
     { w: 18 },
-    { w: 0 }, // name — varied per row
+    { w: 0 }, // name — flexible slot, absorbs leftover row width
     { w: 58 },
-    { w: 60 },
-    { w: 112 },
-    { w: 100 },
+    { w: 60 }, // mime
+    { w: 112 }, // date
+    { w: 100 }, // exif date
     { w: 14 },
     { w: 14 },
     { w: 14 },

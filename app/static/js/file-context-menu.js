@@ -73,7 +73,14 @@ confirmDelete?.on('click', function (event) {
     const pks = [$(this).data('pks')]
     console.debug(`#confirm-delete.click: pks[]: ${pks}`, event)
     socket.send(JSON.stringify({ method: 'delete-files', pks: pks }))
-    if (window.location.pathname.startsWith('/u/')) {
+    if (
+        document
+            .getElementById('file-preview-panel')
+            ?.classList.contains('open')
+    ) {
+        fileDeleteModal.modal('hide')
+        document.dispatchEvent(new CustomEvent('preview-panel:close'))
+    } else if (window.location.pathname.startsWith('/u/')) {
         window.location.replace('/files')
     } else {
         fileDeleteModal.modal('hide')

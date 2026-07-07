@@ -157,15 +157,34 @@ td.dt-empty:empty {
     min-height: 480px;
 }
 
-/* Table skeleton rows — override the td overflow/max-width rules so cells show.
+/* Table skeleton rows — a single td spans all visible columns per row.
+ * max-width: 0 keeps the cell from contributing any content width to the
+ * auto table layout, so skeleton rows can never shift real column widths.
  * Needs table.display in the selector to beat the specificity of
  * table.display > tbody > tr > td (specificity 14) that sets padding-top/bottom. */
 table.display .dt-skeleton-row td {
-    max-width: none;
-    overflow: visible;
+    max-width: 0;
+    overflow: hidden;
     padding-top: 0.3rem;
     padding-bottom: 0.3rem;
     vertical-align: middle;
+}
+
+/* Lays the shimmer blocks out like real columns: fixed blocks are locked at
+ * their px width (flex-shrink: 0) with a constant gap so they align vertically
+ * across rows, while .dt-skeleton-flex slots (w: 0 in the specs) grow like the
+ * real fill column, pushing the trailing blocks (ctx-btn) to the right edge.
+ * Narrow viewports drop whole blocks via data-col visibility (mirroring
+ * DataTables responsive) instead of shrinking them. */
+.dt-skeleton-track {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.dt-skeleton-flex {
+    flex: 1 1 auto;
+    min-width: 40px;
 }
 
 .dt-skeleton-cell {
@@ -174,6 +193,7 @@ table.display .dt-skeleton-row td {
     background-color: var(--bs-secondary-bg, #e9ecef);
     overflow: hidden;
     height: 14px;
+    flex: 0 0 auto;
 }
 
 .dt-skeleton-cell::after {
@@ -350,11 +370,14 @@ div.dataTables_wrapper span.select-item {
 /*
  * Hide every DT layout row that isn't the table itself, plus the DT search,
  * info, paging, and length controls (belt-and-braces alongside the row rule).
+ * .dt-autosize must stay visible: it's the zero-height sentinel DataTables
+ * watches with a ResizeObserver to drive columns.adjust() + responsive
+ * recalc — hiding it freezes column visibility at its load-time state.
  */
 :is(#files-table-section, #streams-table-section) .table-narrow-msg,
 :is(#files-table-section, #streams-table-section)
     .dt-container
-    > *:not(.dt-layout-table),
+    > *:not(.dt-layout-table, .dt-autosize),
 :is(#files-table-section, #streams-table-section) .dt-search,
 :is(#files-table-section, #streams-table-section) .dt-info,
 :is(#files-table-section, #streams-table-section) .dt-paging,

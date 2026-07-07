@@ -360,56 +360,92 @@ function initDtLang(dt, emptyMsg, zeroMsg) {
  * Build skeleton placeholder rows into a DataTable tbody.
  * @param {HTMLElement} tbody
  * @param {number} count
- * @param {Array<{w: number, h?: number}>} specs - per-column width/height
- * @param {Object<number, number[]>} varWidths - colIndex -> array of widths cycled per row
+ * @param {Array<{w: number, h?: number}>} specs - per-column width/height;
+ *   w: 0 marks a flexible slot that absorbs leftover row width (the fill
+ *   column, e.g. name), keeping the fixed blocks column-aligned across rows
+ * @param {Object<number, number[]>} varWidths - colIndex -> percentage widths
+ *   cycled per row for the shimmer inside a flexible (w: 0) slot
  */
 function buildSkeletonRows(tbody, count, specs, varWidths = {}) {
     tbody
         .querySelectorAll('td.dt-empty')
         .forEach((cell) => cell.closest('tr')?.remove())
     tbody.querySelectorAll('.dt-skeleton-row').forEach((el) => el.remove())
+    const vis = columnVisibility(tbody.closest('table'))
+    const colSpan = vis.filter(Boolean).length || 1
     const fragment = document.createDocumentFragment()
     for (let i = 0; i < count; i++) {
         const tr = document.createElement('tr')
         tr.className = 'dt-skeleton-row'
+        const td = document.createElement('td')
+        td.colSpan = colSpan
+        const track = document.createElement('div')
+        track.className = 'dt-skeleton-track'
         specs.forEach(({ w, h = 14 }, colIndex) => {
-            const td = document.createElement('td')
             const cell = document.createElement('div')
             cell.className = 'dt-skeleton-cell'
-            const widths = varWidths[colIndex]
-            const width = widths ? widths[i % widths.length] : w
-            cell.style.width = `${width}px`
             cell.style.height = `${h}px`
-            td.appendChild(cell)
-            tr.appendChild(td)
+            const widths = varWidths[colIndex]
+            let block = cell
+            if (w === 0) {
+                block = document.createElement('div')
+                block.className = 'dt-skeleton-flex'
+                cell.style.width = `${widths ? widths[i % widths.length] : 100}%`
+                block.appendChild(cell)
+            } else {
+                cell.style.width = `${w}px`
+            }
+            block.dataset.col = colIndex
+            if (vis[colIndex] === false) block.style.display = 'none'
+            track.appendChild(block)
         })
+        td.appendChild(track)
+        tr.appendChild(td)
         fragment.appendChild(tr)
     }
     tbody.appendChild(fragment)
-
-    // Mirror DataTables responsive column hiding onto skeleton tds.
-    // DataTables hides columns with inline style="display:none" on <th> elements;
-    // skeleton rows are never processed by DT, so without this their tds for
-    // hidden columns remain visible and inflate the table width on narrow viewports,
-    // pushing the ctx-btn column out of view.
-    const theadThs = tbody
-        .closest('table')
-        ?.querySelectorAll(':scope > thead > tr > th')
-    if (theadThs) {
-        const hiddenIdxs = []
-        theadThs.forEach((th, i) => {
-            if (th.style.display === 'none') hiddenIdxs.push(i)
-        })
-        if (hiddenIdxs.length) {
-            tbody.querySelectorAll('.dt-skeleton-row').forEach((tr) => {
-                hiddenIdxs.forEach((colIdx) => {
-                    const td = tr.children[colIdx]
-                    if (td) td.style.display = 'none'
-                })
-            })
-        }
-    }
 }
+
+// Skeleton rows use a single td spanning every visible column (with
+// max-width: 0 in table.css) so they are geometrically inert: they can never
+// add phantom columns or feed fake content widths into the browser's table
+// layout. DataTables responsive hides columns through several mechanisms
+// (inline styles, the dtr-hidden class, header colspan adjustments), so the
+// thead's computed display is the one reliable signal. Skeleton blocks carry
+// data-col so they can be eliminated exactly like the real columns.
+function columnVisibility(table) {
+    const ths = table?.querySelectorAll(':scope > thead > tr > th')
+    const vis = []
+    ths?.forEach((th) => vis.push(getComputedStyle(th).display !== 'none'))
+    return vis
+}
+
+// Responsive may hide/show columns while skeletons are on screen; re-sync
+// colspans and block visibility after the resize settles so skeleton rows
+// keep matching the real column grid.
+window.addEventListener(
+    'resize',
+    debounce(() => {
+        const tables = new Set()
+        document
+            .querySelectorAll('tr.dt-skeleton-row')
+            .forEach((tr) => tables.add(tr.closest('table')))
+        tables.forEach((table) => {
+            const vis = columnVisibility(table)
+            const span = vis.filter(Boolean).length || 1
+            table
+                .querySelectorAll(':scope > tbody > .dt-skeleton-row > td')
+                .forEach((td) => (td.colSpan = span))
+            table
+                .querySelectorAll('.dt-skeleton-track > [data-col]')
+                .forEach((el) => {
+                    el.style.display =
+                        vis[el.dataset.col] === false ? 'none' : ''
+                })
+        })
+    }, 250),
+    { passive: true }
+)
 
 /**
  * Submit a modal form as JSON via jQuery AJAX.

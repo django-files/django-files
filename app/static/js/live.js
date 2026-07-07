@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     player.on('error', (error) => {
         console.error('Video player error:', error)
-        window.openSidebar()
+        window.tryOpenSidebar?.()
     })
 })
 
