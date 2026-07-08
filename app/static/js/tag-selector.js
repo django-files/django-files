@@ -29,9 +29,13 @@ export function initTagSelector(container, socket) {
     const addTagInput = container.querySelector('.tag-search-input')
     const addTagContainer = container.querySelector('.tag-add-container')
 
+    function hideInput() {
+        addTagContainer.classList.add('d-none')
+    }
+
     function closeInput() {
         addTagInput.value = ''
-        addTagContainer.classList.add('d-none')
+        hideInput()
     }
 
     function submitTag() {
@@ -49,7 +53,6 @@ export function initTagSelector(container, socket) {
 
     addToTagButton?.addEventListener('click', () => {
         addTagContainer.classList.remove('d-none')
-        addTagInput.value = ''
         addTagInput.focus()
     })
 
@@ -62,7 +65,9 @@ export function initTagSelector(container, socket) {
         }
     })
 
-    addTagInput?.addEventListener('blur', () => setTimeout(closeInput, 150))
+    addTagInput?.addEventListener('blur', () => {
+        if (!addTagInput.value.trim()) setTimeout(hideInput, 150)
+    })
 
     function handleTagUpdate(data) {
         if (data.removed) {
