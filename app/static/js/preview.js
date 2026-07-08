@@ -167,10 +167,19 @@ function initPreviewImage() {
     if (!img) return
     const skeleton = document.getElementById('img-skeleton')
 
+    if (skeleton?.dataset.thumb) {
+        const thumb = new Image()
+        thumb.onload = () => {
+            skeleton.style.backgroundImage = `url(${thumb.src})`
+            skeleton.classList.add('has-thumb')
+        }
+        thumb.src = skeleton.dataset.thumb
+    }
+
     const onLoad = () => {
         img.style.opacity = '1'
         if (skeleton) {
-            skeleton.style.transition = 'opacity 0.3s'
+            skeleton.style.transition = 'opacity 0.4s ease-out'
             skeleton.style.opacity = '0'
             skeleton.addEventListener(
                 'transitionend',
