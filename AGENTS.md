@@ -73,10 +73,10 @@ ALWAYS use the `npm run *` command
 
 The file preview UI runs in **two separate rendering contexts** that share templates but use different JS/CSS entry points. Changes to preview behaviour almost always need to be applied in both.
 
-| Context | URL pattern | Template | JS entry | CSS loaded |
-|---|---|---|---|---|
-| **Full-page embed** | `/file/<name>` | `embed/preview.html` | `static/js/preview.js` | `css/preview.css` |
-| **Gallery panel** | `/file/<name>?panel=1` (AJAX) | `embed/preview_panel.html` | `static/js/file-preview-panel.js` | `css/preview.css` + `css/file-preview-panel.css` |
+| Context             | URL pattern                   | Template                   | JS entry                          | CSS loaded                                       |
+| ------------------- | ----------------------------- | -------------------------- | --------------------------------- | ------------------------------------------------ |
+| **Full-page embed** | `/file/<name>`                | `embed/preview.html`       | `static/js/preview.js`            | `css/preview.css`                                |
+| **Gallery panel**   | `/file/<name>?panel=1` (AJAX) | `embed/preview_panel.html` | `static/js/file-preview-panel.js` | `css/preview.css` + `css/file-preview-panel.css` |
 
 Shared pieces:
 
