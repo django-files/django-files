@@ -1021,13 +1021,17 @@ function addGalleryImage(file, top = false) {
     img.addEventListener(
         'load',
         () => {
-            skeleton.style.transition = 'opacity 0.3s'
-            skeleton.style.opacity = '0'
-            skeleton.addEventListener(
-                'transitionend',
-                () => skeleton.remove(),
-                { once: true }
-            )
+            // Defer one frame so the decoded image is composited before the
+            // skeleton starts fading — prevents a gray flash on first paint.
+            requestAnimationFrame(() => {
+                skeleton.style.transition = 'opacity 0.3s'
+                skeleton.style.opacity = '0'
+                skeleton.addEventListener(
+                    'transitionend',
+                    () => skeleton.remove(),
+                    { once: true }
+                )
+            })
         },
         { once: true }
     )
@@ -1061,7 +1065,7 @@ function fadeOutSkeleton(skeleton) {
 function revealVideoThumb(src, img, skeleton) {
     img.onload = () => {
         img.style.visibility = ''
-        fadeOutSkeleton(skeleton)
+        requestAnimationFrame(() => fadeOutSkeleton(skeleton))
     }
     img.src = src
 }
