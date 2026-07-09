@@ -133,9 +133,22 @@ export function openPanel(fileUrl, originEl = null) {
             }
 
             panelContent.innerHTML = html
+
+            // Seed the skeleton with the gallery thumbnail that's already in
+            // the browser cache so initPanelImage can show it instantly rather
+            // than waiting for a fresh ?thumb=1 network request.
+            const panelSkeleton = panelContent.querySelector('#img-skeleton')
+            if (panelSkeleton && originEl) {
+                const galleryThumb = originEl.querySelector('img')
+                if (galleryThumb?.complete && galleryThumb.naturalWidth > 0) {
+                    panelSkeleton.dataset.thumb = galleryThumb.src
+                }
+            }
+
             initPanelContent(panelContent)
 
-            // Images: initPanelImage holds the hero until decode() completes.
+            // Images: hero is dismissed immediately inside initPanelImage so
+            //         sidebar/buttons are visible while the full image loads.
             // Videos: hold the hero until canplay fires (video frame is ready),
             //         with a 4s fallback so a slow connection doesn't hang.
             // Everything else (text…): dismiss immediately.
@@ -462,15 +475,16 @@ function initPanelContent(container) {
     // Wire all context menu actions for dynamically injected elements
     initContextMenu(container)
 
-    // Initialize main content immediately (blocking)
+    // Initialize main content and sidebar immediately (blocking) so chrome is
+    // interactive as soon as the HTML lands, independent of image load time.
     initPanelImage(container)
+    initPanelSidebar(container)
 
     // Initialize secondary features non-blocking (use requestIdleCallback)
     if ('requestIdleCallback' in window) {
         requestIdleCallback(
             () => {
                 if (!isOpen) return
-                initPanelSidebar(container)
                 const handleAlbumBadges = initPanelAlbums(container)
                 const handleTagUpdate = initPanelTags(container)
 
@@ -494,7 +508,6 @@ function initPanelContent(container) {
         // Fallback for browsers without requestIdleCallback
         setTimeout(() => {
             if (!isOpen) return
-            initPanelSidebar(container)
             const handleAlbumBadges = initPanelAlbums(container)
             const handleTagUpdate = initPanelTags(container)
 
@@ -524,23 +537,42 @@ function initPanelImage(container) {
     // Capture at call time so a rapid re-open can't dismiss the wrong hero
     const heroEl = currentHeroEl
 
-    // Set image to be invisible initially to prevent layout shift
     img.style.opacity = '0'
-    img.style.transition = 'opacity 0.25s ease-in-out'
+    img.style.transition = 'opacity 0.3s ease-in-out'
+
+    // Show the gallery thumbnail in the skeleton so the image area stays
+    // informative while the full image downloads.
+    if (skeleton?.dataset.thumb) {
+        const thumbImg = new Image()
+        thumbImg.onload = () => {
+            skeleton.style.backgroundImage = `url(${thumbImg.src})`
+            skeleton.classList.add('has-thumb')
+        }
+        thumbImg.src = skeleton.dataset.thumb
+    }
+
+    // Dismiss the hero now so sidebar/buttons are immediately visible.
+    // The skeleton covers the image area while the full image decodes.
+    dismissHero(heroEl)
 
     const onLoad = () => {
-        // Drop the skeleton instantly while the hero is still at full opacity so
-        // the grey background can't bleed through during the hero fade-out.
-        if (skeleton) skeleton.remove()
-
         requestAnimationFrame(() => {
             img.style.opacity = '1'
-            dismissHero(heroEl)
+            if (skeleton) {
+                skeleton.style.transition = 'opacity 0.3s ease-out'
+                skeleton.style.opacity = '0'
+                skeleton.addEventListener(
+                    'transitionend',
+                    () => skeleton.remove(),
+                    {
+                        once: true,
+                    }
+                )
+            }
         })
     }
 
     const onError = () => {
-        dismissHero(heroEl)
         if (skeleton) skeleton.remove()
         img.style.display = 'none'
         const wrapper = img.closest('.preview-wrapper')
@@ -637,12 +669,14 @@ function initPanelSidebar(container) {
         localStorage.setItem('panelSidebarClosed', '1')
     })
 
-    // Auto-open on wider screens unless user explicitly closed it
+    // Auto-open on wider screens unless user explicitly closed it.
+    // Defer by two frames so the browser paints the closed state first and the
+    // CSS slide/push transition actually plays instead of snapping into place.
     if (
         window.innerWidth >= 768 &&
         !localStorage.getItem('panelSidebarClosed')
     ) {
-        openSidebar()
+        requestAnimationFrame(() => requestAnimationFrame(() => openSidebar()))
     }
 }
 

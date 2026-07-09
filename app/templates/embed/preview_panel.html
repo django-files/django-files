@@ -18,7 +18,8 @@
 
     {% if render == 'image' %}
         <div class="preview-wrapper">
-            <div class="img-skeleton" id="img-skeleton"></div>
+            <div class="img-skeleton" id="img-skeleton"
+                 {% if file.thumb %}data-thumb="{% url 'home:url-raw-redirect' file.name %}?thumb=1"{% endif %}></div>
             <img src="{{ static_url }}" alt="{{ file.name }}" class="preview"
                  style="opacity: 0; transition: opacity 0.3s ease;">
         </div>

@@ -70,6 +70,43 @@
     background: var(--bs-body-bg);
 }
 
+/* When the panel skeleton shows the blurred gallery thumbnail as a placeholder,
+ * suppress the glisten animation and show the image contained + blurred. */
+.preview-panel-root .img-skeleton.has-thumb {
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.preview-panel-root .img-skeleton.has-thumb::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 1;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--bs-primary) 30%,
+        var(--bs-primary) 70%,
+        transparent
+    );
+    background-size: 40% 100%;
+    background-repeat: no-repeat;
+    animation: img-loading-sweep 1.6s ease-in-out infinite;
+}
+
+@keyframes img-loading-sweep {
+    from {
+        background-position: -50% 0;
+    }
+    to {
+        background-position: 150% 0;
+    }
+}
+
 /* ---- Loading / error state ---- */
 
 .file-preview-panel-loading {
