@@ -24,6 +24,46 @@ $('.ctx-album').on('click', ctxAlbumFile)
 
 export const faLockOpen = document.querySelector('div.d-none > .fa-lock-open')
 
+// The sidebar's context menu (#sidebarContext) lives inside `.sidebar`, which
+// has its own `backdrop-filter` plus a `transform` (for its slide-in
+// animation). That combination makes `.sidebar` both a new stacking context
+// and the containing block for the menu, so the dropdown's own
+// `backdrop-filter` can only ever sample the sidebar's already-blurred,
+// near-opaque background — never the real page behind it — which reads as
+// "no blur." Reparenting the menu to <body> while it's open escapes that
+// context so it blurs the actual page content, matching the glass effect
+// everywhere else. Moved back on hide so template structure stays intact.
+//
+// In the gallery panel, <body> is also where `.file-preview-panel` itself
+// stacks (z-index: 1040) — once the menu is a body-level sibling instead of
+// nested inside the low z-index sidebar, its own z-index (1005, see
+// main.css) no longer clears the panel, so it renders hidden behind it. Bump
+// it past the panel while reparented.
+const sidebarCtxMenuOrigin = new WeakMap()
+
+document.addEventListener('show.bs.dropdown', (event) => {
+    const toggle = event.target
+    if (toggle.id !== 'sidebarContext') return
+    const wrapper = toggle.nextElementSibling
+    if (!wrapper?.classList.contains('ctx-menu')) return
+    sidebarCtxMenuOrigin.set(toggle, {
+        wrapper,
+        parent: wrapper.parentNode,
+        next: wrapper.nextSibling,
+    })
+    wrapper.classList.add('ctx-menu-portal')
+    document.body.appendChild(wrapper)
+})
+
+document.addEventListener('hidden.bs.dropdown', (event) => {
+    const toggle = event.target
+    const origin = sidebarCtxMenuOrigin.get(toggle)
+    if (!origin) return
+    sidebarCtxMenuOrigin.delete(toggle)
+    origin.wrapper.classList.remove('ctx-menu-portal')
+    origin.parent.insertBefore(origin.wrapper, origin.next)
+})
+
 // Expire Form
 
 fileExpireModal.on('shown.bs.modal', function (event) {
