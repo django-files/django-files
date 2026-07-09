@@ -67,6 +67,13 @@ html {
     box-shadow: var(--glass-shadow);
 }
 
+/* Applied to the sidebar context menu's wrapper while it's reparented to
+ * <body> (see file-context-menu.js) so it clears .file-preview-panel
+ * (z-index: 1040) instead of stacking behind it. */
+.ctx-menu-portal {
+    z-index: 1045;
+}
+
 .hvr-grow {
     display: inline-block;
     vertical-align: middle;
