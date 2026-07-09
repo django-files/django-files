@@ -736,7 +736,7 @@ def url_route_view(request, filename):
         "static_url": file.get_url(view=session_view),
         "static_meta_url": file.get_meta_static_url(),
         "file_avatar_url": file.user.get_avatar_url(),
-        "full_context": request.user.is_authenticated and request.user == file.user,
+        "full_context": request.user.is_authenticated and (request.user == file.user or request.user.is_superuser),
         "native_app_arg": (
             f"djangofiles://preview/?url={site_url}"
             f"&file_name={quote(file.name)}&file_id={file.id}"

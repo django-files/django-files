@@ -98,6 +98,15 @@
                 </span>
             </div>
         </row>
+        {% elif file.tags.all %}
+        <row class="pt-3">
+            <h6 class="pt-3">Tags</h6>
+            <div class="tag-container">
+                {% for ft in file.tags.all %}
+                    <span class="badge rounded-pill ps-2 file-tag">{{ ft.tag }}</span>
+                {% endfor %}
+            </div>
+        </row>
         {% elif tags %}
         <row class="pt-3">
             <h6 class="pt-3">Tags</h6>

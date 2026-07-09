@@ -538,7 +538,6 @@ function initPanelImage(container) {
     const heroEl = currentHeroEl
 
     img.style.opacity = '0'
-    img.style.transition = 'opacity 0.3s ease-in-out'
 
     // Show the gallery thumbnail in the skeleton so the image area stays
     // informative while the full image downloads.
@@ -551,23 +550,44 @@ function initPanelImage(container) {
         thumbImg.src = skeleton.dataset.thumb
     }
 
+    // Skeleton stays visible (covers the image area during the hero fade) but
+    // shimmer animation is suppressed until loading takes longer than 500ms.
+    let shimmerTimer = null
+    if (skeleton) {
+        skeleton.classList.add('no-shimmer')
+        shimmerTimer = setTimeout(
+            () => skeleton.classList.remove('no-shimmer'),
+            500
+        )
+    }
+
     // Dismiss the hero now so sidebar/buttons are immediately visible.
     // The skeleton covers the image area while the full image decodes.
+    const heroDismissedAt = Date.now()
     dismissHero(heroEl)
+
+    const fadeOutSkeleton = () => {
+        if (!skeleton) return
+        clearTimeout(shimmerTimer)
+        skeleton.remove()
+    }
 
     const onLoad = () => {
         requestAnimationFrame(() => {
+            // Snap image to full opacity instantly so the skeleton (thumbnail)
+            // fades out over a fully-opaque image — no dark background bleed.
             img.style.opacity = '1'
-            if (skeleton) {
-                skeleton.style.transition = 'opacity 0.3s ease-out'
-                skeleton.style.opacity = '0'
-                skeleton.addEventListener(
-                    'transitionend',
-                    () => skeleton.remove(),
-                    {
-                        once: true,
-                    }
-                )
+            // If the image decoded while the hero was still fading (common for
+            // cached images), wait for the hero's 0.25s fade to finish before
+            // fading the skeleton. Overlapping fades create a layered
+            // semi-transparent look as the hero's solid background dissolves.
+            const elapsed = Date.now() - heroDismissedAt
+            const heroFadeMs = 250
+            const wait = Math.max(0, heroFadeMs + 30 - elapsed)
+            if (wait > 0) {
+                setTimeout(fadeOutSkeleton, wait)
+            } else {
+                fadeOutSkeleton()
             }
         })
     }
