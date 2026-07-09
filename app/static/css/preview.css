@@ -238,7 +238,7 @@ body.no-top-navbar .preview-floating-hamburger {
  * .card (incl. the opaque preview behind it) could out-rank the button —
  * dropping to `contain: style` here lets .sidebar itself escape and cover
  * just that corner, leaving the rest of the preview unaffected. */
-@media (max-width: 410px) {
+@media (width <= 410px) {
     .card {
         contain: style;
     }

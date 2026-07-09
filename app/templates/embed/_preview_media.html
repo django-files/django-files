@@ -1,0 +1,32 @@
+{% if render == 'image' %}
+    <div class="preview-wrapper">
+        <div class="img-skeleton" id="img-skeleton"
+             {% if file.thumb %}data-thumb="{% url 'home:url-raw-redirect' file.name %}?thumb=1"{% endif %}></div>
+        <img src="{{ static_url }}" alt="{{ file.name }}" class="preview"
+             style="opacity: 0; transition: opacity {{ media_transition }} ease;">
+    </div>
+{% elif render == 'video' %}
+    <div class="preview-wrapper">
+        <video class="preview" controls>
+            <source src="{{ static_url }}" type="video/mp4">
+            <track kind="captions" src="" default>
+            Your browser does not support the video tag.
+        </video>
+    </div>
+{% elif render == 'audio' %}
+    <div class="position-absolute top-50 start-0 end-0 translate-middle-y px-3">
+        <audio class="w-100" controls>
+            <source src="{{ static_url }}" type="{{ file.mime }}">
+            Your browser does not support the audio tag.
+        </audio>
+    </div>
+{% elif file.mime == 'application/pdf' %}
+    <embed src="{{ static_url }}" type="application/pdf" frameBorder="0" scrolling="auto" width="100%" class="h-100 pt-3 mt-5">
+{% elif render in 'text,code' %}
+    <pre class="pt-3 ps-3 w-100"><code id="text-preview"><i class="fas fa-spinner fa-pulse"></i></code></pre>
+{% elif render == 'markdown' %}
+    <div id="md-rendered" class="markdown-body overflow-auto h-100 px-4 py-3{% if md_extra_class %} {{ md_extra_class }}{% endif %}">{{ markdown|safe }}<!-- //NOSONAR --></div>
+    <pre id="md-source" class="pt-3 ps-3 w-100 d-none"><code id="text-preview"></code></pre>
+{% else %}
+    <div class="d-flex align-items-center justify-content-center h-100 w-100"><i class="fa-10x fa-solid fa-file"></i></div>
+{% endif %}

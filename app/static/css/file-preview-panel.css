@@ -156,7 +156,7 @@
  * preview.css. Both containment layers wrapping .sidebar here need
  * relaxing; this rule must stay below .file-preview-panel .card above
  * since they tie on specificity and this one needs to win. */
-@media (max-width: 410px) {
+@media (width <= 410px) {
     .file-preview-panel-content,
     .file-preview-panel .card {
         contain: style;
