@@ -107,6 +107,13 @@
     }
 }
 
+/* Shimmer is suppressed for the first 500ms; the class is removed by JS if
+ * loading takes longer, allowing the animations to start naturally. */
+.preview-panel-root .img-skeleton.no-shimmer::before,
+.preview-panel-root .img-skeleton.no-shimmer::after {
+    animation: none;
+}
+
 /* ---- Loading / error state ---- */
 
 .file-preview-panel-loading {

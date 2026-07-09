@@ -758,29 +758,9 @@ async function initGallery() {
 
 function showSkeletons() {
     if (!nextPage || gallerySearchTerm.trim()) return
-
     if (params.get('view') !== 'gallery') {
         showTableSkeletons(40)
-        return
     }
-
-    const fragment = new DocumentFragment()
-    for (let i = 0; i < 32; i++) {
-        const outer = tmplOuter.cloneNode(false)
-        outer.id = `gallery-skeleton-${i}`
-        outer.classList.add('m-1')
-
-        const inner = tmplInner.cloneNode(false)
-        inner.style.aspectRatio = '1 / 1'
-
-        const shimmer = document.createElement('div')
-        shimmer.classList.add('img-skeleton')
-
-        inner.appendChild(shimmer)
-        outer.appendChild(inner)
-        fragment.appendChild(outer)
-    }
-    galleryContainer.appendChild(fragment)
 }
 
 function hideSkeletons() {
@@ -1021,13 +1001,17 @@ function addGalleryImage(file, top = false) {
     img.addEventListener(
         'load',
         () => {
-            skeleton.style.transition = 'opacity 0.3s'
-            skeleton.style.opacity = '0'
-            skeleton.addEventListener(
-                'transitionend',
-                () => skeleton.remove(),
-                { once: true }
-            )
+            // Defer one frame so the decoded image is composited before the
+            // skeleton starts fading — prevents a gray flash on first paint.
+            requestAnimationFrame(() => {
+                skeleton.style.transition = 'opacity 0.3s'
+                skeleton.style.opacity = '0'
+                skeleton.addEventListener(
+                    'transitionend',
+                    () => skeleton.remove(),
+                    { once: true }
+                )
+            })
         },
         { once: true }
     )
@@ -1061,7 +1045,7 @@ function fadeOutSkeleton(skeleton) {
 function revealVideoThumb(src, img, skeleton) {
     img.onload = () => {
         img.style.visibility = ''
-        fadeOutSkeleton(skeleton)
+        requestAnimationFrame(() => fadeOutSkeleton(skeleton))
     }
     img.src = src
 }
