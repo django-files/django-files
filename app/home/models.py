@@ -101,7 +101,6 @@ class Files(models.Model):
                         settings.SIGNED_DOWNLOAD_URL_TTL_SECONDS - 60,
                     )
                 return download_url
-            # local file storage: skip cache, signed url is cheap
             url = self.file.url + "?download=true"
             return abs_url + url + self._sign_nginx_url(self.file.url).replace("?", "&")
         # ######## Generic Static URL ########
@@ -115,7 +114,17 @@ class Files(models.Model):
                     int(settings.SIGNED_URL_TTL_SECONDS * settings.SIGNED_URL_REFRESH_RATIO),
                 )
             return url
-        return abs_url + self.file.url + self._sign_nginx_url(self.file.url)
+        # Cache the nginx-signed URL so repeated renders (e.g. re-opening the
+        # gallery panel) return the same URL string and the browser can cache
+        # the image response instead of treating each signed URL as a new resource.
+        if (signed := cache.get(f"file.urlcache.raw.{self.pk}")) is None:
+            signed = self.file.url + self._sign_nginx_url(self.file.url)
+            cache.set(
+                f"file.urlcache.raw.{self.pk}",
+                signed,
+                int(settings.SIGNED_URL_TTL_SECONDS * settings.SIGNED_URL_REFRESH_RATIO),
+            )
+        return abs_url + signed
 
     def get_meta_static_url(self) -> str:
         """
@@ -161,9 +170,6 @@ class Files(models.Model):
         return gallery_url if use_s3() else abs_url + gallery_url
 
     def _sign_nginx_url(self, uri: str) -> str:
-        if use_s3():
-            # guard against using this in cloud settings, or at least not s3 for now
-            return ""
         return sign_nginx_urls(uri)
 
     def _get_password_query_string(self) -> str:

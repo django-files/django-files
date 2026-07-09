@@ -69,6 +69,26 @@ ALWAYS use the `npm run *` command
 - Bundled/vendor assets copied to `app/static/dist/` by `npm install` / `npx gulp`
 - API docs source: `swagger.yaml`
 
+## Embed / file preview — two distinct contexts
+
+The file preview UI runs in **two separate rendering contexts** that share templates but use different JS/CSS entry points. Changes to preview behaviour almost always need to be applied in both.
+
+| Context             | URL pattern                   | Template                   | JS entry                          | CSS loaded                                       |
+| ------------------- | ----------------------------- | -------------------------- | --------------------------------- | ------------------------------------------------ |
+| **Full-page embed** | `/file/<name>`                | `embed/preview.html`       | `static/js/preview.js`            | `css/preview.css`                                |
+| **Gallery panel**   | `/file/<name>?panel=1` (AJAX) | `embed/preview_panel.html` | `static/js/file-preview-panel.js` | `css/preview.css` + `css/file-preview-panel.css` |
+
+Shared pieces:
+
+- `embed/_preview_sidebar.html` — sidebar HTML included by both templates.
+- `css/preview.css` — loaded by `gallery.html` **and** `embed/preview.html`, so rules here affect **both** contexts. Use `.preview-panel-root` scope in `file-preview-panel.css` for panel-only overrides.
+
+Key differences:
+
+- Full-page embed: JS initialises on `DOMContentLoaded` in `preview.js`.
+- Gallery panel: HTML is fetched via AJAX (`?panel=1`) and injected into `#previewPanelContent`; `initPanelContent()` is called after injection — there is no `DOMContentLoaded`. Do not rely on `DOMContentLoaded` for panel init.
+- The gallery panel hero (`panel-hero-thumb`) is a full-viewport opaque overlay that animates the already-cached gallery thumbnail into position. It must be dismissed promptly in `initPanelImage()` — holding it until the full image loads blocks all sidebar/button chrome.
+
 ## High-value files to open first
 
 - `app/djangofiles/settings.py`

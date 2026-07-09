@@ -89,9 +89,10 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
          {% if render == 'markdown' %}data-raw-url="{% url 'home:url-raw-redirect' file.file.name %}{% if file.password %}?password={{ file.password }}{% endif %}"{% endif %}>
         {% if render == 'image' %}
             <div class="preview-wrapper">
-                <div class="img-skeleton" id="img-skeleton"></div>
+                <div class="img-skeleton" id="img-skeleton"
+                     {% if file.thumb %}data-thumb="{% url 'home:url-raw-redirect' file.name %}?thumb=1"{% endif %}></div>
                 <img src="{{ static_url }}" alt="{{ file.name }}" class="preview"
-                     style="opacity: 0; transition: opacity 0.3s ease;">
+                     style="opacity: 0; transition: opacity 0.4s ease;">
             </div>
         {% elif render == 'video' %}
             <div class="preview-wrapper">
