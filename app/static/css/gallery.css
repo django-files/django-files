@@ -180,6 +180,7 @@
     inset: 0;
     border-radius: 2px;
     pointer-events: none;
+    background-color: #000;
 }
 
 .gallery-inner .gallery-no-thumb {
