@@ -272,7 +272,7 @@ body.no-top-navbar .preview-floating-hamburger {
 .img-skeleton {
     position: absolute;
     inset: 0;
-    background: var(--bs-tertiary-bg);
+    background: transparent;
     border-radius: 0;
     transition: opacity 0.25s ease-out;
     opacity: 1;
