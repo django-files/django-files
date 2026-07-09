@@ -758,29 +758,9 @@ async function initGallery() {
 
 function showSkeletons() {
     if (!nextPage || gallerySearchTerm.trim()) return
-
     if (params.get('view') !== 'gallery') {
         showTableSkeletons(40)
-        return
     }
-
-    const fragment = new DocumentFragment()
-    for (let i = 0; i < 32; i++) {
-        const outer = tmplOuter.cloneNode(false)
-        outer.id = `gallery-skeleton-${i}`
-        outer.classList.add('m-1')
-
-        const inner = tmplInner.cloneNode(false)
-        inner.style.aspectRatio = '1 / 1'
-
-        const shimmer = document.createElement('div')
-        shimmer.classList.add('img-skeleton')
-
-        inner.appendChild(shimmer)
-        outer.appendChild(inner)
-        fragment.appendChild(outer)
-    }
-    galleryContainer.appendChild(fragment)
 }
 
 function hideSkeletons() {
