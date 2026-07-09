@@ -232,6 +232,22 @@ body.no-top-navbar .preview-floating-hamburger {
     padding-right: 360px;
 }
 
+/* Below ~410px the open sidebar reaches the top-left corner button
+ * (hamburger or panel close, both z-index 1032/10). .card's containment
+ * normally traps .sidebar's z-index as one atomic layer, so only the whole
+ * .card (incl. the opaque preview behind it) could out-rank the button —
+ * dropping to `contain: style` here lets .sidebar itself escape and cover
+ * just that corner, leaving the rest of the preview unaffected. */
+@media (width <= 410px) {
+    .card {
+        contain: style;
+    }
+
+    .sidebar {
+        z-index: 1033;
+    }
+}
+
 .preview-wrapper {
     position: relative;
     flex: 1;

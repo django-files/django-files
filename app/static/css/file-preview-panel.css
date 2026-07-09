@@ -139,9 +139,8 @@
     flex: 1;
     overflow: hidden;
     position: relative;
-    /* Establish a stacking context so preview-panel children (sidebar, buttons)
-       are contained and don't bleed onto the gallery page. */
-    isolation: isolate;
+    /* .file-preview-panel (fixed, z-index 1040) already isolates this from
+       the gallery page; no isolation needed here too. */
     contain: layout style;
 }
 
@@ -151,4 +150,15 @@
     height: 100%;
     overflow: hidden;
     contain: layout style paint;
+}
+
+/* Below ~410px the open sidebar covers the panel close button — see
+ * preview.css. Both containment layers wrapping .sidebar here need
+ * relaxing; this rule must stay below .file-preview-panel .card above
+ * since they tie on specificity and this one needs to win. */
+@media (width <= 410px) {
+    .file-preview-panel-content,
+    .file-preview-panel .card {
+        contain: style;
+    }
 }
