@@ -184,8 +184,7 @@ export function initAlbumSelector(container, socket) {
             const addGroup = container.querySelector('.addto-album-group')
             for (const [key, value] of Object.entries(data.added_to)) {
                 const span = document.createElement('span')
-                span.className =
-                    'badge rounded-pill text-bg-primary ps-2 file-album-active'
+                span.className = 'badge rounded-pill ps-2 file-album-active'
                 span.id = `album-${key}`
                 span.innerHTML = `
                     <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album=${key}" title="${value}">${value} </a>
@@ -245,8 +244,7 @@ export function initBulkAlbumSelector(container, socket, pks) {
         }
         const addGroup = albumContainer.querySelector('.addto-album-group')
         const span = document.createElement('span')
-        span.className =
-            'badge rounded-pill text-bg-primary ps-2 file-album-active'
+        span.className = 'badge rounded-pill ps-2 file-album-active'
         span.id = `album-${id}`
         span.innerHTML = `
             <a class="text-reset text-decoration-none p-0" href="/files/?view=gallery&album=${id}" title="${name}">${name} </a>

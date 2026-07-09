@@ -832,7 +832,7 @@ body.navbar-snapping header {
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(13, 110, 253, 0.35);
-    color: #fff;
+    color: var(--bs-body-color);
 }
 
 .addto-album-group .album-search-input {
@@ -846,7 +846,7 @@ body.navbar-snapping header {
 }
 
 .addto-album-group .album-search-input::placeholder {
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--bs-secondary-color);
 }
 
 .badge.file-album-active {
@@ -859,7 +859,7 @@ body.navbar-snapping header {
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(13, 110, 253, 0.35);
-    color: #fff;
+    color: var(--bs-body-color);
 }
 
 .badge.file-album-active a {
@@ -868,7 +868,7 @@ body.navbar-snapping header {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: #fff;
+    color: var(--bs-body-color);
 }
 
 .badge.file-album-active .remove-album {
@@ -891,11 +891,11 @@ body.navbar-snapping header {
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(13, 202, 240, 0.35);
-    color: #fff; /* NOSONAR: badge only appears on dark glass sidebar; contrast is fine in context */
+    color: var(--bs-body-color);
 }
 
 .badge.file-tag-active .remove-tag {
-    color: #fff; /* NOSONAR */
+    color: var(--bs-body-color);
     flex-shrink: 0;
 }
 
@@ -906,7 +906,7 @@ body.navbar-snapping header {
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(13, 202, 240, 0.35);
-    color: #fff; /* NOSONAR */
+    color: var(--bs-body-color);
 }
 
 .addto-tag-group .tag-search-input {
@@ -920,5 +920,5 @@ body.navbar-snapping header {
 }
 
 .addto-tag-group .tag-search-input::placeholder {
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--bs-secondary-color);
 }
