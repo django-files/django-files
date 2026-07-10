@@ -18,6 +18,7 @@ from home.util.webhooks import (
     EVENT_FILE_UPLOAD,
     EVENT_TEST,
     EVENT_USER_CREATED,
+    SITE_ONLY_EVENTS,
     WEBHOOK_EVENTS,
     build_album_payload,
     build_discord_embed,
@@ -187,21 +188,52 @@ class WebhookTaskTests(WebhookBaseTestCase):
         dispatch_webhook_event(EVENT_FILE_UPLOAD, self.user.pk, {})
         mock_delay.assert_not_called()
 
-    @patch("home.tasks.fire_webhook.delay")
-    def test_dispatch_admin_event_staff_only(self, mock_delay):
-        self.create_webhook(events=[EVENT_USER_CREATED])
-        staff = CustomUser.objects.create_user(
+    def _create_staff_user(self):
+        return CustomUser.objects.create_user(
             username="staffuser",
             email="staff@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
             is_staff=True,
         )
+
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_site_only_event_requires_site_scope(self, mock_delay):
+        # user-scoped hooks never receive site-only events, even when subscribed
+        self.create_webhook(events=[EVENT_USER_CREATED])
+        staff = self._create_staff_user()
         mock_delay.reset_mock()
-        staff_hook = Webhook.objects.create(
-            owner=staff, name="Admin Hook", url=CUSTOM_URL, events=[EVENT_USER_CREATED]
+        site_hook = Webhook.objects.create(
+            owner=staff,
+            name="Site Hook",
+            url=CUSTOM_URL,
+            scope=Webhook.SCOPE_SITE,
+            events=[EVENT_USER_CREATED],
         )
         dispatch_webhook_event(EVENT_USER_CREATED, None, {"id": 1})
-        mock_delay.assert_called_once_with(staff_hook.pk, EVENT_USER_CREATED, {"id": 1})
+        mock_delay.assert_called_once_with(site_hook.pk, EVENT_USER_CREATED, {"id": 1})
+
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_site_scope_receives_all_users_events(self, mock_delay):
+        staff = self._create_staff_user()
+        mock_delay.reset_mock()
+        site_hook = Webhook.objects.create(
+            owner=staff,
+            name="Site Hook",
+            url=CUSTOM_URL,
+            scope=Webhook.SCOPE_SITE,
+            events=[EVENT_FILE_UPLOAD],
+        )
+        # event owner is self.user, not the hook owner
+        dispatch_webhook_event(EVENT_FILE_UPLOAD, self.user.pk, {"id": 1})
+        mock_delay.assert_called_once_with(site_hook.pk, EVENT_FILE_UPLOAD, {"id": 1})
+
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_user_scope_skips_other_users_events(self, mock_delay):
+        staff = self._create_staff_user()
+        Webhook.objects.create(owner=staff, name="Staff User Hook", url=CUSTOM_URL, events=[EVENT_FILE_UPLOAD])
+        mock_delay.reset_mock()
+        dispatch_webhook_event(EVENT_FILE_UPLOAD, self.user.pk, {"id": 1})
+        mock_delay.assert_not_called()
 
     @patch("home.tasks.send_webhook")
     def test_fire_webhook_success(self, mock_send):
@@ -305,12 +337,13 @@ class WebhookApiTests(WebhookBaseTestCase):
     def test_patch(self):
         webhook = self.create_webhook()
         url = reverse("api:webhook-detail", kwargs={"webhook_id": webhook.pk})
-        body = {"name": "Renamed", "events": list(WEBHOOK_EVENTS), "active": False}
+        user_events = [event for event in WEBHOOK_EVENTS if event not in SITE_ONLY_EVENTS]
+        body = {"name": "Renamed", "events": user_events, "active": False}
         response = self.client.patch(url, json.dumps(body), content_type="application/json", **self._auth(self.token))
         self.assertEqual(response.status_code, 200)
         webhook.refresh_from_db()
         self.assertEqual(webhook.name, "Renamed")
-        self.assertEqual(webhook.events, list(WEBHOOK_EVENTS))
+        self.assertEqual(webhook.events, user_events)
         self.assertFalse(webhook.active)
 
     def test_patch_invalid(self):
@@ -339,6 +372,55 @@ class WebhookApiTests(WebhookBaseTestCase):
         args, _ = mock_send.call_args
         self.assertEqual(args[0], webhook)
         self.assertEqual(args[1], EVENT_TEST)
+
+    def test_create_site_scope_requires_superuser(self):
+        body = {"name": "Site", "url": CUSTOM_URL, "scope": "site"}
+        response = self.client.post(
+            reverse("api:webhooks"), json.dumps(body), content_type="application/json", **self._auth(self.token)
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.post(
+            reverse("api:webhooks"),
+            json.dumps(body),
+            content_type="application/json",
+            **self._auth(self.superuser_token),
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["scope"], "site")
+
+    def test_user_scope_rejects_site_only_events(self):
+        body = {"name": "X", "url": CUSTOM_URL, "events": ["user.created"]}
+        response = self.client.post(
+            reverse("api:webhooks"),
+            json.dumps(body),
+            content_type="application/json",
+            **self._auth(self.superuser_token),
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("site scope", response.json()["error"])
+
+    def test_patch_cannot_drop_scope_with_site_only_events(self):
+        webhook = Webhook.objects.create(
+            owner=self.superuser,
+            name="Site Hook",
+            url=CUSTOM_URL,
+            scope=Webhook.SCOPE_SITE,
+            events=["user.created"],
+        )
+        url = reverse("api:webhook-detail", kwargs={"webhook_id": webhook.pk})
+        response = self.client.patch(
+            url, json.dumps({"scope": "user"}), content_type="application/json", **self._auth(self.superuser_token)
+        )
+        self.assertEqual(response.status_code, 400)
+        response = self.client.patch(
+            url,
+            json.dumps({"scope": "user", "events": [EVENT_FILE_UPLOAD]}),
+            content_type="application/json",
+            **self._auth(self.superuser_token),
+        )
+        self.assertEqual(response.status_code, 200)
+        webhook.refresh_from_db()
+        self.assertEqual(webhook.scope, Webhook.SCOPE_USER)
 
     @patch("api.views.send_webhook")
     def test_test_fire_not_owner(self, mock_send):

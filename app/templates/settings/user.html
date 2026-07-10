@@ -353,6 +353,9 @@
                                             {% else %}
                                                 <i class="fa-solid fa-globe me-1"></i>Custom
                                             {% endif %}
+                                            {% if data.scope == 'site' %}
+                                                <span class="badge text-bg-warning" title="Receives events for all users">Site</span>
+                                            {% endif %}
                                         </td>
                                         <td class="d-none d-md-table-cell">
                                             <a class="clip link-body-emphasis text-decoration-none" role="button"
@@ -380,6 +383,7 @@
                                                data-webhook-id="{{ data.id }}"
                                                data-webhook-name="{{ data.name }}"
                                                data-webhook-type="{{ data.webhook_type }}"
+                                               data-webhook-scope="{{ data.scope }}"
                                                data-webhook-url="{{ data.url }}"
                                                data-webhook-secret="{{ data.secret }}"
                                                data-webhook-active="{{ data.active|yesno:'true,false' }}"

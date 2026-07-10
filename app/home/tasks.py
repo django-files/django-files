@@ -22,7 +22,7 @@ from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
 from home.util.tags import sync_file_tags
 from home.util.video import video_metadata_processor, video_thumbnail_processor
-from home.util.webhooks import ADMIN_EVENTS, send_webhook
+from home.util.webhooks import SITE_ONLY_EVENTS, send_webhook
 from oauth.models import CustomUser
 from packaging import version
 from PIL import UnidentifiedImageError
@@ -597,16 +597,17 @@ def send_push_live(stream_name: str, ttl: int = 1800):
 def dispatch_webhook_event(event_key, owner_pk, payload_data):
     """Fan an event out to all subscribed webhooks.
 
-    owner_pk is None for admin-scoped events, which go to staff-owned webhooks only.
-    Event membership is checked in Python because JSONField __contains is not
+    Site-scoped webhooks (staff-owned) receive events for all users. User-scoped
+    webhooks only receive events for their owner's actions, and never the
+    SITE_ONLY_EVENTS (owner_pk is None when those are dispatched). Event
+    membership is checked in Python because JSONField __contains is not
     supported on SQLite.
     """
     log.info("dispatch_webhook_event: %s owner=%s", event_key, owner_pk)
-    if event_key in ADMIN_EVENTS or owner_pk is None:
-        webhooks = Webhook.objects.filter(active=True, owner__is_staff=True)
-    else:
-        webhooks = Webhook.objects.filter(active=True, owner_id=owner_pk)
-    for webhook in webhooks:
+    query = Q(scope=Webhook.SCOPE_SITE, owner__is_staff=True)
+    if event_key not in SITE_ONLY_EVENTS and owner_pk is not None:
+        query |= Q(scope=Webhook.SCOPE_USER, owner_id=owner_pk)
+    for webhook in Webhook.objects.filter(query, active=True):
         if event_key in webhook.events:
             fire_webhook.delay(webhook.pk, event_key, payload_data)
 

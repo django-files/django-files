@@ -630,6 +630,13 @@ components:
           type: string
           enum: [custom, discord]
           example: custom
+        scope:
+          type: string
+          enum: [user, site]
+          example: user
+          description: >
+            user = events for the owner's actions only; site = events for all
+            users (superuser only). user.created / user.deleted require site scope.
         url:
           type: string
           example: https://example.com/hooks/django-files
@@ -670,6 +677,11 @@ components:
           type: string
           enum: [custom, discord]
           default: custom
+        scope:
+          type: string
+          enum: [user, site]
+          default: user
+          description: site scope requires superuser
         url:
           type: string
           example: https://example.com/hooks/django-files

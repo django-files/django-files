@@ -12,6 +12,9 @@ log = logging.getLogger("app")
 WEBHOOK_TYPE_CUSTOM = "custom"
 WEBHOOK_TYPE_DISCORD = "discord"
 
+WEBHOOK_SCOPE_USER = "user"
+WEBHOOK_SCOPE_SITE = "site"
+
 EVENT_FILE_UPLOAD = "file.upload"
 EVENT_ALBUM_CREATED = "album.created"
 EVENT_ALBUM_UPDATED = "album.updated"
@@ -34,8 +37,8 @@ WEBHOOK_EVENTS = {
     EVENT_USER_LOGIN: "User Login",
 }
 
-# events dispatched to staff-owned webhooks only (owner_pk is None at dispatch)
-ADMIN_EVENTS = {EVENT_USER_CREATED, EVENT_USER_DELETED}
+# events that only site-scoped webhooks may subscribe to (owner_pk is None at dispatch)
+SITE_ONLY_EVENTS = {EVENT_USER_CREATED, EVENT_USER_DELETED}
 
 DISCORD_TITLES = {
     EVENT_FILE_UPLOAD: "New File Upload",

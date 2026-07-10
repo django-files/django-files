@@ -21,7 +21,7 @@ from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from home.util.misc import redact_log
-from home.util.webhooks import WEBHOOK_EVENTS
+from home.util.webhooks import SITE_ONLY_EVENTS, WEBHOOK_EVENTS
 from oauth.models import CustomUser, UserInvites, superuser_exists
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
@@ -108,6 +108,7 @@ def user_view(request):
         context = {
             "webhooks": webhooks,
             "webhook_events": WEBHOOK_EVENTS,
+            "webhook_site_only_events": sorted(SITE_ONLY_EVENTS),
             "timezones": sorted(zoneinfo.available_timezones()),
             "default_upload_name_formats": CustomUser.UploadNameFormats.choices,
             "user_avatar_choices": CustomUser.UserAvatarChoices.choices,

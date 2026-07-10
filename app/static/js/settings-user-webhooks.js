@@ -13,6 +13,7 @@ document.getElementById('addWebhookBtn')?.addEventListener('click', () => {
     document.getElementById('webhook-id').value = ''
     document.getElementById('webhookModalLabel').textContent = 'Add Webhook'
     updateSecretVisibility()
+    updateSiteOnlyEvents()
     bootstrap.Modal.getOrCreateInstance(webhookModalEl).show()
 })
 
@@ -27,6 +28,8 @@ document.querySelectorAll('.editWebhookBtn').forEach((el) =>
         document.getElementById('webhook-secret').value = data.webhookSecret
         document.getElementById('webhook-active').checked =
             data.webhookActive === 'true'
+        const scopeEl = document.getElementById('webhook-scope')
+        if (scopeEl) scopeEl.checked = data.webhookScope === 'site'
         const events = data.webhookEvents ? data.webhookEvents.split(',') : []
         document
             .querySelectorAll('.webhook-event-check')
@@ -34,6 +37,7 @@ document.querySelectorAll('.editWebhookBtn').forEach((el) =>
         document.getElementById('webhookModalLabel').textContent =
             'Edit Webhook'
         updateSecretVisibility()
+        updateSiteOnlyEvents()
         bootstrap.Modal.getOrCreateInstance(webhookModalEl).show()
     })
 )
@@ -41,6 +45,10 @@ document.querySelectorAll('.editWebhookBtn').forEach((el) =>
 document
     .getElementById('webhook-type')
     ?.addEventListener('change', updateSecretVisibility)
+
+document
+    .getElementById('webhook-scope')
+    ?.addEventListener('change', updateSiteOnlyEvents)
 
 webhookForm?.addEventListener('submit', async (event) => {
     event.preventDefault()
@@ -52,9 +60,11 @@ webhookForm?.addEventListener('submit', async (event) => {
         secret: document.getElementById('webhook-secret').value,
         active: document.getElementById('webhook-active').checked,
         events: [...document.querySelectorAll('.webhook-event-check')]
-            .filter((check) => check.checked)
+            .filter((check) => check.checked && !check.disabled)
             .map((check) => check.value),
     }
+    const scopeEl = document.getElementById('webhook-scope')
+    if (scopeEl) body.scope = scopeEl.checked ? 'site' : 'user'
     const url = webhookID ? `/api/webhooks/${webhookID}/` : '/api/webhooks/'
     const method = webhookID ? 'PATCH' : 'POST'
     const response = await fetch(url, {
@@ -126,6 +136,17 @@ function updateSecretVisibility() {
     document
         .getElementById('webhook-secret-group')
         .classList.toggle('d-none', !isCustom)
+}
+
+function updateSiteOnlyEvents() {
+    // site-only events require a site-scoped hook; the switch only exists for superusers
+    const isSite = document.getElementById('webhook-scope')?.checked ?? false
+    document
+        .querySelectorAll('.webhook-event-check[data-site-only]')
+        .forEach((check) => {
+            check.disabled = !isSite
+            if (!isSite) check.checked = false
+        })
 }
 
 async function webhookErrorToast(response) {

@@ -60,6 +60,7 @@ from home.util.webhooks import (
     EVENT_STREAM_LIVE,
     EVENT_STREAM_OFFLINE,
     EVENT_TEST,
+    SITE_ONLY_EVENTS,
     WEBHOOK_EVENTS,
     build_stream_payload,
     build_test_payload,
@@ -583,6 +584,7 @@ def _webhook_response(webhook: Webhook) -> dict:
         "id": webhook.id,
         "name": webhook.name,
         "webhook_type": webhook.webhook_type,
+        "scope": webhook.scope,
         "url": webhook.url,
         "secret": webhook.secret,
         "active": webhook.active,
@@ -611,6 +613,12 @@ def _clean_webhook_type(value) -> tuple:
     return value, None
 
 
+def _clean_webhook_scope(value) -> tuple:
+    if value not in (Webhook.SCOPE_USER, Webhook.SCOPE_SITE):
+        return None, "Invalid scope"
+    return value, None
+
+
 def _clean_webhook_events(value) -> tuple:
     valid = isinstance(value, list) and all(isinstance(event, str) and event in WEBHOOK_EVENTS for event in value)
     if not valid:
@@ -635,6 +643,7 @@ _WEBHOOK_FIELD_CLEANERS = {
     "name": _clean_webhook_name,
     "url": _clean_webhook_url,
     "webhook_type": _clean_webhook_type,
+    "scope": _clean_webhook_scope,
     "events": _clean_webhook_events,
     "secret": _clean_webhook_secret,
     "active": _clean_webhook_active,
@@ -658,6 +667,17 @@ def _validate_webhook_data(data: dict, partial: bool = False) -> tuple[dict, Opt
     return fields, None
 
 
+def _webhook_scope_error(request, fields: dict, current: Optional[Webhook] = None) -> Optional[str]:
+    """Cross-field rules for the final webhook state (submitted fields over current values)."""
+    scope = fields.get("scope", current.scope if current else Webhook.SCOPE_USER)
+    events = fields.get("events", current.events if current else [])
+    if scope == Webhook.SCOPE_SITE and not request.user.is_superuser:
+        return "Site-scoped webhooks require superuser"
+    if scope == Webhook.SCOPE_USER and (site_only := [event for event in events if event in SITE_ONLY_EVENTS]):
+        return f"Events require site scope: {', '.join(site_only)}"
+    return None
+
+
 def _get_webhook_or_error(request, webhook_id: int):
     webhook = Webhook.objects.filter(pk=webhook_id).first()
     if not webhook or (webhook.owner_id != request.user.id and not request.user.is_superuser):
@@ -676,6 +696,8 @@ def webhooks_view(request):
     if request.method == "POST":
         data = get_json_body(request)
         fields, error = _validate_webhook_data(data)
+        if not error:
+            error = _webhook_scope_error(request, fields)
         if error:
             return JsonResponse({"error": error}, status=400)
         webhook = Webhook.objects.create(owner=request.user, **fields)
@@ -701,6 +723,8 @@ def webhook_detail_view(request, webhook_id: int):
     if request.method == "PATCH":
         data = get_json_body(request)
         fields, error = _validate_webhook_data(data, partial=True)
+        if not error:
+            error = _webhook_scope_error(request, fields, current=webhook)
         if error:
             return JsonResponse({"error": error}, status=400)
         for key, value in fields.items():

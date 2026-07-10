@@ -20,8 +20,8 @@ admin.site.site_header = "Django Files Administration"
 @admin.register(Webhook)
 class WebhookAdmin(admin.ModelAdmin):
     model = Webhook
-    list_display = ("id", "owner", "name", "webhook_type", "events", "active", "created_at")
-    list_filter = ("webhook_type", "active", "owner")
+    list_display = ("id", "owner", "name", "webhook_type", "scope", "events", "active", "created_at")
+    list_filter = ("webhook_type", "scope", "active", "owner")
     search_fields = ("name", "url", "owner__username")
     ordering = ("-created_at",)
     actions = ["fire_test_event"]
