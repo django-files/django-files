@@ -1,0 +1,59 @@
+name: django-files
+services:
+  django-files:
+    image: ghcr.io/django-files/django-files:latest
+    container_name: django-files
+    restart: unless-stopped
+    network_mode: bridge
+    ports:
+      - target: 80
+        published: "8580"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: /DATA/AppData/$AppID/media
+        target: /data/media
+    x-casaos:
+      envs: []
+      ports:
+        - container: "80"
+          description:
+            en_US: Web UI HTTP port
+      volumes:
+        - container: /data/media
+          description:
+            en_US: >-
+              File storage and database directory. Point this at a folder on
+              your NFS share (mount the share first under
+              Storage/External Devices, then browse to it here) to keep
+              uploads on your NAS storage instead of the system disk.
+      id: io.github.django-files.django-files
+      main: django-files
+      author: django-files
+      category: Utilities
+      developer: django-files
+      icon: https://raw.githubusercontent.com/django-files/django-files/master/app/static/images/logo.png
+      tagline:
+        en_US: Self-hosted file sharing for ShareX, Flameshot, and more
+      title:
+        en_US: Django Files
+      description:
+        en_US: >-
+          A self-hosted file manager and sharing server with built-in
+          support for ShareX, Flameshot, and the iOS/Android clients.
+          Ships as a single container with no required configuration -
+          the admin account is created from a one-time setup wizard on
+          first visit, and the app secret is generated and stored
+          automatically.
+      tips:
+        before_install:
+          en_US: >-
+            No configuration is required to install. If you want uploads
+            stored on network storage, mount your NFS share first under
+            Storage/External Devices, then set the "File storage" volume
+            path above to a folder on that mount before starting the app.
+      architectures:
+        - amd64
+        - arm64
+      port_map: "8580"
+      index: /
