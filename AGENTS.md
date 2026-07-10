@@ -31,7 +31,7 @@ ALWAYS use the `npm run *` command
     `dispatch_webhook_event` matches subscriptions in Python (JSONField `__contains` is unsupported on SQLite).
 - `app/api/`: JSON/API surface, including upload, shorten, file/album CRUD-ish endpoints, auth helpers, stream endpoints, and webhook CRUD (`/api/webhooks/`).
   - `api/views.py` is large and is the main upload/REST entrypoint.
-- `app/oauth/`: login/logout, OAuth providers (Discord/GitHub/Google), Duo, Discord webhook OAuth flow (creates `home.Webhook` rows), and the custom user model.
+- `app/oauth/`: login/logout, OAuth providers (Discord/GitHub/Google), Duo, Discord webhook OAuth flow (stages a pending webhook in the session; the settings modal finishes creation via `/api/webhooks/`), and the custom user model.
   - `oauth.models.CustomUser` is `AUTH_USER_MODEL`.
 - `app/settings/`: singleton site settings model, settings UI, ShareX/Flameshot config generation, and template context processing.
 - `app/webpush/`: push subscription and VAPID plumbing.

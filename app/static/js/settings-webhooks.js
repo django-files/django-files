@@ -1,6 +1,8 @@
-// Webhook management on the user settings page
+// Webhook management, shared by the user and site settings pages.
+// The hidden #webhook-scope input (rendered per page) fixes the scope:
+// "user" on user settings, "site" on site settings.
 
-console.debug('LOADING: settings-user-webhooks.js')
+console.debug('LOADING: settings-webhooks.js')
 
 const webhookModalEl = document.getElementById('webhookModal')
 const webhookForm = document.getElementById('webhookForm')
@@ -12,8 +14,7 @@ document.getElementById('addWebhookBtn')?.addEventListener('click', () => {
     webhookForm.reset()
     document.getElementById('webhook-id').value = ''
     document.getElementById('webhookModalLabel').textContent = 'Add Webhook'
-    updateSecretVisibility()
-    updateSiteOnlyEvents()
+    updateTypeFields()
     bootstrap.Modal.getOrCreateInstance(webhookModalEl).show()
 })
 
@@ -28,27 +29,20 @@ document.querySelectorAll('.editWebhookBtn').forEach((el) =>
         document.getElementById('webhook-secret').value = data.webhookSecret
         document.getElementById('webhook-active').checked =
             data.webhookActive === 'true'
-        const scopeEl = document.getElementById('webhook-scope')
-        if (scopeEl) scopeEl.checked = data.webhookScope === 'site'
         const events = data.webhookEvents ? data.webhookEvents.split(',') : []
         document
             .querySelectorAll('.webhook-event-check')
             .forEach((check) => (check.checked = events.includes(check.value)))
         document.getElementById('webhookModalLabel').textContent =
             'Edit Webhook'
-        updateSecretVisibility()
-        updateSiteOnlyEvents()
+        updateTypeFields()
         bootstrap.Modal.getOrCreateInstance(webhookModalEl).show()
     })
 )
 
 document
     .getElementById('webhook-type')
-    ?.addEventListener('change', updateSecretVisibility)
-
-document
-    .getElementById('webhook-scope')
-    ?.addEventListener('change', updateSiteOnlyEvents)
+    ?.addEventListener('change', updateTypeFields)
 
 webhookForm?.addEventListener('submit', async (event) => {
     event.preventDefault()
@@ -56,15 +50,14 @@ webhookForm?.addEventListener('submit', async (event) => {
     const body = {
         name: document.getElementById('webhook-name').value,
         webhook_type: document.getElementById('webhook-type').value,
+        scope: document.getElementById('webhook-scope').value,
         url: document.getElementById('webhook-url').value,
         secret: document.getElementById('webhook-secret').value,
         active: document.getElementById('webhook-active').checked,
         events: [...document.querySelectorAll('.webhook-event-check')]
-            .filter((check) => check.checked && !check.disabled)
+            .filter((check) => check.checked)
             .map((check) => check.value),
     }
-    const scopeEl = document.getElementById('webhook-scope')
-    if (scopeEl) body.scope = scopeEl.checked ? 'site' : 'user'
     const url = webhookID ? `/api/webhooks/${webhookID}/` : '/api/webhooks/'
     const method = webhookID ? 'PATCH' : 'POST'
     const response = await fetch(url, {
@@ -131,22 +124,35 @@ document.querySelectorAll('.testWebhookBtn').forEach((el) =>
     })
 )
 
-function updateSecretVisibility() {
+// A webhook authorized via the Discord OAuth flow is staged in the session and
+// finished here: open the modal pre-filled so the user picks events, then the
+// normal save path creates it.
+document.addEventListener('DOMContentLoaded', () => {
+    const pendingWebhookEl = document.getElementById('pending-webhook-data')
+    if (!pendingWebhookEl || !webhookForm) return
+    const pending = JSON.parse(pendingWebhookEl.textContent)
+    webhookForm.reset()
+    document.getElementById('webhook-id').value = ''
+    document.getElementById('webhook-name').value = pending.name
+    document.getElementById('webhook-type').value = 'discord'
+    document.getElementById('webhook-url').value = pending.url
+    document
+        .querySelectorAll('.webhook-event-check')
+        .forEach((check) => (check.checked = check.value === 'file.upload'))
+    document.getElementById('webhookModalLabel').textContent =
+        'Finish Discord Webhook'
+    updateTypeFields()
+    bootstrap.Modal.getOrCreateInstance(webhookModalEl).show()
+})
+
+function updateTypeFields() {
     const isCustom = document.getElementById('webhook-type').value === 'custom'
     document
         .getElementById('webhook-secret-group')
         .classList.toggle('d-none', !isCustom)
-}
-
-function updateSiteOnlyEvents() {
-    // site-only events require a site-scoped hook; the switch only exists for superusers
-    const isSite = document.getElementById('webhook-scope')?.checked ?? false
     document
-        .querySelectorAll('.webhook-event-check[data-site-only]')
-        .forEach((check) => {
-            check.disabled = !isSite
-            if (!isSite) check.checked = false
-        })
+        .getElementById('webhook-discord-help')
+        ?.classList.toggle('d-none', isCustom)
 }
 
 async function webhookErrorToast(response) {

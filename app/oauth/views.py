@@ -267,10 +267,16 @@ def oauth_callback(request, oauth_provider: str = ""):
         oauth.process_login(site_settings)
         if request.session.get("webhook") and provider == "discord":
             del request.session["webhook"]
-            webhook = oauth.add_webhook(request)
-            messages.info(request, f"Webhook successfully added: {webhook.id}")
-            url = get_login_redirect_url(request, native_auth=native_auth)
-            return _maybe_native_redirect(url)
+            # stage the webhook so the user can pick events in the settings modal;
+            # the row is only created when they save (POST /api/webhooks/)
+            hook = oauth.data["webhook"]
+            request.session["pending_discord_webhook"] = {
+                "hook_id": hook.get("id"),
+                "name": hook.get("name") or f"Discord {hook.get('id')}",
+                "url": hook["url"],
+            }
+            messages.info(request, "Discord webhook authorized. Select events to finish setup.")
+            return _maybe_native_redirect(reverse(SETTINGS_USER_URL) + "#webhooks")
 
         invite_code = request.session.pop("oauth_invite", None)
         invite = UserInvites.objects.get_invite(invite_code) if invite_code else None

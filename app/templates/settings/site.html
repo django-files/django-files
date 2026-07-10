@@ -36,6 +36,7 @@
             <a class="nav-link" href="#features"><i class="fas fa-sliders"></i> Features</a>
             <a class="nav-link" href="#appearance"><i class="fas fa-palette"></i> Appearance</a>
             <a class="nav-link" href="#invites"><i class="fas fa-user-plus"></i> Invites</a>
+            <a class="nav-link" href="#webhooks"><i class="fa-solid fa-bolt"></i> Webhooks</a>
             <a class="nav-link" href="#users"><i class="fas fa-users"></i> Users</a>
             <a class="nav-link" href="#sessions"><i class="fas fa-desktop"></i> Sessions</a>
             <hr class="my-2">
@@ -398,6 +399,27 @@
 
         <hr class="my-4">
 
+        <!-- Webhooks -->
+        <section id="webhooks" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header pb-3">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fa-solid fa-bolt"></i> Site Webhooks</h4>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addWebhookBtn">
+                        <i class="fa-solid fa-plus me-1"></i> Add Webhook</button>
+                </div>
+                <div class="dash-card-body">
+                    <p class="text-muted small">
+                        Site-wide webhooks receive events for <strong>all users</strong>, including the
+                        site-only <code>user.created</code> and <code>user.deleted</code> events.
+                    </p>
+                    {% include 'settings/webhooks-table.html' %}
+                </div>
+            </div>
+            {% include 'settings/webhook-modals.html' %}
+        </section>
+
+        <hr class="my-4">
+
         <!-- Users -->
         <section id="users" class="settings-section">
             <div class="dash-card">
@@ -592,4 +614,5 @@
     {% include 'include/datatables-scripts.html' %}
     <script type="module" src="{% static 'js/settings.js' %}"></script>
     <script type="module" src="{% static 'js/settings-site-users.js' %}"></script>
+    <script defer src="{% static 'js/settings-webhooks.js' %}"></script>
 {% endblock %}

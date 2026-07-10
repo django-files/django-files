@@ -429,3 +429,76 @@ class WebhookApiTests(WebhookBaseTestCase):
         response = self.client.post(url, **self._auth(self.other_token))
         self.assertEqual(response.status_code, 404)
         mock_send.assert_not_called()
+
+
+class PendingDiscordWebhookTests(WebhookBaseTestCase):
+    """The Discord OAuth flow stages a webhook in the session; the settings page
+    hands it to the modal exactly once so the user can finish setup."""
+
+    PENDING = {"hook_id": "123", "name": "my-channel-hook", "url": DISCORD_URL}
+
+    def test_settings_page_stages_pending_webhook_once(self):
+        self.client.force_login(self.user)
+        session = self.client.session
+        session["pending_discord_webhook"] = self.PENDING
+        session.save()
+        response = self.client.get(reverse("settings:user"))
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn("pending-webhook-data", html)
+        self.assertIn("my-channel-hook", html)
+        self.assertNotIn("pending_discord_webhook", self.client.session)
+        # a reload no longer offers the staged webhook
+        response = self.client.get(reverse("settings:user"))
+        self.assertNotIn("pending-webhook-data", response.content.decode())
+
+    def test_settings_page_without_pending_webhook(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("settings:user"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("pending-webhook-data", response.content.decode())
+
+
+class WebhookSettingsPagesTests(WebhookBaseTestCase):
+    """User settings manages user-scoped hooks; site settings manages site-scoped hooks."""
+
+    def setUp(self):
+        super().setUp()
+        self.superuser = CustomUser.objects.create_superuser(
+            username="superuser",
+            email="super@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        self.site_hook = Webhook.objects.create(
+            owner=self.superuser,
+            name="SiteWideHook",
+            url=CUSTOM_URL,
+            scope=Webhook.SCOPE_SITE,
+            events=[EVENT_USER_CREATED],
+        )
+
+    def test_user_page_shows_only_user_scoped_hooks(self):
+        user_hook = self.create_webhook(name="MyUserHook")
+        self.client.force_login(self.superuser)
+        html = self.client.get(reverse("settings:user")).content.decode()
+        self.assertNotIn("SiteWideHook", html)
+        self.assertIn('id="webhook-scope" name="scope" value="user"', html)
+        # site-only events are not offered on the user page
+        self.assertNotIn(f'value="{EVENT_USER_CREATED}"', html)
+        self.client.force_login(self.user)
+        html = self.client.get(reverse("settings:user")).content.decode()
+        self.assertIn(user_hook.name, html)
+
+    def test_site_page_shows_site_scoped_hooks(self):
+        self.create_webhook(name="MyUserHook")
+        self.client.force_login(self.superuser)
+        html = self.client.get(reverse("settings:site")).content.decode()
+        self.assertIn("SiteWideHook", html)
+        self.assertNotIn("MyUserHook", html)
+        self.assertIn('id="webhook-scope" name="scope" value="site"', html)
+        self.assertIn(f'value="{EVENT_USER_CREATED}"', html)
+
+    def test_site_page_requires_superuser(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("settings:site"))
+        self.assertEqual(response.status_code, 401)

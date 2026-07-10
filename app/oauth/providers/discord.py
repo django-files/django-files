@@ -42,19 +42,6 @@ class DiscordOauth(BaseOauth):
             user.is_superuser = True
             user.save()
 
-    def add_webhook(self, request):
-        # imported here because home.models imports oauth models at load time
-        from home.models import Webhook
-        from home.util.webhooks import EVENT_FILE_UPLOAD
-
-        return Webhook.objects.create(
-            owner=request.user,
-            name=f"Discord {self.data['webhook']['id']}",
-            webhook_type=Webhook.WEBHOOK_TYPE_DISCORD,
-            url=self.data["webhook"]["url"],
-            events=[EVENT_FILE_UPLOAD],
-        )
-
     @classmethod
     def get_login_url(cls, site_settings) -> str:
         log.info("get_login_url: %s", site_settings.get_oauth_redirect_url(provider="discord"))
