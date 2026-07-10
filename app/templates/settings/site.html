@@ -416,6 +416,7 @@
                 </div>
             </div>
             {% include 'settings/webhook-modals.html' %}
+            {% if pending_webhook %}{{ pending_webhook|json_script:"pending-webhook-data" }}{% endif %}
         </section>
 
         <hr class="my-4">

@@ -270,13 +270,16 @@ def oauth_callback(request, oauth_provider: str = ""):
             # stage the webhook so the user can pick events in the settings modal;
             # the row is only created when they save (POST /api/webhooks/)
             hook = oauth.data["webhook"]
+            scope = request.session.pop("webhook_scope", "user")
             request.session["pending_discord_webhook"] = {
                 "hook_id": hook.get("id"),
                 "name": hook.get("name") or f"Discord {hook.get('id')}",
                 "url": hook["url"],
+                "scope": scope,
             }
             messages.info(request, "Discord webhook authorized. Select events to finish setup.")
-            return _maybe_native_redirect(reverse(SETTINGS_USER_URL) + "#webhooks")
+            target = "settings:site" if scope == "site" else SETTINGS_USER_URL
+            return _maybe_native_redirect(reverse(target) + "#webhooks")
 
         invite_code = request.session.pop("oauth_invite", None)
         invite = UserInvites.objects.get_invite(invite_code) if invite_code else None
@@ -904,4 +907,7 @@ def oauth_webhook(request):
     View  /oauth/webhook/
     """
     site_settings = SiteSettings.objects.settings()
+    # remember which settings page initiated the flow; site scope is superuser only
+    scope = "site" if request.GET.get("scope") == "site" and request.user.is_superuser else "user"
+    request.session["webhook_scope"] = scope
     return DiscordOauth.redirect_webhook(request, site_settings)

@@ -38,6 +38,15 @@ SETUP_TEMPLATE = "settings/setup.html"
 USERNAME_TAKEN = "That username is already taken."
 
 
+def _pop_pending_webhook(request, scope):
+    """Consume the OAuth-staged Discord webhook, but only on the settings page
+    matching the scope the flow was initiated with."""
+    pending = request.session.get("pending_discord_webhook")
+    if pending and pending.get("scope", "user") == scope:
+        return request.session.pop("pending_discord_webhook")
+    return None
+
+
 @csrf_exempt
 @login_required
 def site_view(request):
@@ -61,6 +70,7 @@ def site_view(request):
             "webhook_scope": Webhook.SCOPE_SITE,
             "webhook_events": WEBHOOK_EVENTS,
             "webhook_site_only_events": sorted(SITE_ONLY_EVENTS),
+            "pending_webhook": _pop_pending_webhook(request, Webhook.SCOPE_SITE),
         }
         return render(request, "settings/site.html", context)
 
@@ -115,7 +125,7 @@ def user_view(request):
             "webhook_scope": Webhook.SCOPE_USER,
             "webhook_events": WEBHOOK_EVENTS,
             "webhook_site_only_events": sorted(SITE_ONLY_EVENTS),
-            "pending_webhook": request.session.pop("pending_discord_webhook", None),
+            "pending_webhook": _pop_pending_webhook(request, Webhook.SCOPE_USER),
             "timezones": sorted(zoneinfo.available_timezones()),
             "default_upload_name_formats": CustomUser.UploadNameFormats.choices,
             "user_avatar_choices": CustomUser.UserAvatarChoices.choices,

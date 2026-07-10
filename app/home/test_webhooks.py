@@ -458,6 +458,53 @@ class PendingDiscordWebhookTests(WebhookBaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("pending-webhook-data", response.content.decode())
 
+    def _stage(self, scope):
+        session = self.client.session
+        session["pending_discord_webhook"] = {**self.PENDING, "scope": scope}
+        session.save()
+
+    def test_site_scoped_pending_lands_on_site_page_only(self):
+        superuser = CustomUser.objects.create_superuser(
+            username="superadmin",
+            email="admin@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        self.client.force_login(superuser)
+        self._stage("site")
+        # the user page must not consume a site-scoped staged webhook
+        html = self.client.get(reverse("settings:user")).content.decode()
+        self.assertNotIn("pending-webhook-data", html)
+        self.assertIn("pending_discord_webhook", self.client.session)
+        html = self.client.get(reverse("settings:site")).content.decode()
+        self.assertIn("pending-webhook-data", html)
+        self.assertNotIn("pending_discord_webhook", self.client.session)
+
+    def test_user_scoped_pending_skips_site_page(self):
+        superuser = CustomUser.objects.create_superuser(
+            username="superadmin",
+            email="admin@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        self.client.force_login(superuser)
+        self._stage("user")
+        html = self.client.get(reverse("settings:site")).content.decode()
+        self.assertNotIn("pending-webhook-data", html)
+        html = self.client.get(reverse("settings:user")).content.decode()
+        self.assertIn("pending-webhook-data", html)
+
+    def test_oauth_webhook_scope_session(self):
+        self.client.force_login(self.user)
+        self.client.get(reverse("oauth:webhook") + "?scope=site")
+        self.assertEqual(self.client.session.get("webhook_scope"), "user")
+        superuser = CustomUser.objects.create_superuser(
+            username="superadmin",
+            email="admin@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        self.client.force_login(superuser)
+        self.client.get(reverse("oauth:webhook") + "?scope=site")
+        self.assertEqual(self.client.session.get("webhook_scope"), "site")
+
 
 class WebhookSettingsPagesTests(WebhookBaseTestCase):
     """User settings manages user-scoped hooks; site settings manages site-scoped hooks."""

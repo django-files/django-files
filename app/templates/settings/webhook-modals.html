@@ -49,12 +49,12 @@ site-scoped hooks; the hidden scope input drives the API payload.
                     </div>
                     <div class="alert alert-secondary small d-none mb-3" id="webhook-discord-help">
                         Paste an existing Discord webhook URL below, then Save to create the webhook.
-                        {% if webhook_scope == 'user' %}
-                            {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
-                                {% if user.discord %}
-                                    Don't have one? <a href="{% url 'oauth:webhook' %}" class="alert-link">Create it
-                                    on Discord</a> &mdash; pick a channel there and you will return here to finish setup.
-                                {% endif %}
+                        {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
+                            {% if user.discord %}
+                                Don't have one?
+                                <a href="{% url 'oauth:webhook' %}{% if webhook_scope == 'site' %}?scope=site{% endif %}"
+                                   class="alert-link">Create it on Discord</a>
+                                &mdash; pick a channel there and you will return here to finish setup.
                             {% endif %}
                         {% endif %}
                     </div>
