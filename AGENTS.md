@@ -21,14 +21,17 @@ ALWAYS use the `npm run *` command
 ## Where behavior lives
 
 - `app/home/`: core product logic.
-  - Models for `Files`, `Albums`, `ShortURLs`, `Stream`, `StreamHistory`.
+  - Models for `Files`, `Albums`, `ShortURLs`, `Stream`, `StreamHistory`, `Webhook`.
   - Main HTML views in `home/views.py`.
   - Background jobs in `home/tasks.py`.
   - Websocket protocol in `home/consumers.py`.
-  - Signals in `home/signals.py` clear caches, delete storage objects, and enqueue websocket updates.
-- `app/api/`: JSON/API surface, including upload, shorten, file/album CRUD-ish endpoints, auth helpers, and stream endpoints.
+  - Signals in `home/signals.py` clear caches, delete storage objects, enqueue websocket updates, and emit webhook events.
+  - Webhook event catalogue, payload builders, and HTTP delivery in `home/util/webhooks.py`.
+    Events fan out through the `dispatch_webhook_event` -> `fire_webhook` Celery task chain in `home/tasks.py`;
+    `dispatch_webhook_event` matches subscriptions in Python (JSONField `__contains` is unsupported on SQLite).
+- `app/api/`: JSON/API surface, including upload, shorten, file/album CRUD-ish endpoints, auth helpers, stream endpoints, and webhook CRUD (`/api/webhooks/`).
   - `api/views.py` is large and is the main upload/REST entrypoint.
-- `app/oauth/`: login/logout, OAuth providers (Discord/GitHub/Google), Duo, webhook setup, and the custom user model.
+- `app/oauth/`: login/logout, OAuth providers (Discord/GitHub/Google), Duo, Discord webhook OAuth flow (creates `home.Webhook` rows), and the custom user model.
   - `oauth.models.CustomUser` is `AUTH_USER_MODEL`.
 - `app/settings/`: singleton site settings model, settings UI, ShareX/Flameshot config generation, and template context processing.
 - `app/webpush/`: push subscription and VAPID plumbing.

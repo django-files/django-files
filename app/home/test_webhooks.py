@@ -1,0 +1,349 @@
+import hashlib
+import hmac
+import json
+import logging
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+from celery.exceptions import Retry
+from django.core.management import call_command
+from django.test import TestCase
+from django.urls import reverse
+from djangofiles.test_utils import TEST_PASSWORD
+from home.models import Albums, Stream, Webhook
+from home.tasks import dispatch_webhook_event, fire_webhook
+from home.util.auth import create_api_token
+from home.util.file import process_file
+from home.util.webhooks import (
+    EVENT_FILE_UPLOAD,
+    EVENT_TEST,
+    EVENT_USER_CREATED,
+    WEBHOOK_EVENTS,
+    build_album_payload,
+    build_discord_embed,
+    build_file_payload,
+    build_stream_payload,
+    build_user_payload,
+    send_webhook,
+)
+from oauth.models import CustomUser
+from settings.models import SiteSettings
+
+log = logging.getLogger("app")
+
+CUSTOM_URL = "https://example.com/hooks/django-files"
+DISCORD_URL = "https://discord.com/api/webhooks/123/abc"
+
+
+def _mock_response(status_code=200):
+    response = MagicMock()
+    response.status_code = status_code
+    response.is_success = 200 <= status_code < 300
+    response.text = ""
+    return response
+
+
+class WebhookBaseTestCase(TestCase):
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        self.user = CustomUser.objects.create_user(
+            username="hookuser",
+            email="hook@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+
+    def create_webhook(self, **kwargs):
+        defaults = {
+            "owner": self.user,
+            "name": "Test Hook",
+            "webhook_type": Webhook.WEBHOOK_TYPE_CUSTOM,
+            "url": CUSTOM_URL,
+            "events": [EVENT_FILE_UPLOAD],
+        }
+        defaults.update(kwargs)
+        return Webhook.objects.create(**defaults)
+
+
+class WebhookModelTests(WebhookBaseTestCase):
+    def test_create_defaults(self):
+        webhook = Webhook.objects.create(owner=self.user, name="Bare", url=CUSTOM_URL)
+        self.assertTrue(webhook.active)
+        self.assertEqual(webhook.webhook_type, Webhook.WEBHOOK_TYPE_CUSTOM)
+        self.assertEqual(webhook.events, [])
+        self.assertEqual(webhook.secret, "")
+
+    def test_owner_relation(self):
+        webhook = self.create_webhook()
+        self.assertIn(webhook, self.user.webhooks.all())
+
+    def test_delete(self):
+        webhook = self.create_webhook()
+        webhook.delete()
+        self.assertFalse(Webhook.objects.filter(pk=webhook.pk).exists())
+
+
+class PayloadBuilderTests(WebhookBaseTestCase):
+    def test_build_file_payload(self):
+        with Path("./requirements.txt").open("rb") as f:
+            file = process_file("requirements.txt", f, self.user.id)
+        payload = build_file_payload(file)
+        self.assertEqual(payload["id"], file.id)
+        self.assertEqual(payload["name"], file.name)
+        self.assertEqual(payload["size"], file.size)
+        self.assertEqual(payload["mime"], file.mime)
+        self.assertEqual(payload["user"], self.user.username)
+        site_url = SiteSettings.objects.settings().site_url
+        self.assertTrue(payload["url"].startswith(site_url))
+        self.assertTrue(payload["raw_url"].startswith(site_url))
+
+    def test_build_album_payload(self):
+        album = Albums.objects.create(user=self.user, name="Test Album")
+        payload = build_album_payload(album)
+        self.assertEqual(payload["id"], album.id)
+        self.assertEqual(payload["name"], "Test Album")
+        self.assertEqual(payload["file_count"], 0)
+        self.assertEqual(payload["user"], self.user.username)
+        self.assertIn(f"album={album.id}", payload["url"])
+
+    def test_build_stream_payload(self):
+        stream = Stream.objects.create(name="teststream", title="Test", user=self.user)
+        payload = build_stream_payload(stream)
+        self.assertEqual(payload["name"], "teststream")
+        self.assertEqual(payload["user"], self.user.username)
+        self.assertIn("/live/teststream/", payload["url"])
+
+    def test_build_user_payload(self):
+        payload = build_user_payload(self.user)
+        self.assertEqual(payload["id"], self.user.id)
+        self.assertEqual(payload["username"], self.user.username)
+        self.assertEqual(payload["email"], self.user.email)
+        self.assertEqual(payload["date_joined"], self.user.date_joined.isoformat())
+
+    def test_build_discord_embed(self):
+        data = build_user_payload(self.user)
+        body = build_discord_embed(EVENT_USER_CREATED, data, "https://example.com")
+        self.assertEqual(len(body["embeds"]), 1)
+        embed = body["embeds"][0]
+        self.assertEqual(embed["title"], "User Created")
+        self.assertIn(self.user.username, embed["description"])
+        self.assertEqual(embed["footer"], {"text": "django-files"})
+
+
+class SendWebhookTests(WebhookBaseTestCase):
+    @patch("home.util.webhooks.httpx.post")
+    def test_custom_payload_and_signature(self, mock_post):
+        mock_post.return_value = _mock_response()
+        webhook = self.create_webhook(secret="topsecret")  # nosec  # NOSONAR
+        data = {"id": 1, "name": "file.txt"}
+        response = send_webhook(webhook, EVENT_FILE_UPLOAD, data)
+        self.assertTrue(response.is_success)
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], CUSTOM_URL)
+        body = kwargs["content"]
+        payload = json.loads(body)
+        self.assertEqual(payload["event"], EVENT_FILE_UPLOAD)
+        self.assertEqual(payload["data"], data)
+        self.assertIn("timestamp", payload)
+        self.assertEqual(payload["site_url"], SiteSettings.objects.settings().site_url)
+        headers = kwargs["headers"]
+        self.assertEqual(headers["X-Webhook-Event"], EVENT_FILE_UPLOAD)
+        expected = "sha256=" + hmac.new(b"topsecret", body, hashlib.sha256).hexdigest()
+        self.assertEqual(headers["X-Webhook-Signature"], expected)
+
+    @patch("home.util.webhooks.httpx.post")
+    def test_custom_no_secret_no_signature(self, mock_post):
+        mock_post.return_value = _mock_response()
+        webhook = self.create_webhook()
+        send_webhook(webhook, EVENT_FILE_UPLOAD, {})
+        headers = mock_post.call_args.kwargs["headers"]
+        self.assertNotIn("X-Webhook-Signature", headers)
+
+    @patch("home.util.webhooks.httpx.post")
+    def test_discord_sends_embed(self, mock_post):
+        mock_post.return_value = _mock_response()
+        webhook = self.create_webhook(webhook_type=Webhook.WEBHOOK_TYPE_DISCORD, url=DISCORD_URL)
+        send_webhook(webhook, EVENT_TEST, {"id": 1, "name": "Test Hook", "user": "hookuser"})
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], DISCORD_URL)
+        self.assertIn("embeds", kwargs["json"])
+
+
+class WebhookTaskTests(WebhookBaseTestCase):
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_fires_subscribed(self, mock_delay):
+        webhook = self.create_webhook()
+        dispatch_webhook_event(EVENT_FILE_UPLOAD, self.user.pk, {"id": 1})
+        mock_delay.assert_called_once_with(webhook.pk, EVENT_FILE_UPLOAD, {"id": 1})
+
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_skips_unsubscribed(self, mock_delay):
+        self.create_webhook(events=["album.created"])
+        dispatch_webhook_event(EVENT_FILE_UPLOAD, self.user.pk, {})
+        mock_delay.assert_not_called()
+
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_skips_inactive(self, mock_delay):
+        self.create_webhook(active=False)
+        dispatch_webhook_event(EVENT_FILE_UPLOAD, self.user.pk, {})
+        mock_delay.assert_not_called()
+
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_admin_event_staff_only(self, mock_delay):
+        self.create_webhook(events=[EVENT_USER_CREATED])
+        staff = CustomUser.objects.create_user(
+            username="staffuser",
+            email="staff@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+            is_staff=True,
+        )
+        mock_delay.reset_mock()
+        staff_hook = Webhook.objects.create(
+            owner=staff, name="Admin Hook", url=CUSTOM_URL, events=[EVENT_USER_CREATED]
+        )
+        dispatch_webhook_event(EVENT_USER_CREATED, None, {"id": 1})
+        mock_delay.assert_called_once_with(staff_hook.pk, EVENT_USER_CREATED, {"id": 1})
+
+    @patch("home.tasks.send_webhook")
+    def test_fire_webhook_success(self, mock_send):
+        mock_send.return_value = _mock_response()
+        webhook = self.create_webhook()
+        result = fire_webhook(webhook.pk, EVENT_FILE_UPLOAD, {})
+        self.assertEqual(result, 200)
+
+    @patch("home.tasks.send_webhook")
+    def test_fire_webhook_discord_404_deletes(self, mock_send):
+        mock_send.return_value = _mock_response(404)
+        webhook = self.create_webhook(webhook_type=Webhook.WEBHOOK_TYPE_DISCORD, url=DISCORD_URL)
+        fire_webhook(webhook.pk, EVENT_FILE_UPLOAD, {})
+        self.assertFalse(Webhook.objects.filter(pk=webhook.pk).exists())
+
+    @patch("home.tasks.send_webhook")
+    def test_fire_webhook_5xx_retries(self, mock_send):
+        mock_send.return_value = _mock_response(500)
+        webhook = self.create_webhook()
+        with self.assertRaises(Retry):
+            fire_webhook(webhook.pk, EVENT_FILE_UPLOAD, {})
+
+    @patch("home.tasks.send_webhook")
+    def test_fire_webhook_custom_deactivated_after_max_retries(self, mock_send):
+        mock_send.return_value = _mock_response(400)
+        webhook = self.create_webhook()
+        with patch.object(fire_webhook, "max_retries", 0):
+            result = fire_webhook(webhook.pk, EVENT_FILE_UPLOAD, {})
+        self.assertEqual(result, 400)
+        webhook.refresh_from_db()
+        self.assertFalse(webhook.active)
+
+    @patch("home.tasks.send_webhook")
+    def test_fire_webhook_missing_returns(self, mock_send):
+        result = fire_webhook(999999, EVENT_FILE_UPLOAD, {})
+        self.assertIsNone(result)
+        mock_send.assert_not_called()
+
+
+class WebhookApiTests(WebhookBaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.token = create_api_token(self.user, name="Test Token")
+        self.other_user = CustomUser.objects.create_user(
+            username="otheruser",
+            email="other@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        self.other_token = create_api_token(self.other_user, name="Test Token")
+        self.superuser = CustomUser.objects.create_superuser(
+            username="superuser",
+            email="super@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        self.superuser_token = create_api_token(self.superuser, name="Test Token")
+
+    def _auth(self, token):
+        return {"HTTP_AUTHORIZATION": f"Bearer {token}"}
+
+    def test_list_requires_auth(self):
+        response = self.client.get(reverse("api:webhooks"))
+        self.assertEqual(response.status_code, 401)
+
+    def test_create_and_list(self):
+        body = {"name": "Mine", "url": CUSTOM_URL, "events": [EVENT_FILE_UPLOAD]}
+        response = self.client.post(
+            reverse("api:webhooks"), json.dumps(body), content_type="application/json", **self._auth(self.token)
+        )
+        self.assertEqual(response.status_code, 201)
+        data = response.json()
+        self.assertEqual(data["name"], "Mine")
+        self.assertEqual(data["events"], [EVENT_FILE_UPLOAD])
+        response = self.client.get(reverse("api:webhooks"), **self._auth(self.token))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()["webhooks"]), 1)
+        # other users do not see it
+        response = self.client.get(reverse("api:webhooks"), **self._auth(self.other_token))
+        self.assertEqual(len(response.json()["webhooks"]), 0)
+
+    def test_create_validation(self):
+        auth = self._auth(self.token)
+        url = reverse("api:webhooks")
+        cases = [
+            {"url": CUSTOM_URL},  # missing name
+            {"name": "X"},  # missing url
+            {"name": "X", "url": "not-a-url"},
+            {"name": "X", "url": CUSTOM_URL, "events": ["bogus.event"]},
+            {"name": "X", "url": CUSTOM_URL, "webhook_type": "bogus"},
+        ]
+        for body in cases:
+            response = self.client.post(url, json.dumps(body), content_type="application/json", **auth)
+            self.assertEqual(response.status_code, 400, body)
+
+    def test_detail_ownership(self):
+        webhook = self.create_webhook()
+        url = reverse("api:webhook-detail", kwargs={"webhook_id": webhook.pk})
+        self.assertEqual(self.client.get(url, **self._auth(self.token)).status_code, 200)
+        self.assertEqual(self.client.get(url, **self._auth(self.other_token)).status_code, 404)
+        self.assertEqual(self.client.get(url, **self._auth(self.superuser_token)).status_code, 200)
+
+    def test_patch(self):
+        webhook = self.create_webhook()
+        url = reverse("api:webhook-detail", kwargs={"webhook_id": webhook.pk})
+        body = {"name": "Renamed", "events": list(WEBHOOK_EVENTS), "active": False}
+        response = self.client.patch(url, json.dumps(body), content_type="application/json", **self._auth(self.token))
+        self.assertEqual(response.status_code, 200)
+        webhook.refresh_from_db()
+        self.assertEqual(webhook.name, "Renamed")
+        self.assertEqual(webhook.events, list(WEBHOOK_EVENTS))
+        self.assertFalse(webhook.active)
+
+    def test_patch_invalid(self):
+        webhook = self.create_webhook()
+        url = reverse("api:webhook-detail", kwargs={"webhook_id": webhook.pk})
+        response = self.client.patch(
+            url, json.dumps({"url": "bogus"}), content_type="application/json", **self._auth(self.token)
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_delete(self):
+        webhook = self.create_webhook()
+        url = reverse("api:webhook-detail", kwargs={"webhook_id": webhook.pk})
+        response = self.client.delete(url, **self._auth(self.token))
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Webhook.objects.filter(pk=webhook.pk).exists())
+
+    @patch("api.views.send_webhook")
+    def test_test_fire(self, mock_send):
+        mock_send.return_value = _mock_response()
+        webhook = self.create_webhook()
+        url = reverse("api:webhook-test", kwargs={"webhook_id": webhook.pk})
+        response = self.client.post(url, **self._auth(self.token))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"success": True, "status_code": 200})
+        args, _ = mock_send.call_args
+        self.assertEqual(args[0], webhook)
+        self.assertEqual(args[1], EVENT_TEST)
+
+    @patch("api.views.send_webhook")
+    def test_test_fire_not_owner(self, mock_send):
+        webhook = self.create_webhook()
+        url = reverse("api:webhook-test", kwargs={"webhook_id": webhook.pk})
+        response = self.client.post(url, **self._auth(self.other_token))
+        self.assertEqual(response.status_code, 404)
+        mock_send.assert_not_called()

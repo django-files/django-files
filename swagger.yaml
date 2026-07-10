@@ -434,6 +434,175 @@ paths:
         "401":
           $ref: "#/components/responses/UnauthorizedError"
 
+  /webhooks/:
+    get:
+      summary: Get all Webhooks
+      description: Get all Webhooks owned by the current user.
+      tags:
+        - Webhooks
+      security:
+        - Authorization: []
+
+      responses:
+        "200":
+          description: A JSON object with the user's Webhooks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  webhooks:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Webhook"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+    post:
+      summary: Create a Webhook
+      description: Create a new Webhook. Name and URL are required.
+      tags:
+        - Webhooks
+      security:
+        - Authorization: []
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookRequest"
+
+      responses:
+        "201":
+          description: A JSON object of the created Webhook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Webhook"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /webhooks/{id}/:
+    get:
+      summary: Get a Webhook
+      description: Get a single Webhook by ID. Users can only access their own webhooks.
+      tags:
+        - Webhooks
+      security:
+        - Authorization: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        "200":
+          description: A JSON object of the Webhook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Webhook"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          description: Webhook not found
+
+    patch:
+      summary: Update a Webhook
+      description: Partially update a Webhook. Only supplied fields are changed.
+      tags:
+        - Webhooks
+      security:
+        - Authorization: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookRequest"
+
+      responses:
+        "200":
+          description: A JSON object of the updated Webhook
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Webhook"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          description: Webhook not found
+
+    delete:
+      summary: Delete a Webhook
+      description: Delete a Webhook by ID.
+      tags:
+        - Webhooks
+      security:
+        - Authorization: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        "204":
+          description: Webhook deleted
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          description: Webhook not found
+
+  /webhooks/{id}/test/:
+    post:
+      summary: Test a Webhook
+      description: Synchronously fire a webhook.test event to the Webhook URL.
+      tags:
+        - Webhooks
+      security:
+        - Authorization: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+
+      responses:
+        "200":
+          description: Result of the test delivery
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  status_code:
+                    type: integer
+                    example: 200
+                  error:
+                    type: string
+                    description: Present when the request failed to send
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          description: Webhook not found
+
 components:
   securitySchemes:
     Authorization:
@@ -448,6 +617,77 @@ components:
       description: Access token is missing or invalid
 
   schemas:
+    Webhook:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: My Webhook
+        webhook_type:
+          type: string
+          enum: [custom, discord]
+          example: custom
+        url:
+          type: string
+          example: https://example.com/hooks/django-files
+        secret:
+          type: string
+          description: HMAC-SHA256 signing secret for custom webhooks
+        active:
+          type: boolean
+          example: true
+        events:
+          type: array
+          items:
+            type: string
+            enum:
+              - file.upload
+              - album.created
+              - album.updated
+              - stream.live
+              - stream.offline
+              - user.created
+              - user.deleted
+              - user.login
+          example: [file.upload, album.created]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    WebhookRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: My Webhook
+        webhook_type:
+          type: string
+          enum: [custom, discord]
+          default: custom
+        url:
+          type: string
+          example: https://example.com/hooks/django-files
+        secret:
+          type: string
+          description: Optional HMAC-SHA256 signing secret (custom webhooks only)
+        active:
+          type: boolean
+          default: true
+        events:
+          type: array
+          items:
+            type: string
+          example: [file.upload]
+      required:
+        - name
+        - url
+
     FileUploadResponse:
       type: object
       properties:

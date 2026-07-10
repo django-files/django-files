@@ -41,10 +41,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from django_redis import get_redis_connection
-from home.models import Albums, Files, FileStats, ShortURLs, Stream
+from home.models import Albums, Files, FileStats, ShortURLs, Stream, Webhook
 from home.tasks import (
     clear_files_cache,
     clear_shorts_cache,
+    dispatch_webhook_event,
     send_push_live,
     stream_status_websocket,
 )
@@ -55,6 +56,15 @@ from home.util.nginx import sign_hls_cookie, verify_hls_cookie
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
+from home.util.webhooks import (
+    EVENT_STREAM_LIVE,
+    EVENT_STREAM_OFFLINE,
+    EVENT_TEST,
+    WEBHOOK_EVENTS,
+    build_stream_payload,
+    build_test_payload,
+    send_webhook,
+)
 from oauth.models import ApiToken, CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
@@ -564,6 +574,128 @@ def invite_detail_view(request, invite_id):
         return JsonResponse({"error": "Not Found"}, status=404)
     invite.delete()
     return HttpResponse(status=204)
+
+
+def _webhook_response(webhook: Webhook) -> dict:
+    return {
+        "id": webhook.id,
+        "name": webhook.name,
+        "webhook_type": webhook.webhook_type,
+        "url": webhook.url,
+        "secret": webhook.secret,
+        "active": webhook.active,
+        "events": webhook.events,
+        "created_at": webhook.created_at,
+        "updated_at": webhook.updated_at,
+    }
+
+
+def _validate_webhook_data(data: dict, partial: bool = False) -> tuple[dict, Optional[str]]:
+    """Validate webhook create/update payloads. Returns (fields, error)."""
+    fields = {}
+    if "name" in data:
+        name = str(data["name"]).strip()
+        if not name or len(name) > 128:
+            return {}, "Invalid name"
+        fields["name"] = name
+    elif not partial:
+        return {}, "Missing required field: name"
+    if "url" in data:
+        if not validators.url(str(data["url"])):
+            return {}, "Invalid url"
+        fields["url"] = data["url"]
+    elif not partial:
+        return {}, "Missing required field: url"
+    if "webhook_type" in data:
+        if data["webhook_type"] not in (Webhook.WEBHOOK_TYPE_CUSTOM, Webhook.WEBHOOK_TYPE_DISCORD):
+            return {}, "Invalid webhook_type"
+        fields["webhook_type"] = data["webhook_type"]
+    if "events" in data:
+        events = data["events"]
+        valid = isinstance(events, list) and all(
+            isinstance(event, str) and event in WEBHOOK_EVENTS for event in events
+        )
+        if not valid:
+            return {}, f"Invalid events. Valid events: {', '.join(WEBHOOK_EVENTS)}"
+        fields["events"] = events
+    if "secret" in data:
+        secret = str(data["secret"])
+        if len(secret) > 128:
+            return {}, "Invalid secret"
+        fields["secret"] = secret
+    if "active" in data:
+        fields["active"] = anytobool(data["active"])
+    return fields, None
+
+
+def _get_webhook_or_error(request, webhook_id: int):
+    webhook = Webhook.objects.filter(pk=webhook_id).first()
+    if not webhook or (webhook.owner_id != request.user.id and not request.user.is_superuser):
+        return None
+    return webhook
+
+
+@csrf_exempt
+@require_http_methods(["OPTIONS", "GET", "POST"])
+@auth_from_token
+def webhooks_view(request):
+    """
+    View  /api/webhooks/
+    """
+    log.debug("%s - webhooks_view", request.method)
+    if request.method == "POST":
+        data = get_json_body(request)
+        fields, error = _validate_webhook_data(data)
+        if error:
+            return JsonResponse({"error": error}, status=400)
+        webhook = Webhook.objects.create(owner=request.user, **fields)
+        return JsonResponse(_webhook_response(webhook), status=201)
+    webhooks = Webhook.objects.filter(owner=request.user)
+    return JsonResponse({"webhooks": [_webhook_response(hook) for hook in webhooks]})
+
+
+@csrf_exempt
+@require_http_methods(["OPTIONS", "GET", "PATCH", "DELETE"])
+@auth_from_token
+def webhook_detail_view(request, webhook_id: int):
+    """
+    View  /api/webhooks/<webhook_id>/
+    """
+    log.debug("%s - webhook_detail_view: %s", request.method, webhook_id)
+    webhook = _get_webhook_or_error(request, webhook_id)
+    if not webhook:
+        return JsonResponse({"error": "Not Found"}, status=404)
+    if request.method == "DELETE":
+        webhook.delete()
+        return HttpResponse(status=204)
+    if request.method == "PATCH":
+        data = get_json_body(request)
+        fields, error = _validate_webhook_data(data, partial=True)
+        if error:
+            return JsonResponse({"error": error}, status=400)
+        for key, value in fields.items():
+            setattr(webhook, key, value)
+        webhook.save()
+    return JsonResponse(_webhook_response(webhook))
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@auth_from_token
+def webhook_test_view(request, webhook_id: int):
+    """
+    View  /api/webhooks/<webhook_id>/test/
+    """
+    log.debug("webhook_test_view: %s", webhook_id)
+    webhook = _get_webhook_or_error(request, webhook_id)
+    if not webhook:
+        return JsonResponse({"error": "Not Found"}, status=404)
+    try:
+        r = send_webhook(webhook, EVENT_TEST, build_test_payload(webhook))
+    except httpx.HTTPError as error:
+        log.warning("webhook_test_view: %s - %s", webhook_id, error)
+        return JsonResponse({"success": False, "error": str(error)})
+    return JsonResponse({"success": r.is_success, "status_code": r.status_code})
 
 
 def _quota_bg(pct):
@@ -1368,6 +1500,7 @@ def stream_auth_view(request):
             stream.save()
         send_push_live.apply_async(args=[stream.name], countdown=10)
         stream_status_websocket.delay(stream.name, True, started_at=stream.started_at.isoformat())
+        dispatch_webhook_event.delay(EVENT_STREAM_LIVE, stream.user_id, build_stream_payload(stream))
 
         return HttpResponse()
     except Exception as error:
@@ -1406,6 +1539,7 @@ def stream_done_view(request):
         stream.is_live = False
         stream.save()
         stream_status_websocket.delay(stream.name, False, stream.ended_at.isoformat())
+        dispatch_webhook_event.delay(EVENT_STREAM_OFFLINE, stream.user_id, build_stream_payload(stream))
 
     except Exception as error:
         log.debug("error: %s", error)

@@ -29,7 +29,7 @@ from home.util.nginx import set_hls_cookies
 from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
 from oauth.forms import UserForm
-from oauth.models import CustomUser, DiscordWebhooks, UserInvites
+from oauth.models import CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
@@ -604,22 +604,6 @@ def delete_short_ajax(request, pk):
         return HttpResponse(status=401)
     log.debug(short)
     short.delete()
-    return HttpResponse(status=204)
-
-
-@login_required
-@csrf_exempt
-@require_http_methods(["POST"])
-def delete_hook_ajax(request, pk):
-    """
-    View  /ajax/delete/hook/<int:pk>/
-    """
-    log.debug("delete_hook_ajax: %s", pk)
-    webhook = get_object_or_404(DiscordWebhooks, pk=pk)
-    if webhook.owner != request.user:
-        return HttpResponse(status=404)
-    log.debug(webhook)
-    webhook.delete()
     return HttpResponse(status=204)
 
 

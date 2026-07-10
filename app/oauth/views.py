@@ -19,15 +19,16 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from home.tasks import dispatch_webhook_event
 from home.templatetags.home_tags import is_mobile
 from home.util.auth import _client_ip, _infer_device_name, create_api_token, hash_token
 from home.util.requests import CustomSchemeRedirect
+from home.util.webhooks import EVENT_USER_LOGIN, build_user_payload
 from oauth import passkeys
 from oauth.forms import LoginForm
 from oauth.models import (
     ApiToken,
     CustomUser,
-    DiscordWebhooks,
     PasskeyCredential,
     UserInvites,
     superuser_exists,
@@ -330,6 +331,7 @@ def pre_login(request, user: Union[AbstractBaseUser, CustomUser], site_settings)
 
 def post_login(request):
     log.debug("post_login: %s", request.user.username)
+    dispatch_webhook_event.delay(EVENT_USER_LOGIN, request.user.pk, build_user_payload(request.user))
     try:
         agent = request.META.get("HTTP_USER_AGENT", "")
         log.debug("agent: %s", agent)
@@ -897,19 +899,3 @@ def oauth_webhook(request):
     """
     site_settings = SiteSettings.objects.settings()
     return DiscordOauth.redirect_webhook(request, site_settings)
-
-
-def add_webhook(request, profile):
-    """
-    Add webhook
-    """
-    log.debug("add_webhook")
-    webhook = DiscordWebhooks(
-        hook_id=profile["webhook"]["id"],
-        guild_id=profile["webhook"]["guild_id"],
-        channel_id=profile["webhook"]["channel_id"],
-        url=profile["webhook"]["url"],
-        owner=request.user,
-    )
-    webhook.save()
-    return webhook

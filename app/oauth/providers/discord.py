@@ -6,7 +6,7 @@ from typing import Optional
 import httpx
 from decouple import config
 from django.shortcuts import HttpResponseRedirect
-from oauth.models import Discord, DiscordWebhooks
+from oauth.models import Discord
 from oauth.providers.base import BaseOauth
 from oauth.providers.helpers import is_super_id
 
@@ -42,13 +42,17 @@ class DiscordOauth(BaseOauth):
             user.is_superuser = True
             user.save()
 
-    def add_webhook(self, request) -> DiscordWebhooks:
-        return DiscordWebhooks.objects.create(
-            hook_id=self.data["webhook"]["id"],
-            guild_id=self.data["webhook"]["guild_id"],
-            channel_id=self.data["webhook"]["channel_id"],
-            url=self.data["webhook"]["url"],
+    def add_webhook(self, request):
+        # imported here because home.models imports oauth models at load time
+        from home.models import Webhook
+        from home.util.webhooks import EVENT_FILE_UPLOAD
+
+        return Webhook.objects.create(
             owner=request.user,
+            name=f"Discord {self.data['webhook']['id']}",
+            webhook_type=Webhook.WEBHOOK_TYPE_DISCORD,
+            url=self.data["webhook"]["url"],
+            events=[EVENT_FILE_UPLOAD],
         )
 
     @classmethod

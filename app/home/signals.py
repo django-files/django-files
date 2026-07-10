@@ -6,7 +6,7 @@ from celery.signals import worker_ready
 from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from django.forms.models import model_to_dict
-from home.models import Albums, Files, FileStats, ShortURLs, Stream
+from home.models import Albums, Files, FileStats, ShortURLs, Stream, Webhook
 from home.tasks import (
     app_startup,
     clear_albums_cache,
@@ -16,13 +16,24 @@ from home.tasks import (
     delete_album_websocket,
     delete_file_websocket,
     delete_stream_websocket,
+    dispatch_webhook_event,
+    fire_webhook,
     new_album_websocket,
-    send_success_message,
     update_album_websocket,
     update_file_websocket,
 )
 from home.util.quota import decrement_storage_usage
-from oauth.models import DiscordWebhooks
+from home.util.webhooks import (
+    EVENT_ALBUM_CREATED,
+    EVENT_ALBUM_UPDATED,
+    EVENT_TEST,
+    EVENT_USER_CREATED,
+    EVENT_USER_DELETED,
+    build_album_payload,
+    build_test_payload,
+    build_user_payload,
+)
+from oauth.models import CustomUser
 
 log = logging.getLogger("app")
 
@@ -78,6 +89,8 @@ def albums_post_save_signal(sender, instance, created, **kwargs):
             data["user_name"] = instance.user.get_name()
             update_fields = list(kwargs["update_fields"]) if kwargs.get("update_fields") else []
             update_album_websocket.apply_async(args=[data, instance.user.id, update_fields], priority=0)
+        event_key = EVENT_ALBUM_CREATED if created else EVENT_ALBUM_UPDATED
+        dispatch_webhook_event.delay(event_key, instance.user_id, build_album_payload(instance))
     except Exception:
         log.exception("albums_post_save_signal failed")
 
@@ -111,7 +124,18 @@ def clear_stats_cache_signal(sender, instance, **kwargs):
     clear_stats_cache.delay()
 
 
-@receiver(post_save, sender=DiscordWebhooks)
-def send_success_message_signal(sender, instance, **kwargs):
-    if kwargs.get("created"):
-        send_success_message.delay(instance.id)
+@receiver(post_save, sender=Webhook)
+def webhook_created_signal(sender, instance, created, **kwargs):
+    if created and instance.webhook_type == Webhook.WEBHOOK_TYPE_DISCORD:
+        fire_webhook.delay(instance.pk, EVENT_TEST, build_test_payload(instance))
+
+
+@receiver(post_save, sender=CustomUser)
+def user_created_signal(sender, instance, created, **kwargs):
+    if created:
+        dispatch_webhook_event.delay(EVENT_USER_CREATED, None, build_user_payload(instance))
+
+
+@receiver(pre_delete, sender=CustomUser)
+def user_deleted_signal(sender, instance, **kwargs):
+    dispatch_webhook_event.delay(EVENT_USER_DELETED, None, build_user_payload(instance))

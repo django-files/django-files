@@ -279,11 +279,11 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, "Settings-User-save-settings")
 
-        page.locator(".deleteDiscordHookBtn").first.click()
+        page.locator(".deleteWebhookBtn").first.click()
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, "Settings-delete-click")
 
-        page.locator("#confirmDeleteDiscordHookBtn").click()
+        page.locator("#confirmDeleteWebhookBtn").click()
         page.wait_for_timeout(timeout=500)
         self.screenshot(page, "Settings-delete-deleted")
 
