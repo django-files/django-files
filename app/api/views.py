@@ -79,6 +79,8 @@ from webpush.models import PushInformation
 
 signer = TimestampSigner()
 
+ERROR_NOT_FOUND = "Not Found"
+
 _ARCHIVE_MIMES = [
     "application/zip",
     "application/x-tar",
@@ -571,7 +573,7 @@ def invite_detail_view(request, invite_id):
     try:
         invite = UserInvites.objects.get(pk=invite_id)
     except UserInvites.DoesNotExist:
-        return JsonResponse({"error": "Not Found"}, status=404)
+        return JsonResponse({"error": ERROR_NOT_FOUND}, status=404)
     invite.delete()
     return HttpResponse(status=204)
 
@@ -590,41 +592,69 @@ def _webhook_response(webhook: Webhook) -> dict:
     }
 
 
+def _clean_webhook_name(value) -> tuple:
+    name = str(value).strip()
+    if not name or len(name) > 128:
+        return None, "Invalid name"
+    return name, None
+
+
+def _clean_webhook_url(value) -> tuple:
+    if not validators.url(str(value)):
+        return None, "Invalid url"
+    return value, None
+
+
+def _clean_webhook_type(value) -> tuple:
+    if value not in (Webhook.WEBHOOK_TYPE_CUSTOM, Webhook.WEBHOOK_TYPE_DISCORD):
+        return None, "Invalid webhook_type"
+    return value, None
+
+
+def _clean_webhook_events(value) -> tuple:
+    valid = isinstance(value, list) and all(isinstance(event, str) and event in WEBHOOK_EVENTS for event in value)
+    if not valid:
+        return None, f"Invalid events. Valid events: {', '.join(WEBHOOK_EVENTS)}"
+    return value, None
+
+
+def _clean_webhook_secret(value) -> tuple:
+    secret = str(value)
+    if len(secret) > 128:
+        return None, "Invalid secret"
+    return secret, None
+
+
+def _clean_webhook_active(value) -> tuple:
+    return anytobool(value), None
+
+
+_WEBHOOK_REQUIRED_FIELDS = ("name", "url")
+
+_WEBHOOK_FIELD_CLEANERS = {
+    "name": _clean_webhook_name,
+    "url": _clean_webhook_url,
+    "webhook_type": _clean_webhook_type,
+    "events": _clean_webhook_events,
+    "secret": _clean_webhook_secret,
+    "active": _clean_webhook_active,
+}
+
+
 def _validate_webhook_data(data: dict, partial: bool = False) -> tuple[dict, Optional[str]]:
     """Validate webhook create/update payloads. Returns (fields, error)."""
+    if not partial:
+        for key in _WEBHOOK_REQUIRED_FIELDS:
+            if key not in data:
+                return {}, f"Missing required field: {key}"
     fields = {}
-    if "name" in data:
-        name = str(data["name"]).strip()
-        if not name or len(name) > 128:
-            return {}, "Invalid name"
-        fields["name"] = name
-    elif not partial:
-        return {}, "Missing required field: name"
-    if "url" in data:
-        if not validators.url(str(data["url"])):
-            return {}, "Invalid url"
-        fields["url"] = data["url"]
-    elif not partial:
-        return {}, "Missing required field: url"
-    if "webhook_type" in data:
-        if data["webhook_type"] not in (Webhook.WEBHOOK_TYPE_CUSTOM, Webhook.WEBHOOK_TYPE_DISCORD):
-            return {}, "Invalid webhook_type"
-        fields["webhook_type"] = data["webhook_type"]
-    if "events" in data:
-        events = data["events"]
-        valid = isinstance(events, list) and all(
-            isinstance(event, str) and event in WEBHOOK_EVENTS for event in events
-        )
-        if not valid:
-            return {}, f"Invalid events. Valid events: {', '.join(WEBHOOK_EVENTS)}"
-        fields["events"] = events
-    if "secret" in data:
-        secret = str(data["secret"])
-        if len(secret) > 128:
-            return {}, "Invalid secret"
-        fields["secret"] = secret
-    if "active" in data:
-        fields["active"] = anytobool(data["active"])
+    for key, cleaner in _WEBHOOK_FIELD_CLEANERS.items():
+        if key not in data:
+            continue
+        value, error = cleaner(data[key])
+        if error:
+            return {}, error
+        fields[key] = value
     return fields, None
 
 
@@ -664,7 +694,7 @@ def webhook_detail_view(request, webhook_id: int):
     log.debug("%s - webhook_detail_view: %s", request.method, webhook_id)
     webhook = _get_webhook_or_error(request, webhook_id)
     if not webhook:
-        return JsonResponse({"error": "Not Found"}, status=404)
+        return JsonResponse({"error": ERROR_NOT_FOUND}, status=404)
     if request.method == "DELETE":
         webhook.delete()
         return HttpResponse(status=204)
@@ -689,7 +719,7 @@ def webhook_test_view(request, webhook_id: int):
     log.debug("webhook_test_view: %s", webhook_id)
     webhook = _get_webhook_or_error(request, webhook_id)
     if not webhook:
-        return JsonResponse({"error": "Not Found"}, status=404)
+        return JsonResponse({"error": ERROR_NOT_FOUND}, status=404)
     try:
         r = send_webhook(webhook, EVENT_TEST, build_test_payload(webhook))
     except httpx.HTTPError as error:
