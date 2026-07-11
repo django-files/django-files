@@ -18,8 +18,12 @@ WEBHOOK_SCOPE_USER = "user"
 WEBHOOK_SCOPE_SITE = "site"
 
 EVENT_FILE_UPLOAD = "file.upload"
+EVENT_FILE_DELETED = "file.deleted"
 EVENT_ALBUM_CREATED = "album.created"
 EVENT_ALBUM_UPDATED = "album.updated"
+EVENT_ALBUM_DELETED = "album.deleted"
+EVENT_SHORT_CREATED = "short.created"
+EVENT_SHORT_DELETED = "short.deleted"
 EVENT_STREAM_LIVE = "stream.live"
 EVENT_STREAM_OFFLINE = "stream.offline"
 EVENT_USER_CREATED = "user.created"
@@ -30,8 +34,12 @@ EVENT_TEST = "webhook.test"
 # event key -> human-readable label, rendered as checkboxes in the settings UI
 WEBHOOK_EVENTS = {
     EVENT_FILE_UPLOAD: "File Uploaded",
+    EVENT_FILE_DELETED: "File Deleted",
     EVENT_ALBUM_CREATED: "Album Created",
     EVENT_ALBUM_UPDATED: "Album Updated",
+    EVENT_ALBUM_DELETED: "Album Deleted",
+    EVENT_SHORT_CREATED: "Short URL Created",
+    EVENT_SHORT_DELETED: "Short URL Deleted",
     EVENT_STREAM_LIVE: "Stream Live",
     EVENT_STREAM_OFFLINE: "Stream Ended",
     EVENT_USER_CREATED: "User Created",
@@ -44,8 +52,12 @@ SITE_ONLY_EVENTS = {EVENT_USER_CREATED, EVENT_USER_DELETED}
 
 DISCORD_TITLES = {
     EVENT_FILE_UPLOAD: "New File Upload",
+    EVENT_FILE_DELETED: "File Deleted",
     EVENT_ALBUM_CREATED: "Album Created",
     EVENT_ALBUM_UPDATED: "Album Updated",
+    EVENT_ALBUM_DELETED: "Album Deleted",
+    EVENT_SHORT_CREATED: "Short URL Created",
+    EVENT_SHORT_DELETED: "Short URL Deleted",
     EVENT_STREAM_LIVE: "Stream Live",
     EVENT_STREAM_OFFLINE: "Stream Ended",
     EVENT_USER_CREATED: "User Created",
@@ -98,6 +110,18 @@ def build_album_payload(album) -> dict:
         "url": f"{_site_url()}{reverse('home:files')}?album={album.id}",
         "file_count": album.files_set.count(),
         "user": album.user.username,
+    }
+
+
+def build_short_payload(short) -> dict:
+    return {
+        "id": short.id,
+        "short": short.short,
+        "short_url": _site_url() + reverse("home:short", kwargs={"short": short.short}),
+        "url": short.url,
+        "views": short.views,
+        "max": short.max,
+        "user": short.user.username,
     }
 
 
@@ -176,10 +200,12 @@ def _discord_title(event_key: str, data: dict) -> str:
 
 
 def _discord_description(event_key: str, data: dict) -> str:
-    if event_key == EVENT_FILE_UPLOAD:
+    if event_key in (EVENT_FILE_UPLOAD, EVENT_FILE_DELETED):
         return _file_description(data)
-    if event_key in (EVENT_ALBUM_CREATED, EVENT_ALBUM_UPDATED):
+    if event_key in (EVENT_ALBUM_CREATED, EVENT_ALBUM_UPDATED, EVENT_ALBUM_DELETED):
         return f"**{data['name']}** - {data['file_count']} files"
+    if event_key in (EVENT_SHORT_CREATED, EVENT_SHORT_DELETED):
+        return f"**{data['short_url']}**\n{data['url']}"
     if event_key in (EVENT_STREAM_LIVE, EVENT_STREAM_OFFLINE):
         text = f"**{data.get('title') or data['name']}**"
         if data.get("description"):

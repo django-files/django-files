@@ -25,11 +25,17 @@ from home.tasks import (
 from home.util.quota import decrement_storage_usage
 from home.util.webhooks import (
     EVENT_ALBUM_CREATED,
+    EVENT_ALBUM_DELETED,
     EVENT_ALBUM_UPDATED,
+    EVENT_FILE_DELETED,
+    EVENT_SHORT_CREATED,
+    EVENT_SHORT_DELETED,
     EVENT_TEST,
     EVENT_USER_CREATED,
     EVENT_USER_DELETED,
     build_album_payload,
+    build_file_payload,
+    build_short_payload,
     build_test_payload,
     build_user_payload,
 )
@@ -41,6 +47,16 @@ log = logging.getLogger("app")
 @worker_ready.connect
 def run_startup_task(sender, **kwargs):
     app_startup.delay()
+
+
+# must be registered (defined) before files_delete_signal: that receiver
+# deletes the backing storage objects, which clears fields the payload needs
+@receiver(pre_delete, sender=Files)
+def files_delete_webhook_signal(sender, instance, **kwargs):
+    try:
+        dispatch_webhook_event.delay(EVENT_FILE_DELETED, instance.user_id, build_file_payload(instance))
+    except Exception:
+        log.exception("files_delete_webhook_signal failed")
 
 
 @receiver(pre_delete, sender=Files)
@@ -105,6 +121,10 @@ def clear_albums_cache_signal(sender, instance, **kwargs):
 def albums_delete_signal(sender, instance, **kwargs):
     data = model_to_dict(instance)
     delete_album_websocket.apply_async(args=[data, instance.user.id], priority=0)
+    try:
+        dispatch_webhook_event.delay(EVENT_ALBUM_DELETED, instance.user_id, build_album_payload(instance))
+    except Exception:
+        log.exception("albums_delete_signal webhook dispatch failed")
 
 
 @receiver(pre_delete, sender=Stream)
@@ -116,6 +136,23 @@ def streams_delete_signal(sender, instance, **kwargs):
 @receiver(post_delete, sender=ShortURLs)
 def clear_shorts_cache_signal(sender, instance, **kwargs):
     clear_shorts_cache.delay()
+
+
+@receiver(post_save, sender=ShortURLs)
+def shorts_created_signal(sender, instance, created, **kwargs):
+    try:
+        if created:
+            dispatch_webhook_event.delay(EVENT_SHORT_CREATED, instance.user_id, build_short_payload(instance))
+    except Exception:
+        log.exception("shorts_created_signal failed")
+
+
+@receiver(post_delete, sender=ShortURLs)
+def shorts_deleted_signal(sender, instance, **kwargs):
+    try:
+        dispatch_webhook_event.delay(EVENT_SHORT_DELETED, instance.user_id, build_short_payload(instance))
+    except Exception:
+        log.exception("shorts_deleted_signal failed")
 
 
 @receiver(post_save, sender=FileStats)

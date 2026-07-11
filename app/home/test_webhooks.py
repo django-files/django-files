@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from djangofiles.test_utils import TEST_PASSWORD
-from home.models import Albums, Stream, Webhook
+from home.models import Albums, ShortURLs, Stream, Webhook
 from home.tasks import dispatch_webhook_event, fire_webhook
 from home.util.auth import create_api_token
 from home.util.file import process_file
@@ -24,6 +24,7 @@ from home.util.webhooks import (
     build_album_payload,
     build_discord_embed,
     build_file_payload,
+    build_short_payload,
     build_stream_payload,
     build_user_payload,
     send_webhook,
@@ -111,6 +112,35 @@ class PayloadBuilderTests(WebhookBaseTestCase):
         self.assertEqual(payload["file_count"], 0)
         self.assertEqual(payload["user"], self.user.username)
         self.assertIn(f"album={album.id}", payload["url"])
+
+    def test_build_discord_embed_deleted_events(self):
+        file_data = {"name": "a.jpg", "mime": "image/jpeg", "size": 1000, "url": "u", "raw_url": "https://x/r/a.jpg"}
+        body = build_discord_embed("file.deleted", file_data, "https://example.com")
+        self.assertEqual(body["embeds"][0]["title"], "File Deleted")
+        # deleted files must not reference their (now dead) media URLs
+        self.assertNotIn("image", body["embeds"][0])
+        self.assertNotIn("content", body)
+        album_data = {"id": 1, "name": "Old Album", "file_count": 3, "url": "u", "user": "x"}
+        body = build_discord_embed("album.deleted", album_data, "https://example.com")
+        self.assertEqual(body["embeds"][0]["title"], "Album Deleted")
+        self.assertIn("Old Album", body["embeds"][0]["description"])
+
+    def test_build_short_payload(self):
+        short = ShortURLs.objects.create(short="abc123", url="https://example.org/dest", user=self.user)
+        payload = build_short_payload(short)
+        self.assertEqual(payload["id"], short.id)
+        self.assertEqual(payload["short"], "abc123")
+        self.assertEqual(payload["url"], "https://example.org/dest")
+        self.assertEqual(payload["user"], self.user.username)
+        self.assertTrue(payload["short_url"].endswith("/s/abc123"))
+
+    def test_build_discord_embed_short(self):
+        payload = {"id": 1, "short": "abc", "short_url": "https://x/s/abc", "url": "https://dest", "user": "u"}
+        body = build_discord_embed("short.created", payload, "https://example.com")
+        embed = body["embeds"][0]
+        self.assertEqual(embed["title"], "Short URL Created")
+        self.assertIn("https://x/s/abc", embed["description"])
+        self.assertIn("https://dest", embed["description"])
 
     def test_build_stream_payload(self):
         stream = Stream.objects.create(name="teststream", title="Test", description="A test stream", user=self.user)

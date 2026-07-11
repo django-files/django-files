@@ -49,6 +49,7 @@ log = logging.getLogger("app")
 
 TEMPLATE_OAUTH_USERNAME = "oauth_username.html"
 SETTINGS_USER_URL = "settings:user"
+SETTINGS_SITE_URL = "settings:site"
 MODEL_BACKEND = "django.contrib.auth.backends.ModelBackend"
 PASSKEYS_NOT_ENABLED = "Passkeys are not enabled."
 CONTENT_TYPE_JSON = "application/json"
@@ -240,6 +241,24 @@ def _apply_invite(request, user, invite):
     log.info("oauth_callback: invite used by user: %s", user)
 
 
+def _stage_discord_webhook(request, oauth):
+    """Stage an OAuth-authorized Discord webhook in the session so the user can
+    pick events in the settings modal; the row is only created when they save
+    (POST /api/webhooks/)."""
+    del request.session["webhook"]
+    hook = oauth.data["webhook"]
+    scope = request.session.pop("webhook_scope", "user")
+    request.session["pending_discord_webhook"] = {
+        "hook_id": hook.get("id"),
+        "name": hook.get("name") or f"Discord {hook.get('id')}",
+        "url": hook["url"],
+        "scope": scope,
+    }
+    messages.info(request, "Discord webhook authorized. Select events to finish setup.")
+    target = SETTINGS_SITE_URL if scope == "site" else SETTINGS_USER_URL
+    return _maybe_native_redirect(reverse(target) + "#webhooks")
+
+
 def oauth_callback(request, oauth_provider: str = ""):
     """
     View  /oauth/callback/
@@ -266,20 +285,7 @@ def oauth_callback(request, oauth_provider: str = ""):
         log.debug("oauth.id: %s - %s", oauth.id, oauth.username)
         oauth.process_login(site_settings)
         if request.session.get("webhook") and provider == "discord":
-            del request.session["webhook"]
-            # stage the webhook so the user can pick events in the settings modal;
-            # the row is only created when they save (POST /api/webhooks/)
-            hook = oauth.data["webhook"]
-            scope = request.session.pop("webhook_scope", "user")
-            request.session["pending_discord_webhook"] = {
-                "hook_id": hook.get("id"),
-                "name": hook.get("name") or f"Discord {hook.get('id')}",
-                "url": hook["url"],
-                "scope": scope,
-            }
-            messages.info(request, "Discord webhook authorized. Select events to finish setup.")
-            target = "settings:site" if scope == "site" else SETTINGS_USER_URL
-            return _maybe_native_redirect(reverse(target) + "#webhooks")
+            return _stage_discord_webhook(request, oauth)
 
         invite_code = request.session.pop("oauth_invite", None)
         invite = UserInvites.objects.get_invite(invite_code) if invite_code else None
@@ -787,10 +793,10 @@ def passkey_setup_complete(request):
     request.session.pop("passkey_setup_username", None)
     login(request, user, backend=MODEL_BACKEND)
     post_login(request)
-    request.session["login_redirect_url"] = reverse("settings:site")
+    request.session["login_redirect_url"] = reverse(SETTINGS_SITE_URL)
     messages.info(request, f"Welcome to Django Files {user.get_name()}.")
     log.info("first-run passkey setup: created initial superuser=%s", user.username)
-    return JsonResponse({"redirect": reverse("settings:site")})
+    return JsonResponse({"redirect": reverse(SETTINGS_SITE_URL)})
 
 
 def duo_callback(request):

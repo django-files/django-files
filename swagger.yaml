@@ -652,8 +652,12 @@ components:
             type: string
             enum:
               - file.upload
+              - file.deleted
               - album.created
               - album.updated
+              - album.deleted
+              - short.created
+              - short.deleted
               - stream.live
               - stream.offline
               - user.created
