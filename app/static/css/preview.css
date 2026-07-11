@@ -300,32 +300,54 @@ body.no-top-navbar .preview-floating-hamburger {
     background-repeat: no-repeat;
 }
 
-.img-skeleton.has-thumb::before {
+/* Subtle loading shimmer while the full image downloads. Overrides the
+ * stronger global .img-skeleton::after glisten from main.css (built for the
+ * small gallery-card skeletons, far too loud at viewport size). The
+ * transform-only animation runs on the compositor, and the 0.5s delay keeps
+ * fast loads shimmer-free — the band sits off-screen until the first cycle. */
+.preview-wrapper .img-skeleton::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    z-index: 1;
+    inset: 0;
     background: linear-gradient(
-        90deg,
-        transparent,
-        var(--bs-primary) 30%,
-        var(--bs-primary) 70%,
-        transparent
+        110deg,
+        transparent 32%,
+        rgba(0, 0, 0, 0.1) 50%,
+        transparent 68%
     );
-    background-size: 40% 100%;
-    background-repeat: no-repeat;
-    animation: img-loading-sweep 1.6s ease-in-out infinite;
+    transform: translateX(-100%);
+    animation: preview-shimmer 2.4s ease-in-out 0.5s infinite;
 }
 
-@keyframes img-loading-sweep {
-    from {
-        background-position: -50% 0;
+[data-bs-theme='dark'] .preview-wrapper .img-skeleton::after {
+    background: linear-gradient(
+        110deg,
+        transparent 32%,
+        rgba(255, 255, 255, 0.14) 50%,
+        transparent 68%
+    );
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-bs-theme='light']) .preview-wrapper .img-skeleton::after {
+        background: linear-gradient(
+            110deg,
+            transparent 32%,
+            rgba(255, 255, 255, 0.14) 50%,
+            transparent 68%
+        );
     }
+}
+
+@keyframes preview-shimmer {
     to {
-        background-position: 150% 0;
+        transform: translateX(100%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .preview-wrapper .img-skeleton::after {
+        animation: none;
     }
 }
 

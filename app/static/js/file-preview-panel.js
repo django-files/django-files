@@ -134,14 +134,17 @@ export function openPanel(fileUrl, originEl = null) {
 
             panelContent.innerHTML = html
 
-            // Seed the skeleton with the gallery thumbnail that's already in
-            // the browser cache so initPanelImage can show it instantly rather
-            // than waiting for a fresh ?thumb=1 network request.
+            // Seed the skeleton with the gallery thumbnail that's already
+            // decoded in the gallery DOM — set synchronously so it is painted
+            // beneath the hero before the hero fade begins (no ?thumb=1
+            // network round-trip, no async onload gap).
             const panelSkeleton = panelContent.querySelector('#img-skeleton')
             if (panelSkeleton && originEl) {
                 const galleryThumb = originEl.querySelector('img')
                 if (galleryThumb?.complete && galleryThumb.naturalWidth > 0) {
                     panelSkeleton.dataset.thumb = galleryThumb.src
+                    panelSkeleton.style.backgroundImage = `url(${galleryThumb.src})`
+                    panelSkeleton.classList.add('has-thumb')
                 }
             }
 
@@ -539,55 +542,49 @@ function initPanelImage(container) {
 
     img.style.opacity = '0'
 
-    // Show the gallery thumbnail in the skeleton so the image area stays
-    // informative while the full image downloads.
-    if (skeleton?.dataset.thumb) {
+    // Fallback for opens without a gallery thumbnail already seeded by
+    // openPanel (e.g. direct panel loads): fetch ?thumb=1 into the skeleton.
+    if (skeleton?.dataset.thumb && !skeleton.classList.contains('has-thumb')) {
         const thumbImg = new Image()
         thumbImg.onload = () => {
+            if (!skeleton.isConnected) return
             skeleton.style.backgroundImage = `url(${thumbImg.src})`
             skeleton.classList.add('has-thumb')
         }
         thumbImg.src = skeleton.dataset.thumb
     }
 
-    // Skeleton stays visible (covers the image area during the hero fade) but
-    // shimmer animation is suppressed until loading takes longer than 500ms.
-    let shimmerTimer = null
-    if (skeleton) {
-        skeleton.classList.add('no-shimmer')
-        shimmerTimer = setTimeout(
-            () => skeleton.classList.remove('no-shimmer'),
-            500
-        )
-    }
-
     // Dismiss the hero now so sidebar/buttons are immediately visible.
-    // The skeleton covers the image area while the full image decodes.
-    const heroDismissedAt = Date.now()
+    // The skeleton covers the image area while the full image loads.
     dismissHero(heroEl)
 
-    const fadeOutSkeleton = () => {
-        if (!skeleton) return
-        clearTimeout(shimmerTimer)
-        skeleton.remove()
-    }
-
+    // Crossfade: snap the full image to opacity 1 *beneath* the skeleton,
+    // then fade the skeleton (showing the thumbnail at the same rect) out
+    // over it. The image area stays fully opaque throughout, so the panel
+    // background can never bleed through — no gray flash.
     const onLoad = () => {
         requestAnimationFrame(() => {
-            // Snap image to full opacity instantly so the skeleton (thumbnail)
-            // fades out over a fully-opaque image — no dark background bleed.
+            const hasThumb = skeleton?.classList.contains('has-thumb')
+            if (hasThumb) img.style.transition = 'none'
             img.style.opacity = '1'
-            // If the image decoded while the hero was still fading (common for
-            // cached images), wait for the hero's 0.25s fade to finish before
-            // fading the skeleton. Overlapping fades create a layered
-            // semi-transparent look as the hero's solid background dissolves.
-            const elapsed = Date.now() - heroDismissedAt
-            const heroFadeMs = 250
-            const wait = Math.max(0, heroFadeMs + 30 - elapsed)
-            if (wait > 0) {
-                setTimeout(fadeOutSkeleton, wait)
+            if (!skeleton) return
+            if (hasThumb) {
+                // .img-skeleton has a 0.25s opacity transition in preview.css
+                skeleton.style.opacity = '0'
+                let removed = false
+                const removeSkeleton = () => {
+                    if (removed) return
+                    removed = true
+                    skeleton.remove()
+                }
+                skeleton.addEventListener('transitionend', removeSkeleton, {
+                    once: true,
+                })
+                setTimeout(removeSkeleton, 400)
             } else {
-                fadeOutSkeleton()
+                // No thumbnail to crossfade from — the image fades in via its
+                // inline transition instead; drop the skeleton right away.
+                skeleton.remove()
             }
         })
     }
@@ -611,7 +608,21 @@ function initPanelImage(container) {
     } else {
         // decode() waits for the image to be fully decoded before the first
         // paint, preventing the GPU texture-upload black flash on reveal.
-        img.decode().then(onLoad).catch(onError)
+        img.decode()
+            .then(onLoad)
+            .catch(() => {
+                // decode() rejects for very large images on some browsers
+                // (Safari has a decoder size limit) even though the image
+                // renders fine — fall back to load/error events instead of
+                // treating it as a broken image.
+                if (img.complete) {
+                    if (img.naturalWidth > 0) onLoad()
+                    else onError()
+                } else {
+                    img.addEventListener('load', onLoad, { once: true })
+                    img.addEventListener('error', onError, { once: true })
+                }
+            })
     }
 }
 
