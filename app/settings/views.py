@@ -20,8 +20,10 @@ from django.shortcuts import redirect, render, reverse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from home.models import Webhook
 from home.util.misc import redact_log
-from oauth.models import CustomUser, DiscordWebhooks, UserInvites, superuser_exists
+from home.util.webhooks import SITE_ONLY_EVENTS, WEBHOOK_EVENTS
+from oauth.models import CustomUser, UserInvites, superuser_exists
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
 
@@ -34,6 +36,15 @@ SESSION_AUTH_REQUIRED = "Session authentication required."
 SETTINGS_SITE_URL = "settings:site"
 SETUP_TEMPLATE = "settings/setup.html"
 USERNAME_TAKEN = "That username is already taken."
+
+
+def _pop_pending_webhook(request, scope):
+    """Consume the OAuth-staged Discord webhook, but only on the settings page
+    matching the scope the flow was initiated with."""
+    pending = request.session.get("pending_discord_webhook")
+    if pending and pending.get("scope", "user") == scope:
+        return request.session.pop("pending_discord_webhook")
+    return None
 
 
 @csrf_exempt
@@ -55,6 +66,11 @@ def site_view(request):
             "invites": invites,
             "sessions": get_sessions(request),
             "timezones": sorted(zoneinfo.available_timezones()),
+            "webhooks": Webhook.objects.filter(scope=Webhook.SCOPE_SITE).select_related("owner"),
+            "webhook_scope": Webhook.SCOPE_SITE,
+            "webhook_events": WEBHOOK_EVENTS,
+            "webhook_site_only_events": sorted(SITE_ONLY_EVENTS),
+            "pending_webhook": _pop_pending_webhook(request, Webhook.SCOPE_SITE),
         }
         return render(request, "settings/site.html", context)
 
@@ -103,9 +119,13 @@ def user_view(request):
     """
     log.debug("user_view: %s", request.method)
     if request.method != "POST":
-        webhooks = DiscordWebhooks.objects.get_request(request)
+        webhooks = request.user.webhooks.filter(scope=Webhook.SCOPE_USER)
         context = {
             "webhooks": webhooks,
+            "webhook_scope": Webhook.SCOPE_USER,
+            "webhook_events": WEBHOOK_EVENTS,
+            "webhook_site_only_events": sorted(SITE_ONLY_EVENTS),
+            "pending_webhook": _pop_pending_webhook(request, Webhook.SCOPE_USER),
             "timezones": sorted(zoneinfo.available_timezones()),
             "default_upload_name_formats": CustomUser.UploadNameFormats.choices,
             "user_avatar_choices": CustomUser.UserAvatarChoices.choices,

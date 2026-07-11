@@ -1,0 +1,78 @@
+{% comment %}
+Webhook table shared by user settings (webhook_scope="user") and
+site settings (webhook_scope="site", adds an Owner column).
+{% endcomment %}
+{% if not webhooks %}
+    <p class="text-muted mb-0" id="noWebhooksText">No webhooks found.</p>
+{% else %}
+    <div class="table-responsive">
+        <table class="table table-sm mb-0" id="webhooksTable">
+            <caption class="visually-hidden">Webhooks</caption>
+            <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col" class="d-none d-sm-table-cell">Type</th>
+                {% if webhook_scope == 'site' %}
+                    <th scope="col" class="d-none d-sm-table-cell">Owner</th>
+                {% endif %}
+                <th scope="col" class="d-none d-md-table-cell">URL</th>
+                <th scope="col" class="d-none d-sm-table-cell">Events</th>
+                <th scope="col">Active</th>
+                <th scope="col" class="text-center">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for data in webhooks %}
+                <tr id="webhook-{{ data.id }}">
+                    <td>{{ data.name }}</td>
+                    <td class="d-none d-sm-table-cell">
+                        {% if data.webhook_type == 'discord' %}
+                            <i class="fab fa-discord me-1"></i>Discord
+                        {% else %}
+                            <i class="fa-solid fa-globe me-1"></i>Custom
+                        {% endif %}
+                    </td>
+                    {% if webhook_scope == 'site' %}
+                        <td class="d-none d-sm-table-cell">{{ data.owner.get_name }}</td>
+                    {% endif %}
+                    <td class="d-none d-md-table-cell">
+                        <a class="clip link-body-emphasis text-decoration-none" role="button"
+                           data-clipboard-text="{{ data.url }}">{{ data.url|truncatechars:40 }}</a>
+                    </td>
+                    <td class="d-none d-sm-table-cell">
+                        {% for event in data.events %}
+                            <span class="badge text-bg-secondary">{{ event }}</span>
+                        {% empty %}
+                            <span class="text-muted small">None</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if data.active %}
+                            <i class="fa-solid fa-circle-check text-success" title="Active"></i>
+                        {% else %}
+                            <i class="fa-solid fa-circle-xmark text-danger" title="Inactive"></i>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <a role="button" class="testWebhookBtn me-2" title="Send Test Event"
+                           data-webhook-id="{{ data.id }}">
+                            <i class="fa-solid fa-paper-plane link-primary"></i></a>
+                        <a role="button" class="editWebhookBtn me-2" title="Edit"
+                           data-webhook-id="{{ data.id }}"
+                           data-webhook-name="{{ data.name }}"
+                           data-webhook-type="{{ data.webhook_type }}"
+                           data-webhook-url="{{ data.url }}"
+                           data-webhook-secret="{{ data.secret }}"
+                           data-webhook-active="{{ data.active|yesno:'true,false' }}"
+                           data-webhook-events="{{ data.events|join:',' }}">
+                            <i class="fa-solid fa-pen-to-square link-body-emphasis"></i></a>
+                        <a role="button" class="deleteWebhookBtn" title="Delete"
+                           data-webhook-id="{{ data.id }}">
+                            <i class="fa-regular fa-trash-can link-danger"></i></a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}

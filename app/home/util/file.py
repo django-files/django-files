@@ -12,13 +12,14 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.files import File
 from django.db import transaction
 from home.models import Albums, Files
-from home.tasks import generate_video_thumb, new_file_websocket, send_discord_message
+from home.tasks import dispatch_webhook_event, generate_video_thumb, new_file_websocket
 from home.util.image import ImageProcessor, thumbnail_processor
 from home.util.misc import anytobool
 from home.util.quota import increment_storage_usage
 from home.util.rand import rand_string
 from home.util.tags import sync_file_tags
 from home.util.video import video_metadata_processor
+from home.util.webhooks import EVENT_FILE_UPLOAD, build_file_payload
 from oauth.models import CustomUser
 
 log = logging.getLogger("app")
@@ -145,7 +146,7 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
         transaction.on_commit(lambda: generate_video_thumb.apply_async(args=[pk], kwargs={"strip_gps": strip_gps}))
     increment_storage_usage(file)
     new_file_websocket.apply_async(args=[file.pk], priority=0)
-    send_discord_message.delay(file.pk)
+    dispatch_webhook_event.delay(EVENT_FILE_UPLOAD, file.user_id, build_file_payload(file))
     return file
 
 

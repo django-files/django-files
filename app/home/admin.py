@@ -9,9 +9,28 @@ from home.models import (
     Stream,
     StreamDiscordWebhooks,
     StreamHistory,
+    Webhook,
 )
+from home.tasks import fire_webhook
+from home.util.webhooks import EVENT_TEST, build_test_payload
 
 admin.site.site_header = "Django Files Administration"
+
+
+@admin.register(Webhook)
+class WebhookAdmin(admin.ModelAdmin):
+    model = Webhook
+    list_display = ("id", "owner", "name", "webhook_type", "scope", "events", "active", "created_at")
+    list_filter = ("webhook_type", "scope", "active", "owner")
+    search_fields = ("name", "url", "owner__username")
+    ordering = ("-created_at",)
+    actions = ["fire_test_event"]
+
+    @admin.action(description="Fire test event")
+    def fire_test_event(self, request, queryset):
+        for webhook in queryset:
+            fire_webhook.delay(webhook.pk, EVENT_TEST, build_test_payload(webhook))
+        self.message_user(request, f"Test event queued for {queryset.count()} webhook(s).")
 
 
 @admin.register(Albums)

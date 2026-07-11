@@ -15,15 +15,15 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Count, Q, Sum
 from django.forms.models import model_to_dict
-from django.template.loader import render_to_string
 from django.utils import timezone
 from django_redis import get_redis_connection
-from home.models import Files, FileStats, Stream
+from home.models import Files, FileStats, Stream, Webhook
 from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
 from home.util.tags import sync_file_tags
 from home.util.video import video_metadata_processor, video_thumbnail_processor
-from oauth.models import CustomUser, DiscordWebhooks
+from home.util.webhooks import SITE_ONLY_EVENTS, send_webhook
+from oauth.models import CustomUser
 from packaging import version
 from PIL import UnidentifiedImageError
 from pytimeparse2 import parse
@@ -72,8 +72,8 @@ def generate_thumbs(user_pk: int = None, only_missing: bool = True):
         log.info("Generating thumbnail for: %s", file.name)
         try:
             thumbnail_processor(file)
-        except ValueError, UnidentifiedImageError:
-            # if we hit a file that cannot be processed ignore and continue
+        except ValueError, UnidentifiedImageError, FileNotFoundError:
+            # if we hit a file that cannot be processed or is missing from storage ignore and continue
             log.error("Unable to process thumbnail for %s", file.name)
             continue
 
@@ -593,49 +593,51 @@ def send_push_live(stream_name: str, ttl: int = 1800):
     send_group_notification(group_name=stream.name, payload=payload, ttl=ttl)
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 6, "countdown": 30})
-def send_discord_message(pk):
-    log.info("send_discord_message: pk: %s", pk)
-    file = Files.objects.filter(pk=pk).first()
-    if not file:
-        log.warning("send_discord_message: 404 File Not Found - pk: %s", pk)
-        return f"404 File Not Found - pk: {pk}"
-    webhooks = DiscordWebhooks.objects.filter(owner=file.user)
-    context = {"file": file}
-    message = render_to_string("message/new-file.html", context)
-    log.info(message)
-    for hook in webhooks:
-        send_discord.delay(hook.id, message)
+@shared_task()
+def dispatch_webhook_event(event_key, owner_pk, payload_data):
+    """Fan an event out to all subscribed webhooks.
+
+    Site-scoped webhooks (staff-owned) receive events for all users. User-scoped
+    webhooks only receive events for their owner's actions, and never the
+    SITE_ONLY_EVENTS (owner_pk is None when those are dispatched). Event
+    membership is checked in Python because JSONField __contains is not
+    supported on SQLite.
+    """
+    log.info("dispatch_webhook_event: %s owner=%s", event_key, owner_pk)
+    query = Q(scope=Webhook.SCOPE_SITE, owner__is_staff=True)
+    if event_key not in SITE_ONLY_EVENTS and owner_pk is not None:
+        query |= Q(scope=Webhook.SCOPE_USER, owner_id=owner_pk)
+    for webhook in Webhook.objects.filter(query, active=True):
+        if event_key in webhook.events:
+            fire_webhook.delay(webhook.pk, event_key, payload_data)
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 6, "countdown": 30})
-def send_success_message(hook_pk):
-    site_settings = SiteSettings.objects.settings()
-    log.info("send_success_message: %s", hook_pk)
-    context = {"site_url": site_settings.site_url}
-    message = render_to_string("message/welcome.html", context)
-    send_discord.delay(hook_pk, message)
-
-
-@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 5, "countdown": 60}, rate_limit="10/m")
-def send_discord(hook_pk, message):
-    log.info("send_discord: %s", hook_pk)
+@shared_task(bind=True, max_retries=6, rate_limit="10/m")
+def fire_webhook(self, webhook_pk, event_key, payload_data):
+    log.info("fire_webhook: pk=%s event=%s", webhook_pk, event_key)
+    webhook = Webhook.objects.filter(pk=webhook_pk, active=True).first()
+    if not webhook:
+        log.warning("fire_webhook: webhook %s not found or inactive", webhook_pk)
+        return
     try:
-        webhook = DiscordWebhooks.objects.get(pk=hook_pk)
-        body = {"content": message}
-        log.debug("send_discord body: %s", body)
-        r = httpx.post(webhook.url, json=body, timeout=30)
-        if r.status_code == 404:
-            log.warning("Hook %s removed by owner %s", webhook.hook_id, webhook.owner.username)
-            webhook.delete()
-            return 404
-        if not r.is_success:
-            log.warning(r.content.decode(r.encoding))
-            r.raise_for_status()
+        r = send_webhook(webhook, event_key, payload_data)
+    except httpx.HTTPError as error:
+        log.warning("fire_webhook: %s - %s", webhook_pk, error)
+        raise self.retry(countdown=30) from error
+    if r.is_success:
         return r.status_code
-    except Exception as error:
-        log.exception(error)
-        raise
+    log.warning("fire_webhook: %s returned %s: %s", webhook.url, r.status_code, r.text[:256])
+    if webhook.webhook_type == Webhook.WEBHOOK_TYPE_DISCORD and r.status_code in (404, 410):
+        log.warning("Hook %s removed by owner %s", webhook_pk, webhook.owner.username)
+        webhook.delete()
+        return r.status_code
+    if self.request.retries >= self.max_retries:
+        if webhook.webhook_type == Webhook.WEBHOOK_TYPE_CUSTOM:
+            log.warning("fire_webhook: deactivating webhook %s after max retries", webhook_pk)
+            webhook.active = False
+            webhook.save(update_fields=["active"])
+        return r.status_code
+    raise self.retry(countdown=30)
 
 
 def acquire_lock(key, timeout=900):

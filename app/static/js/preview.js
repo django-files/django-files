@@ -170,23 +170,48 @@ function initPreviewImage() {
     if (skeleton?.dataset.thumb) {
         const thumb = new Image()
         thumb.onload = () => {
+            if (!skeleton.isConnected) return
             skeleton.style.backgroundImage = `url(${thumb.src})`
             skeleton.classList.add('has-thumb')
         }
         thumb.src = skeleton.dataset.thumb
     }
 
-    const onLoad = () => {
+    // Crossfade: snap the full image to opacity 1 beneath the skeleton, then
+    // fade the skeleton (thumbnail at the same rect) out over it — the image
+    // area stays fully opaque throughout so the background never bleeds
+    // through. Without a thumbnail the image fades in via its inline
+    // transition instead.
+    const reveal = () => {
+        const hasThumb = skeleton?.classList.contains('has-thumb')
+        if (hasThumb) img.style.transition = 'none'
         img.style.opacity = '1'
-        if (skeleton) {
-            skeleton.style.transition = 'opacity 0.4s ease-out'
+        if (!skeleton) return
+        if (hasThumb) {
+            // .img-skeleton has a 0.25s opacity transition in preview.css
             skeleton.style.opacity = '0'
-            skeleton.addEventListener(
-                'transitionend',
-                () => skeleton.remove(),
-                { once: true }
-            )
+            let removed = false
+            const removeSkeleton = () => {
+                if (removed) return
+                removed = true
+                skeleton.remove()
+            }
+            skeleton.addEventListener('transitionend', removeSkeleton, {
+                once: true,
+            })
+            setTimeout(removeSkeleton, 400)
+        } else {
+            skeleton.remove()
         }
+    }
+
+    const onLoad = () => {
+        // Decode off-screen first so the crossfade reveals ready pixels
+        // instead of a decode-blank frame. decode() can reject for very large
+        // images (browser decoder limits) even though the image renders fine,
+        // so reveal regardless.
+        if (img.decode) img.decode().then(reveal).catch(reveal)
+        else reveal()
     }
 
     const onError = () => {

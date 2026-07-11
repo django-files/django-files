@@ -145,6 +145,7 @@ Django Files is packed with features for seamless file management and sharing. M
 - [Android Client](https://github.com/django-files/android-client)
 - Customizable UI with light/dark mode
 - OAuth support (Discord, GitHub, Google) & two-factor authentication (Duo)
+- Webhooks — event notifications to Discord or any custom endpoint, with signed JSON payloads
 - Web extensions for Chrome and Firefox
 - Public upload support (optional)
 
@@ -227,7 +228,7 @@ client upload settings.
 
 ### Files
 
-Upload Endpoint: `/api/upload/`  
+Upload Endpoint: `/api/upload/`
 Response Type: JSON
 
 ```json
@@ -241,7 +242,7 @@ Response Type: JSON
 
 ### Short URLs
 
-Upload Endpoint: `/api/shorten/`  
+Upload Endpoint: `/api/shorten/`
 Response Type: JSON
 
 ```json
@@ -267,11 +268,12 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 - Enabled EXIF Embeds: If to show EXIF metadata on unfurls/embeds.
 - Appearance Embed Color: Color of embeds/unfurls for shared links.
 - Appearance Nav Colors: Color of navbar for this user and anonymous users viewing shared user files.
-- Discord Webhooks: Discord webhooks to trigger when a file is uploaded.
+- Webhooks: Send event notifications (uploads, deletions, albums, short URLs, streams, logins) to Discord or any custom HTTP endpoint, with per-webhook event subscriptions and HMAC-signed JSON payloads.
 
-### Site Settings
+### Site Settings (Superusers only.)
 
 - Site URL: The site url to use, used to generate links.
+- Site Webhooks: Site-wide webhooks that receive events for all users, including account creation/deletion.
 - Site Title: Site title in browser and unfurls.
 - Global Storage Quota: The storage quota for the entire django files deployment.
 - User Default Storage Quota: The default storage quota for new users without a specified quota.
@@ -287,7 +289,7 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 >
 > **NO VARIABLES ARE REQUIRED!** All are optional.
 >
-> OAuth may be configured from the UI.  
+> OAuth may be configured from the UI.
 > AWS/Duo/Sentry **require** environment variables.
 > Switching between local storage and s3 is not supported and WILL cause problems.
 
@@ -340,7 +342,7 @@ based on what is set in the `docker-compose.yaml` file.
 
 ## 🛠 Development Deployment
 
-Command included below to generate the required `SECRET`.  
+Command included below to generate the required `SECRET`.
 The `SITE_URL` should be set with a variable for development, in UI Settings.
 You may also want to configure an auth method from the variables above.
 

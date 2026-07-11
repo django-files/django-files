@@ -11,6 +11,10 @@ from home.managers import (
 from home.util.nginx import sign_nginx_urls
 from home.util.rand import rand_string
 from home.util.storage import StoragesRouterFileField, use_s3
+from home.util.webhooks import WEBHOOK_SCOPE_SITE as HOOK_SCOPE_SITE
+from home.util.webhooks import WEBHOOK_SCOPE_USER as HOOK_SCOPE_USER
+from home.util.webhooks import WEBHOOK_TYPE_CUSTOM as HOOK_TYPE_CUSTOM
+from home.util.webhooks import WEBHOOK_TYPE_DISCORD as HOOK_TYPE_DISCORD
 from oauth.managers import DiscordWebhooksManager
 from oauth.models import CustomUser
 
@@ -337,6 +341,51 @@ class StreamHistory(models.Model):
             f"<StreamHistory(id={self.id}, stream={self.stream.name}, "
             f"started_at={self.started_at}, ended_at={self.ended_at})>"
         )
+
+
+class Webhook(models.Model):
+    WEBHOOK_TYPE_CUSTOM = HOOK_TYPE_CUSTOM
+    WEBHOOK_TYPE_DISCORD = HOOK_TYPE_DISCORD
+    TYPE_CHOICES = [
+        (WEBHOOK_TYPE_CUSTOM, "Custom"),
+        (WEBHOOK_TYPE_DISCORD, "Discord"),
+    ]
+    SCOPE_USER = HOOK_SCOPE_USER
+    SCOPE_SITE = HOOK_SCOPE_SITE
+    SCOPE_CHOICES = [
+        (SCOPE_USER, "User"),
+        (SCOPE_SITE, "Site"),
+    ]
+
+    id = models.AutoField(primary_key=True)
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="webhooks")
+    name = models.CharField(max_length=128, verbose_name="Name", help_text="Webhook Name.")
+    webhook_type = models.CharField(
+        max_length=16, choices=TYPE_CHOICES, default=WEBHOOK_TYPE_CUSTOM, verbose_name="Type"
+    )
+    scope = models.CharField(
+        max_length=16,
+        choices=SCOPE_CHOICES,
+        default=SCOPE_USER,
+        verbose_name="Scope",
+        help_text="Site-scoped hooks receive events for all users; superuser only.",
+    )
+    url = models.URLField(verbose_name="Webhook URL")
+    secret = models.CharField(
+        max_length=128, blank=True, verbose_name="Secret", help_text="HMAC-SHA256 signing secret for custom hooks."
+    )
+    active = models.BooleanField(default=True)
+    events = models.JSONField(default=list, blank=True, verbose_name="Events", help_text="Subscribed event keys.")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created", help_text="Hook Created Date.")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated", help_text="Hook Updated Date.")
+
+    def __str__(self):
+        return f"<Webhook(id={self.id} type={self.webhook_type} owner={self.owner_id})>"
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Webhook"
+        verbose_name_plural = "Webhooks"
 
 
 class StreamDiscordWebhooks(models.Model):
