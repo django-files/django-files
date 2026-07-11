@@ -150,9 +150,6 @@ function updateTypeFields() {
     document
         .getElementById('webhook-secret-group')
         .classList.toggle('d-none', !isCustom)
-    document
-        .getElementById('webhook-discord-help')
-        ?.classList.toggle('d-none', isCustom)
 }
 
 async function webhookErrorToast(response) {

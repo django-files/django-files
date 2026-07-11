@@ -314,18 +314,11 @@
             <div class="dash-card">
                 <div class="dash-card-header pb-3">
                     <h4 class="d-flex align-items-center gap-2"><i class="fa-solid fa-bolt"></i> Webhooks</h4>
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="addWebhookBtn">
-                        <i class="fa-solid fa-plus me-1"></i> Add Webhook</button>
+                    {% include 'settings/webhook-add-buttons.html' %}
                 </div>
                 <div class="dash-card-body">
                     <p class="text-muted small">
                         Send event notifications to Discord or any custom HTTP endpoint.
-                        {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
-                            {% if user.discord %}
-                                Discord webhooks can also be added via the
-                                <a href="{% url 'oauth:webhook' %}">Discord OAuth flow</a>.
-                            {% endif %}
-                        {% endif %}
                     </p>
                     {% include 'settings/webhooks-table.html' %}
                 </div>

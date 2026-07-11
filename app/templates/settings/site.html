@@ -404,8 +404,7 @@
             <div class="dash-card">
                 <div class="dash-card-header pb-3">
                     <h4 class="d-flex align-items-center gap-2"><i class="fa-solid fa-bolt"></i> Site Webhooks</h4>
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="addWebhookBtn">
-                        <i class="fa-solid fa-plus me-1"></i> Add Webhook</button>
+                    {% include 'settings/webhook-add-buttons.html' %}
                 </div>
                 <div class="dash-card-body">
                     <p class="text-muted small">

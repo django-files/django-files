@@ -107,11 +107,20 @@ class PayloadBuilderTests(WebhookBaseTestCase):
         self.assertIn(f"album={album.id}", payload["url"])
 
     def test_build_stream_payload(self):
-        stream = Stream.objects.create(name="teststream", title="Test", user=self.user)
+        stream = Stream.objects.create(
+            name="teststream", title="Test", description="A test stream", user=self.user
+        )
         payload = build_stream_payload(stream)
         self.assertEqual(payload["name"], "teststream")
+        self.assertEqual(payload["title"], "Test")
+        self.assertEqual(payload["description"], "A test stream")
         self.assertEqual(payload["user"], self.user.username)
         self.assertIn("/live/teststream/", payload["url"])
+
+    def test_build_discord_embed_stream_description(self):
+        data = {"name": "s1", "description": "Movie night", "url": "u", "user": "x"}
+        body = build_discord_embed("stream.live", data, "https://example.com")
+        self.assertIn("Movie night", body["embeds"][0]["description"])
 
     def test_build_user_payload(self):
         payload = build_user_payload(self.user)
@@ -127,7 +136,19 @@ class PayloadBuilderTests(WebhookBaseTestCase):
         embed = body["embeds"][0]
         self.assertEqual(embed["title"], "User Created")
         self.assertIn(self.user.username, embed["description"])
-        self.assertEqual(embed["footer"], {"text": "django-files"})
+        site_title = SiteSettings.objects.settings().site_title
+        self.assertEqual(body["username"], site_title)
+        self.assertEqual(embed["footer"], {"text": f"django-files • {site_title}"})
+
+    def test_build_discord_embed_file_media(self):
+        image_data = {"name": "a.jpg", "mime": "image/jpeg", "size": 1, "url": "u", "raw_url": "https://x/raw/a.jpg"}
+        body = build_discord_embed(EVENT_FILE_UPLOAD, image_data, "https://example.com")
+        self.assertEqual(body["embeds"][0]["image"], {"url": "https://x/raw/a.jpg"})
+        self.assertNotIn("content", body)
+        video_data = {"name": "b.mp4", "mime": "video/mp4", "size": 1, "url": "u", "raw_url": "https://x/raw/b.mp4"}
+        body = build_discord_embed(EVENT_FILE_UPLOAD, video_data, "https://example.com")
+        self.assertEqual(body["content"], "https://x/raw/b.mp4")
+        self.assertNotIn("image", body["embeds"][0])
 
 
 class SendWebhookTests(WebhookBaseTestCase):

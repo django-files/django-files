@@ -31,7 +31,7 @@ WEBHOOK_EVENTS = {
     EVENT_ALBUM_CREATED: "Album Created",
     EVENT_ALBUM_UPDATED: "Album Updated",
     EVENT_STREAM_LIVE: "Stream Live",
-    EVENT_STREAM_OFFLINE: "Stream Offline",
+    EVENT_STREAM_OFFLINE: "Stream Ended",
     EVENT_USER_CREATED: "User Created",
     EVENT_USER_DELETED: "User Deleted",
     EVENT_USER_LOGIN: "User Login",
@@ -45,7 +45,7 @@ DISCORD_TITLES = {
     EVENT_ALBUM_CREATED: "Album Created",
     EVENT_ALBUM_UPDATED: "Album Updated",
     EVENT_STREAM_LIVE: "Stream Live",
-    EVENT_STREAM_OFFLINE: "Stream Offline",
+    EVENT_STREAM_OFFLINE: "Stream Ended",
     EVENT_USER_CREATED: "User Created",
     EVENT_USER_DELETED: "User Deleted",
     EVENT_USER_LOGIN: "User Login",
@@ -85,6 +85,8 @@ def build_album_payload(album) -> dict:
 def build_stream_payload(stream) -> dict:
     return {
         "name": stream.name,
+        "title": stream.title,
+        "description": stream.description,
         "url": _site_url() + reverse("home:live", kwargs={"key": stream.name}),
         "user": stream.user.username,
     }
@@ -114,24 +116,41 @@ def _discord_description(event_key: str, data: dict) -> str:
         return f"**{data['name']}** - {data['file_count']} files"
     if event_key in (EVENT_STREAM_LIVE, EVENT_STREAM_OFFLINE):
         verb = "went live" if event_key == EVENT_STREAM_LIVE else "ended"
-        return f"**{data['name']}** {verb}"
+        text = f"**{data['name']}** {verb}"
+        if data.get("description"):
+            text += f"\n{data['description']}"
+        return text
     if event_key == EVENT_TEST:
         return "Webhook added successfully. New results will show up here..."
     return f"**{data.get('username', data.get('user', ''))}**"
 
 
 def build_discord_embed(event_key: str, payload_data: dict, site_url: str) -> dict:
-    return {
-        "embeds": [
-            {
-                "title": DISCORD_TITLES.get(event_key, event_key),
-                "description": _discord_description(event_key, payload_data),
-                "url": payload_data.get("url", site_url),
-                "timestamp": timezone.now().isoformat(),
-                "footer": {"text": "django-files"},
-            }
-        ]
+    from settings.models import SiteSettings
+
+    site_title = SiteSettings.objects.settings().site_title
+    embed = {
+        "title": DISCORD_TITLES.get(event_key, event_key),
+        "description": _discord_description(event_key, payload_data),
+        "url": payload_data.get("url", site_url),
+        "timestamp": timezone.now().isoformat(),
+        "footer": {"text": f"django-files • {site_title}"},
     }
+    body = {
+        # username overrides the webhook's own name (the Discord application
+        # name for OAuth-created hooks) on every delivered message
+        "username": site_title,
+        "embeds": [embed],
+    }
+    if event_key == EVENT_FILE_UPLOAD and (raw_url := payload_data.get("raw_url")):
+        mime = payload_data.get("mime", "")
+        if mime.startswith("image/"):
+            embed["image"] = {"url": raw_url}
+        elif mime.startswith("video/"):
+            # webhook embeds cannot carry a playable video; a bare link in
+            # content lets Discord unfurl its own inline player
+            body["content"] = raw_url
+    return body
 
 
 def send_webhook(webhook, event_key: str, payload_data: dict) -> httpx.Response:

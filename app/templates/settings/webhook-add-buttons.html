@@ -1,0 +1,18 @@
+{% load home_tags %}
+{% comment %}
+Header buttons for the webhook sections, shared by user settings
+(webhook_scope="user") and site settings (webhook_scope="site").
+The Discord button launches the OAuth channel picker; the flow returns
+to this page with the webhook staged and the modal pre-filled.
+{% endcomment %}
+<div class="d-flex gap-2">
+    {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
+        {% if user.discord %}
+            <a href="{% url 'oauth:webhook' %}{% if webhook_scope == 'site' %}?scope=site{% endif %}"
+               class="btn btn-sm btn-outline-primary">
+                <i class="fab fa-discord me-1"></i> Add Discord Webhook</a>
+        {% endif %}
+    {% endif %}
+    <button type="button" class="btn btn-sm btn-outline-primary" id="addWebhookBtn">
+        <i class="fa-solid fa-plus me-1"></i> Add Webhook</button>
+</div>
