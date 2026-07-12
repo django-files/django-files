@@ -50,6 +50,9 @@ WEBHOOK_EVENTS = {
 # events that only site-scoped webhooks may subscribe to (owner_pk is None at dispatch)
 SITE_ONLY_EVENTS = {EVENT_USER_CREATED, EVENT_USER_DELETED}
 
+# events whose payloads carry file tags and honor the webhook tag filter
+FILE_EVENTS = {EVENT_FILE_UPLOAD, EVENT_FILE_DELETED}
+
 DISCORD_TITLES = {
     EVENT_FILE_UPLOAD: "New File Upload",
     EVENT_FILE_DELETED: "File Deleted",
@@ -160,6 +163,28 @@ def build_test_payload(webhook) -> dict:
         "name": webhook.name,
         "user": webhook.owner.username,
     }
+
+
+def event_matches_filters(event_key: str, filters: dict, payload_data: dict) -> bool:
+    """Check an event payload against a webhook's filters.
+
+    Only "tags" is supported so far, and only file events honor it: entries are
+    matched case-insensitively against the payload tags, a "!" prefix excludes,
+    and exclusions win over matches. No positive entries means any file passes
+    the exclusion check. Unknown filter keys are ignored so old workers stay
+    compatible with filter types added later.
+    """
+    if event_key not in FILE_EVENTS or not isinstance(filters, dict):
+        return True
+    tag_filter = filters.get("tags")
+    if not tag_filter:
+        return True
+    file_tags = {tag.lower() for tag in payload_data.get("tags", [])}
+    excluded = {tag[1:].lower() for tag in tag_filter if tag.startswith("!")}
+    included = {tag.lower() for tag in tag_filter if not tag.startswith("!")}
+    if excluded & file_tags:
+        return False
+    return not included or bool(included & file_tags)
 
 
 MAX_TAG_LINE = 256

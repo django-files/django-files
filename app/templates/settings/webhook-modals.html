@@ -76,6 +76,15 @@ site-scoped hooks; the hidden scope input drives the API payload.
                             {% endif %}
                         {% endfor %}
                     </div>
+                    <div class="form-floating mt-3">
+                        <input type="text" class="form-control" id="webhook-tag-filter" name="tag_filter"
+                               placeholder="work, screenshots, !private">
+                        <label for="webhook-tag-filter">Tag Filter (optional)</label>
+                        <div class="form-text">
+                            Only fire file events for files with a matching tag. Comma-separated;
+                            prefix a tag with <code>!</code> to exclude. Leave blank for all files.
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary" id="saveWebhookBtn">

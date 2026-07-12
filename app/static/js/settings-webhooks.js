@@ -33,6 +33,8 @@ document.querySelectorAll('.editWebhookBtn').forEach((el) =>
         document
             .querySelectorAll('.webhook-event-check')
             .forEach((check) => (check.checked = events.includes(check.value)))
+        document.getElementById('webhook-tag-filter').value =
+            data.webhookTagFilter || ''
         document.getElementById('webhookModalLabel').textContent =
             'Edit Webhook'
         updateTypeFields()
@@ -47,6 +49,11 @@ document
 webhookForm?.addEventListener('submit', async (event) => {
     event.preventDefault()
     const webhookID = document.getElementById('webhook-id').value
+    const filterTags = document
+        .getElementById('webhook-tag-filter')
+        .value.split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean)
     const body = {
         name: document.getElementById('webhook-name').value,
         webhook_type: document.getElementById('webhook-type').value,
@@ -57,6 +64,7 @@ webhookForm?.addEventListener('submit', async (event) => {
         events: [...document.querySelectorAll('.webhook-event-check')]
             .filter((check) => check.checked)
             .map((check) => check.value),
+        filters: filterTags.length ? { tags: filterTags } : {},
     }
     const url = webhookID ? `/api/webhooks/${webhookID}/` : '/api/webhooks/'
     const method = webhookID ? 'PATCH' : 'POST'

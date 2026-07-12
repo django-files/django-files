@@ -664,6 +664,18 @@ components:
               - user.deleted
               - user.login
           example: [file.upload, album.created]
+        filters:
+          type: object
+          description: >
+            Event filters. tags filters file.upload / file.deleted by file tag:
+            matching is case-insensitive, a "!" prefix excludes, and exclusions
+            win. Empty object = no filtering.
+          properties:
+            tags:
+              type: array
+              items:
+                type: string
+              example: [work, "!private"]
         created_at:
           type: string
           format: date-time
@@ -700,6 +712,17 @@ components:
           items:
             type: string
           example: [file.upload]
+        filters:
+          type: object
+          description: >
+            Optional event filters. tags filters file events by file tag;
+            prefix a tag with "!" to exclude. Maximum 50 tags.
+          properties:
+            tags:
+              type: array
+              items:
+                type: string
+              example: [work, "!private"]
       required:
         - name
         - url
