@@ -70,7 +70,10 @@ site-scoped hooks; the hidden scope input drives the API payload.
                                         <input class="form-check-input webhook-event-check" type="checkbox"
                                                value="{{ key }}" id="webhook-event-{{ forloop.counter }}">
                                         <label class="form-check-label" for="webhook-event-{{ forloop.counter }}">
-                                            {{ label }}</label>
+                                            {{ label }}{% if key in webhook_tag_filtered_events %}
+                                                <i class="fa-solid fa-tag ms-1 text-info opacity-75"
+                                                   title="Supports tag filtering" aria-label="Supports tag filtering"></i>
+                                            {% endif %}</label>
                                     </div>
                                 </div>
                             {% endif %}
@@ -81,8 +84,9 @@ site-scoped hooks; the hidden scope input drives the API payload.
                                placeholder="work, screenshots, !private">
                         <label for="webhook-tag-filter">Tag Filter (optional)</label>
                         <div class="form-text">
-                            Only fire file and album events when a tag matches. Comma-separated;
-                            prefix a tag with <code>!</code> to exclude. Leave blank to match everything.
+                            Only fire events marked <i class="fa-solid fa-tag text-info opacity-75"></i>
+                            when a tag matches. Comma-separated; prefix a tag with <code>!</code>
+                            to exclude. Leave blank to match everything.
                         </div>
                     </div>
                 </div>

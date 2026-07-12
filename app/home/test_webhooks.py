@@ -772,6 +772,12 @@ class WebhookSettingsPagesTests(WebhookBaseTestCase):
             events=[EVENT_USER_CREATED],
         )
 
+    def test_webhook_modal_marks_tag_filterable_events(self):
+        self.client.force_login(self.user)
+        html = self.client.get(reverse("settings:user")).content.decode()
+        # one tag icon per file.*/album.* event checkbox
+        self.assertEqual(html.count('title="Supports tag filtering"'), 5)
+
     def test_user_page_shows_only_user_scoped_hooks(self):
         user_hook = self.create_webhook(name="MyUserHook")
         self.client.force_login(self.superuser)
