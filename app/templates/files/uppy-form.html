@@ -55,8 +55,9 @@
                 <span class="form-label d-block">Privacy</span>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="upload_private"
-                           data-upload-header="private"
-                           {% if request.user.default_file_private %}checked{% endif %}>
+                        data-upload-header="private"
+                        aria-checked="{% if request.user.default_file_private %}true{% else %}false{% endif %}"
+                        {% if request.user.default_file_private %}checked{% endif %}>
                     <label class="form-check-label" for="upload_private">Private file</label>
                 </div>
                 <div class="form-check form-switch">
@@ -73,14 +74,16 @@
                 <span class="form-label d-block">Metadata</span>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="upload_meta_preview"
-                           data-upload-header="embed"
-                           {% if request.user.show_exif_preview %}checked{% endif %}>
+                        data-upload-header="embed"
+                        aria-checked="{% if request.user.show_exif_preview %}true{% else %}false{% endif %}"
+                        {% if request.user.show_exif_preview %}checked{% endif %}>
                     <label class="form-check-label" for="upload_meta_preview">Show metadata on preview</label>
                 </div>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="upload_strip_exif"
-                           data-upload-header="strip-exif"
-                           {% if request.user.remove_exif %}checked{% endif %}>
+                        data-upload-header="strip-exif"
+                        aria-checked="{% if request.user.remove_exif %}true{% else %}false{% endif %}"
+                        {% if request.user.remove_exif %}checked{% endif %}>
                     <label class="form-check-label" for="upload_strip_exif">Strip EXIF data</label>
                 </div>
                 <div class="form-check form-switch">
