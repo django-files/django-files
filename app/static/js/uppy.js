@@ -84,6 +84,80 @@ if (uploadTagsContainer) {
     })
 }
 
+// Batch-level upload options ride XHR headers (the albums pattern). Switches
+// render pre-set to the account default, so nothing is sent until one is
+// touched; after that the explicit true/false state is sent. The format
+// select's Default option deletes the header so the account default applies.
+function initUploadOptions() {
+    // starts collapsed; remember the user's last open/closed choice
+    const optionsCollapse = document.getElementById('uploadOptions')
+    if (optionsCollapse) {
+        const optionsToggle = document.querySelector('.upload-options-toggle')
+        if (localStorage.getItem('upload-options-expanded') === 'true') {
+            optionsCollapse.classList.add('show')
+            optionsToggle?.setAttribute('aria-expanded', 'true')
+        }
+        optionsCollapse.addEventListener('shown.bs.collapse', () => {
+            localStorage.setItem('upload-options-expanded', 'true')
+        })
+        optionsCollapse.addEventListener('hidden.bs.collapse', () => {
+            localStorage.setItem('upload-options-expanded', 'false')
+        })
+    }
+
+    for (const el of document.querySelectorAll(
+        '#upload_options_section [data-upload-header]'
+    )) {
+        el.addEventListener('change', () => {
+            if (el.type === 'checkbox') {
+                headers[el.dataset.uploadHeader] = String(el.checked)
+            } else if (el.value) {
+                headers[el.dataset.uploadHeader] = el.value
+            } else {
+                delete headers[el.dataset.uploadHeader]
+            }
+        })
+    }
+
+    // Expiration rides meta so it prefills the per-file card editor and a
+    // blank value naturally falls back to the account default server side.
+    const expireInput = document.getElementById('upload_expire')
+    expireInput?.addEventListener('input', () => {
+        uppy.setMeta({ 'Expires-At': expireInput.value.trim() })
+    })
+
+    const passwordToggle = document.getElementById('upload_password_toggle')
+    const passwordInput = document.getElementById('upload_password')
+    if (!passwordToggle || !passwordInput) {
+        return
+    }
+    const applyPassword = () => {
+        passwordInput.classList.toggle('d-none', !passwordToggle.checked)
+        if (passwordToggle.checked) {
+            // typed passwords ride meta so unicode survives; blank means
+            // auto-generate server side
+            const password = passwordInput.value
+            if (password) {
+                delete headers['auto-password']
+            } else {
+                headers['auto-password'] = 'true'
+            }
+            uppy.setMeta({ password })
+        } else {
+            uppy.setMeta({ password: '' })
+            if (passwordToggle.dataset.default === 'true') {
+                // explicit opt-out of the account-level auto password
+                headers['auto-password'] = 'false'
+            } else {
+                delete headers['auto-password']
+            }
+        }
+    }
+    passwordToggle.addEventListener('change', applyPassword)
+    passwordInput.addEventListener('input', applyPassword)
+}
+initUploadOptions()
+
 uppy.on('file-added', (file) => {
     console.debug('file-added:', file)
     const uppyEl = document.getElementById('uppy')

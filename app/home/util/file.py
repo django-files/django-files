@@ -48,16 +48,15 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     name = get_formatted_name(name, _format)
     log.debug("get_formatted_name: name: %s", name)
     ctx = {}
-    if strip_exif := kwargs.pop("strip_exif", None) is not None:
+    if (strip_exif := kwargs.pop("strip_exif", None)) is not None:
         ctx["strip_exif"] = anytobool(strip_exif)
-    if strip_gps := kwargs.pop("strip_gps", None) is not None:
+    if (strip_gps := kwargs.pop("strip_gps", None)) is not None:
         ctx["strip_gps"] = anytobool(strip_gps)
-    if auto_password := kwargs.pop("auto_password", None) is not None:
+    if (auto_password := kwargs.pop("auto_password", None)) is not None:
         if anytobool(auto_password):
             kwargs["password"] = rand_string()
-    else:
-        if user.default_file_password:
-            kwargs["password"] = rand_string()
+    elif user.default_file_password and not kwargs.get("password"):
+        kwargs["password"] = rand_string()
     # we want to use a temporary local file to support cloud storage cases
     # this allows us to modify the file before upload
     if kwargs.get("avatar") == "True":

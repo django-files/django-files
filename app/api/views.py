@@ -2040,21 +2040,22 @@ def parse_headers(headers: dict, **kwargs) -> dict:
         "avatar",
         "albums",
         "tags",
+        "info",
     ]
     data = {}
     # TODO: IMPORTANT: Determine why these values are not 1:1 - meta_preview:embed
     difference_mapping = {"embed": "meta_preview"}
-    # TODO: This should probably do the same thing in both loops
     for key in allowed:
         if key in headers:
             value = headers[key]
             if key in difference_mapping:
                 key = difference_mapping[key]
             data[key.replace("-", "_")] = value
-    # data.update(**kwargs)
     for key, value in kwargs.items():
-        if key.lower() in allowed:
-            data[key] = value
+        key = key.lower()
+        if key in allowed:
+            key = difference_mapping.get(key, key)
+            data[key.replace("-", "_")] = value
     return data
 
 

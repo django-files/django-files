@@ -10,12 +10,14 @@ const _tagsField = document.getElementById('album-tags')
 
 // Chip editor with the preview-style "+" adder; the hidden field carries the
 // list to the create endpoint as a comma-separated string.
+const updateAlbumTagsField = (tags) => {
+    _tagsField.value = tags.join(',')
+}
+
 const _tagEditor = _tagsContainer
     ? initTagChipEditor({
           container: _tagsContainer,
-          onChange: (tags) => {
-              _tagsField.value = tags.join(',')
-          },
+          onChange: updateAlbumTagsField,
       })
     : null
 

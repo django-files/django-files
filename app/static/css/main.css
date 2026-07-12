@@ -929,3 +929,36 @@ body.navbar-snapping header {
 .addto-tag-group .tag-search-input::placeholder {
     color: var(--bs-secondary-color);
 }
+
+/* Upload options divider-style collapse toggle (uppy form) */
+.upload-options-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.25rem 0;
+    background: none;
+    border: 0;
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color);
+}
+
+.upload-options-toggle:hover,
+.upload-options-toggle:focus-visible {
+    color: var(--bs-body-color);
+}
+
+.upload-options-toggle::before,
+.upload-options-toggle::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--bs-border-color);
+}
+
+.upload-options-toggle .upload-options-chevron {
+    transition: transform 0.2s ease;
+}
+
+.upload-options-toggle[aria-expanded='true'] .upload-options-chevron {
+    transform: rotate(180deg);
+}

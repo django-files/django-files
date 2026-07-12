@@ -1,13 +1,15 @@
 import json
 import logging
+import tempfile
 from datetime import timedelta
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils.timezone import now
 from djangofiles.test_utils import TEST_PASSWORD, WRONG_PASSWORD
-from home.models import Albums, ShortURLs, Stream
+from home.models import Albums, Files, ShortURLs, Stream
 from home.util.auth import create_api_token, hash_token
 from oauth.models import ApiToken, CustomUser
 
@@ -712,3 +714,80 @@ class ApiTokenAuthTestCase(TestCase):
             HTTP_AUTHORIZATION=f"Bearer {self.plaintext}",
         )
         self.assertEqual(response.status_code, 200)
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class UploadOptionsTestCase(TestCase):
+    """Upload options via POST fields (upload page form) and headers."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        self.user = CustomUser.objects.create_user(
+            username="uploader",
+            email="uploader@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        self.client.force_login(self.user)
+
+    def upload(self, headers=None, **post):
+        data = {"file": SimpleUploadedFile("upload.txt", b"hello world", content_type="text/plain")}
+        data.update(post)
+        response = self.client.post(reverse("api:upload"), data, headers=headers or {})
+        self.assertEqual(response.status_code, 200)
+        return Files.objects.filter(user=self.user).latest("id")
+
+    def test_post_options_applied(self):
+        file = self.upload(private="true", embed="false", info="from the form", **{"Expires-At": "1h"})
+        self.assertTrue(file.private)
+        self.assertFalse(file.meta_preview)
+        self.assertEqual(file.info, "from the form")
+        self.assertEqual(file.expr, "1h")
+
+    def test_header_options_applied(self):
+        file = self.upload(headers={"private": "true", "embed": "false"})
+        self.assertTrue(file.private)
+        self.assertFalse(file.meta_preview)
+
+    def test_hyphenated_post_options_do_not_crash(self):
+        # POST strip-gps/strip-exif previously reached Files(**kwargs) unmapped
+        file = self.upload(**{"strip-gps": "false", "strip-exif": "false"})
+        self.assertEqual(file.mime, "text/plain")
+
+    def test_format_uuid_post(self):
+        file = self.upload(format="uuid")
+        self.assertRegex(file.name, r"^[0-9a-f]{32}\.txt$")
+
+    def test_defaults_apply_when_options_absent(self):
+        self.user.default_file_private = True
+        self.user.show_exif_preview = False
+        self.user.save()
+        file = self.upload()
+        self.assertTrue(file.private)
+        self.assertFalse(file.meta_preview)
+
+    def test_auto_password_true_generates(self):
+        file = self.upload(**{"auto-password": "true"})
+        self.assertTrue(file.password)
+
+    def test_auto_password_false_value_honored(self):
+        # a false value must not generate a password (walrus precedence fix)
+        file = self.upload(**{"auto-password": "false"})
+        self.assertEqual(file.password, "")
+
+    def test_auto_password_false_overrides_account_default(self):
+        self.user.default_file_password = True
+        self.user.save()
+        file = self.upload(**{"auto-password": "false"})
+        self.assertEqual(file.password, "")
+
+    def test_account_default_password_still_generates(self):
+        self.user.default_file_password = True
+        self.user.save()
+        file = self.upload()
+        self.assertTrue(file.password)
+
+    def test_explicit_password_survives_account_default(self):
+        self.user.default_file_password = True
+        self.user.save()
+        file = self.upload(password=TEST_PASSWORD)
+        self.assertEqual(file.password, TEST_PASSWORD)

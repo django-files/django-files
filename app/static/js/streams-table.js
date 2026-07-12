@@ -196,7 +196,7 @@ function updateStreamTagBadges() {
     updateTagSearchBadges(streamsDataTable)
 }
 
-function getStreamLink(data, type, row, meta) {
+function getStreamLink(data, type, row, _meta) {
     if (type === 'display') {
         const link = streamLink.cloneNode(true)
         const linkClip = link.querySelector('.dj-stream-link-clip')

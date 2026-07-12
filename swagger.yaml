@@ -24,7 +24,9 @@ paths:
   /upload/:
     post:
       summary: Upload a File
-      description: Upload a file to the server with optional parameters.
+      description: >
+        Upload a file to the server with optional parameters. All option
+        headers below are also accepted as multipart form fields.
       tags:
         - Files
       security:
@@ -49,10 +51,16 @@ paths:
           description: Strip Exif GPS Data
           schema:
             type: boolean
-        - name: stip-exif
+        - name: strip-exif
           in: header
           required: false
           description: Strip Exif Data
+          schema:
+            type: boolean
+        - name: embed
+          in: header
+          required: false
+          description: Show metadata on previews and embeds (meta_preview).
           schema:
             type: boolean
         - name: private
@@ -96,6 +104,7 @@ paths:
                   format: binary
                 info:
                   type: string
+                  description: Information about the file.
                 tags:
                   type: string
                   description: Comma-separated tags to apply to the file
