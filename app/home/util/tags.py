@@ -21,6 +21,18 @@ def extract_xmp_tags(exif: dict) -> list:
     return []
 
 
+def attach_file_tags(file, tags) -> None:
+    """Attach user tags (xmp=False) to *file* from a list or comma-separated string."""
+    from home.models import FileTag, Tag
+
+    if isinstance(tags, str):
+        tags = tags.split(",")
+    for name in tags or []:
+        if isinstance(name, str) and name.strip():
+            tag = Tag.objects.get_or_create_tag(name)
+            FileTag.objects.get_or_create(file=file, tag=tag, defaults={"xmp": False})
+
+
 def sync_file_tags(file) -> None:
     """Sync FileTag rows for *file* to match the XMP tags in file.exif.
 

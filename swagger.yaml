@@ -73,6 +73,14 @@ paths:
           required: false
           schema:
             type: boolean
+        - name: tags
+          description: >
+            Comma-separated tags to apply to the file. Also accepted as a
+            multipart form field (use the form field for non-ASCII tag names).
+          in: header
+          required: false
+          schema:
+            type: string
 
       requestBody:
         required: true
@@ -88,6 +96,10 @@ paths:
                   format: binary
                 info:
                   type: string
+                tags:
+                  type: string
+                  description: Comma-separated tags to apply to the file
+                  example: work,screenshots
 
       responses:
         "200":

@@ -13,6 +13,14 @@
             Select an album to add uploads to.
         </div>
     </div>
+    <div class="col col-md-12 pb-3 align-self-center" id="upload_tags_section">
+        <span class="form-label d-block">Tags</span>
+        {# chips and the "+" adder are rendered by uppy.js via tag-chips.js #}
+        <div class="tag-container position-relative" id="upload-tags"></div>
+        <div id="upload_tags-help" class="form-text">
+            Tags to apply to uploaded files.
+        </div>
+    </div>
 </form>
 {% endif %}
 <div id="uppy"></div>

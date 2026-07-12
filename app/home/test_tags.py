@@ -8,7 +8,7 @@ from django.urls import reverse
 from djangofiles.test_utils import TEST_PASSWORD
 from home.consumers import HomeConsumer
 from home.models import Albums, AlbumTag, Files, FileTag, Tag
-from home.util.tags import sync_file_tags
+from home.util.tags import attach_file_tags, sync_file_tags
 from oauth.models import CustomUser
 
 log = logging.getLogger("app")
@@ -58,6 +58,31 @@ class TagManagerTests(TagBaseTestCase):
         AlbumTag.objects.create(album=album, tag=tag)
         Tag.objects.prune_orphans([tag.pk])
         self.assertTrue(Tag.objects.filter(pk=tag.pk).exists())
+
+
+class AttachFileTagsTests(TagBaseTestCase):
+    """attach_file_tags backs the upload-time tags option (header/form field)."""
+
+    def test_attach_from_string(self):
+        file = self.create_file()
+        attach_file_tags(file, " work , screenshots ,, ")
+        self.assertEqual(
+            sorted(file.tags.values_list("tag__name", flat=True)),
+            ["screenshots", "work"],
+        )
+        self.assertFalse(file.tags.filter(xmp=True).exists())
+
+    def test_attach_from_list_reuses_canonical(self):
+        existing = Tag.objects.get_or_create_tag("Work")
+        file = self.create_file()
+        attach_file_tags(file, ["work", "work"])
+        self.assertEqual(list(file.tags.values_list("tag_id", flat=True)), [existing.pk])
+
+    def test_attach_empty_noop(self):
+        file = self.create_file()
+        attach_file_tags(file, "")
+        attach_file_tags(file, None)
+        self.assertEqual(file.tags.count(), 0)
 
 
 class SyncFileTagsTests(TagBaseTestCase):

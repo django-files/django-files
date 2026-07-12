@@ -17,7 +17,7 @@ from home.util.image import ImageProcessor, thumbnail_processor
 from home.util.misc import anytobool
 from home.util.quota import increment_storage_usage
 from home.util.rand import rand_string
-from home.util.tags import sync_file_tags
+from home.util.tags import attach_file_tags, sync_file_tags
 from home.util.video import video_metadata_processor
 from home.util.webhooks import EVENT_FILE_UPLOAD, build_file_payload
 from oauth.models import CustomUser
@@ -75,6 +75,8 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     if "albums" in kwargs:
         albums = kwargs.pop("albums")
     log.debug("albums: %s", albums)
+    tags = kwargs.pop("tags", None)
+    log.debug("tags: %s", tags)
 
     file = Files(user=user, **kwargs)
     with tempfile.NamedTemporaryFile(suffix=os.path.basename(name)) as fp:
@@ -123,6 +125,9 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
     file.name = file.file.name
     file.save()
     sync_file_tags(file)
+    if tags:
+        # before the webhook dispatch below so tag include-filters can match
+        attach_file_tags(file, tags)
 
     if albums:
         if albums.isnumeric():

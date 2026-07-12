@@ -2048,6 +2048,7 @@ def parse_headers(headers: dict, **kwargs) -> dict:
         "expr",
         "avatar",
         "albums",
+        "tags",
     ]
     data = {}
     # TODO: IMPORTANT: Determine why these values are not 1:1 - meta_preview:embed

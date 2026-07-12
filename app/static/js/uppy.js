@@ -10,6 +10,7 @@ import {
 
 import { fetchAlbumsSearch } from './api-fetch.js'
 import { initAlbumSearchInput } from './album-selector.js'
+import { initTagChipEditor } from './tag-chips.js'
 
 console.debug('LOADING: uppy.js')
 console.debug('uploadUrl:', uploadUrl)
@@ -72,6 +73,16 @@ const uppy = new Uppy({ debug: false, autoProceed: false })
     .use(DropTarget, {
         target: document.body,
     })
+
+// Preview-style chip editor; chosen tags ride the upload as multipart meta
+// (not a header) so unicode tag names survive the request.
+const uploadTagsContainer = document.getElementById('upload-tags')
+if (uploadTagsContainer) {
+    initTagChipEditor({
+        container: uploadTagsContainer,
+        onChange: (tags) => uppy.setMeta({ tags: tags.join(',') }),
+    })
+}
 
 uppy.on('file-added', (file) => {
     console.debug('file-added:', file)
