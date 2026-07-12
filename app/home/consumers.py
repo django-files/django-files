@@ -47,6 +47,7 @@ _ALLOWED_METHODS = frozenset(
         "set_expr_files",
         "set_password_file",
         "set_file_name",
+        "set_file_description",
         "delete_streams",
         "set_stream_title",
         "set_stream_description",
@@ -407,6 +408,27 @@ class HomeConsumer(AsyncWebsocketConsumer):
                 )
                 return response
         return self._error("File not found.", **kwargs)
+
+    def set_file_description(
+        self, *, user_id: int = None, pk: int = None, description: str = None, **kwargs
+    ) -> Optional[dict]:
+        """
+        :param user_id: Integer - self.scope['user'].id - User ID
+        :param pk: Integer - File ID
+        :param description: String - File Description String
+        :return: Dictionary - With Key: 'success': bool
+        """
+        log.debug("set_file_description")
+        log.debug("user_id: %s", user_id)
+        log.debug("pk: %s", pk)
+        if description is None:
+            return self._error("No description provided.", **kwargs)
+        file, err = self._check_file_permission(pk, user_id, **kwargs)
+        if err:
+            return err
+        file.info = description.strip()[:255]
+        file.save(update_fields=["info"])
+        return {"event": "set-file-description", "id": file.id, "description": file.info}
 
     # -------------------------------------------------------------------------
     # Stream CRUD

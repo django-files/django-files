@@ -91,6 +91,7 @@ def build_file_payload(file) -> dict:
     return {
         "id": file.id,
         "name": file.name,
+        "description": file.info,
         "url": site_url + file.preview_uri(),
         "raw_url": site_url + file.raw_path,
         "size": file.size,
@@ -167,6 +168,8 @@ MAX_TAG_LINE = 256
 
 def _file_description(data: dict) -> str:
     text = f"**{data['name']}**\n`{data['mime']}` - {bytes_to_human_read(data['size'])}"
+    if data.get("description"):
+        text = f"{data['description']}\n{text}"
     if data.get("captured_at"):
         text += f"\n**Captured On:** {data['captured_at']}"
     if data.get("location"):

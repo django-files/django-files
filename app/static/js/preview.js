@@ -3,6 +3,7 @@
 import { socket } from './socket.js'
 import { initAlbumSelector } from './album-selector.js'
 import { initTagSelector } from './tag-selector.js'
+import { initFileEditables } from './file-edit.js'
 
 document.addEventListener('DOMContentLoaded', domLoaded)
 window.addEventListener('resize', checkSize)
@@ -299,6 +300,8 @@ socket?.addEventListener('message', function (event) {
     let data = JSON.parse(event.data)
     if (data.event === 'set-file-name') {
         renameFile(data)
+    } else if (data.event === 'set-file-description') {
+        handleFileDescription(data)
     } else if (data.event === 'set-file-albums') {
         handleAlbumBadges(data)
     } else if (data.event === 'set-file-tags') {
@@ -391,6 +394,12 @@ if (streamDescEdit) {
         }
     })
 }
+
+////////////////////////////
+// File Name / Description Editing Section
+const handleFileDescription = initFileEditables(document, socket)
+// End File Name / Description Editing Section
+////////////////////////////
 
 ////////////////////////
 // Album Badges Section
