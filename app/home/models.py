@@ -7,6 +7,7 @@ from home.managers import (
     AlbumsManager,
     FilesManager,
     ShortURLsManager,
+    TagManager,
 )
 from home.util.nginx import sign_nginx_urls
 from home.util.rand import rand_string
@@ -205,19 +206,53 @@ class Files(models.Model):
         return "/raw/" + self.name + "?thumb=true"
 
 
+class Tag(models.Model):
+    """Canonical tag vocabulary shared by files and albums.
+
+    Names are deduplicated case-insensitively in TagManager.get_or_create_tag;
+    the DB unique constraint only guarantees exact uniqueness so it stays
+    portable across sqlite/mysql/mariadb/postgres collations.
+    """
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, unique=True, verbose_name="Name", help_text="Tag Name.")
+
+    objects = TagManager()
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Tag"
+        verbose_name_plural = "Tags"
+
+    def __str__(self):
+        return self.name
+
+
 class FileTag(models.Model):
     file = models.ForeignKey(Files, on_delete=models.CASCADE, related_name="tags")
-    tag = models.CharField(max_length=255)
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="file_tags")
     xmp = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ["file", "tag"]
-        indexes = [models.Index(fields=["tag"])]
         verbose_name = "File Tag"
         verbose_name_plural = "File Tags"
 
     def __str__(self):
-        return f"<FileTag(file={self.file_id} tag={self.tag!r})>"
+        return f"<FileTag(file={self.file_id} tag={self.tag_id})>"
+
+
+class AlbumTag(models.Model):
+    album = models.ForeignKey(Albums, on_delete=models.CASCADE, related_name="tags")
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="album_tags")
+
+    class Meta:
+        unique_together = ["album", "tag"]
+        verbose_name = "Album Tag"
+        verbose_name_plural = "Album Tags"
+
+    def __str__(self):
+        return f"<AlbumTag(album={self.album_id} tag={self.tag_id})>"
 
 
 class FileStats(models.Model):

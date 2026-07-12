@@ -16,6 +16,17 @@
                             <input type="text" class="form-control" placeholder="Album Description" aria-label="Album Description"
                                    id="description" name="description">
                         </div>
+                        <div class="col-12">
+                            <div class="tag-container mb-1 d-none" id="create-album-tags"></div>
+                            <div class="input-group">
+                                <label for="create-album-tag-input" class="visually-hidden">Add tag</label>
+                                <input type="text" class="form-control" id="create-album-tag-input"
+                                       placeholder="Add tag…" aria-label="Add tag" maxlength="255">
+                                <button type="button" class="btn btn-secondary" id="create-album-tag-add"
+                                        title="Add Tag"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <input type="hidden" id="album-tags" name="tags">
+                        </div>
                         <div class="col-md-6">
                             <div class="input-group w-100">
                                 <input type="password" class="form-control" placeholder="Password" aria-label="Password" id="password" name="password" autocomplete="new-password">

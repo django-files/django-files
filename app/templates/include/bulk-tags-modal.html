@@ -1,0 +1,34 @@
+{% comment %}
+Shared bulk tag edit modal, wired by tag-chips.js initBulkTagsModal on the
+files and albums pages. Enter tags as chips, then apply add or remove to the
+selected rows.
+{% endcomment %}
+<div class="modal fade" id="bulk-tags-modal" tabindex="-1" aria-labelledby="bulk-tags-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="bulk-tags-label">Bulk Tags</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="tag-container mb-3" id="bulk-tags-container">
+                    <span class="text-muted small" id="bulk-tags-empty">Enter tags below…</span>
+                </div>
+                <div class="input-group">
+                    <label for="bulk-tags-input" class="visually-hidden">Add tag</label>
+                    <input type="text" class="form-control" id="bulk-tags-input"
+                           placeholder="Add tag…" maxlength="255">
+                    <button type="button" class="btn btn-secondary" id="bulk-tags-add-chip">
+                        <i class="fa-solid fa-plus"></i></button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" id="bulk-tags-apply-add">
+                    Add to Selected <i class="fa-solid fa-tags ms-1"></i></button>
+                <button type="button" class="btn btn-danger" id="bulk-tags-apply-remove">
+                    Remove from Selected <i class="fa-solid fa-eraser ms-1"></i></button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,13 +1,33 @@
 // Handles #albumsForm submit anywhere the create-album-modal is rendered.
 // Dispatches an `album:created` CustomEvent on document so list views can refresh.
 
+import { initTagChipEditor } from './tag-chips.js'
+
 const _createAlbumModalEl = document.getElementById('create-album-modal')
+
+const _tagsContainer = document.getElementById('create-album-tags')
+const _tagsField = document.getElementById('album-tags')
+
+// Chip editor mirrors the Manage Tags modal; the hidden field carries the
+// list to the create endpoint as a comma-separated string.
+const _tagEditor = _tagsContainer
+    ? initTagChipEditor({
+          container: _tagsContainer,
+          input: document.getElementById('create-album-tag-input'),
+          addBtn: document.getElementById('create-album-tag-add'),
+          onChange: (tags) => {
+              _tagsField.value = tags.join(',')
+              _tagsContainer.classList.toggle('d-none', !tags.length)
+          },
+      })
+    : null
 
 $('#albumsForm').on('submit', function (event) {
     event.preventDefault()
     const form = $(this)
     submitJsonForm(form, function (resp) {
         form.trigger('reset')
+        _tagEditor?.reset()
         if (_createAlbumModalEl) {
             bootstrap.Modal.getOrCreateInstance(_createAlbumModalEl).hide()
         }

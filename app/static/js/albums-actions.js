@@ -11,6 +11,7 @@ import {
     wireClickDelegation,
     wirePasswordModal,
 } from './ctx-menu-shared.js'
+import { renderTagChips } from './tag-chips.js'
 
 async function onCopyLink(btn) {
     const url = btn.dataset.albumUrl
@@ -75,6 +76,72 @@ wirePasswordModal({
     },
 })
 
+// ── Album tags modal ──
+// Chips render from local state seeded by the ctx-menu button's
+// data-album-tags payload; set-album-tags broadcasts reconcile it live.
+
+let tagsModalAlbumId = null
+let tagsModalTags = []
+
+function renderAlbumTagChips() {
+    const container = document.getElementById('album-tags-container')
+    if (!container) return
+    // removal is confirmed by the set-album-tags broadcast, which re-renders
+    renderTagChips(
+        container,
+        tagsModalTags,
+        (tag) => {
+            socket.send(
+                JSON.stringify({
+                    method: 'remove_album_tag',
+                    pk: Number.parseInt(tagsModalAlbumId),
+                    tag,
+                })
+            )
+        },
+        document.getElementById('album-tags-empty')
+    )
+}
+
+function onManageTags(btn) {
+    tagsModalAlbumId = btn.dataset.albumId
+    try {
+        tagsModalTags = JSON.parse(btn.dataset.albumTags || '[]')
+    } catch {
+        tagsModalTags = []
+    }
+    renderAlbumTagChips()
+    const modalEl = document.getElementById('album-tags-modal')
+    if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show()
+}
+
+document
+    .getElementById('album-tag-add-form')
+    ?.addEventListener('submit', (event) => {
+        event.preventDefault()
+        const input = document.getElementById('album-tag-input')
+        const tag = input.value.trim()
+        if (!tag || !tagsModalAlbumId) return
+        socket.send(
+            JSON.stringify({
+                method: 'add_album_tag',
+                pk: Number.parseInt(tagsModalAlbumId),
+                tag,
+            })
+        )
+        input.value = ''
+    })
+
+function syncAlbumTagsState(data) {
+    if (String(data.album_id) === String(tagsModalAlbumId)) {
+        const tags = new Set(tagsModalTags)
+        for (const tag of data.added || []) tags.add(tag)
+        for (const tag of data.removed || []) tags.delete(tag)
+        tagsModalTags = [...tags]
+        renderAlbumTagChips()
+    }
+}
+
 function onDelete(btn) {
     // The delete handler is owned by albums-table.js (it holds the wired
     // delete modal instance). Dispatch a custom event it listens for so we
@@ -90,6 +157,7 @@ wireClickDelegation({
     'album-copy-link-btn': onCopyLink,
     'album-toggle-private-btn': onTogglePrivate,
     'album-set-password-btn': onSetPassword,
+    'album-tags-btn': onManageTags,
     'album-delete-btn': onDelete,
 })
 
@@ -108,6 +176,9 @@ socket?.addEventListener('message', function (event) {
         if (Object.hasOwn(data, 'password')) {
             syncPasswordButtons(data.id, !!data.password)
         }
+    }
+    if (data.event === 'set-album-tags' && data.album_id != null) {
+        syncAlbumTagsState(data)
     }
 })
 

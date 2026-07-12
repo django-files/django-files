@@ -1,6 +1,7 @@
 import { fetchAlbums } from './api-fetch.js'
 import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import { attachSocketTableSync, socket } from './socket.js'
+import { initBulkTagsModal } from './tag-chips.js'
 import {
     dtRevealThead,
     initPopupBtn,
@@ -221,6 +222,14 @@ async function domContentLoaded() {
                 })
             )
         )
+        const bulkTagsModal = initBulkTagsModal(
+            socket,
+            'bulk_edit_album_tags',
+            'album'
+        )
+        $('.bulk-tags').on('click', () =>
+            bulkTagsModal?.open(selectedPks(albumsDataTable))
+        )
     }
     deleteModal = wireDeleteModal({
         modalId: 'delete-album-modal',
@@ -242,7 +251,10 @@ async function domContentLoaded() {
             document
                 .querySelector('.albums-truncation-warning')
                 ?.classList.remove('d-none'),
-        extra: { 'album-update': updateAlbumRow },
+        extra: {
+            'album-update': updateAlbumRow,
+            'set-album-tags': updateAlbumTags,
+        },
     })
     await initDataTable(
         albumsDataTable,
@@ -286,6 +298,9 @@ function renderActions(data, type, row, _meta) {
             </a></li>
             <li><a class="dropdown-item album-set-password-btn" role="button" data-album-id="${id}" data-has-password="${escapeHtmlAttr(hasPassword)}">
                 <i class="fa-solid fa-key me-2"></i>${passwordLabel}
+            </a></li>
+            <li><a class="dropdown-item album-tags-btn" role="button" data-album-id="${id}" data-album-tags="${escapeHtmlAttr(JSON.stringify(row.tags || []))}">
+                <i class="fa-solid fa-tags me-2"></i>Manage Tags
             </a></li>
             <li><hr class="dropdown-divider"></li>`
         : ''
@@ -356,6 +371,21 @@ export function updateAlbumRow(data) {
     if (!row.node()) return
     const current = row.data() || {}
     row.data({ ...current, ...data })
+        .invalidate('data')
+        .draw(false)
+}
+
+// Merge a set-album-tags broadcast into the row so the ctx-menu's
+// data-album-tags payload stays fresh for the next Manage Tags open.
+function updateAlbumTags(data) {
+    if (!albumsDataTable) return
+    const row = albumsDataTable.row(`#album-${data.album_id}`)
+    if (!row.node()) return
+    const current = row.data() || {}
+    const tags = new Set(current.tags || [])
+    for (const tag of data.added || []) tags.add(tag)
+    for (const tag of data.removed || []) tags.delete(tag)
+    row.data({ ...current, tags: [...tags] })
         .invalidate('data')
         .draw(false)
 }

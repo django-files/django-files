@@ -50,8 +50,10 @@ WEBHOOK_EVENTS = {
 # events that only site-scoped webhooks may subscribe to (owner_pk is None at dispatch)
 SITE_ONLY_EVENTS = {EVENT_USER_CREATED, EVENT_USER_DELETED}
 
-# events whose payloads carry file tags and honor the webhook tag filter
+# events whose payloads carry tags and honor the webhook tag filter
 FILE_EVENTS = {EVENT_FILE_UPLOAD, EVENT_FILE_DELETED}
+ALBUM_EVENTS = {EVENT_ALBUM_CREATED, EVENT_ALBUM_UPDATED, EVENT_ALBUM_DELETED}
+TAG_FILTERED_EVENTS = FILE_EVENTS | ALBUM_EVENTS
 
 DISCORD_TITLES = {
     EVENT_FILE_UPLOAD: "New File Upload",
@@ -103,7 +105,7 @@ def build_file_payload(file) -> dict:
         "captured_at": _exif_date(exif.get("DateTimeOriginal", "")),
         "location": meta.get("GPSArea", ""),
         "camera": camera,
-        "tags": [tag.tag for tag in file.tags.all()],
+        "tags": [ft.tag.name for ft in file.tags.select_related("tag")],
     }
 
 
@@ -114,6 +116,7 @@ def build_album_payload(album) -> dict:
         "url": f"{_site_url()}{reverse('home:files')}?album={album.id}",
         "file_count": album.files_set.count(),
         "user": album.user.username,
+        "tags": [at.tag.name for at in album.tags.select_related("tag")],
     }
 
 
@@ -169,13 +172,13 @@ def build_test_payload(webhook) -> dict:
 def event_matches_filters(event_key: str, filters: dict, payload_data: dict) -> bool:
     """Check an event payload against a webhook's filters.
 
-    Only "tags" is supported so far, and only file events honor it: entries are
-    matched case-insensitively against the payload tags, a "!" prefix excludes,
-    and exclusions win over matches. No positive entries means any file passes
-    the exclusion check. Unknown filter keys are ignored so old workers stay
-    compatible with filter types added later.
+    Only "tags" is supported so far, and only file/album events honor it:
+    entries are matched case-insensitively against the payload tags, a "!"
+    prefix excludes, and exclusions win over matches. No positive entries means
+    any payload passes the exclusion check. Unknown filter keys are ignored so
+    old workers stay compatible with filter types added later.
     """
-    if event_key not in FILE_EVENTS or not isinstance(filters, dict):
+    if event_key not in TAG_FILTERED_EVENTS or not isinstance(filters, dict):
         return True
     tag_filter = filters.get("tags")
     if not tag_filter:
@@ -191,6 +194,15 @@ def event_matches_filters(event_key: str, filters: dict, payload_data: dict) -> 
 MAX_TAG_LINE = 256
 
 
+def _tags_line(data: dict) -> str:
+    if not (tags := data.get("tags")):
+        return ""
+    tag_line = ", ".join(tags)
+    if len(tag_line) > MAX_TAG_LINE:
+        tag_line = tag_line[: MAX_TAG_LINE - 1] + "…"
+    return f"\n**Tags:** {tag_line}"
+
+
 def _file_description(data: dict) -> str:
     text = f"**{data['name']}**\n`{data['mime']}` - {bytes_to_human_read(data['size'])}"
     if data.get("description"):
@@ -201,12 +213,7 @@ def _file_description(data: dict) -> str:
         text += f"\n**Location:** {data['location']}"
     if data.get("camera"):
         text += f"\n**Camera:** {data['camera']}"
-    if tags := data.get("tags"):
-        tag_line = ", ".join(tags)
-        if len(tag_line) > MAX_TAG_LINE:
-            tag_line = tag_line[: MAX_TAG_LINE - 1] + "…"
-        text += f"\n**Tags:** {tag_line}"
-    return text
+    return text + _tags_line(data)
 
 
 def _human_duration(seconds: int) -> str:
@@ -231,7 +238,7 @@ def _discord_description(event_key: str, data: dict) -> str:
     if event_key in (EVENT_FILE_UPLOAD, EVENT_FILE_DELETED):
         return _file_description(data)
     if event_key in (EVENT_ALBUM_CREATED, EVENT_ALBUM_UPDATED, EVENT_ALBUM_DELETED):
-        return f"**{data['name']}** - {data['file_count']} files"
+        return f"**{data['name']}** - {data['file_count']} files" + _tags_line(data)
     if event_key in (EVENT_SHORT_CREATED, EVENT_SHORT_DELETED):
         return f"**{data['short_url']}**\n{data['url']}"
     if event_key in (EVENT_STREAM_LIVE, EVENT_STREAM_OFFLINE):

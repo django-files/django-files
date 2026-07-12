@@ -1,6 +1,7 @@
 import { getContextMenu, openAlbumModal } from './file-context-menu.js'
 
 import { attachSocketTableSync, socket } from './socket.js'
+import { initBulkTagsModal } from './tag-chips.js'
 import {
     noChromeLayout,
     selectColumn,
@@ -199,9 +200,37 @@ export function initFilesTable(search = true, ordering = true, info = true) {
         extra: {
             'set-file-name': renameFileRow,
             'file-update': updateFileRow,
+            'set-file-tags': updateFileRowTags,
+            'bulk-set-file-tags': updateFileRowTagsBulk,
         },
     })
     return filesDataTable
+}
+
+// Keep row.tags fresh so tag search and the dt-tag-match badges reflect
+// edits made from the preview sidebar or the bulk tags modal.
+function mergeRowTags(pk, added, removed) {
+    const row = filesDataTable.row(`#file-${pk}`)
+    if (!row.node()) return
+    const current = row.data() || {}
+    const tags = new Set(current.tags || [])
+    for (const tag of added) tags.add(tag)
+    for (const tag of removed) tags.delete(tag)
+    row.data({ ...current, tags: [...tags] }).invalidate('data')
+}
+
+function updateFileRowTags(data) {
+    if (!filesDataTable) return
+    mergeRowTags(data.file_id, data.added || [], data.removed || [])
+    filesDataTable.draw(false)
+}
+
+function updateFileRowTagsBulk(data) {
+    if (!filesDataTable) return
+    for (const pk of data.pks || []) {
+        mergeRowTags(pk, data.added || [], data.removed || [])
+    }
+    filesDataTable.draw(false)
 }
 
 function getFileLink(data, type, row, _meta) {
@@ -456,4 +485,17 @@ export async function bulkManageAlbums(_event) {
         'bulk',
         `Updating albums for ${pks.length} file${s}.`
     )
+}
+
+const bulkTagsModal = initBulkTagsModal(socket, 'bulk_edit_file_tags', 'file')
+
+$('.bulk-tags').on('click', bulkManageTags)
+
+export function bulkManageTags(_event) {
+    if (!bulkTagsModal) return
+    const pks = []
+    filesDataTable.rows('.selected').every(function () {
+        pks.push(this.data().id)
+    })
+    bulkTagsModal.open(pks)
 }

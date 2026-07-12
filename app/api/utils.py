@@ -94,7 +94,7 @@ def extract_files(q: Files.objects):
         albums = list(file.albums.all())
         data["albums"] = [a.id for a in albums]
         data["albums_details"] = [{"id": a.id, "name": a.name} for a in albums]
-        data["tags"] = list(file.tags.values_list("tag", flat=True))
+        data["tags"] = list(file.tags.values_list("tag__name", flat=True))
         files.append(data)
     return files
 
@@ -111,6 +111,7 @@ def extract_albums(q: Albums.objects, user_id: int = None):
         data["url"] = site_settings["site_url"] + "/files/?view=gallery&album=" + str(album.id)
         data["user_name"] = album.user.get_name()
         data["file_count"] = getattr(album, "file_count", 0)
+        data["tags"] = list(album.tags.values_list("tag__name", flat=True))
         data["is_owner"] = is_owner
         if not is_owner:
             # Don't leak the raw password value to e.g. superusers browsing

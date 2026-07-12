@@ -269,6 +269,7 @@
     {% include 'albums/create-modal.html' %}
     {% include 'albums/delete-modal.html' %}
     {% include 'albums/password-modal.html' %}
+    {% include 'albums/tags-modal.html' %}
     {% include 'streams/stream-modal.html' %}
 
     {# ── Mime Types Modal ── #}
@@ -309,6 +310,6 @@
     <script type="module" src="{% static 'js/albums-table.js' %}"></script>
     <script type="module" src="{% static 'js/albums-actions.js' %}"></script>
     <script defer src="{% static 'js/short-create.js' %}"></script>
-    <script defer src="{% static 'js/album-create.js' %}"></script>
+    <script type="module" src="{% static 'js/album-create.js' %}"></script>
     <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}

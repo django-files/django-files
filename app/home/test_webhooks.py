@@ -11,14 +11,16 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from djangofiles.test_utils import TEST_PASSWORD
-from home.models import Albums, ShortURLs, Stream, Webhook
+from home.models import Albums, AlbumTag, ShortURLs, Stream, Tag, Webhook
 from home.tasks import dispatch_webhook_event, fire_webhook
 from home.util.auth import create_api_token
 from home.util.file import process_file
 from home.util.webhooks import (
     EVENT_ALBUM_CREATED,
+    EVENT_ALBUM_UPDATED,
     EVENT_FILE_DELETED,
     EVENT_FILE_UPLOAD,
+    EVENT_SHORT_CREATED,
     EVENT_TEST,
     EVENT_USER_CREATED,
     SITE_ONLY_EVENTS,
@@ -115,6 +117,14 @@ class PayloadBuilderTests(WebhookBaseTestCase):
         self.assertEqual(payload["file_count"], 0)
         self.assertEqual(payload["user"], self.user.username)
         self.assertIn(f"album={album.id}", payload["url"])
+        self.assertEqual(payload["tags"], [])
+        AlbumTag.objects.create(album=album, tag=Tag.objects.get_or_create_tag("travel"))
+        self.assertEqual(build_album_payload(album)["tags"], ["travel"])
+
+    def test_build_discord_embed_album_tags(self):
+        data = {"id": 1, "name": "Trip", "file_count": 2, "url": "u", "user": "x", "tags": ["travel", "iceland"]}
+        body = build_discord_embed(EVENT_ALBUM_CREATED, data, "https://example.com")
+        self.assertIn("**Tags:** travel, iceland", body["embeds"][0]["description"])
 
     def test_build_discord_embed_deleted_events(self):
         file_data = {"name": "a.jpg", "mime": "image/jpeg", "size": 1000, "url": "u", "raw_url": "https://x/r/a.jpg"}
@@ -274,9 +284,14 @@ class EventFilterTests(TestCase):
         self.assertFalse(event_matches_filters(EVENT_FILE_DELETED, filters, {"tags": []}))
         self.assertTrue(event_matches_filters(EVENT_FILE_DELETED, filters, {"tags": ["work"]}))
 
-    def test_non_file_events_ignore_filters(self):
+    def test_album_events_honor_filters(self):
         filters = {"tags": ["work"]}
-        self.assertTrue(event_matches_filters(EVENT_ALBUM_CREATED, filters, {"name": "x"}))
+        self.assertTrue(event_matches_filters(EVENT_ALBUM_UPDATED, filters, {"tags": ["Work"]}))
+        self.assertFalse(event_matches_filters(EVENT_ALBUM_CREATED, filters, {"tags": []}))
+
+    def test_non_tagged_events_ignore_filters(self):
+        filters = {"tags": ["work"]}
+        self.assertTrue(event_matches_filters(EVENT_SHORT_CREATED, filters, {"short": "x"}))
 
     def test_unknown_filter_keys_ignored(self):
         # forward-compat: workers must not drop events over filter types they don't know
@@ -407,10 +422,18 @@ class WebhookTaskTests(WebhookBaseTestCase):
         mock_delay.assert_not_called()
 
     @patch("home.tasks.fire_webhook.delay")
-    def test_dispatch_tag_filter_ignores_other_events(self, mock_delay):
+    def test_dispatch_tag_filter_applies_to_albums(self, mock_delay):
         webhook = self.create_webhook(events=["album.created"], filters={"tags": ["work"]})
-        dispatch_webhook_event(EVENT_ALBUM_CREATED, self.user.pk, {"id": 1})
-        mock_delay.assert_called_once_with(webhook.pk, EVENT_ALBUM_CREATED, {"id": 1})
+        dispatch_webhook_event(EVENT_ALBUM_CREATED, self.user.pk, {"id": 1, "tags": []})
+        mock_delay.assert_not_called()
+        dispatch_webhook_event(EVENT_ALBUM_CREATED, self.user.pk, {"id": 1, "tags": ["Work"]})
+        mock_delay.assert_called_once_with(webhook.pk, EVENT_ALBUM_CREATED, {"id": 1, "tags": ["Work"]})
+
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_tag_filter_ignores_other_events(self, mock_delay):
+        webhook = self.create_webhook(events=["short.created"], filters={"tags": ["work"]})
+        dispatch_webhook_event(EVENT_SHORT_CREATED, self.user.pk, {"id": 1})
+        mock_delay.assert_called_once_with(webhook.pk, EVENT_SHORT_CREATED, {"id": 1})
 
     @patch("home.tasks.send_webhook")
     def test_fire_webhook_success(self, mock_send):
