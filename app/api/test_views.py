@@ -716,6 +716,9 @@ class ApiTokenAuthTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
+AUTO_PASSWORD_OPTION = "auto-password"  # nosec  # NOSONAR - option name, not a credential
+
+
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
 class UploadOptionsTestCase(TestCase):
     """Upload options via POST fields (upload page form) and headers."""
@@ -728,6 +731,13 @@ class UploadOptionsTestCase(TestCase):
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
         self.client.force_login(self.user)
+
+    def tearDown(self):
+        from django.core.cache import cache as _cache
+
+        # get_url() caches signed URLs by pk in Redis, which survives the
+        # test transaction and poisons later tests that reuse the same pks.
+        _cache.clear()
 
     def upload(self, headers=None, **post):
         data = {"file": SimpleUploadedFile("upload.txt", b"hello world", content_type="text/plain")}
@@ -766,18 +776,18 @@ class UploadOptionsTestCase(TestCase):
         self.assertFalse(file.meta_preview)
 
     def test_auto_password_true_generates(self):
-        file = self.upload(**{"auto-password": "true"})
+        file = self.upload(**{AUTO_PASSWORD_OPTION: "true"})
         self.assertTrue(file.password)
 
     def test_auto_password_false_value_honored(self):
         # a false value must not generate a password (walrus precedence fix)
-        file = self.upload(**{"auto-password": "false"})
+        file = self.upload(**{AUTO_PASSWORD_OPTION: "false"})
         self.assertEqual(file.password, "")
 
     def test_auto_password_false_overrides_account_default(self):
         self.user.default_file_password = True
         self.user.save()
-        file = self.upload(**{"auto-password": "false"})
+        file = self.upload(**{AUTO_PASSWORD_OPTION: "false"})
         self.assertEqual(file.password, "")
 
     def test_account_default_password_still_generates(self):
