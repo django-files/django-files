@@ -8,6 +8,7 @@ import httpx
 from django.shortcuts import reverse
 from django.utils import timezone
 from home.util.misc import bytes_to_human_read
+from home.util.tags import tag_names
 
 log = logging.getLogger("app")
 
@@ -53,7 +54,8 @@ SITE_ONLY_EVENTS = {EVENT_USER_CREATED, EVENT_USER_DELETED}
 # events whose payloads carry tags and honor the webhook tag filter
 FILE_EVENTS = {EVENT_FILE_UPLOAD, EVENT_FILE_DELETED}
 ALBUM_EVENTS = {EVENT_ALBUM_CREATED, EVENT_ALBUM_UPDATED, EVENT_ALBUM_DELETED}
-TAG_FILTERED_EVENTS = FILE_EVENTS | ALBUM_EVENTS
+STREAM_EVENTS = {EVENT_STREAM_LIVE, EVENT_STREAM_OFFLINE}
+TAG_FILTERED_EVENTS = FILE_EVENTS | ALBUM_EVENTS | STREAM_EVENTS
 
 DISCORD_TITLES = {
     EVENT_FILE_UPLOAD: "New File Upload",
@@ -105,7 +107,7 @@ def build_file_payload(file) -> dict:
         "captured_at": _exif_date(exif.get("DateTimeOriginal", "")),
         "location": meta.get("GPSArea", ""),
         "camera": camera,
-        "tags": [ft.tag.name for ft in file.tags.select_related("tag")],
+        "tags": tag_names(file),
     }
 
 
@@ -116,7 +118,7 @@ def build_album_payload(album) -> dict:
         "url": f"{_site_url()}{reverse('home:files')}?album={album.id}",
         "file_count": album.files_set.count(),
         "user": album.user.username,
-        "tags": [at.tag.name for at in album.tags.select_related("tag")],
+        "tags": tag_names(album),
     }
 
 
@@ -149,6 +151,7 @@ def build_stream_payload(stream) -> dict:
         "url": _site_url() + reverse("home:live", kwargs={"key": stream.name}),
         "user": stream.user.username,
         "duration": duration,
+        "tags": tag_names(stream),
     }
 
 
@@ -247,7 +250,7 @@ def _discord_description(event_key: str, data: dict) -> str:
             text += f"\n{data['description']}"
         if event_key == EVENT_STREAM_OFFLINE and data.get("duration") is not None:
             text += f"\n**Duration:** {_human_duration(data['duration'])}"
-        return text
+        return text + _tags_line(data)
     if event_key == EVENT_TEST:
         return "Webhook added successfully. New results will show up here..."
     return f"**{data.get('username', data.get('user', ''))}**"

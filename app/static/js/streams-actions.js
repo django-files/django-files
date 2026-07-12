@@ -5,6 +5,7 @@
 
 import { socket } from './socket.js'
 import { wireDeleteModal } from './bulk-actions.js'
+import { initManageTagsModal } from './tag-chips.js'
 import {
     flashCopiedIcon,
     openPasswordModal,
@@ -317,6 +318,26 @@ wirePasswordModal({
     },
 })
 
+// Chips seed from the ctx-menu button's data-stream-tags payload;
+// set-stream-tags broadcasts reconcile the open modal live.
+const streamTagsModal = initManageTagsModal(socket, {
+    modalId: 'stream-tags-modal',
+    addMethod: 'add_stream_tag',
+    removeMethod: 'remove_stream_tag',
+    event: 'set-stream-tags',
+    idKey: 'stream_name',
+})
+
+function onManageTags(btn) {
+    let tags = []
+    try {
+        tags = JSON.parse(btn.dataset.streamTags || '[]')
+    } catch {
+        tags = []
+    }
+    streamTagsModal?.open(btn.dataset.streamName, tags)
+}
+
 wireClickDelegation({
     'stream-copy-rtmp-btn': onCopyRtmp,
     'stream-rotate-token-btn': onRotateToken,
@@ -324,6 +345,7 @@ wireClickDelegation({
     'stream-disable-vlc-url-btn': onDisableVlcUrl,
     'stream-toggle-public-btn': onTogglePublic,
     'stream-set-password-btn': onSetPassword,
+    'stream-tags-btn': onManageTags,
     'stream-delete-btn': onDelete,
 })
 

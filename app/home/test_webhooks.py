@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from djangofiles.test_utils import TEST_PASSWORD
-from home.models import Albums, AlbumTag, ShortURLs, Stream, Tag, Webhook
+from home.models import Albums, AlbumTag, ShortURLs, Stream, StreamTag, Tag, Webhook
 from home.tasks import dispatch_webhook_event, fire_webhook
 from home.util.auth import create_api_token
 from home.util.file import process_file
@@ -21,6 +21,8 @@ from home.util.webhooks import (
     EVENT_FILE_DELETED,
     EVENT_FILE_UPLOAD,
     EVENT_SHORT_CREATED,
+    EVENT_STREAM_LIVE,
+    EVENT_STREAM_OFFLINE,
     EVENT_TEST,
     EVENT_USER_CREATED,
     SITE_ONLY_EVENTS,
@@ -164,6 +166,9 @@ class PayloadBuilderTests(WebhookBaseTestCase):
         self.assertEqual(payload["user"], self.user.username)
         self.assertIn("/live/teststream/", payload["url"])
         self.assertIsNone(payload["duration"])
+        self.assertEqual(payload["tags"], [])
+        StreamTag.objects.create(stream=stream, tag=Tag.objects.get_or_create_tag("gaming"))
+        self.assertEqual(build_stream_payload(stream)["tags"], ["gaming"])
 
     def test_build_stream_payload_duration_naive_ended_at(self):
         # stream_done_view assigns naive datetime.now() for ended_at while
@@ -186,6 +191,10 @@ class PayloadBuilderTests(WebhookBaseTestCase):
         data["duration"] = 8103
         body = build_discord_embed("stream.offline", data, "https://example.com")
         self.assertIn("**Duration:** 2h 15m 3s", body["embeds"][0]["description"])
+        data["tags"] = ["gaming", "irl"]
+        body = build_discord_embed("stream.offline", data, "https://example.com")
+        self.assertIn("**Tags:** gaming, irl", body["embeds"][0]["description"])
+        del data["tags"]
         # live events never show a duration
         body = build_discord_embed("stream.live", data, "https://example.com")
         self.assertNotIn("Duration", body["embeds"][0]["description"])
@@ -288,6 +297,11 @@ class EventFilterTests(TestCase):
         filters = {"tags": ["work"]}
         self.assertTrue(event_matches_filters(EVENT_ALBUM_UPDATED, filters, {"tags": ["Work"]}))
         self.assertFalse(event_matches_filters(EVENT_ALBUM_CREATED, filters, {"tags": []}))
+
+    def test_stream_events_honor_filters(self):
+        filters = {"tags": ["gaming"]}
+        self.assertTrue(event_matches_filters(EVENT_STREAM_LIVE, filters, {"tags": ["Gaming"]}))
+        self.assertFalse(event_matches_filters(EVENT_STREAM_OFFLINE, filters, {"tags": []}))
 
     def test_non_tagged_events_ignore_filters(self):
         filters = {"tags": ["work"]}
@@ -775,8 +789,8 @@ class WebhookSettingsPagesTests(WebhookBaseTestCase):
     def test_webhook_modal_marks_tag_filterable_events(self):
         self.client.force_login(self.user)
         html = self.client.get(reverse("settings:user")).content.decode()
-        # one tag icon per file.*/album.* event checkbox
-        self.assertEqual(html.count('title="Supports tag filtering"'), 5)
+        # one tag icon per file.*/album.*/stream.* event checkbox
+        self.assertEqual(html.count('title="Supports tag filtering"'), 7)
 
     def test_user_page_shows_only_user_scoped_hooks(self):
         user_hook = self.create_webhook(name="MyUserHook")

@@ -255,6 +255,19 @@ class AlbumTag(models.Model):
         return f"<AlbumTag(album={self.album_id} tag={self.tag_id})>"
 
 
+class StreamTag(models.Model):
+    stream = models.ForeignKey("Stream", on_delete=models.CASCADE, related_name="tags")
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="stream_tags")
+
+    class Meta:
+        unique_together = ["stream", "tag"]
+        verbose_name = "Stream Tag"
+        verbose_name_plural = "Stream Tags"
+
+    def __str__(self):
+        return f"<StreamTag(stream={self.stream_id} tag={self.tag_id})>"
+
+
 class FileStats(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, blank=True, null=True, on_delete=models.CASCADE)

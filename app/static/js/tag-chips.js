@@ -122,6 +122,70 @@ export function initTagChipEditor({ container, onChange = null }) {
 }
 
 /**
+ * Merge a set-*-tags broadcast ({added: [], removed: []}) into a tag list.
+ */
+export function applyTagDelta(tags, data) {
+    const set = new Set(tags)
+    for (const tag of data.added || []) set.add(tag)
+    for (const tag of data.removed || []) set.delete(tag)
+    return [...set]
+}
+
+/**
+ * Wire a single-entity Manage Tags modal (albums, streams) to its websocket
+ * add/remove methods. Chips re-render when the matching set-*-tags broadcast
+ * confirms a change.
+ * @param {Object} opts - {modalId, addMethod, removeMethod, event, idKey, castId}
+ * @returns {{open: (id, tags: string[]) => void} | null} null when the modal
+ *          is not on the page.
+ */
+export function initManageTagsModal(socket, opts) {
+    const modalEl = document.getElementById(opts.modalId)
+    if (!modalEl) return null
+    const container = modalEl.querySelector('.tag-container')
+    const cast = opts.castId ?? ((value) => value)
+    let entityId = null
+    let tags = []
+
+    function send(method, tag) {
+        socket.send(JSON.stringify({ method, pk: cast(entityId), tag }))
+    }
+
+    const adder = createTagAdder(container, (tag) => send(opts.addMethod, tag))
+
+    function render() {
+        renderTagChips(container, tags, (tag) => send(opts.removeMethod, tag))
+    }
+
+    socket?.addEventListener('message', (event) => {
+        if (event.data === 'pong') return
+        let data
+        try {
+            data = JSON.parse(event.data)
+        } catch {
+            return
+        }
+        if (
+            data.event === opts.event &&
+            String(data[opts.idKey]) === String(entityId)
+        ) {
+            tags = applyTagDelta(tags, data)
+            render()
+        }
+    })
+
+    return {
+        open(id, initial) {
+            entityId = id
+            tags = [...(initial || [])]
+            adder.reset()
+            render()
+            bootstrap.Modal.getOrCreateInstance(modalEl).show()
+        },
+    }
+}
+
+/**
  * Wire the shared #bulk-tags-modal to a websocket bulk-edit method
  * (bulk_edit_file_tags or bulk_edit_album_tags). Mirrors the bulk album
  * manager: the union of tags across the selection renders as chips, with a

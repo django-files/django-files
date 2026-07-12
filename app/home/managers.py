@@ -19,8 +19,13 @@ class TagManager(models.Manager):
             return self.get(name=name)
 
     def prune_orphans(self, pks) -> None:
-        """Delete Tags in *pks* that no longer tag any file or album."""
-        self.filter(pk__in=pks, file_tags__isnull=True, album_tags__isnull=True).delete()
+        """Delete Tags in *pks* that no longer tag any file, album, or stream."""
+        self.filter(
+            pk__in=pks,
+            file_tags__isnull=True,
+            album_tags__isnull=True,
+            stream_tags__isnull=True,
+        ).delete()
 
 
 class FilesManager(models.Manager):

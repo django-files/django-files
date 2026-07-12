@@ -1,7 +1,7 @@
 import { getContextMenu, openAlbumModal } from './file-context-menu.js'
 
 import { attachSocketTableSync, socket } from './socket.js'
-import { initBulkTagsModal } from './tag-chips.js'
+import { applyTagDelta, initBulkTagsModal } from './tag-chips.js'
 import {
     noChromeLayout,
     selectColumn,
@@ -213,10 +213,11 @@ function mergeRowTags(pk, added, removed) {
     const row = filesDataTable.row(`#file-${pk}`)
     if (!row.node()) return
     const current = row.data() || {}
-    const tags = new Set(current.tags || [])
-    for (const tag of added) tags.add(tag)
-    for (const tag of removed) tags.delete(tag)
-    row.data({ ...current, tags: [...tags] }).invalidate('data')
+    const delta = { added, removed }
+    row.data({
+        ...current,
+        tags: applyTagDelta(current.tags || [], delta),
+    }).invalidate('data')
 }
 
 function updateFileRowTags(data) {

@@ -11,7 +11,7 @@ import {
     wireClickDelegation,
     wirePasswordModal,
 } from './ctx-menu-shared.js'
-import { createTagAdder, renderTagChips } from './tag-chips.js'
+import { initManageTagsModal } from './tag-chips.js'
 
 async function onCopyLink(btn) {
     const url = btn.dataset.albumUrl
@@ -76,64 +76,25 @@ wirePasswordModal({
     },
 })
 
-// ── Album tags modal ──
-// Chips render from local state seeded by the ctx-menu button's
-// data-album-tags payload; set-album-tags broadcasts reconcile it live.
-
-let tagsModalAlbumId = null
-let tagsModalTags = []
-
-const _albumTagsContainer = document.getElementById('album-tags-container')
-
-// The "+" adder chip mirrors the preview sidebar; add/remove are confirmed
-// by the set-album-tags broadcast, which re-renders the chips.
-const _albumTagAdder = _albumTagsContainer
-    ? createTagAdder(_albumTagsContainer, (tag) => {
-          if (!tagsModalAlbumId) return
-          socket.send(
-              JSON.stringify({
-                  method: 'add_album_tag',
-                  pk: Number.parseInt(tagsModalAlbumId),
-                  tag,
-              })
-          )
-      })
-    : null
-
-function renderAlbumTagChips() {
-    if (!_albumTagsContainer) return
-    renderTagChips(_albumTagsContainer, tagsModalTags, (tag) => {
-        socket.send(
-            JSON.stringify({
-                method: 'remove_album_tag',
-                pk: Number.parseInt(tagsModalAlbumId),
-                tag,
-            })
-        )
-    })
-}
+// Chips seed from the ctx-menu button's data-album-tags payload;
+// set-album-tags broadcasts reconcile the open modal live.
+const albumTagsModal = initManageTagsModal(socket, {
+    modalId: 'album-tags-modal',
+    addMethod: 'add_album_tag',
+    removeMethod: 'remove_album_tag',
+    event: 'set-album-tags',
+    idKey: 'album_id',
+    castId: (value) => Number.parseInt(value),
+})
 
 function onManageTags(btn) {
-    tagsModalAlbumId = btn.dataset.albumId
+    let tags = []
     try {
-        tagsModalTags = JSON.parse(btn.dataset.albumTags || '[]')
+        tags = JSON.parse(btn.dataset.albumTags || '[]')
     } catch {
-        tagsModalTags = []
+        tags = []
     }
-    _albumTagAdder?.reset()
-    renderAlbumTagChips()
-    const modalEl = document.getElementById('album-tags-modal')
-    if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show()
-}
-
-function syncAlbumTagsState(data) {
-    if (String(data.album_id) === String(tagsModalAlbumId)) {
-        const tags = new Set(tagsModalTags)
-        for (const tag of data.added || []) tags.add(tag)
-        for (const tag of data.removed || []) tags.delete(tag)
-        tagsModalTags = [...tags]
-        renderAlbumTagChips()
-    }
+    albumTagsModal?.open(btn.dataset.albumId, tags)
 }
 
 function onDelete(btn) {
@@ -170,9 +131,6 @@ socket?.addEventListener('message', function (event) {
         if (Object.hasOwn(data, 'password')) {
             syncPasswordButtons(data.id, !!data.password)
         }
-    }
-    if (data.event === 'set-album-tags' && data.album_id != null) {
-        syncAlbumTagsState(data)
     }
 })
 

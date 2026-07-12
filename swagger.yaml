@@ -679,7 +679,7 @@ components:
         filters:
           type: object
           description: >
-            Event filters. tags filters file.* and album.* events by tag:
+            Event filters. tags filters file.*, album.*, and stream.* events by tag:
             matching is case-insensitive, a "!" prefix excludes, and exclusions
             win. Empty object = no filtering.
           properties:
@@ -727,7 +727,7 @@ components:
         filters:
           type: object
           description: >
-            Optional event filters. tags filters file and album events by tag;
+            Optional event filters. tags filters file, album, and stream events by tag;
             prefix a tag with "!" to exclude. Maximum 50 tags.
           properties:
             tags:

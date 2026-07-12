@@ -56,6 +56,7 @@ from home.util.nginx import sign_hls_cookie, verify_hls_cookie
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
+from home.util.tags import clean_tag_names
 from home.util.webhooks import (
     EVENT_STREAM_LIVE,
     EVENT_STREAM_OFFLINE,
@@ -410,16 +411,6 @@ def shorten_view(request):
         return JsonResponse({"error": str(error)}, status=500)
 
 
-def _clean_album_tags(value) -> list:
-    """Normalize a tags payload (list or comma-separated string) to tag names."""
-    if isinstance(value, str):
-        value = value.split(",")
-    if not isinstance(value, list):
-        return []
-    tags = [str(tag).strip() for tag in value]
-    return [tag for tag in tags if tag and len(tag) <= 255]
-
-
 def _handle_create_album(request):
     data = get_json_body(request)
     log.debug("data: %s", data)
@@ -447,7 +438,7 @@ def _handle_create_album(request):
     )
     # staged for albums_post_save_signal so tags exist before the
     # album.created websocket/webhook payloads are built
-    album._pending_tags = data_or_header(request, data, "tags", [], cast=_clean_album_tags)
+    album._pending_tags = data_or_header(request, data, "tags", [], cast=clean_tag_names)
     album.save()
     site_settings = SiteSettings.objects.settings()
     full_url = site_settings.site_url + reverse("home:files") + f"?album={album.id}"
@@ -2381,9 +2372,9 @@ def streams_view(request, page=None, count=100):
     else:
         user = request.user.id
     if user == "0":
-        q = Stream.objects.select_related("user").all()
+        q = Stream.objects.select_related("user").prefetch_related("tags__tag").all()
     else:
-        q = Stream.objects.select_related("user").filter(user_id=int(user))
+        q = Stream.objects.select_related("user").prefetch_related("tags__tag").filter(user_id=int(user))
     if privacy := request.GET.get("privacy"):
         q = q.filter(public=(privacy == "public"))
     q = apply_ordering(

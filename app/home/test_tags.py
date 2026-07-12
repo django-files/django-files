@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from djangofiles.test_utils import TEST_PASSWORD
 from home.consumers import HomeConsumer
-from home.models import Albums, AlbumTag, Files, FileTag, Tag
+from home.models import Albums, AlbumTag, Files, FileTag, Stream, StreamTag, Tag
 from home.util.tags import attach_file_tags, sync_file_tags
 from oauth.models import CustomUser
 
@@ -56,6 +56,13 @@ class TagManagerTests(TagBaseTestCase):
         tag = Tag.objects.get_or_create_tag("albumonly")
         album = Albums.objects.create(user=self.user, name="A")
         AlbumTag.objects.create(album=album, tag=tag)
+        Tag.objects.prune_orphans([tag.pk])
+        self.assertTrue(Tag.objects.filter(pk=tag.pk).exists())
+
+    def test_prune_orphans_keeps_stream_tags(self):
+        tag = Tag.objects.get_or_create_tag("streamonly")
+        stream = Stream.objects.create(name="prunestream", title="T", user=self.user)
+        StreamTag.objects.create(stream=stream, tag=tag)
         Tag.objects.prune_orphans([tag.pk])
         self.assertTrue(Tag.objects.filter(pk=tag.pk).exists())
 
@@ -115,6 +122,7 @@ class SyncFileTagsTests(TagBaseTestCase):
         self.assertEqual(list(file.tags.values_list("tag_id", flat=True)), [existing.pk])
 
 
+@patch("home.consumers.stream_tag_websocket.apply_async")
 @patch("home.consumers.dispatch_webhook_event.delay")
 @patch("home.consumers.album_tag_websocket.apply_async")
 @patch("home.consumers.file_tag_websocket.apply_async")
@@ -127,7 +135,7 @@ class ConsumerTagTests(TagBaseTestCase):
         consumer.scope = {"user": user or self.user}
         return consumer
 
-    def test_add_and_remove_album_tag(self, _mock_file_ws, mock_album_ws, mock_dispatch):
+    def test_add_and_remove_album_tag(self, _mock_file_ws, mock_album_ws, mock_dispatch, _mock_stream_ws):
         album = Albums.objects.create(user=self.user, name="A")
         # album creation fires album.created through the shared task object
         mock_dispatch.reset_mock()
@@ -145,7 +153,7 @@ class ConsumerTagTests(TagBaseTestCase):
         self.assertEqual(album.tags.count(), 0)
         self.assertFalse(Tag.objects.filter(name="Work").exists())
 
-    def test_album_tag_permission(self, _mock_file_ws, _mock_album_ws, _mock_dispatch):
+    def test_album_tag_permission(self, _mock_file_ws, _mock_album_ws, _mock_dispatch, _mock_stream_ws):
         album = Albums.objects.create(user=self.user, name="A")
         other = CustomUser.objects.create_user(username="other", password=TEST_PASSWORD)  # nosec  # NOSONAR
         consumer = self._consumer(other)
@@ -153,7 +161,7 @@ class ConsumerTagTests(TagBaseTestCase):
         self.assertFalse(result["success"])
         self.assertEqual(album.tags.count(), 0)
 
-    def test_bulk_edit_file_tags(self, mock_file_ws, _mock_album_ws, _mock_dispatch):
+    def test_bulk_edit_file_tags(self, mock_file_ws, _mock_album_ws, _mock_dispatch, _mock_stream_ws):
         first, second = self.create_file("a.txt"), self.create_file("b.txt")
         consumer = self._consumer()
         result = consumer.bulk_edit_file_tags(
@@ -173,20 +181,61 @@ class ConsumerTagTests(TagBaseTestCase):
         consumer.bulk_edit_file_tags(user_id=self.user.id, pks=[second.pk], tags=["work"], action="remove")
         self.assertFalse(Tag.objects.filter(name="work").exists())
 
-    def test_bulk_edit_file_tags_validation(self, _mock_file_ws, _mock_album_ws, _mock_dispatch):
+    def test_bulk_edit_file_tags_validation(self, _mock_file_ws, _mock_album_ws, _mock_dispatch, _mock_stream_ws):
         consumer = self._consumer()
         self.assertFalse(consumer.bulk_edit_file_tags(user_id=self.user.id, pks=[], tags=[], action="add")["success"])
         result = consumer.bulk_edit_file_tags(user_id=self.user.id, pks=[], tags=["x"], action="bogus")
         self.assertFalse(result["success"])
 
-    def test_bulk_edit_file_tags_skips_other_users(self, _mock_file_ws, _mock_album_ws, _mock_dispatch):
+    def test_bulk_edit_file_tags_skips_other_users(
+        self, _mock_file_ws, _mock_album_ws, _mock_dispatch, _mock_stream_ws
+    ):
         file = self.create_file()
         other = CustomUser.objects.create_user(username="other2", password=TEST_PASSWORD)  # nosec  # NOSONAR
         consumer = self._consumer(other)
         consumer.bulk_edit_file_tags(user_id=other.id, pks=[file.pk], tags=["x"], action="add")
         self.assertEqual(file.tags.count(), 0)
 
-    def test_bulk_edit_album_tags(self, _mock_file_ws, mock_album_ws, mock_dispatch):
+    def test_add_and_remove_stream_tag(self, _mock_file_ws, _mock_album_ws, _mock_dispatch, mock_stream_ws):
+        stream = Stream.objects.create(name="tagstream", title="T", user=self.user)
+        consumer = self._consumer()
+        result = consumer.add_stream_tag(user_id=self.user.id, pk=stream.pk, tag=" Gaming ")
+        self.assertIsNone(result)
+        self.assertEqual(list(stream.tags.values_list("tag__name", flat=True)), ["Gaming"])
+        event = mock_stream_ws.call_args.kwargs["args"][0]
+        self.assertEqual(event["event"], "set-stream-tags")
+        self.assertEqual(event["stream_name"], "tagstream")
+        self.assertEqual(event["added"], ["Gaming"])
+        result = consumer.remove_stream_tag(user_id=self.user.id, pk=stream.pk, tag="Gaming")
+        self.assertIsNone(result)
+        self.assertEqual(stream.tags.count(), 0)
+        self.assertFalse(Tag.objects.filter(name="Gaming").exists())
+
+    def test_stream_tag_permission(self, _mock_file_ws, _mock_album_ws, _mock_dispatch, _mock_stream_ws):
+        stream = Stream.objects.create(name="ownedstream", title="T", user=self.user)
+        other = CustomUser.objects.create_user(username="other3", password=TEST_PASSWORD)  # nosec  # NOSONAR
+        consumer = self._consumer(other)
+        result = consumer.add_stream_tag(user_id=other.id, pk=stream.pk, tag="x")
+        self.assertFalse(result["success"])
+        self.assertEqual(stream.tags.count(), 0)
+
+    def test_bulk_edit_stream_tags(self, _mock_file_ws, _mock_album_ws, _mock_dispatch, mock_stream_ws):
+        first = Stream.objects.create(name="s1", title="T", user=self.user)
+        second = Stream.objects.create(name="s2", title="T", user=self.user)
+        consumer = self._consumer()
+        result = consumer.bulk_edit_stream_tags(
+            user_id=self.user.id, pks=[first.pk, second.pk], tags=["IRL"], action="add"
+        )
+        self.assertIsNone(result)
+        for stream in (first, second):
+            self.assertEqual(list(stream.tags.values_list("tag__name", flat=True)), ["IRL"])
+        self.assertEqual(mock_stream_ws.call_count, 2)
+        consumer.bulk_edit_stream_tags(user_id=self.user.id, pks=[first.pk, second.pk], tags=["IRL"], action="remove")
+        self.assertEqual(first.tags.count(), 0)
+        self.assertEqual(second.tags.count(), 0)
+        self.assertFalse(Tag.objects.filter(name="IRL").exists())
+
+    def test_bulk_edit_album_tags(self, _mock_file_ws, mock_album_ws, mock_dispatch, _mock_stream_ws):
         first = Albums.objects.create(user=self.user, name="A1")
         second = Albums.objects.create(user=self.user, name="A2")
         # album creation fires album.created through the shared task object

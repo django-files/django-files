@@ -1,7 +1,7 @@
 import { fetchAlbums } from './api-fetch.js'
 import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import { attachSocketTableSync, socket } from './socket.js'
-import { initBulkTagsModal } from './tag-chips.js'
+import { applyTagDelta, initBulkTagsModal } from './tag-chips.js'
 import {
     dtRevealThead,
     initPopupBtn,
@@ -429,10 +429,7 @@ function updateAlbumTags(data) {
     const row = albumsDataTable.row(`#album-${data.album_id}`)
     if (!row.node()) return
     const current = row.data() || {}
-    const tags = new Set(current.tags || [])
-    for (const tag of data.added || []) tags.add(tag)
-    for (const tag of data.removed || []) tags.delete(tag)
-    row.data({ ...current, tags: [...tags] })
+    row.data({ ...current, tags: applyTagDelta(current.tags || [], data) })
         .invalidate('data')
         .draw(false)
 }
