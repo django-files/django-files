@@ -1,7 +1,11 @@
 import { initBulkSelect, selectedPks } from './bulk-actions.js'
 import { socket } from './socket.js'
 import { openDeleteStreamsModal } from './streams-actions.js'
-import { applyTagDelta, initBulkTagsModal } from './tag-chips.js'
+import {
+    applyTagDelta,
+    initBulkTagsModal,
+    updateTagSearchBadges,
+} from './tag-chips.js'
 import {
     dtRevealThead,
     initPopupBtn,
@@ -91,9 +95,18 @@ const dataTablesOptions = {
             targets: 1,
             width: '150px',
             responsivePriority: 1,
-            render: getStreamLink,
+            render: (data, type, row, meta) => {
+                if (type === 'filter') {
+                    const tags = Array.isArray(row.tags)
+                        ? row.tags.join(' ')
+                        : ''
+                    return `${data || ''} ${tags}`
+                }
+                return getStreamLink(data, type, row, meta)
+            },
             defaultContent: '',
             type: 'html',
+            className: 'dt-name-col',
         },
         {
             targets: 2,
@@ -176,6 +189,11 @@ const dataTablesOptions = {
         if (dt.rows().count() === 0) dt.draw()
         dtRevealThead(dt)
     },
+}
+
+function updateStreamTagBadges() {
+    if (!streamsDataTable) return
+    updateTagSearchBadges(streamsDataTable)
 }
 
 function getStreamLink(data, type, row) {
@@ -342,6 +360,7 @@ document.addEventListener('DOMContentLoaded', domContentLoaded)
 
 function domContentLoaded() {
     streamsDataTable = streamsTable.DataTable(dataTablesOptions)
+    streamsDataTable.on('draw.dt', updateStreamTagBadges)
     showStreamsSkeletons()
     initToolbar('streams-toolbar', streamsDataTable)
     initBulkSelect(streamsDataTable)

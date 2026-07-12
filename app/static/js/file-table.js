@@ -1,7 +1,11 @@
 import { getContextMenu, openAlbumModal } from './file-context-menu.js'
 
 import { attachSocketTableSync, socket } from './socket.js'
-import { applyTagDelta, initBulkTagsModal } from './tag-chips.js'
+import {
+    applyTagDelta,
+    initBulkTagsModal,
+    updateTagSearchBadges,
+} from './tag-chips.js'
 import {
     noChromeLayout,
     selectColumn,
@@ -159,28 +163,7 @@ const dataTablesOptions = {
 
 function updateTableTagBadges() {
     if (!filesDataTable) return
-    const term = filesDataTable.search().toLowerCase()
-    filesDataTable.rows({ search: 'applied' }).every(function () {
-        const node = this.node()
-        const cell = node?.querySelector('td.dt-name-col')
-        if (!cell) return
-        cell.querySelector('.dt-tag-match')?.remove()
-        if (term) {
-            const data = this.data()
-            const match =
-                Array.isArray(data.tags) &&
-                data.tags.find((t) => t.toLowerCase().includes(term))
-            if (match) {
-                const badge = document.createElement('span')
-                badge.className =
-                    'badge rounded-pill ps-2 file-tag ms-1 dt-tag-match'
-                badge.textContent = match
-                ;(cell.querySelector('.dj-file-link') ?? cell).appendChild(
-                    badge
-                )
-            }
-        }
-    })
+    updateTagSearchBadges(filesDataTable, '.dj-file-link')
 }
 
 export function initFilesTable(search = true, ordering = true, info = true) {

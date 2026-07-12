@@ -2375,6 +2375,10 @@ def streams_view(request, page=None, count=100):
         q = Stream.objects.select_related("user").prefetch_related("tags__tag").all()
     else:
         q = Stream.objects.select_related("user").prefetch_related("tags__tag").filter(user_id=int(user))
+    if search := request.GET.get("search"):
+        q = q.filter(
+            Q(name__icontains=search) | Q(title__icontains=search) | Q(tags__tag__name__icontains=search)
+        ).distinct()
     if privacy := request.GET.get("privacy"):
         q = q.filter(public=(privacy == "public"))
     q = apply_ordering(

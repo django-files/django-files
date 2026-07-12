@@ -271,6 +271,21 @@ class AlbumSearchTagsTests(TagBaseTestCase):
         self.assertEqual([album["name"] for album in response.json()["albums"]], ["Other"])
 
 
+class StreamSearchTagsTests(TagBaseTestCase):
+    def test_stream_search_matches_tags(self):
+        tagged = Stream.objects.create(name="gamingstream", title="Play", user=self.user)
+        Stream.objects.create(name="otherstream", title="Chat", user=self.user)
+        StreamTag.objects.create(stream=tagged, tag=Tag.objects.get_or_create_tag("Speedrun"))
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("api:streams") + "?search=speedrun")
+        self.assertEqual(response.status_code, 200)
+        streams = response.json()["streams"]
+        self.assertEqual([stream["name"] for stream in streams], ["gamingstream"])
+        # title matching still works alongside the tag join
+        response = self.client.get(reverse("api:streams") + "?search=chat")
+        self.assertEqual([stream["name"] for stream in response.json()["streams"]], ["otherstream"])
+
+
 class AlbumCreateTagsTests(TagBaseTestCase):
     def _create_album(self, body):
         self.client.force_login(self.user)

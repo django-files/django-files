@@ -1,7 +1,11 @@
 import { fetchAlbums } from './api-fetch.js'
 import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import { attachSocketTableSync, socket } from './socket.js'
-import { applyTagDelta, initBulkTagsModal } from './tag-chips.js'
+import {
+    applyTagDelta,
+    initBulkTagsModal,
+    updateTagSearchBadges,
+} from './tag-chips.js'
 import {
     dtRevealThead,
     initPopupBtn,
@@ -121,32 +125,9 @@ const dataTablesOptions = {
     ],
 }
 
-// Mirrors the files table: when a search hit came from a tag, show the
-// matching tag as a badge next to the album name.
 function updateAlbumTagBadges() {
     if (!albumsDataTable) return
-    const term = albumsDataTable.search().toLowerCase()
-    albumsDataTable.rows({ search: 'applied' }).every(function () {
-        const node = this.node()
-        const cell = node?.querySelector('td.dt-name-col')
-        if (!cell) return
-        cell.querySelector('.dt-tag-match')?.remove()
-        if (term) {
-            const data = this.data()
-            const match =
-                Array.isArray(data.tags) &&
-                data.tags.find((t) => t.toLowerCase().includes(term))
-            if (match) {
-                const badge = document.createElement('span')
-                badge.className =
-                    'badge rounded-pill ps-2 file-tag ms-1 dt-tag-match'
-                badge.textContent = match
-                ;(cell.querySelector('.dj-album-link') ?? cell).appendChild(
-                    badge
-                )
-            }
-        }
-    })
+    updateTagSearchBadges(albumsDataTable, '.dj-album-link')
 }
 
 async function domContentLoaded() {

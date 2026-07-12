@@ -122,6 +122,37 @@ export function initTagChipEditor({ container, onChange = null }) {
 }
 
 /**
+ * Show the matching tag as a badge next to the row's name when a table
+ * search hit came from a tag rather than the name. Call on every draw.
+ * @param {Object} dt - DataTable whose rows carry a tags array.
+ * @param {string} [linkSelector] - Element inside td.dt-name-col to append to.
+ */
+export function updateTagSearchBadges(dt, linkSelector = null) {
+    const term = dt.search().toLowerCase()
+    dt.rows({ search: 'applied' }).every(function () {
+        const node = this.node()
+        const cell = node?.querySelector('td.dt-name-col')
+        if (!cell) return
+        cell.querySelector('.dt-tag-match')?.remove()
+        if (term) {
+            const data = this.data()
+            const match =
+                Array.isArray(data.tags) &&
+                data.tags.find((t) => t.toLowerCase().includes(term))
+            if (match) {
+                const badge = document.createElement('span')
+                badge.className =
+                    'badge rounded-pill ps-2 file-tag ms-1 dt-tag-match'
+                badge.textContent = match
+                const target =
+                    (linkSelector && cell.querySelector(linkSelector)) || cell
+                target.appendChild(badge)
+            }
+        }
+    })
+}
+
+/**
  * Merge a set-*-tags broadcast ({added: [], removed: []}) into a tag list.
  */
 export function applyTagDelta(tags, data) {
