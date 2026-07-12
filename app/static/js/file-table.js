@@ -493,9 +493,10 @@ $('.bulk-tags').on('click', bulkManageTags)
 
 export function bulkManageTags(_event) {
     if (!bulkTagsModal) return
-    const pks = []
+    const items = []
     filesDataTable.rows('.selected').every(function () {
-        pks.push(this.data().id)
+        const data = this.data()
+        items.push({ pk: data.id, tags: data.tags || [] })
     })
-    bulkTagsModal.open(pks)
+    bulkTagsModal.open(items)
 }

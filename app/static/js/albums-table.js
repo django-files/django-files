@@ -227,9 +227,15 @@ async function domContentLoaded() {
             'bulk_edit_album_tags',
             'album'
         )
-        $('.bulk-tags').on('click', () =>
-            bulkTagsModal?.open(selectedPks(albumsDataTable))
-        )
+        $('.bulk-tags').on('click', () => {
+            if (!bulkTagsModal) return
+            const items = []
+            albumsDataTable.rows('.selected').every(function () {
+                const data = this.data()
+                items.push({ pk: data.id, tags: data.tags || [] })
+            })
+            bulkTagsModal.open(items)
+        })
     }
     deleteModal = wireDeleteModal({
         modalId: 'delete-album-modal',

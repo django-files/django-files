@@ -1,7 +1,8 @@
 {% comment %}
 Shared bulk tag edit modal, wired by tag-chips.js initBulkTagsModal on the
-files and albums pages. Enter tags as chips, then apply add or remove to the
-selected rows.
+files and albums pages. Shows the union of tags across the selection (with
+counts for partial coverage); add/remove applies to all selected immediately,
+like the bulk album manager.
 {% endcomment %}
 <div class="modal fade" id="bulk-tags-modal" tabindex="-1" aria-labelledby="bulk-tags-label" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -11,15 +12,10 @@ selected rows.
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted small mb-2">Pick tags, then apply them to the selected items.</p>
                 {# chips and the "+" adder are rendered by tag-chips.js #}
                 <div class="tag-container position-relative" id="bulk-tags-container"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-success" id="bulk-tags-apply-add">
-                    Add to Selected <i class="fa-solid fa-tags ms-1"></i></button>
-                <button type="button" class="btn btn-danger" id="bulk-tags-apply-remove">
-                    Remove from Selected <i class="fa-solid fa-eraser ms-1"></i></button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
