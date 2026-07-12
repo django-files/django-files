@@ -11,7 +11,7 @@ import {
     wireClickDelegation,
     wirePasswordModal,
 } from './ctx-menu-shared.js'
-import { renderTagChips } from './tag-chips.js'
+import { createTagAdder, renderTagChips } from './tag-chips.js'
 
 async function onCopyLink(btn) {
     const url = btn.dataset.albumUrl
@@ -83,24 +83,34 @@ wirePasswordModal({
 let tagsModalAlbumId = null
 let tagsModalTags = []
 
+const _albumTagsContainer = document.getElementById('album-tags-container')
+
+// The "+" adder chip mirrors the preview sidebar; add/remove are confirmed
+// by the set-album-tags broadcast, which re-renders the chips.
+const _albumTagAdder = _albumTagsContainer
+    ? createTagAdder(_albumTagsContainer, (tag) => {
+          if (!tagsModalAlbumId) return
+          socket.send(
+              JSON.stringify({
+                  method: 'add_album_tag',
+                  pk: Number.parseInt(tagsModalAlbumId),
+                  tag,
+              })
+          )
+      })
+    : null
+
 function renderAlbumTagChips() {
-    const container = document.getElementById('album-tags-container')
-    if (!container) return
-    // removal is confirmed by the set-album-tags broadcast, which re-renders
-    renderTagChips(
-        container,
-        tagsModalTags,
-        (tag) => {
-            socket.send(
-                JSON.stringify({
-                    method: 'remove_album_tag',
-                    pk: Number.parseInt(tagsModalAlbumId),
-                    tag,
-                })
-            )
-        },
-        document.getElementById('album-tags-empty')
-    )
+    if (!_albumTagsContainer) return
+    renderTagChips(_albumTagsContainer, tagsModalTags, (tag) => {
+        socket.send(
+            JSON.stringify({
+                method: 'remove_album_tag',
+                pk: Number.parseInt(tagsModalAlbumId),
+                tag,
+            })
+        )
+    })
 }
 
 function onManageTags(btn) {
@@ -110,27 +120,11 @@ function onManageTags(btn) {
     } catch {
         tagsModalTags = []
     }
+    _albumTagAdder?.reset()
     renderAlbumTagChips()
     const modalEl = document.getElementById('album-tags-modal')
     if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show()
 }
-
-document
-    .getElementById('album-tag-add-form')
-    ?.addEventListener('submit', (event) => {
-        event.preventDefault()
-        const input = document.getElementById('album-tag-input')
-        const tag = input.value.trim()
-        if (!tag || !tagsModalAlbumId) return
-        socket.send(
-            JSON.stringify({
-                method: 'add_album_tag',
-                pk: Number.parseInt(tagsModalAlbumId),
-                tag,
-            })
-        )
-        input.value = ''
-    })
 
 function syncAlbumTagsState(data) {
     if (String(data.album_id) === String(tagsModalAlbumId)) {

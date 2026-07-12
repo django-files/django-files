@@ -6,18 +6,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="tag-container mb-3" id="album-tags-container">
-                    <span class="text-muted small d-none" id="album-tags-empty">No tags yet.</span>
-                </div>
-                <form id="album-tag-add-form" autocomplete="off">
-                    <div class="input-group">
-                        <label for="album-tag-input" class="visually-hidden">Add tag</label>
-                        <input type="text" class="form-control" id="album-tag-input"
-                               placeholder="Add tag…" maxlength="255">
-                        <button type="submit" class="btn btn-primary" id="album-tag-add-btn">
-                            Add <i class="fa-solid fa-plus ms-1"></i></button>
-                    </div>
-                </form>
+                {# chips and the "+" adder are rendered by albums-actions.js via tag-chips.js #}
+                <div class="tag-container position-relative" id="album-tags-container"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

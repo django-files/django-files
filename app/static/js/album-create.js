@@ -8,16 +8,13 @@ const _createAlbumModalEl = document.getElementById('create-album-modal')
 const _tagsContainer = document.getElementById('create-album-tags')
 const _tagsField = document.getElementById('album-tags')
 
-// Chip editor mirrors the Manage Tags modal; the hidden field carries the
+// Chip editor with the preview-style "+" adder; the hidden field carries the
 // list to the create endpoint as a comma-separated string.
 const _tagEditor = _tagsContainer
     ? initTagChipEditor({
           container: _tagsContainer,
-          input: document.getElementById('create-album-tag-input'),
-          addBtn: document.getElementById('create-album-tag-add'),
           onChange: (tags) => {
               _tagsField.value = tags.join(',')
-              _tagsContainer.classList.toggle('d-none', !tags.length)
           },
       })
     : null

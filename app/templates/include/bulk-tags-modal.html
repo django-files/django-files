@@ -11,16 +11,9 @@ selected rows.
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="tag-container mb-3" id="bulk-tags-container">
-                    <span class="text-muted small" id="bulk-tags-empty">Enter tags below…</span>
-                </div>
-                <div class="input-group">
-                    <label for="bulk-tags-input" class="visually-hidden">Add tag</label>
-                    <input type="text" class="form-control" id="bulk-tags-input"
-                           placeholder="Add tag…" maxlength="255">
-                    <button type="button" class="btn btn-secondary" id="bulk-tags-add-chip">
-                        <i class="fa-solid fa-plus"></i></button>
-                </div>
+                <p class="text-muted small mb-2">Pick tags, then apply them to the selected items.</p>
+                {# chips and the "+" adder are rendered by tag-chips.js #}
+                <div class="tag-container position-relative" id="bulk-tags-container"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-success" id="bulk-tags-apply-add">
