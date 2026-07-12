@@ -38,6 +38,7 @@ _ERR_STREAM_NOT_FOUND = "Stream not found."
 _ERR_STREAM_OWNED_BY_OTHER = "Stream owned by another user."
 _ERR_SESSION_NOT_READY = "Session not ready."
 _ERR_ALBUM_NOT_FOUND = "Album not found."
+_ERR_NO_TAG_SPECIFIED = "No tag specified."
 _WS_SEND = "websocket.send"
 
 # Explicit allowlist of methods callable via WebSocket.
@@ -1386,7 +1387,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
     def add_file_tag(self, *, user_id: int = None, pk: int = None, tag: str = None, **kwargs) -> Optional[dict]:
         log.debug("add_file_tag: user_id=%s pk=%s tag=%s", user_id, pk, tag)
         if not tag or not tag.strip():
-            return self._error("No tag specified.", **kwargs)
+            return self._error(_ERR_NO_TAG_SPECIFIED, **kwargs)
         file, err = self._check_file_permission(pk, user_id, **kwargs)
         if err:
             return err
@@ -1398,7 +1399,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
     def remove_file_tag(self, *, user_id: int = None, pk: int = None, tag: str = None, **kwargs) -> Optional[dict]:
         log.debug("remove_file_tag: user_id=%s pk=%s tag=%s", user_id, pk, tag)
         if not tag:
-            return self._error("No tag specified.", **kwargs)
+            return self._error(_ERR_NO_TAG_SPECIFIED, **kwargs)
         file, err = self._check_file_permission(pk, user_id, **kwargs)
         if err:
             return err
@@ -1410,7 +1411,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
     def _add_tag_handler(self, model, label: str, notify, *, user_id=None, pk=None, tag=None, **kwargs):
         log.debug("add_%s_tag: user_id=%s pk=%s tag=%s", label.lower(), user_id, pk, tag)
         if not tag or not tag.strip():
-            return self._error("No tag specified.", **kwargs)
+            return self._error(_ERR_NO_TAG_SPECIFIED, **kwargs)
         entity, err = self._check_entity_permission(model, pk, user_id, label, **kwargs)
         if err:
             return err
@@ -1422,7 +1423,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
     def _remove_tag_handler(self, model, label: str, notify, *, user_id=None, pk=None, tag=None, **kwargs):
         log.debug("remove_%s_tag: user_id=%s pk=%s tag=%s", label.lower(), user_id, pk, tag)
         if not tag:
-            return self._error("No tag specified.", **kwargs)
+            return self._error(_ERR_NO_TAG_SPECIFIED, **kwargs)
         entity, err = self._check_entity_permission(model, pk, user_id, label, **kwargs)
         if err:
             return err
