@@ -1239,7 +1239,7 @@ def albums_view(request, page=None, count=100):
             .prefetch_related("tags__tag")
         )
     if search := request.GET.get("search"):
-        q = q.filter(name__icontains=search)
+        q = q.filter(Q(name__icontains=search) | Q(tags__tag__name__icontains=search)).distinct()
     if privacy := request.GET.get("privacy"):
         q = q.filter(private=(privacy == "private"))
     q = q.annotate(file_count=Count("files"))

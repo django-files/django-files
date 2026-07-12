@@ -66,9 +66,21 @@ const dataTablesOptions = {
         selectColumnDef,
         {
             targets: 1,
-            render: renderAlbumLink,
+            render: (data, type, row, meta) => {
+                if (type === 'filter') {
+                    const tags = Array.isArray(row.tags)
+                        ? row.tags.join(' ')
+                        : ''
+                    return `${data || ''} ${tags}`
+                }
+                if (type === 'display') {
+                    return renderAlbumLink(data, type, row, meta)
+                }
+                return data || ''
+            },
             defaultContent: '',
             responsivePriority: 1,
+            className: 'dt-name-col',
         },
         {
             name: 'date',
@@ -109,8 +121,37 @@ const dataTablesOptions = {
     ],
 }
 
+// Mirrors the files table: when a search hit came from a tag, show the
+// matching tag as a badge next to the album name.
+function updateAlbumTagBadges() {
+    if (!albumsDataTable) return
+    const term = albumsDataTable.search().toLowerCase()
+    albumsDataTable.rows({ search: 'applied' }).every(function () {
+        const node = this.node()
+        const cell = node?.querySelector('td.dt-name-col')
+        if (!cell) return
+        cell.querySelector('.dt-tag-match')?.remove()
+        if (term) {
+            const data = this.data()
+            const match =
+                Array.isArray(data.tags) &&
+                data.tags.find((t) => t.toLowerCase().includes(term))
+            if (match) {
+                const badge = document.createElement('span')
+                badge.className =
+                    'badge rounded-pill ps-2 file-tag ms-1 dt-tag-match'
+                badge.textContent = match
+                ;(cell.querySelector('.dj-album-link') ?? cell).appendChild(
+                    badge
+                )
+            }
+        }
+    })
+}
+
 async function domContentLoaded() {
     albumsDataTable = albumsTable.DataTable(dataTablesOptions)
+    albumsDataTable.on('draw.dt', updateAlbumTagBadges)
     truncator.attach(albumsDataTable)
     loader = createPaginatedLoader(albumsDataTable, {
         fetcher: fetchAlbums,

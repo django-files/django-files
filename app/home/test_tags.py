@@ -207,6 +207,21 @@ class ConsumerTagTests(TagBaseTestCase):
         self.assertFalse(Tag.objects.filter(name="Trip").exists())
 
 
+class AlbumSearchTagsTests(TagBaseTestCase):
+    def test_album_search_matches_tags(self):
+        tagged = Albums.objects.create(user=self.user, name="Photos")
+        Albums.objects.create(user=self.user, name="Other")
+        AlbumTag.objects.create(album=tagged, tag=Tag.objects.get_or_create_tag("Iceland"))
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("api:albums") + "?search=iceland")
+        self.assertEqual(response.status_code, 200)
+        albums = response.json()["albums"]
+        self.assertEqual([album["name"] for album in albums], ["Photos"])
+        # name matching still works alongside the tag join
+        response = self.client.get(reverse("api:albums") + "?search=other")
+        self.assertEqual([album["name"] for album in response.json()["albums"]], ["Other"])
+
+
 class AlbumCreateTagsTests(TagBaseTestCase):
     def _create_album(self, body):
         self.client.force_login(self.user)
