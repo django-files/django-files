@@ -376,6 +376,12 @@ class Webhook(models.Model):
     )
     active = models.BooleanField(default=True)
     events = models.JSONField(default=list, blank=True, verbose_name="Events", help_text="Subscribed event keys.")
+    filters = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Filters",
+        help_text="Event filters, e.g. {'tags': ['work', '!private']} to filter file events by tag.",
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created", help_text="Hook Created Date.")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated", help_text="Hook Updated Date.")
 

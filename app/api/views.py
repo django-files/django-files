@@ -589,6 +589,7 @@ def _webhook_response(webhook: Webhook) -> dict:
         "secret": webhook.secret,
         "active": webhook.active,
         "events": webhook.events,
+        "filters": webhook.filters,
         "created_at": webhook.created_at,
         "updated_at": webhook.updated_at,
     }
@@ -626,6 +627,26 @@ def _clean_webhook_events(value) -> tuple:
     return value, None
 
 
+_WEBHOOK_FILTER_KEYS = ("tags",)
+_WEBHOOK_MAX_FILTER_TAGS = 50
+
+
+def _clean_webhook_filters(value) -> tuple:
+    if not isinstance(value, dict):
+        return None, "Invalid filters"
+    if unknown := [key for key in value if key not in _WEBHOOK_FILTER_KEYS]:
+        return None, f"Unknown filter keys: {', '.join(unknown)}. Valid keys: {', '.join(_WEBHOOK_FILTER_KEYS)}"
+    tags = value.get("tags", [])
+    if not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags):
+        return None, "Invalid filters: tags must be a list of strings"
+    tags = [tag.strip() for tag in tags]
+    if any(not tag.lstrip("!") or len(tag) > 255 for tag in tags):
+        return None, "Invalid filters: each tag must be 1-255 characters"
+    if len(tags) > _WEBHOOK_MAX_FILTER_TAGS:
+        return None, f"Invalid filters: maximum {_WEBHOOK_MAX_FILTER_TAGS} tags"
+    return {"tags": tags} if tags else {}, None
+
+
 def _clean_webhook_secret(value) -> tuple:
     secret = str(value)
     if len(secret) > 128:
@@ -645,6 +666,7 @@ _WEBHOOK_FIELD_CLEANERS = {
     "webhook_type": _clean_webhook_type,
     "scope": _clean_webhook_scope,
     "events": _clean_webhook_events,
+    "filters": _clean_webhook_filters,
     "secret": _clean_webhook_secret,
     "active": _clean_webhook_active,
 }
