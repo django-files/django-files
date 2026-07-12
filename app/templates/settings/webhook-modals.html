@@ -66,7 +66,7 @@ site-scoped hooks; the hidden scope input drives the API payload.
                         {% for key, label in webhook_events.items %}
                             {% if webhook_scope == 'site' or key not in webhook_site_only_events %}
                                 <div class="col-sm-6">
-                                    <div class="form-check">
+                                     <div class="form-check form-switch">
                                         <input class="form-check-input webhook-event-check" type="checkbox"
                                                value="{{ key }}" id="webhook-event-{{ forloop.counter }}">
                                         <label class="form-check-label" for="webhook-event-{{ forloop.counter }}">

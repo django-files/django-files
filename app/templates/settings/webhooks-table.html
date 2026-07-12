@@ -53,22 +53,22 @@ site settings (webhook_scope="site", adds an Owner column).
                             <i class="fa-solid fa-circle-xmark text-danger" title="Inactive"></i>
                         {% endif %}
                     </td>
-                    <td class="text-center">
-                        <a role="button" class="testWebhookBtn me-2" title="Send Test Event"
-                           data-webhook-id="{{ data.id }}">
-                            <i class="fa-solid fa-paper-plane link-primary"></i></a>
-                        <a role="button" class="editWebhookBtn me-2" title="Edit"
-                           data-webhook-id="{{ data.id }}"
-                           data-webhook-name="{{ data.name }}"
-                           data-webhook-type="{{ data.webhook_type }}"
-                           data-webhook-url="{{ data.url }}"
-                           data-webhook-secret="{{ data.secret }}"
-                           data-webhook-active="{{ data.active|yesno:'true,false' }}"
-                           data-webhook-events="{{ data.events|join:',' }}">
-                            <i class="fa-solid fa-pen-to-square link-body-emphasis"></i></a>
+                        <td class="text-nowrap">
+                        <a role="button" class="testWebhookBtn" title="Send Test Event"
+                                    data-webhook-id="{{ data.id }}">
+                                    <i class="fa-solid fa-paper-plane link-primary"></i></a>
+                        <a role="button" class="editWebhookBtn" title="Edit"
+                                   data-webhook-id="{{ data.id }}"
+                                   data-webhook-name="{{ data.name }}"
+                                   data-webhook-type="{{ data.webhook_type }}"
+                                   data-webhook-url="{{ data.url }}"
+                                   data-webhook-secret="{{ data.secret }}"
+                                   data-webhook-active="{{ data.active|yesno:'true,false' }}"
+                                   data-webhook-events="{{ data.events|join:',' }}">
+                                   <i class="fa-solid fa-pen-to-square link-body-emphasis"></i></a>
                         <a role="button" class="deleteWebhookBtn" title="Delete"
-                           data-webhook-id="{{ data.id }}">
-                            <i class="fa-regular fa-trash-can link-danger"></i></a>
+                                   data-webhook-id="{{ data.id }}">
+                                   <i class="fa-regular fa-trash-can link-danger"></i></a>
                     </td>
                 </tr>
             {% endfor %}

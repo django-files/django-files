@@ -20,21 +20,21 @@ ALWAYS use the `npm run *` command
 
 ## Where behavior lives
 
-- `app/home/`: core product logic.
-  - Models for `Files`, `Albums`, `ShortURLs`, `Stream`, `StreamHistory`, `Webhook`.
-  - Main HTML views in `home/views.py`.
-  - Background jobs in `home/tasks.py`.
-  - Websocket protocol in `home/consumers.py`.
-  - Signals in `home/signals.py` clear caches, delete storage objects, enqueue websocket updates, and emit webhook events.
-  - Webhook event catalogue, payload builders, and HTTP delivery in `home/util/webhooks.py`.
-    Events fan out through the `dispatch_webhook_event` -> `fire_webhook` Celery task chain in `home/tasks.py`;
-    `dispatch_webhook_event` matches subscriptions in Python (JSONField `__contains` is unsupported on SQLite).
-- `app/api/`: JSON/API surface, including upload, shorten, file/album CRUD-ish endpoints, auth helpers, stream endpoints, and webhook CRUD (`/api/webhooks/`).
-  - `api/views.py` is large and is the main upload/REST entrypoint.
-- `app/oauth/`: login/logout, OAuth providers (Discord/GitHub/Google), Duo, Discord webhook OAuth flow (stages a pending webhook in the session; the settings modal finishes creation via `/api/webhooks/`), and the custom user model.
-  - `oauth.models.CustomUser` is `AUTH_USER_MODEL`.
-- `app/settings/`: singleton site settings model, settings UI, ShareX/Flameshot config generation, and template context processing.
-- `app/webpush/`: push subscription and VAPID plumbing.
+- app/home/: core logic
+  - Models: Files, Albums, ShortURLs, Stream, StreamHistory, Webhook
+  - View: home/views.py
+  - Tasks: home/tasks.py
+  - Websockets: home/consumers.py
+  - Signals: home/signals.py (cache, storage, ws, webhooks)
+  - Webhooks: home/util/webhooks.py
+    Flow: dispatch_webhook_event → fire_webhook (Celery in tasks.py)
+    Note: Querying JSONField `__contains` is unsupported on SQLite.
+- app/api/: API surface (upload, short_url, assets, auth, stream) & webhooks.
+  - Primary entrypoint: api/views.py
+- app/oauth/: Auth flow (Social, Duo), custom user model.
+  - Models: oauth/models.py
+- app/settings/: Site settings & context processing.
+- app/webpush/: Push subscriptions & VAPID.
 
 ## Runtime architecture
 
@@ -51,7 +51,7 @@ ALWAYS use the `npm run *` command
   - app in `app/djangofiles/celery.py`
   - beat schedule declared in `app/djangofiles/settings.py`
   - worker startup hook is registered in `app/home/signals.py`
-- Redis is the default cache, session store, channels layer, and Celery broker/backend.
+- Redis: default cache, session store, channels layer, and Celery broker/backend.
 
 ## Storage and config
 
@@ -74,7 +74,7 @@ ALWAYS use the `npm run *` command
 
 ## Embed / file preview — two distinct contexts
 
-The file preview UI runs in **two separate rendering contexts** that share templates but use different JS/CSS entry points. Changes to preview behaviour almost always need to be applied in both.
+File preview UI runs in **two separate rendering contexts** that share templates but use different JS/CSS entry points. Changes to preview behaviour almost always need to be applied in both.
 
 | Context             | URL pattern                   | Template                   | JS entry                          | CSS loaded                                       |
 | ------------------- | ----------------------------- | -------------------------- | --------------------------------- | ------------------------------------------------ |
@@ -104,7 +104,7 @@ Key differences:
 
 ## Repo-specific gotchas
 
-- The app named `settings` is a Django app, not the project settings package.
+- app named `settings` is a Django app, not the project settings package.
 - `home/views.py`, `api/views.py`, and especially `home/consumers.py` are large, central modules; expect broad coupling.
 - `HomeConfig.ready()` and `SettingsConfig.ready()` load signal handlers, so model saves/deletes often trigger Celery/cache side effects.
 - Deleting `Files` also deletes backing storage and thumb files via signals.
@@ -133,11 +133,11 @@ Key differences:
   - `npm run lint`
   - ALWAYS RUN FOR CSS AND JS CHANGES: `npx prettier --write app/static/js app/static/css`
 
-## Test coverage reality
+## Test coverage
 
-- Existing automated coverage is light and concentrated in:
+- Existing automated coverage concentrated in:
   - `app/djangofiles/tests.py`
   - `app/api/test_views.py`
   - `app/home/tests.py`
   - `app/webpush/tests/test_vapid.py`
-- `app/home/tests.py` includes Playwright/Channels coverage and is heavier than the rest of the suite.
+- `app/home/tests.py` includes Playwright/Channels coverage.

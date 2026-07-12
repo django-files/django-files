@@ -3,6 +3,7 @@
 import { socket } from './socket.js'
 import { initAlbumSelector } from './album-selector.js'
 import { initTagSelector } from './tag-selector.js'
+import { initFileEditables } from './file-edit.js'
 import { initContextMenu } from './file-context-menu.js'
 
 const panel = document.getElementById('file-preview-panel')
@@ -490,6 +491,10 @@ function initPanelContent(container) {
                 if (!isOpen) return
                 const handleAlbumBadges = initPanelAlbums(container)
                 const handleTagUpdate = initPanelTags(container)
+                const handleFileDescription = initFileEditables(
+                    container,
+                    socket
+                )
 
                 if (render === 'text' || render === 'code') {
                     initCodePreview(root)
@@ -503,7 +508,12 @@ function initPanelContent(container) {
                     initPanelMapToggle(root)
                 }
 
-                initPanelSocket(root, handleAlbumBadges, handleTagUpdate)
+                initPanelSocket(
+                    root,
+                    handleAlbumBadges,
+                    handleTagUpdate,
+                    handleFileDescription
+                )
             },
             { timeout: 1000 }
         )
@@ -513,6 +523,7 @@ function initPanelContent(container) {
             if (!isOpen) return
             const handleAlbumBadges = initPanelAlbums(container)
             const handleTagUpdate = initPanelTags(container)
+            const handleFileDescription = initFileEditables(container, socket)
 
             if (render === 'text' || render === 'code') {
                 initCodePreview(root)
@@ -526,7 +537,12 @@ function initPanelContent(container) {
                 initPanelMapToggle(root)
             }
 
-            initPanelSocket(root, handleAlbumBadges, handleTagUpdate)
+            initPanelSocket(
+                root,
+                handleAlbumBadges,
+                handleTagUpdate,
+                handleFileDescription
+            )
         }, 0)
     }
 }
@@ -923,7 +939,12 @@ function initPanelMapToggle(root) {
 
 // ---- WebSocket: live rename inside panel ----
 
-function initPanelSocket(root, handleAlbumBadges, handleTagUpdate) {
+function initPanelSocket(
+    root,
+    handleAlbumBadges,
+    handleTagUpdate,
+    handleFileDescription
+) {
     if (!socket) return
 
     const fileId = String(root.dataset.fileId)
@@ -953,6 +974,11 @@ function initPanelSocket(root, handleAlbumBadges, handleTagUpdate) {
             String(data.file_id) === fileId
         ) {
             handleTagUpdate?.(data)
+        } else if (
+            data.event === 'set-file-description' &&
+            String(data.id) === fileId
+        ) {
+            handleFileDescription?.(data)
         }
     }
 

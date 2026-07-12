@@ -475,3 +475,24 @@ body.no-top-navbar .preview-floating-hamburger {
     border: 0;
     border-radius: 5px;
 }
+
+/* Editable file fields in the preview sidebar (name: double-click, description: click) */
+.file-editable {
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
+.file-editable:hover {
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.file-editable:focus {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 0;
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+.file-desc.file-editable:empty::before {
+    content: attr(data-placeholder);
+    opacity: 0.5;
+}
