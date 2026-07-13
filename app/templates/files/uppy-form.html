@@ -62,7 +62,7 @@
                 </div>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="upload_password_toggle"
-                           data-default="{{ request.user.default_file_password|yesno:'true,false' }}"
+                                        data-default="{{ request.user.default_file_password|yesno:'true,false' }}" aria-checked="{% if request.user.default_file_password %}true{% else %}false{% endif %}"
                            {% if request.user.default_file_password %}checked{% endif %}>
                     <label class="form-check-label" for="upload_password_toggle">Require password</label>
                 </div>
@@ -88,8 +88,9 @@
                 </div>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="upload_strip_gps"
-                           data-upload-header="strip-gps"
-                           {% if request.user.remove_exif_geo %}checked{% endif %}>
+                        data-upload-header="strip-gps"
+                        aria-checked="{% if request.user.remove_exif_geo %}true{% else %}false{% endif %}"
+                        {% if request.user.remove_exif_geo %}checked{% endif %}>
                     <label class="form-check-label" for="upload_strip_gps">Strip GPS location</label>
                 </div>
             </div>
