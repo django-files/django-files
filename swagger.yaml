@@ -24,7 +24,9 @@ paths:
   /upload/:
     post:
       summary: Upload a File
-      description: Upload a file to the server with optional parameters.
+      description: >
+        Upload a file to the server with optional parameters. All option
+        headers below are also accepted as multipart form fields.
       tags:
         - Files
       security:
@@ -49,10 +51,16 @@ paths:
           description: Strip Exif GPS Data
           schema:
             type: boolean
-        - name: stip-exif
+        - name: strip-exif
           in: header
           required: false
           description: Strip Exif Data
+          schema:
+            type: boolean
+        - name: embed
+          in: header
+          required: false
+          description: Show metadata on previews and embeds (meta_preview).
           schema:
             type: boolean
         - name: private
@@ -73,6 +81,14 @@ paths:
           required: false
           schema:
             type: boolean
+        - name: tags
+          description: >
+            Comma-separated tags to apply to the file. Also accepted as a
+            multipart form field (use the form field for non-ASCII tag names).
+          in: header
+          required: false
+          schema:
+            type: string
 
       requestBody:
         required: true
@@ -88,6 +104,11 @@ paths:
                   format: binary
                 info:
                   type: string
+                  description: Information about the file.
+                tags:
+                  type: string
+                  description: Comma-separated tags to apply to the file
+                  example: work,screenshots
 
       responses:
         "200":
@@ -664,6 +685,18 @@ components:
               - user.deleted
               - user.login
           example: [file.upload, album.created]
+        filters:
+          type: object
+          description: >
+            Event filters. tags filters file.*, album.*, and stream.* events by tag:
+            matching is case-insensitive, a "!" prefix excludes, and exclusions
+            win. Empty object = no filtering.
+          properties:
+            tags:
+              type: array
+              items:
+                type: string
+              example: [work, "!private"]
         created_at:
           type: string
           format: date-time
@@ -700,6 +733,17 @@ components:
           items:
             type: string
           example: [file.upload]
+        filters:
+          type: object
+          description: >
+            Optional event filters. tags filters file, album, and stream events by tag;
+            prefix a tag with "!" to exclude. Maximum 50 tags.
+          properties:
+            tags:
+              type: array
+              items:
+                type: string
+              example: [work, "!private"]
       required:
         - name
         - url

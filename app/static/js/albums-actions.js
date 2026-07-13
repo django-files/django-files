@@ -11,6 +11,7 @@ import {
     wireClickDelegation,
     wirePasswordModal,
 } from './ctx-menu-shared.js'
+import { initManageTagsModal } from './tag-chips.js'
 
 async function onCopyLink(btn) {
     const url = btn.dataset.albumUrl
@@ -75,6 +76,27 @@ wirePasswordModal({
     },
 })
 
+// Chips seed from the ctx-menu button's data-album-tags payload;
+// set-album-tags broadcasts reconcile the open modal live.
+const albumTagsModal = initManageTagsModal(socket, {
+    modalId: 'album-tags-modal',
+    addMethod: 'add_album_tag',
+    removeMethod: 'remove_album_tag',
+    event: 'set-album-tags',
+    idKey: 'album_id',
+    castId: (value) => Number.parseInt(value),
+})
+
+function onManageTags(btn) {
+    let tags = []
+    try {
+        tags = JSON.parse(btn.dataset.albumTags || '[]')
+    } catch {
+        tags = []
+    }
+    albumTagsModal?.open(btn.dataset.albumId, tags)
+}
+
 function onDelete(btn) {
     // The delete handler is owned by albums-table.js (it holds the wired
     // delete modal instance). Dispatch a custom event it listens for so we
@@ -90,6 +112,7 @@ wireClickDelegation({
     'album-copy-link-btn': onCopyLink,
     'album-toggle-private-btn': onTogglePrivate,
     'album-set-password-btn': onSetPassword,
+    'album-tags-btn': onManageTags,
     'album-delete-btn': onDelete,
 })
 

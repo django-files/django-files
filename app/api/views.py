@@ -56,6 +56,7 @@ from home.util.nginx import sign_hls_cookie, verify_hls_cookie
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
+from home.util.tags import clean_tag_names
 from home.util.webhooks import (
     EVENT_STREAM_LIVE,
     EVENT_STREAM_OFFLINE,
@@ -426,7 +427,7 @@ def _handle_create_album(request):
     password = data_or_header(request, data, "password") if has_password else ""
     if not has_password and request.user.default_file_password:
         password = rand_string()
-    album = Albums.objects.create(
+    album = Albums(
         user=request.user,
         name=data_or_header(request, data, "name"),
         maxv=data_or_header(request, data, "max-views", 0, cast=int),
@@ -435,6 +436,10 @@ def _handle_create_album(request):
         private=private,
         expr=data_or_header(request, data, "expire"),
     )
+    # staged for albums_post_save_signal so tags exist before the
+    # album.created websocket/webhook payloads are built
+    album._pending_tags = data_or_header(request, data, "tags", [], cast=clean_tag_names)
+    album.save()
     site_settings = SiteSettings.objects.settings()
     full_url = site_settings.site_url + reverse("home:files") + f"?album={album.id}"
     return JsonResponse({"url": full_url}, safe=False)
@@ -589,6 +594,7 @@ def _webhook_response(webhook: Webhook) -> dict:
         "secret": webhook.secret,
         "active": webhook.active,
         "events": webhook.events,
+        "filters": webhook.filters,
         "created_at": webhook.created_at,
         "updated_at": webhook.updated_at,
     }
@@ -626,6 +632,26 @@ def _clean_webhook_events(value) -> tuple:
     return value, None
 
 
+_WEBHOOK_FILTER_KEYS = ("tags",)
+_WEBHOOK_MAX_FILTER_TAGS = 50
+
+
+def _clean_webhook_filters(value) -> tuple:
+    if not isinstance(value, dict):
+        return None, "Invalid filters"
+    if unknown := [key for key in value if key not in _WEBHOOK_FILTER_KEYS]:
+        return None, f"Unknown filter keys: {', '.join(unknown)}. Valid keys: {', '.join(_WEBHOOK_FILTER_KEYS)}"
+    tags = value.get("tags", [])
+    if not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags):
+        return None, "Invalid filters: tags must be a list of strings"
+    tags = [tag.strip() for tag in tags]
+    if any(not tag.lstrip("!") or len(tag) > 255 for tag in tags):
+        return None, "Invalid filters: each tag must be 1-255 characters"
+    if len(tags) > _WEBHOOK_MAX_FILTER_TAGS:
+        return None, f"Invalid filters: maximum {_WEBHOOK_MAX_FILTER_TAGS} tags"
+    return {"tags": tags} if tags else {}, None
+
+
 def _clean_webhook_secret(value) -> tuple:
     secret = str(value)
     if len(secret) > 128:
@@ -645,6 +671,7 @@ _WEBHOOK_FIELD_CLEANERS = {
     "webhook_type": _clean_webhook_type,
     "scope": _clean_webhook_scope,
     "events": _clean_webhook_events,
+    "filters": _clean_webhook_filters,
     "secret": _clean_webhook_secret,
     "active": _clean_webhook_active,
 }
@@ -955,7 +982,7 @@ def recent_view(request):
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
     try:
         # query = Files.objects.filtered_request(request).select_related("user")
-        query = Files.objects.filter(user=request.user).select_related("user").prefetch_related("albums", "tags")
+        query = Files.objects.filter(user=request.user).select_related("user").prefetch_related("albums", "tags__tag")
         if album := request.GET.get("album"):
             query = query.filter(albums__id=album)
 
@@ -985,7 +1012,7 @@ def recent_view(request):
 
 def _files_base_queryset(request, user, album):
     qs = Files.objects.filtered_request
-    prefetch = ("albums", "tags")
+    prefetch = ("albums", "tags__tag")
     if album:
         return qs(request, albums__id=album).select_related("user").prefetch_related(*prefetch)
     if user == "0":
@@ -1002,7 +1029,7 @@ def _apply_search_filter(q, request):
         return q
     if request.GET.get("name_only"):
         return q.filter(name__icontains=search)
-    return q.filter(Q(name__icontains=search) | Q(tags__tag__icontains=search)).distinct()
+    return q.filter(Q(name__icontains=search) | Q(tags__tag__name__icontains=search)).distinct()
 
 
 @csrf_exempt
@@ -1195,11 +1222,15 @@ def albums_view(request, page=None, count=100):
     else:
         user = request.user.id
     if user == "0":
-        q = Albums.objects.filtered_request(request).select_related("user")
+        q = Albums.objects.filtered_request(request).select_related("user").prefetch_related("tags__tag")
     else:
-        q = Albums.objects.filtered_request(request, user_id=int(user)).select_related("user")
+        q = (
+            Albums.objects.filtered_request(request, user_id=int(user))
+            .select_related("user")
+            .prefetch_related("tags__tag")
+        )
     if search := request.GET.get("search"):
-        q = q.filter(name__icontains=search)
+        q = q.filter(Q(name__icontains=search) | Q(tags__tag__name__icontains=search)).distinct()
     if privacy := request.GET.get("privacy"):
         q = q.filter(private=(privacy == "private"))
     q = q.annotate(file_count=Count("files"))
@@ -2008,21 +2039,23 @@ def parse_headers(headers: dict, **kwargs) -> dict:
         "expr",
         "avatar",
         "albums",
+        "tags",
+        "info",
     ]
     data = {}
     # TODO: IMPORTANT: Determine why these values are not 1:1 - meta_preview:embed
     difference_mapping = {"embed": "meta_preview"}
-    # TODO: This should probably do the same thing in both loops
     for key in allowed:
         if key in headers:
             value = headers[key]
             if key in difference_mapping:
                 key = difference_mapping[key]
             data[key.replace("-", "_")] = value
-    # data.update(**kwargs)
     for key, value in kwargs.items():
-        if key.lower() in allowed:
-            data[key] = value
+        key = key.lower()
+        if key in allowed:
+            key = difference_mapping.get(key, key)
+            data[key.replace("-", "_")] = value
     return data
 
 
@@ -2340,9 +2373,13 @@ def streams_view(request, page=None, count=100):
     else:
         user = request.user.id
     if user == "0":
-        q = Stream.objects.select_related("user").all()
+        q = Stream.objects.select_related("user").prefetch_related("tags__tag").all()
     else:
-        q = Stream.objects.select_related("user").filter(user_id=int(user))
+        q = Stream.objects.select_related("user").prefetch_related("tags__tag").filter(user_id=int(user))
+    if search := request.GET.get("search"):
+        q = q.filter(
+            Q(name__icontains=search) | Q(title__icontains=search) | Q(tags__tag__name__icontains=search)
+        ).distinct()
     if privacy := request.GET.get("privacy"):
         q = q.filter(public=(privacy == "public"))
     q = apply_ordering(

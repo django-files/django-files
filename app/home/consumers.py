@@ -12,12 +12,21 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.db.models import Q
 from django.forms.models import model_to_dict
 from django_redis import get_redis_connection
-from home.models import Albums, Files, FileTag, Stream
-from home.tasks import file_album_websocket, file_tag_websocket, version_check
+from home.models import Albums, Files, FileTag, Stream, Tag
+from home.tasks import (
+    album_tag_websocket,
+    dispatch_webhook_event,
+    file_album_websocket,
+    file_tag_websocket,
+    stream_tag_websocket,
+    version_check,
+)
 from home.util.auth import hash_token
 from home.util.file import process_file
 from home.util.misc import redact_log
 from home.util.storage import file_rename
+from home.util.tags import add_entity_tag, clean_tag_names, remove_entity_tag
+from home.util.webhooks import EVENT_ALBUM_UPDATED, build_album_payload
 from oauth.models import ApiToken, CustomUser
 from pytimeparse2 import parse
 from settings.models import SiteSettings
@@ -29,6 +38,7 @@ _ERR_STREAM_NOT_FOUND = "Stream not found."
 _ERR_STREAM_OWNED_BY_OTHER = "Stream owned by another user."
 _ERR_SESSION_NOT_READY = "Session not ready."
 _ERR_ALBUM_NOT_FOUND = "Album not found."
+_ERR_NO_TAG_SPECIFIED = "No tag specified."
 _WS_SEND = "websocket.send"
 
 # Explicit allowlist of methods callable via WebSocket.
@@ -66,6 +76,13 @@ _ALLOWED_METHODS = frozenset(
         "bulk_edit_file_albums",
         "add_file_tag",
         "remove_file_tag",
+        "add_album_tag",
+        "remove_album_tag",
+        "add_stream_tag",
+        "remove_stream_tag",
+        "bulk_edit_file_tags",
+        "bulk_edit_album_tags",
+        "bulk_edit_stream_tags",
         "check_for_update",
     }
 )
@@ -1321,35 +1338,172 @@ class HomeConsumer(AsyncWebsocketConsumer):
         file_album_websocket.apply_async(args=[result, user_id], priority=0)
         return None
 
+    # ── Tags ──
+    # File, album, and stream tag editing share the primitives in
+    # home.util.tags. Files broadcast one (bulk-)set-file-tags event keyed by
+    # id; albums and streams notify per entity, and albums additionally
+    # dispatch album.updated (tagging never saves the row, so the post_save
+    # signal that normally fires it does not).
+
+    def _check_entity_permission(self, model, pk, user_id: int, label: str, **kwargs):
+        """Return (instance, error_dict). Exactly one will be non-None."""
+        entity = model.objects.filter(pk=pk).first()
+        if entity is None:
+            return None, self._error(f"{label} not found.", **kwargs)
+        if user_id and entity.user_id != user_id and not self.scope["user"].is_superuser:
+            return None, self._error(f"{label} owned by another user.", **kwargs)
+        return entity, None
+
+    def _owned_rows(self, model, pks, user_id: int):
+        qs = model.objects.filter(pk__in=pks or [])
+        if not self.scope["user"].is_superuser:
+            qs = qs.filter(user_id=user_id)
+        return qs
+
+    def _validate_bulk_tags(self, tags, action: str, **kwargs) -> tuple:
+        names = clean_tag_names(tags)
+        if not names:
+            return None, self._error("No tags specified.", **kwargs)
+        if action not in ("add", "remove"):
+            return None, self._error("Invalid action.", **kwargs)
+        return names, None
+
+    def _file_tags_changed(self, event: dict, user_id: int) -> None:
+        file_tag_websocket.apply_async(args=[event, user_id], priority=0)
+
+    def _album_tags_changed(self, album, changed: dict, user_id: int) -> None:
+        album_tag_websocket.apply_async(
+            args=[{"event": "set-album-tags", "album_id": album.pk, **changed}, user_id],
+            priority=0,
+        )
+        dispatch_webhook_event.delay(EVENT_ALBUM_UPDATED, album.user_id, build_album_payload(album))
+
+    def _stream_tags_changed(self, stream, changed: dict, user_id: int) -> None:
+        stream_tag_websocket.apply_async(
+            args=[{"event": "set-stream-tags", "stream_name": stream.pk, **changed}, user_id],
+            priority=0,
+        )
+
     def add_file_tag(self, *, user_id: int = None, pk: int = None, tag: str = None, **kwargs) -> Optional[dict]:
         log.debug("add_file_tag: user_id=%s pk=%s tag=%s", user_id, pk, tag)
         if not tag or not tag.strip():
-            return self._error("No tag specified.", **kwargs)
-        tag = tag.strip()
+            return self._error(_ERR_NO_TAG_SPECIFIED, **kwargs)
         file, err = self._check_file_permission(pk, user_id, **kwargs)
         if err:
             return err
-        FileTag.objects.get_or_create(file=file, tag=tag, defaults={"xmp": False})
-        file_tag_websocket.apply_async(
-            args=[{"event": "set-file-tags", "file_id": pk, "added": [tag]}, user_id],
-            priority=0,
-        )
+        name, created = add_entity_tag(file, tag, xmp=False)
+        if created:
+            self._file_tags_changed({"event": "set-file-tags", "file_id": pk, "added": [name]}, user_id)
         return None
 
     def remove_file_tag(self, *, user_id: int = None, pk: int = None, tag: str = None, **kwargs) -> Optional[dict]:
         log.debug("remove_file_tag: user_id=%s pk=%s tag=%s", user_id, pk, tag)
         if not tag:
-            return self._error("No tag specified.", **kwargs)
+            return self._error(_ERR_NO_TAG_SPECIFIED, **kwargs)
         file, err = self._check_file_permission(pk, user_id, **kwargs)
         if err:
             return err
-        deleted, _ = FileTag.objects.filter(file=file, tag=tag, xmp=False).delete()
-        if not deleted:
+        if not remove_entity_tag(file, tag, xmp=False):
             return self._error("Tag not found or cannot remove XMP-sourced tags.", **kwargs)
-        file_tag_websocket.apply_async(
-            args=[{"event": "set-file-tags", "file_id": pk, "removed": [tag]}, user_id],
-            priority=0,
+        self._file_tags_changed({"event": "set-file-tags", "file_id": pk, "removed": [tag]}, user_id)
+        return None
+
+    def _add_tag_handler(self, model, label: str, notify, *, user_id=None, pk=None, tag=None, **kwargs):
+        log.debug("add_%s_tag: user_id=%s pk=%s tag=%s", label.lower(), user_id, pk, tag)
+        if not tag or not tag.strip():
+            return self._error(_ERR_NO_TAG_SPECIFIED, **kwargs)
+        entity, err = self._check_entity_permission(model, pk, user_id, label, **kwargs)
+        if err:
+            return err
+        name, created = add_entity_tag(entity, tag)
+        if created:
+            notify(entity, {"added": [name]}, user_id)
+        return None
+
+    def _remove_tag_handler(self, model, label: str, notify, *, user_id=None, pk=None, tag=None, **kwargs):
+        log.debug("remove_%s_tag: user_id=%s pk=%s tag=%s", label.lower(), user_id, pk, tag)
+        if not tag:
+            return self._error(_ERR_NO_TAG_SPECIFIED, **kwargs)
+        entity, err = self._check_entity_permission(model, pk, user_id, label, **kwargs)
+        if err:
+            return err
+        if not remove_entity_tag(entity, tag):
+            return self._error("Tag not found.", **kwargs)
+        notify(entity, {"removed": [tag]}, user_id)
+        return None
+
+    def add_album_tag(self, **kwargs) -> Optional[dict]:
+        return self._add_tag_handler(Albums, "Album", self._album_tags_changed, **kwargs)
+
+    def remove_album_tag(self, **kwargs) -> Optional[dict]:
+        return self._remove_tag_handler(Albums, "Album", self._album_tags_changed, **kwargs)
+
+    def add_stream_tag(self, **kwargs) -> Optional[dict]:
+        return self._add_tag_handler(Stream, "Stream", self._stream_tags_changed, **kwargs)
+
+    def remove_stream_tag(self, **kwargs) -> Optional[dict]:
+        return self._remove_tag_handler(Stream, "Stream", self._stream_tags_changed, **kwargs)
+
+    def bulk_edit_file_tags(
+        self, *, user_id: int = None, pks: List[int] = None, tags: List[str] = None, action: str = "add", **kwargs
+    ) -> Optional[dict]:
+        log.debug("bulk_edit_file_tags: user_id=%s pks=%s tags=%s action=%s", user_id, pks, tags, action)
+        names, err = self._validate_bulk_tags(tags, action, **kwargs)
+        if err:
+            return err
+        files = self._owned_rows(Files, pks, user_id)
+        if action == "add":
+            tag_objs = [Tag.objects.get_or_create_tag(name) for name in names]
+            for file in files:
+                for tag_obj in tag_objs:
+                    file.tags.get_or_create(tag=tag_obj, defaults={"xmp": False})
+            changed = {"added": [tag_obj.name for tag_obj in tag_objs]}
+        else:
+            removed_qs = FileTag.objects.filter(file__in=files, tag__name__in=names, xmp=False)
+            removed_pks = list(removed_qs.values_list("tag_id", flat=True).distinct())
+            removed_qs.delete()
+            Tag.objects.prune_orphans(removed_pks)
+            changed = {"removed": names}
+        self._file_tags_changed(
+            {"event": "bulk-set-file-tags", "pks": list(files.values_list("id", flat=True)), **changed},
+            user_id,
         )
+        return None
+
+    def _bulk_edit_entity_tags(self, entities, names: list, action: str, notify, user_id: int) -> None:
+        if action == "add":
+            # resolve canonical tags once, not per entity
+            tag_objs = [Tag.objects.get_or_create_tag(name) for name in names]
+            for entity in entities:
+                added = [tag_obj.name for tag_obj in tag_objs if entity.tags.get_or_create(tag=tag_obj)[1]]
+                if added:
+                    notify(entity, {"added": added}, user_id)
+        else:
+            for entity in entities:
+                removed = [name for name in names if remove_entity_tag(entity, name)]
+                if removed:
+                    notify(entity, {"removed": removed}, user_id)
+
+    def bulk_edit_album_tags(
+        self, *, user_id: int = None, pks: List[int] = None, tags: List[str] = None, action: str = "add", **kwargs
+    ) -> Optional[dict]:
+        log.debug("bulk_edit_album_tags: user_id=%s pks=%s tags=%s action=%s", user_id, pks, tags, action)
+        names, err = self._validate_bulk_tags(tags, action, **kwargs)
+        if err:
+            return err
+        albums = self._owned_rows(Albums, pks, user_id)
+        self._bulk_edit_entity_tags(albums, names, action, self._album_tags_changed, user_id)
+        return None
+
+    def bulk_edit_stream_tags(
+        self, *, user_id: int = None, pks: List[str] = None, tags: List[str] = None, action: str = "add", **kwargs
+    ) -> Optional[dict]:
+        log.debug("bulk_edit_stream_tags: user_id=%s pks=%s tags=%s action=%s", user_id, pks, tags, action)
+        names, err = self._validate_bulk_tags(tags, action, **kwargs)
+        if err:
+            return err
+        streams = self._owned_rows(Stream, pks, user_id)
+        self._bulk_edit_entity_tags(streams, names, action, self._stream_tags_changed, user_id)
         return None
 
     async def check_for_update(self, *args, **kwargs) -> dict:

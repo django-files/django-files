@@ -2,6 +2,11 @@ import { initBulkSelect, selectedPks } from './bulk-actions.js'
 import { socket } from './socket.js'
 import { openDeleteStreamsModal } from './streams-actions.js'
 import {
+    applyTagDelta,
+    initBulkTagsModal,
+    updateTagSearchBadges,
+} from './tag-chips.js'
+import {
     dtRevealThead,
     initPopupBtn,
     selectColumn,
@@ -90,9 +95,18 @@ const dataTablesOptions = {
             targets: 1,
             width: '150px',
             responsivePriority: 1,
-            render: getStreamLink,
+            render: (data, type, row, meta) => {
+                if (type === 'filter') {
+                    const tags = Array.isArray(row.tags)
+                        ? row.tags.join(' ')
+                        : ''
+                    return `${data || ''} ${tags}`
+                }
+                return getStreamLink(data, type, row, meta)
+            },
             defaultContent: '',
             type: 'html',
+            className: 'dt-name-col',
         },
         {
             targets: 2,
@@ -177,7 +191,12 @@ const dataTablesOptions = {
     },
 }
 
-function getStreamLink(data, type, row) {
+function updateStreamTagBadges() {
+    if (!streamsDataTable) return
+    updateTagSearchBadges(streamsDataTable)
+}
+
+function getStreamLink(data, type, row, _meta) {
     if (type === 'display') {
         const link = streamLink.cloneNode(true)
         const linkClip = link.querySelector('.dj-stream-link-clip')
@@ -285,6 +304,9 @@ function getActions(data, type, row) {
                 <li><a class="dropdown-item stream-set-password-btn" role="button" data-stream-name="${safeName}" data-has-password="${escapeHtmlAttr(hasPassword)}">
                     <i class="fa-solid fa-key me-2"></i>${passwordLabel}
                 </a></li>
+                <li><a class="dropdown-item stream-tags-btn" role="button" data-stream-name="${safeName}" data-stream-tags="${escapeHtmlAttr(JSON.stringify(row.tags || []))}">
+                    <i class="fa-solid fa-tags me-2"></i>Manage Tags
+                </a></li>
                 <li><hr class="dropdown-divider"></li>`
             : ''
         return `
@@ -338,6 +360,7 @@ document.addEventListener('DOMContentLoaded', domContentLoaded)
 
 function domContentLoaded() {
     streamsDataTable = streamsTable.DataTable(dataTablesOptions)
+    streamsDataTable.on('draw.dt', updateStreamTagBadges)
     showStreamsSkeletons()
     initToolbar('streams-toolbar', streamsDataTable)
     initBulkSelect(streamsDataTable)
@@ -464,6 +487,20 @@ function domContentLoaded() {
             })
         )
     )
+    const bulkTagsModal = initBulkTagsModal(
+        socket,
+        'bulk_edit_stream_tags',
+        'stream'
+    )
+    $('.bulk-tags').on('click', () => {
+        if (!bulkTagsModal) return
+        const items = []
+        streamsDataTable.rows('.selected').every(function () {
+            const data = this.data()
+            items.push({ pk: data.name, tags: data.tags || [] })
+        })
+        bulkTagsModal.open(items)
+    })
 }
 
 socket?.addEventListener('message', function (event) {
@@ -487,6 +524,17 @@ socket?.addEventListener('message', function (event) {
         }
     } else if (data.event === 'set-stream-description') {
         if (updateStreamRow(data.name, { description: data.description })) {
+            streamsDataTable?.draw(false)
+        }
+    } else if (data.event === 'set-stream-tags') {
+        // keep row.tags fresh so the ctx-menu Manage Tags payload stays current
+        const row = streamsDataTable?.row(function (_idx, rowData) {
+            return rowData.name === data.stream_name
+        })
+        if (row?.node()) {
+            const rowData = row.data()
+            rowData.tags = applyTagDelta(rowData.tags || [], data)
+            row.data(rowData).invalidate()
             streamsDataTable?.draw(false)
         }
     }

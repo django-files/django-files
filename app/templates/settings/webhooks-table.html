@@ -45,6 +45,9 @@ site settings (webhook_scope="site", adds an Owner column).
                         {% empty %}
                             <span class="text-muted small">None</span>
                         {% endfor %}
+                        {% for tag in data.filters.tags %}
+                            <span class="badge text-bg-info"><i class="fa-solid fa-tag me-1"></i>{{ tag }}</span>
+                        {% endfor %}
                     </td>
                     <td>
                         {% if data.active %}
@@ -64,7 +67,8 @@ site settings (webhook_scope="site", adds an Owner column).
                                    data-webhook-url="{{ data.url }}"
                                    data-webhook-secret="{{ data.secret }}"
                                    data-webhook-active="{{ data.active|yesno:'true,false' }}"
-                                   data-webhook-events="{{ data.events|join:',' }}">
+                                   data-webhook-events="{{ data.events|join:',' }}"
+                                   data-webhook-tag-filter="{{ data.filters.tags|join:',' }}">
                                    <i class="fa-solid fa-pen-to-square link-body-emphasis"></i></a>
                         <a role="button" class="deleteWebhookBtn" title="Delete"
                                    data-webhook-id="{{ data.id }}">

@@ -41,10 +41,10 @@ Required context: stream, rtmp_url.
                 <i class="fa-solid fa-{% if stream.public %}lock{% else %}globe{% endif %} fa-fw me-2"></i>{% if stream.public %}Make Private{% else %}Make Public{% endif %}</a>
         </li>
         <li>
-            <a role="button" class="dropdown-item stream-set-password-btn"
+            <a role="button" class="dropdown-item stream-tags-btn"
                data-stream-name="{{ stream.name }}"
-               data-has-password="{{ stream.password|yesno:'true,false' }}">
-                <i class="fa-solid fa-key fa-fw me-2"></i>{% if stream.password %}Change Password{% else %}Set Password{% endif %}</a>
+               data-stream-tags='{{ stream.tags|safe }}'>
+                <i class="fa-solid fa-tags fa-fw me-2"></i>Manage Tags</a>
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>

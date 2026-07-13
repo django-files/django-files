@@ -192,6 +192,7 @@
                 </div>
             </div>
             {% if is_owner %}
+            {% include 'streams/tags-modal.html' %}
             {% include 'streams/delete-modal.html' %}
             {% include 'streams/regenerate-token-modal.html' %}
             {% include 'streams/password-modal.html' %}

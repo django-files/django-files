@@ -1,10 +1,10 @@
 {% if request.user.is_authenticated %}
-<form id="upload_inputs" class="row justify-content-center">
-    <div class="col col-md-12 pb-3 align-self-center" id="dest_album">
+<form id="upload_inputs" class="row g-3 pb-3">
+    <div class="col-12 col-md-6" id="dest_album">
         <label for="upload_album_search" class="form-label">Destination Album</label>
         <input type="hidden" id="upload_albums" name="upload_albums" value="0">
         <div class="dropdown">
-            <input type="text" id="upload_album_search" class="form-control form-control-lg"
+            <input type="text" id="upload_album_search" class="form-control"
                    placeholder="Search albums…" aria-label="Search albums"
                    autocomplete="off">
             <ul id="upload_album_results" class="dropdown-menu w-100" style="max-height: 220px; overflow-y: auto;"></ul>
@@ -13,6 +13,88 @@
             Select an album to add uploads to.
         </div>
     </div>
+    <div class="col-12 col-md-6" id="upload_tags_section">
+        <span class="form-label d-block">Tags</span>
+        {# chips and the "+" adder are rendered by uppy.js via tag-chips.js #}
+        <div class="tag-container position-relative" id="upload-tags"></div>
+        <div id="upload_tags-help" class="form-text">
+            Tags to apply to uploaded files.
+        </div>
+    </div>
 </form>
 {% endif %}
 <div id="uppy"></div>
+{% if request.user.is_authenticated %}
+<div id="upload_options_section" class="pt-3">
+    <button class="upload-options-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#uploadOptions"
+            aria-expanded="false" aria-controls="uploadOptions">
+        <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+        Upload Options
+        <i class="fa-solid fa-chevron-down upload-options-chevron" aria-hidden="true"></i>
+    </button>
+    <div class="collapse" id="uploadOptions">
+        <div class="row g-3 pt-3">
+            <div class="col-12 col-md-6">
+                <label for="upload_format" class="form-label">Filename Format</label>
+                <select id="upload_format" class="form-select" data-upload-header="format">
+                    <option value="" selected>Default ({{ request.user.get_default_upload_name_format_display }})</option>
+                    <option value="name">Original Name</option>
+                    <option value="rand">Random</option>
+                    <option value="uuid">UUID</option>
+                    <option value="date">Date</option>
+                </select>
+                <div class="form-text">How uploaded files are named.</div>
+            </div>
+            <div class="col-12 col-md-6">
+                <label for="upload_expire" class="form-label">Expiration</label>
+                <input type="text" id="upload_expire" class="form-control"
+                       placeholder="{{ request.user.default_expire|default:'Never' }}" autocomplete="off">
+                <div class="form-text">e.g. 1h, 30d — blank uses your default.</div>
+            </div>
+            <div class="col-12 col-md-6">
+                <span class="form-label d-block">Privacy</span>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="upload_private"
+                        data-upload-header="private"
+                        aria-checked="{% if request.user.default_file_private %}true{% else %}false{% endif %}"
+                        {% if request.user.default_file_private %}checked{% endif %}>
+                    <label class="form-check-label" for="upload_private">Private file</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="upload_password_toggle"
+                                        data-default="{{ request.user.default_file_password|yesno:'true,false' }}" aria-checked="{% if request.user.default_file_password %}true{% else %}false{% endif %}"
+                           {% if request.user.default_file_password %}checked{% endif %}>
+                    <label class="form-check-label" for="upload_password_toggle">Require password</label>
+                </div>
+                <input type="text" id="upload_password" aria-label="File password"
+                       class="form-control form-control-sm mt-2{% if not request.user.default_file_password %} d-none{% endif %}"
+                       placeholder="Leave blank to auto-generate" autocomplete="off">
+            </div>
+            <div class="col-12 col-md-6">
+                <span class="form-label d-block">Metadata</span>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="upload_meta_preview"
+                        data-upload-header="embed"
+                        aria-checked="{% if request.user.show_exif_preview %}true{% else %}false{% endif %}"
+                        {% if request.user.show_exif_preview %}checked{% endif %}>
+                    <label class="form-check-label" for="upload_meta_preview">Show metadata on preview</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="upload_strip_exif"
+                        data-upload-header="strip-exif"
+                        aria-checked="{% if request.user.remove_exif %}true{% else %}false{% endif %}"
+                        {% if request.user.remove_exif %}checked{% endif %}>
+                    <label class="form-check-label" for="upload_strip_exif">Strip EXIF data</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="upload_strip_gps"
+                        data-upload-header="strip-gps"
+                        aria-checked="{% if request.user.remove_exif_geo %}true{% else %}false{% endif %}"
+                        {% if request.user.remove_exif_geo %}checked{% endif %}>
+                    <label class="form-check-label" for="upload_strip_gps">Strip GPS location</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

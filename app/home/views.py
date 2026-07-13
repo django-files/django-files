@@ -707,7 +707,7 @@ def url_route_view(request, filename):
     log.debug("url_route_view: %s", filename)
     file = get_object_or_404(
         Files.objects.select_related("user", "user__discord", "user__github", "user__google").prefetch_related(
-            "albums", "tags"
+            "albums", "tags__tag"
         ),
         name=filename,
     )

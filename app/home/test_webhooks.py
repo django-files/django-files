@@ -11,12 +11,18 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from djangofiles.test_utils import TEST_PASSWORD
-from home.models import Albums, ShortURLs, Stream, Webhook
+from home.models import Albums, AlbumTag, ShortURLs, Stream, StreamTag, Tag, Webhook
 from home.tasks import dispatch_webhook_event, fire_webhook
 from home.util.auth import create_api_token
 from home.util.file import process_file
 from home.util.webhooks import (
+    EVENT_ALBUM_CREATED,
+    EVENT_ALBUM_UPDATED,
+    EVENT_FILE_DELETED,
     EVENT_FILE_UPLOAD,
+    EVENT_SHORT_CREATED,
+    EVENT_STREAM_LIVE,
+    EVENT_STREAM_OFFLINE,
     EVENT_TEST,
     EVENT_USER_CREATED,
     SITE_ONLY_EVENTS,
@@ -27,6 +33,7 @@ from home.util.webhooks import (
     build_short_payload,
     build_stream_payload,
     build_user_payload,
+    event_matches_filters,
     send_webhook,
 )
 from oauth.models import CustomUser
@@ -112,6 +119,14 @@ class PayloadBuilderTests(WebhookBaseTestCase):
         self.assertEqual(payload["file_count"], 0)
         self.assertEqual(payload["user"], self.user.username)
         self.assertIn(f"album={album.id}", payload["url"])
+        self.assertEqual(payload["tags"], [])
+        AlbumTag.objects.create(album=album, tag=Tag.objects.get_or_create_tag("travel"))
+        self.assertEqual(build_album_payload(album)["tags"], ["travel"])
+
+    def test_build_discord_embed_album_tags(self):
+        data = {"id": 1, "name": "Trip", "file_count": 2, "url": "u", "user": "x", "tags": ["travel", "iceland"]}
+        body = build_discord_embed(EVENT_ALBUM_CREATED, data, "https://example.com")
+        self.assertIn("**Tags:** travel, iceland", body["embeds"][0]["description"])
 
     def test_build_discord_embed_deleted_events(self):
         file_data = {"name": "a.jpg", "mime": "image/jpeg", "size": 1000, "url": "u", "raw_url": "https://x/r/a.jpg"}
@@ -151,6 +166,9 @@ class PayloadBuilderTests(WebhookBaseTestCase):
         self.assertEqual(payload["user"], self.user.username)
         self.assertIn("/live/teststream/", payload["url"])
         self.assertIsNone(payload["duration"])
+        self.assertEqual(payload["tags"], [])
+        StreamTag.objects.create(stream=stream, tag=Tag.objects.get_or_create_tag("gaming"))
+        self.assertEqual(build_stream_payload(stream)["tags"], ["gaming"])
 
     def test_build_stream_payload_duration_naive_ended_at(self):
         # stream_done_view assigns naive datetime.now() for ended_at while
@@ -173,6 +191,10 @@ class PayloadBuilderTests(WebhookBaseTestCase):
         data["duration"] = 8103
         body = build_discord_embed("stream.offline", data, "https://example.com")
         self.assertIn("**Duration:** 2h 15m 3s", body["embeds"][0]["description"])
+        data["tags"] = ["gaming", "irl"]
+        body = build_discord_embed("stream.offline", data, "https://example.com")
+        self.assertIn("**Tags:** gaming, irl", body["embeds"][0]["description"])
+        del data["tags"]
         # live events never show a duration
         body = build_discord_embed("stream.live", data, "https://example.com")
         self.assertNotIn("Duration", body["embeds"][0]["description"])
@@ -236,6 +258,58 @@ class PayloadBuilderTests(WebhookBaseTestCase):
         body = build_discord_embed(EVENT_FILE_UPLOAD, video_data, "https://example.com")
         self.assertEqual(body["content"], "https://x/raw/b.mov")
         self.assertEqual(body["embeds"][0]["image"], {"url": "https://x/raw/b.mov?thumb=true"})
+
+
+class EventFilterTests(TestCase):
+    def test_no_filters_matches(self):
+        self.assertTrue(event_matches_filters(EVENT_FILE_UPLOAD, {}, {"tags": []}))
+        self.assertTrue(event_matches_filters(EVENT_FILE_UPLOAD, {"tags": []}, {"tags": []}))
+
+    def test_include_tags(self):
+        filters = {"tags": ["work", "screenshots"]}
+        self.assertTrue(event_matches_filters(EVENT_FILE_UPLOAD, filters, {"tags": ["work", "misc"]}))
+        self.assertFalse(event_matches_filters(EVENT_FILE_UPLOAD, filters, {"tags": ["misc"]}))
+        self.assertFalse(event_matches_filters(EVENT_FILE_UPLOAD, filters, {"tags": []}))
+        self.assertFalse(event_matches_filters(EVENT_FILE_UPLOAD, filters, {}))
+
+    def test_include_tags_case_insensitive(self):
+        filters = {"tags": ["Work"]}
+        self.assertTrue(event_matches_filters(EVENT_FILE_UPLOAD, filters, {"tags": ["WORK"]}))
+
+    def test_exclude_tags(self):
+        filters = {"tags": ["!private"]}
+        self.assertFalse(event_matches_filters(EVENT_FILE_UPLOAD, filters, {"tags": ["work", "Private"]}))
+        self.assertTrue(event_matches_filters(EVENT_FILE_UPLOAD, filters, {"tags": ["work"]}))
+        # exclusion-only filters pass untagged files
+        self.assertTrue(event_matches_filters(EVENT_FILE_UPLOAD, filters, {"tags": []}))
+
+    def test_exclude_wins_over_include(self):
+        filters = {"tags": ["work", "!private"]}
+        self.assertFalse(event_matches_filters(EVENT_FILE_UPLOAD, filters, {"tags": ["work", "private"]}))
+        self.assertTrue(event_matches_filters(EVENT_FILE_UPLOAD, filters, {"tags": ["work"]}))
+
+    def test_applies_to_file_deleted(self):
+        filters = {"tags": ["work"]}
+        self.assertFalse(event_matches_filters(EVENT_FILE_DELETED, filters, {"tags": []}))
+        self.assertTrue(event_matches_filters(EVENT_FILE_DELETED, filters, {"tags": ["work"]}))
+
+    def test_album_events_honor_filters(self):
+        filters = {"tags": ["work"]}
+        self.assertTrue(event_matches_filters(EVENT_ALBUM_UPDATED, filters, {"tags": ["Work"]}))
+        self.assertFalse(event_matches_filters(EVENT_ALBUM_CREATED, filters, {"tags": []}))
+
+    def test_stream_events_honor_filters(self):
+        filters = {"tags": ["gaming"]}
+        self.assertTrue(event_matches_filters(EVENT_STREAM_LIVE, filters, {"tags": ["Gaming"]}))
+        self.assertFalse(event_matches_filters(EVENT_STREAM_OFFLINE, filters, {"tags": []}))
+
+    def test_non_tagged_events_ignore_filters(self):
+        filters = {"tags": ["work"]}
+        self.assertTrue(event_matches_filters(EVENT_SHORT_CREATED, filters, {"short": "x"}))
+
+    def test_unknown_filter_keys_ignored(self):
+        # forward-compat: workers must not drop events over filter types they don't know
+        self.assertTrue(event_matches_filters(EVENT_FILE_UPLOAD, {"mime": ["image/*"]}, {"tags": []}))
 
 
 class SendWebhookTests(WebhookBaseTestCase):
@@ -343,6 +417,38 @@ class WebhookTaskTests(WebhookBaseTestCase):
         dispatch_webhook_event(EVENT_FILE_UPLOAD, self.user.pk, {"id": 1})
         mock_delay.assert_not_called()
 
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_tag_filter_matches(self, mock_delay):
+        webhook = self.create_webhook(filters={"tags": ["work"]})
+        dispatch_webhook_event(EVENT_FILE_UPLOAD, self.user.pk, {"id": 1, "tags": ["Work", "misc"]})
+        mock_delay.assert_called_once_with(webhook.pk, EVENT_FILE_UPLOAD, {"id": 1, "tags": ["Work", "misc"]})
+
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_tag_filter_skips_non_matching(self, mock_delay):
+        self.create_webhook(filters={"tags": ["work"]})
+        dispatch_webhook_event(EVENT_FILE_UPLOAD, self.user.pk, {"id": 1, "tags": ["misc"]})
+        mock_delay.assert_not_called()
+
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_tag_filter_excludes(self, mock_delay):
+        self.create_webhook(filters={"tags": ["!private"]})
+        dispatch_webhook_event(EVENT_FILE_UPLOAD, self.user.pk, {"id": 1, "tags": ["private"]})
+        mock_delay.assert_not_called()
+
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_tag_filter_applies_to_albums(self, mock_delay):
+        webhook = self.create_webhook(events=["album.created"], filters={"tags": ["work"]})
+        dispatch_webhook_event(EVENT_ALBUM_CREATED, self.user.pk, {"id": 1, "tags": []})
+        mock_delay.assert_not_called()
+        dispatch_webhook_event(EVENT_ALBUM_CREATED, self.user.pk, {"id": 1, "tags": ["Work"]})
+        mock_delay.assert_called_once_with(webhook.pk, EVENT_ALBUM_CREATED, {"id": 1, "tags": ["Work"]})
+
+    @patch("home.tasks.fire_webhook.delay")
+    def test_dispatch_tag_filter_ignores_other_events(self, mock_delay):
+        webhook = self.create_webhook(events=["short.created"], filters={"tags": ["work"]})
+        dispatch_webhook_event(EVENT_SHORT_CREATED, self.user.pk, {"id": 1})
+        mock_delay.assert_called_once_with(webhook.pk, EVENT_SHORT_CREATED, {"id": 1})
+
     @patch("home.tasks.send_webhook")
     def test_fire_webhook_success(self, mock_send):
         mock_send.return_value = _mock_response()
@@ -434,6 +540,54 @@ class WebhookApiTests(WebhookBaseTestCase):
         for body in cases:
             response = self.client.post(url, json.dumps(body), content_type="application/json", **auth)
             self.assertEqual(response.status_code, 400, body)
+
+    def test_create_with_filters(self):
+        body = {
+            "name": "Filtered",
+            "url": CUSTOM_URL,
+            "events": [EVENT_FILE_UPLOAD],
+            "filters": {"tags": ["work", "!private"]},
+        }
+        response = self.client.post(
+            reverse("api:webhooks"), json.dumps(body), content_type="application/json", **self._auth(self.token)
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["filters"], {"tags": ["work", "!private"]})
+
+    def test_create_filters_validation(self):
+        auth = self._auth(self.token)
+        url = reverse("api:webhooks")
+        base = {"name": "X", "url": CUSTOM_URL}
+        cases = [
+            {"filters": ["work"]},  # not a dict
+            {"filters": {"mime": ["image/*"]}},  # unknown key
+            {"filters": {"tags": "work"}},  # not a list
+            {"filters": {"tags": [1]}},  # not strings
+            {"filters": {"tags": ["  "]}},  # blank tag
+            {"filters": {"tags": ["!"]}},  # exclusion with no tag
+            {"filters": {"tags": ["x" * 256]}},  # too long
+            {"filters": {"tags": ["t"] * 51}},  # too many
+        ]
+        for case in cases:
+            response = self.client.post(url, json.dumps(base | case), content_type="application/json", **auth)
+            self.assertEqual(response.status_code, 400, case)
+
+    def test_patch_filters(self):
+        webhook = self.create_webhook(filters={"tags": ["old"]})
+        url = reverse("api:webhook-detail", kwargs={"webhook_id": webhook.pk})
+        body = {"filters": {"tags": [" work ", "!private"]}}
+        response = self.client.patch(url, json.dumps(body), content_type="application/json", **self._auth(self.token))
+        self.assertEqual(response.status_code, 200)
+        webhook.refresh_from_db()
+        # tags are stripped of surrounding whitespace
+        self.assertEqual(webhook.filters, {"tags": ["work", "!private"]})
+        # an empty tag list clears the filter entirely
+        response = self.client.patch(
+            url, json.dumps({"filters": {"tags": []}}), content_type="application/json", **self._auth(self.token)
+        )
+        self.assertEqual(response.status_code, 200)
+        webhook.refresh_from_db()
+        self.assertEqual(webhook.filters, {})
 
     def test_detail_ownership(self):
         webhook = self.create_webhook()
@@ -631,6 +785,12 @@ class WebhookSettingsPagesTests(WebhookBaseTestCase):
             scope=Webhook.SCOPE_SITE,
             events=[EVENT_USER_CREATED],
         )
+
+    def test_webhook_modal_marks_tag_filterable_events(self):
+        self.client.force_login(self.user)
+        html = self.client.get(reverse("settings:user")).content.decode()
+        # one tag icon per file.*/album.*/stream.* event checkbox
+        self.assertEqual(html.count('title="Supports tag filtering"'), 7)
 
     def test_user_page_shows_only_user_scoped_hooks(self):
         user_hook = self.create_webhook(name="MyUserHook")

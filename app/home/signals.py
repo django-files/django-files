@@ -6,7 +6,16 @@ from celery.signals import worker_ready
 from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from django.forms.models import model_to_dict
-from home.models import Albums, Files, FileStats, ShortURLs, Stream, Webhook
+from home.models import (
+    Albums,
+    AlbumTag,
+    Files,
+    FileStats,
+    ShortURLs,
+    Stream,
+    Tag,
+    Webhook,
+)
 from home.tasks import (
     app_startup,
     clear_albums_cache,
@@ -97,6 +106,11 @@ def clear_files_cache_signal(sender, instance, **kwargs):
 def albums_post_save_signal(sender, instance, created, **kwargs):
     try:
         if created:
+            # tags staged by the create API; they must be attached before the
+            # payloads below are built or album.created would never match an
+            # include tag filter
+            for name in getattr(instance, "_pending_tags", []):
+                AlbumTag.objects.get_or_create(album=instance, tag=Tag.objects.get_or_create_tag(name))
             data = extract_albums([instance])[0]
             new_album_websocket.apply_async(args=[data], priority=0)
         else:

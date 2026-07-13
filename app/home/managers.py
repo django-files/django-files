@@ -1,4 +1,31 @@
-from django.db import models
+from django.db import IntegrityError, models, transaction
+
+
+class TagManager(models.Manager):
+    def get_or_create_tag(self, name: str):
+        """Return the canonical Tag for *name*, creating it if needed.
+
+        Matching is case-insensitive so "Vacation" and "vacation" resolve to
+        one Tag; the first writer's casing is kept for display. The unique
+        constraint on name backstops exact-duplicate races.
+        """
+        name = name.strip()
+        if tag := self.filter(name__iexact=name).first():
+            return tag
+        try:
+            with transaction.atomic():
+                return self.create(name=name)
+        except IntegrityError:
+            return self.get(name=name)
+
+    def prune_orphans(self, pks) -> None:
+        """Delete Tags in *pks* that no longer tag any file, album, or stream."""
+        self.filter(
+            pk__in=pks,
+            file_tags__isnull=True,
+            album_tags__isnull=True,
+            stream_tags__isnull=True,
+        ).delete()
 
 
 class FilesManager(models.Manager):

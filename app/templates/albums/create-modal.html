@@ -16,6 +16,11 @@
                             <input type="text" class="form-control" placeholder="Album Description" aria-label="Album Description"
                                    id="description" name="description">
                         </div>
+                        <div class="col-12">
+                            {# chips and the "+" adder are rendered by album-create.js via tag-chips.js #}
+                            <div class="tag-container position-relative" id="create-album-tags"></div>
+                            <input type="hidden" id="album-tags" name="tags">
+                        </div>
                         <div class="col-md-6">
                             <div class="input-group w-100">
                                 <input type="password" class="form-control" placeholder="Password" aria-label="Password" id="password" name="password" autocomplete="new-password">

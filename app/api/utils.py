@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Mapping
 from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from home.models import Albums, Files, Stream
+from home.util.tags import tag_names
 from oauth.models import CustomUser
 from settings.context_processors import site_settings_processor
 from webpush.models import PushInformation
@@ -94,7 +95,7 @@ def extract_files(q: Files.objects):
         albums = list(file.albums.all())
         data["albums"] = [a.id for a in albums]
         data["albums_details"] = [{"id": a.id, "name": a.name} for a in albums]
-        data["tags"] = list(file.tags.values_list("tag", flat=True))
+        data["tags"] = tag_names(file)
         files.append(data)
     return files
 
@@ -111,6 +112,7 @@ def extract_albums(q: Albums.objects, user_id: int = None):
         data["url"] = site_settings["site_url"] + "/files/?view=gallery&album=" + str(album.id)
         data["user_name"] = album.user.get_name()
         data["file_count"] = getattr(album, "file_count", 0)
+        data["tags"] = tag_names(album)
         data["is_owner"] = is_owner
         if not is_owner:
             # Don't leak the raw password value to e.g. superusers browsing
@@ -162,6 +164,7 @@ def extract_streams(
         data["ended_at"] = stream.ended_at
         data["url"] = site_settings["site_url"] + f"/live/{stream.name}/"
         data["is_owner"] = is_owner
+        data["tags"] = tag_names(stream)
         data["subscriber_count"] = _resolve_subscriber_count(stream.name, subscriber_counts)
         if is_owner:
             _apply_owner_fields(data, stream, rtmp_host, rtmp_port)

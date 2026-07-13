@@ -22,7 +22,7 @@ from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
 from home.util.tags import sync_file_tags
 from home.util.video import video_metadata_processor, video_thumbnail_processor
-from home.util.webhooks import SITE_ONLY_EVENTS, send_webhook
+from home.util.webhooks import SITE_ONLY_EVENTS, event_matches_filters, send_webhook
 from oauth.models import CustomUser
 from packaging import version
 from PIL import UnidentifiedImageError
@@ -561,6 +561,16 @@ def file_tag_websocket(data: dict, user_id: int):
 
 
 @shared_task()
+def album_tag_websocket(data: dict, user_id: int):
+    _send_websocket_event(data, f"user-{user_id}")
+
+
+@shared_task()
+def stream_tag_websocket(data: dict, user_id: int):
+    _send_websocket_event(data, f"user-{user_id}")
+
+
+@shared_task()
 def delete_stream_websocket(name: str, user_id: int):
     log.debug("delete_stream_websocket: name=%s user_id=%s", name, user_id)
     _send_websocket_event({"event": "stream-delete", "name": name}, f"user-{user_id}")
@@ -608,7 +618,7 @@ def dispatch_webhook_event(event_key, owner_pk, payload_data):
     if event_key not in SITE_ONLY_EVENTS and owner_pk is not None:
         query |= Q(scope=Webhook.SCOPE_USER, owner_id=owner_pk)
     for webhook in Webhook.objects.filter(query, active=True):
-        if event_key in webhook.events:
+        if event_key in webhook.events and event_matches_filters(event_key, webhook.filters, payload_data):
             fire_webhook.delay(webhook.pk, event_key, payload_data)
 
 
