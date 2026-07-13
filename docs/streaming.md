@@ -47,14 +47,36 @@ Optional metadata is appended as query params on the **Server URL**. OBS sends t
 | `description`  | string  | Short description shown below the title              |
 | `public`       | boolean | `true` makes the stream visible to anyone            |
 | `viewer_limit` | integer | Maximum number of concurrent viewers (0 = unlimited) |
+| `record`       | boolean | `true` saves this session's recording (see below)    |
 
 Example:
 
 ```text
-rtmp://your-domain.com/live?stream_token=YOUR_STREAM_TOKEN&title=My+Stream&description=Tune+in&public=true&viewer_limit=100
+rtmp://your-domain.com/live?stream_token=YOUR_STREAM_TOKEN&title=My+Stream&description=Tune+in&public=true&viewer_limit=100&record=true
 ```
 
 > Setting a **password** is not supported via the RTMP query string — set it from the stream page after publishing (see below).
+
+## Recording & Past Streams
+
+Every stream session (from publish to disconnect) is logged as a **past stream** with its title/description snapshot, start/end time, and peak/average viewer count — visible from the **Streams** table context menu under **Recordings**, regardless of whether recording was enabled.
+
+To also save the video:
+
+- Check **Record this stream** in the Go Live modal, or
+- Toggle **Enable Recording** / **Disable Recording** from a stream's context menu, or
+- Add `&record=true` to the RTMP server URL (see Optional Parameters above)
+
+When recording is on, the finished video is imported as a regular file the moment the stream ends — it shows up in your file gallery like any other upload and is linked from that session's row in the Recordings modal.
+
+Two retention limits are available per stream (both optional, set from the Recordings modal):
+
+| Setting                     | Behavior                                                        |
+| ---------------------------- | ---------------------------------------------------------------- |
+| Expire after (days)         | Recording is deleted this many days after the stream started    |
+| Keep at most (count)        | Only the N most recent recordings are kept; older ones are deleted |
+
+Leaving both blank keeps recordings indefinitely. Deleting a recording never deletes the past-stream entry itself — only the video file.
 
 ## Resuming a Stream
 
@@ -75,6 +97,10 @@ ports:
 ```
 
 **Home network** — if the server is behind a home router, forward TCP port 1935 to the server's local IP. OBS should use your public IP or DDNS hostname externally, or the server's private IP on the LAN.
+
+### Recording storage (self-hosted / custom compose)
+
+Recordings are written by the `nginx` container to `/data/media/record` and then read, remuxed, and deleted by the `app`/`worker` containers — so that path must live on the same shared `media_dir` volume already mounted at `/data/media` in all three services (this is the default in the provided `docker-compose*.yaml` files; no action needed there). If you're running a custom compose setup, make sure that volume is mounted in `nginx`, `app`, and `worker`, and don't restrict `/data/media/record` to a single container's user — nginx and the app/worker both need to create and delete files there.
 
 ## Private Streams and Passwords
 
