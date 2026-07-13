@@ -59,6 +59,7 @@ def serialize_user(user: CustomUser) -> Dict[str, Any]:
     """
     user_dict = model_to_dict(user, exclude=["password", "authorization"])
     user_dict["avatar_url"] = user.get_avatar_url()
+    user_dict["storage_quota_human_read"] = user.get_storage_quota_human_read()
     providers = []
     for provider in ("discord", "github", "google"):
         if getattr(user, provider, None) is not None:
