@@ -26,6 +26,12 @@
                         <label for="streamSetupTitle" class="form-label fw-semibold">Title <span class="text-muted fw-normal">(optional)</span></label>
                         <input type="text" class="form-control" id="streamSetupTitle" placeholder="My Stream Title" autocomplete="off">
                     </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="streamSetupRecord">
+                        <label for="streamSetupRecord" class="form-check-label">
+                            Record this stream and save it as a file
+                        </label>
+                    </div>
                     <div class="mb-4">
                         <label for="streamSetupTokenDisplay" class="form-label fw-semibold">
                             Stream Token
@@ -91,6 +97,7 @@
         let url = `rtmp://${rtmpAuthority}/live?stream_token=${token}`
         const title = document.getElementById('streamSetupTitle')?.value.trim()
         if (title) url += `&title=${encodeURIComponent(title)}`
+        if (document.getElementById('streamSetupRecord')?.checked) url += '&record=true'
         return url
     }
 
@@ -106,6 +113,12 @@
     }
 
     document.getElementById('streamSetupTitle')?.addEventListener('input', function () {
+        if (currentStreamToken) {
+            document.getElementById('streamSetupServerUrl').value = buildServerUrl(currentStreamToken)
+        }
+    })
+
+    document.getElementById('streamSetupRecord')?.addEventListener('change', function () {
         if (currentStreamToken) {
             document.getElementById('streamSetupServerUrl').value = buildServerUrl(currentStreamToken)
         }

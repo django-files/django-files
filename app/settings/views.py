@@ -22,7 +22,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from home.models import Webhook
 from home.util.misc import redact_log
-from home.util.webhooks import SITE_ONLY_EVENTS, TAG_FILTERED_EVENTS, WEBHOOK_EVENTS
+from home.util.webhooks import (
+    SITE_ONLY_EVENTS,
+    TAG_FILTERED_EVENTS,
+    WEBHOOK_EVENT_GROUPS,
+    WEBHOOK_EVENTS,
+)
 from oauth.models import CustomUser, UserInvites, superuser_exists
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
@@ -69,6 +74,7 @@ def site_view(request):
             "webhooks": Webhook.objects.filter(scope=Webhook.SCOPE_SITE).select_related("owner"),
             "webhook_scope": Webhook.SCOPE_SITE,
             "webhook_events": WEBHOOK_EVENTS,
+            "webhook_event_groups": WEBHOOK_EVENT_GROUPS,
             "webhook_site_only_events": sorted(SITE_ONLY_EVENTS),
             "webhook_tag_filtered_events": sorted(TAG_FILTERED_EVENTS),
             "pending_webhook": _pop_pending_webhook(request, Webhook.SCOPE_SITE),
@@ -125,6 +131,7 @@ def user_view(request):
             "webhooks": webhooks,
             "webhook_scope": Webhook.SCOPE_USER,
             "webhook_events": WEBHOOK_EVENTS,
+            "webhook_event_groups": WEBHOOK_EVENT_GROUPS,
             "webhook_site_only_events": sorted(SITE_ONLY_EVENTS),
             "webhook_tag_filtered_events": sorted(TAG_FILTERED_EVENTS),
             "pending_webhook": _pop_pending_webhook(request, Webhook.SCOPE_USER),

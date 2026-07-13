@@ -62,6 +62,8 @@ _ALLOWED_METHODS = frozenset(
         "set_stream_title",
         "set_stream_description",
         "set_stream_password",
+        "set_stream_record",
+        "set_stream_recording_retention",
         "set_stream_live_chat",
         "set_stream_anonymous_chat",
         "join_stream_chat",
@@ -537,6 +539,58 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if user_id:
             owner_data = {**public_data, "password": stream.password}
             await self.channel_layer.group_send(f"user-{user_id}", {"type": _WS_SEND, "text": json.dumps(owner_data)})
+
+    async def set_stream_record(self, *, user_id: int = None, name: str = None, record: bool = None, **kwargs):
+        log.debug("set_stream_record: user_id=%s, name=%s, record=%s", user_id, name, record)
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        stream = await self._fetch_stream(name)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        if err:
+            return err
+        stream.record = bool(record)
+        await database_sync_to_async(stream.save)(update_fields=["record"])
+        data = {"event": "set-stream-record", "name": name, "record": stream.record}
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
+
+    async def set_stream_recording_retention(
+        self,
+        *,
+        user_id: int = None,
+        name: str = None,
+        retention_days: int = None,
+        retention_count: int = None,
+        **kwargs,
+    ):
+        log.debug(
+            "set_stream_recording_retention: user_id=%s, name=%s, days=%s, count=%s",
+            user_id,
+            name,
+            retention_days,
+            retention_count,
+        )
+        if not name:
+            return self._error(_ERR_NO_STREAM_NAME, **kwargs)
+        stream = await self._fetch_stream(name)
+        if not stream:
+            return self._error(_ERR_STREAM_NOT_FOUND, **kwargs)
+        err = await self._check_stream_owner_permission(stream, user_id, _ERR_STREAM_OWNED_BY_OTHER, **kwargs)
+        if err:
+            return err
+        stream.recording_retention_days = retention_days
+        stream.recording_retention_count = retention_count
+        await database_sync_to_async(stream.save)(
+            update_fields=["recording_retention_days", "recording_retention_count"]
+        )
+        data = {
+            "event": "set-stream-recording-retention",
+            "name": name,
+            "recording_retention_days": stream.recording_retention_days,
+            "recording_retention_count": stream.recording_retention_count,
+        }
+        await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
 
     # -------------------------------------------------------------------------
     # Chat identity helpers (no I/O — safe to call in async context)

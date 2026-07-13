@@ -27,6 +27,7 @@ EVENT_SHORT_CREATED = "short.created"
 EVENT_SHORT_DELETED = "short.deleted"
 EVENT_STREAM_LIVE = "stream.live"
 EVENT_STREAM_OFFLINE = "stream.offline"
+EVENT_STREAM_RECORDING_READY = "stream.recording_ready"
 EVENT_USER_CREATED = "user.created"
 EVENT_USER_DELETED = "user.deleted"
 EVENT_USER_LOGIN = "user.login"
@@ -43,6 +44,7 @@ WEBHOOK_EVENTS = {
     EVENT_SHORT_DELETED: "Short URL Deleted",
     EVENT_STREAM_LIVE: "Stream Live",
     EVENT_STREAM_OFFLINE: "Stream Ended",
+    EVENT_STREAM_RECORDING_READY: "Stream Recording Ready",
     EVENT_USER_CREATED: "User Created",
     EVENT_USER_DELETED: "User Deleted",
     EVENT_USER_LOGIN: "User Login",
@@ -54,8 +56,24 @@ SITE_ONLY_EVENTS = {EVENT_USER_CREATED, EVENT_USER_DELETED}
 # events whose payloads carry tags and honor the webhook tag filter
 FILE_EVENTS = {EVENT_FILE_UPLOAD, EVENT_FILE_DELETED}
 ALBUM_EVENTS = {EVENT_ALBUM_CREATED, EVENT_ALBUM_UPDATED, EVENT_ALBUM_DELETED}
-STREAM_EVENTS = {EVENT_STREAM_LIVE, EVENT_STREAM_OFFLINE}
+SHORT_EVENTS = {EVENT_SHORT_CREATED, EVENT_SHORT_DELETED}
+STREAM_EVENTS = {EVENT_STREAM_LIVE, EVENT_STREAM_OFFLINE, EVENT_STREAM_RECORDING_READY}
+USER_EVENTS = {EVENT_USER_CREATED, EVENT_USER_DELETED, EVENT_USER_LOGIN}
 TAG_FILTERED_EVENTS = FILE_EVENTS | ALBUM_EVENTS | STREAM_EVENTS
+
+# (key, label) pairs grouped into labeled mini-sections for the webhook settings
+# UI. Built from WEBHOOK_EVENTS so templates never need a dict-by-variable-key
+# lookup filter — each group is already a list of (key, label) tuples to loop over.
+WEBHOOK_EVENT_GROUPS = [
+    (group_label, [(key, WEBHOOK_EVENTS[key]) for key in keys])
+    for group_label, keys in [
+        ("Files", [EVENT_FILE_UPLOAD, EVENT_FILE_DELETED]),
+        ("Albums", [EVENT_ALBUM_CREATED, EVENT_ALBUM_UPDATED, EVENT_ALBUM_DELETED]),
+        ("Short URLs", [EVENT_SHORT_CREATED, EVENT_SHORT_DELETED]),
+        ("Streams", [EVENT_STREAM_LIVE, EVENT_STREAM_OFFLINE, EVENT_STREAM_RECORDING_READY]),
+        ("User", [EVENT_USER_CREATED, EVENT_USER_DELETED, EVENT_USER_LOGIN]),
+    ]
+]
 
 DISCORD_TITLES = {
     EVENT_FILE_UPLOAD: "New File Upload",
@@ -67,6 +85,7 @@ DISCORD_TITLES = {
     EVENT_SHORT_DELETED: "Short URL Deleted",
     EVENT_STREAM_LIVE: "Stream Live",
     EVENT_STREAM_OFFLINE: "Stream Ended",
+    EVENT_STREAM_RECORDING_READY: "Stream Recording Ready",
     EVENT_USER_CREATED: "User Created",
     EVENT_USER_DELETED: "User Deleted",
     EVENT_USER_LOGIN: "User Login",
@@ -155,6 +174,25 @@ def build_stream_payload(stream) -> dict:
     }
 
 
+def build_stream_recording_payload(history) -> dict:
+    site_url = _site_url()
+    stream = history.stream
+    recording = history.recording
+    return {
+        "name": stream.name,
+        "title": history.title,
+        "description": history.description,
+        "url": site_url + reverse("home:live", kwargs={"key": stream.name}),
+        "user": stream.user.username,
+        "started_at": history.started_at.isoformat(),
+        "ended_at": history.ended_at.isoformat() if history.ended_at else None,
+        "peak_viewers": history.peak_viewers,
+        "avg_viewers": history.avg_viewers,
+        "recording_url": site_url + recording.preview_uri() if recording else None,
+        "tags": tag_names(stream),
+    }
+
+
 def build_user_payload(user) -> dict:
     return {
         "id": user.id,
@@ -234,6 +272,8 @@ def _discord_title(event_key: str, data: dict) -> str:
         return f"{data.get('user', '')} went live"
     if event_key == EVENT_STREAM_OFFLINE:
         return f"{data.get('user', '')} stream ended"
+    if event_key == EVENT_STREAM_RECORDING_READY:
+        return f"{data.get('user', '')} stream recording ready"
     return DISCORD_TITLES.get(event_key, event_key)
 
 
@@ -250,6 +290,11 @@ def _discord_description(event_key: str, data: dict) -> str:
             text += f"\n{data['description']}"
         if event_key == EVENT_STREAM_OFFLINE and data.get("duration") is not None:
             text += f"\n**Duration:** {_human_duration(data['duration'])}"
+        return text + _tags_line(data)
+    if event_key == EVENT_STREAM_RECORDING_READY:
+        text = f"**{data.get('title') or data['name']}**"
+        if data.get("recording_url"):
+            text += f"\n{data['recording_url']}"
         return text + _tags_line(data)
     if event_key == EVENT_TEST:
         return "Webhook added successfully. New results will show up here..."

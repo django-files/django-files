@@ -307,6 +307,13 @@ function getActions(data, type, row) {
                 <li><a class="dropdown-item stream-tags-btn" role="button" data-stream-name="${safeName}" data-stream-tags="${escapeHtmlAttr(JSON.stringify(row.tags || []))}">
                     <i class="fa-solid fa-tags me-2"></i>Manage Tags
                 </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item stream-toggle-record-btn" role="button" data-stream-name="${safeName}" data-record="${escapeHtmlAttr(row.record)}">
+                    <i class="fa-solid fa-circle me-2 ${row.record ? 'text-danger' : ''}"></i>${row.record ? 'Disable Recording' : 'Enable Recording'}
+                </a></li>
+                <li><a class="dropdown-item stream-recordings-btn" role="button" data-stream-name="${safeName}" data-retention-days="${escapeHtmlAttr(row.recording_retention_days ?? '')}" data-retention-count="${escapeHtmlAttr(row.recording_retention_count ?? '')}">
+                    <i class="fa-solid fa-clock-rotate-left me-2"></i>Recordings
+                </a></li>
                 <li><hr class="dropdown-divider"></li>`
             : ''
         return `

@@ -1,0 +1,51 @@
+<div class="modal fade" id="streamRecordingsModal" tabindex="-1" aria-labelledby="streamRecordingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="streamRecordingsModalLabel">Recordings</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="stream-recordings-retention-form" class="row g-2 align-items-end mb-3">
+                    <input type="hidden" name="name" value="">
+                    <div class="col-auto">
+                        <label for="stream-recordings-retention-days" class="form-label mb-0 small">Expire after (days)</label>
+                        <input type="number" min="1" class="form-control form-control-sm" id="stream-recordings-retention-days" name="retention_days" placeholder="Never">
+                    </div>
+                    <div class="col-auto">
+                        <label for="stream-recordings-retention-count" class="form-label mb-0 small">Keep at most</label>
+                        <input type="number" min="1" class="form-control form-control-sm" id="stream-recordings-retention-count" name="retention_count" placeholder="Unlimited">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                    </div>
+                </form>
+                <div class="form-text mb-3">
+                    Older recordings past either limit are deleted automatically. Leave blank to keep recordings indefinitely.
+                </div>
+                <div id="stream-recordings-list">
+                    <p class="text-muted small mb-0">Loading…</p>
+                </div>
+                <div class="table-responsive d-none" id="stream-recordings-table-wrap">
+                    <table class="table table-sm mb-0" id="stream-recordings-table">
+                        <caption class="visually-hidden">Past Streams</caption>
+                        <thead>
+                        <tr>
+                            <th scope="col">Session</th>
+                            <th scope="col" class="d-none d-sm-table-cell">Started</th>
+                            <th scope="col" class="d-none d-sm-table-cell">Ended</th>
+                            <th scope="col" class="d-none d-md-table-cell text-center">Peak</th>
+                            <th scope="col" class="d-none d-md-table-cell text-center">Avg</th>
+                            <th scope="col" class="text-center">Recording</th>
+                        </tr>
+                        </thead>
+                        <tbody id="stream-recordings-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
