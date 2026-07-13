@@ -2342,6 +2342,12 @@ def user_view(request, user_id=None):
                 for field in sensitive_fields:
                     data.pop(field, None)
 
+            if "storage_quota" in data:
+                quota_bytes = human_read_to_byte(str(data["storage_quota"]))
+                if not isinstance(quota_bytes, int):
+                    return JsonResponse({"error": "Invalid storage quota value."}, status=400)
+                data["storage_quota"] = quota_bytes
+
             for key, value in data.items():
                 if hasattr(target_user, key):
                     setattr(target_user, key, value)
