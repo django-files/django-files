@@ -1673,7 +1673,8 @@ def stream_record_done_view(request):
     try:
         stream = Stream.objects.get(name=name)
     except Stream.DoesNotExist:
-        log.warning("stream_record_done_view: unknown stream %s, discarding %s", name, path)
+        # %r (not %s) so a crafted name can't inject fake log lines (CRLF etc.)
+        log.warning("stream_record_done_view: unknown stream %r, discarding %r", name, path)
         delete_recording_file(path)
         return HttpResponse()
 
@@ -2032,6 +2033,29 @@ def stream_commands_view(request, name):
     )
 
 
+def _parse_optional_int(value) -> Optional[int]:
+    return int(value) if value not in (None, "") else None
+
+
+def _apply_stream_patch(stream: Stream, data: dict, request) -> None:
+    if "public" in data:
+        stream.public = data_or_header(request, data, "public", True, cast=bool)
+    if "title" in data:
+        stream.title = data_or_header(request, data, "title")
+    if "description" in data:
+        stream.description = data_or_header(request, data, "description")
+    if "password" in data:
+        stream.password = data_or_header(request, data, "password")
+    if "viewer_limit" in data:
+        stream.viewer_limit = data_or_header(request, data, "viewer_limit", 0, cast=int)
+    if "record" in data:
+        stream.record = data_or_header(request, data, "record", False, cast=bool)
+    if "recording_retention_days" in data:
+        stream.recording_retention_days = _parse_optional_int(data["recording_retention_days"])
+    if "recording_retention_count" in data:
+        stream.recording_retention_count = _parse_optional_int(data["recording_retention_count"])
+
+
 @csrf_exempt
 @require_http_methods(["OPTIONS", "PATCH"])
 @auth_from_token
@@ -2045,24 +2069,7 @@ def stream_detail_view(request, name: str = None):
             if stream.user != request.user and not request.user.is_superuser:
                 return HttpResponse(status=403)
             data = get_json_body(request)
-            if "public" in data:
-                stream.public = data_or_header(request, data, "public", True, cast=bool)
-            if "title" in data:
-                stream.title = data_or_header(request, data, "title")
-            if "description" in data:
-                stream.description = data_or_header(request, data, "description")
-            if "password" in data:
-                stream.password = data_or_header(request, data, "password")
-            if "viewer_limit" in data:
-                stream.viewer_limit = data_or_header(request, data, "viewer_limit", 0, cast=int)
-            if "record" in data:
-                stream.record = data_or_header(request, data, "record", False, cast=bool)
-            if "recording_retention_days" in data:
-                value = data["recording_retention_days"]
-                stream.recording_retention_days = int(value) if value not in (None, "") else None
-            if "recording_retention_count" in data:
-                value = data["recording_retention_count"]
-                stream.recording_retention_count = int(value) if value not in (None, "") else None
+            _apply_stream_patch(stream, data, request)
             stream.save()
             return JsonResponse(extract_streams([stream], request.user.id)[0])
     except Exception as error:

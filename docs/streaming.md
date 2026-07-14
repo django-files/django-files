@@ -71,10 +71,10 @@ When recording is on, the finished video is imported as a regular file the momen
 
 Two retention limits are available per stream (both optional, set from the Recordings modal):
 
-| Setting                     | Behavior                                                        |
-| ---------------------------- | ---------------------------------------------------------------- |
-| Expire after (days)         | Recording is deleted this many days after the stream started    |
-| Keep at most (count)        | Only the N most recent recordings are kept; older ones are deleted |
+| Setting              | Behavior                                                           |
+| -------------------- | ------------------------------------------------------------------ |
+| Expire after (days)  | Recording is deleted this many days after the stream started       |
+| Keep at most (count) | Only the N most recent recordings are kept; older ones are deleted |
 
 Leaving both blank keeps recordings indefinitely. Deleting a recording never deletes the past-stream entry itself — only the video file.
 

@@ -341,7 +341,7 @@ function onManageTags(btn) {
 function onToggleRecord(btn) {
     const name = btn.dataset.streamName
     if (!name) return
-    const record = !(btn.dataset.record === 'true')
+    const record = btn.dataset.record !== 'true'
     socket.send(JSON.stringify({ method: 'set_stream_record', name, record }))
 }
 
@@ -486,8 +486,8 @@ document
             JSON.stringify({
                 method: 'set_stream_recording_retention',
                 name,
-                retention_days: days ? parseInt(days, 10) : null,
-                retention_count: count ? parseInt(count, 10) : null,
+                retention_days: days ? Number.parseInt(days, 10) : null,
+                retention_count: count ? Number.parseInt(count, 10) : null,
             })
         )
         if (typeof show_toast === 'function')
