@@ -3,6 +3,7 @@ import logging
 import mimetypes
 import os
 import pathlib
+import shutil
 import tempfile
 import uuid
 from typing import BinaryIO
@@ -79,7 +80,10 @@ def process_file(name: str, f: BinaryIO, user_id: int, **kwargs) -> Files:
 
     file = Files(user=user, **kwargs)
     with tempfile.NamedTemporaryFile(suffix=os.path.basename(name)) as fp:
-        fp.write(f.read())
+        # Stream in chunks rather than f.read() — reading a large file (e.g. a
+        # multi-GB stream recording) into memory in one shot can exceed the
+        # worker's memory limit and get it OOM-killed.
+        shutil.copyfileobj(f, fp, length=1024 * 1024)
         fp.seek(0)
         log.debug("fp.name: %s", fp.name)
         file_mime = magic.from_file(fp.name, mime=True)

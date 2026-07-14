@@ -1,13 +1,15 @@
+import io
 import logging
 import os
 import shutil
+import tempfile
 from pathlib import Path
 
 from api.views import gen_short
 from channels.testing import ChannelsLiveServerTestCase
 from django.conf import settings
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from djangofiles.test_utils import TEST_PASSWORD
 from home.models import Files, ShortURLs
@@ -383,6 +385,37 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         page.locator(f"text={private_file.size}")
         page.wait_for_timeout(timeout=250)
         self.screenshot(page, "File-unlock")
+
+
+class ProcessFileMemorySafetyTests(TestCase):
+    """
+    Guards against a regression where process_file() read an entire upload
+    into memory via f.read() before writing it to the temp file. That OOM-
+    killed the worker importing a multi-GB stream recording in production
+    (~4.3GB file, 2GiB container memory limit). process_file must only ever
+    perform bounded reads (i.e. stream in chunks), regardless of input size.
+    """
+
+    class BoundedReadOnly(io.BytesIO):
+        """Raises if anything calls .read() without a size limit."""
+
+        def read(self, size=-1, /):
+            if size is None or size < 0:
+                raise AssertionError(
+                    "process_file called read() without a bounded size — this reintroduces the bug "
+                    "that OOM-killed the worker importing large stream recordings."
+                )
+            return super().read(size)
+
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(username="memsafetyuser", password=TEST_PASSWORD)
+
+    def test_process_file_never_reads_unbounded(self):
+        payload = b"binary-data-chunk" * 400_000  # a few MB, enough to force multiple chunked reads
+        f = self.BoundedReadOnly(payload)
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            file = process_file("large-upload.bin", f, self.user.id)
+            self.assertEqual(file.size, len(payload))
 
 
 class FilesTestCase(TestCase):
