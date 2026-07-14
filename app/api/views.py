@@ -60,7 +60,7 @@ from home.tasks import (
 )
 from home.util.auth import create_api_token, hash_token
 from home.util.file import process_file
-from home.util.misc import anytobool, human_read_to_byte, redact_log
+from home.util.misc import anytobool, human_read_to_byte, redact_log, sanitize_log_value
 from home.util.nginx import sign_hls_cookie, verify_hls_cookie
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
@@ -1667,14 +1667,17 @@ def stream_record_done_view(request):
     name = request.GET.get("name")
     path = request.GET.get("path")
     if not name or not path:
-        log.warning("stream_record_done_view: missing name or path: %s", request.GET)
+        log.warning("stream_record_done_view: missing name or path: %s", sanitize_log_value(redact_log(request.GET)))
         return HttpResponse(status=400)
 
     try:
         stream = Stream.objects.get(name=name)
     except Stream.DoesNotExist:
-        # %r (not %s) so a crafted name can't inject fake log lines (CRLF etc.)
-        log.warning("stream_record_done_view: unknown stream %r, discarding %r", name, path)
+        log.warning(
+            "stream_record_done_view: unknown stream %s, discarding %s",
+            sanitize_log_value(name),
+            sanitize_log_value(path),
+        )
         delete_recording_file(path)
         return HttpResponse()
 
