@@ -352,6 +352,21 @@ class Stream(models.Model):
         "to fetch the stream via /hls/?token=. Empty = raw-link playback disabled. "
         "Independent of stream_token (RTMP ingest).",
     )
+    record = models.BooleanField(
+        default=False, verbose_name="Record", help_text="Record this stream and save it as a file."
+    )
+    recording_retention_days = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Recording Retention Days",
+        help_text="Delete recordings older than this many days. Empty = never expire by age.",
+    )
+    recording_retention_count = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Recording Retention Count",
+        help_text="Keep only this many most recent recordings, deleting older ones. Empty = keep all.",
+    )
 
     def __str__(self):
         return f"<Stream(name={self.name}, title={self.title}, user_id={self.user_id})>"

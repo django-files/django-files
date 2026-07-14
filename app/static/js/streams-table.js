@@ -271,43 +271,56 @@ function getPublicIcon(data, type, _row) {
     return data
 }
 
+function getOwnerActionsHtml(row, safeName) {
+    const vlcEnabled = !!row.playback_enabled
+    const vlcLabel = vlcEnabled ? 'Copy Raw Link' : 'Enable Raw Link'
+    const vlcIcon = vlcEnabled ? 'link' : 'link-slash'
+    const vlcDisableItem = `<li class="stream-disable-vlc-url-item ${vlcEnabled ? '' : 'd-none'}" data-stream-name="${safeName}">
+            <a class="dropdown-item stream-disable-vlc-url-btn" role="button" data-stream-name="${safeName}">
+                <i class="fa-solid fa-ban me-2"></i>Disable Raw Link
+            </a></li>`
+    const hasPassword = !!row.password
+    const passwordLabel = hasPassword ? 'Change Password' : 'Set Password'
+    const publicIcon = row.public ? 'lock' : 'globe'
+    const publicLabel = row.public ? 'Make Private' : 'Make Public'
+    const recordIconClass = row.record ? 'text-danger' : ''
+    const recordLabel = row.record ? 'Disable Recording' : 'Enable Recording'
+    return `<li><a class="dropdown-item stream-copy-rtmp-btn" role="button" data-stream-name="${safeName}" data-rtmp-url="${escapeHtmlAttr(row.rtmp_url)}">
+                <i class="fa-solid fa-satellite-dish me-2"></i>Copy RTMP URL
+            </a></li>
+            <li><a class="dropdown-item stream-rotate-token-btn" role="button" data-stream-name="${safeName}">
+                <i class="fa-solid fa-arrows-rotate me-2"></i>Regenerate Token
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item stream-copy-vlc-url-btn" role="button" data-stream-name="${safeName}" data-enabled="${escapeHtmlAttr(vlcEnabled)}">
+                <i class="fa-solid fa-${vlcIcon} me-2"></i>${vlcLabel}
+            </a></li>
+            ${vlcDisableItem}
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item stream-toggle-public-btn" role="button" data-stream-name="${safeName}" data-public="${escapeHtmlAttr(row.public)}">
+                <i class="fa-solid fa-${publicIcon} me-2"></i>${publicLabel}
+            </a></li>
+            <li><a class="dropdown-item stream-set-password-btn" role="button" data-stream-name="${safeName}" data-has-password="${escapeHtmlAttr(hasPassword)}">
+                <i class="fa-solid fa-key me-2"></i>${passwordLabel}
+            </a></li>
+            <li><a class="dropdown-item stream-tags-btn" role="button" data-stream-name="${safeName}" data-stream-tags="${escapeHtmlAttr(JSON.stringify(row.tags || []))}">
+                <i class="fa-solid fa-tags me-2"></i>Manage Tags
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item stream-toggle-record-btn" role="button" data-stream-name="${safeName}" data-record="${escapeHtmlAttr(row.record)}">
+                <i class="fa-solid fa-circle me-2 ${recordIconClass}"></i>${recordLabel}
+            </a></li>
+            <li><a class="dropdown-item stream-recordings-btn" role="button" data-stream-name="${safeName}" data-retention-days="${escapeHtmlAttr(row.recording_retention_days ?? '')}" data-retention-count="${escapeHtmlAttr(row.recording_retention_count ?? '')}">
+                <i class="fa-solid fa-clock-rotate-left me-2"></i>Recordings
+            </a></li>
+            <li><hr class="dropdown-divider"></li>`
+}
+
 function getActions(data, type, row) {
     if (type === 'display') {
-        const publicIcon = row.public ? 'lock' : 'globe'
-        const publicLabel = row.public ? 'Make Private' : 'Make Public'
-        const vlcEnabled = !!row.playback_enabled
-        const vlcLabel = vlcEnabled ? 'Copy Raw Link' : 'Enable Raw Link'
-        const vlcIcon = vlcEnabled ? 'link' : 'link-slash'
         const safeName = escapeHtmlAttr(row.name)
-        const vlcDisableItem = `<li class="stream-disable-vlc-url-item ${vlcEnabled ? '' : 'd-none'}" data-stream-name="${safeName}">
-                <a class="dropdown-item stream-disable-vlc-url-btn" role="button" data-stream-name="${safeName}">
-                    <i class="fa-solid fa-ban me-2"></i>Disable Raw Link
-                </a></li>`
-        const hasPassword = !!row.password
-        const passwordLabel = hasPassword ? 'Change Password' : 'Set Password'
         const ownerItems = row.is_owner
-            ? `<li><a class="dropdown-item stream-copy-rtmp-btn" role="button" data-stream-name="${safeName}" data-rtmp-url="${escapeHtmlAttr(row.rtmp_url)}">
-                    <i class="fa-solid fa-satellite-dish me-2"></i>Copy RTMP URL
-                </a></li>
-                <li><a class="dropdown-item stream-rotate-token-btn" role="button" data-stream-name="${safeName}">
-                    <i class="fa-solid fa-arrows-rotate me-2"></i>Regenerate Token
-                </a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item stream-copy-vlc-url-btn" role="button" data-stream-name="${safeName}" data-enabled="${escapeHtmlAttr(vlcEnabled)}">
-                    <i class="fa-solid fa-${vlcIcon} me-2"></i>${vlcLabel}
-                </a></li>
-                ${vlcDisableItem}
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item stream-toggle-public-btn" role="button" data-stream-name="${safeName}" data-public="${escapeHtmlAttr(row.public)}">
-                    <i class="fa-solid fa-${publicIcon} me-2"></i>${publicLabel}
-                </a></li>
-                <li><a class="dropdown-item stream-set-password-btn" role="button" data-stream-name="${safeName}" data-has-password="${escapeHtmlAttr(hasPassword)}">
-                    <i class="fa-solid fa-key me-2"></i>${passwordLabel}
-                </a></li>
-                <li><a class="dropdown-item stream-tags-btn" role="button" data-stream-name="${safeName}" data-stream-tags="${escapeHtmlAttr(JSON.stringify(row.tags || []))}">
-                    <i class="fa-solid fa-tags me-2"></i>Manage Tags
-                </a></li>
-                <li><hr class="dropdown-divider"></li>`
+            ? getOwnerActionsHtml(row, safeName)
             : ''
         return `
             <div class="dropdown stream-ctx-menu" data-stream-name="${safeName}">

@@ -338,6 +338,162 @@ function onManageTags(btn) {
     streamTagsModal?.open(btn.dataset.streamName, tags)
 }
 
+function onToggleRecord(btn) {
+    const name = btn.dataset.streamName
+    if (!name) return
+    const record = btn.dataset.record !== 'true'
+    socket.send(JSON.stringify({ method: 'set_stream_record', name, record }))
+}
+
+function syncRecordToggleButtons(name, record) {
+    const selector = `.stream-toggle-record-btn[data-stream-name="${CSS.escape(name)}"]`
+    document.querySelectorAll(selector).forEach((btn) => {
+        btn.dataset.record = record ? 'true' : 'false'
+        const icon = btn.querySelector('i')
+        if (icon) icon.classList.toggle('text-danger', record)
+        setMenuLabel(btn, record ? 'Disable Recording' : 'Enable Recording')
+    })
+}
+
+// The "recording" dot in the stream page's icon area only lights up while a
+// recording is actually in progress — record enabled AND the stream is live —
+// so it tracks both the set-stream-record and stream-status broadcasts.
+function syncRecordingBadge(name, { record, isLive } = {}) {
+    const selector = `#stream-recording-badge[data-stream-name="${CSS.escape(name)}"]`
+    document.querySelectorAll(selector).forEach((el) => {
+        if (record !== undefined) el.dataset.record = record ? 'true' : 'false'
+        if (isLive !== undefined) el.dataset.live = isLive ? 'true' : 'false'
+        const recording =
+            el.dataset.record === 'true' && el.dataset.live !== 'false'
+        el.classList.toggle('d-none', !recording)
+    })
+}
+
+function setRecordingsMessage(modalEl, text, className) {
+    const msgEl = modalEl.querySelector('#stream-recordings-list')
+    const tableWrap = modalEl.querySelector('#stream-recordings-table-wrap')
+    tableWrap.classList.add('d-none')
+    msgEl.classList.remove('d-none')
+    msgEl.replaceChildren()
+    const p = document.createElement('p')
+    p.className = className || 'text-muted small mb-0'
+    p.textContent = text
+    msgEl.append(p)
+}
+
+function renderRecordingsTable(modalEl, history) {
+    if (!history.length) {
+        setRecordingsMessage(modalEl, 'No past streams yet.')
+        return
+    }
+    const msgEl = modalEl.querySelector('#stream-recordings-list')
+    const tableWrap = modalEl.querySelector('#stream-recordings-table-wrap')
+    msgEl.classList.add('d-none')
+    tableWrap.classList.remove('d-none')
+    const tbody = modalEl.querySelector('#stream-recordings-tbody')
+    tbody.replaceChildren()
+    for (const item of history) {
+        const tr = document.createElement('tr')
+
+        const sessionTd = document.createElement('td')
+        sessionTd.textContent =
+            item.title || new Date(item.started_at).toLocaleString()
+        tr.append(sessionTd)
+
+        const startedTd = document.createElement('td')
+        startedTd.className = 'd-none d-sm-table-cell'
+        startedTd.textContent = new Date(item.started_at).toLocaleString()
+        tr.append(startedTd)
+
+        const endedTd = document.createElement('td')
+        endedTd.className = 'd-none d-sm-table-cell'
+        endedTd.textContent = item.ended_at
+            ? new Date(item.ended_at).toLocaleString()
+            : 'live'
+        tr.append(endedTd)
+
+        const peakTd = document.createElement('td')
+        peakTd.className = 'd-none d-md-table-cell text-center'
+        peakTd.textContent = item.peak_viewers
+        tr.append(peakTd)
+
+        const avgTd = document.createElement('td')
+        avgTd.className = 'd-none d-md-table-cell text-center'
+        avgTd.textContent = item.avg_viewers
+        tr.append(avgTd)
+
+        const recordingTd = document.createElement('td')
+        recordingTd.className = 'text-center'
+        if (item.recording_url) {
+            const link = document.createElement('a')
+            link.href = item.recording_url
+            // Same badge box as the "No recording" state below (only the color
+            // differs) so rows don't change height depending on whether a
+            // recording exists.
+            link.className = 'badge text-bg-primary text-decoration-none'
+            link.textContent = 'View'
+            recordingTd.append(link)
+        } else {
+            const badge = document.createElement('span')
+            badge.className = 'badge text-bg-secondary'
+            badge.textContent = 'No recording'
+            recordingTd.append(badge)
+        }
+        tr.append(recordingTd)
+
+        tbody.append(tr)
+    }
+}
+
+async function onOpenRecordings(btn) {
+    const name = btn.dataset.streamName
+    if (!name) return
+    const modalEl = document.getElementById('streamRecordingsModal')
+    if (!modalEl) return
+    modalEl.querySelector('input[name=name]').value = name
+    modalEl.querySelector('#stream-recordings-retention-days').value =
+        btn.dataset.retentionDays || ''
+    modalEl.querySelector('#stream-recordings-retention-count').value =
+        btn.dataset.retentionCount || ''
+    setRecordingsMessage(modalEl, 'Loading…')
+    bootstrap.Modal.getOrCreateInstance(modalEl).show()
+    try {
+        const res = await fetch(
+            `/api/stream/${encodeURIComponent(name)}/history/`
+        )
+        if (!res.ok) throw new Error('failed')
+        const { history } = await res.json()
+        renderRecordingsTable(modalEl, history)
+    } catch {
+        setRecordingsMessage(
+            modalEl,
+            'Failed to load recordings.',
+            'text-danger small mb-0'
+        )
+    }
+}
+
+document
+    .getElementById('stream-recordings-retention-form')
+    ?.addEventListener('submit', function (event) {
+        event.preventDefault()
+        const form = event.currentTarget
+        const name = form.elements.name.value
+        if (!name) return
+        const days = form.elements.retention_days.value
+        const count = form.elements.retention_count.value
+        socket.send(
+            JSON.stringify({
+                method: 'set_stream_recording_retention',
+                name,
+                retention_days: days ? Number.parseInt(days, 10) : null,
+                retention_count: count ? Number.parseInt(count, 10) : null,
+            })
+        )
+        if (typeof show_toast === 'function')
+            show_toast('Recording retention updated.', 'success', '3000')
+    })
+
 wireClickDelegation({
     'stream-copy-rtmp-btn': onCopyRtmp,
     'stream-rotate-token-btn': onRotateToken,
@@ -346,6 +502,8 @@ wireClickDelegation({
     'stream-toggle-public-btn': onTogglePublic,
     'stream-set-password-btn': onSetPassword,
     'stream-tags-btn': onManageTags,
+    'stream-toggle-record-btn': onToggleRecord,
+    'stream-recordings-btn': onOpenRecordings,
     'stream-delete-btn': onDelete,
 })
 
@@ -367,6 +525,11 @@ socket?.addEventListener('message', function (event) {
             syncPublicToggleButtons(obj.name, obj.public)
             syncPublicBadge(obj.name, obj.public)
         })
+    } else if (data.event === 'set-stream-record') {
+        syncRecordToggleButtons(data.name, data.record)
+        syncRecordingBadge(data.name, { record: data.record })
+    } else if (data.event === 'stream-status') {
+        syncRecordingBadge(data.name, { isLive: data.is_live })
     }
 })
 

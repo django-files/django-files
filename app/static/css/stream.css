@@ -18,6 +18,14 @@
     text-align: center;
 }
 
+/* The recordings modal sits on the site-wide translucent/blurred modal
+   background (see .modal .modal-content in main.css); Bootstrap's .table
+   otherwise paints its own opaque --bs-table-bg, which would show as a
+   solid block breaking the glass effect. */
+#stream-recordings-table {
+    --bs-table-bg: transparent;
+}
+
 /* Editable stream fields (title + description, used in live sidebar and streams table) */
 .stream-editable {
     cursor: pointer;

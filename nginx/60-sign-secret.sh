@@ -4,6 +4,16 @@ set -e
 
 echo "$0 - Starting as: $(whoami)"
 
+mkdir -p /data/media/record
+# nginx (uid 101, `user nginx;`) writes the .flv here; the app/worker
+# containers (uid 1000, group 1000 there) read it, remux it, and delete it.
+# Neither side owns the other's files, so make the directory group-writable
+# by gid 1000 with setgid so files nginx creates are still deletable/writable
+# by the app/worker containers (and vice versa) regardless of which side
+# reused an inode first.
+chown nginx:1000 /data/media/record
+chmod 2775 /data/media/record
+
 if [ -n "${SECRET}" ] || [ -n "${SECRET_KEY}" ];then
     echo "Writing Secret Key Variable to File: /data/media/db/secret.key"
     printf "%s" "${SECRET}${SECRET_KEY}" > /data/media/db/secret.key

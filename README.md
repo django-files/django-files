@@ -178,6 +178,8 @@ Django Files is packed with features for seamless file management and sharing. M
 - Viewer count/viewer list
 - Owner controls: enable/disable chat and anonymous access live
 - Push notifications for stream start via Web Push
+- Past-stream history with viewer stats, independent of recording
+- Optional per-stream recording, saved as a regular file with configurable retention
 
 ### External
 

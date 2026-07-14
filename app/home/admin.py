@@ -179,11 +179,13 @@ class StreamAdmin(admin.ModelAdmin):
         "unique_views",
         "public",
         "viewer_limit",
+        "record",
     )
     list_filter = (
         "user",
         "is_live",
         "public",
+        "record",
         "started_at",
         "ended_at",
     )
@@ -199,7 +201,7 @@ class StreamAdmin(admin.ModelAdmin):
         "user__username",
     )
     ordering = ("-started_at",)
-    list_editable = ("is_live", "public", "viewer_limit")
+    list_editable = ("is_live", "public", "viewer_limit", "record")
 
 
 @admin.register(StreamHistory)

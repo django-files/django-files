@@ -48,6 +48,20 @@ Required context: stream, rtmp_url.
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>
+            <a role="button" class="dropdown-item stream-toggle-record-btn"
+               data-stream-name="{{ stream.name }}"
+               data-record="{{ stream.record|yesno:'true,false' }}">
+                <i class="fa-solid fa-circle fa-fw me-2 {% if stream.record %}text-danger{% endif %}"></i>{% if stream.record %}Disable Recording{% else %}Enable Recording{% endif %}</a>
+        </li>
+        <li>
+            <a role="button" class="dropdown-item stream-recordings-btn"
+               data-stream-name="{{ stream.name }}"
+               data-retention-days="{{ stream.recording_retention_days|default_if_none:'' }}"
+               data-retention-count="{{ stream.recording_retention_count|default_if_none:'' }}">
+                <i class="fa-solid fa-clock-rotate-left fa-fw me-2"></i>Recordings</a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
             <a role="button" class="dropdown-item stream-delete-btn link-danger"
                data-hook-id="{{ stream.name }}"
                data-redirect-on-delete="{% url 'home:streams' %}">

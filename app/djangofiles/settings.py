@@ -169,6 +169,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "home.tasks.delete_expired_files",
         "schedule": datetime.timedelta(minutes=config("DELETE_EXPIRED_MIN", 15, int)),
     },
+    "enforce_stream_retention": {
+        "task": "home.tasks.enforce_stream_retention",
+        "schedule": datetime.timedelta(minutes=config("STREAM_RETENTION_MIN", 15, int)),
+    },
     "process_stats": {
         "task": "home.tasks.process_stats",
         "schedule": datetime.timedelta(minutes=config("PROCESS_STATS_MIN", 15, int)),

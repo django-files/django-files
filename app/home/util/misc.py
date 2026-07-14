@@ -27,6 +27,13 @@ def redact_log(data):
     return {k: ("***" if k in _SENSITIVE_LOG_KEYS else v) for k, v in dict(data).items()}
 
 
+def sanitize_log_value(value) -> str:
+    """Strip CR/LF from a value before it's interpolated into a log message, so
+    user-controlled input (query params, headers, etc.) can't forge extra log
+    lines or spoof log entries (CWE-117)."""
+    return str(value).replace("\r", "").replace("\n", "")
+
+
 def anytobool(value) -> bool:
     log.debug("anytobool: %s", value)
     if not isinstance(value, str):

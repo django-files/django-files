@@ -41,21 +41,31 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from django_redis import get_redis_connection
-from home.models import Albums, Files, FileStats, ShortURLs, Stream, Webhook
+from home.models import (
+    Albums,
+    Files,
+    FileStats,
+    ShortURLs,
+    Stream,
+    StreamHistory,
+    Webhook,
+)
 from home.tasks import (
     clear_files_cache,
     clear_shorts_cache,
     dispatch_webhook_event,
+    import_stream_recording,
     send_push_live,
     stream_status_websocket,
 )
 from home.util.auth import create_api_token, hash_token
 from home.util.file import process_file
-from home.util.misc import anytobool, human_read_to_byte, redact_log
+from home.util.misc import anytobool, human_read_to_byte, redact_log, sanitize_log_value
 from home.util.nginx import sign_hls_cookie, verify_hls_cookie
 from home.util.quota import process_storage_quotas
 from home.util.rand import rand_string
 from home.util.storage import file_rename
+from home.util.stream_record import delete_recording_file
 from home.util.tags import clean_tag_names
 from home.util.webhooks import (
     EVENT_STREAM_LIVE,
@@ -1537,6 +1547,8 @@ def _parse_stream_kwargs(data):
         kwargs["description"] = description[0]
     if title := data.get("title"):
         kwargs["title"] = title[0]
+    if record := data.get("record"):
+        kwargs["record"] = anytobool(record[0])
     return kwargs
 
 
@@ -1583,6 +1595,8 @@ def stream_auth_view(request):
             stream.started_at = datetime.now()
             stream.ended_at = None
             stream.save()
+        StreamHistory.objects.create(stream=stream, title=stream.title, description=stream.description)
+        _reset_viewer_stats(stream.name)
         send_push_live.apply_async(args=[stream.name], countdown=10)
         stream_status_websocket.delay(stream.name, True, started_at=stream.started_at.isoformat())
         dispatch_webhook_event.delay(EVENT_STREAM_LIVE, stream.user_id, build_stream_payload(stream))
@@ -1623,12 +1637,56 @@ def stream_done_view(request):
         stream.ended_at = datetime.now()
         stream.is_live = False
         stream.save()
+
+        history = StreamHistory.objects.filter(stream=stream, ended_at__isnull=True).order_by("-started_at").first()
+        if history:
+            peak, avg = _pop_viewer_stats(stream.name)
+            history.ended_at = stream.ended_at
+            history.peak_viewers = peak
+            history.avg_viewers = avg
+            history.save()
+
         stream_status_websocket.delay(stream.name, False, stream.ended_at.isoformat())
         dispatch_webhook_event.delay(EVENT_STREAM_OFFLINE, stream.user_id, build_stream_payload(stream))
 
     except Exception as error:
         log.debug("error: %s", error)
 
+    return HttpResponse()
+
+
+@csrf_exempt
+def stream_record_done_view(request):
+    """
+    View /stream/record/
+    Called by nginx-rtmp's on_record_done when a recording file is finalized.
+    nginx records every live session unconditionally (record all;); this
+    endpoint decides whether to keep it based on Stream.record.
+    """
+    log.debug("stream_record_done_view: %s", redact_log(request.GET))
+    name = request.GET.get("name")
+    path = request.GET.get("path")
+    if not name or not path:
+        log.warning("stream_record_done_view: missing name or path: %s", sanitize_log_value(redact_log(request.GET)))
+        return HttpResponse(status=400)
+
+    try:
+        stream = Stream.objects.get(name=name)
+    except Stream.DoesNotExist:
+        log.warning(
+            "stream_record_done_view: unknown stream %s, discarding %s",
+            sanitize_log_value(name),
+            sanitize_log_value(path),
+        )
+        delete_recording_file(path)
+        return HttpResponse()
+
+    history = StreamHistory.objects.filter(stream=stream, recording__isnull=True).order_by("-started_at").first()
+    if not stream.record or not history:
+        delete_recording_file(path)
+        return HttpResponse()
+
+    import_stream_recording.delay(history.pk, path)
     return HttpResponse()
 
 
@@ -1978,6 +2036,29 @@ def stream_commands_view(request, name):
     )
 
 
+def _parse_optional_int(value) -> Optional[int]:
+    return int(value) if value not in (None, "") else None
+
+
+def _apply_stream_patch(stream: Stream, data: dict, request) -> None:
+    if "public" in data:
+        stream.public = data_or_header(request, data, "public", True, cast=bool)
+    if "title" in data:
+        stream.title = data_or_header(request, data, "title")
+    if "description" in data:
+        stream.description = data_or_header(request, data, "description")
+    if "password" in data:
+        stream.password = data_or_header(request, data, "password")
+    if "viewer_limit" in data:
+        stream.viewer_limit = data_or_header(request, data, "viewer_limit", 0, cast=int)
+    if "record" in data:
+        stream.record = data_or_header(request, data, "record", False, cast=bool)
+    if "recording_retention_days" in data:
+        stream.recording_retention_days = _parse_optional_int(data["recording_retention_days"])
+    if "recording_retention_count" in data:
+        stream.recording_retention_count = _parse_optional_int(data["recording_retention_count"])
+
+
 @csrf_exempt
 @require_http_methods(["OPTIONS", "PATCH"])
 @auth_from_token
@@ -1991,21 +2072,43 @@ def stream_detail_view(request, name: str = None):
             if stream.user != request.user and not request.user.is_superuser:
                 return HttpResponse(status=403)
             data = get_json_body(request)
-            if "public" in data:
-                stream.public = data_or_header(request, data, "public", True, cast=bool)
-            if "title" in data:
-                stream.title = data_or_header(request, data, "title")
-            if "description" in data:
-                stream.description = data_or_header(request, data, "description")
-            if "password" in data:
-                stream.password = data_or_header(request, data, "password")
-            if "viewer_limit" in data:
-                stream.viewer_limit = data_or_header(request, data, "viewer_limit", 0, cast=int)
+            _apply_stream_patch(stream, data, request)
             stream.save()
             return JsonResponse(extract_streams([stream], request.user.id)[0])
     except Exception as error:
         log.exception(error)
         return JsonResponse({"error": f"{error}"}, status=400)
+
+
+@require_http_methods(["GET"])
+@auth_from_token
+def stream_history_view(request, name: str, page=None, count=25):
+    """
+    View /api/stream/<name>/history/{page}/{count}/
+    Past sessions (StreamHistory) for a stream, most recent first, with a link
+    to the recording's normal file preview when one exists.
+    """
+    stream = get_object_or_404(Stream, name=name)
+    if stream.user != request.user and not request.user.is_superuser:
+        return HttpResponse(status=403)
+    q = StreamHistory.objects.filter(stream=stream).select_related("recording")
+    page_items, _next = paginate_no_count(q, page, count)
+    site_url = SiteSettings.objects.settings().site_url
+    history = [
+        {
+            "id": h.id,
+            "started_at": h.started_at,
+            "ended_at": h.ended_at,
+            "peak_viewers": h.peak_viewers,
+            "avg_viewers": h.avg_viewers,
+            "title": h.title,
+            "description": h.description,
+            "recording_url": site_url + h.recording.preview_uri() if h.recording else None,
+            "recording_name": h.recording.name if h.recording else None,
+        }
+        for h in page_items
+    ]
+    return JsonResponse({"history": history, "next": _next, "count": count}, status=200)
 
 
 def get_viewer_count(name):
@@ -2015,7 +2118,40 @@ def get_viewer_count(name):
     cutoff = int(now().timestamp()) - 60
     count = redis.zcount(key, min=cutoff, max="+inf")
     log.debug("stream_viewers_view - count: %s", count)
+    _record_viewer_sample(name, count)
     return count
+
+
+def _record_viewer_sample(name, count):
+    """Accumulate a viewer-count sample, piggybacking on stream_viewers_view polling,
+    so peak/avg can be computed for the StreamHistory row when the stream ends."""
+    redis = get_redis_connection("default")
+    peak_key = f"stream:{name}:peak_viewers"
+    current_peak = redis.get(peak_key)
+    if current_peak is None or count > int(current_peak):
+        redis.set(peak_key, count, ex=3600)
+    redis.incrby(f"stream:{name}:viewer_sum", count)
+    redis.expire(f"stream:{name}:viewer_sum", 3600)
+    redis.incr(f"stream:{name}:viewer_samples")
+    redis.expire(f"stream:{name}:viewer_samples", 3600)
+
+
+def _pop_viewer_stats(name):
+    """Read and clear the accumulated peak/avg viewer stats for a finished stream session."""
+    redis = get_redis_connection("default")
+    peak_key = f"stream:{name}:peak_viewers"
+    sum_key = f"stream:{name}:viewer_sum"
+    samples_key = f"stream:{name}:viewer_samples"
+    peak = int(redis.get(peak_key) or 0)
+    total = int(redis.get(sum_key) or 0)
+    samples = int(redis.get(samples_key) or 0)
+    redis.delete(peak_key, sum_key, samples_key)
+    return peak, (total // samples if samples else 0)
+
+
+def _reset_viewer_stats(name):
+    redis = get_redis_connection("default")
+    redis.delete(f"stream:{name}:peak_viewers", f"stream:{name}:viewer_sum", f"stream:{name}:viewer_samples")
 
 
 def get_json_body(request):

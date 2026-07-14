@@ -17,12 +17,23 @@ from django.db.models import Count, Q, Sum
 from django.forms.models import model_to_dict
 from django.utils import timezone
 from django_redis import get_redis_connection
-from home.models import Files, FileStats, Stream, Webhook
+from home.models import Files, FileStats, Stream, StreamHistory, Webhook
 from home.util.image import thumbnail_processor
 from home.util.quota import regenerate_all_storage_values
+from home.util.stream_record import delete_recording_file, validate_recording_path
 from home.util.tags import sync_file_tags
-from home.util.video import video_metadata_processor, video_thumbnail_processor
-from home.util.webhooks import SITE_ONLY_EVENTS, event_matches_filters, send_webhook
+from home.util.video import (
+    remux_to_mp4,
+    video_metadata_processor,
+    video_thumbnail_processor,
+)
+from home.util.webhooks import (
+    EVENT_STREAM_RECORDING_READY,
+    SITE_ONLY_EVENTS,
+    build_stream_recording_payload,
+    event_matches_filters,
+    send_webhook,
+)
 from oauth.models import CustomUser
 from packaging import version
 from PIL import UnidentifiedImageError
@@ -601,6 +612,75 @@ def send_push_live(stream_name: str, ttl: int = 1800):
     }
     log.info("payload: %s", payload)
     send_group_notification(group_name=stream.name, payload=payload, ttl=ttl)
+
+
+@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 30})
+def import_stream_recording(history_pk: int, path: str):
+    """
+    Remux a finished stream recording (FLV, written by nginx-rtmp's `record all;`
+    to the shared media_dir volume) into an MP4 and import it as a Files object,
+    then link it to the StreamHistory row for that session.
+
+    process_file is imported locally to avoid a circular import: home.util.file
+    imports from home.tasks at module load time.
+    """
+    from home.util.file import process_file
+
+    log.info("import_stream_recording: history_pk=%s path=%s", history_pk, path)
+    try:
+        history = StreamHistory.objects.select_related("stream", "stream__user").get(pk=history_pk)
+    except StreamHistory.DoesNotExist:
+        log.warning("import_stream_recording: history_pk=%s not found, discarding %s", history_pk, path)
+        delete_recording_file(path)
+        return
+
+    resolved = validate_recording_path(path)
+    if not resolved or not os.path.isfile(resolved):
+        log.warning("import_stream_recording: invalid or missing recording path: %s", path)
+        return
+
+    stream = history.stream
+    mp4_path = os.path.splitext(resolved)[0] + ".mp4"
+    try:
+        remux_to_mp4(resolved, mp4_path)
+        name = f"{stream.name}-{history.started_at:%Y%m%d-%H%M%S}.mp4"
+        # Age-based expiry rides the existing Files.expr / delete_expired_files
+        # mechanism (same as any other upload) instead of a second cleanup path.
+        expr = f"{stream.recording_retention_days}d" if stream.recording_retention_days else ""
+        with open(mp4_path, "rb") as fp:
+            recording = process_file(name, fp, stream.user_id, expr=expr)
+        history.recording = recording
+        history.save()
+        dispatch_webhook_event.delay(
+            EVENT_STREAM_RECORDING_READY, stream.user_id, build_stream_recording_payload(history)
+        )
+    finally:
+        delete_recording_file(resolved)
+        if os.path.exists(mp4_path):
+            os.remove(mp4_path)
+
+
+@shared_task()
+def enforce_stream_retention(stream_name: str = None):
+    """
+    Delete recording Files beyond a stream's recording_retention_count, keeping
+    only the N most recent. Age-based expiry isn't handled here — it's set as
+    Files.expr at import time and enforced by the existing delete_expired_files
+    task, the same path every other upload's expiration goes through.
+    """
+    streams = Stream.objects.filter(name=stream_name) if stream_name else Stream.objects.all()
+    for stream in streams.iterator():
+        if not stream.recording_retention_count:
+            continue
+        history_qs = StreamHistory.objects.filter(stream=stream, recording__isnull=False).order_by("-started_at")
+        keep_pks = set(history_qs.values_list("pk", flat=True)[: stream.recording_retention_count])
+        to_delete = history_qs.exclude(pk__in=keep_pks)
+        if not to_delete.exists():
+            continue
+        for history in to_delete.select_related("recording"):
+            log.info("enforce_stream_retention: stream=%s deleting recording history_pk=%s", stream.name, history.pk)
+            if history.recording:
+                history.recording.delete()
 
 
 @shared_task()

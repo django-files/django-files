@@ -124,6 +124,12 @@
                                        class="fa-solid fa-lock text-warning{% if stream.public %} d-none{% endif %}"
                                        data-stream-name="{{ stream.name }}"
                                        title="Private"></i>
+                                    <i id="stream-recording-badge"
+                                       class="fa-solid fa-circle text-danger{% if not stream.is_live or not stream.record %} d-none{% endif %}"
+                                       data-stream-name="{{ stream.name }}"
+                                       data-record="{{ stream.record|yesno:'true,false' }}"
+                                       data-live="{{ stream.is_live|yesno:'true,false' }}"
+                                       title="This stream is being recorded"></i>
                                 </span>
                                 <strong class="m-0 text-info text-end">
                                     <span id="subscriber-count">{{ subscriber_count }}</span> <i class="fa-solid fa-bell" title="Notification subscribers"></i>
@@ -196,6 +202,7 @@
             {% include 'streams/delete-modal.html' %}
             {% include 'streams/regenerate-token-modal.html' %}
             {% include 'streams/password-modal.html' %}
+            {% include 'streams/recordings-modal.html' %}
             {% endif %}
 {% endblock %}
 

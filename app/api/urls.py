@@ -53,6 +53,7 @@ urlpatterns = [
     path("stream/auth/", views.stream_auth_view, name="stream-auth"),
     path("stream/ingest/", views.stream_ingest_view, name="stream-ingest"),
     path("stream/done/", views.stream_done_view, name="stream-done"),
+    path("stream/record/", views.stream_record_done_view, name="stream-record-done"),
     path("stream/create/", views.stream_create_view, name="stream-create"),
     path("stream/<str:name>/rotate-token/", views.stream_rotate_token_view, name="stream-rotate-token"),
     path(
@@ -72,6 +73,9 @@ urlpatterns = [
     path("stream/viewers/<str:name>/", views.stream_viewers_view, name="stream-viewers"),
     path("stream/subscribers/<str:name>/", views.stream_subscribers_view, name="stream-subscribers"),
     path("stream/commands/<str:name>/", views.stream_commands_view, name="stream-commands"),
+    path("stream/<str:name>/history/", views.stream_history_view, name="stream-history"),
+    path("stream/<str:name>/history/<int:page>/", views.stream_history_view, name="stream-history"),
+    path("stream/<str:name>/history/<int:page>/<int:count>/", views.stream_history_view, name="stream-history-amount"),
     path("stream/<str:name>/", views.stream_detail_view, name="stream-detail"),
     path("oauth/", oauth_show, name="oauth-show"),
 ]

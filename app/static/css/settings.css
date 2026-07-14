@@ -77,3 +77,16 @@ html:has(#settings-nav) {
 .settings-token-blurred {
     filter: blur(3px);
 }
+
+/* Webhook events checklist: keep the label and its tag-filter icon on one
+   line — the label text otherwise wraps before the icon in the two-column
+   layout once labels get long (e.g. "Stream Recording Ready"). */
+.webhook-event-option .form-check-label {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.webhook-event-option .webhook-event-label {
+    white-space: nowrap;
+}
