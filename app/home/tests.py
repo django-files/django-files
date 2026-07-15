@@ -19,7 +19,7 @@ from home.tasks import (
     flush_template_cache,
     process_stats,
 )
-from home.util.file import process_file
+from home.util.file import LocalFile, process_file
 from oauth.models import CustomUser
 from playwright.sync_api import sync_playwright
 from settings.models import SiteSettings
@@ -415,6 +415,20 @@ class ProcessFileMemorySafetyTests(TestCase):
         f = self.BoundedReadOnly(payload)
         with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
             file = process_file("large-upload.bin", f, self.user.id)
+            self.assertEqual(file.size, len(payload))
+
+    def test_process_file_local_file_source(self):
+        # LocalFile marks a server-owned on-disk file (stream recordings,
+        # remote downloads) that process_file consumes in place with no
+        # second temp copy; the source must still exist afterwards since
+        # cleanup belongs to the caller.
+        payload = b"local-path-data" * 1000
+        with tempfile.TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            with tempfile.NamedTemporaryFile(suffix=".bin") as src:
+                src.write(payload)
+                src.flush()
+                file = process_file("recording.bin", LocalFile(src.name), self.user.id)
+                self.assertTrue(os.path.exists(src.name))
             self.assertEqual(file.size, len(payload))
 
 

@@ -3,6 +3,7 @@ import logging
 import tempfile
 from datetime import timedelta
 
+from api.utils import remote_url_error
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
@@ -763,6 +764,15 @@ class UploadOptionsTestCase(TestCase):
         file = self.upload(**{"strip-gps": "false", "strip-exif": "false"})
         self.assertEqual(file.mime, "text/plain")
 
+    def test_text_only_upload(self):
+        # text paste with no file key previously 500'd: the quota check
+        # dereferenced f.size before the text-to-BytesIO fallback ran
+        response = self.client.post(reverse("api:upload"), {"text": "hello paste"})
+        self.assertEqual(response.status_code, 200)
+        file = Files.objects.filter(user=self.user).latest("id")
+        self.assertEqual(file.size, len(b"hello paste"))
+        self.assertEqual(file.mime, "text/plain")
+
     def test_format_uuid_post(self):
         file = self.upload(format="uuid")
         self.assertRegex(file.name, r"^[0-9a-f]{32}\.txt$")
@@ -801,3 +811,40 @@ class UploadOptionsTestCase(TestCase):
         self.user.save()
         file = self.upload(password=TEST_PASSWORD)
         self.assertEqual(file.password, TEST_PASSWORD)
+
+
+class RemoteUploadSecurityTestCase(TestCase):
+    """SSRF and scheme guards on /api/remote/"""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        self.user = CustomUser.objects.create_user(
+            username="remoteuser",
+            email="remote@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        self.client.force_login(self.user)
+
+    def remote(self, url):
+        return self.client.post(reverse("api:remote"), data=json.dumps({"url": url}), content_type="application/json")
+
+    def test_non_public_addresses_rejected(self):
+        # loopback, cloud metadata, private ranges — all resolve without DNS
+        # so these are deterministic offline
+        for url in (
+            "http://127.0.0.1/secret.txt",
+            "http://169.254.169.254/latest/meta-data/",
+            "http://10.0.0.1/file.bin",
+            "http://192.168.1.1/file.bin",
+        ):
+            response = self.remote(url)
+            self.assertEqual(response.status_code, 400, url)
+
+    def test_non_http_schemes_rejected(self):
+        self.assertIsNotNone(remote_url_error("ftp://example.com/file.bin"))
+        self.assertIsNotNone(remote_url_error("file:///etc/passwd"))
+        self.assertIsNotNone(remote_url_error("gopher://example.com/1"))
+
+    def test_public_address_allowed(self):
+        # 1.1.1.1 is globally routable; the validator must not block it
+        self.assertIsNone(remote_url_error("http://1.1.1.1/file.bin"))

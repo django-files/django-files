@@ -118,12 +118,14 @@ class ImageProcessor(object):
             new.save(local_path)
 
 
-def thumbnail_processor(file: Files, file_bytes: bytes = None, extension: str = None):
-    # generate thumbnail via bytes object or file object
-    # prefer bytes object if file is still local to avoid wasteful redownload of file
-    tmp_file = f"/tmp/thumb_{file.name}"  # nosec
-    file_bytes = BytesIO(file_bytes) if file_bytes else BytesIO(file.file.read())
-    with Image.open(file_bytes) as image:
+def thumbnail_processor(file: Files, local_path: str = None, extension: str = None):
+    # generate thumbnail from a local file when one is available (upload path)
+    # to avoid a wasteful redownload; fall back to reading from storage
+    source = local_path if local_path else BytesIO(file.file.read())
+    with Image.open(source) as image:
+        # capture the format before transforms — exif_transpose and convert
+        # return new Image objects that don't carry the original format
+        fmt = extension or image.format
         image = ImageOps.exif_transpose(image)
         # TODO: check resolution is not already small, if it is don't bother generating a thumbnail
         image.thumbnail((512, 512))
@@ -137,9 +139,11 @@ def thumbnail_processor(file: Files, file_bytes: bytes = None, extension: str = 
             background = Image.new("RGB", image.size, (255, 255, 255))
             background.paste(image, mask=image.split()[-1])
             image = background
-        image.save(tmp_file, format=extension)
-    with open(tmp_file, "rb") as thumb:
-        # we cannot call update, we must explicitly save, here since the hooks that upload the file will not happen
-        file.thumb = File(thumb, name=file.name)
-        file.save()
-    os.remove(tmp_file)
+        # render in memory (thumbnails are ≤512px) — a predictable /tmp path
+        # derived from a user-influenced filename is a symlink/clobber hazard
+        thumb = BytesIO()
+        image.save(thumb, format=fmt)
+    thumb.seek(0)
+    # we cannot call update, we must explicitly save, here since the hooks that upload the file will not happen
+    file.thumb = File(thumb, name=file.name)
+    file.save()

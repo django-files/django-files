@@ -624,7 +624,7 @@ def import_stream_recording(history_pk: int, path: str):
     process_file is imported locally to avoid a circular import: home.util.file
     imports from home.tasks at module load time.
     """
-    from home.util.file import process_file
+    from home.util.file import LocalFile, process_file
 
     log.info("import_stream_recording: history_pk=%s path=%s", history_pk, path)
     try:
@@ -647,8 +647,10 @@ def import_stream_recording(history_pk: int, path: str):
         # Age-based expiry rides the existing Files.expr / delete_expired_files
         # mechanism (same as any other upload) instead of a second cleanup path.
         expr = f"{stream.recording_retention_days}d" if stream.recording_retention_days else ""
-        with open(mp4_path, "rb") as fp:
-            recording = process_file(name, fp, stream.user_id, expr=expr)
+        # LocalFile lets process_file consume the mp4 in place instead of
+        # copying a multi-GB recording to a second temp file first; the
+        # finally block below still owns cleanup of mp4_path.
+        recording = process_file(name, LocalFile(mp4_path), stream.user_id, expr=expr)
         history.recording = recording
         history.save()
         dispatch_webhook_event.delay(
