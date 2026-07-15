@@ -27,7 +27,7 @@ def remote_url_error(url: str) -> Optional[str]:
     try:
         port = parsed.port or (443 if parsed.scheme == "https" else 80)
         addr_info = socket.getaddrinfo(parsed.hostname, port, proto=socket.IPPROTO_TCP)
-    except socket.gaierror, UnicodeError, ValueError:
+    except socket.gaierror, ValueError:
         return f"Could not resolve host: {parsed.hostname}"
     for info in addr_info:
         if not ipaddress.ip_address(info[4][0]).is_global:
