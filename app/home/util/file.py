@@ -7,7 +7,7 @@ import pathlib
 import shutil
 import tempfile
 import uuid
-from typing import BinaryIO, Union
+from typing import BinaryIO, Optional, Union
 
 import magic
 from django.core.exceptions import ObjectDoesNotExist
@@ -48,6 +48,101 @@ class LocalFile:
         return f"LocalFile({self.path})"
 
 
+def _pop_upload_options(user: CustomUser, kwargs: dict) -> dict:
+    """
+    Pop processor-only options out of kwargs (so they never reach the Files
+    constructor), applying user defaults; returns the processor ctx.
+    """
+    ctx = {}
+    if (strip_exif := kwargs.pop("strip_exif", None)) is not None:
+        ctx["strip_exif"] = anytobool(strip_exif)
+    if (strip_gps := kwargs.pop("strip_gps", None)) is not None:
+        ctx["strip_gps"] = anytobool(strip_gps)
+    if (auto_password := kwargs.pop("auto_password", None)) is not None:
+        if anytobool(auto_password):
+            kwargs["password"] = rand_string()
+    elif user.default_file_password and not kwargs.get("password"):
+        kwargs["password"] = rand_string()
+    return ctx
+
+
+def _replace_existing_avatar(user: CustomUser, kwargs: dict) -> None:
+    if kwargs.get("avatar") != "True":
+        return
+    log.debug("This is an avatar upload.")
+    # avatar should never expire
+    kwargs.pop("expr", None)
+    try:
+        # if user avatar already exists for the user delete it
+        Files.objects.get(user=user, avatar=True).delete()
+    except ObjectDoesNotExist:
+        pass
+
+
+def _stage_source(f: Union[BinaryIO, LocalFile], name: str, stack: contextlib.ExitStack) -> str:
+    """
+    Return a local filesystem path for the upload source. Reuses the on-disk
+    file directly when we own it: a LocalFile from server-side code, or the
+    temp file Django already spooled the upload to. This skips a full extra
+    disk copy, which matters for multi-GB files.
+    """
+    if isinstance(f, LocalFile):
+        return f.path
+    if isinstance(f, TemporaryUploadedFile):
+        return f.temporary_file_path()
+    # Stream in chunks rather than f.read() — reading a large file (e.g. a
+    # multi-GB stream recording) into memory in one shot can exceed the
+    # worker's memory limit and get it OOM-killed.
+    tmp = stack.enter_context(tempfile.NamedTemporaryFile(suffix=os.path.basename(name)))
+    shutil.copyfileobj(f, tmp, length=1024 * 1024)
+    tmp.flush()
+    return tmp.name
+
+
+def _detect_mime(path: str, name: str) -> str:
+    file_mime = magic.from_file(path, mime=True)
+    # libmagic uses content analysis, which misidentifies text files —
+    # e.g. a .md file containing Python code blocks becomes
+    # text/x-script.python. For any text/* result, prefer the
+    # extension-based guess when it provides a more specific type.
+    if file_mime and (file_mime.startswith("text/") or file_mime == OCTET_STREAM):
+        guess, _ = mimetypes.guess_type(name, strict=False)
+        if guess and guess != OCTET_STREAM:
+            file_mime = guess
+    return file_mime or OCTET_STREAM
+
+
+def _process_metadata(file: Files, path: str, file_mime: str, user: CustomUser, ctx: dict) -> Optional[str]:
+    """
+    Run the image/video metadata processors (these may rewrite the file at
+    `path` in place); returns the detected image extension, if any.
+    """
+    if file_mime in IMAGE_THUMB_MIMES:
+        # when handling images, if we detect an extension we need to
+        # tell PIL to use that extension now and in thumbnail processor
+        detected_extension = file_mime.split("/")[1]
+        processor = ImageProcessor(path, user.remove_exif, user.remove_exif_geo, ctx, detected_extension)
+        processor.process_file()
+        file.meta = processor.meta
+        file.exif = processor.exif
+        return detected_extension
+    if file_mime.startswith("video/"):
+        strip_gps = ctx.get("strip_gps", user.remove_exif_geo)
+        file.exif, file.meta = video_metadata_processor(path, strip_gps=strip_gps)
+    return None
+
+
+def _attach_album(file: Files, albums: Optional[str]) -> None:
+    if not albums:
+        return
+    lookup = {"id": int(albums)} if albums.isnumeric() else {"name": albums}
+    album = Albums.objects.filter(**lookup)
+    log.debug("album: %s", album)
+    if album:
+        file.albums.add(album[0])
+        file.save()
+
+
 def process_file(name: str, f: Union[BinaryIO, LocalFile], user_id: int, **kwargs) -> Files:
     """
     Process File Uploads
@@ -63,94 +158,28 @@ def process_file(name: str, f: Union[BinaryIO, LocalFile], user_id: int, **kwarg
     log.debug("kwargs: %s", kwargs)
     user = CustomUser.objects.get(id=user_id)
     log.debug("user: %s", user)
-    log.debug("user.default_upload_name_format: %s", user.default_upload_name_format)
     _format = kwargs.pop("format", user.default_upload_name_format)
-    log.debug("_format: %s", _format)
     name = get_formatted_name(name, _format)
     log.debug("get_formatted_name: name: %s", name)
-    ctx = {}
-    if (strip_exif := kwargs.pop("strip_exif", None)) is not None:
-        ctx["strip_exif"] = anytobool(strip_exif)
-    if (strip_gps := kwargs.pop("strip_gps", None)) is not None:
-        ctx["strip_gps"] = anytobool(strip_gps)
-    if (auto_password := kwargs.pop("auto_password", None)) is not None:
-        if anytobool(auto_password):
-            kwargs["password"] = rand_string()
-    elif user.default_file_password and not kwargs.get("password"):
-        kwargs["password"] = rand_string()
-    # we want to use a temporary local file to support cloud storage cases
-    # this allows us to modify the file before upload
-    if kwargs.get("avatar") == "True":
-        log.debug("This is an avatar upload.")
-        # avatar should never expire
-        kwargs.pop("expr", None)
-        try:
-            # if user avatar already exists for the user delete it
-            file = Files.objects.get(user=user, avatar=True)
-            file.delete()
-        except ObjectDoesNotExist:
-            pass
-
-    albums = None
-    if "albums" in kwargs:
-        albums = kwargs.pop("albums")
+    ctx = _pop_upload_options(user, kwargs)
+    _replace_existing_avatar(user, kwargs)
+    albums = kwargs.pop("albums", None)
     log.debug("albums: %s", albums)
     tags = kwargs.pop("tags", None)
     log.debug("tags: %s", tags)
 
     file = Files(user=user, **kwargs)
-    # Reuse the on-disk source directly when we own it: a LocalFile from
-    # server-side code, or the temp file Django already spooled the upload to.
-    # This skips a full extra disk copy, which matters for multi-GB files.
-    if isinstance(f, LocalFile):
-        local_path = f.path
-    elif isinstance(f, TemporaryUploadedFile):
-        local_path = f.temporary_file_path()
-    else:
-        local_path = None
-    detected_extension = None
     with contextlib.ExitStack() as stack:
-        if local_path:
-            path = local_path
-        else:
-            # Stream in chunks rather than f.read() — reading a large file (e.g. a
-            # multi-GB stream recording) into memory in one shot can exceed the
-            # worker's memory limit and get it OOM-killed.
-            tmp = stack.enter_context(tempfile.NamedTemporaryFile(suffix=os.path.basename(name)))
-            shutil.copyfileobj(f, tmp, length=1024 * 1024)
-            tmp.flush()
-            path = tmp.name
+        path = _stage_source(f, name, stack)
         log.debug("path: %s", path)
-        file_mime = magic.from_file(path, mime=True)
-        # libmagic uses content analysis, which misidentifies text files —
-        # e.g. a .md file containing Python code blocks becomes
-        # text/x-script.python. For any text/* result, prefer the
-        # extension-based guess when it provides a more specific type.
-        if file_mime and (file_mime.startswith("text/") or file_mime == OCTET_STREAM):
-            guess, _ = mimetypes.guess_type(name, strict=False)
-            if guess and guess != OCTET_STREAM:
-                file_mime = guess
-        file_mime = file_mime or OCTET_STREAM
+        file_mime = _detect_mime(path, name)
         log.debug("file_mime: %s", file_mime)
-        if file_mime in IMAGE_THUMB_MIMES:
-            # when handling images, if we detect an extension we need to
-            # tell PIL to use that extension now and in thumbnail processor
-            detected_extension = file_mime.split("/")[1]
-            processor = ImageProcessor(path, user.remove_exif, user.remove_exif_geo, ctx, detected_extension)
-            processor.process_file()
-            file.meta = processor.meta
-            file.exif = processor.exif
-        elif file_mime.startswith("video/"):
-            strip_gps = ctx.get("strip_gps", user.remove_exif_geo)
-            v_exif, v_meta = video_metadata_processor(path, strip_gps=strip_gps)
-            file.exif = v_exif
-            file.meta = v_meta
+        detected_extension = _process_metadata(file, path, file_mime, user, ctx)
         # open a fresh handle after the processors — they may have rewritten
         # the file at `path` (EXIF stripping truncates and rewrites in place)
         fp = stack.enter_context(open(path, "rb"))
         file.file = File(fp, name=name)
         file.mime = file_mime
-        log.debug("file.mime: %s", file.mime)
         file.size = file.file.size
         log.debug("file.size: %s", file.size)
         if (meta_preview := kwargs.get("meta_preview")) is not None:
@@ -173,18 +202,7 @@ def process_file(name: str, f: Union[BinaryIO, LocalFile], user_id: int, **kwarg
     if tags:
         # before the webhook dispatch below so tag include-filters can match
         attach_file_tags(file, tags)
-
-    if albums:
-        if albums.isnumeric():
-            kwargs = {"id": int(albums)}
-        else:
-            kwargs = {"name": albums}
-        album = Albums.objects.filter(**kwargs)
-        log.debug("album: %s", album)
-        if album:
-            # file[0].albums.add(Albums.objects.filter(id=album)[0])
-            file.albums.add(album[0])
-            file.save()
+    _attach_album(file, albums)
 
     if file_mime.startswith("video/"):
         # on_commit ensures the row is visible to the Celery worker before the
