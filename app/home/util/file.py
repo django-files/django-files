@@ -15,7 +15,12 @@ from django.core.files import File
 from django.core.files.uploadedfile import TemporaryUploadedFile
 from django.db import transaction
 from home.models import Albums, Files
-from home.tasks import dispatch_webhook_event, generate_video_thumb, new_file_websocket
+from home.tasks import (
+    VIDEO_MIME_PREFIX,
+    dispatch_webhook_event,
+    generate_video_thumb,
+    new_file_websocket,
+)
 from home.util.image import (
     ImageProcessor,
     image_exceeds_pixel_budget,
@@ -134,7 +139,7 @@ def _process_metadata(file: Files, path: str, file_mime: str, user: CustomUser, 
         file.meta = processor.meta
         file.exif = processor.exif
         return detected_extension
-    if file_mime.startswith("video/"):
+    if file_mime.startswith(VIDEO_MIME_PREFIX):
         strip_gps = ctx.get("strip_gps", user.remove_exif_geo)
         file.exif, file.meta = video_metadata_processor(path, strip_gps=strip_gps)
     return None
@@ -207,7 +212,7 @@ def process_file(name: str, f: Union[BinaryIO, LocalFile], user_id: int, **kwarg
             # it on disk instead of re-downloading the file from storage
             thumbnail_processor(file, path, detected_extension)
         video_thumb_saved = False
-        if file_mime.startswith("video/"):
+        if file_mime.startswith(VIDEO_MIME_PREFIX):
             # same idea for videos: pull the thumbnail frame from the local
             # copy now, skipping the storage re-download in generate_video_thumb
             # and its VIDEO_THUMB_MAX_BYTES cap, which large stream recordings
@@ -220,7 +225,7 @@ def process_file(name: str, f: Union[BinaryIO, LocalFile], user_id: int, **kwarg
         attach_file_tags(file, tags)
     _attach_album(file, albums)
 
-    if file_mime.startswith("video/") and not video_thumb_saved:
+    if file_mime.startswith(VIDEO_MIME_PREFIX) and not video_thumb_saved:
         # fallback when local extraction failed; on_commit ensures the row is
         # visible to the Celery worker before the task is dispatched,
         # preventing a DoesNotExist race on fast workers.

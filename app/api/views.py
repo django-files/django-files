@@ -334,6 +334,29 @@ def version_view(request):
             return JsonResponse({"error": str(error)}, status=500)
 
 
+def _upload_size_error(user, size) -> Optional[JsonResponse]:
+    """
+    Return an error response when an upload exceeds the size cap or a storage
+    quota, or None when it fits. nginx and asgi.py already gate on
+    Content-Length; the size cap is rechecked here against the real file size
+    to cover chunked transfers and deployments behind other proxies.
+    """
+    if size and size > settings.UPLOAD_MAX_SIZE:
+        message = f"Upload Failed: Maximum upload size is {filesizeformat(settings.UPLOAD_MAX_SIZE)}."
+        log.warning("%s (got %s bytes)", message, size)
+        return JsonResponse({"error": True, "message": message}, status=413)
+    if any(pq := process_storage_quotas(user, size)):
+        if pq[1]:
+            message = "Upload Failed: Global storage quota exceeded."
+        elif pq[0]:
+            message = "Upload Failed: User storage quota exceeded."
+        else:
+            message = "Unknown error checking quotas."
+        log.error(message)
+        return JsonResponse({"error": True, "message": message}, status=400)
+    return None
+
+
 @csrf_exempt
 @require_http_methods(["OPTIONS", "POST"])
 @auth_from_token(no_fail=True)
@@ -361,21 +384,8 @@ def upload_view(request):
         if not f:
             return JsonResponse({"error": "No file or text keys found."}, status=400)
         # log.debug("f.size: %s", f.size)
-        # nginx and asgi.py gate on Content-Length; recheck the real file size
-        # here to cover chunked transfers and deployments behind other proxies
-        if f.size and f.size > settings.UPLOAD_MAX_SIZE:
-            message = f"Upload Failed: Maximum upload size is {filesizeformat(settings.UPLOAD_MAX_SIZE)}."
-            log.warning("%s (got %s bytes)", message, f.size)
-            return JsonResponse({"error": True, "message": message}, status=413)
-        if any(pq := process_storage_quotas(request.user, f.size)):
-            if pq[1]:
-                message = "Upload Failed: Global storage quota exceeded."
-            elif pq[0]:
-                message = "Upload Failed: User storage quota exceeded."
-            else:
-                message = "Unknown error checking quotas."
-            log.error(message)
-            return JsonResponse({"error": True, "message": message}, status=400)
+        if error_response := _upload_size_error(request.user, f.size):
+            return error_response
         # TODO: Determine how to better handle expire and why info is still being used differently from other methods
         expire = parse_expire(request)
         log.debug("expire: %s", expire)

@@ -23,14 +23,14 @@
                 </div>
 
                 <div class="mb-3 form-check form-switch">
-                    <input type="checkbox" class="form-check-input" role="switch" id="streamSetupRecord">
+                    <input type="checkbox" class="form-check-input" role="switch" aria-checked="false" id="streamSetupRecord">
                     <label for="streamSetupRecord" class="form-check-label">
                         Record this stream and save it as a file
                     </label>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Tags <span class="text-muted fw-normal">(optional)</span></label>
+                    <span class="form-label fw-semibold d-block">Tags <span class="text-muted fw-normal">(optional)</span></span>
                     {# chips and the "+" adder are rendered by the module script below via tag-chips.js #}
                     <div class="tag-container position-relative" id="streamSetupTags"></div>
                     <input type="hidden" id="streamSetupTagsField">

@@ -42,6 +42,8 @@ case "${upload_max}" in
     ''|*[!0-9kKmMgG]*)
         echo "Invalid UPLOAD_MAX_SIZE: '${upload_max}' - using default: 5G"
         upload_max="5G";;
+    *)
+        ;;
 esac
 echo "client_max_body_size: ${upload_max}"
 sed "s/{{upload_max_size}}/${upload_max}/g" -i /etc/nginx/nginx.conf
