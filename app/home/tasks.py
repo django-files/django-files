@@ -36,7 +36,7 @@ from home.util.webhooks import (
 )
 from oauth.models import CustomUser
 from packaging import version
-from PIL import UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError
 from pytimeparse2 import parse
 from settings.models import SiteSettings
 from webpush import send_group_notification
@@ -83,7 +83,7 @@ def generate_thumbs(user_pk: int = None, only_missing: bool = True):
         log.info("Generating thumbnail for: %s", file.name)
         try:
             thumbnail_processor(file)
-        except ValueError, UnidentifiedImageError, FileNotFoundError:
+        except ValueError, UnidentifiedImageError, FileNotFoundError, Image.DecompressionBombError:
             # if we hit a file that cannot be processed or is missing from storage ignore and continue
             log.error("Unable to process thumbnail for %s", file.name)
             continue

@@ -4,7 +4,7 @@ and live.html (rendered server-side here). The classes and data attributes must
 match what streams-table.js emits in getActions(), so streams-actions.js can
 delegate handlers globally for both contexts.
 
-Required context: stream, rtmp_url.
+Required context: stream, rtmp_url, stream_tags_json.
 {% endcomment %}
 <div class="dropdown stream-ctx-menu" data-stream-name="{{ stream.name }}">
     <input type="hidden" name="current-stream-password" value="{{ stream.password|default:'' }}">
@@ -43,7 +43,7 @@ Required context: stream, rtmp_url.
         <li>
             <a role="button" class="dropdown-item stream-tags-btn"
                data-stream-name="{{ stream.name }}"
-               data-stream-tags='{{ stream.tags|safe }}'>
+               data-stream-tags="{{ stream_tags_json }}">
                 <i class="fa-solid fa-tags fa-fw me-2"></i>Manage Tags</a>
         </li>
         <li><hr class="dropdown-divider"></li>

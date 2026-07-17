@@ -16,12 +16,16 @@ from django.core.files.uploadedfile import TemporaryUploadedFile
 from django.db import transaction
 from home.models import Albums, Files
 from home.tasks import dispatch_webhook_event, generate_video_thumb, new_file_websocket
-from home.util.image import ImageProcessor, thumbnail_processor
+from home.util.image import (
+    ImageProcessor,
+    image_exceeds_pixel_budget,
+    thumbnail_processor,
+)
 from home.util.misc import anytobool
 from home.util.quota import increment_storage_usage
 from home.util.rand import rand_string
 from home.util.tags import attach_file_tags, sync_file_tags
-from home.util.video import video_metadata_processor
+from home.util.video import video_metadata_processor, video_thumbnail_from_path
 from home.util.webhooks import EVENT_FILE_UPLOAD, build_file_payload
 from oauth.models import CustomUser
 
@@ -118,6 +122,10 @@ def _process_metadata(file: Files, path: str, file_mime: str, user: CustomUser, 
     `path` in place); returns the detected image extension, if any.
     """
     if file_mime in IMAGE_THUMB_MIMES:
+        if image_exceeds_pixel_budget(path):
+            # store the file as-is with no EXIF pass or thumbnail rather
+            # than decode something the container cannot afford
+            return None
         # when handling images, if we detect an extension we need to
         # tell PIL to use that extension now and in thumbnail processor
         detected_extension = file_mime.split("/")[1]
@@ -198,15 +206,24 @@ def process_file(name: str, f: Union[BinaryIO, LocalFile], user_id: int, **kwarg
             # generate the thumbnail from the local copy while we still have
             # it on disk instead of re-downloading the file from storage
             thumbnail_processor(file, path, detected_extension)
+        video_thumb_saved = False
+        if file_mime.startswith("video/"):
+            # same idea for videos: pull the thumbnail frame from the local
+            # copy now, skipping the storage re-download in generate_video_thumb
+            # and its VIDEO_THUMB_MAX_BYTES cap, which large stream recordings
+            # always exceeded (metadata was already extracted from this same
+            # local file in _process_metadata above)
+            video_thumb_saved = video_thumbnail_from_path(file, path)
     sync_file_tags(file)
     if tags:
         # before the webhook dispatch below so tag include-filters can match
         attach_file_tags(file, tags)
     _attach_album(file, albums)
 
-    if file_mime.startswith("video/"):
-        # on_commit ensures the row is visible to the Celery worker before the
-        # task is dispatched, preventing a DoesNotExist race on fast workers.
+    if file_mime.startswith("video/") and not video_thumb_saved:
+        # fallback when local extraction failed; on_commit ensures the row is
+        # visible to the Celery worker before the task is dispatched,
+        # preventing a DoesNotExist race on fast workers.
         strip_gps = ctx.get("strip_gps", user.remove_exif_geo)
         pk = file.pk
         transaction.on_commit(lambda: generate_video_thumb.apply_async(args=[pk], kwargs={"strip_gps": strip_gps}))

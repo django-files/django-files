@@ -2,12 +2,43 @@ import logging
 import os
 from io import BytesIO
 
+from django.conf import settings
 from django.core.files import File
 from home.models import Files
 from home.util.geolocation import city_state_from_exif
 from PIL import ExifTags, Image, ImageOps, TiffImagePlugin
 
 log = logging.getLogger("app")
+
+
+def image_exceeds_pixel_budget(path: str) -> bool:
+    """
+    True when the image has more pixels than the container can afford to
+    decode (settings.UPLOAD_MAX_IMAGE_PIXELS, derived from the cgroup memory
+    limit). Image.open only parses the header here, so the check itself
+    costs no decode memory. Pillow's own decompression-bomb error (raised at
+    open for images over 2x MAX_IMAGE_PIXELS) also counts as over budget.
+    """
+    max_pixels = settings.UPLOAD_MAX_IMAGE_PIXELS
+    if not max_pixels:
+        return False
+    try:
+        with Image.open(path) as image:
+            width, height = image.size
+    except Image.DecompressionBombError:
+        log.warning("image_exceeds_pixel_budget: %s exceeds the Pillow hard pixel limit", path)
+        return True
+    if width * height > max_pixels:
+        log.warning(
+            "image_exceeds_pixel_budget: %s is %dx%d (%d px), over the %d px budget",
+            path,
+            width,
+            height,
+            width * height,
+            max_pixels,
+        )
+        return True
+    return False
 
 
 class ImageProcessor(object):
@@ -111,8 +142,10 @@ class ImageProcessor(object):
     def strip_exif(image: Image, local_path: str) -> None:
         # accepts image and file, rewrites image file without exif
         log.info("Stripping EXIF: %s", local_path)
-        with Image.new(image.mode, image.size) as new:
-            new.putdata(image.getdata())
+        # tobytes/frombytes moves raw pixel data (W*H*channels bytes);
+        # putdata(getdata()) built a Python tuple per pixel, which costs
+        # gigabytes on large photos and OOM-killed the worker
+        with Image.frombytes(image.mode, image.size, image.tobytes()) as new:
             if "P" in image.mode:
                 new.putpalette(image.getpalette())
             new.save(local_path)

@@ -217,23 +217,19 @@ def _seek_container(container) -> None:
             pass
 
 
-def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
+# Reject frames whose decoded area exceeds 4 K (≈ 8 MP). This check runs
+# against codec-context metadata before any pixel data is decompressed,
+# preventing codec-bomb and Pillow decompression-bomb attacks.
+MAX_VIDEO_PIXELS = 3840 * 2160
+
+
+def video_thumbnail_from_path(file: Files, local_path: str) -> bool:
     """
-    Extract a single keyframe at ~1 s from a video and save it as a thumbnail.
-
-    Uses PyAV. The video is first written to a local NamedTemporaryFile so PyAV
-    always gets a fully seekable path on disk.
-    This is required for two reasons:
-      1. Non-faststart MP4s have the moov atom at the end; PyAV must seek backward
-         after reading the header, which is impossible on a forward-only S3 stream.
-      2. S3-backed FieldFile objects do not support arbitrary backward seeks.
-
-    max_bytes: Hard cap on how many bytes are written to the local temp file.
-      Streaming is done via file.file.chunks() so memory usage stays low; if the
-      running total exceeds the cap a ValueError is raised and the temp file is
-      cleaned up in the finally block. This is a second layer of defence — the
-      primary check happens in generate_video_thumb before this function is called.
-      Default matches the VIDEO_THUMB_MAX_BYTES default of 2 GB.
+    Extract a single keyframe at ~1 s from an already-local video file and
+    save it as file.thumb. Called by process_file while the upload or stream
+    recording is still on local disk — no storage download, so file size is
+    irrelevant and memory stays bounded by the 4K frame guard — and by
+    video_thumbnail_processor for storage-backed files after download.
 
     Returns True on success, False if the video cannot be processed.
     """
@@ -242,32 +238,11 @@ def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
     # thumbs directory when the resulting File is saved by the storage backend.
     basename = os.path.basename(file.name.replace("\\", "/"))
     stem = os.path.splitext(basename)[0]
-    suffix = os.path.splitext(basename)[1] or ".mp4"
 
-    # Reject frames whose decoded area exceeds 4 K (≈ 8 MP). This check runs
-    # against codec-context metadata before any pixel data is decompressed,
-    # preventing codec-bomb and Pillow decompression-bomb attacks.
-    MAX_VIDEO_PIXELS = 3840 * 2160
-
-    tmp_video = None
     try:
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as vf:
-            # Stream chunks rather than loading the whole file into memory at
-            # once. The running total is checked against max_bytes so an
-            # unexpectedly large file (e.g. the size field is stale or missing)
-            # cannot exhaust /tmp on the worker.
-            written = 0
-            with file.file.open("rb") as source:
-                for chunk in source.chunks():
-                    written += len(chunk)
-                    if written > max_bytes:
-                        raise ValueError(f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download")
-                    vf.write(chunk)
-            tmp_video = vf.name
-
-        with av.open(tmp_video) as container:
+        with av.open(local_path) as container:
             if not container.streams.video:
-                log.warning("video_thumbnail_processor: no video stream in %s", file.name)
+                log.warning("video_thumbnail_from_path: no video stream in %s", file.name)
                 return False
 
             stream = container.streams.video[0]
@@ -277,7 +252,7 @@ def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
             h = stream.codec_context.height or 0
             if w * h > MAX_VIDEO_PIXELS:
                 log.warning(
-                    "video_thumbnail_processor: %s frame %dx%d exceeds 4K pixel limit",
+                    "video_thumbnail_from_path: %s frame %dx%d exceeds 4K pixel limit",
                     file.name,
                     w,
                     h,
@@ -303,7 +278,7 @@ def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
 
         # container is now closed; image is an independent Pillow object.
         if image is None:
-            log.warning("video_thumbnail_processor: no frame decoded for %s", file.name)
+            log.warning("video_thumbnail_from_path: no frame decoded for %s", file.name)
             return False
 
         # frame.rotation is the display matrix rotation PyAV reads from the container.
@@ -327,8 +302,54 @@ def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
         # update_fields=None, which triggers TypeError: 'NoneType' is not iterable.
         file.save(update_fields=["thumb"])
 
-        log.info("video_thumbnail_processor: saved thumbnail for %s", file.name)
+        log.info("video_thumbnail_from_path: saved thumbnail for %s", file.name)
         return True
+
+    except Exception:
+        log.exception("video_thumbnail_from_path: failed for %s", file.name)
+        return False
+
+
+def video_thumbnail_processor(file: Files, max_bytes: int) -> bool:
+    """
+    Download a storage-backed video to a local temp file, then extract a
+    thumbnail from it via video_thumbnail_from_path.
+
+    The video is first written to a local NamedTemporaryFile so PyAV
+    always gets a fully seekable path on disk.
+    This is required for two reasons:
+      1. Non-faststart MP4s have the moov atom at the end; PyAV must seek backward
+         after reading the header, which is impossible on a forward-only S3 stream.
+      2. S3-backed FieldFile objects do not support arbitrary backward seeks.
+
+    max_bytes: Hard cap on how many bytes are written to the local temp file.
+      Streaming is done via file.file.chunks() so memory usage stays low; if the
+      running total exceeds the cap a ValueError is raised and the temp file is
+      cleaned up in the finally block. This is a second layer of defence — the
+      primary check happens in generate_video_thumb before this function is called.
+      Default matches the VIDEO_THUMB_MAX_BYTES default of 2 GB.
+
+    Returns True on success, False if the video cannot be processed.
+    """
+    suffix = os.path.splitext(os.path.basename(file.name.replace("\\", "/")))[1] or ".mp4"
+
+    tmp_video = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as vf:
+            # Stream chunks rather than loading the whole file into memory at
+            # once. The running total is checked against max_bytes so an
+            # unexpectedly large file (e.g. the size field is stale or missing)
+            # cannot exhaust /tmp on the worker.
+            written = 0
+            with file.file.open("rb") as source:
+                for chunk in source.chunks():
+                    written += len(chunk)
+                    if written > max_bytes:
+                        raise ValueError(f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download")
+                    vf.write(chunk)
+            tmp_video = vf.name
+
+        return video_thumbnail_from_path(file, tmp_video)
 
     except Exception:
         log.exception("video_thumbnail_processor: failed for %s", file.name)

@@ -1,3 +1,4 @@
+import json
 import logging
 from fractions import Fraction
 from urllib.parse import quote, urlparse
@@ -28,6 +29,7 @@ from home.util.misc import redact_log
 from home.util.nginx import set_hls_cookies
 from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
+from home.util.tags import tag_names
 from oauth.forms import UserForm
 from oauth.models import CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
@@ -158,6 +160,7 @@ def live_view(request, key):
         "key": key,
         "webpush": {"group": key},
         "stream": stream,
+        "stream_tags_json": json.dumps(tag_names(stream)),
         "is_owner": is_owner,
         "chat_user_info": chat_user_info,
         "subscriber_count": PushInformation.objects.filter(group__name=key).count(),

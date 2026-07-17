@@ -36,6 +36,7 @@ from django.db.models.fields.json import KeyTextTransform
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.template.defaultfilters import filesizeformat
 from django.utils.crypto import constant_time_compare
 from django.utils.timezone import localtime, now
 from django.views.decorators.cache import cache_control, cache_page, never_cache
@@ -68,7 +69,7 @@ from home.util.quota import process_storage_quotas, remaining_quota_bytes
 from home.util.rand import rand_string
 from home.util.storage import file_rename
 from home.util.stream_record import delete_recording_file
-from home.util.tags import clean_tag_names
+from home.util.tags import add_entity_tag, clean_tag_names
 from home.util.webhooks import (
     EVENT_STREAM_LIVE,
     EVENT_STREAM_OFFLINE,
@@ -360,6 +361,12 @@ def upload_view(request):
         if not f:
             return JsonResponse({"error": "No file or text keys found."}, status=400)
         # log.debug("f.size: %s", f.size)
+        # nginx and asgi.py gate on Content-Length; recheck the real file size
+        # here to cover chunked transfers and deployments behind other proxies
+        if f.size and f.size > settings.UPLOAD_MAX_SIZE:
+            message = f"Upload Failed: Maximum upload size is {filesizeformat(settings.UPLOAD_MAX_SIZE)}."
+            log.warning("%s (got %s bytes)", message, f.size)
+            return JsonResponse({"error": True, "message": message}, status=413)
         if any(pq := process_storage_quotas(request.user, f.size)):
             if pq[1]:
                 message = "Upload Failed: Global storage quota exceeded."
@@ -1773,6 +1780,8 @@ def stream_create_view(request):
     stream, created = Stream.objects.get_or_create(name=name, defaults=defaults)
     if not created and stream.user != request.user:
         return JsonResponse({"error": "Stream name already taken."}, status=409)
+    for tag_name in clean_tag_names(request.POST.get("tags", "")):
+        add_entity_tag(stream, tag_name)
     return JsonResponse({"name": stream.name, "stream_token": stream.stream_token})
 
 

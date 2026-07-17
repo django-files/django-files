@@ -19,9 +19,32 @@ const fileUploadModal = $('#fileUploadModal')
 
 const albumHidden = document.getElementById('upload_albums')
 
-function getResponseError(responseText, _response) {
-    return new Error(JSON.parse(responseText).message)
+// Server errors are JSON, but proxy-level failures (e.g. an nginx 413 for an
+// oversize body) are HTML - fall back to a readable message instead of
+// surfacing a JSON.parse exception to the user.
+function getResponseError(responseText, response) {
+    try {
+        return new Error(JSON.parse(responseText).message)
+    } catch {
+        if (response?.status === 413) {
+            return new Error(
+                'Upload Failed: File exceeds the maximum upload size.'
+            )
+        }
+        return new Error(
+            response?.status
+                ? `Upload Failed: HTTP ${response.status}`
+                : 'Upload Failed'
+        )
+    }
 }
+
+// Global set by file-upload-modals.html from settings.UPLOAD_MAX_SIZE; the
+// same limit nginx and the app enforce, checked here before any bytes move.
+const maxFileSize =
+    typeof uploadMaxSize !== 'undefined' && uploadMaxSize > 0
+        ? uploadMaxSize
+        : null
 
 const headers = {
     'X-CSRFToken': $('input[name=csrfmiddlewaretoken]').val(),
@@ -34,7 +57,11 @@ if (selectedAlbum) {
     headers.albums = selectedAlbum
 }
 
-const uppy = new Uppy({ debug: false, autoProceed: false })
+const uppy = new Uppy({
+    debug: false,
+    autoProceed: false,
+    restrictions: { maxFileSize },
+})
     .use(Dashboard, {
         inline: true,
         theme: 'auto',
