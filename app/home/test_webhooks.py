@@ -54,9 +54,10 @@ def _mock_response(status_code=200):
 
 
 class WebhookBaseTestCase(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="hookuser",
             email="hook@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
@@ -488,21 +489,22 @@ class WebhookTaskTests(WebhookBaseTestCase):
 
 
 class WebhookApiTests(WebhookBaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.token = create_api_token(self.user, name="Test Token")
-        self.other_user = CustomUser.objects.create_user(
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.token = create_api_token(cls.user, name="Test Token")
+        cls.other_user = CustomUser.objects.create_user(
             username="otheruser",
             email="other@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.other_token = create_api_token(self.other_user, name="Test Token")
-        self.superuser = CustomUser.objects.create_superuser(
+        cls.other_token = create_api_token(cls.other_user, name="Test Token")
+        cls.superuser = CustomUser.objects.create_superuser(
             username="superuser",
             email="super@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.superuser_token = create_api_token(self.superuser, name="Test Token")
+        cls.superuser_token = create_api_token(cls.superuser, name="Test Token")
 
     def _auth(self, token):
         return {"HTTP_AUTHORIZATION": f"Bearer {token}"}
@@ -771,15 +773,16 @@ class PendingDiscordWebhookTests(WebhookBaseTestCase):
 class WebhookSettingsPagesTests(WebhookBaseTestCase):
     """User settings manages user-scoped hooks; site settings manages site-scoped hooks."""
 
-    def setUp(self):
-        super().setUp()
-        self.superuser = CustomUser.objects.create_superuser(
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.superuser = CustomUser.objects.create_superuser(
             username="superuser",
             email="super@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.site_hook = Webhook.objects.create(
-            owner=self.superuser,
+        cls.site_hook = Webhook.objects.create(
+            owner=cls.superuser,
             name="SiteWideHook",
             url=CUSTOM_URL,
             scope=Webhook.SCOPE_SITE,

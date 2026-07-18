@@ -20,23 +20,24 @@ log = logging.getLogger("app")
 class UserApiTestCase(TestCase):
     """Test User API endpoints - Simple version to avoid timeouts"""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Set up test environment"""
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
 
-        self.superuser = CustomUser.objects.create_superuser(
+        cls.superuser = CustomUser.objects.create_superuser(
             username="superuser",
             email="super@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.superuser_token = create_api_token(self.superuser, name="Test Token")
+        cls.superuser_token = create_api_token(cls.superuser, name="Test Token")
 
-        self.regular_user = CustomUser.objects.create_user(
+        cls.regular_user = CustomUser.objects.create_user(
             username="regularuser",
             email="regular@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.regular_token = create_api_token(self.regular_user, name="Test Token")
+        cls.regular_token = create_api_token(cls.regular_user, name="Test Token")
 
     def test_current_user_get_with_auth(self):
         """Test GET /api/user/ with valid authorization"""
@@ -72,33 +73,34 @@ class UserApiTestCase(TestCase):
 class OrderingApiTestCase(TestCase):
     """Validate the ?ordering= query param on paginated list endpoints."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="orderuser",
             email="order@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.auth = create_api_token(self.user, name="Test Token")
+        cls.auth = create_api_token(cls.user, name="Test Token")
 
         # Albums: names "bravo", "alpha", "charlie"; backdate to give them
         # distinct created times since `date` is auto_now_add.
-        self.album_alpha = Albums.objects.create(user=self.user, name="alpha")
-        self.album_bravo = Albums.objects.create(user=self.user, name="bravo")
-        self.album_charlie = Albums.objects.create(user=self.user, name="charlie")
+        cls.album_alpha = Albums.objects.create(user=cls.user, name="alpha")
+        cls.album_bravo = Albums.objects.create(user=cls.user, name="bravo")
+        cls.album_charlie = Albums.objects.create(user=cls.user, name="charlie")
         # Force a known creation ordering: charlie newest, bravo middle, alpha oldest.
-        for offset, album in enumerate([self.album_alpha, self.album_bravo, self.album_charlie]):
+        for offset, album in enumerate([cls.album_alpha, cls.album_bravo, cls.album_charlie]):
             Albums.objects.filter(pk=album.pk).update(date=now() - timedelta(days=10 - offset))
 
         # Shorts
-        ShortURLs.objects.create(url="https://example.com/a", short="zzz", user=self.user, views=5)
-        ShortURLs.objects.create(url="https://example.com/b", short="aaa", user=self.user, views=42)
-        ShortURLs.objects.create(url="https://example.com/c", short="mmm", user=self.user, views=1)
+        ShortURLs.objects.create(url="https://example.com/a", short="zzz", user=cls.user, views=5)
+        ShortURLs.objects.create(url="https://example.com/b", short="aaa", user=cls.user, views=42)
+        ShortURLs.objects.create(url="https://example.com/c", short="mmm", user=cls.user, views=1)
 
         # Streams
-        Stream.objects.create(name="zeta", title="z", user=self.user, unique_views=7)
-        Stream.objects.create(name="alpha", title="a", user=self.user, unique_views=99)
-        Stream.objects.create(name="mike", title="m", user=self.user, unique_views=3)
+        Stream.objects.create(name="zeta", title="z", user=cls.user, unique_views=7)
+        Stream.objects.create(name="alpha", title="a", user=cls.user, unique_views=99)
+        Stream.objects.create(name="mike", title="m", user=cls.user, unique_views=3)
 
     def _get(self, url):
         return self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.auth}")
@@ -154,14 +156,15 @@ class OrderingApiTestCase(TestCase):
 class StreamLifecycleTestCase(TestCase):
     """View stream list, create a stream, open the stream page."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="streamuser",
             email="stream@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.auth = create_api_token(self.user, name="Test Token")
+        cls.auth = create_api_token(cls.user, name="Test Token")
 
     def _get(self, url):
         return self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {self.auth}")
@@ -227,17 +230,18 @@ class HlsAuthRequestTestCase(TestCase):
     bundles or one of the rejection paths.
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="hlsuser",
             email="hls@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.public_stream = Stream.objects.create(name="pub", title="Pub", user=self.user, public=True)
-        self.private_stream = Stream.objects.create(name="priv", title="Priv", user=self.user, public=False)
-        self.password_stream = Stream.objects.create(
-            name="locked", title="Locked", user=self.user, public=True, password="hunter2"  # nosec  # NOSONAR
+        cls.public_stream = Stream.objects.create(name="pub", title="Pub", user=cls.user, public=True)
+        cls.private_stream = Stream.objects.create(name="priv", title="Priv", user=cls.user, public=False)
+        cls.password_stream = Stream.objects.create(
+            name="locked", title="Locked", user=cls.user, public=True, password="hunter2"  # nosec  # NOSONAR
         )
 
     def _auth(self, **params):
@@ -312,14 +316,15 @@ class HlsAuthRequestTestCase(TestCase):
 class BearerTokenAuthTestCase(TestCase):
     """Tests for the hashed-at-rest Bearer token authentication scheme."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="authuser",
             email="auth@test.com",
             password=TEST_PASSWORD,
         )
-        self.token = create_api_token(self.user, name="Test Token")
+        cls.token = create_api_token(cls.user, name="Test Token")
 
     # --- basic Bearer auth ---
 
@@ -375,14 +380,15 @@ class BearerTokenAuthTestCase(TestCase):
 class TokenRotationTestCase(TestCase):
     """Tests for POST /api/token/ token creation endpoint."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="rotateuser",
             email="rotate@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.token = create_api_token(self.user, name="Test Token")
+        cls.token = create_api_token(cls.user, name="Test Token")
 
     def test_create_via_session_returns_new_plaintext(self):
         self.client.login(username="rotateuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
@@ -433,17 +439,20 @@ class TokenRotationTestCase(TestCase):
 class LocalAuthForNativeClientTestCase(TestCase):
     """Tests for POST /api/auth/token/ — the native-client login endpoint."""
 
-    def setUp(self):
-        from django.core.cache import cache as _cache
-
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        # Clear rate-limit counters so each test starts with a clean slate.
-        _cache.clear()
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="nativeuser",
             email="native@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
+
+    def setUp(self):
+        from django.core.cache import cache as _cache
+
+        # Clear rate-limit counters so each test starts with a clean slate.
+        _cache.clear()
 
     def test_login_with_valid_credentials_returns_token(self):
         r = self.client.post(
@@ -513,14 +522,15 @@ class LocalAuthForNativeClientTestCase(TestCase):
 class AuthSessionTestCase(TestCase):
     """Tests for POST /api/auth/session/ — Bearer token → session cookie exchange."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="sessionuser",
             email="session@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.token = create_api_token(self.user, name="Test Token")
+        cls.token = create_api_token(cls.user, name="Test Token")
 
     def test_bearer_token_exchanges_for_session_cookie(self):
         r = self.client.post(
@@ -553,14 +563,15 @@ class AuthSessionTestCase(TestCase):
 class LogoutTokenRotationTestCase(TestCase):
     """Logout must NOT touch ApiToken rows — only the session is flushed."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="logoutuser",
             email="logout@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.token = create_api_token(self.user, name="Test Token")
+        cls.token = create_api_token(cls.user, name="Test Token")
 
     def test_token_remains_active_after_logout(self):
         """Logout must leave ApiToken rows untouched."""
@@ -586,9 +597,12 @@ class LogoutTokenRotationTestCase(TestCase):
 class ApiTokenListCreateTestCase(TestCase):
     """GET /api/token/ and POST /api/token/"""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(username="tokenuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
+        cls.user = CustomUser.objects.create_user(username="tokenuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
+
+    def setUp(self):
         self.client.login(username="tokenuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
 
     def test_list_tokens_empty(self):
@@ -642,11 +656,14 @@ class ApiTokenListCreateTestCase(TestCase):
 class ApiTokenDeleteTestCase(TestCase):
     """DELETE /api/token/<uuid>/"""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(username="deluser", password=TEST_PASSWORD)  # nosec  # NOSONAR
+        cls.user = CustomUser.objects.create_user(username="deluser", password=TEST_PASSWORD)  # nosec  # NOSONAR
+        cls.token = ApiToken.objects.create(user=cls.user, token_hash=hash_token("mytoken"), name="My Token")
+
+    def setUp(self):
         self.client.login(username="deluser", password=TEST_PASSWORD)  # nosec  # NOSONAR
-        self.token = ApiToken.objects.create(user=self.user, token_hash=hash_token("mytoken"), name="My Token")
 
     def test_delete_token(self):
         response = self.client.delete(f"/api/token/{self.token.pk}/")
@@ -671,13 +688,14 @@ class ApiTokenDeleteTestCase(TestCase):
 class ApiTokenAuthTestCase(TestCase):
     """auth_from_token middleware with ApiToken model"""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(username="authuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
-        self.plaintext = "testbearertoken12345678"
-        self.token = ApiToken.objects.create(
-            user=self.user,
-            token_hash=hash_token(self.plaintext),
+        cls.user = CustomUser.objects.create_user(username="authuser", password=TEST_PASSWORD)  # nosec  # NOSONAR
+        cls.plaintext = "testbearertoken12345678"
+        cls.token = ApiToken.objects.create(
+            user=cls.user,
+            token_hash=hash_token(cls.plaintext),
             name="Test",
         )
 
@@ -724,13 +742,16 @@ AUTO_PASSWORD_OPTION = "auto-password"  # nosec  # NOSONAR - option name, not a 
 class UploadOptionsTestCase(TestCase):
     """Upload options via POST fields (upload page form) and headers."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="uploader",
             email="uploader@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
+
+    def setUp(self):
         self.client.force_login(self.user)
 
     def tearDown(self):
@@ -816,13 +837,16 @@ class UploadOptionsTestCase(TestCase):
 class RemoteUploadSecurityTestCase(TestCase):
     """SSRF and scheme guards on /api/remote/"""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="remoteuser",
             email="remote@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
+
+    def setUp(self):
         self.client.force_login(self.user)
 
     def remote(self, url):
