@@ -2,6 +2,8 @@ import json
 import logging
 import os
 import tempfile
+from datetime import datetime
+from datetime import timezone as dt_timezone
 from typing import Optional
 
 import httpx
@@ -14,7 +16,6 @@ from decouple import config
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Count, Q, Sum
-from django.forms.models import model_to_dict
 from django.utils import timezone
 from django_redis import get_redis_connection
 from home.models import Files, FileStats, Stream, StreamHistory, Webhook
@@ -34,7 +35,7 @@ from home.util.webhooks import (
     event_matches_filters,
     send_webhook,
 )
-from oauth.models import CustomUser
+from oauth.models import ApiToken, CustomUser
 from packaging import version
 from PIL import Image, UnidentifiedImageError
 from pytimeparse2 import parse
@@ -64,43 +65,39 @@ def app_init():
     return "app_init - finished"
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60, "default_retry_delay": 180})
+@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60})
 def generate_thumbs(user_pk: int = None, only_missing: bool = True):
     log.info("Generating Thumbnails - only_missing: %s - user_pk: %s", only_missing, user_pk)
-    users = CustomUser.objects.filter(pk=user_pk) if user_pk else CustomUser.objects.all()
+    user_filter = Q(user_id=user_pk) if user_pk else Q()
     # Formats Pillow cannot reliably thumbnail. DNG is TIFF-based so libmagic
     # may report image/tiff; exclude by extension as well to catch that case.
     thumb_exclude = Q(mime__in=["image/jxl", "image/x-adobe-dng"]) | Q(name__iendswith=".dng")
 
+    files = Files.objects.filter(user_filter, mime__startswith="image/").exclude(thumb_exclude)
     if only_missing:
-        files = Files.objects.filter(thumb__in=[None, ""], user__in=users, mime__startswith="image/").exclude(
-            thumb_exclude
-        )
-    else:
-        files = Files.objects.filter(user__in=users, mime__startswith="image").exclude(thumb_exclude)
-    log.info("Processing thumbnails for %d objects", files.count())
-    for file in files.iterator():
+        files = files.filter(thumb__in=[None, ""])
+    processed = 0
+    for file in files.iterator(chunk_size=100):
+        processed += 1
         log.info("Generating thumbnail for: %s", file.name)
         try:
             thumbnail_processor(file)
         except ValueError, UnidentifiedImageError, FileNotFoundError, Image.DecompressionBombError:
             # if we hit a file that cannot be processed or is missing from storage ignore and continue
             log.error("Unable to process thumbnail for %s", file.name)
-            continue
+    log.info("Processed thumbnails for %d objects", processed)
 
     # Queue a separate task per video so they run in parallel and each gets
-    # its own retry budget. Evaluate the queryset once to avoid a COUNT then
-    # SELECT double-query; generate_video_thumb checks for an existing thumb
+    # its own retry budget; generate_video_thumb checks for an existing thumb
     # before doing any work so re-queuing in-flight files is safe.
+    videos = Files.objects.filter(user_filter, mime__startswith=VIDEO_MIME_PREFIX)
     if only_missing:
-        video_files = list(
-            Files.objects.filter(thumb__in=[None, ""], user__in=users, mime__startswith=VIDEO_MIME_PREFIX)
-        )
-    else:
-        video_files = list(Files.objects.filter(user__in=users, mime__startswith=VIDEO_MIME_PREFIX))
-    log.info("Queueing video thumbnails for %d files", len(video_files))
-    for vfile in video_files:
-        generate_video_thumb.delay(vfile.pk)
+        videos = videos.filter(thumb__in=[None, ""])
+    queued = 0
+    for pk in videos.values_list("pk", flat=True).iterator(chunk_size=500):
+        generate_video_thumb.delay(pk)
+        queued += 1
+    log.info("Queued video thumbnails for %d files", queued)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60})
@@ -178,72 +175,6 @@ def _extract_video_metadata(file: Files, strip_gps: bool) -> bool:
                 pass
 
 
-def _backfill_single_video(file, max_bytes: int) -> bool:
-    """Download one video, extract GPS metadata, and persist it. Returns True if GPS was saved."""
-    suffix = os.path.splitext(os.path.basename(file.name.replace("\\", "/")))[1] or ".mp4"
-    tmp_video = None
-    try:
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as vf:
-            written = 0
-            with file.file.open("rb") as source:
-                for chunk in source.chunks():
-                    written += len(chunk)
-                    if written > max_bytes:
-                        raise ValueError(f"Video exceeds {max_bytes // (1024 * 1024)} MB size limit during download")
-                    vf.write(chunk)
-            tmp_video = vf.name
-
-        v_exif, v_meta = video_metadata_processor(tmp_video)
-        if not v_exif.get("GPSInfo"):
-            log.info("backfill_video_gps: pk=%s no GPS found", file.pk)
-            return False
-
-        file.exif = {**file.exif, **v_exif}
-        file.meta = {**file.meta, **v_meta}
-        file.save(update_fields=["exif", "meta"])
-        sync_file_tags(file)
-        log.info("backfill_video_gps: pk=%s GPS saved", file.pk)
-        return True
-
-    except Exception:
-        log.exception("backfill_video_gps: failed for pk=%s, continuing", file.pk)
-        return False
-    finally:
-        if tmp_video:
-            try:
-                os.remove(tmp_video)
-            except OSError:
-                pass
-
-
-@shared_task()
-def backfill_video_gps():
-    """
-    One-time backfill task: scan every eligible video file that has no stored
-    GPS data, download it to a local temp file (compatible with both S3 and
-    local filesystem storage), and attempt to extract GPS metadata.
-
-    Trigger from the Django shell or Flower:
-        from home.tasks import backfill_video_gps
-        backfill_video_gps.delay()
-
-    TODO: Remove this task in a future release.
-    """
-    max_bytes = settings.VIDEO_THUMB_MAX_BYTES
-    files = (
-        Files.objects.filter(mime__startswith=VIDEO_MIME_PREFIX, user__remove_exif_geo=False)
-        .exclude(exif__has_key="GPSInfo")
-        .exclude(size__gt=max_bytes)
-        .select_related("user")
-    )
-    total = len(files)
-    log.info("backfill_video_gps: processing %d video file(s) without GPS", total)
-    updated = sum(_backfill_single_video(file, max_bytes) for file in files)
-    result = f"backfill_video_gps: done — {updated}/{total} video(s) updated with GPS"
-    log.info(result)
-    return result
-
-
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 5})
 def app_startup():
     log.info("app_startup")
@@ -251,8 +182,8 @@ def app_startup():
     version_check.apply_async(countdown=5)
     cache.delete_pattern("*.decorators.cache.*")
     log.info("Flushed Template Cache")
-    cache.set("site_settings", model_to_dict(site_settings))
-    log.info("Created Cache: site_settings")
+    # site_settings cache is set by the SiteSettings post_save signal when the
+    # unconditional save() below runs, so no explicit cache.set is needed here.
     if oauth_redirect_url := config("OAUTH_REDIRECT_URL", ""):
         site_settings.oauth_redirect_url = oauth_redirect_url
     if discord_client_id := config("DISCORD_CLIENT_ID", ""):
@@ -316,8 +247,8 @@ def version_check():
                 site_settings.save()
                 return f"App Updated. Clearing latest_version: {latest_version}"
             return f"No Update Available. Current Version: {app_version}"
-    except Exception as error:
-        log.warning("Exception checking version: %s", error)
+    except Exception:
+        log.exception("Exception checking version")
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 300})
@@ -443,7 +374,10 @@ def process_stats():
 @shared_task()
 def new_file_websocket(pk):
     log.debug("new_file_websocket: %s", pk)
-    file = Files.objects.get(pk=pk)
+    file = Files.objects.filter(pk=pk).first()
+    if not file:
+        log.warning("new_file_websocket: pk=%s not found, skipping", pk)
+        return
     log.debug("file: %s", file)
     data = extract_files([file])[0]
     log.debug("data: %s", data)
@@ -452,14 +386,7 @@ def new_file_websocket(pk):
     data["event"] = "file-new"
     # handle datetime obj to str
     data["date"] = str(data["date"])
-    channel_layer = get_channel_layer()
-    log.info("data: %s", data)
-    event = {
-        "type": "websocket.send",
-        "text": json.dumps(data),
-    }
-    log.debug("event: %s", event)
-    async_to_sync(channel_layer.group_send)(f"user-{file.user_id}", event)
+    _send_websocket_event(data, f"user-{file.user_id}")
 
 
 @shared_task()
@@ -471,65 +398,34 @@ def delete_file_websocket(data: dict, user_id):
     data["pk"] = data["id"]
     user = CustomUser.objects.filter(pk=user_id).first()
     data["user_name"] = user.get_name() if user else str(user_id)
-    channel_layer = get_channel_layer()
-    event = {
-        "type": "websocket.send",
-        "text": json.dumps(data),
-    }
-    async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
+    _send_websocket_event(data, f"user-{user_id}")
 
 
 @shared_task()
 def update_file_websocket(data: dict, user_id: int, update_fields: Optional[list] = None):
-    try:
-        log.debug("update_file_websocket user_id: %s data: %s", user_id, data)
-        log.debug("update_fields: %s", update_fields)
-        data["event"] = "file-update"
-        # if update_fields:
-        data["update_fields"] = update_fields
-        channel_layer = get_channel_layer()
-        event = {
-            "type": "websocket.send",
-            "text": json.dumps(data),
-        }
-        async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
-
-    except Exception as error:
-        log.warning("tasks websocket error: %s", error)
+    log.debug("update_file_websocket user_id: %s data: %s", user_id, data)
+    log.debug("update_fields: %s", update_fields)
+    data["event"] = "file-update"
+    data["update_fields"] = update_fields
+    _send_websocket_event(data, f"user-{user_id}")
 
 
 @shared_task()
 def update_album_websocket(data: dict, user_id: int, update_fields: Optional[list] = None):
-    try:
-        log.debug("update_album_websocket user_id: %s data: %s", user_id, data)
-        log.debug("update_fields: %s", update_fields)
-        data["event"] = "album-update"
-        data["update_fields"] = update_fields
-        channel_layer = get_channel_layer()
-        event = {
-            "type": "websocket.send",
-            "text": json.dumps(data, default=str),
-        }
-        async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
-    except Exception as error:
-        log.warning("tasks websocket error: %s", error)
+    log.debug("update_album_websocket user_id: %s data: %s", user_id, data)
+    log.debug("update_fields: %s", update_fields)
+    data["event"] = "album-update"
+    data["update_fields"] = update_fields
+    _send_websocket_event(data, f"user-{user_id}", default=str)
 
 
 @shared_task()
 def new_album_websocket(album):
     log.debug("new_album_websocket: %s", album)
-    log.debug("album: %s", album)
     album["event"] = "album-new"
     # handle datetime obj to str
     album["date"] = str(album["date"])
-    channel_layer = get_channel_layer()
-    log.info("data: %s", album)
-    event = {
-        "type": "websocket.send",
-        "text": json.dumps(album),
-    }
-    log.debug("event: %s", event)
-    async_to_sync(channel_layer.group_send)(f"user-{album['user']}", event)
+    _send_websocket_event(album, f"user-{album['user']}")
 
 
 @shared_task()
@@ -541,21 +437,16 @@ def delete_album_websocket(data: dict, user_id):
     data["pk"] = data["id"]
     user = CustomUser.objects.filter(pk=user_id).first()
     data["user_name"] = user.get_name() if user else str(user_id)
-    channel_layer = get_channel_layer()
-    event = {
-        "type": "websocket.send",
-        "text": json.dumps(data),
-    }
-    async_to_sync(channel_layer.group_send)(f"user-{user_id}", event)
+    _send_websocket_event(data, f"user-{user_id}")
 
 
-def _send_websocket_event(data: dict, group: str):
+def _send_websocket_event(data: dict, group: str, default=None):
     channel_layer = get_channel_layer()
     if channel_layer is None:
         log.error("channel layer not configured, dropping websocket event for group %s", group)
         return
     try:
-        event = {"type": "websocket.send", "text": json.dumps(data)}
+        event = {"type": "websocket.send", "text": json.dumps(data, default=default)}
         async_to_sync(channel_layer.group_send)(group, event)
     except Exception:
         log.exception("websocket group_send failed for group %s", group)
@@ -587,7 +478,6 @@ def delete_stream_websocket(name: str, user_id: int):
     _send_websocket_event({"event": "stream-delete", "name": name}, f"user-{user_id}")
 
 
-# @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 1, "countdown": 300})
 @shared_task()
 def stream_status_websocket(stream_name: str, is_live: bool, ended_at: str = None, started_at: str = None):
     log.debug("stream_status_websocket: stream_name=%s is_live=%s", stream_name, is_live)
@@ -601,7 +491,10 @@ def stream_status_websocket(stream_name: str, is_live: bool, ended_at: str = Non
 
 @shared_task()
 def send_push_live(stream_name: str, ttl: int = 1800):
-    stream = Stream.objects.get(name=stream_name)
+    stream = Stream.objects.filter(name=stream_name).first()
+    if not stream:
+        log.warning("send_push_live: stream %s not found, skipping", stream_name)
+        return
     log.info("send_push_live: name: %s - user: %s", stream.name, stream.user.username)
     site_settings = SiteSettings.objects.settings()
     payload = {
@@ -614,12 +507,16 @@ def send_push_live(stream_name: str, ttl: int = 1800):
     send_group_notification(group_name=stream.name, payload=payload, ttl=ttl)
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 30})
+@shared_task()
 def import_stream_recording(history_pk: int, path: str):
     """
     Remux a finished stream recording (FLV, written by nginx-rtmp's `record all;`
     to the shared media_dir volume) into an MP4 and import it as a Files object,
     then link it to the StreamHistory row for that session.
+
+    Deliberately no retries: the finally block always deletes the source
+    recording (media_dir is a persistent volume; leftovers would accumulate
+    forever), so a retry would find the file already gone.
 
     process_file is imported locally to avoid a circular import: home.util.file
     imports from home.tasks at module load time.
@@ -677,8 +574,6 @@ def enforce_stream_retention(stream_name: str = None):
         history_qs = StreamHistory.objects.filter(stream=stream, recording__isnull=False).order_by("-started_at")
         keep_pks = set(history_qs.values_list("pk", flat=True)[: stream.recording_retention_count])
         to_delete = history_qs.exclude(pk__in=keep_pks)
-        if not to_delete.exists():
-            continue
         for history in to_delete.select_related("recording"):
             log.info("enforce_stream_retention: stream=%s deleting recording history_pk=%s", stream.name, history.pk)
             if history.recording:
@@ -704,7 +599,7 @@ def dispatch_webhook_event(event_key, owner_pk, payload_data):
             fire_webhook.delay(webhook.pk, event_key, payload_data)
 
 
-@shared_task(bind=True, max_retries=6, rate_limit="10/m")
+@shared_task(bind=True, max_retries=6)
 def fire_webhook(self, webhook_pk, event_key, payload_data):
     log.info("fire_webhook: pk=%s event=%s", webhook_pk, event_key)
     webhook = Webhook.objects.filter(pk=webhook_pk, active=True).first()
@@ -733,11 +628,8 @@ def fire_webhook(self, webhook_pk, event_key, payload_data):
 
 
 def acquire_lock(key, timeout=900):
-    log.debug("Checking lock for %s", key)
-    if cache.get(key):
-        log.debug("Found Lock")
-        return False
-    log.debug("Setting lock for %s", key)
+    # cache.add is atomic: returns False if the key already exists
+    log.debug("Acquiring lock for %s", key)
     return cache.add(key, "1", timeout)
 
 
@@ -754,11 +646,6 @@ def on_worker_shutdown(**kwargs):
 @shared_task
 def flush_token_last_used():
     """Write buffered last_used_at values from Redis to the ApiToken table."""
-    from datetime import datetime
-
-    from django.utils.timezone import timezone as dt_timezone
-    from oauth.models import ApiToken
-
     redis = get_redis_connection("default")
     pipe = redis.pipeline()
     pipe.hgetall("token_last_used")

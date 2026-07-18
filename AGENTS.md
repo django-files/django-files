@@ -123,8 +123,13 @@ Key differences:
 - Migration check:
   - `cd app && python manage.py migrate`
   - `cd app && python manage.py makemigrations --dry-run --check --noinput`
-- Tests:
-  - `cd app && python manage.py test --verbosity 2 --keepdb`
+- Tests — running `manage.py test` naively on macOS fails or appears to hang. Do ALL of the following:
+  - `MEDIA_ROOT` MUST be overridden on macOS: `test.env` hardcodes the CI path `/home/runner/work/files`, and `/home` is a read-only firmlink on macOS. Point it at any writable temp dir or tests error with `OSError: Operation not supported`.
+  - Full invocation (from `app/`, with the Redis env overrides above):
+    `MEDIA_ROOT=<writable-tmp-dir> python manage.py test home djangofiles api --exclude-tag=playwright --keepdb --noinput`
+  - The suite completes in under a minute but the process HANGS at interpreter exit: orphaned multiprocessing children (resource tracker + spawn worker) block Python's atexit in `os.waitpid`. Redirect output to a log file (never pipe through `tail`/`head` — nothing flushes until exit, which never comes), watch the log for the `Ran N tests` summary line, then `pkill -P <pid>` to reap the children.
+  - A run interrupted before teardown leaves committed rows in the kept test DB (`app/db_test.sqlite3`), and the next run fails with `UNIQUE constraint failed: oauth_customuser.username`. Delete `app/db_test.sqlite3` and re-run instead of debugging the tests.
+  - Never run two test invocations concurrently — they deadlock silently on the shared SQLite test DB.
 - Lint/format checks used in CI:
   - `ruff check .`
   - `black --check .`
