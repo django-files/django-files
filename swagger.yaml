@@ -4,6 +4,17 @@ info:
   title: Django Files
   description: |
     Django Files: [https://github.com/django-files/django-files](https://github.com/django-files/django-files)
+
+    ## Authentication
+
+    Most endpoints accept a user API token via the `Authorization` header.
+    Both `Authorization: Bearer <token>` and the legacy raw form
+    `Authorization: <token>` are accepted, as is a `Token: <token>` header.
+    Endpoints used by the web UI only (token management, stream management,
+    invite deletion, session administration) require a session cookie instead.
+
+    `/upload/` and `/shorten/` are also mounted at the site root
+    (outside the `/api` prefix) for ShareX/Flameshot style clients.
   version: 0.14.6
 
 servers:
@@ -20,13 +31,239 @@ servers:
   - url: https://intranet.cssnr.com/api
     description: Intranet
 
+tags:
+  - name: Status
+    description: Version and status endpoints.
+  - name: Auth
+    description: Native-client authentication and session exchange.
+  - name: Files
+    description: Upload, list, edit, and delete files.
+  - name: Albums
+    description: Album CRUD and random-file redirects.
+  - name: URLs
+    description: Short URL creation and management.
+  - name: Users
+    description: User profiles and invites.
+  - name: Tokens
+    description: API token management (session cookie required).
+  - name: Stats
+    description: Dashboard statistics.
+  - name: Streams
+    description: Live stream management, playback auth, and chat metadata.
+  - name: Admin
+    description: Superuser-only administration endpoints.
+
 paths:
+  /version/:
+    get:
+      summary: Get Server Version
+      description: Returns the running application version. No authentication required.
+      tags:
+        - Status
+      security: []
+      responses:
+        "200":
+          description: Application version
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    example: 0.14.6
+    post:
+      summary: Check Version Compatibility
+      description: |
+        Checks whether the server satisfies a client's minimum required version.
+        `valid` is `true` when the server runs a DEV build, the client requests a
+        pre-release version, or the required version is greater than or equal to
+        the server version. No authentication required.
+      tags:
+        - Status
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - version
+              properties:
+                version:
+                  type: string
+                  example: 0.14.0
+      responses:
+        "200":
+          description: Version compatibility result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    example: 0.14.6
+                  valid:
+                    type: boolean
+        "400":
+          description: Invalid version string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/methods/:
+    get:
+      summary: List Configured Auth Methods
+      description: |
+        Returns the authentication methods configured on this server (local,
+        passkey, discord, github, google) with their login URLs, plus the site
+        name for native-client branding. No authentication required.
+      tags:
+        - Auth
+      security: []
+      responses:
+        "200":
+          description: Configured auth methods
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authMethods:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          enum: [local, passkey, discord, github, google]
+                        url:
+                          type: string
+                          example: https://example.com/oauth/login/
+                  siteName:
+                    type: string
+                    example: Django Files
+
+  /auth/token/:
+    post:
+      summary: Get API Token via Local Auth
+      description: |
+        Exchanges local username/password credentials for an API token
+        (native-client login). If the request already carries a valid session,
+        the session's token is returned (or a new one is created).
+        Rate limited to 10 requests per minute per IP.
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: API token (plaintext, shown once)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "429":
+          description: Rate limit exceeded
+
+  /auth/session/:
+    post:
+      summary: Exchange Token for Session Cookie
+      description: |
+        Exchanges a valid Bearer token for a Django session cookie so native
+        clients can refresh expired WebView sessions without re-entering
+        credentials. Rate limited to 10 requests per minute per IP.
+      tags:
+        - Auth
+      security:
+        - Authorization: []
+      responses:
+        "204":
+          description: Session established; cookie set on the response
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "429":
+          description: Rate limit exceeded
+
+  /auth/application/:
+    post:
+      summary: Exchange Signed Application Signature for Token
+      description: |
+        Exchanges a server-issued signed signature (valid for 10 minutes) for a
+        logged-in session and a new API token. Used by the QR-code / deep-link
+        application login flow. The signature may be sent as a form field or in
+        a JSON body.
+      tags:
+        - Auth
+      security: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - signature
+              properties:
+                signature:
+                  type: string
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - signature
+              properties:
+                signature:
+                  type: string
+      responses:
+        "200":
+          description: API token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        "400":
+          description: Missing, invalid, or expired signature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /upload/:
     post:
       summary: Upload a File
-      description: >
-        Upload a file to the server with optional parameters. All option
-        headers below are also accepted as multipart form fields.
+      description: |
+        Upload a file to the server with optional parameters. Also mounted at
+        the site root as `/upload/`. Instead of a file, a `text` form field may
+        be sent to create a paste (optionally named via the `name` field).
+        Anonymous uploads are accepted when public uploads are enabled in site
+        settings. All option headers below are also accepted as multipart form
+        fields.
       tags:
         - Files
       security:
@@ -35,26 +272,26 @@ paths:
       parameters:
         - name: format
           in: header
-          description: File Name Format
+          description: "File name format: name, random, date, or uuid"
           required: false
           schema:
             type: string
-        - name: expires-at
+        - name: Expires-At
           in: header
-          description: File Expiration
+          description: File expiration (e.g. `1h`, `30d`; `0`/`never` for none). Also accepted as `ExpiresAt` header or form field.
           required: false
           schema:
             type: string
         - name: strip-gps
           in: header
           required: false
-          description: Strip Exif GPS Data
+          description: Strip EXIF GPS data
           schema:
             type: boolean
         - name: strip-exif
           in: header
           required: false
-          description: Strip Exif Data
+          description: Strip all EXIF data
           schema:
             type: boolean
         - name: embed
@@ -64,7 +301,7 @@ paths:
           schema:
             type: boolean
         - name: private
-          description: Make File Private
+          description: Make file private
           in: header
           required: false
           schema:
@@ -72,11 +309,11 @@ paths:
         - name: password
           in: header
           required: false
-          description: Password to protect file with.
+          description: Password to protect file with
           schema:
             type: string
         - name: auto-password
-          description: Automatically set an autogenerated file password on upload.
+          description: Automatically set an autogenerated file password on upload
           in: header
           required: false
           schema:
@@ -89,6 +326,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: albums
+          description: Album IDs to add the file to
+          in: header
+          required: false
+          schema:
+            type: string
 
       requestBody:
         required: true
@@ -96,12 +339,16 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required:
-                - file
               properties:
                 file:
                   type: string
                   format: binary
+                text:
+                  type: string
+                  description: Paste content, used when no file is sent
+                name:
+                  type: string
+                  description: File name for text pastes (defaults to paste.txt)
                 info:
                   type: string
                   description: Information about the file.
@@ -112,26 +359,35 @@ paths:
 
       responses:
         "200":
-          description: A JSON array of file details
+          description: A JSON object of file details
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/FileUploadResponse"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: No file/text provided, or storage quota exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          description: Public uploads are disabled and request is unauthenticated
 
   /remote/:
     post:
       summary: Upload a Remote URL
-      description: Send a URL to be Downloaded as a File Upload.
+      description: |
+        Send a URL to be downloaded server-side and stored as a file upload.
+        Accepts the same option headers as `/upload/`.
       tags:
         - Files
       security:
         - Authorization: []
 
       requestBody:
+        required: true
         content:
           application/json:
             schema:
@@ -141,20 +397,26 @@ paths:
 
       responses:
         "200":
-          description: A JSON array of file details
+          description: Preview URL of the created file
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/URL"
         "400":
-          $ref: "#/components/responses/BadRequest"
+          description: Missing/invalid URL or remote fetch failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
 
   /recent/:
     get:
       summary: Get Recent Uploads
-      description: Get the Preview URLs for Recently Uploaded Files.
+      description: |
+        Returns the authenticated user's most recent files as full file
+        objects, newest first. Supports cursor-style paging by file ID.
       tags:
         - Files
       security:
@@ -163,32 +425,1181 @@ paths:
       parameters:
         - name: amount
           in: query
-          description: Amount of Files to Return
+          description: Number of files to return (default 20)
+          required: false
+          schema:
+            type: integer
+        - name: start
+          in: query
+          description: Starting offset
+          required: false
+          schema:
+            type: integer
+        - name: after
+          in: query
+          description: Return all files with ID greater than this value (ignores amount)
+          required: false
+          schema:
+            type: integer
+        - name: before
+          in: query
+          description: Return files with ID less than this value
+          required: false
+          schema:
+            type: integer
+        - name: album
+          in: query
+          description: Only return files in this album ID
           required: false
           schema:
             type: integer
 
       responses:
         "200":
-          description: A JSON array of file Preview URLs
+          description: A JSON array of file objects
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: string
-                  example: http://example.com/u/john.jpg
+                  $ref: "#/components/schemas/File"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+
+  /files/{page}/:
+    get:
+      summary: Get Paginated Files List
+      description: |
+        Returns a page of file objects for the authenticated user (25 per page
+        by default; use `/files/{page}/{count}/` for a custom page size).
+        Superusers may pass `user` to view another user's files, or `user=0`
+        for all users. `next` is the next page number or `null` on the last
+        page.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+
+      parameters:
+        - $ref: "#/components/parameters/PagePath"
+        - name: user
+          in: query
+          description: "Superuser only: user ID to list files for (`0` = all users)"
+          required: false
+          schema:
+            type: integer
+        - name: album
+          in: query
+          description: Only return files in this album ID
+          required: false
+          schema:
+            type: integer
+        - name: search
+          in: query
+          description: Filter by file name or tag (case-insensitive substring)
+          required: false
+          schema:
+            type: string
+        - name: name_only
+          in: query
+          description: With `search`, match file names only (skip tags)
+          required: false
+          schema:
+            type: boolean
+        - name: privacy
+          in: query
+          description: Filter by privacy
+          required: false
+          schema:
+            type: string
+            enum: [private, public]
+        - name: mime
+          in: query
+          description: Filter by MIME type prefix (e.g. `image/`)
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Comma-separated file type categories to include
+          required: false
+          schema:
+            type: string
+            example: image,video
+          # allowed values: image, video, audio, text, document, archive, executable
+        - name: has_gps
+          in: query
+          description: Filter to only files that have GPS EXIF data
+          required: false
+          schema:
+            type: boolean
+        - name: ordering
+          in: query
+          description: |
+            Field to order results by. Prefix with `-` for descending.
+            Comma-separate multiple keys for tiebreaking.
+            Allowed keys: `created`, `size`, `name`, `exif_date`.
+            Defaults to `-created` (newest first).
+          required: false
+          schema:
+            type: string
+            example: -created
+
+      responses:
+        "200":
+          description: A page of file objects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FilesPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /files/{page}/{count}/:
+    get:
+      summary: Get Paginated Files List (custom page size)
+      description: Same as `/files/{page}/` with an explicit page size.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/PagePath"
+        - $ref: "#/components/parameters/CountPath"
+      responses:
+        "200":
+          description: A page of file objects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FilesPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /files/edit/:
+    post:
+      summary: Bulk Edit Files
+      description: |
+        Bulk-updates fields on the files identified by `ids`. Non-superusers
+        may only edit their own files. `albums` (a list of album IDs) replaces
+        the files' album set; any other supplied model fields (e.g. `private`,
+        `password`, `expr`, `maxv`, `info`) are applied with a bulk update.
+        `name` is ignored (no bulk rename). Returns the number of files
+        changed as plain text.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FilesBulkEdit"
+      responses:
+        "200":
+          description: Count of files updated (plain text integer)
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "3"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /files/delete/:
+    post:
+      summary: Bulk Delete Files
+      description: |
+        Deletes the files identified by `ids`. Non-superusers may only delete
+        their own files. Also accepts the `DELETE` method. Returns the number
+        of objects deleted as plain text.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ids
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        "200":
+          description: Count of files deleted (plain text integer)
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "3"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /file/{idname}:
+    get:
+      summary: Get File Details
+      description: |
+        Returns details for a single file, addressed by numeric ID or file
+        name. Unauthenticated requests may access public files (with
+        `?password=` for password-protected files); private files return 404.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/FileIdName"
+        - name: password
+          in: query
+          description: File password for unauthenticated access
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/File"
+        "404":
+          description: File not found (or private/wrong password when unauthenticated)
+    post:
+      summary: Update a File
+      description: |
+        Updates file fields (owner or superuser only). Supported keys include
+        `name` (rename, must be unique), `info`, `expr`, `maxv`, `password`,
+        `private`, `meta_preview`, and `albums` (list of album IDs, replaces
+        the album set). Returns the updated file object.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/FileIdName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileEdit"
+      responses:
+        "200":
+          description: Updated file details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/File"
+        "400":
+          description: Invalid body or file name already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: File not found
+    delete:
+      summary: Delete a File
+      description: Deletes the file and its backing storage (owner or superuser only).
+      tags:
+        - Files
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/FileIdName"
+      responses:
+        "204":
+          description: File deleted
+        "404":
+          description: File not found
+
+  /delete/{idname}:
+    delete:
+      summary: Delete a File (legacy alias)
+      description: Legacy alias for `DELETE /file/{idname}`.
+      deprecated: true
+      tags:
+        - Files
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/FileIdName"
+      responses:
+        "204":
+          description: File deleted
+        "404":
+          description: File not found
+
+  /album/:
+    post:
+      summary: Create an Album
+      description: |
+        Creates an album. Values may be sent in the JSON body or as headers of
+        the same name. When `private`/`password` are omitted the user's
+        "Default Private" and "Auto Password" preferences are applied.
+      tags:
+        - Albums
+      security:
+        - Authorization: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlbumCreate"
+      responses:
+        "200":
+          description: URL of the new album's gallery view
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/URL"
+              example:
+                url: http://example.com/files/?album=1
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+    get:
+      summary: Get Album Details (by query parameter)
+      description: Returns details for the album given by `?id=`.
+      tags:
+        - Albums
+      security:
+        - Authorization: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Album details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Album"
+        "404":
+          description: Album not found
+
+  /album/{album_id}:
+    get:
+      summary: Get Album Details
+      tags:
+        - Albums
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/AlbumId"
+      responses:
+        "200":
+          description: Album details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Album"
+        "404":
+          description: Album not found
+    patch:
+      summary: Update an Album
+      description: |
+        Updates album fields (owner or superuser only). Only keys present in
+        the JSON body are changed.
+      tags:
+        - Albums
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/AlbumId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlbumCreate"
+      responses:
+        "200":
+          description: Updated album details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Album"
+        "403":
+          description: Not the album owner
+        "404":
+          description: Album not found
+    delete:
+      summary: Delete an Album
+      description: Deletes the album (owner or superuser only). Files are not deleted.
+      tags:
+        - Albums
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/AlbumId"
+      responses:
+        "204":
+          description: Album deleted
+        "403":
+          description: Not the album owner
+        "404":
+          description: Album not found
+
+  /albums/:
+    get:
+      summary: Get Albums List
+      description: First page of `/albums/{page}/{count}/` (100 per page).
+      tags:
+        - Albums
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: A page of album objects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumsPage"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /albums/{page}/:
+    get:
+      summary: Get Paginated Albums List
+      description: |
+        Returns a page of the authenticated user's albums (100 per page by
+        default; use `/albums/{page}/{count}/` for a custom page size).
+        Superusers may pass `user` (`0` = all users).
+      tags:
+        - Albums
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/PagePath"
+        - name: user
+          in: query
+          description: "Superuser only: user ID to list albums for (`0` = all users)"
+          required: false
+          schema:
+            type: integer
+        - name: search
+          in: query
+          description: Filter by album name (case-insensitive substring)
+          required: false
+          schema:
+            type: string
+        - name: privacy
+          in: query
+          description: Filter by privacy
+          required: false
+          schema:
+            type: string
+            enum: [private, public]
+        - name: ordering
+          in: query
+          description: |
+            Field to order results by. Prefix with `-` for descending.
+            Allowed keys: `created`, `name`, `files`. Defaults to `-created`.
+          required: false
+          schema:
+            type: string
+            example: -created
+      responses:
+        "200":
+          description: A page of album objects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumsPage"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /albums/{page}/{count}/:
+    get:
+      summary: Get Paginated Albums List (custom page size)
+      description: Same as `/albums/{page}/` with an explicit page size.
+      tags:
+        - Albums
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/PagePath"
+        - $ref: "#/components/parameters/CountPath"
+      responses:
+        "200":
+          description: A page of album objects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlbumsPage"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /random/album/{user_album}/:
+    get:
+      summary: Redirect to a Random File in an Album (by album ID)
+      description: |
+        Redirects to the raw URL of a random file in the given album.
+        Unauthenticated requests are allowed for public albums; private albums
+        return 404 when unauthenticated.
+      tags:
+        - Albums
+      security:
+        - Authorization: []
+      parameters:
+        - name: user_album
+          in: path
+          description: Album ID
+          required: true
+          schema:
+            type: integer
+      responses:
+        "302":
+          description: Redirect to a random file's raw URL
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Album not found (or private and unauthenticated)
+
+  /random/album/{user_album}/{idname}/:
+    get:
+      summary: Redirect to a Random File in an Album (by user and album)
+      description: |
+        Same as `/random/album/{album_id}/`, but the album is addressed by
+        owner (user ID or username) and album (ID or name).
+      tags:
+        - Albums
+      security:
+        - Authorization: []
+      parameters:
+        - name: user_album
+          in: path
+          description: User ID or username
+          required: true
+          schema:
+            type: string
+        - name: idname
+          in: path
+          description: Album ID or album name
+          required: true
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect to a random file's raw URL
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Album not found (or private and unauthenticated)
+
+  /shorten/:
+    post:
+      summary: Shorten a URL
+      description: |
+        Shorten a URL using header parameters or a JSON encoded body. Also
+        mounted at the site root as `/shorten/`.
+      tags:
+        - URLs
+      security:
+        - Authorization: []
+
+      parameters:
+        - name: url
+          in: header
+          description: URL to shorten
+          required: false
+          schema:
+            type: string
+        - name: vanity
+          in: header
+          description: Vanity name for the short URL
+          required: false
+          schema:
+            type: string
+        - name: max-views
+          in: header
+          description: Max short URL views
+          required: false
+          schema:
+            type: integer
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShortURL"
+            example:
+              url: http://example.com/really-long-url.html
+              vanity: ab12
+              max-views: 1
+
+      responses:
+        "200":
+          description: The full short URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/URL"
+              example:
+                url: http://example.com/s/ab12
+        "400":
+          description: Missing/invalid url, non-integer max-views, or non-slug vanity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          description: Server error (e.g. vanity already taken)
+
+  /shorts/:
+    get:
+      summary: Get Recent Short URLs
+      description: |
+        Returns the authenticated user's short URLs. Supports cursor-style
+        paging by ID. Note: `full_url` is only included on the default
+        (offset-based) listing, not on `before`/`after` queries.
+      tags:
+        - URLs
+      security:
+        - Authorization: []
+
+      parameters:
+        - name: amount
+          in: query
+          description: Number of short URLs to return (default 10)
+          required: false
+          schema:
+            type: integer
+        - name: start
+          in: query
+          description: Starting offset
+          required: false
+          schema:
+            type: integer
+        - name: after
+          in: query
+          description: Return short URLs with ID greater than this value
+          required: false
+          schema:
+            type: integer
+        - name: before
+          in: query
+          description: Return all short URLs with ID less than this value (ignores amount)
+          required: false
+          schema:
+            type: integer
+
+      responses:
+        "200":
+          description: A JSON array of short URLs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShortURLDetails"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /shorts/{page}/:
+    get:
+      summary: Get Paginated Short URLs
+      description: |
+        Returns a page of the authenticated user's short URLs (100 per page by
+        default; use `/shorts/{page}/{count}/` for a custom page size).
+        Superusers may pass `user` (`0` = all users).
+      tags:
+        - URLs
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/PagePath"
+        - name: user
+          in: query
+          description: "Superuser only: user ID to list short URLs for (`0` = all users)"
+          required: false
+          schema:
+            type: integer
+        - name: ordering
+          in: query
+          description: |
+            Field to order results by. Prefix with `-` for descending.
+            Allowed keys: `created`, `name`, `views`. Defaults to `-created`.
+          required: false
+          schema:
+            type: string
+            example: -created
+      responses:
+        "200":
+          description: A page of short URLs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShortsPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /shorts/{page}/{count}/:
+    get:
+      summary: Get Paginated Short URLs (custom page size)
+      description: Same as `/shorts/{page}/` with an explicit page size.
+      tags:
+        - URLs
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/PagePath"
+        - $ref: "#/components/parameters/CountPath"
+      responses:
+        "200":
+          description: A page of short URLs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShortsPage"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /shorts/delete/:
+    delete:
+      summary: Bulk Delete Short URLs
+      description: |
+        Deletes the short URLs identified by `ids`. Non-superusers may only
+        delete their own. Returns the number of objects deleted as plain text.
+      tags:
+        - URLs
+      security:
+        - Authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ids
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        "200":
+          description: Count of short URLs deleted (plain text integer)
+          content:
+            text/html:
+              schema:
+                type: string
+                example: "2"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /user/:
+    get:
+      summary: Get Current User
+      description: Returns the authenticated user's profile.
+      tags:
+        - Users
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+    patch:
+      summary: Update Current User
+      description: |
+        Updates fields on the authenticated user's profile. Any model field
+        may be supplied (e.g. `first_name`, `timezone`, `default_expire`,
+        `default_color`, `remove_exif`, `default_file_private`). `password`
+        sets a new password. Non-superusers cannot change `is_superuser`,
+        `is_staff`, or `authorization`. Returns the updated profile.
+      tags:
+        - Users
+      security:
+        - Authorization: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /user/{user_id}/:
+    get:
+      summary: Get a User
+      description: Returns a user's profile. Requesting another user requires superuser.
+      tags:
+        - Users
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          description: Access denied (not self and not superuser)
+        "404":
+          description: User not found
+    patch:
+      summary: Update a User
+      description: Same semantics as `PATCH /user/`, targeting the given user (superuser required for other users).
+      tags:
+        - Users
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          description: Access denied (not self and not superuser)
+        "404":
+          description: User not found
+
+  /users/:
+    get:
+      summary: Get Users (superuser)
+      description: |
+        Returns users as an array. Superuser only. Supports cursor-style
+        paging by user ID.
+      tags:
+        - Users
+      security:
+        - Authorization: []
+      parameters:
+        - name: amount
+          in: query
+          description: Number of users to return (default 20)
+          required: false
+          schema:
+            type: integer
+        - name: start
+          in: query
+          description: Starting offset
+          required: false
+          schema:
+            type: integer
+        - name: after
+          in: query
+          description: Return all users with ID greater than this value (ignores amount)
+          required: false
+          schema:
+            type: integer
+        - name: before
+          in: query
+          description: Return users with ID less than this value
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: A JSON array of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          description: Superuser required
+
+  /users/{page}/:
+    get:
+      summary: Get Paginated Users (superuser)
+      description: |
+        Returns a page of users (50 per page by default; use
+        `/users/{page}/{count}/` for a custom page size). Superuser only.
+        Each user includes a `name` convenience field (first name or username).
+      tags:
+        - Users
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/PagePath"
+      responses:
+        "200":
+          description: A page of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersPage"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          description: Superuser required
+
+  /users/{page}/{count}/:
+    get:
+      summary: Get Paginated Users (custom page size, superuser)
+      description: Same as `/users/{page}/` with an explicit page size.
+      tags:
+        - Users
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/PagePath"
+        - $ref: "#/components/parameters/CountPath"
+      responses:
+        "200":
+          description: A page of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsersPage"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          description: Superuser required
+
+  /invites/:
+    post:
+      summary: Create an Invite
+      description: |
+        Creates a new user invite. `storage_quota` accepts human-readable
+        sizes (e.g. `10GB`).
+      tags:
+        - Users
+      security:
+        - Authorization: []
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Invite"
+
+      responses:
+        "200":
+          description: The created invite
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInvites"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+    get:
+      summary: List Invites (not implemented)
+      description: Listing invites via the API is not implemented; always returns 501.
+      tags:
+        - Users
+      security:
+        - Authorization: []
+      responses:
+        "501":
+          description: Not Implemented
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /invites/{invite_id}/:
+    delete:
+      summary: Delete an Invite
+      description: Deletes an invite. Superuser only. Requires a session cookie.
+      tags:
+        - Users
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: invite_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Invite deleted
+        "403":
+          description: Superuser required
+        "404":
+          description: Invite not found
+
+  /token/:
+    get:
+      summary: List API Tokens
+      description: |
+        Lists the current user's API tokens (20 per page). Token values are
+        never returned after creation — only metadata. Requires a session
+        cookie (browser settings page).
+      tags:
+        - Tokens
+      security:
+        - SessionAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (default 1)
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: A page of token metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+    post:
+      summary: Create an API Token
+      description: |
+        Creates a new named API token for the current user and returns the
+        plaintext value once. Requires a session cookie.
+      tags:
+        - Tokens
+      security:
+        - SessionAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: My Laptop
+                expires_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+      responses:
+        "200":
+          description: The new token (plaintext, shown once)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /token/{token_id}/:
+    patch:
+      summary: Toggle an API Token
+      description: Toggles `is_active` on a token owned by the current user. Requires a session cookie.
+      tags:
+        - Tokens
+      security:
+        - SessionAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TokenId"
+      responses:
+        "200":
+          description: New token state
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [active, disabled]
+                  is_active:
+                    type: boolean
+        "404":
+          description: Token not found
+    delete:
+      summary: Delete an API Token
+      description: Permanently deletes a token owned by the current user. Requires a session cookie.
+      tags:
+        - Tokens
+      security:
+        - SessionAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TokenId"
+      responses:
+        "200":
+          description: Token deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: deleted
+        "404":
+          description: Token not found
 
   /stats/me/:
     get:
       summary: Get Current User Stats
       description: Returns dashboard stat cards and 90-day chart history for the authenticated user.
       tags:
-        - Files
+        - Stats
       security:
         - Authorization: []
 
@@ -207,7 +1618,7 @@ paths:
       summary: Get Server-Wide Stats
       description: Returns server-wide stat cards and 90-day aggregated chart. Superuser only.
       tags:
-        - Files
+        - Stats
       security:
         - Authorization: []
 
@@ -223,237 +1634,607 @@ paths:
         "403":
           description: Forbidden — superuser access required
 
-  /shorts/:
-    get:
-      summary: Get Recent Short URLs
-      description: Get a list of short URLs created by the user
+  /session/{sessionid}:
+    delete:
+      summary: Delete a Session
+      description: |
+        Deletes the given session from the session cache, or all sessions
+        except the caller's when `sessionid` is `all`. Superuser only.
+        Requires a session cookie.
       tags:
-        - URLs
+        - Admin
       security:
-        - Authorization: []
-
+        - SessionAuth: []
       parameters:
-        - name: amount
-          in: query
-          description: Amount of Short URLs to Return
-          required: false
-          schema:
-            type: integer
-        - name: start
-          in: query
-          description: Starting index for pagination
-          required: false
-          schema:
-            type: integer
-        - name: since
-          in: query
-          description: Return Short URLs with ID greater than this value
-          required: false
-          schema:
-            type: integer
-
-      responses:
-        "200":
-          description: A JSON array of Short URLs
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/ShortURLDetails"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-
-  /shorten/:
-    post:
-      summary: Shorten a URL
-      description: Shorten a URL using header parameters or a JSON encoded body.
-      tags:
-        - URLs
-      security:
-        - Authorization: []
-
-      parameters:
-        - name: url
-          in: header
-          description: URL to Shorten
-          required: false
-          schema:
-            type: string
-        - name: vanity
-          in: header
-          description: Vanity Name for URL
-          required: false
-          schema:
-            type: string
-        - name: max-views
-          in: header
-          description: Max URL Views
-          required: false
-          schema:
-            type: integer
-
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ShortURL"
-            example:
-              url: http://example.com/really-long-url.html
-              vanity: ab12
-              max-views: 1
-
-      responses:
-        "200":
-          description: A JSON array of the Short URL
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/URL"
-              example:
-                url: http://example.com/s/ab12
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-
-  /files/{page}/:
-    get:
-      summary: Get paginated files list.
-      description: Get a paginated list of files.
-      tags:
-        - Files
-      security:
-        - Authorization: []
-
-      parameters:
-        - name: page
+        - name: sessionid
           in: path
-          description: Which page to return
+          description: Session key, or `all`
           required: true
           schema:
+            type: string
+      responses:
+        "201":
+          description: Session(s) deleted
+        "404":
+          description: Session not found
+        "500":
+          description: Server error
+
+  /streams/:
+    get:
+      summary: Get Streams List
+      description: First page of `/streams/{page}/{count}/` (100 per page).
+      tags:
+        - Streams
+      security:
+        - Authorization: []
+      responses:
+        "200":
+          description: A page of stream objects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StreamsPage"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /streams/{page}/:
+    get:
+      summary: Get Paginated Streams List
+      description: |
+        Returns a page of the authenticated user's streams (100 per page by
+        default; use `/streams/{page}/{count}/` for a custom page size).
+        Superusers may pass `user` (`0` = all users). Owner rows include
+        `rtmp_url` and `playback_enabled`; non-owner rows have secrets
+        stripped and expose `has_password` instead.
+      tags:
+        - Streams
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/PagePath"
+        - name: user
+          in: query
+          description: "Superuser only: user ID to list streams for (`0` = all users)"
+          required: false
+          schema:
             type: integer
+        - name: privacy
+          in: query
+          description: Filter by visibility
+          required: false
+          schema:
+            type: string
+            enum: [public, private]
         - name: ordering
           in: query
           description: |
             Field to order results by. Prefix with `-` for descending.
-            Comma-separate multiple keys for tiebreaking.
-            Defaults to `-created` (newest first).
+            Allowed keys: `created`, `name`, `views`. Defaults to `-created`.
           required: false
           schema:
             type: string
-            enum:
-              - created
-              - -created
-              - size
-              - -size
-              - name
-              - -name
-        - name: has_gps
-          in: query
-          description: Filter to only files that have GPS EXIF data.
-          required: false
-          schema:
-            type: boolean
-
+            example: -created
       responses:
         "200":
-          description: A JSON array of file Preview URLs
+          description: A page of stream objects
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
-                  example: http://example.com/u/john.jpg
-        "400":
-          $ref: "#/components/responses/BadRequest"
+                $ref: "#/components/schemas/StreamsPage"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
 
-  /invites/:
-    post:
-      summary: Create an Invite
-      description: Create a new User Invite.
+  /streams/{page}/{count}/:
+    get:
+      summary: Get Paginated Streams List (custom page size)
+      description: Same as `/streams/{page}/` with an explicit page size.
       tags:
-        - Users
+        - Streams
       security:
         - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/PagePath"
+        - $ref: "#/components/parameters/CountPath"
+      responses:
+        "200":
+          description: A page of stream objects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StreamsPage"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 
+  /stream/create/:
+    post:
+      summary: Create a Stream
+      description: |
+        Pre-creates a stream for the authenticated user and returns its
+        `stream_token` for RTMP ingest. Idempotent: returns the existing
+        stream when the user already owns one with that name. When
+        `private`/`password` defaults are enabled on the user profile they
+        are applied on first create. Requires a session cookie.
+      tags:
+        - Streams
+      security:
+        - SessionAuth: []
       requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: 1–64 chars of letters, numbers, hyphen, or underscore
+                  example: my-stream
+                title:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "200":
+          description: Stream name and ingest token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  stream_token:
+                    type: string
+        "400":
+          description: Missing or invalid stream name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Stream name already taken by another user
+
+  /stream/{name}/:
+    patch:
+      summary: Update a Stream
+      description: |
+        Updates stream fields (owner or superuser only). Only keys present in
+        the JSON body are changed: `public`, `title`, `description`,
+        `password`, `viewer_limit`.
+      tags:
+        - Streams
+      security:
+        - Authorization: []
+      parameters:
+        - $ref: "#/components/parameters/StreamName"
+      requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Invite"
-
+              type: object
+              properties:
+                public:
+                  type: boolean
+                title:
+                  type: string
+                description:
+                  type: string
+                password:
+                  type: string
+                viewer_limit:
+                  type: integer
       responses:
         "200":
-          description: A JSON object of the Invites
+          description: Updated stream object
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserInvites"
+                $ref: "#/components/schemas/Stream"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          description: Not the stream owner
+        "404":
+          description: Stream not found
 
-    get:
-      summary: Get all Invites
-      description: Get all User Invites.
-      tags:
-        - Users
-      security:
-        - Authorization: []
-
-      responses:
-        "200":
-          description: A JSON array of the Invites
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/UserInvites"
-
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
-
-  /token/:
+  /stream/{name}/rotate-token/:
     post:
-      summary: Regenerate an api token
-      description: Regenerates API token for current user and returns new token
+      summary: Rotate Stream Ingest Token
+      description: Generates a new RTMP `stream_token` (owner or superuser only). Requires a session cookie.
       tags:
-        - Users
+        - Streams
       security:
-        - Authorization: []
+        - SessionAuth: []
+      parameters:
+        - $ref: "#/components/parameters/StreamName"
       responses:
         "200":
-          description: A raw string value of the token.
+          description: New ingest token
           content:
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/UnauthorizedError"
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  stream_token:
+                    type: string
+        "403":
+          description: Not the stream owner
+        "404":
+          description: Stream not found
+
+  /stream/{name}/enable-playback-token/:
+    post:
+      summary: Enable Raw-Link Playback
+      description: |
+        Generates (or regenerates) the per-stream `playback_token` used by
+        native players via `/hls/<name>.m3u8?token=`. Calling on an
+        already-enabled stream rotates the token and invalidates previously
+        issued raw links. Owner or superuser only; requires a session cookie.
+      tags:
+        - Streams
+      security:
+        - SessionAuth: []
+      parameters:
+        - $ref: "#/components/parameters/StreamName"
+      responses:
+        "200":
+          description: Playback token and raw playback URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  playback_token:
+                    type: string
+                  enabled:
+                    type: boolean
+                    example: true
+                  url:
+                    type: string
+                    example: https://example.com/hls/my-stream.m3u8?token=abcd1234
+        "403":
+          description: Not the stream owner
+        "404":
+          description: Stream not found
+
+  /stream/{name}/disable-playback-token/:
+    post:
+      summary: Disable Raw-Link Playback
+      description: |
+        Clears the `playback_token`, disabling raw-link playback. Existing raw
+        links stop working. Owner or superuser only; requires a session cookie.
+      tags:
+        - Streams
+      security:
+        - SessionAuth: []
+      parameters:
+        - $ref: "#/components/parameters/StreamName"
+      responses:
+        "200":
+          description: Playback disabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  playback_token:
+                    type: string
+                    example: ""
+                  enabled:
+                    type: boolean
+                    example: false
+        "403":
+          description: Not the stream owner
+        "404":
+          description: Stream not found
+
+  /stream/{name}/vlc-url/:
     get:
-      summary: Get the current api token.
-      description: Get the current api token, expects cookie authentication.
+      summary: Get Raw Playback URL
+      description: |
+        Returns the absolute `/hls/<name>.m3u8?token=` raw link for HLS
+        players that can't carry browser cookies (VLC, ffmpeg). Owner or
+        superuser only; 404 for missing and non-owned streams alike (no name
+        enumeration). Requires a session cookie.
       tags:
-        - Users
+        - Streams
+      security:
+        - SessionAuth: []
+      parameters:
+        - $ref: "#/components/parameters/StreamName"
+      responses:
+        "200":
+          description: Raw playback URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  url:
+                    type: string
+                  enabled:
+                    type: boolean
+        "404":
+          description: Stream not found or not owned by the caller
+        "409":
+          description: Raw-link playback is not enabled on this stream
+
+  /stream/ingest/:
+    get:
+      summary: Get RTMP Ingest Host
+      description: Returns the RTMP ingest host and port for this server.
+      tags:
+        - Streams
       security:
         - Authorization: []
       responses:
         "200":
-          description: A raw string value of the token.
+          description: RTMP ingest endpoint
           content:
-        "400":
-          $ref: "#/components/responses/BadRequest"
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rtmp_host:
+                    type: string
+                    example: example.com
+                  rtmp_port:
+                    type: integer
+                    example: 1935
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+
+  /stream/hls-token/{name}/:
+    get:
+      summary: Refresh HLS Playback Cookies
+      description: |
+        Re-issues the `hls_sig`/`hls_exp` cookies so a viewer can keep
+        fetching HLS segments past the original signing TTL. Private streams
+        require an authenticated user; password-protected streams require
+        `?password=` or a still-valid cookie pair. Authentication is optional
+        for public streams.
+      tags:
+        - Streams
+      security:
+        - Authorization: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/StreamName"
+        - name: password
+          in: query
+          description: Stream password, when required
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cookie expiry timestamp; cookies set on the response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exp:
+                    type: integer
+                    example: 1718000000
+        "403":
+          description: Private stream (unauthenticated) or password required
+        "404":
+          description: Stream not found
+
+  /stream/ping/{name}/:
+    get:
+      summary: Viewer Presence Ping
+      description: |
+        Records the caller's session as an active viewer of the stream for 60
+        seconds (drives the viewer count). No authentication required.
+      tags:
+        - Streams
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/StreamName"
+      responses:
+        "200":
+          description: Ping recorded
+
+  /stream/viewers/{name}/:
+    get:
+      summary: Get Stream Viewer Count
+      description: |
+        Returns the number of viewers active in the last 60 seconds. Returns
+        JSON when the `Accept: application/json` header is sent; otherwise
+        renders an HTML overlay fragment (supports `prefix`/`suffix` query
+        params) for use in broadcast software. No authentication required.
+      tags:
+        - Streams
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/StreamName"
+        - name: prefix
+          in: query
+          description: Text before the count (HTML overlay only)
+          required: false
+          schema:
+            type: string
+        - name: suffix
+          in: query
+          description: Text after the count (HTML overlay only)
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Viewer count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+            text/html:
+              schema:
+                type: string
+
+  /stream/subscribers/{name}/:
+    get:
+      summary: Get Stream Subscriber Count
+      description: Returns the number of push-notification subscribers for the stream. No authentication required.
+      tags:
+        - Streams
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/StreamName"
+      responses:
+        "200":
+          description: Subscriber count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /stream/commands/{name}/:
+    get:
+      summary: Get Stream Chat Commands
+      description: |
+        Returns the slash commands available to the requesting user for the
+        given stream, plus chat context so clients know whether to show the
+        input bar. Authentication is optional; owners receive additional
+        stream/moderation commands.
+      tags:
+        - Streams
+      security:
+        - Authorization: []
+        - {}
+      parameters:
+        - $ref: "#/components/parameters/StreamName"
+      responses:
+        "200":
+          description: Available commands and chat context
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StreamCommands"
+        "404":
+          description: Stream not found
+
+  /stream/auth/:
+    get:
+      summary: RTMP Publish Auth (internal)
+      description: |
+        Internal callback hit by the RTMP server (`on_publish`). Validates the
+        `stream_token` carried in the RTMP `tcurl` query string, creates or
+        re-activates the stream, and triggers live notifications. Not intended
+        for direct client use.
+      tags:
+        - Streams
+      security: []
+      parameters:
+        - name: name
+          in: query
+          description: Stream name
+          required: true
+          schema:
+            type: string
+        - name: tcurl
+          in: query
+          description: RTMP tcUrl containing `stream_token` in its query string
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Publish authorized
+        "401":
+          description: Missing name or invalid stream token
+        "403":
+          description: Stream name owned by another user
+
+  /stream/done/:
+    get:
+      summary: RTMP Publish Done (internal)
+      description: |
+        Internal callback hit by the RTMP server when a stream ends. Marks the
+        stream offline. Always returns 200 to the RTMP server unless the
+        token check fails. Not intended for direct client use.
+      tags:
+        - Streams
+      security: []
+      parameters:
+        - name: name
+          in: query
+          description: Stream name
+          required: true
+          schema:
+            type: string
+        - name: tcurl
+          in: query
+          description: RTMP tcUrl containing `stream_token` in its query string
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Acknowledged
+        "400":
+          description: Missing stream name
+        "401":
+          description: Invalid stream token
+        "403":
+          description: Token belongs to a different user
+
+  /stream/hls-auth/:
+    get:
+      summary: HLS Segment Auth (internal)
+      description: |
+        Internal endpoint hit by nginx's `auth_request` for every `/hls/`
+        request. Returns 204 when the signed cookie pair is valid, the
+        `token` matches the stream's playback token, or the stream is public
+        and unprotected. nginx blocks direct external access to this path.
+      tags:
+        - Streams
+      security: []
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: token
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sig
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: exp
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Playback authorized
+        "403":
+          description: Playback denied
 
   /webhooks/:
     get:
@@ -630,6 +2411,67 @@ components:
       type: apiKey
       in: header
       name: Authorization
+      description: |
+        User API token. `Bearer <token>` and the legacy raw `<token>` form are
+        both accepted; a `Token: <token>` header also works. A valid session
+        cookie satisfies these endpoints as well.
+    SessionAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+      description: Django session cookie (browser login). API tokens are not accepted.
+
+  parameters:
+    PagePath:
+      name: page
+      in: path
+      description: Page number (1-based)
+      required: true
+      schema:
+        type: integer
+    CountPath:
+      name: count
+      in: path
+      description: Items per page
+      required: true
+      schema:
+        type: integer
+    FileIdName:
+      name: idname
+      in: path
+      description: File ID (numeric) or file name
+      required: true
+      schema:
+        type: string
+    AlbumId:
+      name: album_id
+      in: path
+      description: Album ID
+      required: true
+      schema:
+        type: integer
+    UserId:
+      name: user_id
+      in: path
+      description: User ID
+      required: true
+      schema:
+        type: integer
+    TokenId:
+      name: token_id
+      in: path
+      description: Token UUID
+      required: true
+      schema:
+        type: string
+        format: uuid
+    StreamName:
+      name: name
+      in: path
+      description: Stream name
+      required: true
+      schema:
+        type: string
 
   responses:
     BadRequest:
@@ -638,6 +2480,13 @@ components:
       description: Access token is missing or invalid
 
   schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Error Parsing JSON Body
+
     Webhook:
       type: object
       properties:
@@ -758,10 +2607,16 @@ components:
             example: http://example.com/u/john.jpg
         url:
           type: string
+          description: Preview URL
           example: http://example.com/u/john.jpg
         raw:
           type: string
+          description: Raw URL (redirect path)
           example: http://example.com/r/john.jpg
+        r:
+          type: string
+          description: Direct/signed URL to the file content
+          example: http://example.com/media/files/john.jpg
         name:
           type: string
           example: john.jpg
@@ -769,6 +2624,613 @@ components:
           type: integer
           format: int64
           example: 1000
+
+    File:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user:
+          type: integer
+          description: Owner user ID
+          example: 1
+        user_name:
+          type: string
+          example: John
+        user_username:
+          type: string
+          example: john
+        size:
+          type: integer
+          format: int64
+          example: 1000
+        mime:
+          type: string
+          example: image/jpeg
+        name:
+          type: string
+          example: john.jpg
+        info:
+          type: string
+          example: ""
+        expr:
+          type: string
+          description: Expiration (e.g. `30d`, empty for never)
+          example: ""
+        view:
+          type: integer
+          example: 0
+        maxv:
+          type: integer
+          description: Max views (0 = unlimited)
+          example: 0
+        exif:
+          type: object
+          nullable: true
+          description: EXIF metadata (images)
+        meta:
+          type: object
+          description: Additional metadata
+        meta_preview:
+          type: boolean
+          description: Show metadata on previews/unfurls
+        password:
+          type: string
+          example: ""
+        private:
+          type: boolean
+          example: false
+        avatar:
+          type: boolean
+          description: File is a user avatar
+          example: false
+        date:
+          type: string
+          format: date-time
+          description: Created date
+        url:
+          type: string
+          description: Preview URL
+          example: http://example.com/u/john.jpg
+        thumb:
+          type: string
+          description: Thumbnail URL
+          example: http://example.com/t/john.jpg
+        raw:
+          type: string
+          description: Raw URL
+          example: http://example.com/r/john.jpg
+        albums:
+          type: array
+          description: Album IDs the file belongs to
+          items:
+            type: integer
+        albums_details:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    FilesPage:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            $ref: "#/components/schemas/File"
+        next:
+          type: integer
+          nullable: true
+          description: Next page number, or null on the last page
+          example: 2
+        count:
+          type: integer
+          description: Page size used
+          example: 25
+
+    FileEdit:
+      type: object
+      description: Only supplied keys are changed.
+      properties:
+        name:
+          type: string
+          description: New file name (must be unique)
+        info:
+          type: string
+        expr:
+          type: string
+          description: Expiration; invalid values are cleared
+        maxv:
+          type: integer
+        password:
+          type: string
+        private:
+          type: boolean
+        meta_preview:
+          type: boolean
+        albums:
+          type: array
+          description: Album IDs; replaces the file's album set
+          items:
+            type: integer
+
+    FilesBulkEdit:
+      type: object
+      required:
+        - ids
+      description: |
+        `ids` selects the files; all other supplied model fields are applied
+        to every selected file. `name` is ignored.
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+        albums:
+          type: array
+          description: Album IDs; replaces each file's album set
+          items:
+            type: integer
+        private:
+          type: boolean
+        password:
+          type: string
+        expr:
+          type: string
+        maxv:
+          type: integer
+
+    AlbumCreate:
+      type: object
+      description: Values may also be sent as request headers of the same name.
+      properties:
+        name:
+          type: string
+          example: Vacation
+        description:
+          type: string
+          description: Album info text
+        private:
+          type: boolean
+        password:
+          type: string
+        max-views:
+          type: integer
+        expire:
+          type: string
+          example: 30d
+
+    Album:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        user:
+          type: integer
+          description: Owner user ID
+        user_name:
+          type: string
+          example: John
+        name:
+          type: string
+          example: Vacation
+        password:
+          type: string
+          description: Only present for the owner; non-owners get `has_password`
+        has_password:
+          type: boolean
+          description: Present instead of `password` for non-owners
+        private:
+          type: boolean
+        info:
+          type: string
+        view:
+          type: integer
+        maxv:
+          type: integer
+        expr:
+          type: string
+        date:
+          type: string
+          format: date-time
+        url:
+          type: string
+          description: Gallery URL for the album
+          example: http://example.com/files/?view=gallery&album=1
+        file_count:
+          type: integer
+          example: 10
+        is_owner:
+          type: boolean
+
+    AlbumsPage:
+      type: object
+      properties:
+        albums:
+          type: array
+          items:
+            $ref: "#/components/schemas/Album"
+        next:
+          type: integer
+          nullable: true
+          example: 2
+        count:
+          type: integer
+          example: 100
+
+    URL:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          example: http://example.com/u/john.png
+
+    ShortURL:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          example: http://example.com/really-long-url.html
+        vanity:
+          type: string
+          example: ab12
+        max-views:
+          type: integer
+          example: 1
+
+    ShortURLDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        short:
+          type: string
+          example: ab12
+        url:
+          type: string
+          example: http://example.com/really-long-url.html
+        max:
+          type: integer
+          example: 5
+        views:
+          type: integer
+          example: 2
+        user:
+          type: integer
+          example: 1
+        full_url:
+          type: string
+          description: Absolute short link (offset-based and paginated listings only)
+          example: http://example.com/s/ab12
+
+    ShortsPage:
+      type: object
+      properties:
+        shorts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ShortURLDetails"
+        next:
+          type: integer
+          nullable: true
+          example: 2
+        count:
+          type: integer
+          example: 100
+
+    User:
+      type: object
+      description: |
+        Serialized user model. `password` and `authorization` are always
+        excluded. Additional Django user fields (`last_login`, `date_joined`,
+        `groups`, `user_permissions`, etc.) are included as-is.
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: john
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        is_active:
+          type: boolean
+        is_staff:
+          type: boolean
+        is_superuser:
+          type: boolean
+        timezone:
+          type: string
+          example: America/Los_Angeles
+        default_expire:
+          type: string
+        default_color:
+          type: string
+          example: "#aabbcc"
+        nav_color_1:
+          type: string
+        nav_color_2:
+          type: string
+        remove_exif_geo:
+          type: boolean
+        remove_exif:
+          type: boolean
+        show_exif_preview:
+          type: boolean
+        default_upload_name_format:
+          type: string
+          enum: [name, rand, date, uuid]
+        default_file_private:
+          type: boolean
+        default_file_password:
+          type: boolean
+        storage_quota:
+          type: integer
+          format: int64
+          description: Bytes (0 = unlimited)
+        storage_usage:
+          type: integer
+          format: int64
+        avatar_url:
+          type: string
+          nullable: true
+        oauth_providers:
+          type: array
+          items:
+            type: string
+            enum: [discord, github, google]
+        name:
+          type: string
+          description: First name or username (paginated users listing only)
+
+    UsersPage:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        next:
+          type: integer
+          nullable: true
+          example: 2
+        count:
+          type: integer
+          example: 50
+
+    Invite:
+      type: object
+      properties:
+        expire:
+          type: integer
+          description: Expiration in seconds (0 = never)
+          example: 86400
+        max_uses:
+          type: integer
+          example: 1
+        super_user:
+          type: boolean
+          example: false
+        storage_quota:
+          type: string
+          description: Human-readable storage quota for invited users (e.g. `10GB`)
+          example: 10GB
+
+    UserInvites:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        invite:
+          type: string
+          example: abcdefgh12345678
+        owner:
+          type: integer
+          example: 1
+        expire:
+          type: integer
+          description: Expiration in seconds (0 = never)
+          example: 86400
+        max_uses:
+          type: integer
+          example: 1
+        uses:
+          type: integer
+          example: 0
+        user_ids:
+          type: array
+          description: IDs of users who used this invite
+          items:
+            type: integer
+        super_user:
+          type: boolean
+          example: false
+        storage_quota:
+          type: integer
+          format: int64
+          nullable: true
+          description: Storage quota in bytes for invited users
+
+    TokenInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: My Laptop
+        created_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_ip:
+          type: string
+          nullable: true
+        user_agent:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+
+    TokenList:
+      type: object
+      properties:
+        tokens:
+          type: array
+          items:
+            $ref: "#/components/schemas/TokenInfo"
+        page:
+          type: integer
+          example: 1
+        num_pages:
+          type: integer
+          example: 1
+        count:
+          type: integer
+          description: Total token count
+          example: 3
+
+    Stream:
+      type: object
+      description: |
+        Serialized stream. Owner rows include `rtmp_url` and
+        `playback_enabled`; non-owner rows omit `stream_token` and
+        `playback_token` and expose `has_password` instead of `password`.
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: my-stream
+        title:
+          type: string
+        description:
+          type: string
+        is_live:
+          type: boolean
+        user_name:
+          type: string
+        user_username:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        unique_views:
+          type: integer
+        public:
+          type: boolean
+        password:
+          type: string
+          description: Owner only
+        has_password:
+          type: boolean
+          description: Non-owners only
+        viewer_limit:
+          type: integer
+        live_chat:
+          type: boolean
+        anonymous_chat:
+          type: boolean
+        stream_token:
+          type: string
+          description: RTMP ingest token (owner only)
+        playback_enabled:
+          type: boolean
+          description: Owner only — whether raw-link playback is enabled
+        rtmp_url:
+          type: string
+          description: Owner only — full RTMP ingest URL including stream_token
+        url:
+          type: string
+          description: Public watch page URL
+          example: http://example.com/live/my-stream/
+        is_owner:
+          type: boolean
+        subscriber_count:
+          type: integer
+
+    StreamsPage:
+      type: object
+      properties:
+        streams:
+          type: array
+          items:
+            $ref: "#/components/schemas/Stream"
+        next:
+          type: integer
+          nullable: true
+          example: 2
+        count:
+          type: integer
+          example: 100
+
+    StreamCommands:
+      type: object
+      properties:
+        stream:
+          type: string
+          example: my-stream
+        title:
+          type: string
+        description:
+          type: string
+        is_live:
+          type: boolean
+        is_public:
+          type: boolean
+        live_chat:
+          type: boolean
+        anonymous_chat:
+          type: boolean
+        commands:
+          type: array
+          items:
+            type: object
+            properties:
+              command:
+                type: string
+                example: /join
+              args:
+                type: string
+                example: <name>
+              description:
+                type: string
+              category:
+                type: string
+                enum: [chat, stream, moderation]
 
     StatCard:
       type: object
@@ -791,6 +3253,10 @@ components:
           type: string
           description: Optional detail line, e.g. quota usage fraction.
           example: 1.2 GB / 10 GB
+        modal:
+          type: string
+          description: Optional modal to open when clicked (e.g. `mime`).
+          example: mime
 
     StatsChart:
       type: object
@@ -873,104 +3339,6 @@ components:
           nullable: true
           allOf:
             - $ref: "#/components/schemas/StatsChart"
-
-    URL:
-      type: object
-      required:
-        - url
-      properties:
-        url:
-          type: string
-          example: http://example.com/u/john.png
-
-    ShortURL:
-      type: object
-      required:
-        - url
-      properties:
-        url:
-          type: string
-          example: http://example.com/s/ab12
-        vanity:
-          type: string
-          example: ab12
-        max-views:
-          type: string
-          example: 1
-
-    Invite:
-      type: object
-      properties:
-        expire:
-          type: string
-          example: 1mo
-        max_uses:
-          type: integer
-          example: 1
-        super_user:
-          type: boolean
-          example: false
-
-    UserInvites:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        invite:
-          type: string
-          example: abcdefgh12345678
-        owner:
-          type: integer
-          example: 1
-        expire:
-          type: string
-          example: 1mo
-        max_uses:
-          type: integer
-          example: 1
-        super_user:
-          type: boolean
-          example: false
-        created_at:
-          type: string
-          example: unknown
-        updated_at:
-          type: string
-          example: unknown
-
-    ShortURLDetails:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        short:
-          type: string
-          example: ab12
-        url:
-          type: string
-          example: http://example.com/really-long-url.html
-        max:
-          type: integer
-          example: 5
-        views:
-          type: integer
-          example: 2
-        user:
-          type: integer
-          example: 1
-        created_at:
-          type: string
-          format: date-time
-          example: "2023-01-01T12:00:00Z"
-        updated_at:
-          type: string
-          format: date-time
-          example: "2023-01-01T12:00:00Z"
-        full_url:
-          type: string
-          example: http://example.com/s/ab12
 
 security:
   - Authorization: []
