@@ -372,6 +372,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+if "test" in sys.argv or "test_coverage" in sys.argv:
+    # PBKDF2's iteration count is a deliberate prod-only cost; tests create
+    # hundreds of users and don't exercise hashing strength.
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+
 if config("SENTRY_URL", False):
     sentry_sdk.init(
         dsn=config("SENTRY_URL"),
