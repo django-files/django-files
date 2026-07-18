@@ -440,6 +440,8 @@ body.navbar-snapping header {
 }
 
 .files-toolbar-views {
+    display: inline-flex;
+    align-items: center;
     gap: 0.15rem;
 }
 
@@ -516,6 +518,31 @@ body.navbar-snapping header {
 .files-toolbar-view.view-active {
     background: rgba(var(--bs-primary-rgb), 0.18);
     opacity: 1;
+}
+
+/* Toolbar overflow tiers, collapsed one at a time by observeToolbar() in
+ * main.js as soon as the row wraps — kept separate from the width-based
+ * breakpoint below since the wrap point varies with page/view context. */
+.files-toolbar--hide-count .files-toolbar-count,
+.files-toolbar--hide-select-all-label
+    #gallery-select-all-btn
+    .files-toolbar-view-label,
+.files-toolbar--hide-bulk-label #bulk-actions .files-toolbar-view-label,
+.files-toolbar--hide-sort-label #gallery-sort-btn .files-toolbar-view-label,
+.files-toolbar--hide-size-label #gallery-size-btn .files-toolbar-view-label,
+.files-toolbar--hide-view-labels .files-toolbar-views .files-toolbar-view-label,
+.files-toolbar--collapse-views .files-toolbar-views {
+    display: none;
+}
+
+/* Collapsed single-icon stand-in for .files-toolbar-views, shown only once
+ * the tier above hides the real nav. */
+.files-toolbar-view-toggle {
+    display: none;
+}
+
+.files-toolbar--collapse-views .files-toolbar-view-toggle {
+    display: inline-flex;
 }
 
 /* Hide labels and count on narrow screens — icons only */

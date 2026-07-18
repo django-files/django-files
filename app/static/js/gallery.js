@@ -224,6 +224,16 @@ function setToolbarBtnVisible(btn, visible) {
     }
 }
 
+// Mirrors the active tab's own icon rather than a second hardcoded map.
+function syncViewToggleIcon(view) {
+    const icon = document.getElementById('files-view-toggle-icon')
+    const source = { list: showList, gallery: showGallery, map: showMap }[
+        view
+    ]?.querySelector('i')
+    if (!icon || !source) return
+    icon.className = source.className
+}
+
 function applyView(view) {
     const container = mapContainer.parentElement
     if (!container) {
@@ -250,6 +260,7 @@ function applyView(view) {
     else if (view === 'gallery') active = showGallery
     else active = showList
     active?.classList.add('view-active')
+    syncViewToggleIcon(view)
 
     setToolbarBtnVisible(
         document.getElementById('gallery-sort-btn'),
@@ -641,6 +652,37 @@ async function initGallery() {
                 syncFilterPopoverState(clone)
                 const userSel = clone.querySelector('#user')
                 if (userSel && activeUser) userSel.value = activeUser
+            },
+        }
+    )
+    initPopupBtn(
+        'files-view-toggle-btn',
+        'files-view-popup-tpl',
+        (tip, popover) => {
+            tip.querySelectorAll('.files-toolbar-view[data-view]').forEach(
+                (optBtn) => {
+                    optBtn.addEventListener('click', (e) => {
+                        changeView(e)
+                        popover.hide()
+                    })
+                }
+            )
+            tip.querySelector('.show-slideshow')?.addEventListener(
+                'click',
+                () => popover.hide()
+            )
+        },
+        {
+            prepareContent: (clone) => {
+                const currentView = params.get('view') || 'list'
+                clone
+                    .querySelectorAll('.files-toolbar-view[data-view]')
+                    .forEach((optBtn) => {
+                        optBtn.classList.toggle(
+                            'view-active',
+                            optBtn.dataset.view === currentView
+                        )
+                    })
             },
         }
     )

@@ -280,15 +280,56 @@ function debounce(fn, timeout = 250) {
     }
 }
 
-function observeToolbarHeight(toolbarId, cssVar) {
+// Toolbar items collapsed one tier at a time, least- to most-aggressive, as
+// soon as the row would otherwise wrap. A width breakpoint can't drive this:
+// the wrap point depends on which buttons are visible (list vs. gallery,
+// album vs. not), so it's measured instead (see observeToolbar below).
+const TOOLBAR_COLLAPSE_TIERS = [
+    'files-toolbar--hide-count',
+    'files-toolbar--hide-select-all-label',
+    'files-toolbar--hide-bulk-label',
+    'files-toolbar--hide-sort-label',
+    'files-toolbar--hide-size-label',
+    'files-toolbar--hide-view-labels', // List/Gallery/Map/Slideshow go icon-only...
+    'files-toolbar--collapse-views', // ...then unify into one icon+popup (files-view-toggle-btn)
+]
+
+/**
+ * One ResizeObserver per toolbar, driving both the --toolbar-h CSS var and
+ * the collapse tiers above — two observers on the same element would double
+ * the layout work per resize for no benefit.
+ */
+function observeToolbar(toolbarId, cssVar) {
     const toolbar = document.getElementById(toolbarId)
     if (!toolbar) return
-    const sync = () =>
+    const firstRowItem = toolbar.querySelector(
+        ':scope > :not(.files-toolbar-album-row)'
+    )
+    const actions = toolbar.querySelector('.files-toolbar-actions')
+    // Sibling buttons on the same row can differ by a px or two from
+    // padding/line-height, so only a full row's worth of offset counts.
+    const isWrapped = () =>
+        !!firstRowItem &&
+        !!actions &&
+        actions.getBoundingClientRect().top -
+            firstRowItem.getBoundingClientRect().top >
+            10
+
+    const sync = () => {
         document.documentElement.style.setProperty(
             cssVar,
             `${toolbar.offsetHeight}px`
         )
+        toolbar.classList.remove(...TOOLBAR_COLLAPSE_TIERS)
+        for (const tier of TOOLBAR_COLLAPSE_TIERS) {
+            if (!isWrapped()) break
+            toolbar.classList.add(tier)
+        }
+    }
     sync()
+    // Also fires when content (not just viewport width) changes how many
+    // buttons need to fit — e.g. switching list -> gallery view adds
+    // Sort/Display/Select-all without any window resize.
     new ResizeObserver(sync).observe(toolbar)
 }
 
@@ -297,7 +338,7 @@ function initToolbar(toolbarId, dt) {
     const searchInputId = `${toolbarId}-search-input`
     if (dt) wireToolbarSearch(searchInputId, dt)
     initCollapsibleSearch(`${toolbarId}-search`, searchInputId)
-    observeToolbarHeight(toolbarId, '--toolbar-h')
+    observeToolbar(toolbarId, '--toolbar-h')
 }
 
 function wireToolbarSearch(inputId, dt) {
