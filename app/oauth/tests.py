@@ -2,6 +2,7 @@ import json
 import logging
 import types
 
+from django.core.cache import cache
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
@@ -10,6 +11,7 @@ from djangofiles.test_utils import TEST_PASSWORD, WEAK_PASSWORD, WRONG_PASSWORD
 from oauth import passkeys
 from oauth.models import CustomUser, Discord, PasskeyCredential, UserInvites
 from oauth.providers.helpers import create_oauth_user, get_or_create_user
+from settings.managers import CACHE_KEY as SITE_SETTINGS_CACHE_KEY
 from settings.models import SiteSettings
 
 log = logging.getLogger("app")
@@ -18,8 +20,15 @@ log = logging.getLogger("app")
 class PasskeyConfigTest(TestCase):
     """RP derivation from SiteSettings.site_url."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+
+    def setUp(self):
+        # SiteSettings.objects.settings() caches in Redis, which survives the
+        # per-test DB rollback; tests here mutate and save the singleton, so
+        # clear the cache each test to avoid reading a previous test's value.
+        cache.delete(SITE_SETTINGS_CACHE_KEY)
 
     def test_get_rp_from_site_url(self):
         site = SiteSettings.objects.settings()
@@ -42,17 +51,24 @@ class PasskeyConfigTest(TestCase):
 class PasskeyViewTest(TestCase):
     """Passkey registration/authentication endpoints."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
         site = SiteSettings.objects.settings()
         site.site_url = "https://example.com"
         site.passkey_auth = True
         site.save()
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="passkeyuser",
             email="passkey@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
+
+    def setUp(self):
+        # SiteSettings.objects.settings() caches in Redis, which survives the
+        # per-test DB rollback; tests here mutate and save the singleton, so
+        # clear the cache each test to avoid reading a previous test's value.
+        cache.delete(SITE_SETTINGS_CACHE_KEY)
 
     def _login(self):
         self.client.force_login(self.user)
@@ -139,18 +155,25 @@ class PasskeyViewTest(TestCase):
 class PasskeyInviteTest(TestCase):
     """Passkey account creation via the invite flow."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
         site = SiteSettings.objects.settings()
         site.site_url = "https://example.com"
         site.passkey_auth = True
         site.save()
-        self.owner = CustomUser.objects.create_superuser(
+        cls.owner = CustomUser.objects.create_superuser(
             username="owner",
             email="owner@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
         )
-        self.invite = UserInvites.objects.create(owner=self.owner, max_uses=1)
+        cls.invite = UserInvites.objects.create(owner=cls.owner, max_uses=1)
+
+    def setUp(self):
+        # SiteSettings.objects.settings() caches in Redis, which survives the
+        # per-test DB rollback; tests here mutate and save the singleton, so
+        # clear the cache each test to avoid reading a previous test's value.
+        cache.delete(SITE_SETTINGS_CACHE_KEY)
 
     def _begin_url(self, code):
         return reverse("oauth:passkey-invite-begin", kwargs={"invite": code})
@@ -196,11 +219,18 @@ class PasskeyInviteTest(TestCase):
 class OAuthUserCreationTest(TestCase):
     """get_or_create_user / create_oauth_user: no username-based account adoption."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
         site = SiteSettings.objects.settings()
         site.oauth_reg = True
         site.save()
+
+    def setUp(self):
+        # SiteSettings.objects.settings() caches in Redis, which survives the
+        # per-test DB rollback; tests here mutate and save the singleton, so
+        # clear the cache each test to avoid reading a previous test's value.
+        cache.delete(SITE_SETTINGS_CACHE_KEY)
 
     @staticmethod
     def _req():
@@ -256,9 +286,10 @@ class OAuthUserCreationTest(TestCase):
 class OAuthUsernameViewTest(TestCase):
     """The post-signup username interstitial."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(username="auto1234", password=TEST_PASSWORD)  # nosec  # NOSONAR
+        cls.user = CustomUser.objects.create_user(username="auto1234", password=TEST_PASSWORD)  # nosec  # NOSONAR
 
     def test_requires_login(self):
         response = self.client.get(reverse("oauth:username"))
@@ -298,8 +329,15 @@ class OAuthUsernameViewTest(TestCase):
 class FirstRunSetupTest(TestCase):
     """First-run bootstrap: create the initial admin only while none exists."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+
+    def setUp(self):
+        # SiteSettings.objects.settings() caches in Redis, which survives the
+        # per-test DB rollback; tests here mutate and save the singleton, so
+        # clear the cache each test to avoid reading a previous test's value.
+        cache.delete(SITE_SETTINGS_CACHE_KEY)
 
     def test_login_redirects_to_setup_when_no_admin(self):
         response = self.client.get(reverse("oauth:login"))
@@ -377,13 +415,20 @@ class FirstRunSetupTest(TestCase):
 class PasskeySetupTest(TestCase):
     """First-run passkey registration for the initial admin."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
         # No site_url: first-run setup derives the RP from the request origin.
         site = SiteSettings.objects.settings()
         site.site_url = ""
         site.passkey_auth = True
         site.save()
+
+    def setUp(self):
+        # SiteSettings.objects.settings() caches in Redis, which survives the
+        # per-test DB rollback; tests here mutate and save the singleton, so
+        # clear the cache each test to avoid reading a previous test's value.
+        cache.delete(SITE_SETTINGS_CACHE_KEY)
 
     def test_begin_returns_options(self):
         response = self.client.post(

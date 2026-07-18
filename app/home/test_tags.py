@@ -19,9 +19,10 @@ def _xmp_exif(tags: list) -> dict:
 
 
 class TagBaseTestCase(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
-        self.user = CustomUser.objects.create_user(
+        cls.user = CustomUser.objects.create_user(
             username="taguser",
             email="tag@test.com",
             password=TEST_PASSWORD,  # nosec  # NOSONAR
