@@ -148,6 +148,8 @@ Django Files is packed with features for seamless file management and sharing. M
 - Webhooks — event notifications to Discord or any custom endpoint, with signed JSON payloads
 - Web extensions for Chrome and Firefox
 - Public upload support (optional)
+- Resumable chunked uploads via [tus](https://tus.io/) (optional) — multi-GB files upload through
+  Cloudflare's 100 MB request limit and dropped connections resume where they left off
 
 ### 🔒 Authentication & Security
 
@@ -323,6 +325,13 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 | DUO_CLIENT_SECRET               | DUO Secret                        | `nmoNmuLM72WB3RsNkwuvnmoNmuLM72WB3RsNkwuv`           |
 | SENTRY_URL                      | Sentry URL                        | `https://a5cb357a@o133337.ingest.sentry.io/1234567`  |
 | SENTRY_ENVIRONMENT              | Sentry ENV                        | `prod`                                               |
+| TUS_ENABLED                     | Resumable uploads via tusd [^1]   | `True`                                               |
+| TUS_EXPIRE_HOURS                | Sweep abandoned tus uploads after | `24`                                                 |
+
+[^1]:
+    Requires the `tusd` sidecar service included in the repo compose files (not the all-in-one
+    image). The web uploader then sends chunked, resumable uploads to `/tus/`; existing upload
+    endpoints and clients (ShareX, Flameshot, etc.) are unaffected.
 
 ## Database
 
