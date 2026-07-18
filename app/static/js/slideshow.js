@@ -109,6 +109,39 @@ function slideshowCallback(data) {
     }
 }
 
+// Swiper's native `loading="lazy"` deferral relies on each slide's real
+// on-screen position, but the main swiper uses the `fade` effect, which
+// stacks every slide at the same on-screen box (crossfade via opacity), so
+// the browser can't tell "off-screen" slides apart by viewport distance.
+// Instead, images are built with a `data-src` placeholder and the real
+// `src` is only assigned for the active slide (+/- one) via
+// hydrateVisibleSlides(), driven by Swiper's slide-active/prev/next
+// classes on init/slideChange — which stay correct through loop mode too.
+function buildLazyImage(src, alt) {
+    const img = document.createElement('img')
+    img.dataset.src = src
+    img.alt = alt
+    return img
+}
+
+function buildLazyPreloader(img) {
+    const preloader = document.createElement('div')
+    preloader.className = 'swiper-lazy-preloader'
+    img.addEventListener('load', () => preloader.remove(), { once: true })
+    return preloader
+}
+
+function hydrateVisibleSlides(swiperEl) {
+    if (!swiperEl) return
+    swiperEl
+        .querySelectorAll(
+            '.swiper-slide-active img[data-src], .swiper-slide-prev img[data-src], .swiper-slide-next img[data-src]'
+        )
+        .forEach((img) => {
+            if (!img.src) img.src = img.dataset.src
+        })
+}
+
 function buildSlide(file) {
     const div = document.createElement('div')
     div.classList.add('swiper-slide')
@@ -116,10 +149,9 @@ function buildSlide(file) {
         const poster = document.createElement('div')
         poster.className = 'slideshow-video-poster'
         if (file.thumb) {
-            const img = document.createElement('img')
-            img.src = file.thumb
-            img.alt = file.name
+            const img = buildLazyImage(file.thumb, file.name)
             poster.appendChild(img)
+            poster.appendChild(buildLazyPreloader(img))
         }
         const playBtn = document.createElement('button')
         playBtn.className =
@@ -137,12 +169,11 @@ function buildSlide(file) {
         })
         div.appendChild(poster)
     } else {
-        const img = document.createElement('img')
         const url = new URL(file.raw)
         url.searchParams.set('view', 'gallery')
-        img.src = url.toString()
-        img.alt = file.name
+        const img = buildLazyImage(url.toString(), file.name)
         div.appendChild(img)
+        div.appendChild(buildLazyPreloader(img))
     }
     return div
 }
@@ -152,10 +183,7 @@ function buildThumbSlide(file) {
     div.classList.add('swiper-slide')
     if (file.mime?.startsWith('video/') && file.thumb) {
         // Use the server-generated thumbnail image for the strip
-        const img = document.createElement('img')
-        img.src = file.thumb
-        img.alt = file.name
-        div.appendChild(img)
+        div.appendChild(buildLazyImage(file.thumb, file.name))
     } else if (file.mime?.startsWith('video/')) {
         // No thumbnail yet — show a film icon placeholder
         const icon = document.createElement('div')
@@ -163,12 +191,15 @@ function buildThumbSlide(file) {
         icon.innerHTML = '<i class="fa-solid fa-film"></i>'
         div.appendChild(icon)
     } else {
-        const img = document.createElement('img')
-        const url = new URL(file.raw)
-        url.searchParams.set('view', 'gallery')
-        img.src = url.toString()
-        img.alt = file.name
-        div.appendChild(img)
+        // Use the server-generated thumbnail for the strip; fall back to
+        // the full-size image only if no thumb is available.
+        let src = file.thumb
+        if (!src) {
+            const url = new URL(file.raw)
+            url.searchParams.set('view', 'gallery')
+            src = url.toString()
+        }
+        div.appendChild(buildLazyImage(src, file.name))
     }
     return div
 }
@@ -180,6 +211,8 @@ function appendSlidesToSwiper(files) {
     }
     if (thumbsSwiper) thumbsSwiper.update()
     if (imagesSwiper) imagesSwiper.update()
+    hydrateVisibleSlides(swiperImages)
+    hydrateVisibleSlides(swiperThumbs)
 }
 
 function initSlideshow() {
@@ -200,6 +233,11 @@ function initSlideshow() {
         slidesPerView: 5,
         spaceBetween: 8,
         watchSlidesProgress: true,
+        on: {
+            init: () => hydrateVisibleSlides(swiperThumbs),
+            slideChange: () => hydrateVisibleSlides(swiperThumbs),
+            slideChangeTransitionEnd: () => hydrateVisibleSlides(swiperThumbs),
+        },
     })
 
     imagesSwiper = new Swiper('.images', {
@@ -224,11 +262,14 @@ function initSlideshow() {
             swiper: thumbsSwiper,
         },
         on: {
+            init: () => hydrateVisibleSlides(swiperImages),
             slideChange() {
+                hydrateVisibleSlides(swiperImages)
                 swiperImages.querySelectorAll('video').forEach((v) => {
                     v.pause()
                 })
             },
+            slideChangeTransitionEnd: () => hydrateVisibleSlides(swiperImages),
         },
     })
 }
