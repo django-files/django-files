@@ -1,4 +1,7 @@
-from typing import Any, Dict, List, Mapping
+import ipaddress
+import socket
+from typing import Any, Dict, List, Mapping, Optional
+from urllib.parse import urlparse
 
 from django.db.models import QuerySet
 from django.forms.models import model_to_dict
@@ -7,6 +10,29 @@ from home.util.tags import tag_names
 from oauth.models import CustomUser
 from settings.context_processors import site_settings_processor
 from webpush.models import PushInformation
+
+
+def remote_url_error(url: str) -> Optional[str]:
+    """
+    SSRF guard for URLs the server fetches on a user's behalf. Returns an
+    error message, or None when the URL is safe to fetch: http(s) only, and
+    every address the host resolves to must be public — otherwise any user
+    with a token could make the server probe internal services.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return "Only http(s) URLs are allowed."
+    if not parsed.hostname:
+        return "Missing/Invalid URL"
+    try:
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        addr_info = socket.getaddrinfo(parsed.hostname, port, proto=socket.IPPROTO_TCP)
+    except socket.gaierror, ValueError:
+        return f"Could not resolve host: {parsed.hostname}"
+    for info in addr_info:
+        if not ipaddress.ip_address(info[4][0]).is_global:
+            return "URL resolves to a non-public address."
+    return None
 
 
 def _parse_ordering(spec: str, allowed: Mapping[str, str]) -> list:

@@ -35,4 +35,17 @@ done
 secret=$(cat /data/media/db/secret.key)
 sed "s/{{nginx_signing_secret}}/${secret}/g" -i /etc/nginx/nginx.conf
 
+# Template the shared upload cap into client_max_body_size. Same env var the
+# app reads (UPLOAD_MAX_SIZE in settings.py) so nginx and Django always agree.
+upload_max="${UPLOAD_MAX_SIZE:-5G}"
+case "${upload_max}" in
+    ''|*[!0-9kKmMgG]*)
+        echo "Invalid UPLOAD_MAX_SIZE: '${upload_max}' - using default: 5G"
+        upload_max="5G";;
+    *)
+        ;;
+esac
+echo "client_max_body_size: ${upload_max}"
+sed "s/{{upload_max_size}}/${upload_max}/g" -i /etc/nginx/nginx.conf
+
 echo "$0 - Finished"

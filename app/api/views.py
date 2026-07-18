@@ -6,6 +6,7 @@ import operator
 import os
 import random
 import re
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -20,6 +21,7 @@ from api.utils import (
     extract_albums,
     extract_files,
     extract_streams,
+    remote_url_error,
     serialize_user,
     serialize_users,
 )
@@ -34,6 +36,7 @@ from django.db.models.fields.json import KeyTextTransform
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.template.defaultfilters import filesizeformat
 from django.utils.crypto import constant_time_compare
 from django.utils.timezone import localtime, now
 from django.views.decorators.cache import cache_control, cache_page, never_cache
@@ -59,14 +62,14 @@ from home.tasks import (
     stream_status_websocket,
 )
 from home.util.auth import create_api_token, hash_token
-from home.util.file import process_file
+from home.util.file import LocalFile, process_file
 from home.util.misc import anytobool, human_read_to_byte, redact_log, sanitize_log_value
 from home.util.nginx import sign_hls_cookie, verify_hls_cookie
-from home.util.quota import process_storage_quotas
+from home.util.quota import process_storage_quotas, remaining_quota_bytes
 from home.util.rand import rand_string
 from home.util.storage import file_rename
 from home.util.stream_record import delete_recording_file
-from home.util.tags import clean_tag_names
+from home.util.tags import add_entity_tag, clean_tag_names
 from home.util.webhooks import (
     EVENT_STREAM_LIVE,
     EVENT_STREAM_OFFLINE,
@@ -331,6 +334,29 @@ def version_view(request):
             return JsonResponse({"error": str(error)}, status=500)
 
 
+def _upload_size_error(user, size) -> Optional[JsonResponse]:
+    """
+    Return an error response when an upload exceeds the size cap or a storage
+    quota, or None when it fits. nginx and asgi.py already gate on
+    Content-Length; the size cap is rechecked here against the real file size
+    to cover chunked transfers and deployments behind other proxies.
+    """
+    if size and size > settings.UPLOAD_MAX_SIZE:
+        message = f"Upload Failed: Maximum upload size is {filesizeformat(settings.UPLOAD_MAX_SIZE)}."
+        log.warning("%s (got %s bytes)", message, size)
+        return JsonResponse({"error": True, "message": message}, status=413)
+    if any(pq := process_storage_quotas(user, size)):
+        if pq[1]:
+            message = "Upload Failed: Global storage quota exceeded."
+        elif pq[0]:
+            message = "Upload Failed: User storage quota exceeded."
+        else:
+            message = "Unknown error checking quotas."
+        log.error(message)
+        return JsonResponse({"error": True, "message": message}, status=400)
+    return None
+
+
 @csrf_exempt
 @require_http_methods(["OPTIONS", "POST"])
 @auth_from_token(no_fail=True)
@@ -350,22 +376,16 @@ def upload_view(request):
         request.user = CustomUser.objects.get(username="anonymous")
     try:
         f = request.FILES.get("file")
-        # log.debug("f.size: %s", f.size)
-        if any(pq := process_storage_quotas(request.user, f.size)):
-            if pq[1]:
-                message = "Upload Failed: Global storage quota exceeded."
-            elif pq[0]:
-                message = "Upload Failed: User storage quota exceeded."
-            else:
-                message = "Unknown error checking quotas."
-            log.error(message)
-            return JsonResponse({"error": True, "message": message}, status=400)
         if not f and post.get("text"):
             f = io.BytesIO(bytes(post.pop("text"), "utf-8"))
             f.name = post.pop("name", "paste.txt") or "paste.txt"
             f.name = f.name if "." in f.name else f.name + ".txt"
+            f.size = f.getbuffer().nbytes
         if not f:
             return JsonResponse({"error": "No file or text keys found."}, status=400)
+        # log.debug("f.size: %s", f.size)
+        if error_response := _upload_size_error(request.user, f.size):
+            return error_response
         # TODO: Determine how to better handle expire and why info is still being used differently from other methods
         expire = parse_expire(request)
         log.debug("expire: %s", expire)
@@ -1261,6 +1281,56 @@ def albums_view(request, page=None, count=100):
     return JsonResponse(response, safe=False, status=200)
 
 
+# Remote fetch guards: Content-Length can lie (or be absent, or the body is
+# gzip that httpx transparently expands), so the byte cap is enforced on
+# bytes actually written. The hard cap bounds disk use even when storage
+# quotas are unlimited, and the wall-clock cap stops a slow-drip server from
+# pinning a worker indefinitely.
+REMOTE_MAX_REDIRECTS = 5
+REMOTE_MAX_BYTES = 10 * 1024**3
+REMOTE_MAX_SECONDS = 900
+REMOTE_TIMEOUT = httpx.Timeout(30, connect=10)
+REMOTE_QUOTA_MESSAGE = "Upload Failed: storage quota exceeded."
+
+
+def download_remote_file(user: CustomUser, url: str, fp: BinaryIO) -> Optional[str]:
+    """
+    Stream url into fp; returns an error message or None on success.
+    Redirects are followed manually so remote_url_error re-validates every
+    hop — a public URL redirecting to an internal address is the classic
+    SSRF bypass.
+    """
+    cap = min(remaining_quota_bytes(user) or REMOTE_MAX_BYTES, REMOTE_MAX_BYTES)
+    start = time.monotonic()
+    try:
+        with httpx.Client(follow_redirects=False, timeout=REMOTE_TIMEOUT) as client:
+            for _ in range(REMOTE_MAX_REDIRECTS + 1):
+                if error := remote_url_error(url):
+                    return error
+                with client.stream("GET", url) as r:
+                    if r.has_redirect_location and r.next_request:
+                        url = str(r.next_request.url)
+                        continue
+                    if not r.is_success:
+                        return f"{r.status_code} Fetching {url}"
+                    if int(r.headers.get("Content-Length") or 0) > cap:
+                        return REMOTE_QUOTA_MESSAGE
+                    total = 0
+                    for chunk in r.iter_bytes(1024 * 1024):
+                        total += len(chunk)
+                        if total > cap:
+                            return REMOTE_QUOTA_MESSAGE
+                        if time.monotonic() - start > REMOTE_MAX_SECONDS:
+                            return f"Download exceeded {REMOTE_MAX_SECONDS}s time limit."
+                        fp.write(chunk)
+                    fp.flush()
+                    return None
+    except httpx.HTTPError as error:
+        log.exception("download_remote_file: %s", url)
+        return f"Error fetching {url}: {error}"
+    return "Too many redirects."
+
+
 @csrf_exempt
 @require_http_methods(["OPTIONS", "POST"])
 @auth_from_token
@@ -1286,13 +1356,14 @@ def remote_view(request):
     name = os.path.basename(parsed_url.path)
     log.debug("name: %s", name)
 
-    r = httpx.get(url, follow_redirects=True)
-    if not r.is_success:
-        return JsonResponse({"error": f"{r.status_code} Fetching {url}"}, status=400)
-
     extra_args = parse_headers(request.headers, expr=parse_expire(request), **request.POST.dict())
     log.debug("extra_args: %s", extra_args)
-    file = process_file(name, io.BytesIO(r.content), request.user.id, **extra_args)
+    with tempfile.NamedTemporaryFile(suffix=os.path.basename(name)) as tmp:
+        if error := download_remote_file(request.user, url, tmp):
+            return JsonResponse({"error": error}, status=400)
+        # LocalFile: process_file consumes the temp file in place instead of
+        # making a second on-disk copy of a potentially very large download
+        file = process_file(name, LocalFile(tmp.name), request.user.id, **extra_args)
     response = {"url": f"{site_settings['site_url'] + file.preview_uri()}"}
     log.debug("response: %s", response)
     return JsonResponse(response)
@@ -1719,6 +1790,8 @@ def stream_create_view(request):
     stream, created = Stream.objects.get_or_create(name=name, defaults=defaults)
     if not created and stream.user != request.user:
         return JsonResponse({"error": "Stream name already taken."}, status=409)
+    for tag_name in clean_tag_names(request.POST.get("tags", "")):
+        add_entity_tag(stream, tag_name)
     return JsonResponse({"name": stream.name, "stream_token": stream.stream_token})
 
 

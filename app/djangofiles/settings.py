@@ -8,6 +8,7 @@ from asgiref.sync import sync_to_async
 from celery.schedules import crontab
 from decouple import Csv, config
 from django.contrib.messages import constants as message_constants
+from djangofiles.sysinfo import cgroup_memory_limit, parse_size
 from dotenv import find_dotenv, load_dotenv
 from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -116,6 +117,31 @@ AWS_S3_REGION_NAME = config("AWS_REGION_NAME", None)
 AWS_S3_CDN_URL = config("AWS_S3_CDN_URL", None)
 
 VIDEO_THUMB_MAX_BYTES = config("VIDEO_THUMB_MAX_BYTES", 2 * 1024 * 1024 * 1024, int)
+
+# Single knob for the upload body cap. The same env var is templated into
+# nginx's client_max_body_size (nginx/60-sign-secret.sh), enforced in asgi.py
+# before Django spools the request body to disk, rechecked per-file in
+# upload_view, and passed to Uppy for client-side pre-flight rejection.
+try:
+    UPLOAD_MAX_SIZE = parse_size(config("UPLOAD_MAX_SIZE", "5G"))
+except ValueError:
+    print(f"Invalid UPLOAD_MAX_SIZE: {config('UPLOAD_MAX_SIZE', '5G')} - using default: 5G")
+    UPLOAD_MAX_SIZE = parse_size("5G")
+print(f"UPLOAD_MAX_SIZE: {UPLOAD_MAX_SIZE}")
+
+# Pixel budget for in-request image processing (EXIF handling + thumbnails).
+# Decoding costs roughly 3-4 bytes per pixel per copy and processing touches
+# several copies, so images above this budget are stored as-is with no
+# EXIF/thumbnail pass instead of risking an OOM-killed worker. 0 = derive
+# from the container's cgroup memory limit; an explicit value overrides.
+UPLOAD_MAX_IMAGE_PIXELS = config("UPLOAD_MAX_IMAGE_PIXELS", 0, int)
+if not UPLOAD_MAX_IMAGE_PIXELS and (_mem_limit := cgroup_memory_limit()):
+    # half the container limit shared across the two gunicorn workers at
+    # ~16 bytes/pixel of processing headroom; floor of 8 MP so common
+    # screenshots/photos still get thumbnails on tiny containers, ceiling of
+    # Pillow's default so big hosts keep decompression-bomb protection.
+    UPLOAD_MAX_IMAGE_PIXELS = min(max(_mem_limit // 2 // 16, 8_000_000), 178_956_970)
+print(f"UPLOAD_MAX_IMAGE_PIXELS: {UPLOAD_MAX_IMAGE_PIXELS or 'unlimited'}")
 
 CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", True, bool)
 NGINX_ACCESS_LOGS = config("NGINX_ACCESS_LOGS", "/logs/nginx.access")

@@ -1,7 +1,8 @@
+{% load static %}
 {% if request.user.is_authenticated %}
 <!-- Stream Setup Modal -->
 <div class="modal fade" id="streamSetupModal" tabindex="-1" aria-labelledby="streamSetupModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="streamSetupModalLabel"><i class="fa-solid fa-satellite-dish me-2"></i>Go Live</h5>
@@ -21,16 +22,24 @@
                     <div class="form-text">This becomes your stream path: <code>/live/&lt;name&gt;/</code></div>
                 </div>
 
+                <div class="mb-3 form-check form-switch">
+                    <input type="checkbox" class="form-check-input" role="switch" aria-checked="false" id="streamSetupRecord">
+                    <label for="streamSetupRecord" class="form-check-label">
+                        Record this stream and save it as a file
+                    </label>
+                </div>
+
+                <div class="mb-3">
+                    <span class="form-label fw-semibold d-block">Tags <span class="text-muted fw-normal">(optional)</span></span>
+                    {# chips and the "+" adder are rendered by the module script below via tag-chips.js #}
+                    <div class="tag-container position-relative" id="streamSetupTags"></div>
+                    <input type="hidden" id="streamSetupTagsField">
+                </div>
+
                 <div id="streamSetupTokenSection" class="d-none">
                     <div class="mb-3">
                         <label for="streamSetupTitle" class="form-label fw-semibold">Title <span class="text-muted fw-normal">(optional)</span></label>
                         <input type="text" class="form-control" id="streamSetupTitle" placeholder="My Stream Title" autocomplete="off">
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="streamSetupRecord">
-                        <label for="streamSetupRecord" class="form-check-label">
-                            Record this stream and save it as a file
-                        </label>
                     </div>
                     <div class="mb-4">
                         <label for="streamSetupTokenDisplay" class="form-label fw-semibold">
@@ -79,19 +88,24 @@
                 </div>
 
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
         </div>
     </div>
 </div>
-<script>
+<script type="module">
+import { initTagChipEditor } from '{% static "js/tag-chips.js" %}'
+
 (function () {
     const rtmpAuthority = '{{ rtmp_authority|default:rtmp_host|escapejs }}'
     const cdnDetected = '{{ cdn_detected|default:"" }}'
     const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
     let currentStreamName = ''
     let currentStreamToken = ''
+
+    const streamSetupTagsField = document.getElementById('streamSetupTagsField')
+    const streamSetupTagEditor = initTagChipEditor({
+        container: document.getElementById('streamSetupTags'),
+        onChange: (tags) => { streamSetupTagsField.value = tags.join(',') },
+    })
 
     function buildServerUrl(token) {
         let url = `rtmp://${rtmpAuthority}/live?stream_token=${token}`
@@ -118,9 +132,28 @@
         }
     })
 
-    document.getElementById('streamSetupRecord')?.addEventListener('change', function () {
+    document.getElementById('streamSetupRecord')?.addEventListener('change', async function () {
         if (currentStreamToken) {
             document.getElementById('streamSetupServerUrl').value = buildServerUrl(currentStreamToken)
+        }
+        if (!currentStreamName) return
+        const record = this.checked
+        this.disabled = true
+        try {
+            const res = await fetch(`/api/stream/${encodeURIComponent(currentStreamName)}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ record }),
+            })
+            if (!res.ok) {
+                this.checked = !record
+                alert('Failed to update recording setting.')
+            }
+        } catch {
+            this.checked = !record
+            alert('Failed to update recording setting.')
+        } finally {
+            this.disabled = false
         }
     })
 
@@ -135,6 +168,7 @@
         try {
             const fd = new FormData()
             fd.append('name', name)
+            fd.append('tags', streamSetupTagsField.value)
             const res = await fetch('/api/stream/create/', {
                 method: 'POST',
                 body: fd,
@@ -203,6 +237,11 @@
 
     document.querySelectorAll('#streamSetupModal .stream-setup-clip-btn').forEach(function (btn) {
         btn.addEventListener('click', () => handleClipClick(btn))
+    })
+
+    document.getElementById('streamSetupModal').addEventListener('show.bs.modal', function () {
+        document.getElementById('streamSetupRecord').checked = false
+        streamSetupTagEditor.reset()
     })
 
     if (cdnDetected) {
