@@ -48,7 +48,7 @@ def tus_hook_view(request):
     """
     try:
         data = json.loads(request.body.decode())
-    except ValueError, UnicodeDecodeError:
+    except ValueError:
         return JsonResponse({"error": "Invalid JSON."}, status=400)
     hook_type = data.get("Type", "")
     event = data.get("Event") or {}

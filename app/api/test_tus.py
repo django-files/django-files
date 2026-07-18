@@ -30,7 +30,6 @@ def hook_payload(hook_type, *, size=1024, metadata=None, headers=None, storage=N
             "HTTPRequest": {
                 "Method": "POST",
                 "URI": "/tus/",
-                "RemoteAddr": "10.0.0.2:1234",
                 "Header": headers or {},
             },
         },
@@ -209,11 +208,10 @@ class TusImportTaskTestCase(TestCase):
         self.assertFalse(os.path.exists(path + ".info"))
 
     def test_import_applies_options(self):
+        options = {"private": "true", "password": "hunter2"}  # nosec  # NOSONAR
         with self.settings(TUS_UPLOAD_DIR=self.tus_dir):
             path = self.write_upload()
-            import_tus_upload(
-                path, "secret.txt", self.user.id, {"private": "true", "password": "hunter2"}
-            )  # nosec  # NOSONAR
+            import_tus_upload(path, "secret.txt", self.user.id, options)
         file = Files.objects.filter(user=self.user).first()
         self.assertTrue(file.private)
         self.assertEqual(file.password, "hunter2")
