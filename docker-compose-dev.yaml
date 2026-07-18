@@ -72,6 +72,19 @@ services:
       - app
       - redis
 
+  tusd:
+    image: tusproject/tusd:v2
+    # uid 1000 matches the app/worker containers so the imported file and the
+    # .info sidecar are deletable by the celery worker
+    user: "1000:1000"
+    command: "-behind-proxy -base-path /tus/ -upload-dir /data/media/tus -hooks-http http://app:9000/api/tus/hook/ -hooks-enabled-events pre-create,post-finish"
+    deploy:
+      replicas: 1
+    volumes:
+      - media_dir:/data/media
+    depends_on:
+      - app
+
   redis:
     image: redis:7-alpine
     command: "redis-server --appendonly yes"

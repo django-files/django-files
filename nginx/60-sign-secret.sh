@@ -14,6 +14,12 @@ mkdir -p /data/media/record
 chown nginx:1000 /data/media/record
 chmod 2775 /data/media/record
 
+# tusd sidecar (uid 1000, same as the app/worker containers) writes partial
+# uploads here; the worker imports and deletes them. Created here as well as
+# in the app image so bind-mounted media dirs (swarm) get it too.
+mkdir -p /data/media/tus
+chown 1000:1000 /data/media/tus
+
 if [ -n "${SECRET}" ] || [ -n "${SECRET_KEY}" ];then
     echo "Writing Secret Key Variable to File: /data/media/db/secret.key"
     printf "%s" "${SECRET}${SECRET_KEY}" > /data/media/db/secret.key

@@ -19,4 +19,9 @@ def site_settings_processor(request):
     # Default so templates extending main.html (login, error pages, etc.) can use
     # {% if native_app_arg %} without raising VariableDoesNotExist. Views that build
     # a real deep-link override this in their own context.
-    return {"site_settings": site_settings, "native_app_arg": None, "upload_max_size": settings.UPLOAD_MAX_SIZE}
+    return {
+        "site_settings": site_settings,
+        "native_app_arg": None,
+        "upload_max_size": settings.UPLOAD_MAX_SIZE,
+        "tus_enabled": settings.TUS_ENABLED,
+    }

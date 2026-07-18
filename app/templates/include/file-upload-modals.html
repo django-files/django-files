@@ -60,4 +60,5 @@
 <script>
     const uploadUrl = "{% url 'api:upload' %}"
     const uploadMaxSize = {{ upload_max_size|default:0 }}
+    const tusEnabled = {{ tus_enabled|yesno:'true,false' }}
 </script>

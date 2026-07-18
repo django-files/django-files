@@ -1,4 +1,5 @@
 from api import views
+from api.tus import tus_hook_view
 from django.urls import path, re_path
 from oauth.views import oauth_show
 
@@ -50,6 +51,7 @@ urlpatterns = [
     path("auth/session/", views.auth_session, name="auth-session"),
     path("auth/application/", views.auth_application, name="auth-application"),
     path("session/<path:sessionid>", views.session_view, name="session"),
+    path("tus/hook/", tus_hook_view, name="tus-hook"),
     path("stream/auth/", views.stream_auth_view, name="stream-auth"),
     path("stream/ingest/", views.stream_ingest_view, name="stream-ingest"),
     path("stream/done/", views.stream_done_view, name="stream-done"),

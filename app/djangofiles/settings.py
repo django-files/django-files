@@ -129,6 +129,19 @@ except ValueError:
     UPLOAD_MAX_SIZE = parse_size("5G")
 print(f"UPLOAD_MAX_SIZE: {UPLOAD_MAX_SIZE}")
 
+# tus resumable uploads via the tusd sidecar (see docker-compose). TUS_ENABLED
+# switches the web uploader from XHR to chunked tus uploads at /tus/ — chunks
+# stay under Cloudflare's 100MB body cap and dropped transfers resume from the
+# last confirmed offset. Off by default: enabling it without the tusd service
+# running would break web uploads.
+TUS_ENABLED = config("TUS_ENABLED", False, bool)
+# tusd's -upload-dir on the shared media volume; must match the tusd service
+# command and be visible to app + worker containers for zero-copy import.
+TUS_UPLOAD_DIR = config("TUS_UPLOAD_DIR", "/data/media/tus")
+# Abandoned partial uploads are swept after this many hours (cleanup_tus_uploads).
+TUS_EXPIRE_HOURS = config("TUS_EXPIRE_HOURS", 24, int)
+print(f"TUS_ENABLED: {TUS_ENABLED}")
+
 # Pixel budget for in-request image processing (EXIF handling + thumbnails).
 # Decoding costs roughly 3-4 bytes per pixel per copy and processing touches
 # several copies, so images above this budget are stored as-is with no
@@ -210,6 +223,10 @@ CELERY_BEAT_SCHEDULE = {
     "flush-token-last-used": {
         "task": "home.tasks.flush_token_last_used",
         "schedule": crontab(minute=0),
+    },
+    "cleanup_tus_uploads": {
+        "task": "home.tasks.cleanup_tus_uploads",
+        "schedule": datetime.timedelta(hours=config("TUS_CLEANUP_HOUR", 1, int)),
     },
 }
 

@@ -48,6 +48,7 @@ x-django-env: &django_env
   REDIS_IGNORE_EXCEPTIONS: ${REDIS_IGNORE_EXCEPTIONS}
   RTMP_HOST: ${RTMP_HOST}
   RTMP_PORT: ${RTMP_PORT}
+  TUS_ENABLED: ${TUS_ENABLED}
 
 services:
   nginx:
@@ -164,6 +165,28 @@ services:
     depends_on:
       - app
       - redis
+    networks:
+      - net-internal
+
+  tusd:
+    image: tusproject/tusd:v2
+    # uid 1000 matches the app/worker containers so the imported file and the
+    # .info sidecar are deletable by the celery worker
+    user: "1000:1000"
+    command: "-behind-proxy -base-path /tus/ -upload-dir /data/media/tus -hooks-http http://app:9000/api/tus/hook/ -hooks-enabled-events pre-create,post-finish"
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+        reservations:
+          memory: 32M
+          cpus: "0.1"
+    volumes:
+      - /data/docker/${STACK_NAME}:/data/media
+    depends_on:
+      - app
     networks:
       - net-internal
 

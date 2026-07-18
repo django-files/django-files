@@ -17,6 +17,7 @@
 {% block tail %}
     <script type="text/javascript">
         const uploadUrl = "{% url 'api:upload' %}"
+        const tusEnabled = {{ tus_enabled|yesno:'true,false' }}
     </script>
     <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}

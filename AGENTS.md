@@ -52,6 +52,10 @@ ALWAYS use the `npm run *` command
   - beat schedule declared in `app/djangofiles/settings.py`
   - worker startup hook is registered in `app/home/signals.py`
 - Redis: default cache, session store, channels layer, and Celery broker/backend.
+- tus resumable uploads (opt-in via `TUS_ENABLED`, off by default):
+  - tusd sidecar (docker-compose) owns transport at `/tus/`; nginx proxies to it and 404s `/api/tus/hook/` externally
+  - hook endpoint `app/api/tus.py` (pre-create: auth + quota before bytes move; post-finish: enqueue import)
+  - `home.tasks.import_tus_upload` imports via `process_file(LocalFile(...))`; `cleanup_tus_uploads` beat task sweeps `/data/media/tus`
 
 ## Storage and config
 
