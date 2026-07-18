@@ -2,6 +2,8 @@ import json
 import logging
 import os
 import tempfile
+from datetime import datetime
+from datetime import timezone as dt_timezone
 from typing import Optional
 
 import httpx
@@ -14,7 +16,6 @@ from decouple import config
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Count, Q, Sum
-from django.forms.models import model_to_dict
 from django.utils import timezone
 from django_redis import get_redis_connection
 from home.models import Files, FileStats, Stream, StreamHistory, Webhook
@@ -34,7 +35,7 @@ from home.util.webhooks import (
     event_matches_filters,
     send_webhook,
 )
-from oauth.models import CustomUser
+from oauth.models import ApiToken, CustomUser
 from packaging import version
 from PIL import Image, UnidentifiedImageError
 from pytimeparse2 import parse
@@ -64,7 +65,7 @@ def app_init():
     return "app_init - finished"
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60, "default_retry_delay": 180})
+@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60})
 def generate_thumbs(user_pk: int = None, only_missing: bool = True):
     log.info("Generating Thumbnails - only_missing: %s - user_pk: %s", only_missing, user_pk)
     user_filter = Q(user_id=user_pk) if user_pk else Q()
@@ -72,35 +73,31 @@ def generate_thumbs(user_pk: int = None, only_missing: bool = True):
     # may report image/tiff; exclude by extension as well to catch that case.
     thumb_exclude = Q(mime__in=["image/jxl", "image/x-adobe-dng"]) | Q(name__iendswith=".dng")
 
+    files = Files.objects.filter(user_filter, mime__startswith="image/").exclude(thumb_exclude)
     if only_missing:
-        files = Files.objects.filter(user_filter, thumb__in=[None, ""], mime__startswith="image/").exclude(
-            thumb_exclude
-        )
-    else:
-        files = Files.objects.filter(user_filter, mime__startswith="image").exclude(thumb_exclude)
-    # Evaluate the queryset once to avoid a COUNT then SELECT double-query.
-    files = list(files)
-    log.info("Processing thumbnails for %d objects", len(files))
-    for file in files:
+        files = files.filter(thumb__in=[None, ""])
+    processed = 0
+    for file in files.iterator(chunk_size=100):
+        processed += 1
         log.info("Generating thumbnail for: %s", file.name)
         try:
             thumbnail_processor(file)
         except ValueError, UnidentifiedImageError, FileNotFoundError, Image.DecompressionBombError:
             # if we hit a file that cannot be processed or is missing from storage ignore and continue
             log.error("Unable to process thumbnail for %s", file.name)
-            continue
+    log.info("Processed thumbnails for %d objects", processed)
 
     # Queue a separate task per video so they run in parallel and each gets
-    # its own retry budget. Evaluate the queryset once to avoid a COUNT then
-    # SELECT double-query; generate_video_thumb checks for an existing thumb
+    # its own retry budget; generate_video_thumb checks for an existing thumb
     # before doing any work so re-queuing in-flight files is safe.
+    videos = Files.objects.filter(user_filter, mime__startswith=VIDEO_MIME_PREFIX)
     if only_missing:
-        video_files = list(Files.objects.filter(user_filter, thumb__in=[None, ""], mime__startswith=VIDEO_MIME_PREFIX))
-    else:
-        video_files = list(Files.objects.filter(user_filter, mime__startswith=VIDEO_MIME_PREFIX))
-    log.info("Queueing video thumbnails for %d files", len(video_files))
-    for vfile in video_files:
-        generate_video_thumb.delay(vfile.pk)
+        videos = videos.filter(thumb__in=[None, ""])
+    queued = 0
+    for pk in videos.values_list("pk", flat=True).iterator(chunk_size=500):
+        generate_video_thumb.delay(pk)
+        queued += 1
+    log.info("Queued video thumbnails for %d files", queued)
 
 
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 60})
@@ -185,8 +182,8 @@ def app_startup():
     version_check.apply_async(countdown=5)
     cache.delete_pattern("*.decorators.cache.*")
     log.info("Flushed Template Cache")
-    cache.set("site_settings", model_to_dict(site_settings))
-    log.info("Created Cache: site_settings")
+    # site_settings cache is set by the SiteSettings post_save signal when the
+    # unconditional save() below runs, so no explicit cache.set is needed here.
     if oauth_redirect_url := config("OAUTH_REDIRECT_URL", ""):
         site_settings.oauth_redirect_url = oauth_redirect_url
     if discord_client_id := config("DISCORD_CLIENT_ID", ""):
@@ -377,7 +374,10 @@ def process_stats():
 @shared_task()
 def new_file_websocket(pk):
     log.debug("new_file_websocket: %s", pk)
-    file = Files.objects.get(pk=pk)
+    file = Files.objects.filter(pk=pk).first()
+    if not file:
+        log.warning("new_file_websocket: pk=%s not found, skipping", pk)
+        return
     log.debug("file: %s", file)
     data = extract_files([file])[0]
     log.debug("data: %s", data)
@@ -478,7 +478,6 @@ def delete_stream_websocket(name: str, user_id: int):
     _send_websocket_event({"event": "stream-delete", "name": name}, f"user-{user_id}")
 
 
-# @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 1, "countdown": 300})
 @shared_task()
 def stream_status_websocket(stream_name: str, is_live: bool, ended_at: str = None, started_at: str = None):
     log.debug("stream_status_websocket: stream_name=%s is_live=%s", stream_name, is_live)
@@ -492,7 +491,10 @@ def stream_status_websocket(stream_name: str, is_live: bool, ended_at: str = Non
 
 @shared_task()
 def send_push_live(stream_name: str, ttl: int = 1800):
-    stream = Stream.objects.get(name=stream_name)
+    stream = Stream.objects.filter(name=stream_name).first()
+    if not stream:
+        log.warning("send_push_live: stream %s not found, skipping", stream_name)
+        return
     log.info("send_push_live: name: %s - user: %s", stream.name, stream.user.username)
     site_settings = SiteSettings.objects.settings()
     payload = {
@@ -505,12 +507,16 @@ def send_push_live(stream_name: str, ttl: int = 1800):
     send_group_notification(group_name=stream.name, payload=payload, ttl=ttl)
 
 
-@shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 30})
+@shared_task()
 def import_stream_recording(history_pk: int, path: str):
     """
     Remux a finished stream recording (FLV, written by nginx-rtmp's `record all;`
     to the shared media_dir volume) into an MP4 and import it as a Files object,
     then link it to the StreamHistory row for that session.
+
+    Deliberately no retries: the finally block always deletes the source
+    recording (media_dir is a persistent volume; leftovers would accumulate
+    forever), so a retry would find the file already gone.
 
     process_file is imported locally to avoid a circular import: home.util.file
     imports from home.tasks at module load time.
@@ -568,8 +574,6 @@ def enforce_stream_retention(stream_name: str = None):
         history_qs = StreamHistory.objects.filter(stream=stream, recording__isnull=False).order_by("-started_at")
         keep_pks = set(history_qs.values_list("pk", flat=True)[: stream.recording_retention_count])
         to_delete = history_qs.exclude(pk__in=keep_pks)
-        if not to_delete.exists():
-            continue
         for history in to_delete.select_related("recording"):
             log.info("enforce_stream_retention: stream=%s deleting recording history_pk=%s", stream.name, history.pk)
             if history.recording:
@@ -624,11 +628,8 @@ def fire_webhook(self, webhook_pk, event_key, payload_data):
 
 
 def acquire_lock(key, timeout=900):
-    log.debug("Checking lock for %s", key)
-    if cache.get(key):
-        log.debug("Found Lock")
-        return False
-    log.debug("Setting lock for %s", key)
+    # cache.add is atomic: returns False if the key already exists
+    log.debug("Acquiring lock for %s", key)
     return cache.add(key, "1", timeout)
 
 
@@ -645,11 +646,6 @@ def on_worker_shutdown(**kwargs):
 @shared_task
 def flush_token_last_used():
     """Write buffered last_used_at values from Redis to the ApiToken table."""
-    from datetime import datetime
-
-    from django.utils.timezone import timezone as dt_timezone
-    from oauth.models import ApiToken
-
     redis = get_redis_connection("default")
     pipe = redis.pipeline()
     pipe.hgetall("token_last_used")
