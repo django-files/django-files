@@ -140,6 +140,12 @@ TUS_ENABLED = config("TUS_ENABLED", False, bool)
 TUS_UPLOAD_DIR = config("TUS_UPLOAD_DIR", "/data/media/tus")
 # Abandoned partial uploads are swept after this many hours (cleanup_tus_uploads).
 TUS_EXPIRE_HOURS = config("TUS_EXPIRE_HOURS", 24, int)
+# Shared secret required on /api/tus/hook/ calls (defense in depth on top of
+# the nginx 404 + internal-network containment). Empty means read it from
+# TUS_HOOK_SECRET_FILE, which the nginx entrypoint generates on the shared
+# media volume; the env var is an optional override for both app and tusd.
+TUS_HOOK_SECRET = config("TUS_HOOK_SECRET", "")
+TUS_HOOK_SECRET_FILE = config("TUS_HOOK_SECRET_FILE", "/data/media/db/tus-hook.secret")
 print(f"TUS_ENABLED: {TUS_ENABLED}")
 
 # Pixel budget for in-request image processing (EXIF handling + thumbnails).

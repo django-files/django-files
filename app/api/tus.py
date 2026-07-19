@@ -5,7 +5,10 @@ The tusd sidecar owns the upload transport (chunk assembly, offsets, resume
 state) and POSTs hook events here directly at app:9000 over the internal
 docker network. nginx returns 404 for this path to external callers — same
 containment pattern as /api/stream/hls-auth/ — so tusd is the only reachable
-caller.
+caller. Defense in depth on top of that containment: the view 404s unless
+TUS_ENABLED is set, and requires the shared hook secret (TUS_HOOK_SECRET env,
+else the file nginx generates on the shared media volume) as a ?secret= query
+param — tusd has no flag for static hook headers, so the URL is the channel.
 
 pre-create runs before any bytes transfer: authenticate the uploader, check
 the declared Upload-Length against the size cap and storage quotas, then
@@ -18,6 +21,7 @@ process_file. Import is async: clients learn the file URL from the existing
 new-file websocket event, the same completion signal the gallery already uses.
 """
 
+import hmac
 import json
 import logging
 import os
@@ -46,6 +50,10 @@ def tus_hook_view(request):
     """
     View  /api/tus/hook/  (internal-only, called by the tusd sidecar)
     """
+    if not settings.TUS_ENABLED:
+        return JsonResponse({"error": "Not Found."}, status=404)
+    if not _hook_secret_valid(request):
+        return JsonResponse({"error": "Invalid hook secret."}, status=403)
     try:
         data = json.loads(request.body.decode())
     except ValueError:
@@ -82,8 +90,11 @@ def _pre_create(event: dict) -> JsonResponse:
     # behavior is identical across the XHR and tus endpoints.
     expire = _parse_expire(headers, metadata, user)
     kwargs = parse_headers(headers, expr=expire, **{k.lower(): v for k, v in metadata.items()})
-    log.debug("_pre_create: user=%s size=%s kwargs=%s", user.id, size, kwargs)
-    new_meta = dict(metadata)
+    log.debug("_pre_create: user=%s size=%s kwargs=%s", user.id, size, _redact(kwargs))
+    # Credentials never persist past this hook: tusd writes the (rewritten)
+    # metadata to the on-disk .info sidecar and echoes it on HEAD requests,
+    # and the stamped user_id below already carries the auth result.
+    new_meta = {k: v for k, v in metadata.items() if k.lower() not in ("authorization", "token")}
     new_meta["user_id"] = str(user.id)
     new_meta["df_kwargs"] = json.dumps(kwargs)
     return JsonResponse({"ChangeFileInfo": {"MetaData": new_meta}})
@@ -105,6 +116,31 @@ def _post_finish(event: dict) -> JsonResponse:
     name = metadata.get("name") or metadata.get("filename") or os.path.basename(path)
     import_tus_upload.delay(path, name, int(user_id), options)
     return JsonResponse({})
+
+
+def _hook_secret_valid(request) -> bool:
+    secret = settings.TUS_HOOK_SECRET or _read_hook_secret_file()
+    if not secret:
+        # fail closed: a correctly composed stack always has the file — the
+        # nginx entrypoint generates it on the shared volume at startup
+        log.error(
+            "tus_hook_view: no hook secret configured (set TUS_HOOK_SECRET or provide %s)",
+            settings.TUS_HOOK_SECRET_FILE,
+        )
+        return False
+    return hmac.compare_digest(secret, request.GET.get("secret", ""))
+
+
+def _read_hook_secret_file() -> str:
+    try:
+        with open(settings.TUS_HOOK_SECRET_FILE) as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
+def _redact(kwargs: dict) -> dict:
+    return {key: "***" if key == "password" and value else value for key, value in kwargs.items()}
 
 
 def _reject(status: int, message: str) -> JsonResponse:

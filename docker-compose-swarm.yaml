@@ -49,6 +49,7 @@ x-django-env: &django_env
   RTMP_HOST: ${RTMP_HOST}
   RTMP_PORT: ${RTMP_PORT}
   TUS_ENABLED: ${TUS_ENABLED}
+  TUS_HOOK_SECRET: ${TUS_HOOK_SECRET}
 
 services:
   nginx:
@@ -173,7 +174,26 @@ services:
     # uid 1000 matches the app/worker containers so the imported file and the
     # .info sidecar are deletable by the celery worker
     user: "1000:1000"
-    command: "-behind-proxy -base-path /tus/ -upload-dir /data/media/tus -hooks-http http://app:9000/api/tus/hook/ -hooks-enabled-events pre-create,post-finish"
+    environment:
+      TUS_HOOK_SECRET: ${TUS_HOOK_SECRET}
+    # tusd has no flag for static hook headers, so the shared hook secret
+    # (TUS_HOOK_SECRET env, else the file the nginx entrypoint generates on
+    # the shared volume) rides the hook URL as a query param
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        f=/data/media/db/tus-hook.secret
+        t=0
+        while [ -z "$${TUS_HOOK_SECRET:-}" ] && [ ! -s "$$f" ] && [ "$$t" -lt 60 ]; do
+          [ "$$t" -eq 0 ] && echo "waiting for $$f (created by the nginx entrypoint)"
+          sleep 1
+          t=$$((t+1))
+        done
+        secret="$${TUS_HOOK_SECRET:-$$(cat "$$f" 2>/dev/null)}"
+        [ -n "$$secret" ] || echo "WARNING: no tus hook secret found; the app will reject hook calls"
+        exec tusd -behind-proxy -base-path /tus/ -upload-dir /data/media/tus \
+          -hooks-http "http://app:9000/api/tus/hook/?secret=$$secret" \
+          -hooks-enabled-events pre-create,post-finish
     deploy:
       replicas: 1
       resources:

@@ -20,6 +20,18 @@ chmod 2775 /data/media/record
 mkdir -p /data/media/tus
 chown 1000:1000 /data/media/tus
 
+# Shared secret for the tusd -> app hook endpoint (defense in depth on top of
+# the nginx 404 + internal-network containment). Single writer: generated here
+# as root; the tusd entrypoint wrapper and the app (both uid 1000) read it
+# from the shared volume. TUS_HOOK_SECRET env overrides it on both sides.
+mkdir -p /data/media/db
+if [ ! -s "/data/media/db/tus-hook.secret" ];then
+    echo "Created tus hook secret: /data/media/db/tus-hook.secret"
+    tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 50 > "/data/media/db/tus-hook.secret"
+fi
+chown 1000:1000 /data/media/db/tus-hook.secret
+chmod 600 /data/media/db/tus-hook.secret
+
 if [ -n "${SECRET}" ] || [ -n "${SECRET_KEY}" ];then
     echo "Writing Secret Key Variable to File: /data/media/db/secret.key"
     printf "%s" "${SECRET}${SECRET_KEY}" > /data/media/db/secret.key

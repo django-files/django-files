@@ -36,6 +36,10 @@ def hook_payload(hook_type, *, size=1024, metadata=None, headers=None, storage=N
     }
 
 
+TEST_HOOK_SECRET = "tus-test-hook-secret"  # nosec  # NOSONAR
+
+
+@override_settings(TUS_ENABLED=True, TUS_HOOK_SECRET=TEST_HOOK_SECRET)
 class TusHookTestCase(TestCase):
     """Test POST /api/tus/hook/ (tusd pre-create / post-finish events)"""
 
@@ -49,8 +53,11 @@ class TusHookTestCase(TestCase):
         )
         cls.token = create_api_token(cls.user, name="Tus Token")
 
-    def hook(self, payload):
-        return self.client.post(reverse("api:tus-hook"), data=json.dumps(payload), content_type="application/json")
+    def hook(self, payload, secret=TEST_HOOK_SECRET):
+        url = reverse("api:tus-hook")
+        if secret is not None:
+            url += f"?secret={secret}"
+        return self.client.post(url, data=json.dumps(payload), content_type="application/json")
 
     def assertRejected(self, response, status):
         self.assertEqual(response.status_code, 200)
@@ -165,13 +172,58 @@ class TusHookTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         mock_task.delay.assert_not_called()
 
+    def test_pre_create_strips_credentials_from_metadata(self):
+        """Tokens must never persist into tusd's .info sidecar / HEAD echo."""
+        payload = hook_payload(
+            "pre-create",
+            metadata={"authorization": self.token, "Token": self.token, "name": "keep.bin"},
+        )
+        response = self.hook(payload)
+        meta = response.json()["ChangeFileInfo"]["MetaData"]
+        self.assertEqual(meta["user_id"], str(self.user.id))
+        self.assertEqual(meta["name"], "keep.bin")
+        for key in meta:
+            self.assertNotIn(key.lower(), ("authorization", "token"))
+
     def test_invalid_json(self):
-        response = self.client.post(reverse("api:tus-hook"), data="not json", content_type="application/json")
+        url = reverse("api:tus-hook") + f"?secret={TEST_HOOK_SECRET}"
+        response = self.client.post(url, data="not json", content_type="application/json")
         self.assertEqual(response.status_code, 400)
 
     def test_unknown_hook_type_is_noop(self):
         response = self.hook(hook_payload("post-terminate"))
         self.assertEqual(response.status_code, 200)
+
+    def test_hook_disabled_is_404(self):
+        with override_settings(TUS_ENABLED=False):
+            response = self.hook(hook_payload("pre-create"))
+        self.assertEqual(response.status_code, 404)
+
+    def test_hook_missing_secret(self):
+        response = self.hook(hook_payload("pre-create"), secret=None)
+        self.assertEqual(response.status_code, 403)
+
+    def test_hook_wrong_secret(self):
+        response = self.hook(hook_payload("pre-create"), secret="wrong")  # nosec  # NOSONAR
+        self.assertEqual(response.status_code, 403)
+
+    def test_hook_unconfigured_secret_fails_closed(self):
+        """No env secret and no secret file: every call is rejected."""
+        with override_settings(
+            TUS_HOOK_SECRET="", TUS_HOOK_SECRET_FILE="/nonexistent/tus-hook.secret"
+        ):  # nosec  # NOSONAR
+            response = self.hook(hook_payload("pre-create"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_hook_secret_from_file(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".secret", delete=False) as f:  # NOSONAR
+            f.write(f"{TEST_HOOK_SECRET}\n")
+        try:
+            with override_settings(TUS_HOOK_SECRET="", TUS_HOOK_SECRET_FILE=f.name):  # nosec  # NOSONAR
+                response = self.hook(hook_payload("post-terminate"))
+            self.assertEqual(response.status_code, 200)
+        finally:
+            os.remove(f.name)
 
 
 class TusImportTaskTestCase(TestCase):
@@ -215,6 +267,30 @@ class TusImportTaskTestCase(TestCase):
         file = Files.objects.filter(user=self.user).first()
         self.assertTrue(file.private)
         self.assertEqual(file.password, "hunter2")
+
+    def test_import_rejects_over_quota(self):
+        """Concurrent uploads can pass pre-create individually; the import
+        recheck against the real on-disk size is the backstop."""
+        self.user.storage_quota = 8
+        self.user.save()
+        try:
+            with self.settings(TUS_UPLOAD_DIR=self.tus_dir):
+                path = self.write_upload(content=b"sixteen bytes!!!")
+                import_tus_upload(path, "big.txt", self.user.id, {})
+            self.assertFalse(Files.objects.filter(user=self.user).exists())
+            self.assertFalse(os.path.exists(path))
+            self.assertFalse(os.path.exists(path + ".info"))
+        finally:
+            self.user.storage_quota = 0
+            self.user.save()
+
+    @override_settings(UPLOAD_MAX_SIZE=8)
+    def test_import_rejects_over_max_size(self):
+        with self.settings(TUS_UPLOAD_DIR=self.tus_dir):
+            path = self.write_upload(content=b"sixteen bytes!!!")
+            import_tus_upload(path, "big.txt", self.user.id, {})
+        self.assertFalse(Files.objects.filter(user=self.user).exists())
+        self.assertFalse(os.path.exists(path))
 
     def test_import_rejects_path_outside_tus_dir(self):
         outside = tempfile.NamedTemporaryFile(delete=False)  # NOSONAR

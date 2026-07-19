@@ -20,7 +20,7 @@ from django.utils import timezone
 from django_redis import get_redis_connection
 from home.models import Files, FileStats, Stream, StreamHistory, Webhook
 from home.util.image import thumbnail_processor
-from home.util.quota import regenerate_all_storage_values
+from home.util.quota import process_storage_quotas, regenerate_all_storage_values
 from home.util.stream_record import delete_recording_file, validate_recording_path
 from home.util.tags import sync_file_tags
 from home.util.tus import delete_tus_files, sweep_expired_tus_files, validate_tus_path
@@ -583,6 +583,15 @@ def import_tus_upload(path: str, name: str, user_id: int, options: Optional[dict
         log.warning("import_tus_upload: invalid or missing tus path: %s", path)
         return
     try:
+        # pre-create checked the declared Upload-Length before bytes moved;
+        # recheck the real on-disk size here so concurrent uploads can't stack
+        # past a quota between pre-create and import, and so an understated
+        # declared length can't dodge the size cap.
+        size = os.path.getsize(resolved)
+        user = CustomUser.objects.filter(pk=user_id).first()
+        if user is None or size > settings.UPLOAD_MAX_SIZE or any(process_storage_quotas(user, size)):
+            log.warning("import_tus_upload: rejected at import: size=%s user_id=%s", size, user_id)
+            return
         # LocalFile lets process_file consume tusd's on-disk file in place
         # instead of copying a potentially multi-GB upload to a second temp
         # file first; the finally block below still owns cleanup.

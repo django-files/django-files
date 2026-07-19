@@ -327,11 +327,17 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 | SENTRY_ENVIRONMENT              | Sentry ENV                        | `prod`                                               |
 | TUS_ENABLED                     | Resumable uploads via tusd [^1]   | `True`                                               |
 | TUS_EXPIRE_HOURS                | Sweep abandoned tus uploads after | `24`                                                 |
+| TUS_HOOK_SECRET                 | Override tusd hook secret [^2]    | `random-string`                                      |
 
 [^1]:
     Requires the `tusd` sidecar service included in the repo compose files (not the all-in-one
     image). The web uploader then sends chunked, resumable uploads to `/tus/`; existing upload
     endpoints and clients (ShareX, Flameshot, etc.) are unaffected.
+
+[^2]:
+    Optional. The internal tusd→app hook endpoint requires a shared secret; by default one is
+    auto-generated on the shared media volume at startup (`/data/media/db/tus-hook.secret`).
+    Set this only to override it, e.g. when tusd and the app don't share a volume.
 
 ## Database
 
