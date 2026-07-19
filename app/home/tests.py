@@ -336,7 +336,12 @@ class PlaywrightTest(ChannelsLiveServerTestCase):
         self.screenshot(page, f"Raw-{control}")
 
         for file in self.previews:
-            page.goto(f"{self.live_server_url}/u/{file}")
+            # README.md's rendered markdown embeds third-party badge/logo images
+            # (shields.io, GitHub, Apple's badge CDN); waiting for the default
+            # "load" event ties this local smoke test to those hosts being
+            # reachable, which is flaky in CI. domcontentloaded plus the
+            # settle timeout below is enough for the screenshot.
+            page.goto(f"{self.live_server_url}/u/{file}", wait_until="domcontentloaded")
             page.wait_for_timeout(timeout=1000)
             self.screenshot(page, f"Preview-{file}")
 
