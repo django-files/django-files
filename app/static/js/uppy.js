@@ -16,9 +16,14 @@ import { initTagChipEditor } from './tag-chips.js'
 console.debug('LOADING: uppy.js')
 console.debug('uploadUrl:', uploadUrl)
 
-// Global set by the including template from settings.TUS_ENABLED: uploads go
-// through the tusd sidecar at /tus/ instead of the XHR endpoint.
+// Globals set by the including template from settings.TUS_ENABLED/TUS_CHUNK_MB:
+// uploads go through tusd at /tus/ instead of the XHR endpoint, in chunks
+// sized to stay under the operator's edge proxy body-size cap.
 const useTus = typeof tusEnabled !== 'undefined' && tusEnabled
+const tusChunkBytes =
+    typeof tusChunkSize !== 'undefined' && tusChunkSize > 0
+        ? tusChunkSize
+        : 90 * 1024 * 1024
 
 const fileUploadModal = $('#fileUploadModal')
 
@@ -103,16 +108,17 @@ const uppy = new Uppy({
     })
 
 if (useTus) {
-    // Chunked resumable uploads via the tusd sidecar. 90MB chunks stay under
-    // Cloudflare's 100MB request-body cap with headroom; a dropped connection
-    // resumes from the last confirmed offset instead of restarting. The same
-    // live `headers` object rides every tus request — tusd forwards request
-    // headers to the Django pre-create hook, which parses them exactly like
-    // the XHR endpoint does.
+    // Chunked resumable uploads via tusd. Chunk size (TUS_CHUNK_MB, default
+    // 90MB) stays under the operator's edge proxy body-size cap with
+    // headroom — 90MB is safe under Cloudflare Free/Pro's 100MB cap; a
+    // dropped connection resumes from the last confirmed offset instead of
+    // restarting. The same live `headers` object rides every tus request —
+    // tusd forwards request headers to the Django pre-create hook, which
+    // parses them exactly like the XHR endpoint does.
     uppy.use(Tus, {
         endpoint: '/tus/',
         headers,
-        chunkSize: 90 * 1024 * 1024,
+        chunkSize: tusChunkBytes,
         withCredentials: true,
         retryDelays: [0, 1000, 3000, 5000],
         removeFingerprintOnSuccess: true,

@@ -24,4 +24,5 @@ def site_settings_processor(request):
         "native_app_arg": None,
         "upload_max_size": settings.UPLOAD_MAX_SIZE,
         "tus_enabled": settings.TUS_ENABLED,
+        "tus_chunk_size": settings.TUS_CHUNK_MB * 1024 * 1024,
     }

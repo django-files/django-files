@@ -48,7 +48,11 @@ x-django-env: &django_env
   REDIS_IGNORE_EXCEPTIONS: ${REDIS_IGNORE_EXCEPTIONS}
   RTMP_HOST: ${RTMP_HOST}
   RTMP_PORT: ${RTMP_PORT}
-  TUS_ENABLED: ${TUS_ENABLED}
+  # :-True (not a bare passthrough): Compose substitutes an unset var with an
+  # empty string, and decouple's bool cast treats "" as False, not "unset" —
+  # a bare ${TUS_ENABLED} would silently force this off for any stack whose
+  # config file doesn't set it, defeating the on-by-default intent.
+  TUS_ENABLED: ${TUS_ENABLED:-True}
   TUS_HOOK_SECRET: ${TUS_HOOK_SECRET}
 
 services:

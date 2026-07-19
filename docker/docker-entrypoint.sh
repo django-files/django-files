@@ -22,7 +22,10 @@ if [ ! -d "/data/media/redis" ];then
 fi
 chown "app:app" "/data/media/redis"
 
-echo "127.0.0.1 app redis" >> /etc/hosts
+# tusd runs as a local supervisord program in this image (not a separate
+# container like the multi-container stacks); this alias lets nginx.conf's
+# static "proxy_pass http://tusd:8080" resolve unmodified in both worlds.
+echo "127.0.0.1 app redis tusd" >> /etc/hosts
 
 if [ -d "/docker-entrypoint.d/" ];then
     echo "Running Scripts in: /docker-entrypoint.d/"

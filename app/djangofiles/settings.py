@@ -129,12 +129,18 @@ except ValueError:
     UPLOAD_MAX_SIZE = parse_size("5G")
 print(f"UPLOAD_MAX_SIZE: {UPLOAD_MAX_SIZE}")
 
-# tus resumable uploads via the tusd sidecar (see docker-compose). TUS_ENABLED
-# switches the web uploader from XHR to chunked tus uploads at /tus/ — chunks
-# stay under Cloudflare's 100MB body cap and dropped transfers resume from the
-# last confirmed offset. Off by default: enabling it without the tusd service
-# running would break web uploads.
-TUS_ENABLED = config("TUS_ENABLED", False, bool)
+# tus resumable uploads via tusd — a sidecar container in the multi-container
+# stacks, a local supervisord program in the all-in-one image. Every image
+# this project ships runs it, so TUS_ENABLED defaults on: switches the web
+# uploader from XHR to chunked tus uploads at /tus/, keeping chunks under
+# Cloudflare's 100MB body cap and letting dropped transfers resume from the
+# last confirmed offset. Escape hatch for a custom deployment that doesn't
+# run tusd: set TUS_ENABLED=False.
+TUS_ENABLED = config("TUS_ENABLED", True, bool)
+# Client-side chunk size (MB) for tus uploads. 90MB default stays under
+# Cloudflare's 100MB request-body cap with headroom; raise it for deployments
+# not fronted by Cloudflare Free/Pro to cut round trips on large files.
+TUS_CHUNK_MB = config("TUS_CHUNK_MB", 90, int)
 # tusd's -upload-dir on the shared media volume; must match the tusd service
 # command and be visible to app + worker containers for zero-copy import.
 TUS_UPLOAD_DIR = config("TUS_UPLOAD_DIR", "/data/media/tus")

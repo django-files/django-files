@@ -23,6 +23,9 @@ RUN uv pip install --system --no-cache -r /requirements.txt
 FROM ghcr.io/django-files/docker-nginx:1.31.2 AS nginx-base
 
 
+FROM tusproject/tusd:v2 AS tusd-base
+
+
 FROM python:3.14-slim
 
 LABEL org.opencontainers.image.source="https://github.com/django-files/django-files"
@@ -52,6 +55,7 @@ COPY --from=python \
 COPY --from=nginx-base /usr/sbin/nginx /usr/sbin/nginx
 COPY --from=nginx-base /etc/nginx /etc/nginx
 COPY --from=nginx-base /stat.xsl /stat.xsl
+COPY --from=tusd-base /usr/local/bin/tusd /usr/local/bin/tusd
 
 # Create users before apt installs — redis-server claims GID 101 on Debian trixie if we don't reserve it first
 RUN groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin/nologin app  &&\
