@@ -37,6 +37,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from home.tasks import import_tus_upload
 from home.util.auth import hash_token
+from home.util.tus import has_disk_space
 from oauth.models import ApiToken
 from pytimeparse2 import parse
 from settings.models import SiteSettings
@@ -84,6 +85,9 @@ def _pre_create(event: dict) -> JsonResponse:
     if error_response := _upload_size_error(user, size):
         message = json.loads(error_response.content)["message"]
         return _reject(error_response.status_code, message)
+    if not has_disk_space(size):
+        log.warning("_pre_create: rejected, insufficient disk space for size=%s", size)
+        return _reject(507, "Upload Failed: Not enough storage space available on the server.")
 
     # Same option channels as upload_view: request headers play the role of
     # request.headers, tus metadata plays the role of POST fields — so option

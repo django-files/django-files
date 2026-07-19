@@ -91,7 +91,20 @@ services:
         done
         secret="$${TUS_HOOK_SECRET:-$$(cat "$$f" 2>/dev/null)}"
         [ -n "$$secret" ] || echo "WARNING: no tus hook secret found; the app will reject hook calls"
-        exec tusd -behind-proxy -base-path /tus/ -upload-dir /data/media/tus \
+        # -max-size backs up the Django pre-create hook's UPLOAD_MAX_SIZE check
+        # directly at the transport layer, so an oversized upload is rejected
+        # even if the hook is ever down or misconfigured. tusd wants raw bytes,
+        # not the K/M/G suffix nginx/Django accept, so convert here.
+        u="$${UPLOAD_MAX_SIZE:-5G}"
+        case "$$u" in ''|*[!0-9kKmMgG]*) u="5G";; esac
+        n=$$(echo "$$u" | sed 's/[a-zA-Z]*$$//')
+        case "$$u" in
+          *[kK]) b=$$((n*1024));;
+          *[mM]) b=$$((n*1024*1024));;
+          *[gG]) b=$$((n*1024*1024*1024));;
+          *) b=$$n;;
+        esac
+        exec tusd -behind-proxy -base-path /tus/ -upload-dir /data/media/tus -max-size "$$b" \
           -hooks-http "http://app:9000/api/tus/hook/?secret=$$secret" \
           -hooks-enabled-events pre-create,post-finish
     deploy:

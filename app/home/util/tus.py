@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import time
 from typing import Optional
 
@@ -12,6 +13,28 @@ def tus_dir() -> str:
     # settings.TUS_UPLOAD_DIR — the tusd sidecar's -upload-dir on the shared
     # media volume mounted in the tusd, app, and worker containers.
     return settings.TUS_UPLOAD_DIR
+
+
+def has_disk_space(declared_size: int) -> bool:
+    """
+    True if the media volume has enough free space for a declared upload
+    size plus TUS_DISK_HEADROOM_MB of margin. Checked in the pre-create hook
+    so one user's declared size can't run the shared volume to empty before
+    quota/max-size even come into play — SQLite, thumbnails, and every other
+    user's uploads live on that same volume.
+
+    Best-effort, not exact: concurrent in-flight uploads aren't accounted
+    for (tusd doesn't expose that), so this catches the common case (volume
+    already low, or one clearly-oversized request) rather than perfectly
+    reserving space under heavy concurrency.
+    """
+    try:
+        free = shutil.disk_usage(tus_dir()).free
+    except OSError:
+        log.exception("has_disk_space: could not stat %s", tus_dir())
+        return True  # fail open — a stat failure shouldn't block all uploads
+    headroom = settings.TUS_DISK_HEADROOM_MB * 1024 * 1024
+    return declared_size + headroom <= free
 
 
 def validate_tus_path(path: str) -> Optional[str]:

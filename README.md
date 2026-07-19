@@ -297,38 +297,42 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 > AWS/Duo/Sentry **require** environment variables.
 > Switching between local storage and s3 is not supported and WILL cause problems.
 
-| Variable                        | Description                       | Example                                              |
-| ------------------------------- | --------------------------------- | ---------------------------------------------------- |
-| SECRET                          | App Secret                        | `JYGTKLztZxVdu5NXuhXGaSkLJosiiQyBhFJ4LAHrJ5YHigQqq7` |
-| SITE_URL                        | Site URL                          | `https://example.com`                                |
-| USERNAME                        | Seed admin username (optional)    | `admin`                                              |
-| PASSWORD                        | Seed admin password (optional)    | `PSZX7TgiSg6aB6sZ`                                   |
-| SUPER_USERS                     | oAuth Sup User IDs                | `111150265075298304,111148006983614464`              |
-| DISCORD_CLIENT_ID               | Discord Client ID                 | `1135676900124135484`                                |
-| DISCORD_CLIENT_SECRET           | Discord Secret                    | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
-| GITHUB_CLIENT_ID                | GitHub Client ID                  | `1135676900124135484`                                |
-| GITHUB_CLIENT_SECRET            | GitHub Secret                     | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
-| GOOGLE_CLIENT_ID                | Google Client ID                  | `113567690-gvasdfasdf.apps.googleusercontent.com`    |
-| GOOGLE_CLIENT_SECRET            | Google Secret                     | `GCSDPC-Tskdfix-klsjdf_r32489fj09jfsd`               |
-| OAUTH_REDIRECT_URL              | Discord Redirect                  | `https://example.com/oauth/callback/`                |
-| AWS_REGION_NAME                 | AWS Region Name                   | `us-east-1`                                          |
-| AWS_ACCESS_KEY_ID               | AWS IAM User Key                  | `AKIEAKADFGASDFASGSDAFSDF`                           |
-| AWS_SECRET_ACCESS_KEY           | AWS IAM Secret                    | `eVJsrhftrv2fcwyYcy323Sfhe5svy5436r557`              |
-| AWS_STORAGE_BUCKET_NAME         | Name of s3 bucket                 | `my-s3-bucket`                                       |
-| SIGNED_URL_TTL_SECONDS          | Gallery/static signed URL TTL (s) | `14400`                                              |
-| SIGNED_DOWNLOAD_URL_TTL_SECONDS | One-shot download signed URL TTL  | `900`                                                |
-| SIGNED_META_URL_TTL_SECONDS     | OG/meta signed URL TTL            | `86400`                                              |
-| SIGNED_URL_REFRESH_RATIO        | Cache TTL fraction of signing TTL | `0.5`                                                |
-| AWS_S3_CDN_URL                  | proxy or cdn url                  | `https://examples3cdndomain.com`                     |
-| DUO_API_HOST                    | DUO API Host                      | `api-abc123.duosecurity.com`                         |
-| DUO_CLIENT_ID                   | DUO Client ID                     | `nmoNmuLM72WB3RsNkwuv`                               |
-| DUO_CLIENT_SECRET               | DUO Secret                        | `nmoNmuLM72WB3RsNkwuvnmoNmuLM72WB3RsNkwuv`           |
-| SENTRY_URL                      | Sentry URL                        | `https://a5cb357a@o133337.ingest.sentry.io/1234567`  |
-| SENTRY_ENVIRONMENT              | Sentry ENV                        | `prod`                                               |
-| TUS_ENABLED                     | Resumable uploads via tusd [^1]   | `False`                                              |
-| TUS_CHUNK_MB                    | tus upload chunk size (MB) [^3]   | `90`                                                 |
-| TUS_EXPIRE_HOURS                | Sweep abandoned tus uploads after | `24`                                                 |
-| TUS_HOOK_SECRET                 | Override tusd hook secret [^2]    | `random-string`                                      |
+| Variable                              | Description                       | Example                                              |
+| ------------------------------------- | --------------------------------- | ---------------------------------------------------- |
+| SECRET                                | App Secret                        | `JYGTKLztZxVdu5NXuhXGaSkLJosiiQyBhFJ4LAHrJ5YHigQqq7` |
+| SITE_URL                              | Site URL                          | `https://example.com`                                |
+| USERNAME                              | Seed admin username (optional)    | `admin`                                              |
+| PASSWORD                              | Seed admin password (optional)    | `PSZX7TgiSg6aB6sZ`                                   |
+| SUPER_USERS                           | oAuth Sup User IDs                | `111150265075298304,111148006983614464`              |
+| DISCORD_CLIENT_ID                     | Discord Client ID                 | `1135676900124135484`                                |
+| DISCORD_CLIENT_SECRET                 | Discord Secret                    | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
+| GITHUB_CLIENT_ID                      | GitHub Client ID                  | `1135676900124135484`                                |
+| GITHUB_CLIENT_SECRET                  | GitHub Secret                     | `HbSyPWgOBx1U38MqmEEUy75KUe1Pm7dR`                   |
+| GOOGLE_CLIENT_ID                      | Google Client ID                  | `113567690-gvasdfasdf.apps.googleusercontent.com`    |
+| GOOGLE_CLIENT_SECRET                  | Google Secret                     | `GCSDPC-Tskdfix-klsjdf_r32489fj09jfsd`               |
+| OAUTH_REDIRECT_URL                    | Discord Redirect                  | `https://example.com/oauth/callback/`                |
+| AWS_REGION_NAME                       | AWS Region Name                   | `us-east-1`                                          |
+| AWS_ACCESS_KEY_ID                     | AWS IAM User Key                  | `AKIEAKADFGASDFASGSDAFSDF`                           |
+| AWS_SECRET_ACCESS_KEY                 | AWS IAM Secret                    | `eVJsrhftrv2fcwyYcy323Sfhe5svy5436r557`              |
+| AWS_STORAGE_BUCKET_NAME               | Name of s3 bucket                 | `my-s3-bucket`                                       |
+| SIGNED_URL_TTL_SECONDS                | Gallery/static signed URL TTL (s) | `14400`                                              |
+| SIGNED_DOWNLOAD_URL_TTL_SECONDS       | One-shot download signed URL TTL  | `900`                                                |
+| SIGNED_META_URL_TTL_SECONDS           | OG/meta signed URL TTL            | `86400`                                              |
+| SIGNED_URL_REFRESH_RATIO              | Cache TTL fraction of signing TTL | `0.5`                                                |
+| AWS_S3_CDN_URL                        | proxy or cdn url                  | `https://examples3cdndomain.com`                     |
+| DUO_API_HOST                          | DUO API Host                      | `api-abc123.duosecurity.com`                         |
+| DUO_CLIENT_ID                         | DUO Client ID                     | `nmoNmuLM72WB3RsNkwuv`                               |
+| DUO_CLIENT_SECRET                     | DUO Secret                        | `nmoNmuLM72WB3RsNkwuvnmoNmuLM72WB3RsNkwuv`           |
+| SENTRY_URL                            | Sentry URL                        | `https://a5cb357a@o133337.ingest.sentry.io/1234567`  |
+| SENTRY_ENVIRONMENT                    | Sentry ENV                        | `prod`                                               |
+| TUS_ENABLED                           | Resumable uploads via tusd [^1]   | `False`                                              |
+| TUS_CHUNK_MB                          | tus upload chunk size (MB) [^3]   | `90`                                                 |
+| TUS_EXPIRE_HOURS                      | Sweep abandoned tus uploads after | `24`                                                 |
+| TUS_HOOK_SECRET                       | Override tusd hook secret [^2]    | `random-string`                                      |
+| TUS_DISK_HEADROOM_MB                  | Min free disk left after upload   | `1024`                                               |
+| CELERY_WORKER_MAX_MEMORY_PER_CHILD_KB | Recycle a worker past this RSS    | `1048576`                                            |
+| CELERY_TASK_SOFT_TIME_LIMIT           | Graceful task timeout (s) [^4]    | `1500`                                               |
+| CELERY_TASK_TIME_LIMIT                | Hard task timeout (s) [^4]        | `1800`                                               |
 
 [^1]:
     On by default — every image (the all-in-one image and the compose stacks alike) runs `tusd`,
@@ -345,6 +349,11 @@ You can parse the URL with JSON keys `url` or Zipline style `files[0]`
 [^3]:
     90MB stays under Cloudflare Free/Pro's 100MB request-body cap with headroom. Raise it if
     you're not behind that cap, to cut round trips on large uploads.
+
+[^4]:
+    Image/video processing scales with whatever a user uploads; these bound the worst case
+    instead of trying to predict it — see [docs/resource-sizing.md](docs/resource-sizing.md) for
+    how to size worker memory/concurrency for the file sizes you expect.
 
 ## Database
 

@@ -66,4 +66,12 @@ esac
 echo "client_max_body_size: ${upload_max}"
 sed "s/{{upload_max_size}}/${upload_max}/g" -i /etc/nginx/nginx.conf
 
+# Template the tusd upstream. Defaults to the sidecar's service name for the
+# standalone nginx image used by every compose stack; the all-in-one image's
+# Dockerfile overrides TUSD_UPSTREAM to a literal 127.0.0.1:8080 (tusd runs
+# as a local supervisord process there, not a separately-resolvable host).
+tusd_upstream="${TUSD_UPSTREAM:-tusd:8080}"
+echo "tusd_upstream: ${tusd_upstream}"
+sed "s/{{tusd_upstream}}/${tusd_upstream}/g" -i /etc/nginx/nginx.conf
+
 echo "$0 - Finished"

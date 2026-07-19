@@ -85,6 +85,16 @@ CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", "redis://redis:6379/1")
 CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = config("TZ", "UTC")
+# File processing (image/video decode, storage copy) scales with whatever a
+# user uploads, not something we control per-task. These bound the blast
+# radius instead: a worker child is recycled once it has held onto this much
+# RSS (catches slow leaks/fragmentation across many tasks, not just one big
+# one), and any single task is killed outright if it runs unreasonably long
+# (a stuck ffmpeg decode on a malformed file, a stalled disk write, etc.)
+# rather than parking a worker slot forever. See docs/resource-sizing.md.
+CELERY_WORKER_MAX_MEMORY_PER_CHILD = config("CELERY_WORKER_MAX_MEMORY_PER_CHILD_KB", 1_048_576, int)
+CELERY_TASK_SOFT_TIME_LIMIT = config("CELERY_TASK_SOFT_TIME_LIMIT", 1500, int)
+CELERY_TASK_TIME_LIMIT = config("CELERY_TASK_TIME_LIMIT", 1800, int)
 
 DJANGO_REDIS_IGNORE_EXCEPTIONS = config("REDIS_IGNORE_EXCEPTIONS", True, bool)
 USE_X_FORWARDED_HOST = config("USE_X_FORWARDED_HOST", False, bool)
@@ -152,6 +162,11 @@ TUS_EXPIRE_HOURS = config("TUS_EXPIRE_HOURS", 24, int)
 # media volume; the env var is an optional override for both app and tusd.
 TUS_HOOK_SECRET = config("TUS_HOOK_SECRET", "")
 TUS_HOOK_SECRET_FILE = config("TUS_HOOK_SECRET_FILE", "/data/media/db/tus-hook.secret")
+# Minimum free space (MB) the media volume must have left over after a
+# declared upload completes, checked in the pre-create hook. quota/max-size
+# bound one user's own usage; this bounds the shared disk itself, which
+# every user's uploads, thumbnails, and the database all live on.
+TUS_DISK_HEADROOM_MB = config("TUS_DISK_HEADROOM_MB", 1024, int)
 print(f"TUS_ENABLED: {TUS_ENABLED}")
 
 # Pixel budget for in-request image processing (EXIF handling + thumbnails).

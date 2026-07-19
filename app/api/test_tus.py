@@ -11,6 +11,7 @@ from djangofiles.test_utils import TEST_PASSWORD
 from home.models import Files
 from home.tasks import cleanup_tus_uploads, import_tus_upload
 from home.util.auth import create_api_token
+from home.util.tus import has_disk_space
 from oauth.models import CustomUser
 
 
@@ -131,6 +132,17 @@ class TusHookTestCase(TestCase):
     def test_pre_create_exceeds_max_size(self):
         payload = hook_payload("pre-create", size=1000, headers={"Authorization": [f"Bearer {self.token}"]})
         self.assertRejected(self.hook(payload), 413)
+
+    def test_pre_create_rejects_when_disk_nearly_full(self):
+        with patch("api.tus.has_disk_space", return_value=False):
+            payload = hook_payload("pre-create", size=1000, headers={"Authorization": [f"Bearer {self.token}"]})
+            self.assertRejected(self.hook(payload), 507)
+
+    def test_pre_create_allows_when_disk_has_space(self):
+        with patch("api.tus.has_disk_space", return_value=True):
+            payload = hook_payload("pre-create", size=1000, headers={"Authorization": [f"Bearer {self.token}"]})
+            response = self.hook(payload)
+            self.assertFalse(response.json().get("RejectUpload"))
 
     def test_pre_create_parses_options(self):
         """Header and metadata options land in df_kwargs like the XHR endpoint."""
@@ -316,3 +328,29 @@ class TusImportTaskTestCase(TestCase):
         self.assertFalse(os.path.exists(stale + ".info"))
         self.assertTrue(os.path.exists(fresh))
         self.assertTrue(os.path.exists(fresh + ".info"))
+
+
+class HasDiskSpaceTestCase(TestCase):
+    """Test home.util.tus.has_disk_space"""
+
+    def setUp(self):
+        self.tus_dir = tempfile.mkdtemp()
+
+    def fake_usage(self, free):
+        return type("usage", (), {"total": 0, "used": 0, "free": free})()
+
+    def test_rejects_when_declared_size_plus_headroom_exceeds_free(self):
+        with self.settings(TUS_UPLOAD_DIR=self.tus_dir, TUS_DISK_HEADROOM_MB=1024):
+            with patch("shutil.disk_usage", return_value=self.fake_usage(500 * 1024 * 1024)):
+                self.assertFalse(has_disk_space(100 * 1024 * 1024))
+
+    def test_allows_when_free_space_covers_size_plus_headroom(self):
+        with self.settings(TUS_UPLOAD_DIR=self.tus_dir, TUS_DISK_HEADROOM_MB=1024):
+            with patch("shutil.disk_usage", return_value=self.fake_usage(10 * 1024 * 1024 * 1024)):
+                self.assertTrue(has_disk_space(100 * 1024 * 1024))
+
+    def test_fails_open_on_stat_error(self):
+        """A stat failure shouldn't itself block every upload."""
+        with self.settings(TUS_UPLOAD_DIR="/nonexistent/path/for/test"):
+            with patch("shutil.disk_usage", side_effect=OSError("no such path")):
+                self.assertTrue(has_disk_space(100))
