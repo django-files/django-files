@@ -16,6 +16,7 @@ secret="${TUS_HOOK_SECRET:-$(cat /data/media/db/tus-hook.secret 2>/dev/null)}"
 upload_max="${UPLOAD_MAX_SIZE:-5G}"
 case "${upload_max}" in
     ''|*[!0-9kKmMgG]*) upload_max="5G";;
+    *) ;;
 esac
 num=$(echo "${upload_max}" | sed 's/[a-zA-Z]*$//')
 case "${upload_max}" in

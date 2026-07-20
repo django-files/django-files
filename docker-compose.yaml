@@ -96,7 +96,7 @@ services:
         # even if the hook is ever down or misconfigured. tusd wants raw bytes,
         # not the K/M/G suffix nginx/Django accept, so convert here.
         u="$${UPLOAD_MAX_SIZE:-5G}"
-        case "$$u" in ''|*[!0-9kKmMgG]*) u="5G";; esac
+        case "$$u" in ''|*[!0-9kKmMgG]*) u="5G";; *) ;; esac
         n=$$(echo "$$u" | sed 's/[a-zA-Z]*$$//')
         case "$$u" in
           *[kK]) b=$$((n*1024));;
