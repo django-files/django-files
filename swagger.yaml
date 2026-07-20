@@ -375,6 +375,74 @@ paths:
         "403":
           description: Public uploads are disabled and request is unauthenticated
 
+  /tus/:
+    post:
+      summary: Create a Resumable Upload (tus)
+      description: |
+        Creates a resumable upload using the [tus v1.0.0 protocol](https://tus.io/protocols/resumable-upload).
+        Chunks are then sent via `PATCH` requests to the `Location` URL
+        returned in the response, per the tus spec — this endpoint only
+        covers upload creation, not chunk transfer.
+
+        Only available when `TUS_ENABLED` is set (on by default). Preferred
+        over `/upload/` for large files, or any deployment fronted by a
+        proxy with a request-body size cap (e.g. Cloudflare's 100MB limit on
+        Free/Pro) — chunks stay under that cap and a dropped connection
+        resumes instead of restarting.
+
+        Authenticate via `Authorization` header (same forms as other
+        endpoints) or, since some tus clients only expose custom metadata,
+        an `authorization` or `token` key in `Upload-Metadata`. `Upload-Length`
+        is required — deferred-length uploads are rejected, since quota must
+        be checkable before any bytes transfer. All `/upload/` option headers
+        are accepted the same way, as either a request header or an
+        `Upload-Metadata` key (case-insensitive; hyphens optional, e.g.
+        `stripgps` or `strip-gps`).
+
+        The response has no body — completion is asynchronous. The web UI
+        gallery updates via the existing new-file websocket event; other
+        clients can poll `/api/files/` or `/api/recent/`.
+      tags:
+        - Files
+      security:
+        - Authorization: []
+
+      parameters:
+        - name: Upload-Length
+          in: header
+          description: Declared file size in bytes. Required — deferred length is not supported.
+          required: true
+          schema:
+            type: integer
+        - name: Tus-Resumable
+          in: header
+          description: tus protocol version. Must be `1.0.0`.
+          required: true
+          schema:
+            type: string
+            example: "1.0.0"
+        - name: Upload-Metadata
+          in: header
+          description: >
+            Comma-separated `key base64Value` pairs per the tus spec. Carries
+            auth (if not sent via `Authorization`) plus any `/upload/` option
+            (format, password, tags, albums, Expires-At, name, ...).
+          required: false
+          schema:
+            type: string
+
+      responses:
+        "201":
+          description: Upload created. The `Location` header is the URL to `PATCH` chunks to.
+        "400":
+          description: Missing/invalid Upload-Length, or deferred length was declared
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "413":
+          description: Declared size exceeds UPLOAD_MAX_SIZE or a storage quota
+        "507":
+          description: Not enough free disk space on the server for this declared size
+
   /remote/:
     post:
       summary: Upload a Remote URL
