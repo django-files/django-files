@@ -23,6 +23,9 @@ RUN uv pip install --system --no-cache -r /requirements.txt
 FROM ghcr.io/django-files/docker-nginx:1.31.2 AS nginx-base
 
 
+FROM tusproject/tusd:v2 AS tusd-base
+
+
 FROM python:3.14-slim
 
 LABEL org.opencontainers.image.source="https://github.com/django-files/django-files"
@@ -37,6 +40,10 @@ RUN touch build_sha && echo "${BUILD_SHA}" > build_sha
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV XDG_RUNTIME_DIR=/tmp
+# tusd runs as a local supervisord process in this image, not a separate
+# container — nginx.conf's tusd upstream must be a literal loopback address
+# instead of a hostname (see nginx/60-sign-secret.sh for why).
+ENV TUSD_UPSTREAM=127.0.0.1:8080
 
 COPY --from=node /work/app/static/dist/ /app/static/dist/
 COPY --from=python /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
@@ -52,6 +59,7 @@ COPY --from=python \
 COPY --from=nginx-base /usr/sbin/nginx /usr/sbin/nginx
 COPY --from=nginx-base /etc/nginx /etc/nginx
 COPY --from=nginx-base /stat.xsl /stat.xsl
+COPY --from=tusd-base /usr/local/bin/tusd /usr/local/bin/tusd
 
 # Create users before apt installs — redis-server claims GID 101 on Debian trixie if we don't reserve it first
 RUN groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin/nologin app  &&\
@@ -74,6 +82,7 @@ COPY nginx/docker-entrypoint.sh /nginx-entrypoint.sh
 COPY docker/redis.conf /etc/redis/redis.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/docker-entrypoint.sh /docker-entrypoint.sh
+COPY docker/tusd-entrypoint.sh /tusd-entrypoint.sh
 
 WORKDIR /app
 

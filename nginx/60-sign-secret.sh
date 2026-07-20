@@ -14,6 +14,24 @@ mkdir -p /data/media/record
 chown nginx:1000 /data/media/record
 chmod 2775 /data/media/record
 
+# tusd sidecar (uid 1000, same as the app/worker containers) writes partial
+# uploads here; the worker imports and deletes them. Created here as well as
+# in the app image so bind-mounted media dirs (swarm) get it too.
+mkdir -p /data/media/tus
+chown 1000:1000 /data/media/tus
+
+# Shared secret for the tusd -> app hook endpoint (defense in depth on top of
+# the nginx 404 + internal-network containment). Single writer: generated here
+# as root; the tusd entrypoint wrapper and the app (both uid 1000) read it
+# from the shared volume. TUS_HOOK_SECRET env overrides it on both sides.
+mkdir -p /data/media/db
+if [ ! -s "/data/media/db/tus-hook.secret" ];then
+    echo "Created tus hook secret: /data/media/db/tus-hook.secret"
+    tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 50 > "/data/media/db/tus-hook.secret"
+fi
+chown 1000:1000 /data/media/db/tus-hook.secret
+chmod 600 /data/media/db/tus-hook.secret
+
 if [ -n "${SECRET}" ] || [ -n "${SECRET_KEY}" ];then
     echo "Writing Secret Key Variable to File: /data/media/db/secret.key"
     printf "%s" "${SECRET}${SECRET_KEY}" > /data/media/db/secret.key
@@ -47,5 +65,13 @@ case "${upload_max}" in
 esac
 echo "client_max_body_size: ${upload_max}"
 sed "s/{{upload_max_size}}/${upload_max}/g" -i /etc/nginx/nginx.conf
+
+# Template the tusd upstream. Defaults to the sidecar's service name for the
+# standalone nginx image used by every compose stack; the all-in-one image's
+# Dockerfile overrides TUSD_UPSTREAM to a literal 127.0.0.1:8080 (tusd runs
+# as a local supervisord process there, not a separately-resolvable host).
+tusd_upstream="${TUSD_UPSTREAM:-tusd:8080}"
+echo "tusd_upstream: ${tusd_upstream}"
+sed "s/{{tusd_upstream}}/${tusd_upstream}/g" -i /etc/nginx/nginx.conf
 
 echo "$0 - Finished"

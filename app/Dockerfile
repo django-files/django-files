@@ -40,8 +40,8 @@ COPY --from=python \
 
 RUN addgroup -g 1000 app  &&\
     adduser -S -H -h /app -s /sbin/nologin -u 1000 -G app app  &&\
-    mkdir -p /app /data/media/db /data/media/files /data/static /logs  &&  touch /logs/nginx.access  &&\
-    chown app:app /app /data/media/db /data/media/files /data/static /logs /logs/nginx.access  &&\
+    mkdir -p /app /data/media/db /data/media/files /data/media/tus /data/static /logs  &&  touch /logs/nginx.access  &&\
+    chown app:app /app /data/media/db /data/media/files /data/media/tus /data/static /logs /logs/nginx.access  &&\
     apk add --no-cache curl libmagic mailcap mysql-dev
 
 ARG BUILD_SHA=''

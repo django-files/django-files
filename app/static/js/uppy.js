@@ -5,6 +5,7 @@ import {
     Webcam,
     Audio,
     ScreenCapture,
+    Tus,
     XHRUpload,
 } from '../dist/uppy/uppy.min.mjs'
 
@@ -14,6 +15,15 @@ import { initTagChipEditor } from './tag-chips.js'
 
 console.debug('LOADING: uppy.js')
 console.debug('uploadUrl:', uploadUrl)
+
+// Globals set by the including template from settings.TUS_ENABLED/TUS_CHUNK_MB:
+// uploads go through tusd at /tus/ instead of the XHR endpoint, in chunks
+// sized to stay under the operator's edge proxy body-size cap.
+const useTus = typeof tusEnabled !== 'undefined' && tusEnabled
+const tusChunkBytes =
+    typeof tusChunkSize !== 'undefined' && tusChunkSize > 0
+        ? tusChunkSize
+        : 90 * 1024 * 1024
 
 const fileUploadModal = $('#fileUploadModal')
 
@@ -68,7 +78,8 @@ const uppy = new Uppy({
         target: '#uppy',
 
         showProgressDetails: true,
-        showLinkToFileUploadResult: true,
+        // with tus the upload URL is the transfer endpoint, not the file page
+        showLinkToFileUploadResult: !useTus,
         autoOpenFileEditor: true,
         proudlyDisplayPoweredByUppy: false,
         note: 'Django Files Upload',
@@ -92,14 +103,33 @@ const uppy = new Uppy({
     .use(Webcam, { target: Dashboard })
     .use(Audio, { target: Dashboard })
     .use(ScreenCapture, { target: Dashboard })
-    .use(XHRUpload, {
+    .use(DropTarget, {
+        target: document.body,
+    })
+
+if (useTus) {
+    // Chunked resumable uploads via tusd. Chunk size (TUS_CHUNK_MB, default
+    // 90MB) stays under the operator's edge proxy body-size cap with
+    // headroom — 90MB is safe under Cloudflare Free/Pro's 100MB cap; a
+    // dropped connection resumes from the last confirmed offset instead of
+    // restarting. The same live `headers` object rides every tus request —
+    // tusd forwards request headers to the Django pre-create hook, which
+    // parses them exactly like the XHR endpoint does.
+    uppy.use(Tus, {
+        endpoint: '/tus/',
+        headers,
+        chunkSize: tusChunkBytes,
+        withCredentials: true,
+        retryDelays: [0, 1000, 3000, 5000],
+        removeFingerprintOnSuccess: true,
+    })
+} else {
+    uppy.use(XHRUpload, {
         endpoint: uploadUrl,
         headers,
         getResponseError: getResponseError,
     })
-    .use(DropTarget, {
-        target: document.body,
-    })
+}
 
 // Preview-style chip editor; chosen tags ride the upload as multipart meta
 // (not a header) so unicode tag names survive the request.
@@ -201,7 +231,8 @@ uppy.on('complete', (fileCount) => {
 })
 
 uppy.on('upload-error', (file, error, response) => {
-    console.debug('upload-error:', response.body.message)
+    // tus errors carry no response object, XHR errors do
+    console.debug('upload-error:', response?.body?.message ?? error)
 })
 
 uppy.on('error', (error) => {

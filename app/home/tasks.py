@@ -20,9 +20,10 @@ from django.utils import timezone
 from django_redis import get_redis_connection
 from home.models import Files, FileStats, Stream, StreamHistory, Webhook
 from home.util.image import thumbnail_processor
-from home.util.quota import regenerate_all_storage_values
+from home.util.quota import process_storage_quotas, regenerate_all_storage_values
 from home.util.stream_record import delete_recording_file, validate_recording_path
 from home.util.tags import sync_file_tags
+from home.util.tus import delete_tus_files, sweep_expired_tus_files, validate_tus_path
 from home.util.video import (
     remux_to_mp4,
     video_metadata_processor,
@@ -557,6 +558,57 @@ def import_stream_recording(history_pk: int, path: str):
         delete_recording_file(resolved)
         if os.path.exists(mp4_path):
             os.remove(mp4_path)
+
+
+@shared_task()
+def import_tus_upload(path: str, name: str, user_id: int, options: Optional[dict] = None):
+    """
+    Import a finished tus upload (assembled by the tusd sidecar on the shared
+    media_dir volume) as a Files object via the same process_file pipeline as
+    every other upload — thumbnails, quota accounting, websocket event,
+    webhooks all included.
+
+    Deliberately no retries: the finally block always deletes the tus data
+    file and its .info sidecar (the media volume is persistent; leftovers
+    would accumulate forever), so a retry would find the file already gone.
+
+    process_file is imported locally to avoid a circular import: home.util.file
+    imports from home.tasks at module load time.
+    """
+    from home.util.file import LocalFile, process_file
+
+    log.info("import_tus_upload: path=%s name=%s user_id=%s", path, name, user_id)
+    resolved = validate_tus_path(path)
+    if not resolved or not os.path.isfile(resolved):
+        log.warning("import_tus_upload: invalid or missing tus path: %s", path)
+        return
+    try:
+        # pre-create checked the declared Upload-Length before bytes moved;
+        # recheck the real on-disk size here so concurrent uploads can't stack
+        # past a quota between pre-create and import, and so an understated
+        # declared length can't dodge the size cap.
+        size = os.path.getsize(resolved)
+        user = CustomUser.objects.filter(pk=user_id).first()
+        if user is None or size > settings.UPLOAD_MAX_SIZE or any(process_storage_quotas(user, size)):
+            log.warning("import_tus_upload: rejected at import: size=%s user_id=%s", size, user_id)
+            return
+        # LocalFile lets process_file consume tusd's on-disk file in place
+        # instead of copying a potentially multi-GB upload to a second temp
+        # file first; the finally block below still owns cleanup.
+        process_file(name, LocalFile(resolved), user_id, **(options or {}))
+    finally:
+        delete_tus_files(resolved)
+
+
+@shared_task()
+def cleanup_tus_uploads():
+    """
+    Sweep abandoned partial tus uploads (client never resumed) past the
+    expiry window. Completed uploads are already deleted by import_tus_upload.
+    """
+    removed = sweep_expired_tus_files(settings.TUS_EXPIRE_HOURS * 3600)
+    if removed:
+        log.info("cleanup_tus_uploads: removed %s stale files", removed)
 
 
 @shared_task()
