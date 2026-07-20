@@ -23,7 +23,18 @@ RUN uv pip install --system --no-cache -r /requirements.txt
 FROM ghcr.io/django-files/docker-nginx:1.31.2 AS nginx-base
 
 
-FROM tusproject/tusd:v2 AS tusd-base
+# The tusproject/tusd:v2 *image* is Alpine/musl-based; its binary needs
+# ld-musl-x86_64.so.1, which doesn't exist on this image's Debian/glibc final
+# stage, so exec silently fails with "not found" (exit 127) — not a missing
+# file, a missing dynamic loader. tusd's GitHub release tarballs are true
+# static (CGO_ENABLED=0) binaries, portable to any base — use those instead.
+FROM alpine:3 AS tusd-base
+ARG TARGETARCH
+ARG TUSD_VERSION=v2.10.0
+RUN apk add --no-cache curl  &&\
+    curl -fsSL -o /tmp/tusd.tar.gz "https://github.com/tus/tusd/releases/download/${TUSD_VERSION}/tusd_linux_${TARGETARCH}.tar.gz"  &&\
+    tar -xzf /tmp/tusd.tar.gz -C /tmp  &&\
+    mv "/tmp/tusd_linux_${TARGETARCH}/tusd" /usr/local/bin/tusd
 
 
 FROM python:3.14-slim
