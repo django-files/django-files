@@ -680,6 +680,20 @@ class SessionManagementTestCase(TestCase):
         response = client_a.delete(reverse("api:session", kwargs={"sessionid": "doesnotexist1234567890"}))
         self.assertEqual(response.status_code, 404)
 
+    def test_glob_wildcard_sessionid_cannot_match_others_session(self):
+        """A crafted sessionid can't use Redis glob syntax to reach another user's key."""
+        client_a = self._login("sessionusera")
+        client_b = self._login("sessionuserb")
+        crafted = f"*{client_b.session.session_key}"
+        response = client_a.delete(reverse("api:session", kwargs={"sessionid": crafted}))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(client_b.get(reverse("api:current-user")).status_code, 200)
+
+    def test_malformed_glob_sessionid_returns_404_not_500(self):
+        client_a = self._login("sessionusera")
+        response = client_a.delete(reverse("api:session", kwargs={"sessionid": "["}))
+        self.assertEqual(response.status_code, 404)
+
     def test_unauthenticated_request_rejected(self):
         from django.test import Client
 

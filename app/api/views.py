@@ -28,6 +28,7 @@ from api.utils import (
 from django.conf import settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
+from django.contrib.sessions.backends.base import VALID_KEY_CHARS
 from django.contrib.sessions.backends.cache import SessionStore
 from django.core.cache import cache
 from django.core.paginator import Paginator
@@ -1569,6 +1570,12 @@ def _session_owner_id(session_key: str) -> Optional[str]:
     return str(user_id) if user_id is not None else None
 
 
+def _is_valid_session_key(sessionid: str) -> bool:
+    # rejects glob metacharacters (*, ?, [, ]) before sessionid reaches
+    # cache.keys() as a pattern -- a real session key can never contain them
+    return bool(sessionid) and set(sessionid) <= set(VALID_KEY_CHARS)
+
+
 @csrf_exempt
 @require_http_methods(["DELETE"])
 @login_required
@@ -1598,6 +1605,9 @@ def session_view(request, sessionid):
             # deleting your own live session confuses SessionMiddleware; reject with a clear message
             return HttpResponse("Cannot delete your current session; log out instead.", status=400)
 
+        if not _is_valid_session_key(sessionid):
+            return HttpResponse(status=404)
+
         keys = cache.keys(f"*{sessionid}")
         log.debug("keys: %s", keys)
         if not keys:
@@ -1607,9 +1617,9 @@ def session_view(request, sessionid):
         log.debug("keys[0]: %s", keys[0])
         cache.delete(keys[0])
         return HttpResponse(status=201)
-    except Exception as error:
-        log.debug("error: %s", error)
-        return HttpResponse(str(error), status=500)
+    except Exception:
+        log.exception("session_view: error deleting sessionid=%s", sessionid)
+        return HttpResponse("Error deleting session.", status=500)
 
 
 def _resolve_stream_user(name, data):
