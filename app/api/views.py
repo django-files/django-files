@@ -1571,8 +1571,8 @@ def _session_owner_id(session_key: str) -> Optional[str]:
 
 
 def _is_valid_session_key(sessionid: str) -> bool:
-    # rejects glob metacharacters (*, ?, [, ]) before sessionid reaches
-    # cache.keys() as a pattern -- a real session key can never contain them
+    # rejects glob metacharacters (*, ?, [, ]) before sessionid reaches Redis
+    # as a scan pattern -- a real session key can never contain them
     return bool(sessionid) and set(sessionid) <= set(VALID_KEY_CHARS)
 
 
@@ -1588,7 +1588,7 @@ def session_view(request, sessionid):
         log.debug("request.user: %s", request.user)
         log.debug("sessionid: %s", sessionid)
         if sessionid == "all":
-            keys = cache.keys(f"{_SESSIONS_CACHE_PREFIX}*")
+            keys = list(cache.iter_keys(f"{_SESSIONS_CACHE_PREFIX}*"))
             log.debug("keys: %s", keys)
             for key in keys:
                 if request.session.session_key in key:
@@ -1608,7 +1608,7 @@ def session_view(request, sessionid):
         if not _is_valid_session_key(sessionid):
             return HttpResponse(status=404)
 
-        keys = cache.keys(f"*{sessionid}")
+        keys = list(cache.iter_keys(f"*{sessionid}"))
         log.debug("keys: %s", keys)
         if not keys:
             return HttpResponse(status=404)

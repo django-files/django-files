@@ -528,7 +528,7 @@ def get_sessions(request, exclude_current=False, user_id=None):
     user_map = {str(user.id): user.get_name() for user in CustomUser.objects.all()}
     prefix = "django.contrib.sessions.cache"
     sessions = []
-    for key in cache.keys(f"{prefix}*"):
+    for key in cache.iter_keys(f"{prefix}*"):
         session_key = key[len(prefix) :]
         log.debug("session_key: %s", session_key)
         # data = cache.get(key)
