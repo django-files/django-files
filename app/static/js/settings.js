@@ -261,6 +261,8 @@ async function deleteSession(event, all = false) {
         show_toast('Session Deleted.')
     } else if (response.status === 404) {
         show_toast('Session Not Found.')
+    } else if (response.status === 403) {
+        show_toast('You can only manage your own sessions.', 'danger')
     } else if (response.status === 400) {
         show_toast(await response.text())
     } else {

@@ -27,7 +27,8 @@ from api.utils import (
 )
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
+from django.contrib.sessions.backends.cache import SessionStore
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.signing import TimestampSigner
@@ -1559,33 +1560,53 @@ def auth_application(request):
         return JsonResponse({"error": str(error)}, status=400)
 
 
+_SESSIONS_CACHE_PREFIX = "django.contrib.sessions.cache"
+
+
+def _session_owner_id(session_key: str) -> Optional[str]:
+    data = SessionStore(session_key=session_key).load()
+    user_id = data.get("_auth_user_id")
+    return str(user_id) if user_id is not None else None
+
+
 @csrf_exempt
 @require_http_methods(["DELETE"])
-@user_passes_test(lambda user: user.is_superuser)
+@login_required
 def session_view(request, sessionid):
     """
     View /session/:id/
+    Superusers may delete any session; regular users only their own.
     """
     try:
         log.debug("request.user: %s", request.user)
         log.debug("sessionid: %s", sessionid)
         if sessionid == "all":
-            keys = cache.keys("django.contrib.sessions.cache*")
+            keys = cache.keys(f"{_SESSIONS_CACHE_PREFIX}*")
             log.debug("keys: %s", keys)
             for key in keys:
-                if request.session.session_key not in key:
-                    log.debug("cache.delete: %s", key)
-                    cache.delete(key)
+                if request.session.session_key in key:
+                    continue
+                if not request.user.is_superuser:
+                    session_key = key[len(_SESSIONS_CACHE_PREFIX) :]
+                    if _session_owner_id(session_key) != str(request.user.id):
+                        continue
+                log.debug("cache.delete: %s", key)
+                cache.delete(key)
             return HttpResponse(status=201)
+
+        if sessionid == request.session.session_key:
+            # deleting your own live session confuses SessionMiddleware; reject with a clear message
+            return HttpResponse("Cannot delete your current session; log out instead.", status=400)
 
         keys = cache.keys(f"*{sessionid}")
         log.debug("keys: %s", keys)
-        if keys:
-            log.debug("keys[0]: %s", keys[0])
-            cache.delete(keys[0])
-            return HttpResponse(status=201)
-        else:
+        if not keys:
             return HttpResponse(status=404)
+        if not request.user.is_superuser and _session_owner_id(sessionid) != str(request.user.id):
+            return HttpResponse(status=403)
+        log.debug("keys[0]: %s", keys[0])
+        cache.delete(keys[0])
+        return HttpResponse(status=201)
     except Exception as error:
         log.debug("error: %s", error)
         return HttpResponse(str(error), status=500)

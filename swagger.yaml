@@ -1706,11 +1706,11 @@ paths:
     delete:
       summary: Delete a Session
       description: |
-        Deletes the given session from the session cache, or all sessions
-        except the caller's when `sessionid` is `all`. Superuser only.
-        Requires a session cookie.
+        Deletes a session, or all other sessions when `sessionid` is `all`.
+        Requires a session cookie. Regular users may only delete their own
+        sessions; superusers may delete any.
       tags:
-        - Admin
+        - Users
       security:
         - SessionAuth: []
       parameters:
@@ -1723,6 +1723,8 @@ paths:
       responses:
         "201":
           description: Session(s) deleted
+        "403":
+          description: Forbidden — the session belongs to another user and the caller is not a superuser
         "404":
           description: Session not found
         "500":

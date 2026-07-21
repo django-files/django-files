@@ -594,6 +594,99 @@ class LogoutTokenRotationTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
 
 
+class SessionManagementTestCase(TestCase):
+    """DELETE /api/session/:id"""
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        cls.user_a = CustomUser.objects.create_user(
+            username="sessionusera",
+            email="sessiona@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        cls.user_b = CustomUser.objects.create_user(
+            username="sessionuserb",
+            email="sessionb@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        cls.superuser = CustomUser.objects.create_superuser(
+            username="sessionadmin",
+            email="sessionadmin@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+
+    def setUp(self):
+        # sessions live in Redis, not the DB, so TestCase's rollback won't clear them
+        from django.core.cache import cache
+
+        cache.clear()
+
+    @staticmethod
+    def _login(username):
+        from django.test import Client
+
+        client = Client()
+        client.login(username=username, password=TEST_PASSWORD)  # nosec  # NOSONAR
+        return client
+
+    def test_user_can_delete_own_other_session(self):
+        primary = self._login("sessionusera")
+        other = self._login("sessionusera")
+        response = primary.delete(reverse("api:session", kwargs={"sessionid": other.session.session_key}))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(other.get(reverse("api:current-user")).status_code, 401)
+
+    def test_user_cannot_delete_own_current_session_by_id(self):
+        primary = self._login("sessionusera")
+        response = primary.delete(reverse("api:session", kwargs={"sessionid": primary.session.session_key}))
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(primary.get(reverse("api:current-user")).status_code, 200)
+
+    def test_user_cannot_delete_others_session(self):
+        client_a = self._login("sessionusera")
+        client_b = self._login("sessionuserb")
+        response = client_a.delete(reverse("api:session", kwargs={"sessionid": client_b.session.session_key}))
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(client_b.get(reverse("api:current-user")).status_code, 200)
+
+    def test_user_all_only_deletes_own_other_sessions(self):
+        primary = self._login("sessionusera")
+        secondary = self._login("sessionusera")
+        other_user = self._login("sessionuserb")
+        response = primary.delete(reverse("api:session", kwargs={"sessionid": "all"}))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(secondary.get(reverse("api:current-user")).status_code, 401)
+        self.assertEqual(other_user.get(reverse("api:current-user")).status_code, 200)
+
+    def test_superuser_can_delete_any_users_session(self):
+        admin = self._login("sessionadmin")
+        client_a = self._login("sessionusera")
+        response = admin.delete(reverse("api:session", kwargs={"sessionid": client_a.session.session_key}))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(client_a.get(reverse("api:current-user")).status_code, 401)
+
+    def test_superuser_all_deletes_every_other_session_site_wide(self):
+        admin = self._login("sessionadmin")
+        client_a = self._login("sessionusera")
+        client_b = self._login("sessionuserb")
+        response = admin.delete(reverse("api:session", kwargs={"sessionid": "all"}))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(client_a.get(reverse("api:current-user")).status_code, 401)
+        self.assertEqual(client_b.get(reverse("api:current-user")).status_code, 401)
+
+    def test_delete_nonexistent_session_returns_404(self):
+        client_a = self._login("sessionusera")
+        response = client_a.delete(reverse("api:session", kwargs={"sessionid": "doesnotexist1234567890"}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_unauthenticated_request_rejected(self):
+        from django.test import Client
+
+        response = Client().delete(reverse("api:session", kwargs={"sessionid": "all"}))
+        self.assertEqual(response.status_code, 302)
+
+
 class ApiTokenListCreateTestCase(TestCase):
     """GET /api/token/ and POST /api/token/"""
 
