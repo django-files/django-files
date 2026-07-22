@@ -634,12 +634,6 @@
             <div class="dash-card">
                 <div class="dash-card-header pb-3">
                     <h4 class="d-flex align-items-center gap-2"><i class="fas fa-desktop"></i> Sessions</h4>
-                    {% if sessions|length > 1 %}
-                    <button type="button" class="btn btn-sm btn-outline-danger"
-                            data-bs-toggle="modal" data-bs-target="#delete-sessions-modal">
-                        Log Out Other Sessions
-                    </button>
-                    {% endif %}
                 </div>
                 <div class="dash-card-body p-0">
                     <p class="text-muted small px-3 pt-3 mb-0">
@@ -659,7 +653,7 @@
                             {% for session in sessions %}
                             <tr class="{% if session.current %}table-active{% endif %}">
                                 <td class="d-none d-sm-table-cell" style="width: 160px;">{{ session.date|date }}</td>
-                                <td class="d-none d-md-table-cell" style="width: 140px;">{{ session.ttl }}/{{ session.age }}</td>
+                                <td class="d-none d-md-table-cell text-nowrap text-truncate overflow-hidden" style="width: 140px;">{{ session.ttl }}/{{ session.age }}</td>
                                 <td class="text-nowrap text-truncate overflow-hidden">
                                     {{ session.user_agent }}
                                     {% if session.current %}<span class="badge text-bg-secondary">This device</span>{% endif %}
@@ -688,6 +682,21 @@
                     <h4 class="d-flex align-items-center gap-2 text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h4>
                 </div>
                 <div class="dash-card-body">
+                    {% if sessions|length > 1 %}
+                    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                        <div>
+                            <h6 class="fw-medium mb-1">Log Out Other Sessions</h6>
+                            <p class="text-muted small mb-0">
+                                Signs out every other device and browser currently logged in to your account.
+                            </p>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger flex-shrink-0"
+                                data-bs-toggle="modal" data-bs-target="#delete-sessions-modal">
+                            Log Out Other Sessions
+                        </button>
+                    </div>
+                    <hr class="my-3">
+                    {% endif %}
                     <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                         <div>
                             <h6 class="fw-medium mb-1">Delete Account</h6>
