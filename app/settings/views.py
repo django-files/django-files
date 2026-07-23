@@ -138,6 +138,7 @@ def user_view(request):
             "timezones": sorted(zoneinfo.available_timezones()),
             "default_upload_name_formats": CustomUser.UploadNameFormats.choices,
             "user_avatar_choices": CustomUser.UserAvatarChoices.choices,
+            "sessions": get_sessions(request, user_id=request.user.id),
         }
         return render(request, "settings/user.html", context)
 
@@ -518,31 +519,38 @@ def qr_view(request):
     return FileResponse(open(path, "rb"), content_type="image/png")
 
 
-def get_sessions(request, exclude_current=False):
+def get_sessions(request, exclude_current=False, user_id=None):
+    """
+    List active sessions. Pass user_id to scope the results to a single user
+    (user settings, self-service); omit it for the site-wide admin view.
+    """
     log.debug("get_sessions: %s", request.session.session_key)
     user_map = {str(user.id): user.get_name() for user in CustomUser.objects.all()}
     prefix = "django.contrib.sessions.cache"
     sessions = []
-    for key in cache.keys(f"{prefix}*"):
+    for key in cache.iter_keys(f"{prefix}*"):
         session_key = key[len(prefix) :]
         log.debug("session_key: %s", session_key)
         # data = cache.get(key)
         session = SessionStore(session_key=session_key)
         data = session.load()
         now = datetime.now()
-        if "_auth_user_id" in data:
-            if session_key == request.session.session_key:
-                if exclude_current:
-                    continue
-                data["current"] = True
-            data["key"] = session_key
-            data["ttl"] = cache.ttl(key)
-            data["age"] = session.get_expiry_age()
-            data["date"] = now + timedelta(seconds=data["ttl"])
-            data["user_id"] = data["_auth_user_id"]
-            data["user_name"] = user_map.get(data["user_id"], "Deleted")
-            log.debug("data: %s", data)
-            sessions.append(data)
+        if "_auth_user_id" not in data:
+            continue
+        if user_id is not None and str(data["_auth_user_id"]) != str(user_id):
+            continue
+        if session_key == request.session.session_key:
+            if exclude_current:
+                continue
+            data["current"] = True
+        data["key"] = session_key
+        data["ttl"] = cache.ttl(key)
+        data["age"] = session.get_expiry_age()
+        data["date"] = now + timedelta(seconds=data["ttl"])
+        data["user_id"] = data["_auth_user_id"]
+        data["user_name"] = user_map.get(data["user_id"], "Deleted")
+        log.debug("data: %s", data)
+        sessions.append(data)
     sessions.sort(key=lambda x: x["date"], reverse=True)
     log.debug("sessions: %s", sessions)
     return sessions

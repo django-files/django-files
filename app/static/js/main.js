@@ -3,6 +3,19 @@ console.log(`Loaded: %cmain.js`, 'color: Lime')
 
 const isAndroid = typeof Android !== 'undefined'
 
+// img 'error' events don't bubble, so this must be registered on the capture phase.
+document.addEventListener(
+    'error',
+    (event) => {
+        const img = event.target
+        const fallback = img?.dataset?.avatarFallback
+        if (!fallback) return
+        delete img.dataset.avatarFallback
+        img.src = fallback
+    },
+    true
+)
+
 document.addEventListener('DOMContentLoaded', domContentLoaded)
 document
     .querySelectorAll('[data-bs-toggle="popover"]')

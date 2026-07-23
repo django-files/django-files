@@ -84,18 +84,3 @@ fileUploadModal.on('hidden.bs.modal', (event) => {
 uppy.on('error', (error) => {
     console.warn('error:', error)
 })
-
-uppy.on('info-visible', function () {
-    fileUploadModal.modal('show')
-    // const state = uppy.getState()
-    // console.warn('state:', state)
-    // const { info } = uppy.getState()
-    // console.warn('info:', info)
-    // setTimeout(() => {
-    //     console.warn('info.type:', info.type)
-    //     console.log(`${info.message} ${info.details}`)
-    //     if (info.type === 'error') {
-    //         showToast(info.message, 'danger')
-    //     }
-    // }, 250)
-})

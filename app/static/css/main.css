@@ -223,6 +223,10 @@ body.no-top-navbar .offcanvas-body {
     transition: background-color 0.15s ease;
 }
 
+.nav-avatar {
+    object-fit: cover;
+}
+
 /* TODO: CONFIRM THIS REMOVAL: */
 /*body {*/
 /*    padding-top: 37px;*/

@@ -30,6 +30,7 @@
             <a class="nav-link" href="#upload"><i class="fas fa-cloud-arrow-up"></i> Upload</a>
             <a class="nav-link" href="#token"><i class="fas fa-key"></i> Token</a>
             <a class="nav-link" href="#security"><i class="fas fa-shield-halved"></i> Security</a>
+            <a class="nav-link" href="#sessions"><i class="fas fa-desktop"></i> Sessions</a>
             <a class="nav-link text-danger" href="#danger-zone"><i class="fa-solid fa-triangle-exclamation"></i> Danger</a>
             {% if request.user.is_superuser %}
             <hr class="my-2">
@@ -628,6 +629,52 @@
 
         <hr class="my-4">
 
+        <!-- Sessions -->
+        <section id="sessions" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header pb-3">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-desktop"></i> Sessions</h4>
+                </div>
+                <div class="dash-card-body">
+                    <p class="text-muted small mb-3">
+                        Devices and browsers currently signed in to your account.
+                    </p>
+                    <div class="table-responsive">
+                        <table id="sessions-table" class="table table-sm mb-0 w-100" style="table-layout: fixed;">
+                            <thead>
+                            <tr>
+                                <th scope="col" class="d-none d-sm-table-cell" style="width: 164px;">Expiration</th>
+                                <th scope="col" class="d-none d-md-table-cell" style="width: 180px;">Age/TTL</th>
+                                <th scope="col">User Agent</th>
+                                <th scope="col" style="width: 28px;"></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for session in sessions %}
+                            <tr class="{% if session.current %}table-active{% endif %}">
+                                <td class="d-none d-sm-table-cell" style="width: 160px;">{{ session.date|date }}</td>
+                                <td class="d-none d-md-table-cell text-nowrap text-truncate overflow-hidden" style="width: 180px;">{{ session.ttl }}/{{ session.age }}</td>
+                                <td class="text-nowrap text-truncate overflow-hidden">
+                                    {{ session.user_agent }}
+                                    {% if session.current %}<span class="badge text-bg-secondary">This device</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if not session.current %}
+                                    <a role="button" class="ctx-delete" data-session="{{ session.key }}" title="Log Out">
+                                        <i class="fa-regular fa-trash-can fa-fw link-danger"></i></a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-4">
+
         <!-- Danger Zone -->
         <section id="danger-zone" class="settings-section">
             <div class="dash-card border-danger">
@@ -635,6 +682,21 @@
                     <h4 class="d-flex align-items-center gap-2 text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h4>
                 </div>
                 <div class="dash-card-body">
+                    {% if sessions|length > 1 %}
+                    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                        <div>
+                            <h6 class="fw-medium mb-1">Log Out Other Sessions</h6>
+                            <p class="text-muted small mb-0">
+                                Signs out every other device and browser currently logged in to your account.
+                            </p>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger flex-shrink-0"
+                                data-bs-toggle="modal" data-bs-target="#delete-sessions-modal">
+                            Log Out Other Sessions
+                        </button>
+                    </div>
+                    <hr class="my-3">
+                    {% endif %}
                     <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                         <div>
                             <h6 class="fw-medium mb-1">Delete Account</h6>
