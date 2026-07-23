@@ -644,7 +644,7 @@
                             <thead>
                             <tr>
                                 <th scope="col" class="d-none d-sm-table-cell" style="width: 164px;">Expiration</th>
-                                <th scope="col" class="d-none d-md-table-cell" style="width: 140px;">Age/TTL</th>
+                                <th scope="col" class="d-none d-md-table-cell" style="width: 180px;">Age/TTL</th>
                                 <th scope="col">User Agent</th>
                                 <th scope="col" style="width: 28px;"></th>
                             </tr>
@@ -653,7 +653,7 @@
                             {% for session in sessions %}
                             <tr class="{% if session.current %}table-active{% endif %}">
                                 <td class="d-none d-sm-table-cell" style="width: 160px;">{{ session.date|date }}</td>
-                                <td class="d-none d-md-table-cell text-nowrap text-truncate overflow-hidden" style="width: 140px;">{{ session.ttl }}/{{ session.age }}</td>
+                                <td class="d-none d-md-table-cell text-nowrap text-truncate overflow-hidden" style="width: 180px;">{{ session.ttl }}/{{ session.age }}</td>
                                 <td class="text-nowrap text-truncate overflow-hidden">
                                     {{ session.user_agent }}
                                     {% if session.current %}<span class="badge text-bg-secondary">This device</span>{% endif %}
