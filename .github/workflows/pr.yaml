@@ -17,35 +17,35 @@ jobs:
       contents: write
 
     steps:
-      - name: "Checkout Configs"
-        uses: actions/checkout@v6
-        with:
-          repository: django-files/configs
-          ref: master
-          sparse-checkout-cone-mode: false
-          sparse-checkout: |
-            pr/.pr_agent.toml
-
-      - name: "Debug event.json"
-        continue-on-error: true
-        run: cat "${GITHUB_EVENT_PATH}"
-      - name: "Debug CTX github"
-        continue-on-error: true
-        env:
-          GITHUB_CTX: ${{ toJSON(github) }}
-        run: echo "$GITHUB_CTX"
-      - name: "Debug Environment"
-        continue-on-error: true
-        run: env
-
-      - name: "Debug"
-        continue-on-error: true
-        run: ls -lhR .
-
-      - name: "Move Config"
-        run: |
-          mv pr/.pr_agent.toml .pr_agent.toml
-          cat .pr_agent.toml
+      #- name: "Checkout Configs"
+      #  uses: actions/checkout@v6
+      #  with:
+      #    repository: django-files/configs
+      #    ref: master
+      #    sparse-checkout-cone-mode: false
+      #    sparse-checkout: |
+      #      pr/.pr_agent.toml
+      #
+      #- name: "Debug event.json"
+      #  continue-on-error: true
+      #  run: cat "${GITHUB_EVENT_PATH}"
+      #- name: "Debug CTX github"
+      #  continue-on-error: true
+      #  env:
+      #    GITHUB_CTX: ${{ toJSON(github) }}
+      #  run: echo "$GITHUB_CTX"
+      #- name: "Debug Environment"
+      #  continue-on-error: true
+      #  run: env
+      #
+      #- name: "Debug"
+      #  continue-on-error: true
+      #  run: ls -lhR .
+      #
+      #- name: "Move Config"
+      #  run: |
+      #    mv pr/.pr_agent.toml .pr_agent.toml
+      #    cat .pr_agent.toml
 
       - name: "Setup Python"
         uses: actions/setup-python@v6
