@@ -42,7 +42,7 @@ Frame Rate: {{ file.meta.FrameRate }} fps{% endif %}
         {% endif %}
     {% elif render == 'video' %}
         <meta property="og:video" content="{{ static_meta_url|safe }}">
-        <meta property="og:video:type" content="{{ file.mime }}">
+        <meta property="og:video:type" content="{{ file.get_playback_mime }}">
         <meta property="og:type" content="video.other">
         {% if file.thumb %}
             <meta property="og:image" content="{{ site_settings.site_url }}{% url 'home:url-raw-redirect' file.name %}?thumb=1">

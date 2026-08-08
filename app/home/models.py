@@ -131,10 +131,13 @@ class Files(models.Model):
             )
         return abs_url + signed
 
-    def get_meta_static_url(self) -> str:
+    def get_meta_static_url(self, abs_url: str = "") -> str:
         """
         Otherwise some clients may cache an old meta url and it will fail to display when using signed urls.
         There may also be future cases where we dont want to issue this url for private/pw protected files.
+
+        og:video/og:image require an absolute URL or unfurlers (Discord, Slack, iMessage, etc.) silently
+        drop the embed, so the non-S3 branch must be prefixed the same way get_gallery_url() is.
         """
         if use_s3():
             if (meta_static_url := cache.get(f"file.urlcache.meta_static.{self.pk}")) is None:
@@ -151,7 +154,7 @@ class Files(models.Model):
                     int(settings.SIGNED_META_URL_TTL_SECONDS * settings.SIGNED_URL_REFRESH_RATIO),
                 )
             return meta_static_url
-        return self.get_url(False)
+        return abs_url + self.get_url(False)
 
     def get_gallery_url(self, abs_url: str = "") -> str:
         """Generates a static url for use on a gallery page."""
@@ -176,6 +179,18 @@ class Files(models.Model):
 
     def _sign_nginx_url(self, uri: str) -> str:
         return sign_nginx_urls(uri)
+
+    def get_playback_mime(self) -> str:
+        """MIME type actually served for inline playback (see nginx/raw-mime.types).
+
+        .mov is relabeled video/mp4 at serve time since video/quicktime isn't in the
+        MIME allowlist most <video> elements or chat-app inline previewers use to
+        decide whether to attempt playback. Keep that in sync here so declared
+        metadata (og:video:type) matches what the raw URL actually returns.
+        """
+        if self.mime == "video/quicktime":
+            return "video/mp4"
+        return self.mime
 
     def _get_password_query_string(self) -> str:
         if self.password:

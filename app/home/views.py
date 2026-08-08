@@ -721,7 +721,7 @@ def url_route_view(request, filename):
         "file": file,
         "render": file.mime.split("/", 1)[0],
         "static_url": file.get_url(view=session_view),
-        "static_meta_url": file.get_meta_static_url(),
+        "static_meta_url": file.get_meta_static_url(site_url),
         "file_avatar_url": file.user.get_avatar_url(),
         "full_context": request.user.is_authenticated and (request.user == file.user or request.user.is_superuser),
         "native_app_arg": (
