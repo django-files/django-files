@@ -113,7 +113,9 @@ services:
         - BUILD_SHA=${COMMIT_SHA}
     image: ghcr.io/django-files/django-files-app:${VERSION:-latest}
     environment: *django_env
-    command: "gunicorn djangofiles.asgi:application -b 0.0.0.0:9000 -w 2 -k uvicorn.workers.UvicornWorker"
+    # -w1: the UvicornWorker is async and handles dev's low idle concurrency
+    # fine on its own; a 2nd worker only buys parallelism dev doesn't need.
+    command: "gunicorn djangofiles.asgi:application -b 0.0.0.0:9000 -w 1 -k uvicorn.workers.UvicornWorker"
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:9000/app-health-check/"]
       interval: 1m
@@ -127,10 +129,10 @@ services:
           - node.hostname == ${SWARM_NODE}
       resources:
         limits:
-          memory: 1G
+          memory: 512M
           cpus: "2.0"
         reservations:
-          memory: 512M
+          memory: 256M
           cpus: "0.5"
     volumes:
       - static_dir:/data/static
@@ -143,15 +145,19 @@ services:
   worker:
     image: ghcr.io/django-files/django-files-app:${VERSION:-latest}
     environment: *django_env
-    command: "celery -A djangofiles worker -l INFO -c 4"
+    # Autoscale instead of a fixed prefork pool of 4: each forked process is
+    # a full Django import, and dev's task load is idle almost all the time.
+    # Scales up to 4 for real bursts (thumbnail/video generation), back down
+    # to 1 when idle.
+    command: "celery -A djangofiles worker -l INFO --autoscale=4,1"
     deploy:
       replicas: 1
       resources:
         limits:
-          memory: 2G
+          memory: 1G
           cpus: "2.0"
         reservations:
-          memory: 1G
+          memory: 256M
           cpus: "0.5"
     volumes:
       - /data/docker/${STACK_NAME}:/data/media
@@ -239,7 +245,13 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: "redis-server --appendonly yes"
+    # maxmemory-policy noeviction: this instance also serves as the Celery
+    # broker/backend (db1) and Channels layer (db0, shared with cache) —
+    # evicting those keys under memory pressure would silently drop tasks
+    # or websocket group state, so a full instance should fail writes
+    # loudly instead. maxmemory stays under the container's memory limit so
+    # redis enforces the cap itself rather than getting OOM-killed.
+    command: "redis-server --appendonly yes --maxmemory 400mb --maxmemory-policy noeviction"
     deploy:
       replicas: 1
       resources:
@@ -247,7 +259,7 @@ services:
           memory: 512M
           cpus: "0.5"
         reservations:
-          memory: 256M
+          memory: 128M
           cpus: "0.25"
     volumes:
       - /data/docker/${STACK_NAME}/redis:/data
