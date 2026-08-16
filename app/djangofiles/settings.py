@@ -280,6 +280,8 @@ CACHES = {
         "LOCATION": config("CACHE_LOCATION", "redis://redis:6379/0"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SOCKET_CONNECT_TIMEOUT": config("CACHE_SOCKET_CONNECT_TIMEOUT", 5, int),
+            "SOCKET_TIMEOUT": config("CACHE_SOCKET_TIMEOUT", 5, int),
         },
     },
 }

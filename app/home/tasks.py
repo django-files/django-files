@@ -289,10 +289,30 @@ def clear_stats_cache():
     return cache.delete_pattern("*.stats.*")
 
 
+def _refresh_gallery_url_chunk(files) -> int:
+    """Populate the gallery-url cache for a chunk of files with two redis round
+    trips (an MGET + a pipelined MSET) instead of a get+set per file."""
+    keys_by_pk = {file.pk: file.gallery_url_cache_key() for file in files}
+    cached = cache.get_many(keys_by_pk.values())
+    to_set = {}
+    for file in files:
+        key = keys_by_pk[file.pk]
+        if key in cached:
+            continue
+        try:
+            to_set[key] = file.compute_gallery_url()
+        except FileNotFoundError:
+            continue
+    if to_set:
+        cache.set_many(to_set, int(settings.SIGNED_URL_TTL_SECONDS * settings.SIGNED_URL_REFRESH_RATIO))
+    return len(files)
+
+
 @shared_task(autoretry_for=(Exception,), retry_kwargs={"max_retries": 3, "countdown": 10})
 def refresh_gallery_static_urls_cache():
     lock_key = "gallery_refresh"
     file_count = 0
+    chunk_size = 500
     if not acquire_lock(lock_key, 1000):
         log.info("Gallery cache refresh task locked, skipping run.")
         return "Skipped — already running."
@@ -300,9 +320,14 @@ def refresh_gallery_static_urls_cache():
         log.info("----- START gallery cache refresh -----")
         # any file that renders in a gallery: an image, or a file with a generated thumb (video/audio)
         qs = Files.objects.filter(Q(mime__startswith="image/") | ~Q(thumb=""))
-        for file in qs.iterator(chunk_size=500):
-            file.get_gallery_url()
-            file_count += 1
+        chunk = []
+        for file in qs.iterator(chunk_size=chunk_size):
+            chunk.append(file)
+            if len(chunk) >= chunk_size:
+                file_count += _refresh_gallery_url_chunk(chunk)
+                chunk = []
+        if chunk:
+            file_count += _refresh_gallery_url_chunk(chunk)
         log.info("----- COMPLETE gallery cache refresh -----")
     except Exception:
         log.exception("Error populating gallery cache")
