@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import os
 import sys
@@ -429,6 +430,9 @@ if config("SENTRY_URL", False):
         send_default_pii=True,
         debug=config("SENTRY_DEBUG", config("DEBUG", "False"), bool),
         environment=config("SENTRY_ENVIRONMENT", None),
+        # A client disconnecting mid-request cancels the ASGI task; the
+        # resulting CancelledError is expected control flow, not a bug.
+        ignore_errors=[asyncio.CancelledError],
     )
 
 if DEBUG:
