@@ -690,6 +690,18 @@ def release_lock(key):
     cache.delete(key)
 
 
+def debounce(task, lock_key, countdown=5):
+    """Coalesce a burst of calls (e.g. a thumbnail backfill saving hundreds
+    of rows) into a single delayed task run instead of one per call.
+
+    cache.add is atomic, so only the first caller in the window schedules
+    the task. The lock's timeout equals the countdown, so it expires right
+    as the delayed task fires and the next burst can schedule again.
+    """
+    if cache.add(lock_key, "1", countdown):
+        task.apply_async(countdown=countdown)
+
+
 @worker_shutdown.connect
 def on_worker_shutdown(**kwargs):
     release_lock("gallery_refresh")
