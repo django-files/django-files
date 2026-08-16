@@ -92,10 +92,17 @@ _ALLOWED_METHODS = frozenset(
 
 class HomeConsumer(AsyncWebsocketConsumer):
     _stream_chat_group = None
+    _accepted = False
 
     async def websocket_connect(self, event):
         log.debug("websocket_connect")
         log.debug(event)
+        if self._accepted:
+            # Duplicate 'websocket.connect' dispatch on an already-accepted
+            # connection; calling accept() again raises a RuntimeError from
+            # the ASGI protocol's state machine, so bail out instead.
+            log.warning("websocket_connect: duplicate connect event, ignoring")
+            return
         await self.channel_layer.group_add("home", self.channel_name)
         user = self.scope["user"]
         if not (hasattr(user, "id") and user.id):
@@ -117,6 +124,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         session = self.scope.get("session")
         if session and not session.session_key:
             await database_sync_to_async(session.save)()
+        self._accepted = True
         await self.accept()
 
     async def websocket_disconnect(self, event):
