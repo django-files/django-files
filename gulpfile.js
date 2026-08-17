@@ -143,7 +143,10 @@ gulp.task('swiper', () => {
 
 gulp.task('tsparticles', () => {
     return gulp
-        .src(['node_modules/tsparticles/tsparticles.bundle.min.js'])
+        .src([
+            'node_modules/tsparticles/tsparticles.bundle.min.js',
+            'node_modules/@tsparticles/plugin-background-mask/tsparticles.plugin.background-mask.min.js',
+        ])
         .pipe(gulp.dest('app/static/dist/tsparticles'))
 })
 

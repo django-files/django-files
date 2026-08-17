@@ -103,16 +103,26 @@ document.addEventListener('DOMContentLoaded', function () {
         '/static/config/tsparticles.json'
     console.debug('tsparticlesConfig:', tsparticlesConfig)
     if (tsparticlesEnabled) {
-        tsParticles
-            .load({
-                id: 'tsparticles',
-                url: tsparticlesConfig,
-            })
-            .then((container) => {
-                console.log('tsparticles loaded:', container)
-            })
+        initParticles(tsparticlesConfig)
     }
 })
+
+/**
+ * Load tsParticles with the shapes/updaters/interactions our config uses.
+ * Since v4 the bundle no longer self-registers on the engine, so loadFull must
+ * run first, and backgroundMask ships as a separate plugin outside the bundle.
+ * @param {string} url tsParticles config URL
+ */
+async function initParticles(url) {
+    try {
+        await loadFull(tsParticles)
+        await loadBackgroundMaskPlugin(tsParticles)
+    } catch (error) {
+        console.warn('tsparticles plugin load failed:', error)
+    }
+    const container = await tsParticles.load({ id: 'tsparticles', url })
+    console.log('tsparticles loaded:', container)
+}
 
 const animateCSS = (selector, animation, prefix = 'animate__') => {
     const name = `${prefix}${animation}`
