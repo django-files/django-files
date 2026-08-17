@@ -156,22 +156,31 @@ class Files(models.Model):
             return meta_static_url
         return abs_url + self.get_url(False)
 
+    def gallery_url_cache_key(self) -> str:
+        return f"file.urlcache.gallery.{self.pk}"
+
+    def compute_gallery_url(self) -> str:
+        """Compute the static gallery url, bypassing the cache. Callers that need to
+        batch this across many files (e.g. the cache-refresh task) should use this
+        plus a bulk `cache.set_many()` instead of calling `get_gallery_url()` in a
+        loop, which round-trips to redis per file."""
+        use = self.thumb if self.thumb else self.file
+        if use_s3():
+            # TODO: access protected member, look into how to better handle this
+            return self.file.file._storage.url(use.file.name, expire=settings.SIGNED_URL_TTL_SECONDS)
+        return use.url + self._sign_nginx_url(use.url)
+
     def get_gallery_url(self, abs_url: str = "") -> str:
         """Generates a static url for use on a gallery page."""
-        use = self.thumb if self.thumb else self.file
         # cache the signed url so the browser cache key stays stable across renders;
         # intentionally expire before the signature does so urls don't 403 mid-page
-        if (gallery_url := cache.get(f"file.urlcache.gallery.{self.pk}")) is None:
+        if (gallery_url := cache.get(self.gallery_url_cache_key())) is None:
             try:
-                if use_s3():
-                    # TODO: access protected member, look into how to better handle this
-                    gallery_url = self.file.file._storage.url(use.file.name, expire=settings.SIGNED_URL_TTL_SECONDS)
-                else:
-                    gallery_url = use.url + self._sign_nginx_url(use.url)
+                gallery_url = self.compute_gallery_url()
             except FileNotFoundError:
                 return ""
             cache.set(
-                f"file.urlcache.gallery.{self.pk}",
+                self.gallery_url_cache_key(),
                 gallery_url,
                 int(settings.SIGNED_URL_TTL_SECONDS * settings.SIGNED_URL_REFRESH_RATIO),
             )
