@@ -2244,6 +2244,8 @@ def _record_viewer_sample(name, count):
     pipe = redis.pipeline()
     if current_peak is None or count > int(current_peak):
         pipe.set(peak_key, count, ex=3600)
+    else:
+        pipe.expire(peak_key, 3600)
     pipe.incrby(f"stream:{name}:viewer_sum", count)
     pipe.expire(f"stream:{name}:viewer_sum", 3600)
     pipe.incr(f"stream:{name}:viewer_samples")

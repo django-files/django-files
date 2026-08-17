@@ -267,7 +267,8 @@ CHANNEL_LAYERS = {
                 {
                     "host": config("CHANNELS_REDIS_HOST", "redis"),
                     "port": config("CHANNELS_REDIS_PORT", 6379, int),
-                    "socket_timeout": None,
+                    "socket_connect_timeout": config("CHANNELS_REDIS_SOCKET_CONNECT_TIMEOUT", 5, int),
+                    "socket_timeout": config("CHANNELS_REDIS_SOCKET_TIMEOUT", 10, int),
                 }
             ],
         },
