@@ -88,7 +88,7 @@ const albumTagsModal = initManageTagsModal(socket, {
 })
 
 function onManageTags(btn) {
-    let tags = []
+    let tags
     try {
         tags = JSON.parse(btn.dataset.albumTags || '[]')
     } catch {
