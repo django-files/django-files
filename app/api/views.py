@@ -2002,8 +2002,10 @@ def stream_ping_view(request, name):
 
     key = f"stream:{name}:viewers"
     redis = get_redis_connection("default")
-    redis.zadd(key, {session_key: int(now().timestamp())})
-    redis.expire(key, 60)
+    pipe = redis.pipeline()
+    pipe.zadd(key, {session_key: int(now().timestamp())})
+    pipe.expire(key, 60)
+    pipe.execute()
     return HttpResponse()
 
 
@@ -2239,12 +2241,16 @@ def _record_viewer_sample(name, count):
     redis = get_redis_connection("default")
     peak_key = f"stream:{name}:peak_viewers"
     current_peak = redis.get(peak_key)
+    pipe = redis.pipeline()
     if current_peak is None or count > int(current_peak):
-        redis.set(peak_key, count, ex=3600)
-    redis.incrby(f"stream:{name}:viewer_sum", count)
-    redis.expire(f"stream:{name}:viewer_sum", 3600)
-    redis.incr(f"stream:{name}:viewer_samples")
-    redis.expire(f"stream:{name}:viewer_samples", 3600)
+        pipe.set(peak_key, count, ex=3600)
+    else:
+        pipe.expire(peak_key, 3600)
+    pipe.incrby(f"stream:{name}:viewer_sum", count)
+    pipe.expire(f"stream:{name}:viewer_sum", 3600)
+    pipe.incr(f"stream:{name}:viewer_samples")
+    pipe.expire(f"stream:{name}:viewer_samples", 3600)
+    pipe.execute()
 
 
 def _pop_viewer_stats(name):

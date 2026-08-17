@@ -22,6 +22,7 @@ from home.tasks import (
     clear_files_cache,
     clear_shorts_cache,
     clear_stats_cache,
+    debounce,
     delete_album_websocket,
     delete_file_websocket,
     delete_stream_websocket,
@@ -99,7 +100,9 @@ def files_post_save_signal(sender, instance, **kwargs):
 @receiver(post_delete, sender=Files)
 def clear_files_cache_signal(sender, instance, **kwargs):
     log.debug("clear_files_cache_signal")
-    clear_files_cache.delay()
+    # debounced: a thumbnail backfill saves hundreds/thousands of rows in a
+    # burst, and each save used to fire its own delete_pattern scan
+    debounce(clear_files_cache, "debounce.clear_files_cache")
 
 
 @receiver(post_save, sender=Albums)
@@ -128,7 +131,7 @@ def albums_post_save_signal(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Albums)
 @receiver(post_delete, sender=Albums)
 def clear_albums_cache_signal(sender, instance, **kwargs):
-    clear_albums_cache.delay()
+    debounce(clear_albums_cache, "debounce.clear_albums_cache")
 
 
 @receiver(pre_delete, sender=Albums)
@@ -149,7 +152,7 @@ def streams_delete_signal(sender, instance, **kwargs):
 @receiver(post_save, sender=ShortURLs)
 @receiver(post_delete, sender=ShortURLs)
 def clear_shorts_cache_signal(sender, instance, **kwargs):
-    clear_shorts_cache.delay()
+    debounce(clear_shorts_cache, "debounce.clear_shorts_cache")
 
 
 @receiver(post_save, sender=ShortURLs)
@@ -172,7 +175,7 @@ def shorts_deleted_signal(sender, instance, **kwargs):
 @receiver(post_save, sender=FileStats)
 @receiver(post_delete, sender=FileStats)
 def clear_stats_cache_signal(sender, instance, **kwargs):
-    clear_stats_cache.delay()
+    debounce(clear_stats_cache, "debounce.clear_stats_cache")
 
 
 @receiver(post_save, sender=Webhook)

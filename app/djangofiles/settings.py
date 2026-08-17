@@ -267,7 +267,8 @@ CHANNEL_LAYERS = {
                 {
                     "host": config("CHANNELS_REDIS_HOST", "redis"),
                     "port": config("CHANNELS_REDIS_PORT", 6379, int),
-                    "socket_timeout": None,
+                    "socket_connect_timeout": config("CHANNELS_REDIS_SOCKET_CONNECT_TIMEOUT", 5, int),
+                    "socket_timeout": config("CHANNELS_REDIS_SOCKET_TIMEOUT", 10, int),
                 }
             ],
         },
@@ -280,6 +281,8 @@ CACHES = {
         "LOCATION": config("CACHE_LOCATION", "redis://redis:6379/0"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SOCKET_CONNECT_TIMEOUT": config("CACHE_SOCKET_CONNECT_TIMEOUT", 5, int),
+            "SOCKET_TIMEOUT": config("CACHE_SOCKET_TIMEOUT", 5, int),
         },
     },
 }
