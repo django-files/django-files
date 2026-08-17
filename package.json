@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",
+    "@tsparticles/plugin-background-mask": "4.3.2",
     "animate.css": "^4.1.1",
     "bootstrap": "^5.3.8",
     "clipboard": "^2.0.11",
@@ -46,7 +47,7 @@
     "qr-code-styling": "^1.9.2",
     "swagger-ui": "^5.32.10",
     "swiper": "^12.1.4",
-    "tsparticles": "3.0.3",
+    "tsparticles": "4.3.2",
     "ua-parser-js": "^2.0.10"
   },
   "devDependencies": {
