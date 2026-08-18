@@ -2,6 +2,11 @@ import { getContextMenu, openAlbumModal } from './file-context-menu.js'
 
 import { attachSocketTableSync, socket } from './socket.js'
 import {
+    applyTagDelta,
+    initBulkTagsModal,
+    updateTagSearchBadges,
+} from './tag-chips.js'
+import {
     noChromeLayout,
     selectColumn,
     selectColumnDef,
@@ -158,28 +163,7 @@ const dataTablesOptions = {
 
 function updateTableTagBadges() {
     if (!filesDataTable) return
-    const term = filesDataTable.search().toLowerCase()
-    filesDataTable.rows({ search: 'applied' }).every(function () {
-        const node = this.node()
-        const cell = node?.querySelector('td.dt-name-col')
-        if (!cell) return
-        cell.querySelector('.dt-tag-match')?.remove()
-        if (term) {
-            const data = this.data()
-            const match =
-                Array.isArray(data.tags) &&
-                data.tags.find((t) => t.toLowerCase().includes(term))
-            if (match) {
-                const badge = document.createElement('span')
-                badge.className =
-                    'badge rounded-pill ps-2 file-tag ms-1 dt-tag-match'
-                badge.textContent = match
-                ;(cell.querySelector('.dj-file-link') ?? cell).appendChild(
-                    badge
-                )
-            }
-        }
-    })
+    updateTagSearchBadges(filesDataTable, '.dj-file-link')
 }
 
 export function initFilesTable(search = true, ordering = true, info = true) {
@@ -199,9 +183,38 @@ export function initFilesTable(search = true, ordering = true, info = true) {
         extra: {
             'set-file-name': renameFileRow,
             'file-update': updateFileRow,
+            'set-file-tags': updateFileRowTags,
+            'bulk-set-file-tags': updateFileRowTagsBulk,
         },
     })
     return filesDataTable
+}
+
+// Keep row.tags fresh so tag search and the dt-tag-match badges reflect
+// edits made from the preview sidebar or the bulk tags modal.
+function mergeRowTags(pk, added, removed) {
+    const row = filesDataTable.row(`#file-${pk}`)
+    if (!row.node()) return
+    const current = row.data() || {}
+    const delta = { added, removed }
+    row.data({
+        ...current,
+        tags: applyTagDelta(current.tags || [], delta),
+    }).invalidate('data')
+}
+
+function updateFileRowTags(data) {
+    if (!filesDataTable) return
+    mergeRowTags(data.file_id, data.added || [], data.removed || [])
+    filesDataTable.draw(false)
+}
+
+function updateFileRowTagsBulk(data) {
+    if (!filesDataTable) return
+    for (const pk of data.pks || []) {
+        mergeRowTags(pk, data.added || [], data.removed || [])
+    }
+    filesDataTable.draw(false)
 }
 
 function getFileLink(data, type, row, _meta) {
@@ -456,4 +469,18 @@ export async function bulkManageAlbums(_event) {
         'bulk',
         `Updating albums for ${pks.length} file${s}.`
     )
+}
+
+const bulkTagsModal = initBulkTagsModal(socket, 'bulk_edit_file_tags', 'file')
+
+$('.bulk-tags').on('click', bulkManageTags)
+
+export function bulkManageTags(_event) {
+    if (!bulkTagsModal) return
+    const items = []
+    filesDataTable.rows('.selected').every(function () {
+        const data = this.data()
+        items.push({ pk: data.id, tags: data.tags || [] })
+    })
+    bulkTagsModal.open(items)
 }

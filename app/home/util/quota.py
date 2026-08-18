@@ -1,9 +1,24 @@
-from typing import List
+from typing import List, Optional
 
 from django.db.models import F, Sum
 from home.models import Files
 from oauth.models import CustomUser
 from settings.models import SiteSettings
+
+
+def remaining_quota_bytes(user: CustomUser) -> Optional[int]:
+    """
+    Smallest applicable remaining quota (user or global) in bytes, or None
+    when both quotas are unlimited. Mirrors the 0-means-unlimited convention
+    of process_storage_quotas.
+    """
+    settings = SiteSettings.objects.get(id=1)
+    limits = [
+        quota
+        for quota in (user.get_remaining_quota_bytes(), settings.get_remaining_global_storage_quota_bytes())
+        if quota != 0
+    ]
+    return min(limits) if limits else None
 
 
 def process_storage_quotas(user: CustomUser, size: int) -> List[bool]:

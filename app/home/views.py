@@ -1,3 +1,4 @@
+import json
 import logging
 from fractions import Fraction
 from urllib.parse import quote, urlparse
@@ -28,8 +29,9 @@ from home.util.misc import redact_log
 from home.util.nginx import set_hls_cookies
 from home.util.s3 import use_s3
 from home.util.storage import fetch_file, fetch_raw_file
+from home.util.tags import tag_names
 from oauth.forms import UserForm
-from oauth.models import CustomUser, DiscordWebhooks, UserInvites
+from oauth.models import CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
 from oauth.providers.google import GoogleOauth
@@ -158,6 +160,7 @@ def live_view(request, key):
         "key": key,
         "webpush": {"group": key},
         "stream": stream,
+        "stream_tags_json": json.dumps(tag_names(stream)),
         "is_owner": is_owner,
         "chat_user_info": chat_user_info,
         "subscriber_count": PushInformation.objects.filter(group__name=key).count(),
@@ -607,22 +610,6 @@ def delete_short_ajax(request, pk):
     return HttpResponse(status=204)
 
 
-@login_required
-@csrf_exempt
-@require_http_methods(["POST"])
-def delete_hook_ajax(request, pk):
-    """
-    View  /ajax/delete/hook/<int:pk>/
-    """
-    log.debug("delete_hook_ajax: %s", pk)
-    webhook = get_object_or_404(DiscordWebhooks, pk=pk)
-    if webhook.owner != request.user:
-        return HttpResponse(status=404)
-    log.debug(webhook)
-    webhook.delete()
-    return HttpResponse(status=204)
-
-
 @require_http_methods(["POST"])
 def check_password_file_ajax(request, pk):
     """
@@ -723,7 +710,7 @@ def url_route_view(request, filename):
     log.debug("url_route_view: %s", filename)
     file = get_object_or_404(
         Files.objects.select_related("user", "user__discord", "user__github", "user__google").prefetch_related(
-            "albums", "tags"
+            "albums", "tags__tag"
         ),
         name=filename,
     )
@@ -734,7 +721,7 @@ def url_route_view(request, filename):
         "file": file,
         "render": file.mime.split("/", 1)[0],
         "static_url": file.get_url(view=session_view),
-        "static_meta_url": file.get_meta_static_url(),
+        "static_meta_url": file.get_meta_static_url(site_url),
         "file_avatar_url": file.user.get_avatar_url(),
         "full_context": request.user.is_authenticated and (request.user == file.user or request.user.is_superuser),
         "native_app_arg": (

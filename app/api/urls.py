@@ -1,4 +1,5 @@
 from api import views
+from api.tus import tus_hook_view
 from django.urls import path, re_path
 from oauth.views import oauth_show
 
@@ -11,6 +12,9 @@ urlpatterns = [
     re_path(r"^shorten/?$", views.shorten_view, name="shorten"),
     path("invites/", views.invites_view, name="invites"),
     path("invites/<int:invite_id>/", views.invite_detail_view, name="invite-detail"),
+    path("webhooks/", views.webhooks_view, name="webhooks"),
+    path("webhooks/<int:webhook_id>/", views.webhook_detail_view, name="webhook-detail"),
+    path("webhooks/<int:webhook_id>/test/", views.webhook_test_view, name="webhook-test"),
     path("recent/", views.recent_view, name="recent"),
     path("shorts/", views.shorts_view, name="shorts"),
     path("shorts/<int:page>/", views.shorts_paginated_view, name="shorts-page"),
@@ -47,9 +51,11 @@ urlpatterns = [
     path("auth/session/", views.auth_session, name="auth-session"),
     path("auth/application/", views.auth_application, name="auth-application"),
     path("session/<path:sessionid>", views.session_view, name="session"),
+    path("tus/hook/", tus_hook_view, name="tus-hook"),
     path("stream/auth/", views.stream_auth_view, name="stream-auth"),
     path("stream/ingest/", views.stream_ingest_view, name="stream-ingest"),
     path("stream/done/", views.stream_done_view, name="stream-done"),
+    path("stream/record/", views.stream_record_done_view, name="stream-record-done"),
     path("stream/create/", views.stream_create_view, name="stream-create"),
     path("stream/<str:name>/rotate-token/", views.stream_rotate_token_view, name="stream-rotate-token"),
     path(
@@ -69,6 +75,9 @@ urlpatterns = [
     path("stream/viewers/<str:name>/", views.stream_viewers_view, name="stream-viewers"),
     path("stream/subscribers/<str:name>/", views.stream_subscribers_view, name="stream-subscribers"),
     path("stream/commands/<str:name>/", views.stream_commands_view, name="stream-commands"),
+    path("stream/<str:name>/history/", views.stream_history_view, name="stream-history"),
+    path("stream/<str:name>/history/<int:page>/", views.stream_history_view, name="stream-history"),
+    path("stream/<str:name>/history/<int:page>/<int:count>/", views.stream_history_view, name="stream-history-amount"),
     path("stream/<str:name>/", views.stream_detail_view, name="stream-detail"),
     path("oauth/", oauth_show, name="oauth-show"),
 ]

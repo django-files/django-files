@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from home.util.misc import bytes_to_human_read
 from home.util.rand import rand_color_hex, rand_string
 from home.util.time_zones import TIMEZONE_CHOICES
-from oauth.managers import DiscordWebhooksManager, UserInvitesManager
+from oauth.managers import UserInvitesManager
 from settings.models import SiteSettings
 
 
@@ -212,27 +212,6 @@ class Discord(models.Model):
     class Meta:
         verbose_name = "Discord"
         verbose_name_plural = "Discords"
-
-
-class DiscordWebhooks(models.Model):
-    id = models.AutoField(primary_key=True)
-    url = models.URLField(unique=True, verbose_name="Webhook URL")
-    hook_id = models.CharField(max_length=32, blank=True, null=True)
-    guild_id = models.CharField(max_length=32, blank=True, null=True)
-    channel_id = models.CharField(max_length=32, blank=True, null=True)
-    active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created", help_text="Hook Created Date.")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated", help_text="Hook Updated Date.")
-    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    objects = DiscordWebhooksManager()
-
-    def __str__(self):
-        return f"<Webhook(id={self.id} hook_id={self.hook_id} owner={self.owner.id})>"
-
-    class Meta:
-        ordering = ["-created_at"]
-        verbose_name = "Discord Webhook"
-        verbose_name_plural = "Discord Webhooks"
 
 
 class Github(models.Model):

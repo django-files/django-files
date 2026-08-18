@@ -9,45 +9,12 @@ import { fetchAlbumsSearch } from './api-fetch.js'
 // -- Settings form (both pages) --
 document.getElementById('settingsForm')?.addEventListener('change', saveOptions)
 
-// -- Discord webhook delete (user page) --
-let hookID
-document.querySelectorAll('.deleteDiscordHookBtn').forEach((el) =>
-    el.addEventListener('click', (event) => {
-        hookID = event.currentTarget.dataset.hookId
-        bootstrap.Modal.getOrCreateInstance(
-            document.getElementById('deleteDiscordHookModal')
-        ).show()
-    })
-)
-
 document
     .getElementById('uploadAvatarHookBtn')
     ?.addEventListener('click', () => {
         bootstrap.Modal.getOrCreateInstance(
             document.getElementById('avatarUploadModal')
         ).show()
-    })
-
-document
-    .getElementById('confirmDeleteDiscordHookBtn')
-    ?.addEventListener('click', async () => {
-        const response = await fetch(`/ajax/delete/hook/${hookID}/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': csrftoken },
-        })
-        const modal = bootstrap.Modal.getOrCreateInstance(
-            document.getElementById('deleteDiscordHookModal')
-        )
-        modal.hide()
-        if (response.ok) {
-            const table = document.getElementById('discordWebhooksTable')
-            const rowCount = table?.querySelectorAll('tr').length ?? 0
-            document.getElementById(`webhook-${hookID}`)?.remove()
-            if (rowCount <= 2) table?.remove()
-            show_toast(`Webhook ${hookID} Successfully Removed.`, 'success')
-        } else {
-            await fetchErrorToast(response)
-        }
     })
 
 // -- Invites form (site page) --
@@ -294,6 +261,8 @@ async function deleteSession(event, all = false) {
         show_toast('Session Deleted.')
     } else if (response.status === 404) {
         show_toast('Session Not Found.')
+    } else if (response.status === 403) {
+        show_toast('You can only manage your own sessions.', 'danger')
     } else if (response.status === 400) {
         show_toast(await response.text())
     } else {

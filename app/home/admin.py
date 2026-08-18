@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from home.models import (
     Albums,
+    AlbumTag,
     Files,
     FileStats,
     FileTag,
@@ -9,21 +10,58 @@ from home.models import (
     Stream,
     StreamDiscordWebhooks,
     StreamHistory,
+    Tag,
+    Webhook,
 )
+from home.tasks import fire_webhook
+from home.util.webhooks import EVENT_TEST, build_test_payload
 
 admin.site.site_header = "Django Files Administration"
+
+
+@admin.register(Webhook)
+class WebhookAdmin(admin.ModelAdmin):
+    model = Webhook
+    list_display = ("id", "owner", "name", "webhook_type", "scope", "events", "active", "created_at")
+    list_filter = ("webhook_type", "scope", "active", "owner")
+    search_fields = ("name", "url", "owner__username")
+    ordering = ("-created_at",)
+    actions = ["fire_test_event"]
+
+    @admin.action(description="Fire test event")
+    def fire_test_event(self, request, queryset):
+        for webhook in queryset:
+            fire_webhook.delay(webhook.pk, EVENT_TEST, build_test_payload(webhook))
+        self.message_user(request, f"Test event queued for {queryset.count()} webhook(s).")
+
+
+class AlbumTagInline(admin.TabularInline):
+    model = AlbumTag
+    extra = 0
+    fields = ("tag",)
+    autocomplete_fields = ("tag",)
 
 
 @admin.register(Albums)
 class AlbumAdmin(admin.ModelAdmin):
     model = Albums
     list_display = ("id", "name")
+    inlines = [AlbumTagInline]
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    model = Tag
+    list_display = ("id", "name")
+    search_fields = ("name",)
+    ordering = ("name",)
 
 
 class FileTagInline(admin.TabularInline):
     model = FileTag
     extra = 0
     fields = ("tag",)
+    autocomplete_fields = ("tag",)
 
 
 @admin.register(FileTag)
@@ -31,9 +69,10 @@ class FileTagAdmin(admin.ModelAdmin):
     model = FileTag
     list_display = ("id", "tag", "file_link", "file_user")
     list_filter = ("file__user",)
-    search_fields = ("tag", "file__name", "file__user__username")
-    ordering = ("tag",)
+    search_fields = ("tag__name", "file__name", "file__user__username")
+    ordering = ("tag__name",)
     raw_id_fields = ("file",)
+    autocomplete_fields = ("tag",)
 
     @admin.display(description="File")
     def file_link(self, obj):
@@ -140,11 +179,13 @@ class StreamAdmin(admin.ModelAdmin):
         "unique_views",
         "public",
         "viewer_limit",
+        "record",
     )
     list_filter = (
         "user",
         "is_live",
         "public",
+        "record",
         "started_at",
         "ended_at",
     )
@@ -160,7 +201,7 @@ class StreamAdmin(admin.ModelAdmin):
         "user__username",
     )
     ordering = ("-started_at",)
-    list_editable = ("is_live", "public", "viewer_limit")
+    list_editable = ("is_live", "public", "viewer_limit", "record")
 
 
 @admin.register(StreamHistory)

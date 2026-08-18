@@ -6,6 +6,7 @@ import operator
 import os
 import random
 import re
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -20,12 +21,15 @@ from api.utils import (
     extract_albums,
     extract_files,
     extract_streams,
+    remote_url_error,
     serialize_user,
     serialize_users,
 )
 from django.conf import settings
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
+from django.contrib.sessions.backends.base import VALID_KEY_CHARS
+from django.contrib.sessions.backends.cache import SessionStore
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.core.signing import TimestampSigner
@@ -34,6 +38,7 @@ from django.db.models.fields.json import KeyTextTransform
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render, reverse
+from django.template.defaultfilters import filesizeformat
 from django.utils.crypto import constant_time_compare
 from django.utils.timezone import localtime, now
 from django.views.decorators.cache import cache_control, cache_page, never_cache
@@ -41,20 +46,42 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from django_redis import get_redis_connection
-from home.models import Albums, Files, FileStats, ShortURLs, Stream
+from home.models import (
+    Albums,
+    Files,
+    FileStats,
+    ShortURLs,
+    Stream,
+    StreamHistory,
+    Webhook,
+)
 from home.tasks import (
     clear_files_cache,
     clear_shorts_cache,
+    dispatch_webhook_event,
+    import_stream_recording,
     send_push_live,
     stream_status_websocket,
 )
 from home.util.auth import create_api_token, hash_token
-from home.util.file import process_file
-from home.util.misc import anytobool, human_read_to_byte, redact_log
+from home.util.file import LocalFile, process_file
+from home.util.misc import anytobool, human_read_to_byte, redact_log, sanitize_log_value
 from home.util.nginx import sign_hls_cookie, verify_hls_cookie
-from home.util.quota import process_storage_quotas
+from home.util.quota import process_storage_quotas, remaining_quota_bytes
 from home.util.rand import rand_string
 from home.util.storage import file_rename
+from home.util.stream_record import delete_recording_file
+from home.util.tags import add_entity_tag, clean_tag_names
+from home.util.webhooks import (
+    EVENT_STREAM_LIVE,
+    EVENT_STREAM_OFFLINE,
+    EVENT_TEST,
+    SITE_ONLY_EVENTS,
+    WEBHOOK_EVENTS,
+    build_stream_payload,
+    build_test_payload,
+    send_webhook,
+)
 from oauth.models import ApiToken, CustomUser, UserInvites
 from oauth.providers.discord import DiscordOauth
 from oauth.providers.github import GithubOauth
@@ -68,6 +95,8 @@ from settings.models import SiteSettings
 from webpush.models import PushInformation
 
 signer = TimestampSigner()
+
+ERROR_NOT_FOUND = "Not Found"
 
 _ARCHIVE_MIMES = [
     "application/zip",
@@ -307,6 +336,29 @@ def version_view(request):
             return JsonResponse({"error": str(error)}, status=500)
 
 
+def _upload_size_error(user, size) -> Optional[JsonResponse]:
+    """
+    Return an error response when an upload exceeds the size cap or a storage
+    quota, or None when it fits. nginx and asgi.py already gate on
+    Content-Length; the size cap is rechecked here against the real file size
+    to cover chunked transfers and deployments behind other proxies.
+    """
+    if size and size > settings.UPLOAD_MAX_SIZE:
+        message = f"Upload Failed: Maximum upload size is {filesizeformat(settings.UPLOAD_MAX_SIZE)}."
+        log.warning("%s (got %s bytes)", message, size)
+        return JsonResponse({"error": True, "message": message}, status=413)
+    if any(pq := process_storage_quotas(user, size)):
+        if pq[1]:
+            message = "Upload Failed: Global storage quota exceeded."
+        elif pq[0]:
+            message = "Upload Failed: User storage quota exceeded."
+        else:
+            message = "Unknown error checking quotas."
+        log.error(message)
+        return JsonResponse({"error": True, "message": message}, status=400)
+    return None
+
+
 @csrf_exempt
 @require_http_methods(["OPTIONS", "POST"])
 @auth_from_token(no_fail=True)
@@ -326,22 +378,16 @@ def upload_view(request):
         request.user = CustomUser.objects.get(username="anonymous")
     try:
         f = request.FILES.get("file")
-        # log.debug("f.size: %s", f.size)
-        if any(pq := process_storage_quotas(request.user, f.size)):
-            if pq[1]:
-                message = "Upload Failed: Global storage quota exceeded."
-            elif pq[0]:
-                message = "Upload Failed: User storage quota exceeded."
-            else:
-                message = "Unknown error checking quotas."
-            log.error(message)
-            return JsonResponse({"error": True, "message": message}, status=400)
         if not f and post.get("text"):
             f = io.BytesIO(bytes(post.pop("text"), "utf-8"))
             f.name = post.pop("name", "paste.txt") or "paste.txt"
             f.name = f.name if "." in f.name else f.name + ".txt"
+            f.size = f.getbuffer().nbytes
         if not f:
             return JsonResponse({"error": "No file or text keys found."}, status=400)
+        # log.debug("f.size: %s", f.size)
+        if error_response := _upload_size_error(request.user, f.size):
+            return error_response
         # TODO: Determine how to better handle expire and why info is still being used differently from other methods
         expire = parse_expire(request)
         log.debug("expire: %s", expire)
@@ -413,7 +459,7 @@ def _handle_create_album(request):
     password = data_or_header(request, data, "password") if has_password else ""
     if not has_password and request.user.default_file_password:
         password = rand_string()
-    album = Albums.objects.create(
+    album = Albums(
         user=request.user,
         name=data_or_header(request, data, "name"),
         maxv=data_or_header(request, data, "max-views", 0, cast=int),
@@ -422,6 +468,10 @@ def _handle_create_album(request):
         private=private,
         expr=data_or_header(request, data, "expire"),
     )
+    # staged for albums_post_save_signal so tags exist before the
+    # album.created websocket/webhook payloads are built
+    album._pending_tags = data_or_header(request, data, "tags", [], cast=clean_tag_names)
+    album.save()
     site_settings = SiteSettings.objects.settings()
     full_url = site_settings.site_url + reverse("home:files") + f"?album={album.id}"
     return JsonResponse({"url": full_url}, safe=False)
@@ -561,9 +611,204 @@ def invite_detail_view(request, invite_id):
     try:
         invite = UserInvites.objects.get(pk=invite_id)
     except UserInvites.DoesNotExist:
-        return JsonResponse({"error": "Not Found"}, status=404)
+        return JsonResponse({"error": ERROR_NOT_FOUND}, status=404)
     invite.delete()
     return HttpResponse(status=204)
+
+
+def _webhook_response(webhook: Webhook) -> dict:
+    return {
+        "id": webhook.id,
+        "name": webhook.name,
+        "webhook_type": webhook.webhook_type,
+        "scope": webhook.scope,
+        "url": webhook.url,
+        "secret": webhook.secret,
+        "active": webhook.active,
+        "events": webhook.events,
+        "filters": webhook.filters,
+        "created_at": webhook.created_at,
+        "updated_at": webhook.updated_at,
+    }
+
+
+def _clean_webhook_name(value) -> tuple:
+    name = str(value).strip()
+    if not name or len(name) > 128:
+        return None, "Invalid name"
+    return name, None
+
+
+def _clean_webhook_url(value) -> tuple:
+    if not validators.url(str(value)):
+        return None, "Invalid url"
+    return value, None
+
+
+def _clean_webhook_type(value) -> tuple:
+    if value not in (Webhook.WEBHOOK_TYPE_CUSTOM, Webhook.WEBHOOK_TYPE_DISCORD):
+        return None, "Invalid webhook_type"
+    return value, None
+
+
+def _clean_webhook_scope(value) -> tuple:
+    if value not in (Webhook.SCOPE_USER, Webhook.SCOPE_SITE):
+        return None, "Invalid scope"
+    return value, None
+
+
+def _clean_webhook_events(value) -> tuple:
+    valid = isinstance(value, list) and all(isinstance(event, str) and event in WEBHOOK_EVENTS for event in value)
+    if not valid:
+        return None, f"Invalid events. Valid events: {', '.join(WEBHOOK_EVENTS)}"
+    return value, None
+
+
+_WEBHOOK_FILTER_KEYS = ("tags",)
+_WEBHOOK_MAX_FILTER_TAGS = 50
+
+
+def _clean_webhook_filters(value) -> tuple:
+    if not isinstance(value, dict):
+        return None, "Invalid filters"
+    if unknown := [key for key in value if key not in _WEBHOOK_FILTER_KEYS]:
+        return None, f"Unknown filter keys: {', '.join(unknown)}. Valid keys: {', '.join(_WEBHOOK_FILTER_KEYS)}"
+    tags = value.get("tags", [])
+    if not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags):
+        return None, "Invalid filters: tags must be a list of strings"
+    tags = [tag.strip() for tag in tags]
+    if any(not tag.lstrip("!") or len(tag) > 255 for tag in tags):
+        return None, "Invalid filters: each tag must be 1-255 characters"
+    if len(tags) > _WEBHOOK_MAX_FILTER_TAGS:
+        return None, f"Invalid filters: maximum {_WEBHOOK_MAX_FILTER_TAGS} tags"
+    return {"tags": tags} if tags else {}, None
+
+
+def _clean_webhook_secret(value) -> tuple:
+    secret = str(value)
+    if len(secret) > 128:
+        return None, "Invalid secret"
+    return secret, None
+
+
+def _clean_webhook_active(value) -> tuple:
+    return anytobool(value), None
+
+
+_WEBHOOK_REQUIRED_FIELDS = ("name", "url")
+
+_WEBHOOK_FIELD_CLEANERS = {
+    "name": _clean_webhook_name,
+    "url": _clean_webhook_url,
+    "webhook_type": _clean_webhook_type,
+    "scope": _clean_webhook_scope,
+    "events": _clean_webhook_events,
+    "filters": _clean_webhook_filters,
+    "secret": _clean_webhook_secret,
+    "active": _clean_webhook_active,
+}
+
+
+def _validate_webhook_data(data: dict, partial: bool = False) -> tuple[dict, Optional[str]]:
+    """Validate webhook create/update payloads. Returns (fields, error)."""
+    if not partial:
+        for key in _WEBHOOK_REQUIRED_FIELDS:
+            if key not in data:
+                return {}, f"Missing required field: {key}"
+    fields = {}
+    for key, cleaner in _WEBHOOK_FIELD_CLEANERS.items():
+        if key not in data:
+            continue
+        value, error = cleaner(data[key])
+        if error:
+            return {}, error
+        fields[key] = value
+    return fields, None
+
+
+def _webhook_scope_error(request, fields: dict, current: Optional[Webhook] = None) -> Optional[str]:
+    """Cross-field rules for the final webhook state (submitted fields over current values)."""
+    scope = fields.get("scope", current.scope if current else Webhook.SCOPE_USER)
+    events = fields.get("events", current.events if current else [])
+    if scope == Webhook.SCOPE_SITE and not request.user.is_superuser:
+        return "Site-scoped webhooks require superuser"
+    if scope == Webhook.SCOPE_USER and (site_only := [event for event in events if event in SITE_ONLY_EVENTS]):
+        return f"Events require site scope: {', '.join(site_only)}"
+    return None
+
+
+def _get_webhook_or_error(request, webhook_id: int):
+    webhook = Webhook.objects.filter(pk=webhook_id).first()
+    if not webhook or (webhook.owner_id != request.user.id and not request.user.is_superuser):
+        return None
+    return webhook
+
+
+@csrf_exempt
+@require_http_methods(["OPTIONS", "GET", "POST"])
+@auth_from_token
+def webhooks_view(request):
+    """
+    View  /api/webhooks/
+    """
+    log.debug("%s - webhooks_view", request.method)
+    if request.method == "POST":
+        data = get_json_body(request)
+        fields, error = _validate_webhook_data(data)
+        if not error:
+            error = _webhook_scope_error(request, fields)
+        if error:
+            return JsonResponse({"error": error}, status=400)
+        webhook = Webhook.objects.create(owner=request.user, **fields)
+        return JsonResponse(_webhook_response(webhook), status=201)
+    webhooks = Webhook.objects.filter(owner=request.user)
+    return JsonResponse({"webhooks": [_webhook_response(hook) for hook in webhooks]})
+
+
+@csrf_exempt
+@require_http_methods(["OPTIONS", "GET", "PATCH", "DELETE"])
+@auth_from_token
+def webhook_detail_view(request, webhook_id: int):
+    """
+    View  /api/webhooks/<webhook_id>/
+    """
+    log.debug("%s - webhook_detail_view: %s", request.method, webhook_id)
+    webhook = _get_webhook_or_error(request, webhook_id)
+    if not webhook:
+        return JsonResponse({"error": ERROR_NOT_FOUND}, status=404)
+    if request.method == "DELETE":
+        webhook.delete()
+        return HttpResponse(status=204)
+    if request.method == "PATCH":
+        data = get_json_body(request)
+        fields, error = _validate_webhook_data(data, partial=True)
+        if not error:
+            error = _webhook_scope_error(request, fields, current=webhook)
+        if error:
+            return JsonResponse({"error": error}, status=400)
+        for key, value in fields.items():
+            setattr(webhook, key, value)
+        webhook.save()
+    return JsonResponse(_webhook_response(webhook))
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@auth_from_token
+def webhook_test_view(request, webhook_id: int):
+    """
+    View  /api/webhooks/<webhook_id>/test/
+    """
+    log.debug("webhook_test_view: %s", webhook_id)
+    webhook = _get_webhook_or_error(request, webhook_id)
+    if not webhook:
+        return JsonResponse({"error": ERROR_NOT_FOUND}, status=404)
+    try:
+        r = send_webhook(webhook, EVENT_TEST, build_test_payload(webhook))
+    except httpx.HTTPError as error:
+        log.warning("webhook_test_view: %s - %s", webhook_id, error)
+        return JsonResponse({"success": False, "error": str(error)})
+    return JsonResponse({"success": r.is_success, "status_code": r.status_code})
 
 
 def _quota_bg(pct):
@@ -769,7 +1014,7 @@ def recent_view(request):
     log.debug("%s - recent_view: is_secure: %s", request.method, request.is_secure())
     try:
         # query = Files.objects.filtered_request(request).select_related("user")
-        query = Files.objects.filter(user=request.user).select_related("user").prefetch_related("albums", "tags")
+        query = Files.objects.filter(user=request.user).select_related("user").prefetch_related("albums", "tags__tag")
         if album := request.GET.get("album"):
             query = query.filter(albums__id=album)
 
@@ -799,7 +1044,7 @@ def recent_view(request):
 
 def _files_base_queryset(request, user, album):
     qs = Files.objects.filtered_request
-    prefetch = ("albums", "tags")
+    prefetch = ("albums", "tags__tag")
     if album:
         return qs(request, albums__id=album).select_related("user").prefetch_related(*prefetch)
     if user == "0":
@@ -816,7 +1061,7 @@ def _apply_search_filter(q, request):
         return q
     if request.GET.get("name_only"):
         return q.filter(name__icontains=search)
-    return q.filter(Q(name__icontains=search) | Q(tags__tag__icontains=search)).distinct()
+    return q.filter(Q(name__icontains=search) | Q(tags__tag__name__icontains=search)).distinct()
 
 
 @csrf_exempt
@@ -1009,11 +1254,15 @@ def albums_view(request, page=None, count=100):
     else:
         user = request.user.id
     if user == "0":
-        q = Albums.objects.filtered_request(request).select_related("user")
+        q = Albums.objects.filtered_request(request).select_related("user").prefetch_related("tags__tag")
     else:
-        q = Albums.objects.filtered_request(request, user_id=int(user)).select_related("user")
+        q = (
+            Albums.objects.filtered_request(request, user_id=int(user))
+            .select_related("user")
+            .prefetch_related("tags__tag")
+        )
     if search := request.GET.get("search"):
-        q = q.filter(name__icontains=search)
+        q = q.filter(Q(name__icontains=search) | Q(tags__tag__name__icontains=search)).distinct()
     if privacy := request.GET.get("privacy"):
         q = q.filter(private=(privacy == "private"))
     q = q.annotate(file_count=Count("files"))
@@ -1032,6 +1281,56 @@ def albums_view(request, page=None, count=100):
         "count": count,
     }
     return JsonResponse(response, safe=False, status=200)
+
+
+# Remote fetch guards: Content-Length can lie (or be absent, or the body is
+# gzip that httpx transparently expands), so the byte cap is enforced on
+# bytes actually written. The hard cap bounds disk use even when storage
+# quotas are unlimited, and the wall-clock cap stops a slow-drip server from
+# pinning a worker indefinitely.
+REMOTE_MAX_REDIRECTS = 5
+REMOTE_MAX_BYTES = 10 * 1024**3
+REMOTE_MAX_SECONDS = 900
+REMOTE_TIMEOUT = httpx.Timeout(30, connect=10)
+REMOTE_QUOTA_MESSAGE = "Upload Failed: storage quota exceeded."
+
+
+def download_remote_file(user: CustomUser, url: str, fp: BinaryIO) -> Optional[str]:
+    """
+    Stream url into fp; returns an error message or None on success.
+    Redirects are followed manually so remote_url_error re-validates every
+    hop — a public URL redirecting to an internal address is the classic
+    SSRF bypass.
+    """
+    cap = min(remaining_quota_bytes(user) or REMOTE_MAX_BYTES, REMOTE_MAX_BYTES)
+    start = time.monotonic()
+    try:
+        with httpx.Client(follow_redirects=False, timeout=REMOTE_TIMEOUT) as client:
+            for _ in range(REMOTE_MAX_REDIRECTS + 1):
+                if error := remote_url_error(url):
+                    return error
+                with client.stream("GET", url) as r:
+                    if r.has_redirect_location and r.next_request:
+                        url = str(r.next_request.url)
+                        continue
+                    if not r.is_success:
+                        return f"{r.status_code} Fetching {url}"
+                    if int(r.headers.get("Content-Length") or 0) > cap:
+                        return REMOTE_QUOTA_MESSAGE
+                    total = 0
+                    for chunk in r.iter_bytes(1024 * 1024):
+                        total += len(chunk)
+                        if total > cap:
+                            return REMOTE_QUOTA_MESSAGE
+                        if time.monotonic() - start > REMOTE_MAX_SECONDS:
+                            return f"Download exceeded {REMOTE_MAX_SECONDS}s time limit."
+                        fp.write(chunk)
+                    fp.flush()
+                    return None
+    except httpx.HTTPError as error:
+        log.exception("download_remote_file: %s", url)
+        return f"Error fetching {url}: {error}"
+    return "Too many redirects."
 
 
 @csrf_exempt
@@ -1059,13 +1358,14 @@ def remote_view(request):
     name = os.path.basename(parsed_url.path)
     log.debug("name: %s", name)
 
-    r = httpx.get(url, follow_redirects=True)
-    if not r.is_success:
-        return JsonResponse({"error": f"{r.status_code} Fetching {url}"}, status=400)
-
     extra_args = parse_headers(request.headers, expr=parse_expire(request), **request.POST.dict())
     log.debug("extra_args: %s", extra_args)
-    file = process_file(name, io.BytesIO(r.content), request.user.id, **extra_args)
+    with tempfile.NamedTemporaryFile(suffix=os.path.basename(name)) as tmp:
+        if error := download_remote_file(request.user, url, tmp):
+            return JsonResponse({"error": error}, status=400)
+        # LocalFile: process_file consumes the temp file in place instead of
+        # making a second on-disk copy of a potentially very large download
+        file = process_file(name, LocalFile(tmp.name), request.user.id, **extra_args)
     response = {"url": f"{site_settings['site_url'] + file.preview_uri()}"}
     log.debug("response: %s", response)
     return JsonResponse(response)
@@ -1261,36 +1561,72 @@ def auth_application(request):
         return JsonResponse({"error": str(error)}, status=400)
 
 
+_SESSIONS_CACHE_PREFIX = "django.contrib.sessions.cache"
+
+
+def _session_owner_id(session_key: str) -> Optional[str]:
+    data = SessionStore(session_key=session_key).load()
+    user_id = data.get("_auth_user_id")
+    return str(user_id) if user_id is not None else None
+
+
+def _is_valid_session_key(sessionid: str) -> bool:
+    # rejects glob metacharacters (*, ?, [, ]) before sessionid reaches Redis
+    # as a scan pattern -- a real session key can never contain them
+    return bool(sessionid) and set(sessionid) <= set(VALID_KEY_CHARS)
+
+
+def _delete_other_sessions(request):
+    keys = list(cache.iter_keys(f"{_SESSIONS_CACHE_PREFIX}*"))
+    log.debug("keys: %s", keys)
+    for key in keys:
+        if request.session.session_key in key:
+            continue
+        if not request.user.is_superuser:
+            session_key = key[len(_SESSIONS_CACHE_PREFIX) :]
+            if _session_owner_id(session_key) != str(request.user.id):
+                continue
+        log.debug("cache.delete: %s", key)
+        cache.delete(key)
+    return HttpResponse(status=201)
+
+
+def _delete_one_session(request, sessionid):
+    if sessionid == request.session.session_key:
+        # deleting your own live session confuses SessionMiddleware; reject with a clear message
+        return HttpResponse("Cannot delete your current session; log out instead.", status=400)
+
+    if not _is_valid_session_key(sessionid):
+        return HttpResponse(status=404)
+
+    keys = list(cache.iter_keys(f"*{sessionid}"))
+    log.debug("keys: %s", keys)
+    if not keys:
+        return HttpResponse(status=404)
+    if not request.user.is_superuser and _session_owner_id(sessionid) != str(request.user.id):
+        return HttpResponse(status=403)
+    log.debug("keys[0]: %s", keys[0])
+    cache.delete(keys[0])
+    return HttpResponse(status=201)
+
+
 @csrf_exempt
 @require_http_methods(["DELETE"])
-@user_passes_test(lambda user: user.is_superuser)
+@login_required
 def session_view(request, sessionid):
     """
     View /session/:id/
+    Superusers may delete any session; regular users only their own.
     """
     try:
         log.debug("request.user: %s", request.user)
         log.debug("sessionid: %s", sessionid)
         if sessionid == "all":
-            keys = cache.keys("django.contrib.sessions.cache*")
-            log.debug("keys: %s", keys)
-            for key in keys:
-                if request.session.session_key not in key:
-                    log.debug("cache.delete: %s", key)
-                    cache.delete(key)
-            return HttpResponse(status=201)
-
-        keys = cache.keys(f"*{sessionid}")
-        log.debug("keys: %s", keys)
-        if keys:
-            log.debug("keys[0]: %s", keys[0])
-            cache.delete(keys[0])
-            return HttpResponse(status=201)
-        else:
-            return HttpResponse(status=404)
-    except Exception as error:
-        log.debug("error: %s", error)
-        return HttpResponse(str(error), status=500)
+            return _delete_other_sessions(request)
+        return _delete_one_session(request, sessionid)
+    except Exception:
+        log.exception("session_view: error deleting sessionid=%s", sessionid)
+        return HttpResponse("Error deleting session.", status=500)
 
 
 def _resolve_stream_user(name, data):
@@ -1320,6 +1656,8 @@ def _parse_stream_kwargs(data):
         kwargs["description"] = description[0]
     if title := data.get("title"):
         kwargs["title"] = title[0]
+    if record := data.get("record"):
+        kwargs["record"] = anytobool(record[0])
     return kwargs
 
 
@@ -1366,8 +1704,11 @@ def stream_auth_view(request):
             stream.started_at = datetime.now()
             stream.ended_at = None
             stream.save()
+        StreamHistory.objects.create(stream=stream, title=stream.title, description=stream.description)
+        _reset_viewer_stats(stream.name)
         send_push_live.apply_async(args=[stream.name], countdown=10)
         stream_status_websocket.delay(stream.name, True, started_at=stream.started_at.isoformat())
+        dispatch_webhook_event.delay(EVENT_STREAM_LIVE, stream.user_id, build_stream_payload(stream))
 
         return HttpResponse()
     except Exception as error:
@@ -1405,11 +1746,56 @@ def stream_done_view(request):
         stream.ended_at = datetime.now()
         stream.is_live = False
         stream.save()
+
+        history = StreamHistory.objects.filter(stream=stream, ended_at__isnull=True).order_by("-started_at").first()
+        if history:
+            peak, avg = _pop_viewer_stats(stream.name)
+            history.ended_at = stream.ended_at
+            history.peak_viewers = peak
+            history.avg_viewers = avg
+            history.save()
+
         stream_status_websocket.delay(stream.name, False, stream.ended_at.isoformat())
+        dispatch_webhook_event.delay(EVENT_STREAM_OFFLINE, stream.user_id, build_stream_payload(stream))
 
     except Exception as error:
         log.debug("error: %s", error)
 
+    return HttpResponse()
+
+
+@csrf_exempt
+def stream_record_done_view(request):
+    """
+    View /stream/record/
+    Called by nginx-rtmp's on_record_done when a recording file is finalized.
+    nginx records every live session unconditionally (record all;); this
+    endpoint decides whether to keep it based on Stream.record.
+    """
+    log.debug("stream_record_done_view: %s", redact_log(request.GET))
+    name = request.GET.get("name")
+    path = request.GET.get("path")
+    if not name or not path:
+        log.warning("stream_record_done_view: missing name or path: %s", sanitize_log_value(redact_log(request.GET)))
+        return HttpResponse(status=400)
+
+    try:
+        stream = Stream.objects.get(name=name)
+    except Stream.DoesNotExist:
+        log.warning(
+            "stream_record_done_view: unknown stream %s, discarding %s",
+            sanitize_log_value(name),
+            sanitize_log_value(path),
+        )
+        delete_recording_file(path)
+        return HttpResponse()
+
+    history = StreamHistory.objects.filter(stream=stream, recording__isnull=True).order_by("-started_at").first()
+    if not stream.record or not history:
+        delete_recording_file(path)
+        return HttpResponse()
+
+    import_stream_recording.delay(history.pk, path)
     return HttpResponse()
 
 
@@ -1442,6 +1828,8 @@ def stream_create_view(request):
     stream, created = Stream.objects.get_or_create(name=name, defaults=defaults)
     if not created and stream.user != request.user:
         return JsonResponse({"error": "Stream name already taken."}, status=409)
+    for tag_name in clean_tag_names(request.POST.get("tags", "")):
+        add_entity_tag(stream, tag_name)
     return JsonResponse({"name": stream.name, "stream_token": stream.stream_token})
 
 
@@ -1614,8 +2002,10 @@ def stream_ping_view(request, name):
 
     key = f"stream:{name}:viewers"
     redis = get_redis_connection("default")
-    redis.zadd(key, {session_key: int(now().timestamp())})
-    redis.expire(key, 60)
+    pipe = redis.pipeline()
+    pipe.zadd(key, {session_key: int(now().timestamp())})
+    pipe.expire(key, 60)
+    pipe.execute()
     return HttpResponse()
 
 
@@ -1759,6 +2149,29 @@ def stream_commands_view(request, name):
     )
 
 
+def _parse_optional_int(value) -> Optional[int]:
+    return int(value) if value not in (None, "") else None
+
+
+def _apply_stream_patch(stream: Stream, data: dict, request) -> None:
+    if "public" in data:
+        stream.public = data_or_header(request, data, "public", True, cast=bool)
+    if "title" in data:
+        stream.title = data_or_header(request, data, "title")
+    if "description" in data:
+        stream.description = data_or_header(request, data, "description")
+    if "password" in data:
+        stream.password = data_or_header(request, data, "password")
+    if "viewer_limit" in data:
+        stream.viewer_limit = data_or_header(request, data, "viewer_limit", 0, cast=int)
+    if "record" in data:
+        stream.record = data_or_header(request, data, "record", False, cast=bool)
+    if "recording_retention_days" in data:
+        stream.recording_retention_days = _parse_optional_int(data["recording_retention_days"])
+    if "recording_retention_count" in data:
+        stream.recording_retention_count = _parse_optional_int(data["recording_retention_count"])
+
+
 @csrf_exempt
 @require_http_methods(["OPTIONS", "PATCH"])
 @auth_from_token
@@ -1772,21 +2185,43 @@ def stream_detail_view(request, name: str = None):
             if stream.user != request.user and not request.user.is_superuser:
                 return HttpResponse(status=403)
             data = get_json_body(request)
-            if "public" in data:
-                stream.public = data_or_header(request, data, "public", True, cast=bool)
-            if "title" in data:
-                stream.title = data_or_header(request, data, "title")
-            if "description" in data:
-                stream.description = data_or_header(request, data, "description")
-            if "password" in data:
-                stream.password = data_or_header(request, data, "password")
-            if "viewer_limit" in data:
-                stream.viewer_limit = data_or_header(request, data, "viewer_limit", 0, cast=int)
+            _apply_stream_patch(stream, data, request)
             stream.save()
             return JsonResponse(extract_streams([stream], request.user.id)[0])
     except Exception as error:
         log.exception(error)
         return JsonResponse({"error": f"{error}"}, status=400)
+
+
+@require_http_methods(["GET"])
+@auth_from_token
+def stream_history_view(request, name: str, page=None, count=25):
+    """
+    View /api/stream/<name>/history/{page}/{count}/
+    Past sessions (StreamHistory) for a stream, most recent first, with a link
+    to the recording's normal file preview when one exists.
+    """
+    stream = get_object_or_404(Stream, name=name)
+    if stream.user != request.user and not request.user.is_superuser:
+        return HttpResponse(status=403)
+    q = StreamHistory.objects.filter(stream=stream).select_related("recording")
+    page_items, _next = paginate_no_count(q, page, count)
+    site_url = SiteSettings.objects.settings().site_url
+    history = [
+        {
+            "id": h.id,
+            "started_at": h.started_at,
+            "ended_at": h.ended_at,
+            "peak_viewers": h.peak_viewers,
+            "avg_viewers": h.avg_viewers,
+            "title": h.title,
+            "description": h.description,
+            "recording_url": site_url + h.recording.preview_uri() if h.recording else None,
+            "recording_name": h.recording.name if h.recording else None,
+        }
+        for h in page_items
+    ]
+    return JsonResponse({"history": history, "next": _next, "count": count}, status=200)
 
 
 def get_viewer_count(name):
@@ -1796,7 +2231,44 @@ def get_viewer_count(name):
     cutoff = int(now().timestamp()) - 60
     count = redis.zcount(key, min=cutoff, max="+inf")
     log.debug("stream_viewers_view - count: %s", count)
+    _record_viewer_sample(name, count)
     return count
+
+
+def _record_viewer_sample(name, count):
+    """Accumulate a viewer-count sample, piggybacking on stream_viewers_view polling,
+    so peak/avg can be computed for the StreamHistory row when the stream ends."""
+    redis = get_redis_connection("default")
+    peak_key = f"stream:{name}:peak_viewers"
+    current_peak = redis.get(peak_key)
+    pipe = redis.pipeline()
+    if current_peak is None or count > int(current_peak):
+        pipe.set(peak_key, count, ex=3600)
+    else:
+        pipe.expire(peak_key, 3600)
+    pipe.incrby(f"stream:{name}:viewer_sum", count)
+    pipe.expire(f"stream:{name}:viewer_sum", 3600)
+    pipe.incr(f"stream:{name}:viewer_samples")
+    pipe.expire(f"stream:{name}:viewer_samples", 3600)
+    pipe.execute()
+
+
+def _pop_viewer_stats(name):
+    """Read and clear the accumulated peak/avg viewer stats for a finished stream session."""
+    redis = get_redis_connection("default")
+    peak_key = f"stream:{name}:peak_viewers"
+    sum_key = f"stream:{name}:viewer_sum"
+    samples_key = f"stream:{name}:viewer_samples"
+    peak = int(redis.get(peak_key) or 0)
+    total = int(redis.get(sum_key) or 0)
+    samples = int(redis.get(samples_key) or 0)
+    redis.delete(peak_key, sum_key, samples_key)
+    return peak, (total // samples if samples else 0)
+
+
+def _reset_viewer_stats(name):
+    redis = get_redis_connection("default")
+    redis.delete(f"stream:{name}:peak_viewers", f"stream:{name}:viewer_sum", f"stream:{name}:viewer_samples")
 
 
 def get_json_body(request):
@@ -1820,21 +2292,23 @@ def parse_headers(headers: dict, **kwargs) -> dict:
         "expr",
         "avatar",
         "albums",
+        "tags",
+        "info",
     ]
     data = {}
     # TODO: IMPORTANT: Determine why these values are not 1:1 - meta_preview:embed
     difference_mapping = {"embed": "meta_preview"}
-    # TODO: This should probably do the same thing in both loops
     for key in allowed:
         if key in headers:
             value = headers[key]
             if key in difference_mapping:
                 key = difference_mapping[key]
             data[key.replace("-", "_")] = value
-    # data.update(**kwargs)
     for key, value in kwargs.items():
-        if key.lower() in allowed:
-            data[key] = value
+        key = key.lower()
+        if key in allowed:
+            key = difference_mapping.get(key, key)
+            data[key.replace("-", "_")] = value
     return data
 
 
@@ -2121,6 +2595,12 @@ def user_view(request, user_id=None):
                 for field in sensitive_fields:
                     data.pop(field, None)
 
+            if "storage_quota" in data:
+                quota_bytes = human_read_to_byte(str(data["storage_quota"]))
+                if not isinstance(quota_bytes, int):
+                    return JsonResponse({"error": "Invalid storage quota value."}, status=400)
+                data["storage_quota"] = quota_bytes
+
             for key, value in data.items():
                 if hasattr(target_user, key):
                     setattr(target_user, key, value)
@@ -2152,9 +2632,13 @@ def streams_view(request, page=None, count=100):
     else:
         user = request.user.id
     if user == "0":
-        q = Stream.objects.select_related("user").all()
+        q = Stream.objects.select_related("user").prefetch_related("tags__tag").all()
     else:
-        q = Stream.objects.select_related("user").filter(user_id=int(user))
+        q = Stream.objects.select_related("user").prefetch_related("tags__tag").filter(user_id=int(user))
+    if search := request.GET.get("search"):
+        q = q.filter(
+            Q(name__icontains=search) | Q(title__icontains=search) | Q(tags__tag__name__icontains=search)
+        ).distinct()
     if privacy := request.GET.get("privacy"):
         q = q.filter(public=(privacy == "public"))
     q = apply_ordering(

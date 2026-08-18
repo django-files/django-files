@@ -1,0 +1,17 @@
+<div class="modal fade" id="album-tags-modal" tabindex="-1" aria-labelledby="album-tags-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="album-tags-label">Album Tags</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {# chips and the "+" adder are rendered by albums-actions.js via tag-chips.js #}
+                <div class="tag-container position-relative" id="album-tags-container"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

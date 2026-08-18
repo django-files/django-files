@@ -2,6 +2,11 @@ import { fetchAlbums } from './api-fetch.js'
 import { initBulkSelect, selectedPks, wireDeleteModal } from './bulk-actions.js'
 import { attachSocketTableSync, socket } from './socket.js'
 import {
+    applyTagDelta,
+    initBulkTagsModal,
+    updateTagSearchBadges,
+} from './tag-chips.js'
+import {
     dtRevealThead,
     initPopupBtn,
     noChromeLayout,
@@ -65,9 +70,21 @@ const dataTablesOptions = {
         selectColumnDef,
         {
             targets: 1,
-            render: renderAlbumLink,
+            render: (data, type, row, meta) => {
+                if (type === 'filter') {
+                    const tags = Array.isArray(row.tags)
+                        ? row.tags.join(' ')
+                        : ''
+                    return `${data || ''} ${tags}`
+                }
+                if (type === 'display') {
+                    return renderAlbumLink(data, type, row, meta)
+                }
+                return data || ''
+            },
             defaultContent: '',
             responsivePriority: 1,
+            className: 'dt-name-col',
         },
         {
             name: 'date',
@@ -108,8 +125,14 @@ const dataTablesOptions = {
     ],
 }
 
+function updateAlbumTagBadges() {
+    if (!albumsDataTable) return
+    updateTagSearchBadges(albumsDataTable, '.dj-album-link')
+}
+
 async function domContentLoaded() {
     albumsDataTable = albumsTable.DataTable(dataTablesOptions)
+    albumsDataTable.on('draw.dt', updateAlbumTagBadges)
     truncator.attach(albumsDataTable)
     loader = createPaginatedLoader(albumsDataTable, {
         fetcher: fetchAlbums,
@@ -221,6 +244,20 @@ async function domContentLoaded() {
                 })
             )
         )
+        const bulkTagsModal = initBulkTagsModal(
+            socket,
+            'bulk_edit_album_tags',
+            'album'
+        )
+        $('.bulk-tags').on('click', () => {
+            if (!bulkTagsModal) return
+            const items = []
+            albumsDataTable.rows('.selected').every(function () {
+                const data = this.data()
+                items.push({ pk: data.id, tags: data.tags || [] })
+            })
+            bulkTagsModal.open(items)
+        })
     }
     deleteModal = wireDeleteModal({
         modalId: 'delete-album-modal',
@@ -242,7 +279,10 @@ async function domContentLoaded() {
             document
                 .querySelector('.albums-truncation-warning')
                 ?.classList.remove('d-none'),
-        extra: { 'album-update': updateAlbumRow },
+        extra: {
+            'album-update': updateAlbumRow,
+            'set-album-tags': updateAlbumTags,
+        },
     })
     await initDataTable(
         albumsDataTable,
@@ -286,6 +326,9 @@ function renderActions(data, type, row, _meta) {
             </a></li>
             <li><a class="dropdown-item album-set-password-btn" role="button" data-album-id="${id}" data-has-password="${escapeHtmlAttr(hasPassword)}">
                 <i class="fa-solid fa-key me-2"></i>${passwordLabel}
+            </a></li>
+            <li><a class="dropdown-item album-tags-btn" role="button" data-album-id="${id}" data-album-tags="${escapeHtmlAttr(JSON.stringify(row.tags || []))}">
+                <i class="fa-solid fa-tags me-2"></i>Manage Tags
             </a></li>
             <li><hr class="dropdown-divider"></li>`
         : ''
@@ -356,6 +399,18 @@ export function updateAlbumRow(data) {
     if (!row.node()) return
     const current = row.data() || {}
     row.data({ ...current, ...data })
+        .invalidate('data')
+        .draw(false)
+}
+
+// Merge a set-album-tags broadcast into the row so the ctx-menu's
+// data-album-tags payload stays fresh for the next Manage Tags open.
+function updateAlbumTags(data) {
+    if (!albumsDataTable) return
+    const row = albumsDataTable.row(`#album-${data.album_id}`)
+    if (!row.node()) return
+    const current = row.data() || {}
+    row.data({ ...current, tags: applyTagDelta(current.tags || [], data) })
         .invalidate('data')
         .draw(false)
 }

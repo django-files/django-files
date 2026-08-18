@@ -82,8 +82,9 @@
             <li class="nav-item dropdown nav-user-dropdown">
                 <a class="nav-link d-inline-flex align-items-center gap-2" id="navbarDropdown" role="button"
                    data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                    <img src="{{ user.get_avatar_url }}" class="rounded-circle"
-                         height="24" width="24" alt="P">
+                    <img src="{{ user.get_avatar_url }}" class="rounded-circle flex-shrink-0 nav-avatar"
+                         height="24" width="24" alt="P"
+                         data-avatar-fallback="{% static 'images/default_avatar.png' %}">
                     {{ user.get_name|truncatechars:16 }} <i class="fas fa-angle-down ms-1"></i></a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                     <li>
@@ -173,7 +174,9 @@
                 <hr class="my-2">
                 <div class="nav-user-profile-row">
                     <a class="nav-link d-inline-flex align-items-center gap-2 flex-grow-1 py-0{% if request.resolver_match.view_name == 'settings:user' %} active{% endif %}" href="{% url 'settings:user' %}">
-                        <img src="{{ user.get_avatar_url }}" class="rounded-circle" height="28" width="28" alt="P">
+                        <img src="{{ user.get_avatar_url }}" class="rounded-circle flex-shrink-0 nav-avatar"
+                             height="28" width="28" alt="P"
+                             data-avatar-fallback="{% static 'images/default_avatar.png' %}">
                         {{ user.get_name|truncatechars:20 }}
                     </a>
                     <button class="btn btn-link text-danger log-out p-1" title="Log Out" aria-label="Log Out">

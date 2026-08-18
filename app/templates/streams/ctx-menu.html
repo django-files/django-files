@@ -4,7 +4,7 @@ and live.html (rendered server-side here). The classes and data attributes must
 match what streams-table.js emits in getActions(), so streams-actions.js can
 delegate handlers globally for both contexts.
 
-Required context: stream, rtmp_url.
+Required context: stream, rtmp_url, stream_tags_json.
 {% endcomment %}
 <div class="dropdown stream-ctx-menu" data-stream-name="{{ stream.name }}">
     <input type="hidden" name="current-stream-password" value="{{ stream.password|default:'' }}">
@@ -41,10 +41,24 @@ Required context: stream, rtmp_url.
                 <i class="fa-solid fa-{% if stream.public %}lock{% else %}globe{% endif %} fa-fw me-2"></i>{% if stream.public %}Make Private{% else %}Make Public{% endif %}</a>
         </li>
         <li>
-            <a role="button" class="dropdown-item stream-set-password-btn"
+            <a role="button" class="dropdown-item stream-tags-btn"
                data-stream-name="{{ stream.name }}"
-               data-has-password="{{ stream.password|yesno:'true,false' }}">
-                <i class="fa-solid fa-key fa-fw me-2"></i>{% if stream.password %}Change Password{% else %}Set Password{% endif %}</a>
+               data-stream-tags="{{ stream_tags_json }}">
+                <i class="fa-solid fa-tags fa-fw me-2"></i>Manage Tags</a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a role="button" class="dropdown-item stream-toggle-record-btn"
+               data-stream-name="{{ stream.name }}"
+               data-record="{{ stream.record|yesno:'true,false' }}">
+                <i class="fa-solid fa-circle fa-fw me-2 {% if stream.record %}text-danger{% endif %}"></i>{% if stream.record %}Disable Recording{% else %}Enable Recording{% endif %}</a>
+        </li>
+        <li>
+            <a role="button" class="dropdown-item stream-recordings-btn"
+               data-stream-name="{{ stream.name }}"
+               data-retention-days="{{ stream.recording_retention_days|default_if_none:'' }}"
+               data-retention-count="{{ stream.recording_retention_count|default_if_none:'' }}">
+                <i class="fa-solid fa-clock-rotate-left fa-fw me-2"></i>Recordings</a>
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>

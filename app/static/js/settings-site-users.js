@@ -6,6 +6,8 @@ import {
 } from './table-defaults.js'
 
 const usersTable = $('#users-table')
+const editUserModalEl = document.getElementById('edit-user-modal')
+const editUserForm = document.getElementById('editUserForm')
 
 let usersDataTable
 let nextPage = 1
@@ -15,7 +17,12 @@ const dataTablesOptions = {
     ...paginatedTableDefaults,
     order: [1, 'asc'],
     layout: noChromeLayout,
-    columns: [{ data: 'id' }, { data: 'username' }, { data: 'storage_usage' }],
+    columns: [
+        { data: 'id' },
+        { data: 'username' },
+        { data: 'storage_usage' },
+        { data: 'id' },
+    ],
     columnDefs: [
         {
             targets: 0,
@@ -31,6 +38,13 @@ const dataTablesOptions = {
             render: renderStorage,
             responsivePriority: 2,
             width: '220px',
+        },
+        {
+            targets: 3,
+            render: renderActions,
+            responsivePriority: 1,
+            orderable: false,
+            width: '28px',
         },
     ],
 }
@@ -93,6 +107,12 @@ function renderStorage(data, type, row) {
             </div>`
 }
 
+function renderActions(data, type, row) {
+    if (type !== 'display') return data
+    return `<a role="button" class="editUserBtn" title="Edit" data-user-id="${row.id}">
+        <i class="fa-solid fa-pen-to-square link-body-emphasis"></i></a>`
+}
+
 async function addUserRows() {
     if (!fetchLock) {
         fetchLock = true
@@ -109,8 +129,52 @@ async function addUserRows() {
 function showUsersSkeletons(count = 5) {
     const tbody = document.querySelector('#users-table tbody')
     if (!tbody) return
-    buildSkeletonRows(tbody, count, [{ w: 0 }, { w: 160 }, { w: 120 }])
+    buildSkeletonRows(tbody, count, [
+        { w: 0 },
+        { w: 160 },
+        { w: 120 },
+        { w: 24 },
+    ])
 }
+
+usersTable.on('click', '.editUserBtn', (event) => {
+    const userId = event.currentTarget.dataset.userId
+    const row = usersDataTable.row(`#user-${userId}`).data()
+    if (!row) return
+    editUserForm.reset()
+    document.getElementById('edit-user-id').value = row.id
+    document.getElementById('edit-user-name').textContent =
+        row.first_name || row.username
+    document.getElementById('edit-user-storage-quota').value =
+        row.storage_quota_human_read || ''
+    bootstrap.Modal.getOrCreateInstance(editUserModalEl).show()
+})
+
+editUserForm?.addEventListener('submit', async (event) => {
+    event.preventDefault()
+    const userId = document.getElementById('edit-user-id').value
+    const storageQuota = document.getElementById(
+        'edit-user-storage-quota'
+    ).value
+    const response = await fetch(`/api/user/${userId}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ storage_quota: storageQuota }),
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json',
+        },
+    })
+    if (response.ok) {
+        const data = await response.json()
+        const row = usersDataTable.row(`#user-${userId}`)
+        row.data({ ...row.data(), ...data }).draw(false)
+        bootstrap.Modal.getOrCreateInstance(editUserModalEl).hide()
+        show_toast('User updated.', 'success')
+    } else {
+        const data = await response.json().catch(() => ({}))
+        show_toast(data.error || 'Failed to update user.', 'danger')
+    }
+})
 
 document.addEventListener('DOMContentLoaded', async () => {
     usersDataTable = usersTable.DataTable(dataTablesOptions)

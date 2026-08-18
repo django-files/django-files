@@ -9,7 +9,11 @@ types {
     video/mp2t                                       ts;
     video/mp4                                        mp4;
     video/mpeg                                       mpeg mpg;
-    video/quicktime                                  mov;
+    # Serve .mov as video/mp4: it shares the ISO base media container with mp4 and
+    # is typically H.264/AAC, but video/quicktime isn't in the MIME allowlist most
+    # <video> elements (Chrome/Firefox) or chat-app inline previewers (Discord,
+    # Slack, iMessage) use to decide whether to attempt inline playback.
+    video/mp4                                        mov;
     video/webm                                       webm;
     video/x-flv                                      flv;
     video/x-m4v                                      m4v;

@@ -36,6 +36,7 @@
             <a class="nav-link" href="#features"><i class="fas fa-sliders"></i> Features</a>
             <a class="nav-link" href="#appearance"><i class="fas fa-palette"></i> Appearance</a>
             <a class="nav-link" href="#invites"><i class="fas fa-user-plus"></i> Invites</a>
+            <a class="nav-link" href="#webhooks"><i class="fa-solid fa-bolt"></i> Webhooks</a>
             <a class="nav-link" href="#users"><i class="fas fa-users"></i> Users</a>
             <a class="nav-link" href="#sessions"><i class="fas fa-desktop"></i> Sessions</a>
             <hr class="my-2">
@@ -398,6 +399,27 @@
 
         <hr class="my-4">
 
+        <!-- Webhooks -->
+        <section id="webhooks" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header pb-3">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fa-solid fa-bolt"></i> Site Webhooks</h4>
+                    {% include 'settings/webhook-add-buttons.html' %}
+                </div>
+                <div class="dash-card-body">
+                    <p class="text-muted small">
+                        Site-wide webhooks receive events for <strong>all users</strong>, including the
+                        site-only <code>user.created</code> and <code>user.deleted</code> events.
+                    </p>
+                    {% include 'settings/webhooks-table.html' %}
+                </div>
+            </div>
+            {% include 'settings/webhook-modals.html' %}
+            {% if pending_webhook %}{{ pending_webhook|json_script:"pending-webhook-data" }}{% endif %}
+        </section>
+
+        <hr class="my-4">
+
         <!-- Users -->
         <section id="users" class="settings-section">
             <div class="dash-card">
@@ -411,13 +433,14 @@
                 </div>
                 <div class="dash-card-body p-0">
                     <table class="display responsive nowrap table table-hover w-100 mb-0" id="users-table"
-                           data-skeleton-cols="80,160,120" data-skeleton-rows="5">
+                           data-skeleton-cols="80,160,120,40" data-skeleton-rows="5">
                         <caption class="visually-hidden">User List</caption>
                         <thead>
                             <tr>
                                 <th scope="col">ID</th>
                                 <th scope="col">User</th>
                                 <th scope="col">Storage</th>
+                                <th scope="col" style="width: 28px;"></th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -523,6 +546,48 @@
     </div>
 </div>
 
+<!-- Edit User Modal -->
+<div class="modal fade" id="edit-user-modal" tabindex="-1"
+     aria-labelledby="edit-user-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="edit-user-modal-label">
+                    <i class="fa-solid fa-user-pen me-2"></i> Edit User
+                </h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editUserForm" autocomplete="off">
+                <div class="modal-body">
+                    <input type="hidden" id="edit-user-id" name="id">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">User</label>
+                        <div id="edit-user-name" class="form-control-plaintext py-0 fw-medium"></div>
+                    </div>
+                    <div class="mb-1">
+                        <label for="edit-user-storage-quota" class="form-label fw-medium">
+                            Storage Quota
+                            <span data-bs-toggle="tooltip" data-bs-title="Per-user storage quota. 0 is unlimited.">
+                                <i class="fa-solid fa-circle-info ms-1 fs-6"></i>
+                            </span>
+                        </label>
+                        <input type="text" class="form-control" id="edit-user-storage-quota"
+                               name="storage_quota" placeholder="e.g. 10GB"
+                               aria-describedby="edit-user-storage-quota-invalid">
+                        <div id="edit-user-storage-quota-invalid" class="invalid-feedback"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">
+                        Save <i class="fa-solid fa-floppy-disk ms-1"></i>
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Delete Sessions Modal -->
 <div class="modal fade" id="delete-sessions-modal" tabindex="-1"
      aria-labelledby="delete-sessions-modal-label" aria-hidden="true">
@@ -592,4 +657,5 @@
     {% include 'include/datatables-scripts.html' %}
     <script type="module" src="{% static 'js/settings.js' %}"></script>
     <script type="module" src="{% static 'js/settings-site-users.js' %}"></script>
+    <script defer src="{% static 'js/settings-webhooks.js' %}"></script>
 {% endblock %}

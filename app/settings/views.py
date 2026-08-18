@@ -20,8 +20,15 @@ from django.shortcuts import redirect, render, reverse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from home.models import Webhook
 from home.util.misc import redact_log
-from oauth.models import CustomUser, DiscordWebhooks, UserInvites, superuser_exists
+from home.util.webhooks import (
+    SITE_ONLY_EVENTS,
+    TAG_FILTERED_EVENTS,
+    WEBHOOK_EVENT_GROUPS,
+    WEBHOOK_EVENTS,
+)
+from oauth.models import CustomUser, UserInvites, superuser_exists
 from settings.forms import SiteSettingsForm, UserSettingsForm, WelcomeForm
 from settings.models import SiteSettings
 
@@ -34,6 +41,15 @@ SESSION_AUTH_REQUIRED = "Session authentication required."
 SETTINGS_SITE_URL = "settings:site"
 SETUP_TEMPLATE = "settings/setup.html"
 USERNAME_TAKEN = "That username is already taken."
+
+
+def _pop_pending_webhook(request, scope):
+    """Consume the OAuth-staged Discord webhook, but only on the settings page
+    matching the scope the flow was initiated with."""
+    pending = request.session.get("pending_discord_webhook")
+    if pending and pending.get("scope", "user") == scope:
+        return request.session.pop("pending_discord_webhook")
+    return None
 
 
 @csrf_exempt
@@ -55,6 +71,13 @@ def site_view(request):
             "invites": invites,
             "sessions": get_sessions(request),
             "timezones": sorted(zoneinfo.available_timezones()),
+            "webhooks": Webhook.objects.filter(scope=Webhook.SCOPE_SITE).select_related("owner"),
+            "webhook_scope": Webhook.SCOPE_SITE,
+            "webhook_events": WEBHOOK_EVENTS,
+            "webhook_event_groups": WEBHOOK_EVENT_GROUPS,
+            "webhook_site_only_events": sorted(SITE_ONLY_EVENTS),
+            "webhook_tag_filtered_events": sorted(TAG_FILTERED_EVENTS),
+            "pending_webhook": _pop_pending_webhook(request, Webhook.SCOPE_SITE),
         }
         return render(request, "settings/site.html", context)
 
@@ -103,12 +126,19 @@ def user_view(request):
     """
     log.debug("user_view: %s", request.method)
     if request.method != "POST":
-        webhooks = DiscordWebhooks.objects.get_request(request)
+        webhooks = request.user.webhooks.filter(scope=Webhook.SCOPE_USER)
         context = {
             "webhooks": webhooks,
+            "webhook_scope": Webhook.SCOPE_USER,
+            "webhook_events": WEBHOOK_EVENTS,
+            "webhook_event_groups": WEBHOOK_EVENT_GROUPS,
+            "webhook_site_only_events": sorted(SITE_ONLY_EVENTS),
+            "webhook_tag_filtered_events": sorted(TAG_FILTERED_EVENTS),
+            "pending_webhook": _pop_pending_webhook(request, Webhook.SCOPE_USER),
             "timezones": sorted(zoneinfo.available_timezones()),
             "default_upload_name_formats": CustomUser.UploadNameFormats.choices,
             "user_avatar_choices": CustomUser.UserAvatarChoices.choices,
+            "sessions": get_sessions(request, user_id=request.user.id),
         }
         return render(request, "settings/user.html", context)
 
@@ -489,31 +519,38 @@ def qr_view(request):
     return FileResponse(open(path, "rb"), content_type="image/png")
 
 
-def get_sessions(request, exclude_current=False):
+def get_sessions(request, exclude_current=False, user_id=None):
+    """
+    List active sessions. Pass user_id to scope the results to a single user
+    (user settings, self-service); omit it for the site-wide admin view.
+    """
     log.debug("get_sessions: %s", request.session.session_key)
     user_map = {str(user.id): user.get_name() for user in CustomUser.objects.all()}
     prefix = "django.contrib.sessions.cache"
     sessions = []
-    for key in cache.keys(f"{prefix}*"):
+    for key in cache.iter_keys(f"{prefix}*"):
         session_key = key[len(prefix) :]
         log.debug("session_key: %s", session_key)
         # data = cache.get(key)
         session = SessionStore(session_key=session_key)
         data = session.load()
         now = datetime.now()
-        if "_auth_user_id" in data:
-            if session_key == request.session.session_key:
-                if exclude_current:
-                    continue
-                data["current"] = True
-            data["key"] = session_key
-            data["ttl"] = cache.ttl(key)
-            data["age"] = session.get_expiry_age()
-            data["date"] = now + timedelta(seconds=data["ttl"])
-            data["user_id"] = data["_auth_user_id"]
-            data["user_name"] = user_map.get(data["user_id"], "Deleted")
-            log.debug("data: %s", data)
-            sessions.append(data)
+        if "_auth_user_id" not in data:
+            continue
+        if user_id is not None and str(data["_auth_user_id"]) != str(user_id):
+            continue
+        if session_key == request.session.session_key:
+            if exclude_current:
+                continue
+            data["current"] = True
+        data["key"] = session_key
+        data["ttl"] = cache.ttl(key)
+        data["age"] = session.get_expiry_age()
+        data["date"] = now + timedelta(seconds=data["ttl"])
+        data["user_id"] = data["_auth_user_id"]
+        data["user_name"] = user_map.get(data["user_id"], "Deleted")
+        log.debug("data: %s", data)
+        sessions.append(data)
     sessions.sort(key=lambda x: x["date"], reverse=True)
     log.debug("sessions: %s", sessions)
     return sessions

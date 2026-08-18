@@ -7,10 +7,15 @@ from home.managers import (
     AlbumsManager,
     FilesManager,
     ShortURLsManager,
+    TagManager,
 )
 from home.util.nginx import sign_nginx_urls
 from home.util.rand import rand_string
 from home.util.storage import StoragesRouterFileField, use_s3
+from home.util.webhooks import WEBHOOK_SCOPE_SITE as HOOK_SCOPE_SITE
+from home.util.webhooks import WEBHOOK_SCOPE_USER as HOOK_SCOPE_USER
+from home.util.webhooks import WEBHOOK_TYPE_CUSTOM as HOOK_TYPE_CUSTOM
+from home.util.webhooks import WEBHOOK_TYPE_DISCORD as HOOK_TYPE_DISCORD
 from oauth.managers import DiscordWebhooksManager
 from oauth.models import CustomUser
 
@@ -126,10 +131,13 @@ class Files(models.Model):
             )
         return abs_url + signed
 
-    def get_meta_static_url(self) -> str:
+    def get_meta_static_url(self, abs_url: str = "") -> str:
         """
         Otherwise some clients may cache an old meta url and it will fail to display when using signed urls.
         There may also be future cases where we dont want to issue this url for private/pw protected files.
+
+        og:video/og:image require an absolute URL or unfurlers (Discord, Slack, iMessage, etc.) silently
+        drop the embed, so the non-S3 branch must be prefixed the same way get_gallery_url() is.
         """
         if use_s3():
             if (meta_static_url := cache.get(f"file.urlcache.meta_static.{self.pk}")) is None:
@@ -146,24 +154,33 @@ class Files(models.Model):
                     int(settings.SIGNED_META_URL_TTL_SECONDS * settings.SIGNED_URL_REFRESH_RATIO),
                 )
             return meta_static_url
-        return self.get_url(False)
+        return abs_url + self.get_url(False)
+
+    def gallery_url_cache_key(self) -> str:
+        return f"file.urlcache.gallery.{self.pk}"
+
+    def compute_gallery_url(self) -> str:
+        """Compute the static gallery url, bypassing the cache. Callers that need to
+        batch this across many files (e.g. the cache-refresh task) should use this
+        plus a bulk `cache.set_many()` instead of calling `get_gallery_url()` in a
+        loop, which round-trips to redis per file."""
+        use = self.thumb if self.thumb else self.file
+        if use_s3():
+            # TODO: access protected member, look into how to better handle this
+            return self.file.file._storage.url(use.file.name, expire=settings.SIGNED_URL_TTL_SECONDS)
+        return use.url + self._sign_nginx_url(use.url)
 
     def get_gallery_url(self, abs_url: str = "") -> str:
         """Generates a static url for use on a gallery page."""
-        use = self.thumb if self.thumb else self.file
         # cache the signed url so the browser cache key stays stable across renders;
         # intentionally expire before the signature does so urls don't 403 mid-page
-        if (gallery_url := cache.get(f"file.urlcache.gallery.{self.pk}")) is None:
+        if (gallery_url := cache.get(self.gallery_url_cache_key())) is None:
             try:
-                if use_s3():
-                    # TODO: access protected member, look into how to better handle this
-                    gallery_url = self.file.file._storage.url(use.file.name, expire=settings.SIGNED_URL_TTL_SECONDS)
-                else:
-                    gallery_url = use.url + self._sign_nginx_url(use.url)
+                gallery_url = self.compute_gallery_url()
             except FileNotFoundError:
                 return ""
             cache.set(
-                f"file.urlcache.gallery.{self.pk}",
+                self.gallery_url_cache_key(),
                 gallery_url,
                 int(settings.SIGNED_URL_TTL_SECONDS * settings.SIGNED_URL_REFRESH_RATIO),
             )
@@ -171,6 +188,18 @@ class Files(models.Model):
 
     def _sign_nginx_url(self, uri: str) -> str:
         return sign_nginx_urls(uri)
+
+    def get_playback_mime(self) -> str:
+        """MIME type actually served for inline playback (see nginx/raw-mime.types).
+
+        .mov is relabeled video/mp4 at serve time since video/quicktime isn't in the
+        MIME allowlist most <video> elements or chat-app inline previewers use to
+        decide whether to attempt playback. Keep that in sync here so declared
+        metadata (og:video:type) matches what the raw URL actually returns.
+        """
+        if self.mime == "video/quicktime":
+            return "video/mp4"
+        return self.mime
 
     def _get_password_query_string(self) -> str:
         if self.password:
@@ -201,19 +230,66 @@ class Files(models.Model):
         return "/raw/" + self.name + "?thumb=true"
 
 
+class Tag(models.Model):
+    """Canonical tag vocabulary shared by files and albums.
+
+    Names are deduplicated case-insensitively in TagManager.get_or_create_tag;
+    the DB unique constraint only guarantees exact uniqueness so it stays
+    portable across sqlite/mysql/mariadb/postgres collations.
+    """
+
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, unique=True, verbose_name="Name", help_text="Tag Name.")
+
+    objects = TagManager()
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Tag"
+        verbose_name_plural = "Tags"
+
+    def __str__(self):
+        return self.name
+
+
 class FileTag(models.Model):
     file = models.ForeignKey(Files, on_delete=models.CASCADE, related_name="tags")
-    tag = models.CharField(max_length=255)
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="file_tags")
     xmp = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ["file", "tag"]
-        indexes = [models.Index(fields=["tag"])]
         verbose_name = "File Tag"
         verbose_name_plural = "File Tags"
 
     def __str__(self):
-        return f"<FileTag(file={self.file_id} tag={self.tag!r})>"
+        return f"<FileTag(file={self.file_id} tag={self.tag_id})>"
+
+
+class AlbumTag(models.Model):
+    album = models.ForeignKey(Albums, on_delete=models.CASCADE, related_name="tags")
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="album_tags")
+
+    class Meta:
+        unique_together = ["album", "tag"]
+        verbose_name = "Album Tag"
+        verbose_name_plural = "Album Tags"
+
+    def __str__(self):
+        return f"<AlbumTag(album={self.album_id} tag={self.tag_id})>"
+
+
+class StreamTag(models.Model):
+    stream = models.ForeignKey("Stream", on_delete=models.CASCADE, related_name="tags")
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="stream_tags")
+
+    class Meta:
+        unique_together = ["stream", "tag"]
+        verbose_name = "Stream Tag"
+        verbose_name_plural = "Stream Tags"
+
+    def __str__(self):
+        return f"<StreamTag(stream={self.stream_id} tag={self.tag_id})>"
 
 
 class FileStats(models.Model):
@@ -300,6 +376,21 @@ class Stream(models.Model):
         "to fetch the stream via /hls/?token=. Empty = raw-link playback disabled. "
         "Independent of stream_token (RTMP ingest).",
     )
+    record = models.BooleanField(
+        default=False, verbose_name="Record", help_text="Record this stream and save it as a file."
+    )
+    recording_retention_days = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Recording Retention Days",
+        help_text="Delete recordings older than this many days. Empty = never expire by age.",
+    )
+    recording_retention_count = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Recording Retention Count",
+        help_text="Keep only this many most recent recordings, deleting older ones. Empty = keep all.",
+    )
 
     def __str__(self):
         return f"<Stream(name={self.name}, title={self.title}, user_id={self.user_id})>"
@@ -337,6 +428,57 @@ class StreamHistory(models.Model):
             f"<StreamHistory(id={self.id}, stream={self.stream.name}, "
             f"started_at={self.started_at}, ended_at={self.ended_at})>"
         )
+
+
+class Webhook(models.Model):
+    WEBHOOK_TYPE_CUSTOM = HOOK_TYPE_CUSTOM
+    WEBHOOK_TYPE_DISCORD = HOOK_TYPE_DISCORD
+    TYPE_CHOICES = [
+        (WEBHOOK_TYPE_CUSTOM, "Custom"),
+        (WEBHOOK_TYPE_DISCORD, "Discord"),
+    ]
+    SCOPE_USER = HOOK_SCOPE_USER
+    SCOPE_SITE = HOOK_SCOPE_SITE
+    SCOPE_CHOICES = [
+        (SCOPE_USER, "User"),
+        (SCOPE_SITE, "Site"),
+    ]
+
+    id = models.AutoField(primary_key=True)
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="webhooks")
+    name = models.CharField(max_length=128, verbose_name="Name", help_text="Webhook Name.")
+    webhook_type = models.CharField(
+        max_length=16, choices=TYPE_CHOICES, default=WEBHOOK_TYPE_CUSTOM, verbose_name="Type"
+    )
+    scope = models.CharField(
+        max_length=16,
+        choices=SCOPE_CHOICES,
+        default=SCOPE_USER,
+        verbose_name="Scope",
+        help_text="Site-scoped hooks receive events for all users; superuser only.",
+    )
+    url = models.URLField(verbose_name="Webhook URL")
+    secret = models.CharField(
+        max_length=128, blank=True, verbose_name="Secret", help_text="HMAC-SHA256 signing secret for custom hooks."
+    )
+    active = models.BooleanField(default=True)
+    events = models.JSONField(default=list, blank=True, verbose_name="Events", help_text="Subscribed event keys.")
+    filters = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Filters",
+        help_text="Event filters, e.g. {'tags': ['work', '!private']} to filter file events by tag.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created", help_text="Hook Created Date.")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated", help_text="Hook Updated Date.")
+
+    def __str__(self):
+        return f"<Webhook(id={self.id} type={self.webhook_type} owner={self.owner_id})>"
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Webhook"
+        verbose_name_plural = "Webhooks"
 
 
 class StreamDiscordWebhooks(models.Model):

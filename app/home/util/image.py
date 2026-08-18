@@ -2,12 +2,43 @@ import logging
 import os
 from io import BytesIO
 
+from django.conf import settings
 from django.core.files import File
 from home.models import Files
 from home.util.geolocation import city_state_from_exif
 from PIL import ExifTags, Image, ImageOps, TiffImagePlugin
 
 log = logging.getLogger("app")
+
+
+def image_exceeds_pixel_budget(path: str) -> bool:
+    """
+    True when the image has more pixels than the container can afford to
+    decode (settings.UPLOAD_MAX_IMAGE_PIXELS, derived from the cgroup memory
+    limit). Image.open only parses the header here, so the check itself
+    costs no decode memory. Pillow's own decompression-bomb error (raised at
+    open for images over 2x MAX_IMAGE_PIXELS) also counts as over budget.
+    """
+    max_pixels = settings.UPLOAD_MAX_IMAGE_PIXELS
+    if not max_pixels:
+        return False
+    try:
+        with Image.open(path) as image:
+            width, height = image.size
+    except Image.DecompressionBombError:
+        log.warning("image_exceeds_pixel_budget: %s exceeds the Pillow hard pixel limit", path)
+        return True
+    if width * height > max_pixels:
+        log.warning(
+            "image_exceeds_pixel_budget: %s is %dx%d (%d px), over the %d px budget",
+            path,
+            width,
+            height,
+            width * height,
+            max_pixels,
+        )
+        return True
+    return False
 
 
 class ImageProcessor(object):
@@ -111,19 +142,23 @@ class ImageProcessor(object):
     def strip_exif(image: Image, local_path: str) -> None:
         # accepts image and file, rewrites image file without exif
         log.info("Stripping EXIF: %s", local_path)
-        with Image.new(image.mode, image.size) as new:
-            new.putdata(image.getdata())
+        # tobytes/frombytes moves raw pixel data (W*H*channels bytes);
+        # putdata(getdata()) built a Python tuple per pixel, which costs
+        # gigabytes on large photos and OOM-killed the worker
+        with Image.frombytes(image.mode, image.size, image.tobytes()) as new:
             if "P" in image.mode:
                 new.putpalette(image.getpalette())
             new.save(local_path)
 
 
-def thumbnail_processor(file: Files, file_bytes: bytes = None, extension: str = None):
-    # generate thumbnail via bytes object or file object
-    # prefer bytes object if file is still local to avoid wasteful redownload of file
-    tmp_file = f"/tmp/thumb_{file.name}"  # nosec
-    file_bytes = BytesIO(file_bytes) if file_bytes else BytesIO(file.file.read())
-    with Image.open(file_bytes) as image:
+def thumbnail_processor(file: Files, local_path: str = None, extension: str = None):
+    # generate thumbnail from a local file when one is available (upload path)
+    # to avoid a wasteful redownload; fall back to reading from storage
+    source = local_path if local_path else BytesIO(file.file.read())
+    with Image.open(source) as image:
+        # capture the format before transforms — exif_transpose and convert
+        # return new Image objects that don't carry the original format
+        fmt = extension or image.format
         image = ImageOps.exif_transpose(image)
         # TODO: check resolution is not already small, if it is don't bother generating a thumbnail
         image.thumbnail((512, 512))
@@ -137,9 +172,11 @@ def thumbnail_processor(file: Files, file_bytes: bytes = None, extension: str = 
             background = Image.new("RGB", image.size, (255, 255, 255))
             background.paste(image, mask=image.split()[-1])
             image = background
-        image.save(tmp_file, format=extension)
-    with open(tmp_file, "rb") as thumb:
-        # we cannot call update, we must explicitly save, here since the hooks that upload the file will not happen
-        file.thumb = File(thumb, name=file.name)
-        file.save()
-    os.remove(tmp_file)
+        # render in memory (thumbnails are ≤512px) — a predictable /tmp path
+        # derived from a user-influenced filename is a symlink/clobber hazard
+        thumb = BytesIO()
+        image.save(thumb, format=fmt)
+    thumb.seek(0)
+    # we cannot call update, we must explicitly save, here since the hooks that upload the file will not happen
+    file.thumb = File(thumb, name=file.name)
+    file.save()

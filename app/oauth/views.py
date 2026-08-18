@@ -19,15 +19,16 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from home.tasks import dispatch_webhook_event
 from home.templatetags.home_tags import is_mobile
 from home.util.auth import _client_ip, _infer_device_name, create_api_token, hash_token
 from home.util.requests import CustomSchemeRedirect
+from home.util.webhooks import EVENT_USER_LOGIN, build_user_payload
 from oauth import passkeys
 from oauth.forms import LoginForm
 from oauth.models import (
     ApiToken,
     CustomUser,
-    DiscordWebhooks,
     PasskeyCredential,
     UserInvites,
     superuser_exists,
@@ -48,6 +49,7 @@ log = logging.getLogger("app")
 
 TEMPLATE_OAUTH_USERNAME = "oauth_username.html"
 SETTINGS_USER_URL = "settings:user"
+SETTINGS_SITE_URL = "settings:site"
 MODEL_BACKEND = "django.contrib.auth.backends.ModelBackend"
 PASSKEYS_NOT_ENABLED = "Passkeys are not enabled."
 CONTENT_TYPE_JSON = "application/json"
@@ -239,6 +241,24 @@ def _apply_invite(request, user, invite):
     log.info("oauth_callback: invite used by user: %s", user)
 
 
+def _stage_discord_webhook(request, oauth):
+    """Stage an OAuth-authorized Discord webhook in the session so the user can
+    pick events in the settings modal; the row is only created when they save
+    (POST /api/webhooks/)."""
+    del request.session["webhook"]
+    hook = oauth.data["webhook"]
+    scope = request.session.pop("webhook_scope", "user")
+    request.session["pending_discord_webhook"] = {
+        "hook_id": hook.get("id"),
+        "name": hook.get("name") or f"Discord {hook.get('id')}",
+        "url": hook["url"],
+        "scope": scope,
+    }
+    messages.info(request, "Discord webhook authorized. Select events to finish setup.")
+    target = SETTINGS_SITE_URL if scope == "site" else SETTINGS_USER_URL
+    return _maybe_native_redirect(reverse(target) + "#webhooks")
+
+
 def oauth_callback(request, oauth_provider: str = ""):
     """
     View  /oauth/callback/
@@ -265,11 +285,7 @@ def oauth_callback(request, oauth_provider: str = ""):
         log.debug("oauth.id: %s - %s", oauth.id, oauth.username)
         oauth.process_login(site_settings)
         if request.session.get("webhook") and provider == "discord":
-            del request.session["webhook"]
-            webhook = oauth.add_webhook(request)
-            messages.info(request, f"Webhook successfully added: {webhook.id}")
-            url = get_login_redirect_url(request, native_auth=native_auth)
-            return _maybe_native_redirect(url)
+            return _stage_discord_webhook(request, oauth)
 
         invite_code = request.session.pop("oauth_invite", None)
         invite = UserInvites.objects.get_invite(invite_code) if invite_code else None
@@ -330,6 +346,7 @@ def pre_login(request, user: Union[AbstractBaseUser, CustomUser], site_settings)
 
 def post_login(request):
     log.debug("post_login: %s", request.user.username)
+    dispatch_webhook_event.delay(EVENT_USER_LOGIN, request.user.pk, build_user_payload(request.user))
     try:
         agent = request.META.get("HTTP_USER_AGENT", "")
         log.debug("agent: %s", agent)
@@ -776,10 +793,10 @@ def passkey_setup_complete(request):
     request.session.pop("passkey_setup_username", None)
     login(request, user, backend=MODEL_BACKEND)
     post_login(request)
-    request.session["login_redirect_url"] = reverse("settings:site")
+    request.session["login_redirect_url"] = reverse(SETTINGS_SITE_URL)
     messages.info(request, f"Welcome to Django Files {user.get_name()}.")
     log.info("first-run passkey setup: created initial superuser=%s", user.username)
-    return JsonResponse({"redirect": reverse("settings:site")})
+    return JsonResponse({"redirect": reverse(SETTINGS_SITE_URL)})
 
 
 def duo_callback(request):
@@ -896,20 +913,7 @@ def oauth_webhook(request):
     View  /oauth/webhook/
     """
     site_settings = SiteSettings.objects.settings()
+    # remember which settings page initiated the flow; site scope is superuser only
+    scope = "site" if request.GET.get("scope") == "site" and request.user.is_superuser else "user"
+    request.session["webhook_scope"] = scope
     return DiscordOauth.redirect_webhook(request, site_settings)
-
-
-def add_webhook(request, profile):
-    """
-    Add webhook
-    """
-    log.debug("add_webhook")
-    webhook = DiscordWebhooks(
-        hook_id=profile["webhook"]["id"],
-        guild_id=profile["webhook"]["guild_id"],
-        channel_id=profile["webhook"]["channel_id"],
-        url=profile["webhook"]["url"],
-        owner=request.user,
-    )
-    webhook.save()
-    return webhook

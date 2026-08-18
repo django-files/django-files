@@ -19,6 +19,12 @@ Required context:
             <a role="button" class="dropdown-item bulk-public" title="Make Public">
                 <i class="fa-solid fa-lock-open fa-fw me-2"></i> Make Public</a>
         </li>
+        {% if tb_bulk_tags %}
+            <li>
+                <a role="button" class="dropdown-item bulk-tags" title="Manage Tags">
+                    <i class="fa-solid fa-tags fa-fw me-2"></i> Manage Tags</a>
+            </li>
+        {% endif %}
         <li><hr class="dropdown-divider"></li>
         <li>
             <a role="button" class="dropdown-item bulk-delete" title="Bulk Delete">

@@ -14,13 +14,12 @@
     {% endif %}
 
     <div id="file-{{ file.id }}" class="card-body sidebar-card">
-        <h3 class="card-title mb-0 text-break">{{ file.name }}</h3>
+        <h3 class="card-title mb-0 text-break{% if full_context %} file-editable rounded-1{% endif %}"{% if full_context %} data-file-id="{{ file.id }}" title="Double-click to rename" spellcheck="false"{% endif %}>{{ file.name }}</h3>
         <row>
             <strong class="d-inline-block mb-1 text-primary-emphasis col-md-6 text-start">{{ file.mime }}</strong>
             <strong class="d-inline-block text-secondary-emphasis col-md-5 text-end">{% if file.meta.PILImageWidth %}{{ file.meta.PILImageWidth }} x {{ file.meta.PILImageHeight }}{% endif %}</strong>
         </row>
         <row>
-            {% if file.info %}<p class="card-text mt-0">{{ file.info }}</p>{% endif %}
             <div class="d-inline-block col-md-5 text-start">
                 <img src="{{ file_avatar_url }}" class="rounded-circle" height="26" width="26" alt="P"><span class="fw-semibold ps-1">{{ file.user.get_name }}</span>
             </div>
@@ -34,13 +33,15 @@
             </div>
         </row>
         <row>
-            <div class="d-inline-block w-100 text-end pe-4">
+            <small class="d-inline-block col-md-5 text-start text-body-secondary text-nowrap pb-2" title="Uploaded {{ file.date }}">{{ file.date|date:"M j, Y g:i A" }}</small>
+            <div class="d-inline-block col-md-6 text-end pb-2">
                 <i title="Private File" class="fa-solid fa-lock ms-2" id="previewIcon" {% if not file.private %}style="display: none"{% endif %}></i>
                 <i title="Password Protected File" class="fa-solid fa-key ms-2 passwordStatus" {% if not file.password %}style="display: none"{% endif %}></i>
                 <span title="File Expires in {{ file.expr }}" class="ms-2 expire-icon" {% if not file.expr %}style="display: none"{% endif %}><i class="fa-solid fa-hourglass"></i></span>
             </div>
         </row>
-        <p class="card-text py-2 pt-0">Uploaded {{ file.date }}</p>
+        {% if full_context %}<p class="card-text mt-0 file-desc file-editable rounded-1" contenteditable="true" data-placeholder="Add a description..." data-file-id="{{ file.id }}" spellcheck="false">{{ file.info }}</p>
+        {% elif file.info %}<p class="card-text mt-0">{{ file.info }}</p>{% endif %}
 
         {% if file.meta_preview and file.exif %}
             <p class="card-text text-body-secondary">

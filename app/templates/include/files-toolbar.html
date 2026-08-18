@@ -10,7 +10,7 @@
             aria-label="Navigation">
         <i class="fa-solid fa-bars" aria-hidden="true"></i>
     </button>
-    <nav class="files-toolbar-views d-inline-flex align-items-center" aria-label="Files view">
+    <nav class="files-toolbar-views" aria-label="Files view">
         <a class="files-toolbar-view show-list{% if view_mode == 'list' %} view-active{% endif %}" role="button" data-view="list" title="List" href="{% url 'home:files' %}">
             <i class="fa-solid fa-list" aria-hidden="true"></i><span class="files-toolbar-view-label">List</span>
         </a>
@@ -24,6 +24,29 @@
             <i class="fa-solid fa-play" aria-hidden="true"></i><span class="files-toolbar-view-label">Slideshow</span>
         </a>
     </nav>
+
+    {# Collapsed stand-in for .files-toolbar-views on extremely narrow viewports; see observeToolbar() in main.js. #}
+    <button id="files-view-toggle-btn"
+            class="files-toolbar-btn files-toolbar-view-toggle"
+            aria-label="Change view">
+        <i id="files-view-toggle-icon" class="{% if view_mode == 'gallery' %}fa-regular fa-images{% elif view_mode == 'map' %}fa-solid fa-map-location-dot{% else %}fa-solid fa-list{% endif %}" aria-hidden="true"></i>
+    </button>
+    <template id="files-view-popup-tpl">
+        <div class="d-flex flex-column gap-1" style="min-width:160px">
+            <a class="btn btn-sm text-start files-toolbar-view show-list{% if view_mode == 'list' %} view-active{% endif %}" role="button" data-view="list" href="{% url 'home:files' %}">
+                <i class="fa-solid fa-list me-2" aria-hidden="true"></i>List
+            </a>
+            <a class="btn btn-sm text-start files-toolbar-view show-gallery{% if view_mode == 'gallery' %} view-active{% endif %}" role="button" data-view="gallery" href="{% url 'home:files' %}?view=gallery">
+                <i class="fa-regular fa-images me-2" aria-hidden="true"></i>Gallery
+            </a>
+            <a class="btn btn-sm text-start files-toolbar-view show-map{% if view_mode == 'map' %} view-active{% endif %}" role="button" data-view="map" href="{% url 'home:files' %}?view=map">
+                <i class="fa-solid fa-map-location-dot me-2" aria-hidden="true"></i>Map
+            </a>
+            <a class="btn btn-sm text-start files-toolbar-view show-slideshow" role="button" href="#offcanvas-bottom" data-bs-toggle="offcanvas" aria-controls="offcanvas-bottom">
+                <i class="fa-solid fa-play me-2" aria-hidden="true"></i>Slideshow
+            </a>
+        </div>
+    </template>
 
     <button id="files-filter-btn"
             class="files-toolbar-btn{% if active_types %} view-active{% endif %}"

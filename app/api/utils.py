@@ -1,11 +1,38 @@
-from typing import Any, Dict, List, Mapping
+import ipaddress
+import socket
+from typing import Any, Dict, List, Mapping, Optional
+from urllib.parse import urlparse
 
 from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from home.models import Albums, Files, Stream
+from home.util.tags import tag_names
 from oauth.models import CustomUser
 from settings.context_processors import site_settings_processor
 from webpush.models import PushInformation
+
+
+def remote_url_error(url: str) -> Optional[str]:
+    """
+    SSRF guard for URLs the server fetches on a user's behalf. Returns an
+    error message, or None when the URL is safe to fetch: http(s) only, and
+    every address the host resolves to must be public — otherwise any user
+    with a token could make the server probe internal services.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return "Only http(s) URLs are allowed."
+    if not parsed.hostname:
+        return "Missing/Invalid URL"
+    try:
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        addr_info = socket.getaddrinfo(parsed.hostname, port, proto=socket.IPPROTO_TCP)
+    except socket.gaierror, ValueError:
+        return f"Could not resolve host: {parsed.hostname}"
+    for info in addr_info:
+        if not ipaddress.ip_address(info[4][0]).is_global:
+            return "URL resolves to a non-public address."
+    return None
 
 
 def _parse_ordering(spec: str, allowed: Mapping[str, str]) -> list:
@@ -58,6 +85,7 @@ def serialize_user(user: CustomUser) -> Dict[str, Any]:
     """
     user_dict = model_to_dict(user, exclude=["password", "authorization"])
     user_dict["avatar_url"] = user.get_avatar_url()
+    user_dict["storage_quota_human_read"] = user.get_storage_quota_human_read()
     providers = []
     for provider in ("discord", "github", "google"):
         if getattr(user, provider, None) is not None:
@@ -94,7 +122,7 @@ def extract_files(q: Files.objects):
         albums = list(file.albums.all())
         data["albums"] = [a.id for a in albums]
         data["albums_details"] = [{"id": a.id, "name": a.name} for a in albums]
-        data["tags"] = list(file.tags.values_list("tag", flat=True))
+        data["tags"] = tag_names(file)
         files.append(data)
     return files
 
@@ -111,6 +139,7 @@ def extract_albums(q: Albums.objects, user_id: int = None):
         data["url"] = site_settings["site_url"] + "/files/?view=gallery&album=" + str(album.id)
         data["user_name"] = album.user.get_name()
         data["file_count"] = getattr(album, "file_count", 0)
+        data["tags"] = tag_names(album)
         data["is_owner"] = is_owner
         if not is_owner:
             # Don't leak the raw password value to e.g. superusers browsing
@@ -162,6 +191,7 @@ def extract_streams(
         data["ended_at"] = stream.ended_at
         data["url"] = site_settings["site_url"] + f"/live/{stream.name}/"
         data["is_owner"] = is_owner
+        data["tags"] = tag_names(stream)
         data["subscriber_count"] = _resolve_subscriber_count(stream.name, subscriber_counts)
         if is_owner:
             _apply_owner_fields(data, stream, rtmp_host, rtmp_port)

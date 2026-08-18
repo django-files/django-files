@@ -25,11 +25,12 @@
             <a class="nav-link" href="#preferences"><i class="fas fa-sliders"></i> Preferences</a>
             <a class="nav-link" href="#appearance"><i class="fas fa-palette"></i> Appearance</a>
             <a class="nav-link" href="#connected"><i class="fas fa-plug"></i> Connected</a>
-            <a class="nav-link" href="#webhooks"><i class="fab fa-discord"></i> Webhooks</a>
+            <a class="nav-link" href="#webhooks"><i class="fa-solid fa-bolt"></i> Webhooks</a>
             <a class="nav-link" href="#clients"><i class="fas fa-mobile-screen"></i> Clients</a>
             <a class="nav-link" href="#upload"><i class="fas fa-cloud-arrow-up"></i> Upload</a>
             <a class="nav-link" href="#token"><i class="fas fa-key"></i> Token</a>
             <a class="nav-link" href="#security"><i class="fas fa-shield-halved"></i> Security</a>
+            <a class="nav-link" href="#sessions"><i class="fas fa-desktop"></i> Sessions</a>
             <a class="nav-link text-danger" href="#danger-zone"><i class="fa-solid fa-triangle-exclamation"></i> Danger</a>
             {% if request.user.is_superuser %}
             <hr class="my-2">
@@ -313,67 +314,14 @@
         <section id="webhooks" class="settings-section">
             <div class="dash-card">
                 <div class="dash-card-header pb-3">
-                    <h4 class="d-flex align-items-center gap-2"><i class="fab fa-discord"></i> Webhooks</h4>
-                    {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
-                        {% if user.discord %}
-                            <a href="{% url 'oauth:webhook' %}" class="btn btn-sm btn-outline-primary">
-                                <i class="fab fa-discord me-1"></i> Add Webhook</a>
-                        {% endif %}
-                    {% endif %}
+                    <h4 class="d-flex align-items-center gap-2"><i class="fa-solid fa-bolt"></i> Webhooks</h4>
+                    {% include 'settings/webhook-add-buttons.html' %}
                 </div>
                 <div class="dash-card-body">
-                    {% if site_settings.discord_client_id or 'DISCORD_CLIENT_ID'|get_config %}
-                        {% if user.discord %}
-                            {% if not webhooks %}
-                                <p class="text-muted mb-0">No webhooks found.</p>
-                            {% else %}
-                                <div class="table-responsive">
-                                    <table class="table table-sm mb-0" id="discordWebhooksTable">
-                                        <caption class="visually-hidden">Active Webhooks</caption>
-                                        <thead>
-                                        <tr>
-                                            <th scope="col" class="d-none d-sm-table-cell">ID</th>
-                                            <th scope="col">Guild ID</th>
-                                            <th scope="col" class="d-none d-sm-table-cell">Channel ID</th>
-                                            <th scope="col" class="d-none d-md-table-cell">Date</th>
-                                            <th scope="col" class="text-center"><i class="fa-solid fa-recycle"></i></th>
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {% for data in webhooks %}
-                                            <tr id="webhook-{{ data.id }}">
-                                                <th scope="row" class="d-none d-sm-table-cell">{{ data.id }}</th>
-                                                <td>
-                                                    <a class="clip link-body-emphasis text-decoration-none" role="button"
-                                                       data-clipboard-text="{{ data.guild_id }}">{{ data.guild_id }}</a>
-                                                </td>
-                                                <td class="d-none d-sm-table-cell">
-                                                    <a class="clip link-body-emphasis text-decoration-none" role="button"
-                                                       data-clipboard-text="{{ data.channel_id }}">{{ data.channel_id }}</a>
-                                                </td>
-                                                <td class="d-none d-md-table-cell">
-                                                    <a class="clip link-body-emphasis text-decoration-none" role="button"
-                                                       data-clipboard-text="{{ data.created_at }}">{{ data.created_at|date:"j M, o" }}</a>
-                                                </td>
-                                                <td class="text-center">
-                                                    <a role="button" class="deleteDiscordHookBtn"
-                                                       data-hook-id="{{ data.id }}" title="Delete">
-                                                        <i class="fa-regular fa-trash-can link-danger"></i></a>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            {% endif %}
-                        {% else %}
-                            <p class="mb-2">Connect a Discord account to enable webhooks.</p>
-                            <a href="{% url 'oauth:discord' %}" class="btn btn-sm btn-outline-primary">
-                                <i class="fab fa-discord me-2"></i>Connect Discord</a>
-                        {% endif %}
-                    {% else %}
-                        <p class="text-muted mb-0">Webhooks require Discord to be configured on this instance.</p>
-                    {% endif %}
+                    <p class="text-muted small">
+                        Send event notifications to Discord or any custom HTTP endpoint.
+                    </p>
+                    {% include 'settings/webhooks-table.html' %}
                 </div>
             </div>
         </section>
@@ -675,6 +623,54 @@
             </div>
 
             {% include 'settings/user-settings-modals.html' %}
+            {% include 'settings/webhook-modals.html' %}
+            {% if pending_webhook %}{{ pending_webhook|json_script:"pending-webhook-data" }}{% endif %}
+        </section>
+
+        <hr class="my-4">
+
+        <!-- Sessions -->
+        <section id="sessions" class="settings-section">
+            <div class="dash-card">
+                <div class="dash-card-header pb-3">
+                    <h4 class="d-flex align-items-center gap-2"><i class="fas fa-desktop"></i> Sessions</h4>
+                </div>
+                <div class="dash-card-body">
+                    <p class="text-muted small mb-3">
+                        Devices and browsers currently signed in to your account.
+                    </p>
+                    <div class="table-responsive">
+                        <table id="sessions-table" class="table table-sm mb-0 w-100" style="table-layout: fixed;">
+                            <thead>
+                            <tr>
+                                <th scope="col" class="d-none d-sm-table-cell" style="width: 164px;">Expiration</th>
+                                <th scope="col" class="d-none d-md-table-cell" style="width: 180px;">Age/TTL</th>
+                                <th scope="col">User Agent</th>
+                                <th scope="col" style="width: 28px;"></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for session in sessions %}
+                            <tr class="{% if session.current %}table-active{% endif %}">
+                                <td class="d-none d-sm-table-cell" style="width: 160px;">{{ session.date|date }}</td>
+                                <td class="d-none d-md-table-cell text-nowrap text-truncate overflow-hidden" style="width: 180px;">{{ session.ttl }}/{{ session.age }}</td>
+                                <td class="text-nowrap text-truncate overflow-hidden">
+                                    {{ session.user_agent }}
+                                    {% if session.current %}<span class="badge text-bg-secondary">This device</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if not session.current %}
+                                    <a role="button" class="ctx-delete" data-session="{{ session.key }}" title="Log Out">
+                                        <i class="fa-regular fa-trash-can fa-fw link-danger"></i></a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <hr class="my-4">
@@ -686,6 +682,21 @@
                     <h4 class="d-flex align-items-center gap-2 text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h4>
                 </div>
                 <div class="dash-card-body">
+                    {% if sessions|length > 1 %}
+                    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                        <div>
+                            <h6 class="fw-medium mb-1">Log Out Other Sessions</h6>
+                            <p class="text-muted small mb-0">
+                                Signs out every other device and browser currently logged in to your account.
+                            </p>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger flex-shrink-0"
+                                data-bs-toggle="modal" data-bs-target="#delete-sessions-modal">
+                            Log Out Other Sessions
+                        </button>
+                    </div>
+                    <hr class="my-3">
+                    {% endif %}
                     <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
                         <div>
                             <h6 class="fw-medium mb-1">Delete Account</h6>
@@ -712,6 +723,7 @@
     <script type="module" src="{% static 'js/settings.js' %}"></script>
     <script defer src="{% static 'js/password-match.js' %}"></script>
     <script defer src="{% static 'js/settings-user.js' %}"></script>
+    <script defer src="{% static 'js/settings-webhooks.js' %}"></script>
     <script type="module" src="{% static 'js/avatar.js' %}"></script>
     <script type="module" src="{% static 'js/settings-user-tokens.js' %}"></script>
     {% if site_settings.passkey_auth and site_settings.site_url %}

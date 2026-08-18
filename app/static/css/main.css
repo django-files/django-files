@@ -223,6 +223,10 @@ body.no-top-navbar .offcanvas-body {
     transition: background-color 0.15s ease;
 }
 
+.nav-avatar {
+    object-fit: cover;
+}
+
 /* TODO: CONFIRM THIS REMOVAL: */
 /*body {*/
 /*    padding-top: 37px;*/
@@ -440,6 +444,8 @@ body.navbar-snapping header {
 }
 
 .files-toolbar-views {
+    display: inline-flex;
+    align-items: center;
     gap: 0.15rem;
 }
 
@@ -516,6 +522,31 @@ body.navbar-snapping header {
 .files-toolbar-view.view-active {
     background: rgba(var(--bs-primary-rgb), 0.18);
     opacity: 1;
+}
+
+/* Toolbar overflow tiers, collapsed one at a time by observeToolbar() in
+ * main.js as soon as the row wraps — kept separate from the width-based
+ * breakpoint below since the wrap point varies with page/view context. */
+.files-toolbar--hide-count .files-toolbar-count,
+.files-toolbar--hide-select-all-label
+    #gallery-select-all-btn
+    .files-toolbar-view-label,
+.files-toolbar--hide-bulk-label #bulk-actions .files-toolbar-view-label,
+.files-toolbar--hide-sort-label #gallery-sort-btn .files-toolbar-view-label,
+.files-toolbar--hide-size-label #gallery-size-btn .files-toolbar-view-label,
+.files-toolbar--hide-view-labels .files-toolbar-views .files-toolbar-view-label,
+.files-toolbar--collapse-views .files-toolbar-views {
+    display: none;
+}
+
+/* Collapsed single-icon stand-in for .files-toolbar-views, shown only once
+ * the tier above hides the real nav. */
+.files-toolbar-view-toggle {
+    display: none;
+}
+
+.files-toolbar--collapse-views .files-toolbar-view-toggle {
+    display: inline-flex;
 }
 
 /* Hide labels and count on narrow screens — icons only */
@@ -928,4 +959,37 @@ body.navbar-snapping header {
 
 .addto-tag-group .tag-search-input::placeholder {
     color: var(--bs-secondary-color);
+}
+
+/* Upload options divider-style collapse toggle (uppy form) */
+.upload-options-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.25rem 0;
+    background: none;
+    border: 0;
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color);
+}
+
+.upload-options-toggle:hover,
+.upload-options-toggle:focus-visible {
+    color: var(--bs-body-color);
+}
+
+.upload-options-toggle::before,
+.upload-options-toggle::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--bs-border-color);
+}
+
+.upload-options-toggle .upload-options-chevron {
+    transition: transform 0.2s ease;
+}
+
+.upload-options-toggle[aria-expanded='true'] .upload-options-chevron {
+    transform: rotate(180deg);
 }
