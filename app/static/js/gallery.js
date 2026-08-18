@@ -421,18 +421,20 @@ async function resetAndReload() {
     fetchLock = false
     hideSkeletons()
     galleryContainer.replaceChildren()
-    // .clear().draw() renders DataTables' own "No files" placeholder before
-    // addNodes() gets a chance to swap in skeleton rows. Hide it via CSS
-    // (table.css .dt-reloading) for the duration of the reload rather than
-    // relying on JS timing — it un-hides on its own once real rows (or a
-    // genuinely empty result) land.
+    // without the pinned height, the header visibly jumps as rows clear/reload
     const tableNode = filesDataTable?.table().node()
-    tableNode?.classList.add('dt-reloading')
+    if (tableNode) {
+        tableNode.style.minHeight = `${tableNode.getBoundingClientRect().height}px`
+        tableNode.classList.add('dt-reloading')
+    }
     if (filesDataTable) filesDataTable.clear().draw()
     try {
         await addNodes()
     } finally {
-        tableNode?.classList.remove('dt-reloading')
+        if (tableNode) {
+            tableNode.classList.remove('dt-reloading')
+            tableNode.style.minHeight = ''
+        }
     }
 }
 

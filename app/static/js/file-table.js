@@ -325,7 +325,12 @@ export function addFileTableRow(file) {
 }
 
 export function addFileTableRowsBatch(files) {
-    if (!filesDataTable || !files.length) return
+    if (!filesDataTable) return
+    if (!files.length) {
+        // without this draw a zero-result filter leaves tbody blank forever
+        if (filesDataTable.rows().count() === 0) filesDataTable.draw(false)
+        return
+    }
     files.forEach((file) => {
         file['DT_RowId'] = `file-${file.id}`
     })
