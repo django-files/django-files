@@ -133,7 +133,7 @@ export const paginatedTableDefaults = {
 // Freeze DataTables' auto-width measurement during the initial bulk row insertion
 // so column widths don't shift while headers are visible.  Call before adding rows.
 export function dtFreezeAutoWidth(dt) {
-    dt.settings()[0].oFeatures.bAutoWidth = false
+    dt.settings()[0].features.autoWidth = false
 }
 
 // Re-enable auto-width, do one hidden measurement, then slide the thead in.
@@ -158,7 +158,7 @@ export function dtRevealThead(dt) {
         tbody.style.transition = 'none'
     }
 
-    dt.settings()[0].oFeatures.bAutoWidth = true
+    dt.settings()[0].features.autoWidth = true
     dt.columns.adjust()
     requestAnimationFrame(() =>
         requestAnimationFrame(() => {
