@@ -325,7 +325,17 @@ export function addFileTableRow(file) {
 }
 
 export function addFileTableRowsBatch(files) {
-    if (!filesDataTable || !files.length) return
+    if (!filesDataTable) return
+    if (!files.length) {
+        // Nothing to add. If the table is currently empty, still force a
+        // draw so DataTables renders its "no records" placeholder — without
+        // this, a sort/filter reload that legitimately matches zero files
+        // leaves tbody permanently blank: clear().draw()'s own placeholder
+        // row was already stripped out by showTableSkeletons()'s cleanup,
+        // and nothing else ever redraws to put it back.
+        if (filesDataTable.rows().count() === 0) filesDataTable.draw(false)
+        return
+    }
     files.forEach((file) => {
         file['DT_RowId'] = `file-${file.id}`
     })
