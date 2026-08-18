@@ -19,7 +19,11 @@
   },
   "overrides": {
     "axios": "^1.18.1",
-    "node-domexception": "file:patches/node-domexception"
+    "node-domexception": "file:patches/node-domexception",
+    "swagger-ui": {
+      "react": "^18.3.1",
+      "react-dom": "^18.3.1"
+    }
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",
