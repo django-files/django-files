@@ -873,7 +873,12 @@ async function addNodes() {
     if (nextPage) setupScrollObserver()
 }
 
-const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp|jxl|avif)$/i
+// JXL/DNG are deliberately excluded from server-side thumbnailing (see
+// home.tasks.generate_thumbs's thumb_exclude) because Pillow can't decode
+// them, and no mainstream browser can render the raw file inline either —
+// so treat them as generic (icon) files here rather than attempting an
+// image thumb that's guaranteed to fail.
+const imageExtensions = /\.(gif|ico|jpeg|jpg|png|webp|avif)$/i
 
 function addGalleryFile(file, top = false) {
     if (file.mime?.startsWith('video/')) {
