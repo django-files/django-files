@@ -46,7 +46,7 @@ jobs:
 
       - name: "Docker Meta"
         id: tags
-        uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804 # v5.7.0
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.USER }}/${{ env.REPO }}
           tags: |
@@ -72,19 +72,19 @@ jobs:
           echo "APP_VERSION=${GITHUB_REF_NAME}" >> app/.env
 
       - name: "Setup Buildx"
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
         with:
           platforms: linux/amd64,linux/arm64
 
       - name: "Docker Login"
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.GHCR_USER }}
           password: ${{ secrets.GHCR_PASS }}
 
       - name: "Build and Push"
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           platforms: linux/amd64,linux/arm64
