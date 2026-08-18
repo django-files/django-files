@@ -421,8 +421,7 @@ async function resetAndReload() {
     fetchLock = false
     hideSkeletons()
     galleryContainer.replaceChildren()
-    // dt-reloading hides the empty-table message (table.css) and pins
-    // min-height so the table can't collapse and un-collapse mid-reload.
+    // without the pinned height, the header visibly jumps as rows clear/reload
     const tableNode = filesDataTable?.table().node()
     if (tableNode) {
         tableNode.style.minHeight = `${tableNode.getBoundingClientRect().height}px`

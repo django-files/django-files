@@ -327,7 +327,7 @@ export function addFileTableRow(file) {
 export function addFileTableRowsBatch(files) {
     if (!filesDataTable) return
     if (!files.length) {
-        // Redraw anyway if empty, so the "no records" placeholder appears
+        // without this draw a zero-result filter leaves tbody blank forever
         if (filesDataTable.rows().count() === 0) filesDataTable.draw(false)
         return
     }
