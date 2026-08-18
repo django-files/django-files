@@ -1,7 +1,9 @@
 services:
   django-files:
     image: ghcr.io/django-files/django-files:latest
-    #    env_file: .env
+    # ⚠️ DEMO credentials for local/example testing only — replace before
+    # production, or remove this block and use `env_file: .env` with a
+    # unique SECRET (generate via `get_random_secret_key()`).
     environment:
       SECRET: "JYGTKLztZxVdu5NXuhXGaSkLJosiiQyBhFJ4LAHrJ5YHigQqq7"
       USERNAME: "testuser"
