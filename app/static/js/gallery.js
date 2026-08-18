@@ -9,6 +9,7 @@ import {
     formatBytes,
     showTableSkeletons,
     hideTableSkeletons,
+    DT_ORDER_COLUMNS,
 } from './file-table.js'
 
 import { updateBulkCount } from './bulk-actions.js'
@@ -483,6 +484,21 @@ function syncSortBtn() {
     }
 }
 
+// Reflect galleryOrdering onto the List view's column header sort arrows.
+// Safe to call for any ordering key: columns the List table doesn't have
+// (e.g. Sort popover has no equivalent for some future key) just no-op.
+function syncListSortFromOrdering() {
+    if (!filesDataTable) return
+    const key = galleryOrdering.replace(/^-/, '')
+    const col = Object.keys(DT_ORDER_COLUMNS).find(
+        (c) => DT_ORDER_COLUMNS[c] === key
+    )
+    if (col === undefined) return
+    filesDataTable
+        .order([Number(col), galleryOrdering.startsWith('-') ? 'desc' : 'asc'])
+        .draw(false)
+}
+
 function syncSortPopoverState(popoverBody) {
     popoverBody.querySelectorAll('[data-ordering]').forEach((btn) => {
         const active = btn.dataset.ordering === galleryOrdering
@@ -497,6 +513,7 @@ async function setGalleryOrdering(ordering) {
     params.set('ordering', ordering)
     history.replaceState(null, '', '/files/?' + params)
     syncSortBtn()
+    syncListSortFromOrdering()
     await resetAndReload()
 }
 
@@ -600,6 +617,16 @@ async function initGallery() {
     }
 
     filesDataTable = initFilesTable()
+    syncListSortFromOrdering()
+    // The List view's column headers sort via the same backend `ordering` the
+    // gallery's Sort popover uses, rather than re-sorting only the rows the
+    // infinite scroll has loaded so far.
+    filesDataTable.on('order.dt', () => {
+        const [col, dir] = filesDataTable.order()[0] || []
+        const key = DT_ORDER_COLUMNS[col]
+        if (!key) return
+        setGalleryOrdering(dir === 'desc' ? `-${key}` : key)
+    })
     initToolbar('files-toolbar', filesDataTable)
     if (activeUser) {
         const tpl = document.getElementById('files-filter-popup-tpl')

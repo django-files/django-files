@@ -15,6 +15,17 @@ import {
 
 const filesTable = $('#files-table')
 
+// Columns whose ordering the backend can actually apply (api.views.files_view's
+// `allowed` ordering map). Used by gallery.js to route header-click sorts to a
+// server re-fetch instead of re-sorting only the rows currently loaded in the
+// browser — columns not listed here are marked orderable: false below.
+export const DT_ORDER_COLUMNS = {
+    1: 'name',
+    2: 'size',
+    4: 'created',
+    5: 'exif_date',
+}
+
 export const faLock = document.querySelector('div.d-none > .fa-lock')
 export const faKey = document.querySelector('div.d-none > .fa-key')
 export const faHourglass = document.querySelector('div.d-none > .fa-hourglass')
@@ -82,13 +93,18 @@ const dataTablesOptions = {
         },
         {
             targets: 2,
-            render: formatBytes,
+            // Orthogonal render: display gets the "18.66 MB" string, sort/type/filter
+            // keep the raw byte count. Rendering everything through formatBytes made
+            // sort compare formatted strings lexicographically ("1.2 MB" < "18 MB").
+            render: (data, type) =>
+                type === 'display' ? formatBytes(data) : data,
             defaultContent: '',
             responsivePriority: 9,
             width: '150px',
         },
         {
             targets: 3,
+            orderable: false,
             defaultContent: '',
             responsivePriority: 10,
             width: '110px',
@@ -113,6 +129,7 @@ const dataTablesOptions = {
         },
         {
             targets: 6,
+            orderable: false,
             width: '15px',
             defaultContent: '',
             className: 'expire-value text-center',
@@ -120,6 +137,7 @@ const dataTablesOptions = {
         },
         {
             targets: 7,
+            orderable: false,
             width: '15px',
             render: getPwIcon,
             defaultContent: '',
@@ -127,6 +145,7 @@ const dataTablesOptions = {
         },
         {
             targets: 8,
+            orderable: false,
             width: '15px',
             responsivePriority: 4,
             render: getPrivateIcon,
@@ -134,6 +153,7 @@ const dataTablesOptions = {
         },
         {
             targets: 9,
+            orderable: false,
             width: '15px',
             defaultContent: '',
             responsivePriority: 8,
