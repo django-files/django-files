@@ -133,9 +133,11 @@ function buildLazyPreloader(img) {
 
 function hydrateVisibleSlides(swiperEl) {
     if (!swiperEl) return
+    // .swiper-slide-visible catches every slide in view on the thumbs strip
+    // (slidesPerView: 5) — active/prev/next alone only tags 3 slides.
     swiperEl
         .querySelectorAll(
-            '.swiper-slide-active img[data-src], .swiper-slide-prev img[data-src], .swiper-slide-next img[data-src]'
+            '.swiper-slide-visible img[data-src], .swiper-slide-active img[data-src], .swiper-slide-prev img[data-src], .swiper-slide-next img[data-src]'
         )
         .forEach((img) => {
             if (!img.src) img.src = img.dataset.src
