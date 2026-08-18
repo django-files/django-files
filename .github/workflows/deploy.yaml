@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: "Debug"
         run: |
@@ -41,7 +41,7 @@ jobs:
           cat ${{ inputs.COMPOSE_FILE }}
 
       - name: "Checkout Service Configs"
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: "hosted-domains/service-configs"
           ssh-key: ${{ secrets.SERVICE_CONFIGS_KEY }}
