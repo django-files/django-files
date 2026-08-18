@@ -3,6 +3,14 @@
     top: 100% !important;
 }
 
+/* gallery.js's resetAndReload() adds this while a sort/filter change re-fetches
+ * data, so DataTables' own "No files" placeholder (drawn immediately by
+ * .clear().draw()) stays hidden until skeleton rows — or a genuinely empty
+ * result — replace it. */
+table.display.dt-reloading tbody td.dt-empty {
+    display: none;
+}
+
 /* DataTables prepends a <colgroup> on init, shifting <thead> from first-child
  * to second-child and triggering Bootstrap's
  * .table > :not(:first-child) { border-top: 2px } rule.  That extra border
