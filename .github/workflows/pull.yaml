@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v6 # v6.0.2
+        uses: actions/checkout@v7 # v7.0.1
 
       - name: "NPM Outdated Action"
         continue-on-error: true

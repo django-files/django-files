@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: "AI Issue"
         uses: cssnr/ai-issue-action@v1

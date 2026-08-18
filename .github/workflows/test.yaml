@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: "Debug event.json"
         if: ${{ !cancelled() }}
@@ -41,7 +41,7 @@ jobs:
           cat "${GITHUB_EVENT_PATH}"
 
       - name: "Setup Python 3.14"
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
 
@@ -52,7 +52,7 @@ jobs:
           cache-dependency-glob: "app/requirements-dev.txt"
 
       - name: "Cache Playwright Browsers"
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('app/requirements-dev.txt') }}
@@ -70,7 +70,7 @@ jobs:
           uv pip freeze
 
       - name: "Setup Node"
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: "npm"
