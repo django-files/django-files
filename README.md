@@ -132,6 +132,14 @@ docker compose up --remove-orphans --force-recreate --detach
 
 For a Docker Swarm and Traefik example, see: [docker-compose-prod.yaml](docker-compose-prod.yaml)
 
+### ZimaOS / CasaOS
+
+Running a ZimaOS or CasaOS NAS? Use the App Store's **Custom Install > Import**
+option and paste in [zimaos/docker-compose.yml](zimaos/docker-compose.yml). No
+configuration is required. If you want uploads stored on network storage,
+mount your NFS share first under Storage/External Devices, then point the
+app's storage volume at a folder on that mount before starting it.
+
 ## Features
 
 Django Files is packed with features for seamless file management and sharing. More features are in progress!
