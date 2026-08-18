@@ -41,6 +41,17 @@ table.display > thead > tr > td {
     padding-bottom: 0.35rem;
 }
 
+/* DataTables 3+ draws a hover outline on sortable header cells by default
+ * (--dt-order-header_outline-hover). Disable it — it clashes with our own
+ * header styling. !important needed: the bootstrap5 integration's dark-mode
+ * variant (:root.dark ...:hover) outranks a plain override on specificity. */
+table.dataTable thead > tr > th.dt-orderable-asc:hover,
+table.dataTable thead > tr > th.dt-orderable-desc:hover,
+table.dataTable thead > tr > td.dt-orderable-asc:hover,
+table.dataTable thead > tr > td.dt-orderable-desc:hover {
+    outline: none !important;
+}
+
 /* Toolbar pages: transparent cells so .dt-blur-strip provides the glass backdrop.
  * backdrop-filter doesn't work on display:table-* elements, so a sibling div
  * inserted by dtRevealThead() handles the blur.  Compact padding keeps the

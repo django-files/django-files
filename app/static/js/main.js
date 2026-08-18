@@ -391,7 +391,7 @@ function initCollapsibleSearch(wrapperId, inputId) {
 async function initDataTable(dt, skeletonFn, fetchFn, emptyMsg, zeroMsg) {
     skeletonFn()
     // Freeze auto-width so each draw(false) inside fetchFn doesn't shift columns.
-    dt.settings()[0].oFeatures.bAutoWidth = false
+    dt.settings()[0].features.autoWidth = false
     await fetchFn()
     // Hide tbody before DT redraws real rows so the skeleton→real swap is invisible.
     // dtRevealThead (called by the caller after us) fades it back in.
@@ -405,9 +405,9 @@ async function initDataTable(dt, skeletonFn, fetchFn, emptyMsg, zeroMsg) {
 }
 
 function initDtLang(dt, emptyMsg, zeroMsg) {
-    const lang = dt.settings()[0].oLanguage
-    lang.sEmptyTable = emptyMsg
-    lang.sZeroRecords = zeroMsg
+    const lang = dt.settings()[0].language
+    lang.emptyTable = emptyMsg
+    lang.zeroRecords = zeroMsg
 }
 
 /**
