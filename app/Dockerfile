@@ -50,5 +50,5 @@ RUN touch build_sha && echo "${BUILD_SHA}" > build_sha
 
 WORKDIR /app
 COPY --chmod=555 --chown=root:root app/ .
-USER app
+USER 1000:1000
 ENTRYPOINT ["sh", "docker-entrypoint.sh"]
