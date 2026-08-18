@@ -1,7 +1,7 @@
 name: "Pull"
 
 on:
-  pull_request_target:
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,8 +20,6 @@ jobs:
     steps:
       - name: "Checkout"
         uses: actions/checkout@v6 # v6.0.2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: "NPM Outdated Action"
         continue-on-error: true
