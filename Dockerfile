@@ -51,10 +51,12 @@ RUN touch build_sha && echo "${BUILD_SHA}" > build_sha
 ENV TZ=UTC
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV XDG_RUNTIME_DIR=/tmp
-# tusd runs as a local supervisord process in this image, not a separate
-# container — nginx.conf's tusd upstream must be a literal loopback address
-# instead of a hostname (see nginx/60-sign-secret.sh for why).
+# tusd and the app both run as local supervisord processes in this image, not
+# separate containers — nginx.conf's tusd/app upstreams must be literal
+# loopback addresses instead of hostnames (see nginx/60-sign-secret.sh for
+# why: nginx's resolver directive only queries real DNS, never /etc/hosts).
 ENV TUSD_UPSTREAM=127.0.0.1:8080
+ENV APP_UPSTREAM=127.0.0.1:9000
 
 COPY --from=node /work/app/static/dist/ /app/static/dist/
 COPY --from=python /usr/local/lib/python3.14/site-packages/ /usr/local/lib/python3.14/site-packages/
