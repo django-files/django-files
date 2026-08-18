@@ -74,4 +74,15 @@ tusd_upstream="${TUSD_UPSTREAM:-tusd:8080}"
 echo "tusd_upstream: ${tusd_upstream}"
 sed "s/{{tusd_upstream}}/${tusd_upstream}/g" -i /etc/nginx/nginx.conf
 
+# Template the app upstream. Defaults to the app container's service name for
+# the standalone nginx image used by every compose stack, resolvable via
+# Docker's embedded DNS (127.0.0.11) at request time; the all-in-one image's
+# Dockerfile overrides APP_UPSTREAM to a literal 127.0.0.1:9000 (app runs as a
+# local supervisord process there, and the `resolver` directive only queries
+# real DNS servers — it never falls back to /etc/hosts, so the "app" alias
+# added there for other tools doesn't help here).
+app_upstream="${APP_UPSTREAM:-app:9000}"
+echo "app_upstream: ${app_upstream}"
+sed "s/{{app_upstream}}/${app_upstream}/g" -i /etc/nginx/nginx.conf
+
 echo "$0 - Finished"
