@@ -1116,6 +1116,12 @@ def files_view(request, page, count=25):
     return JsonResponse(response, safe=False, status=200)
 
 
+# Allowlist of Files model fields that users may update via the edit APIs.
+# Anything not listed (user, avatar, size, mime, view, file, thumb, ...) is
+# dropped before the ORM update to prevent mass-assignment.
+_EDITABLE_FILE_FIELDS = frozenset({"albums", "expr", "info", "maxv", "meta_preview", "password", "private"})
+
+
 @csrf_exempt
 @require_http_methods(["DELETE", "POST"])
 @auth_from_token
@@ -1136,6 +1142,8 @@ def files_edit_view(request):
         if not ids:
             return JsonResponse({"error": "No IDs to Process"}, status=400)
         del data["ids"]
+        # drop any fields outside the editable allowlist before the ORM update
+        data = {k: v for k, v in data.items() if k in _EDITABLE_FILE_FIELDS}
         # count = Files.objects.filter(id__in=ids, user=request.user).update(**data)
         queryset = Files.objects.filter(id__in=ids)
         if not queryset:
@@ -1212,6 +1220,8 @@ def file_view(request, idname):
                 set_albums(queryset, data["albums"])
                 del data["albums"]
             new_name = data.pop("name", None)
+            # drop any fields outside the editable allowlist before the ORM update
+            data = {k: v for k, v in data.items() if k in _EDITABLE_FILE_FIELDS}
             queryset.update(**data)
             if new_name and new_name != file.name:
                 if Files.objects.filter(name=new_name).exists():

@@ -14,7 +14,7 @@ def extract_xmp_tags(exif: dict) -> list:
                 ptr = ptr[key]
             elif isinstance(ptr, list):
                 ptr = {k: v for d in ptr for k, v in d.items()}[key]
-    except KeyError, IndexError, TypeError:
+    except (KeyError, IndexError, TypeError):
         return []
     if isinstance(ptr, list):
         return [t for t in ptr if isinstance(t, str) and t.strip()]

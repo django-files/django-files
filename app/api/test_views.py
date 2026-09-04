@@ -979,3 +979,83 @@ class RemoteUploadSecurityTestCase(TestCase):
     def test_public_address_allowed(self):
         # 1.1.1.1 is globally routable; the validator must not block it
         self.assertIsNone(remote_url_error("http://1.1.1.1/file.bin"))
+
+
+class FileEditSecurityTestCase(TestCase):
+    """Mass-assignment guards on /api/file/{id} and /api/files/edit/ (GHSA-vcc9-h4c5-cg2h).
+
+    User-supplied JSON must be allowlisted before reaching the ORM update so
+    sensitive Files fields (user, avatar, view, size, mime, ...) cannot be
+    overwritten by an owner-account request.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        cls.user = CustomUser.objects.create_user(
+            username="edituser",
+            email="edit@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        cls.victim = CustomUser.objects.create_user(
+            username="editvictim",
+            email="editvictim@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+
+    def setUp(self):
+        self.client.force_login(self.user)
+        self.file = Files.objects.create(user=self.user, name="safe.txt", file="safe.txt", mime="text/plain")
+
+    def _post_json(self, url, data):
+        return self.client.post(url, data=json.dumps(data), content_type="application/json")
+
+    def test_file_view_rejects_mass_assignment(self):
+        response = self._post_json(
+            reverse("api:file", kwargs={"idname": self.file.id}),
+            {"user_id": self.victim.id, "avatar": True, "view": 9999, "size": 999, "mime": "image/png"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.user_id, self.user.id)
+        self.assertFalse(self.file.avatar)
+        self.assertEqual(self.file.view, 0)
+        self.assertEqual(self.file.size, 0)
+        self.assertEqual(self.file.mime, "text/plain")
+
+    def test_file_view_allows_documented_fields(self):
+        response = self._post_json(
+            reverse("api:file", kwargs={"idname": self.file.id}),
+            {"info": "hello", "expr": "1d", "maxv": 5, "password": "secret", "private": True, "meta_preview": False},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.info, "hello")
+        self.assertEqual(self.file.expr, "1d")
+        self.assertEqual(self.file.maxv, 5)
+        self.assertEqual(self.file.password, "secret")
+        self.assertTrue(self.file.private)
+        self.assertFalse(self.file.meta_preview)
+
+    def test_bulk_edit_rejects_mass_assignment(self):
+        response = self._post_json(
+            reverse("api:files-edit"),
+            {"ids": [self.file.id], "user_id": self.victim.id, "avatar": True, "view": 1234},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.user_id, self.user.id)
+        self.assertFalse(self.file.avatar)
+        self.assertEqual(self.file.view, 0)
+
+    def test_bulk_edit_allows_documented_fields(self):
+        response = self._post_json(
+            reverse("api:files-edit"),
+            {"ids": [self.file.id], "private": True, "password": "secret", "expr": "2d", "maxv": 3},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.file.refresh_from_db()
+        self.assertTrue(self.file.private)
+        self.assertEqual(self.file.password, "secret")
+        self.assertEqual(self.file.expr, "2d")
+        self.assertEqual(self.file.maxv, 3)
