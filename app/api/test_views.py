@@ -1026,7 +1026,14 @@ class FileEditSecurityTestCase(TestCase):
     def test_file_view_allows_documented_fields(self):
         response = self._post_json(
             reverse("api:file", kwargs={"idname": self.file.id}),
-            {"info": "hello", "expr": "1d", "maxv": 5, "password": "secret", "private": True, "meta_preview": False},
+            {
+                "info": "hello",
+                "expr": "1d",
+                "maxv": 5,
+                "password": "secret",
+                "private": True,
+                "meta_preview": False,
+            },  # nosec  # NOSONAR
         )
         self.assertEqual(response.status_code, 200)
         self.file.refresh_from_db()
@@ -1051,7 +1058,13 @@ class FileEditSecurityTestCase(TestCase):
     def test_bulk_edit_allows_documented_fields(self):
         response = self._post_json(
             reverse("api:files-edit"),
-            {"ids": [self.file.id], "private": True, "password": "secret", "expr": "2d", "maxv": 3},
+            {
+                "ids": [self.file.id],
+                "private": True,
+                "password": "secret",
+                "expr": "2d",
+                "maxv": 3,
+            },  # nosec  # NOSONAR
         )
         self.assertEqual(response.status_code, 200)
         self.file.refresh_from_db()
