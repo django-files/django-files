@@ -33,7 +33,7 @@ def cgroup_memory_limit() -> int:
         try:
             with open(path) as f:
                 raw = f.read().strip()
-        except OSError, ValueError:
+        except (OSError, ValueError):
             continue
         if raw == "max":
             return 0

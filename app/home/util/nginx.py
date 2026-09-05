@@ -44,7 +44,7 @@ def verify_hls_cookie(stream_name: str, sig: str | None, exp: str | None) -> boo
         return False
     try:
         exp_int = int(exp)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return False
     if exp_int < int(time.time()):
         return False
