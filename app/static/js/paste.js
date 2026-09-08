@@ -25,6 +25,7 @@ $('#send-paste').on('submit', function (event) {
         success: function (data) {
             console.log('data:', data)
             form.trigger('reset')
+            show_toast('Text Uploaded.', 'success')
         },
         error: messageErrorHandler,
         cache: false,
