@@ -25,7 +25,16 @@ $('#send-paste').on('submit', function (event) {
         success: function (data) {
             console.log('data:', data)
             form.trigger('reset')
-            show_toast('Text Uploaded.', 'success')
+            const link = $('<span>Text Uploaded: </span>').append(
+                $('<a>', {
+                    href: data.url,
+                    text: data.name,
+                    class: 'link-light',
+                    target: '_blank',
+                    rel: 'noopener',
+                })
+            )
+            show_toast(link, 'success')
         },
         error: messageErrorHandler,
         cache: false,
