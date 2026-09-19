@@ -13,6 +13,7 @@ from home.tasks import cleanup_tus_uploads, import_tus_upload
 from home.util.auth import create_api_token
 from home.util.tus import has_disk_space
 from oauth.models import CustomUser
+from settings.models import SiteSettings
 
 
 def hook_payload(hook_type, *, size=1024, metadata=None, headers=None, storage=None, size_is_deferred=False):
@@ -85,6 +86,31 @@ class TusHookTestCase(TestCase):
 
     def test_pre_create_no_auth(self):
         self.assertRejected(self.hook(hook_payload("pre-create")), 401)
+
+    def test_pre_create_public_upload_enabled(self):
+        site_settings = SiteSettings.objects.settings()
+        site_settings.pub_load = True
+        site_settings.save()
+        try:
+            response = self.hook(hook_payload("pre-create"))
+        finally:
+            site_settings.pub_load = False
+            site_settings.save()
+        self.assertFalse(response.json().get("RejectUpload"))
+        anon = CustomUser.objects.get(username="anonymous")
+        self.assertEqual(response.json()["ChangeFileInfo"]["MetaData"]["user_id"], str(anon.id))
+
+    def test_pre_create_bad_token_does_not_fall_through_to_public(self):
+        """An explicit bad token must be rejected even when public uploads are on."""
+        site_settings = SiteSettings.objects.settings()
+        site_settings.pub_load = True
+        site_settings.save()
+        try:
+            payload = hook_payload("pre-create", headers={"Authorization": ["Bearer wrongtoken"]})
+            self.assertRejected(self.hook(payload), 401)
+        finally:
+            site_settings.pub_load = False
+            site_settings.save()
 
     def test_pre_create_session_cookie_with_origin(self):
         self.client.login(username="tususer", password=TEST_PASSWORD)
