@@ -38,7 +38,7 @@ from django.views.decorators.http import require_http_methods
 from home.tasks import import_tus_upload
 from home.util.auth import hash_token
 from home.util.tus import has_disk_space
-from oauth.models import ApiToken
+from oauth.models import ApiToken, CustomUser
 from pytimeparse2 import parse
 from settings.models import SiteSettings
 
@@ -175,15 +175,22 @@ def _resolve_user(headers: dict, metadata: dict):
         api_token = ApiToken.objects.select_related("user").filter(token_hash=hash_token(token)).first()
         if api_token and api_token.is_valid():
             return api_token.user
-        # an explicit bad token never falls through to cookie auth
+        # an explicit bad token never falls through to cookie or public auth
         return None
     # Browser path: session cookie. tusd sits outside Django's CSRF
     # protection, so cookie auth additionally requires an Origin/Referer
     # matching the site — otherwise any web page could upload into a
     # logged-in user's account with their ambient cookies.
-    if not _origin_allowed(headers):
-        return None
-    return _session_user(headers)
+    if _origin_allowed(headers):
+        if user := _session_user(headers):
+            return user
+    # /public/ is unauthenticated by design, so when the site allows public
+    # uploads fall back to the shared anonymous account — the same identity
+    # api.views.upload_view assigns public XHR uploads.
+    if SiteSettings.objects.settings().pub_load:
+        user, _ = CustomUser.objects.get_or_create(username="anonymous", defaults={"first_name": "Anonymous"})
+        return user
+    return None
 
 
 def _extract_hook_token(headers: dict, metadata: dict) -> str:
