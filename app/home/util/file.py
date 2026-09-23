@@ -33,6 +33,7 @@ from home.util.tags import attach_file_tags, sync_file_tags
 from home.util.video import video_metadata_processor, video_thumbnail_from_path
 from home.util.webhooks import EVENT_FILE_UPLOAD, build_file_payload
 from oauth.models import CustomUser
+from settings.models import SiteSettings
 
 log = logging.getLogger("app")
 
@@ -156,6 +157,22 @@ def _attach_album(file: Files, albums: Optional[str]) -> None:
         file.save()
 
 
+def _attach_pub_album(file: Files, user: CustomUser) -> None:
+    # anonymous uploads (both the XHR /upload/ path and the TUS public route)
+    # share this single account, so the site-wide public album applies here
+    # rather than per-user.
+    if user.username != "anonymous":
+        return
+    pub_album = SiteSettings.objects.settings().pub_album
+    if not pub_album:
+        return
+    album = Albums.objects.filter(id=pub_album)
+    log.debug("pub_album: %s", album)
+    if album:
+        file.albums.add(album[0])
+        file.save()
+
+
 def process_file(name: str, f: Union[BinaryIO, LocalFile], user_id: int, **kwargs) -> Files:
     """
     Process File Uploads
@@ -224,6 +241,7 @@ def process_file(name: str, f: Union[BinaryIO, LocalFile], user_id: int, **kwarg
         # before the webhook dispatch below so tag include-filters can match
         attach_file_tags(file, tags)
     _attach_album(file, albums)
+    _attach_pub_album(file, user)
 
     if file_mime.startswith(VIDEO_MIME_PREFIX) and not video_thumb_saved:
         # fallback when local extraction failed; on_commit ensures the row is

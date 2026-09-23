@@ -2329,14 +2329,6 @@ def process_file_upload(request, f: BinaryIO, user_id: int, **kwargs):
     name = kwargs.pop("name", f.name)
     file = process_file(name, f, user_id, **kwargs)
 
-    if request.user.username == "anonymous":
-        if site_settings["pub_album"]:
-            album = Albums.objects.filter(id=site_settings["pub_album"])
-            log.debug("album: %s", album)
-            if album:
-                file.albums.add(album[0])
-                file.save()
-
     data = {
         "files": [site_settings["site_url"] + file.preview_uri()],
         "url": site_settings["site_url"] + file.preview_uri(),
