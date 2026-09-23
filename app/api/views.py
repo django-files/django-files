@@ -395,7 +395,7 @@ def upload_view(request):
         log.debug("f.name: %s", f.name)
         log.debug("extra_args: %s", extra_args)
         log.debug("request.user: %s", request.user)
-        return process_file_upload(request, f, request.user.id, **extra_args)
+        return process_file_upload(f, request.user.id, **extra_args)
     except Exception as error:
         log.exception(error)
         return JsonResponse({"error": True, "message": str(error)}, status=500)
@@ -2322,7 +2322,7 @@ def parse_headers(headers: dict, **kwargs) -> dict:
     return data
 
 
-def process_file_upload(request, f: BinaryIO, user_id: int, **kwargs):
+def process_file_upload(f: BinaryIO, user_id: int, **kwargs):
     log.debug("user_id: %s", user_id)
     log.debug("kwargs: %s", kwargs)
     site_settings = site_settings_processor(None)["site_settings"]
