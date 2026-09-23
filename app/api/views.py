@@ -375,7 +375,7 @@ def upload_view(request):
     if not site_settings.pub_load and not request.user.is_authenticated:
         return JsonResponse({"error": "Public uploads are disabled."}, status=403)
     elif request.user.is_anonymous:
-        request.user = CustomUser.objects.get(username="anonymous")
+        request.user, _ = CustomUser.objects.get_or_create(username="anonymous", defaults={"first_name": "Anonymous"})
     try:
         f = request.FILES.get("file")
         if not f and post.get("text"):
