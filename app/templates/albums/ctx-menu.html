@@ -4,7 +4,8 @@ data attributes must match what getActions() emits there, so albums-actions.js
 can delegate handlers globally. This template is here for server-side renders
 (if/when added); the JS path renders the same DOM inline.
 
-Required context: album.
+Required context: album. Uses the site_settings context processor for
+per_album_public_uploads.
 {% endcomment %}
 <div class="dropdown album-ctx-menu" data-album-id="{{ album.id }}">
     <input type="hidden" name="current-album-password" value="{{ album.password|default:'' }}">
@@ -22,6 +23,14 @@ Required context: album.
                data-private="{{ album.private|yesno:'true,false' }}">
                 <i class="fa-solid fa-{% if album.private %}globe{% else %}lock{% endif %} fa-fw me-2"></i>{% if album.private %}Make Public{% else %}Make Private{% endif %}</a>
         </li>
+        {% if site_settings.per_album_public_uploads %}
+        <li>
+            <a role="button" class="dropdown-item album-toggle-public-uploads-btn"
+               data-album-id="{{ album.id }}"
+               data-public-uploads="{{ album.public_uploads|yesno:'true,false' }}">
+                <i class="fa-solid fa-upload fa-fw me-2"></i>{% if album.public_uploads %}Disable Public Uploads{% else %}Enable Public Uploads{% endif %}</a>
+        </li>
+        {% endif %}
         <li>
             <a role="button" class="dropdown-item album-set-password-btn"
                data-album-id="{{ album.id }}"

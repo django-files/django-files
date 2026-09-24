@@ -604,6 +604,49 @@ class ToggleAlbumPublicUploadsAjaxTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
 
 
+class AlbumGalleryUploadButtonTestCase(TestCase):
+    """Test the album gallery page's Upload button/uppy.js gating (home.views.files_view)."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        self.owner = CustomUser.objects.create_user(username="albumowner4", password=TEST_PASSWORD)
+        self.other = CustomUser.objects.create_user(username="notowner2", password=TEST_PASSWORD)
+        self.album = Albums.objects.create(user=self.owner, name="drop-box-4")
+
+    def get_album(self):
+        return self.client.get(reverse("home:files"), {"view": "gallery", "album": self.album.id})
+
+    def test_owner_sees_upload_button_regardless_of_public_uploads(self):
+        self.client.force_login(self.owner)
+        response = self.get_album()
+        self.assertContains(response, 'data-bs-target="#fileUploadModal"')
+        self.assertContains(response, 'src="/static/js/uppy.js"')
+
+    def test_non_owner_does_not_see_upload_button_when_public_uploads_off(self):
+        self.client.force_login(self.other)
+        response = self.get_album()
+        self.assertNotContains(response, 'data-bs-target="#fileUploadModal"')
+        self.assertNotContains(response, 'src="/static/js/uppy.js"')
+
+    def test_anonymous_sees_upload_button_when_public_uploads_enabled(self):
+        site_settings = SiteSettings.objects.settings()
+        site_settings.per_album_public_uploads = True
+        site_settings.save()
+        self.album.public_uploads = True
+        self.album.save()
+        response = self.get_album()
+        self.assertContains(response, 'data-bs-target="#fileUploadModal"')
+        self.assertContains(response, 'src="/static/js/uppy.js"')
+
+    def test_anonymous_does_not_see_upload_button_when_album_switch_off(self):
+        site_settings = SiteSettings.objects.settings()
+        site_settings.per_album_public_uploads = True
+        site_settings.save()
+        response = self.get_album()
+        self.assertNotContains(response, 'data-bs-target="#fileUploadModal"')
+        self.assertNotContains(response, 'src="/static/js/uppy.js"')
+
+
 def process_file_path(path: Path, user_id: int) -> Files:
     print(f"--- Processing: path: {path}")
     with path.open(mode="rb") as f:

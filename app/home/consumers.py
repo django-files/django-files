@@ -50,6 +50,7 @@ _ALLOWED_METHODS = frozenset(
         "delete_files",
         "delete_albums",
         "private_albums",
+        "public_uploads_albums",
         "set_album_password",
         "toggle_private_file",
         "private_files",
@@ -297,6 +298,17 @@ class HomeConsumer(AsyncWebsocketConsumer):
         for a in albums:
             a.private = private
             a.save(update_fields=["private"])  # triggers post_save signal → album-update WS broadcast
+
+    def public_uploads_albums(
+        self, *, user_id: int = None, pks: List[int] = None, public_uploads: bool, **kwargs
+    ) -> None:
+        log.debug("public_uploads_albums: user_id=%s pks=%s public_uploads=%s", user_id, pks, public_uploads)
+        albums = list(Albums.objects.filter(**filter_kwargs(pks, user_id)))
+        if not albums:
+            return self._error("Album(s) not found.", **kwargs)
+        for a in albums:
+            a.public_uploads = public_uploads
+            a.save(update_fields=["public_uploads"])  # triggers post_save signal → album-update WS broadcast
 
     def set_album_password(self, *, user_id: int = None, pk: int = None, password: str = None, **kwargs) -> dict:
         # Owner-gated; superusers may also pass any pk. The plaintext is emitted

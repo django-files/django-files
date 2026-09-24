@@ -226,41 +226,39 @@
             <span class="mx-1 opacity-50">&bull;</span>
             <i class="fa-solid fa-file me-1" aria-hidden="true"></i><strong>{{ album_file_count }}</strong> files
         </span>
-        {% if not full_context and album.public_uploads and site_settings.per_album_public_uploads %}
-        <a href="{% url 'home:uppy' %}?album={{ album.id }}" class="files-toolbar-btn ms-auto"
-           title="Upload files to this album — no login required">
-            <i class="fa-solid fa-upload" aria-hidden="true"></i><span>Upload</span>
-        </a>
-        {% endif %}
-        {% if full_context %}
-        {% if site_settings.per_album_public_uploads %}
-        <button id="album-public-uploads-toggle"
-                class="files-toolbar-btn ms-auto{% if album.public_uploads %} files-toolbar-btn--private{% endif %}"
-                data-album-id="{{ album.id }}"
-                data-public-uploads="{{ album.public_uploads|yesno:'true,false' }}"
-                data-url="{% url 'home:toggle-public-uploads-album' album.id %}"
-                title="{% if album.public_uploads %}Anonymous uploads enabled — click to disable{% else %}Anonymous uploads disabled — click to enable{% endif %}">
-            <i class="fa-solid fa-upload" aria-hidden="true"></i><span>{% if album.public_uploads %}Public Uploads{% else %}No Public Uploads{% endif %}</span>
-        </button>
-        {% endif %}
-        <button id="album-private-toggle"
-                class="files-toolbar-btn{% if not site_settings.per_album_public_uploads %} ms-auto{% endif %}{% if album.private %} files-toolbar-btn--private{% endif %}"
-                data-album-id="{{ album.id }}"
-                data-private="{{ album.private|yesno:'true,false' }}"
-                data-url="{% url 'home:toggle-private-album' album.id %}"
-                title="{% if album.private %}Private — click to make public{% else %}Public — click to make private{% endif %}">
-            <i class="fa-solid {% if album.private %}fa-lock{% else %}fa-lock-open{% endif %}" aria-hidden="true"></i><span>{% if album.private %}Private{% else %}Public{% endif %}</span>
-        </button>
-        {% if mobile_browser %}
-        <a href="{{ native_app_arg }}" class="link-body-emphasis files-toolbar-album-app-link" title="Open in App">
-            <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
-        </a>
-        {% endif %}
-        {% elif mobile_browser %}
-        <a href="{{ native_app_arg }}" class="ms-auto link-body-emphasis files-toolbar-album-app-link" title="Open in App">
-            <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
-        </a>
-        {% endif %}
+        <div class="d-flex align-items-center gap-2 ms-auto">
+            {% if album_can_upload %}
+            <button type="button" class="files-toolbar-btn" data-bs-toggle="modal" data-bs-target="#fileUploadModal"
+                    title="Upload files to this album{% if not full_context %} — no login required{% endif %}">
+                <i class="fa-solid fa-upload" aria-hidden="true"></i><span>Upload</span>
+            </button>
+            {% endif %}
+            {% if full_context %}
+            {% if site_settings.per_album_public_uploads %}
+            <button id="album-public-uploads-toggle"
+                    class="files-toolbar-btn{% if album.public_uploads %} files-toolbar-btn--private{% endif %}"
+                    data-album-id="{{ album.id }}"
+                    data-public-uploads="{{ album.public_uploads|yesno:'true,false' }}"
+                    data-url="{% url 'home:toggle-public-uploads-album' album.id %}"
+                    title="{% if album.public_uploads %}Anonymous uploads enabled — click to disable{% else %}Anonymous uploads disabled — click to enable{% endif %}">
+                <i class="fa-solid fa-upload" aria-hidden="true"></i><span>{% if album.public_uploads %}Public Uploads{% else %}No Public Uploads{% endif %}</span>
+            </button>
+            {% endif %}
+            <button id="album-private-toggle"
+                    class="files-toolbar-btn{% if album.private %} files-toolbar-btn--private{% endif %}"
+                    data-album-id="{{ album.id }}"
+                    data-private="{{ album.private|yesno:'true,false' }}"
+                    data-url="{% url 'home:toggle-private-album' album.id %}"
+                    title="{% if album.private %}Private — click to make public{% else %}Public — click to make private{% endif %}">
+                <i class="fa-solid {% if album.private %}fa-lock{% else %}fa-lock-open{% endif %}" aria-hidden="true"></i><span>{% if album.private %}Private{% else %}Public{% endif %}</span>
+            </button>
+            {% endif %}
+            {% if mobile_browser %}
+            <a href="{{ native_app_arg }}" class="link-body-emphasis files-toolbar-album-app-link" title="Open in App">
+                <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
+            </a>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 </div>
