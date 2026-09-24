@@ -8,6 +8,7 @@ from pathlib import Path
 from api.views import gen_short
 from channels.testing import ChannelsLiveServerTestCase
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -513,6 +514,35 @@ class FilesTestCase(TestCase):
         app_init()
         print("--- Testing: delete_expired_files")
         delete_expired_files()
+
+
+class PublicUppyViewTestCase(TestCase):
+    """Test the /public/ endpoint (home.views.pub_uppy_view)"""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        site_settings = SiteSettings.objects.settings()
+        site_settings.pub_load = True
+        site_settings.save()
+
+    def test_anonymous_upload_without_info_field_does_not_crash(self):
+        # info previously defaulted to None via POST.get("info"), which
+        # violates the non-nullable Files.info CharField and 500'd for any
+        # client (e.g. a ShareX-style config) that omits the field.
+        data = {"file": SimpleUploadedFile("upload.txt", b"hello world", content_type="text/plain")}
+        response = self.client.post(reverse("home:public-uppy"), data)
+        self.assertEqual(response.status_code, 200)
+        anon = CustomUser.objects.get(username="anonymous")
+        file = Files.objects.filter(user=anon).latest("id")
+        self.assertEqual(file.info, "")
+
+    def test_anonymous_upload_resolves_to_anonymous_account(self):
+        data = {"file": SimpleUploadedFile("upload2.txt", b"hello again", content_type="text/plain")}
+        response = self.client.post(reverse("home:public-uppy"), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(CustomUser.objects.filter(username="public").exists())
+        anon = CustomUser.objects.get(username="anonymous")
+        self.assertTrue(Files.objects.filter(user=anon, name="upload2.txt").exists())
 
 
 def process_file_path(path: Path, user_id: int) -> Files:
