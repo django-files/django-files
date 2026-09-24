@@ -42,6 +42,7 @@ from webpush.models import PushInformation
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
+OAUTH_LOGIN_URL_NAME = "oauth:login"
 _ORDERING_LABELS = {
     "created": "Upload Date",
     "-created": "Upload Date",
@@ -278,7 +279,7 @@ def files_view(request):
         if request.user.is_authenticated or request.user.is_superuser:
             ctx.update({"full_context": True})
     if not request.user.is_authenticated and (not album or album.private):
-        return HttpResponseRedirect(reverse("oauth:login"))
+        return HttpResponseRedirect(reverse(OAUTH_LOGIN_URL_NAME))
     elif request.user.is_superuser:
         users = list(CustomUser.objects.all().only("id", "username"))
         ctx.update({"users": users})
@@ -360,7 +361,7 @@ def uppy_view(request):
     if not request.user.is_authenticated:
         public_album = album_allows_public_upload(request.GET.get("album"))
         if not public_album:
-            return HttpResponseRedirect(reverse("oauth:login") + "?next=" + request.get_full_path())
+            return HttpResponseRedirect(reverse(OAUTH_LOGIN_URL_NAME) + "?next=" + request.get_full_path())
     return render(request, "uppy.html", {"public_album": public_album})
 
 
@@ -392,7 +393,7 @@ def pub_uppy_view(request):
             if request.user.is_authenticated:
                 messages.warning(request, "You Must Enable Public Uploads.")
                 return HttpResponseRedirect(reverse("settings:site"))
-            return HttpResponseRedirect(reverse("oauth:login") + "?next=" + reverse("home:public-uppy"))
+            return HttpResponseRedirect(reverse(OAUTH_LOGIN_URL_NAME) + "?next=" + reverse("home:public-uppy"))
 
         if request.method == "POST":
             if not (f := request.FILES.get("file")):
