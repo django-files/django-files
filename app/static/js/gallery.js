@@ -181,6 +181,42 @@ if (albumPrivateToggle) {
     })
 }
 
+const albumPublicUploadsToggle = document.getElementById(
+    'album-public-uploads-toggle'
+)
+if (albumPublicUploadsToggle) {
+    albumPublicUploadsToggle.addEventListener('click', async () => {
+        const btn = albumPublicUploadsToggle
+        btn.disabled = true
+        try {
+            const resp = await fetch(btn.dataset.url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken':
+                        /csrftoken=([^;]+)/.exec(document.cookie)?.[1] ?? '',
+                },
+            })
+            if (!resp.ok) throw new Error(resp.status)
+            const enabled = (await resp.text()).trim() === 'True'
+            btn.dataset.publicUploads = enabled ? 'true' : 'false'
+            const label = btn.querySelector('span')
+            if (enabled) {
+                btn.classList.add('files-toolbar-btn--private')
+                if (label) label.textContent = 'Public Uploads'
+                btn.title = 'Anonymous uploads enabled — click to disable'
+            } else {
+                btn.classList.remove('files-toolbar-btn--private')
+                if (label) label.textContent = 'No Public Uploads'
+                btn.title = 'Anonymous uploads disabled — click to enable'
+            }
+        } catch (e) {
+            console.error('Failed to toggle album public uploads', e)
+        } finally {
+            btn.disabled = false
+        }
+    })
+}
+
 const albumRow = document.querySelector('.files-toolbar-album-row')
 if (albumRow) {
     albumRow.addEventListener(

@@ -25,6 +25,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from home.models import Albums, Files, ShortURLs, Stream
 from home.tasks import clear_shorts_cache, process_stats
+from home.util.file import album_allows_public_upload
 from home.util.misc import redact_log
 from home.util.nginx import set_hls_cookies
 from home.util.s3 import use_s3
@@ -351,12 +352,16 @@ def streams_view(request):
 
 @csrf_exempt
 @cache_control(no_cache=True)
-@login_required
 def uppy_view(request):
     """
     View  /uppy/
     """
-    return render(request, "uppy.html")
+    public_album = None
+    if not request.user.is_authenticated:
+        public_album = album_allows_public_upload(request.GET.get("album"))
+        if not public_album:
+            return HttpResponseRedirect(reverse("oauth:login") + "?next=" + request.get_full_path())
+    return render(request, "uppy.html", {"public_album": public_album})
 
 
 @csrf_exempt
@@ -593,6 +598,22 @@ def toggle_private_album_ajax(request, pk):
     album.private = not album.private
     album.save()
     return HttpResponse(album.private, status=200)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def toggle_public_uploads_album_ajax(request, pk):
+    """
+    View  /ajax/toggle_public_uploads/album/<int:pk>/
+    """
+    log.debug("toggle_public_uploads_album_ajax: %s", pk)
+    album = get_object_or_404(Albums, pk=pk)
+    if album.user != request.user and not request.user.is_superuser:
+        return HttpResponse(status=401)
+    album.public_uploads = not album.public_uploads
+    album.save()
+    return HttpResponse(album.public_uploads, status=200)
 
 
 @login_required

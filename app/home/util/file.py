@@ -146,14 +146,30 @@ def _process_metadata(file: Files, path: str, file_mime: str, user: CustomUser, 
     return None
 
 
+def resolve_album_ref(ref: Optional[str]) -> Optional[Albums]:
+    if not ref:
+        return None
+    lookup = {"id": int(ref)} if ref.isnumeric() else {"name": ref}
+    return Albums.objects.filter(**lookup).first()
+
+
+def album_allows_public_upload(ref: Optional[str]) -> Optional[Albums]:
+    """
+    Return the album `ref` (id or name) identifies if anonymous uploads are
+    currently allowed straight into it - both the site-wide switch and the
+    album's own toggle must be on - else None.
+    """
+    if not SiteSettings.objects.settings().per_album_public_uploads:
+        return None
+    album = resolve_album_ref(ref)
+    return album if album and album.public_uploads else None
+
+
 def _attach_album(file: Files, albums: Optional[str]) -> None:
-    if not albums:
-        return
-    lookup = {"id": int(albums)} if albums.isnumeric() else {"name": albums}
-    album = Albums.objects.filter(**lookup)
+    album = resolve_album_ref(albums)
     log.debug("album: %s", album)
     if album:
-        file.albums.add(album[0])
+        file.albums.add(album)
         file.save()
 
 

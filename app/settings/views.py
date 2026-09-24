@@ -98,6 +98,7 @@ def site_view(request):
     site_settings.site_color = form.cleaned_data["site_color"]
     site_settings.pub_load = form.cleaned_data["pub_load"]
     site_settings.pub_album = form.cleaned_data["pub_album"]
+    site_settings.per_album_public_uploads = form.cleaned_data["per_album_public_uploads"]
     site_settings.oauth_reg = form.cleaned_data["oauth_reg"]
     site_settings.local_auth = form.cleaned_data["local_auth"]
     site_settings.duo_auth = form.cleaned_data["duo_auth"]

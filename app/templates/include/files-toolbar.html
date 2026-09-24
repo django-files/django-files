@@ -226,9 +226,25 @@
             <span class="mx-1 opacity-50">&bull;</span>
             <i class="fa-solid fa-file me-1" aria-hidden="true"></i><strong>{{ album_file_count }}</strong> files
         </span>
+        {% if not full_context and album.public_uploads and site_settings.per_album_public_uploads %}
+        <a href="{% url 'home:uppy' %}?album={{ album.id }}" class="files-toolbar-btn ms-auto"
+           title="Upload files to this album — no login required">
+            <i class="fa-solid fa-upload" aria-hidden="true"></i><span>Upload</span>
+        </a>
+        {% endif %}
         {% if full_context %}
+        {% if site_settings.per_album_public_uploads %}
+        <button id="album-public-uploads-toggle"
+                class="files-toolbar-btn ms-auto{% if album.public_uploads %} files-toolbar-btn--private{% endif %}"
+                data-album-id="{{ album.id }}"
+                data-public-uploads="{{ album.public_uploads|yesno:'true,false' }}"
+                data-url="{% url 'home:toggle-public-uploads-album' album.id %}"
+                title="{% if album.public_uploads %}Anonymous uploads enabled — click to disable{% else %}Anonymous uploads disabled — click to enable{% endif %}">
+            <i class="fa-solid fa-upload" aria-hidden="true"></i><span>{% if album.public_uploads %}Public Uploads{% else %}No Public Uploads{% endif %}</span>
+        </button>
+        {% endif %}
         <button id="album-private-toggle"
-                class="files-toolbar-btn ms-auto{% if album.private %} files-toolbar-btn--private{% endif %}"
+                class="files-toolbar-btn{% if not site_settings.per_album_public_uploads %} ms-auto{% endif %}{% if album.private %} files-toolbar-btn--private{% endif %}"
                 data-album-id="{{ album.id }}"
                 data-private="{{ album.private|yesno:'true,false' }}"
                 data-url="{% url 'home:toggle-private-album' album.id %}"

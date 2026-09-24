@@ -8,7 +8,7 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from djangofiles.test_utils import TEST_PASSWORD
-from home.models import Files
+from home.models import Albums, Files
 from home.tasks import cleanup_tus_uploads, import_tus_upload
 from home.util.auth import create_api_token
 from home.util.tus import has_disk_space
@@ -110,6 +110,33 @@ class TusHookTestCase(TestCase):
             self.assertRejected(self.hook(payload), 401)
         finally:
             site_settings.pub_load = False
+            site_settings.save()
+
+    def test_pre_create_public_album_upload_enabled(self):
+        site_settings = SiteSettings.objects.settings()
+        site_settings.per_album_public_uploads = True
+        site_settings.save()
+        album = Albums.objects.create(user=self.user, name="drop-box", public_uploads=True)
+        try:
+            payload = hook_payload("pre-create", headers={"albums": [str(album.id)]})
+            response = self.hook(payload)
+        finally:
+            site_settings.per_album_public_uploads = False
+            site_settings.save()
+        self.assertFalse(response.json().get("RejectUpload"))
+        anon = CustomUser.objects.get(username="anonymous")
+        self.assertEqual(response.json()["ChangeFileInfo"]["MetaData"]["user_id"], str(anon.id))
+
+    def test_pre_create_rejects_album_without_public_uploads(self):
+        site_settings = SiteSettings.objects.settings()
+        site_settings.per_album_public_uploads = True
+        site_settings.save()
+        album = Albums.objects.create(user=self.user, name="not-a-drop-box")
+        try:
+            payload = hook_payload("pre-create", headers={"albums": [str(album.id)]})
+            self.assertRejected(self.hook(payload), 401)
+        finally:
+            site_settings.per_album_public_uploads = False
             site_settings.save()
 
     def test_pre_create_session_cookie_with_origin(self):

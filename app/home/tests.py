@@ -13,7 +13,7 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from djangofiles.test_utils import TEST_PASSWORD
-from home.models import Files, ShortURLs
+from home.models import Albums, Files, ShortURLs
 from home.tasks import (
     app_init,
     delete_expired_files,
@@ -543,6 +543,65 @@ class PublicUppyViewTestCase(TestCase):
         self.assertFalse(CustomUser.objects.filter(username="public").exists())
         anon = CustomUser.objects.get(username="anonymous")
         self.assertTrue(Files.objects.filter(user=anon, name="upload2.txt").exists())
+
+
+class PerAlbumPublicUploadPageTestCase(TestCase):
+    """Test the /uppy/ endpoint (home.views.uppy_view) for per-album public uploads."""
+
+    def setUp(self):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        self.owner = CustomUser.objects.create_superuser(username="albumowner2", password=TEST_PASSWORD)
+        self.album = Albums.objects.create(user=self.owner, name="drop-box-2", public_uploads=True)
+        site_settings = SiteSettings.objects.settings()
+        site_settings.per_album_public_uploads = True
+        site_settings.save()
+
+    def test_anonymous_get_allowed_for_public_upload_album(self):
+        response = self.client.get(reverse("home:uppy"), {"album": self.album.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.album.name)
+
+    def test_anonymous_get_redirects_to_login_without_album(self):
+        response = self.client.get(reverse("home:uppy"))
+        self.assertRedirects(response, reverse("oauth:login") + "?next=" + reverse("home:uppy"))
+
+    def test_anonymous_get_redirects_when_album_switch_off(self):
+        self.album.public_uploads = False
+        self.album.save()
+        response = self.client.get(reverse("home:uppy"), {"album": self.album.id})
+        self.assertEqual(response.status_code, 302)
+
+    def test_authenticated_get_ignores_album_gating(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("home:uppy"))
+        self.assertEqual(response.status_code, 200)
+
+
+class ToggleAlbumPublicUploadsAjaxTestCase(TestCase):
+    """Test /ajax/toggle_public_uploads/album/<pk>/ (home.views.toggle_public_uploads_album_ajax)"""
+
+    def setUp(self):
+        self.owner = CustomUser.objects.create_user(username="albumowner3", password=TEST_PASSWORD)
+        self.other = CustomUser.objects.create_user(username="notowner", password=TEST_PASSWORD)
+        self.album = Albums.objects.create(user=self.owner, name="drop-box-3")
+
+    def test_owner_can_toggle(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(reverse("home:toggle-public-uploads-album", args=[self.album.id]))
+        self.assertEqual(response.status_code, 200)
+        self.album.refresh_from_db()
+        self.assertTrue(self.album.public_uploads)
+
+    def test_non_owner_cannot_toggle(self):
+        self.client.force_login(self.other)
+        response = self.client.post(reverse("home:toggle-public-uploads-album", args=[self.album.id]))
+        self.assertEqual(response.status_code, 401)
+        self.album.refresh_from_db()
+        self.assertFalse(self.album.public_uploads)
+
+    def test_anonymous_cannot_toggle(self):
+        response = self.client.post(reverse("home:toggle-public-uploads-album", args=[self.album.id]))
+        self.assertEqual(response.status_code, 302)
 
 
 def process_file_path(path: Path, user_id: int) -> Files:
