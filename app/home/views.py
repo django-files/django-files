@@ -25,6 +25,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.vary import vary_on_cookie
 from home.models import Albums, Files, ShortURLs, Stream
 from home.tasks import clear_shorts_cache, process_stats
+from home.util.file import album_allows_public_upload
 from home.util.misc import redact_log
 from home.util.nginx import set_hls_cookies
 from home.util.s3 import use_s3
@@ -41,6 +42,7 @@ from webpush.models import PushInformation
 
 log = logging.getLogger("app")
 cache_seconds = 60 * 60 * 4
+OAUTH_LOGIN_URL_NAME = "oauth:login"
 _ORDERING_LABELS = {
     "created": "Upload Date",
     "-created": "Upload Date",
@@ -236,6 +238,7 @@ def files_view(request):
     ordering_label = _ORDERING_LABELS.get(ordering, "Sort")
     ctx = {
         "full_context": False,
+        "album_can_upload": False,
         "view_mode": view_mode,
         "ordering": ordering,
         "ordering_label": ordering_label,
@@ -255,7 +258,16 @@ def files_view(request):
             return HttpResponseNotFound()
         if (request.user.is_authenticated and request.user == album.user) or request.user.is_superuser:
             ctx.update({"full_context": True})
-        ctx.update({"album": album, "album_file_count": album.files_set.count()})
+        album_public_upload_enabled = bool(
+            album.public_uploads and SiteSettings.objects.settings().per_album_public_uploads
+        )
+        ctx.update(
+            {
+                "album": album,
+                "album_file_count": album.files_set.count(),
+                "album_can_upload": ctx["full_context"] or album_public_upload_enabled,
+            }
+        )
         site_url = site_settings_processor(request)["site_settings"]["site_url"]
         ctx.update(
             {
@@ -275,9 +287,9 @@ def files_view(request):
             Albums.objects.filter(pk=album.id).update(view=F("view") + 1)
     else:
         if request.user.is_authenticated or request.user.is_superuser:
-            ctx.update({"full_context": True})
+            ctx.update({"full_context": True, "album_can_upload": True})
     if not request.user.is_authenticated and (not album or album.private):
-        return HttpResponseRedirect(reverse("oauth:login"))
+        return HttpResponseRedirect(reverse(OAUTH_LOGIN_URL_NAME))
     elif request.user.is_superuser:
         users = list(CustomUser.objects.all().only("id", "username"))
         ctx.update({"users": users})
@@ -351,12 +363,16 @@ def streams_view(request):
 
 @csrf_exempt
 @cache_control(no_cache=True)
-@login_required
 def uppy_view(request):
     """
     View  /uppy/
     """
-    return render(request, "uppy.html")
+    public_album = None
+    if not request.user.is_authenticated:
+        public_album = album_allows_public_upload(request.GET.get("album"))
+        if not public_album:
+            return HttpResponseRedirect(reverse(OAUTH_LOGIN_URL_NAME) + "?next=" + request.get_full_path())
+    return render(request, "uppy.html", {"public_album": public_album})
 
 
 @csrf_exempt
@@ -387,7 +403,7 @@ def pub_uppy_view(request):
             if request.user.is_authenticated:
                 messages.warning(request, "You Must Enable Public Uploads.")
                 return HttpResponseRedirect(reverse("settings:site"))
-            return HttpResponseRedirect(reverse("oauth:login") + "?next=" + reverse("home:public-uppy"))
+            return HttpResponseRedirect(reverse(OAUTH_LOGIN_URL_NAME) + "?next=" + reverse("home:public-uppy"))
 
         if request.method == "POST":
             if not (f := request.FILES.get("file")):
@@ -593,6 +609,22 @@ def toggle_private_album_ajax(request, pk):
     album.private = not album.private
     album.save()
     return HttpResponse(album.private, status=200)
+
+
+@login_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def toggle_public_uploads_album_ajax(request, pk):
+    """
+    View  /ajax/toggle_public_uploads/album/<int:pk>/
+    """
+    log.debug("toggle_public_uploads_album_ajax: %s", pk)
+    album = get_object_or_404(Albums, pk=pk)
+    if album.user != request.user and not request.user.is_superuser:
+        return HttpResponse(status=401)
+    album.public_uploads = not album.public_uploads
+    album.save()
+    return HttpResponse(album.public_uploads, status=200)
 
 
 @login_required

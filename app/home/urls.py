@@ -41,6 +41,11 @@ urlpatterns = [
     path("ajax/set_expr/file/<int:pk>/", views.set_expr_file_ajax, name="set-expr-file"),
     path("ajax/toggle_private/file/<int:pk>/", views.toggle_private_file_ajax, name="toggle-private-file"),
     path("ajax/toggle_private/album/<int:pk>/", views.toggle_private_album_ajax, name="toggle-private-album"),
+    path(
+        "ajax/toggle_public_uploads/album/<int:pk>/",
+        views.toggle_public_uploads_album_ajax,
+        name="toggle-public-uploads-album",
+    ),
     path("ajax/check_password/file/<int:pk>/", views.check_password_file_ajax, name="check-password-file"),
     path("ajax/check_password/album/<int:pk>/", views.check_password_album_ajax, name="check-password-album"),
     path("ajax/check_password/stream/<str:name>/", views.check_password_stream_ajax, name="check-password-stream"),

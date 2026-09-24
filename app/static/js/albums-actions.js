@@ -41,6 +41,21 @@ function onTogglePrivate(btn) {
     )
 }
 
+function onTogglePublicUploads(btn) {
+    const pk = btn.dataset.albumId
+    if (!pk) return
+    const enable =
+        btn.dataset.publicUploads === 'false' ||
+        btn.dataset.publicUploads === false
+    socket.send(
+        JSON.stringify({
+            method: 'public_uploads_albums',
+            pks: [Number.parseInt(pk)],
+            public_uploads: enable,
+        })
+    )
+}
+
 function onSetPassword(btn) {
     const pk = btn.dataset.albumId
     if (!pk) return
@@ -111,6 +126,7 @@ function onDelete(btn) {
 wireClickDelegation({
     'album-copy-link-btn': onCopyLink,
     'album-toggle-private-btn': onTogglePrivate,
+    'album-toggle-public-uploads-btn': onTogglePublicUploads,
     'album-set-password-btn': onSetPassword,
     'album-tags-btn': onManageTags,
     'album-delete-btn': onDelete,
@@ -131,6 +147,9 @@ socket?.addEventListener('message', function (event) {
         if (Object.hasOwn(data, 'password')) {
             syncPasswordButtons(data.id, !!data.password)
         }
+        if (Object.hasOwn(data, 'public_uploads')) {
+            syncPublicUploadsButtons(data.id, !!data.public_uploads)
+        }
     }
 })
 
@@ -143,6 +162,17 @@ function syncPrivateButtons(id, isPrivate) {
             icon.className = `fa-solid fa-${isPrivate ? 'globe' : 'lock'} fa-fw me-2`
         }
         setMenuLabel(btn, isPrivate ? 'Make Public' : 'Make Private')
+    })
+}
+
+function syncPublicUploadsButtons(id, publicUploads) {
+    const sel = `.album-toggle-public-uploads-btn[data-album-id="${CSS.escape(String(id))}"]`
+    document.querySelectorAll(sel).forEach((btn) => {
+        btn.dataset.publicUploads = publicUploads ? 'true' : 'false'
+        setMenuLabel(
+            btn,
+            publicUploads ? 'Disable Public Uploads' : 'Enable Public Uploads'
+        )
     })
 }
 

@@ -37,6 +37,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from home.tasks import import_tus_upload
 from home.util.auth import hash_token
+from home.util.file import album_allows_public_upload
 from home.util.tus import has_disk_space
 from oauth.models import ApiToken, CustomUser
 from pytimeparse2 import parse
@@ -185,9 +186,11 @@ def _resolve_user(headers: dict, metadata: dict):
         if user := _session_user(headers):
             return user
     # /public/ is unauthenticated by design, so when the site allows public
-    # uploads fall back to the shared anonymous account — the same identity
+    # uploads — sitewide, or for the specific album this upload targets —
+    # fall back to the shared anonymous account, the same identity
     # api.views.upload_view assigns public XHR uploads.
-    if SiteSettings.objects.settings().pub_load:
+    target_album = headers.get("albums") or metadata.get("albums")
+    if SiteSettings.objects.settings().pub_load or album_allows_public_upload(target_album):
         user, _ = CustomUser.objects.get_or_create(username="anonymous", defaults={"first_name": "Anonymous"})
         return user
     return None
