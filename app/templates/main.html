@@ -129,14 +129,6 @@
     </div>
 
     {% include 'include/file-upload-modals.html' %}
-    <script type="text/javascript">
-        // Globals js/uppy.js expects — declared once here since the modal it
-        // targets (#fileUploadModal, included above) is available on every
-        // page, not only uppy.html.
-        const uploadUrl = "{% url 'api:upload' %}"
-        const tusEnabled = {{ tus_enabled|yesno:'true,false' }}
-        const tusChunkSize = {{ tus_chunk_size|default:0 }}
-    </script>
     <form id="log-out" action="{% url 'oauth:logout' %}" method="POST">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
