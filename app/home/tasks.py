@@ -211,7 +211,7 @@ def app_startup():
         else:
             user = CustomUser.objects.create_superuser(username=username, password=password)
             log.info("Custom User Created: %s", user.username)
-    CustomUser.objects.get_or_create(username="anonymous", first_name="Anonymous")
+    CustomUser.objects.get_or_create(username="anonymous", defaults={"first_name": "Anonymous"})
     os.makedirs(f"{settings.MEDIA_ROOT}/qr", exist_ok=True)
     regenerate_all_storage_values()
     refresh_gallery_static_urls_cache.delay()

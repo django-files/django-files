@@ -392,10 +392,12 @@ def pub_uppy_view(request):
         if request.method == "POST":
             if not (f := request.FILES.get("file")):
                 return JsonResponse({"error": "No File Found at Key: file"}, status=400)
-            kwargs = {"expr": parse_expire(request), "info": request.POST.get("info")}
+            kwargs = {"expr": parse_expire(request), "info": request.POST.get("info", "")}
             if not request.user.is_authenticated:
-                request.user, _ = CustomUser.objects.get_or_create(username="public")
-            return process_file_upload(request, f, request.user.id, **kwargs)
+                request.user, _ = CustomUser.objects.get_or_create(
+                    username="anonymous", defaults={"first_name": "Anonymous"}
+                )
+            return process_file_upload(f, request.user.id, **kwargs)
 
         return render(request, "uppy.html")
     except Exception as error:
