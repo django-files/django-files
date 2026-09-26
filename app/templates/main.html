@@ -92,6 +92,8 @@
     {% include 'include/footer.html' %}
 {% endblock %}
 
+{% include 'include/file-upload-modals.html' %}
+
 {% if request.user.is_authenticated %}
     <div id="keybinds-modal" class="modal fade" tabindex="-1">
         <div class="modal-dialog">
@@ -128,7 +130,6 @@
         </div>
     </div>
 
-    {% include 'include/file-upload-modals.html' %}
     <form id="log-out" action="{% url 'oauth:logout' %}" method="POST">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">

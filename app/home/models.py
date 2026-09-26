@@ -32,6 +32,11 @@ class Albums(models.Model):
     name = models.CharField(max_length=255, blank=False, verbose_name="Name", help_text="Album Name.")
     password = models.CharField(default="", max_length=255, blank=True, verbose_name="Album Password")
     private = models.BooleanField(default=False, verbose_name="Private Album")
+    public_uploads = models.BooleanField(
+        default=False,
+        verbose_name="Public Uploads",
+        help_text="Allow anonymous visitors to upload files into this album via its upload link.",
+    )
     info = models.CharField(
         default="", max_length=255, blank=True, verbose_name="Info", help_text="Album Information."
     )

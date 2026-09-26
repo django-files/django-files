@@ -24,6 +24,11 @@ class SiteSettings(models.Model):
     )
     pub_load = models.BooleanField(default=False, verbose_name="Public Upload", help_text="Allow Public Uploads")
     pub_album = models.IntegerField(default=0, verbose_name="Public Album", help_text="Public Upload Album")
+    per_album_public_uploads = models.BooleanField(
+        default=False,
+        verbose_name="Per-Album Public Uploads",
+        help_text="Allow album owners to enable a public, unauthenticated upload link for their own albums.",
+    )
     oauth_reg = models.BooleanField(default=False, verbose_name="Oauth Reg", help_text="Allow Oauth Auto Registration")
     two_factor = models.BooleanField(
         default=False, verbose_name="Two-Factor", help_text="Require Two-Factor Authentication"

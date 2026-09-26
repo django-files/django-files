@@ -9,16 +9,11 @@
 
 {% block body %}
     <div class="container-fluid pb-3 pt-2 px-4 h-100">
-        {% include 'include/upload-menu.html' with heading='Upload Files' fa_class='fa-solid fa-upload' %}
+        {% include 'include/upload-menu.html' with heading=public_album.name|default:'Upload Files' fa_class='fa-solid fa-upload' %}
         {% include 'files/uppy-form.html' %}
     </div>
 {% endblock %}
 
 {% block tail %}
-    <script type="text/javascript">
-        const uploadUrl = "{% url 'api:upload' %}"
-        const tusEnabled = {{ tus_enabled|yesno:'true,false' }}
-        const tusChunkSize = {{ tus_chunk_size|default:0 }}
-    </script>
     <script type="module" src="{% static 'js/uppy.js' %}"></script>
 {% endblock %}

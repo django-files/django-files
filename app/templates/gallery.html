@@ -100,5 +100,5 @@
     <script src="{% static 'dist/leaflet/leaflet.js' %}"></script>
     <script type="module" src="{% static 'js/gallery.js' %}"></script>
     <script type="module" src="{% static 'js/file-preview-panel.js' %}"></script>
-    {% if full_context %}<script type="module" src="{% static 'js/uppy.js' %}"></script>{% endif %}
+    {% if album_can_upload %}<script type="module" src="{% static 'js/uppy.js' %}"></script>{% endif %}
 {% endblock %}

@@ -64,7 +64,7 @@ from home.tasks import (
     stream_status_websocket,
 )
 from home.util.auth import create_api_token, hash_token
-from home.util.file import LocalFile, process_file
+from home.util.file import LocalFile, album_allows_public_upload, process_file
 from home.util.misc import anytobool, human_read_to_byte, redact_log, sanitize_log_value
 from home.util.nginx import sign_hls_cookie, verify_hls_cookie
 from home.util.quota import process_storage_quotas, remaining_quota_bytes
@@ -372,9 +372,10 @@ def upload_view(request):
     log.debug(redact_log(post))
     log.debug(request.FILES)
     site_settings = SiteSettings.objects.settings()
-    if not site_settings.pub_load and not request.user.is_authenticated:
-        return JsonResponse({"error": "Public uploads are disabled."}, status=403)
-    elif request.user.is_anonymous:
+    target_album = request.headers.get("albums") or post.get("albums")
+    if not request.user.is_authenticated:
+        if not (site_settings.pub_load or album_allows_public_upload(target_album)):
+            return JsonResponse({"error": "Public uploads are disabled."}, status=403)
         request.user, _ = CustomUser.objects.get_or_create(username="anonymous", defaults={"first_name": "Anonymous"})
     try:
         f = request.FILES.get("file")
@@ -492,6 +493,8 @@ def _handle_update_album(request, album_id):
     data = get_json_body(request)
     if "private" in data:
         album.private = data_or_header(request, data, "private", False, cast=bool)
+    if "public_uploads" in data:
+        album.public_uploads = data_or_header(request, data, "public_uploads", False, cast=bool)
     if "name" in data:
         album.name = data_or_header(request, data, "name")
     if "password" in data:

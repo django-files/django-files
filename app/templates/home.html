@@ -235,7 +235,8 @@
                 </div>
                 <div class="px-2 pt-1">
                     <table class="display responsive nowrap table table-hover table-responsive mb-0 dt-select-no-highlight w-100"
-                           id="albums-table" data-home="true">
+                           id="albums-table" data-home="true"
+                           data-per-album-public-uploads-enabled="{{ site_settings.per_album_public_uploads|yesno:'true,false' }}">
                         <caption class="visually-hidden">Recent Albums</caption>
                         <thead>
                             <tr>

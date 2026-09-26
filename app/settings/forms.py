@@ -24,6 +24,7 @@ class SiteSettingsForm(forms.Form):
     local_auth = forms.BooleanField(required=False)
     pub_load = forms.BooleanField(required=False)
     pub_album = forms.IntegerField(required=False)
+    per_album_public_uploads = forms.BooleanField(required=False)
     two_factor = forms.BooleanField(required=False)
     duo_auth = forms.BooleanField(required=False)
     passkey_auth = forms.BooleanField(required=False)

@@ -13,6 +13,7 @@ from djangofiles.test_utils import TEST_PASSWORD, WRONG_PASSWORD
 from home.models import Albums, Files, ShortURLs, Stream
 from home.util.auth import create_api_token, hash_token
 from oauth.models import ApiToken, CustomUser
+from settings.models import SiteSettings
 
 log = logging.getLogger("app")
 
@@ -1072,3 +1073,69 @@ class FileEditSecurityTestCase(TestCase):
         self.assertEqual(self.file.password, "secret")
         self.assertEqual(self.file.expr, "2d")
         self.assertEqual(self.file.maxv, 3)
+
+
+class PerAlbumPublicUploadTestCase(TestCase):
+    """Anonymous XHR uploads into an album with public_uploads enabled (api.views.upload_view)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        cls.owner = CustomUser.objects.create_user(
+            username="albumowner",
+            email="albumowner@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+        cls.album = Albums.objects.create(user=cls.owner, name="drop-box")
+
+    def setUp(self):
+        site_settings = SiteSettings.objects.settings()
+        site_settings.pub_load = False
+        site_settings.per_album_public_uploads = True
+        site_settings.save()
+        self.album.public_uploads = True
+        self.album.save()
+
+    def upload(self, **headers):
+        data = {"file": SimpleUploadedFile("drop.txt", b"hello drop box", content_type="text/plain")}
+        return self.client.post(reverse("api:upload"), data, headers=headers)
+
+    def test_anonymous_upload_into_public_album_succeeds(self):
+        response = self.upload(albums=str(self.album.id))
+        self.assertEqual(response.status_code, 200)
+        file = Files.objects.latest("id")
+        self.assertEqual(file.user.username, "anonymous")
+        self.assertIn(self.album, file.albums.all())
+
+    def test_anonymous_upload_rejected_when_site_switch_off(self):
+        site_settings = SiteSettings.objects.settings()
+        site_settings.per_album_public_uploads = False
+        site_settings.save()
+        response = self.upload(albums=str(self.album.id))
+        self.assertEqual(response.status_code, 403)
+
+    def test_anonymous_upload_rejected_when_album_switch_off(self):
+        self.album.public_uploads = False
+        self.album.save()
+        response = self.upload(albums=str(self.album.id))
+        self.assertEqual(response.status_code, 403)
+
+    def test_anonymous_upload_rejected_without_targeting_the_album(self):
+        response = self.upload()
+        self.assertEqual(response.status_code, 403)
+
+    def test_anonymous_upload_rejected_for_album_without_public_uploads(self):
+        other_album = Albums.objects.create(user=self.owner, name="not-a-drop-box")
+        response = self.upload(albums=str(other_album.id))
+        self.assertEqual(response.status_code, 403)
+
+    def test_owner_can_toggle_public_uploads_via_album_api(self):
+        self.client.force_login(self.owner)
+        response = self.client.patch(
+            reverse("api:album-id", kwargs={"album_id": self.album.id}),
+            data=json.dumps({"public_uploads": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.album.refresh_from_db()
+        self.assertFalse(self.album.public_uploads)
