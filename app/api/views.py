@@ -78,6 +78,7 @@ from home.util.webhooks import (
     EVENT_TEST,
     SITE_ONLY_EVENTS,
     WEBHOOK_EVENTS,
+    WebhookURLBlocked,
     build_stream_payload,
     build_test_payload,
     send_webhook,
@@ -645,6 +646,8 @@ def _clean_webhook_name(value) -> tuple:
 def _clean_webhook_url(value) -> tuple:
     if not validators.url(str(value)):
         return None, "Invalid url"
+    if error := remote_url_error(str(value)):
+        return None, error
     return value, None
 
 
@@ -808,9 +811,11 @@ def webhook_test_view(request, webhook_id: int):
         return JsonResponse({"error": ERROR_NOT_FOUND}, status=404)
     try:
         r = send_webhook(webhook, EVENT_TEST, build_test_payload(webhook))
+    except WebhookURLBlocked as error:
+        return JsonResponse({"success": False, "error": str(error)})
     except httpx.HTTPError as error:
         log.warning("webhook_test_view: %s - %s", webhook_id, error)
-        return JsonResponse({"success": False, "error": str(error)})
+        return JsonResponse({"success": False, "error": "Webhook delivery failed."})
     return JsonResponse({"success": r.is_success, "status_code": r.status_code})
 
 

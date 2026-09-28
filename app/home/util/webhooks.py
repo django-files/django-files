@@ -9,6 +9,7 @@ from django.shortcuts import reverse
 from django.utils import timezone
 from home.util.misc import bytes_to_human_read
 from home.util.tags import tag_names
+from home.util.urls import remote_url_error
 
 log = logging.getLogger("app")
 
@@ -333,12 +334,18 @@ def build_discord_embed(event_key: str, payload_data: dict, site_url: str) -> di
     return body
 
 
+class WebhookURLBlocked(ValueError):
+    """The webhook destination failed the public-address policy."""
+
+
 def send_webhook(webhook, event_key: str, payload_data: dict) -> httpx.Response:
     """POST an event to a webhook endpoint. Shared by the Celery task and the test-fire views."""
+    if error := remote_url_error(webhook.url):
+        raise WebhookURLBlocked(error)
     site_url = _site_url()
     if webhook.webhook_type == WEBHOOK_TYPE_DISCORD:
         body = build_discord_embed(event_key, payload_data, site_url)
-        return httpx.post(webhook.url, json=body, timeout=30)
+        return httpx.post(webhook.url, json=body, timeout=30, follow_redirects=False)
     payload = {
         "event": event_key,
         "timestamp": timezone.now().isoformat(),
@@ -350,4 +357,4 @@ def send_webhook(webhook, event_key: str, payload_data: dict) -> httpx.Response:
     if webhook.secret:
         signature = hmac.new(webhook.secret.encode(), body, hashlib.sha256).hexdigest()
         headers["X-Webhook-Signature"] = f"sha256={signature}"
-    return httpx.post(webhook.url, content=body, headers=headers, timeout=30)
+    return httpx.post(webhook.url, content=body, headers=headers, timeout=30, follow_redirects=False)
