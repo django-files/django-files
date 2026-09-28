@@ -21,7 +21,6 @@ from api.utils import (
     extract_albums,
     extract_files,
     extract_streams,
-    remote_url_error,
     serialize_user,
     serialize_users,
 )
@@ -72,6 +71,7 @@ from home.util.rand import rand_string
 from home.util.storage import file_rename
 from home.util.stream_record import delete_recording_file
 from home.util.tags import add_entity_tag, clean_tag_names
+from home.util.urls import remote_url_error
 from home.util.webhooks import (
     EVENT_STREAM_LIVE,
     EVENT_STREAM_OFFLINE,

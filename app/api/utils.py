@@ -4,7 +4,6 @@ from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 from home.models import Albums, Files, Stream
 from home.util.tags import tag_names
-from home.util.urls import remote_url_error as remote_url_error
 from oauth.models import CustomUser
 from settings.context_processors import site_settings_processor
 from webpush.models import PushInformation
