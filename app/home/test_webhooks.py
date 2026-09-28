@@ -2,19 +2,22 @@ import hashlib
 import hmac
 import json
 import logging
+import socket
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import httpx
 from celery.exceptions import Retry
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from djangofiles.test_utils import TEST_PASSWORD
 from home.models import Albums, AlbumTag, ShortURLs, Stream, StreamTag, Tag, Webhook
 from home.tasks import dispatch_webhook_event, fire_webhook
 from home.util.auth import create_api_token
 from home.util.file import process_file
+from home.util.urls import remote_url_error
 from home.util.webhooks import (
     EVENT_ALBUM_CREATED,
     EVENT_ALBUM_UPDATED,
@@ -27,6 +30,7 @@ from home.util.webhooks import (
     EVENT_USER_CREATED,
     SITE_ONLY_EVENTS,
     WEBHOOK_EVENTS,
+    WebhookURLBlocked,
     build_album_payload,
     build_discord_embed,
     build_file_payload,
@@ -314,6 +318,11 @@ class EventFilterTests(TestCase):
 
 
 class SendWebhookTests(WebhookBaseTestCase):
+    def setUp(self):
+        resolver = patch("home.util.urls.socket.getaddrinfo", return_value=_addresses("1.1.1.1"))
+        resolver.start()
+        self.addCleanup(resolver.stop)
+
     @patch("home.util.webhooks.httpx.post")
     def test_custom_payload_and_signature(self, mock_post):
         mock_post.return_value = _mock_response()
@@ -323,6 +332,7 @@ class SendWebhookTests(WebhookBaseTestCase):
         self.assertTrue(response.is_success)
         args, kwargs = mock_post.call_args
         self.assertEqual(args[0], CUSTOM_URL)
+        self.assertFalse(kwargs["follow_redirects"])
         body = kwargs["content"]
         payload = json.loads(body)
         self.assertEqual(payload["event"], EVENT_FILE_UPLOAD)
@@ -350,6 +360,7 @@ class SendWebhookTests(WebhookBaseTestCase):
         args, kwargs = mock_post.call_args
         self.assertEqual(args[0], DISCORD_URL)
         self.assertIn("embeds", kwargs["json"])
+        self.assertFalse(kwargs["follow_redirects"])
 
 
 class WebhookTaskTests(WebhookBaseTestCase):
@@ -489,6 +500,11 @@ class WebhookTaskTests(WebhookBaseTestCase):
 
 
 class WebhookApiTests(WebhookBaseTestCase):
+    def setUp(self):
+        resolver = patch("home.util.urls.socket.getaddrinfo", return_value=_addresses("1.1.1.1"))
+        resolver.start()
+        self.addCleanup(resolver.stop)
+
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
@@ -820,3 +836,106 @@ class WebhookSettingsPagesTests(WebhookBaseTestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("settings:site"))
         self.assertEqual(response.status_code, 401)
+
+
+def _addresses(*ips):
+    return [
+        (socket.AF_INET6 if ":" in ip else socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", (ip, 443))
+        for ip in ips
+    ]
+
+
+class PublicURLPolicyTests(SimpleTestCase):
+    def test_rejects_non_public_and_mixed_dns_answers(self):
+        for ip in (
+            "127.0.0.1",
+            "10.0.0.1",
+            "172.16.0.1",
+            "192.168.1.1",
+            "169.254.169.254",
+            "::1",
+            "fc00::1",
+            "fe80::1",
+            "::ffff:127.0.0.1",
+        ):
+            with (
+                self.subTest(ip=ip),
+                patch("home.util.urls.socket.getaddrinfo", return_value=_addresses("1.1.1.1", ip)),
+            ):
+                self.assertIsNotNone(remote_url_error("https://hooks.example.com/"))
+
+    def test_fails_closed_on_resolution_failure(self):
+        with patch("home.util.urls.socket.getaddrinfo", side_effect=socket.gaierror):
+            self.assertIsNotNone(remote_url_error(CUSTOM_URL))
+        with patch("home.util.urls.socket.getaddrinfo", return_value=[]):
+            self.assertIsNotNone(remote_url_error(CUSTOM_URL))
+
+    def test_rejects_invalid_urls(self):
+        for url in ("ftp://example.com/hook", "file:///etc/passwd", "http://[invalid", "https://example.com:99999/"):
+            with self.subTest(url=url):
+                self.assertIsNotNone(remote_url_error(url))
+
+
+class WebhookSSRFTests(WebhookBaseTestCase):
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    @patch("home.util.webhooks.httpx.post")
+    def test_create_and_update_reject_internal_destinations(self, mock_post):
+        webhook = self.create_webhook()
+        for url in (
+            "http://127.0.0.1:6379/",
+            "http://169.254.169.254/",
+            "http://10.0.0.1/",
+            "http://[::1]/",
+            "ftp://example.com/hook",
+        ):
+            for hook_type in (Webhook.WEBHOOK_TYPE_CUSTOM, Webhook.WEBHOOK_TYPE_DISCORD):
+                body = json.dumps({"name": "Unsafe", "url": url, "webhook_type": hook_type})
+                with self.subTest(url=url, hook_type=hook_type):
+                    response = self.client.post(reverse("api:webhooks"), body, content_type="application/json")
+                    self.assertEqual(response.status_code, 400)
+                    response = self.client.patch(
+                        reverse("api:webhook-detail", kwargs={"webhook_id": webhook.pk}),
+                        body,
+                        content_type="application/json",
+                    )
+                    self.assertEqual(response.status_code, 400)
+        webhook.refresh_from_db()
+        self.assertEqual(webhook.url, CUSTOM_URL)
+        self.assertEqual(Webhook.objects.count(), 1)
+        mock_post.assert_not_called()
+
+    @patch("home.util.webhooks.httpx.post")
+    def test_stored_internal_webhooks_blocked_on_test_and_task(self, mock_post):
+        for hook_type in (Webhook.WEBHOOK_TYPE_CUSTOM, Webhook.WEBHOOK_TYPE_DISCORD):
+            with self.subTest(hook_type=hook_type):
+                webhook = self.create_webhook(url="http://127.0.0.1:6379/", webhook_type=hook_type)
+                response = self.client.post(reverse("api:webhook-test", kwargs={"webhook_id": webhook.pk}))
+                self.assertEqual(response.json(), {"success": False, "error": "URL resolves to a non-public address."})
+                self.assertIsNone(fire_webhook.run(webhook.pk, EVENT_TEST, {}))
+        mock_post.assert_not_called()
+
+    @patch("home.util.webhooks.httpx.post")
+    def test_dns_change_after_save_blocks_send(self, mock_post):
+        with patch("home.util.urls.socket.getaddrinfo", return_value=_addresses("1.1.1.1")):
+            response = self.client.post(
+                reverse("api:webhooks"),
+                json.dumps({"name": "Changes", "url": CUSTOM_URL}),
+                content_type="application/json",
+            )
+        self.assertEqual(response.status_code, 201)
+        webhook = Webhook.objects.get(pk=response.json()["id"])
+        with patch("home.util.urls.socket.getaddrinfo", return_value=_addresses("127.0.0.1")):
+            with self.assertRaises(WebhookURLBlocked):
+                send_webhook(webhook, EVENT_TEST, {})
+        mock_post.assert_not_called()
+
+    @patch("home.util.webhooks.httpx.post")
+    def test_delivery_errors_do_not_expose_network_details(self, mock_post):
+        webhook = self.create_webhook()
+        for message in ("Connection refused", "Server disconnected without sending a response."):
+            mock_post.side_effect = httpx.ConnectError(message)
+            with patch("home.util.urls.socket.getaddrinfo", return_value=_addresses("1.1.1.1")):
+                response = self.client.post(reverse("api:webhook-test", kwargs={"webhook_id": webhook.pk}))
+            self.assertEqual(response.json(), {"success": False, "error": "Webhook delivery failed."})

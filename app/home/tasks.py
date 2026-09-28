@@ -32,6 +32,7 @@ from home.util.video import (
 from home.util.webhooks import (
     EVENT_STREAM_RECORDING_READY,
     SITE_ONLY_EVENTS,
+    WebhookURLBlocked,
     build_stream_recording_payload,
     event_matches_filters,
     send_webhook,
@@ -685,6 +686,9 @@ def fire_webhook(self, webhook_pk, event_key, payload_data):
         return
     try:
         r = send_webhook(webhook, event_key, payload_data)
+    except WebhookURLBlocked as error:
+        log.warning("fire_webhook: blocked destination for webhook %s: %s", webhook_pk, error)
+        return
     except httpx.HTTPError as error:
         log.warning("fire_webhook: %s - %s", webhook_pk, error)
         raise self.retry(countdown=30) from error
