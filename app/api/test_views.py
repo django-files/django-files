@@ -3,7 +3,6 @@ import logging
 import tempfile
 from datetime import timedelta
 
-from api.utils import remote_url_error
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
@@ -12,6 +11,7 @@ from django.utils.timezone import now
 from djangofiles.test_utils import TEST_PASSWORD, WRONG_PASSWORD
 from home.models import Albums, Files, ShortURLs, Stream
 from home.util.auth import create_api_token, hash_token
+from home.util.urls import remote_url_error
 from oauth.models import ApiToken, CustomUser
 from settings.models import SiteSettings
 
