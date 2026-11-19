@@ -30,7 +30,7 @@ FROM ghcr.io/django-files/docker-nginx:1.31.9 AS nginx-base
 # static (CGO_ENABLED=0) binaries, portable to any base — use those instead.
 FROM alpine:3 AS tusd-base
 ARG TARGETARCH
-ARG TUSD_VERSION=v2.10.0
+ARG TUSD_VERSION=v2.10.1
 RUN apk add --no-cache curl  &&\
     curl -fsSL -o /tmp/tusd.tar.gz "https://github.com/tus/tusd/releases/download/${TUSD_VERSION}/tusd_linux_${TARGETARCH}.tar.gz"  &&\
     tar -xzf /tmp/tusd.tar.gz -C /tmp  &&\
