@@ -272,7 +272,7 @@ def files_view(request):
         ctx.update(
             {
                 "native_app_arg": (
-                    f"djangofiles://album/?url={site_url}" f"&album_id={album.id}" f"&album_name={quote(album.name)}"
+                    f"djangofiles://album/?url={site_url}&album_id={album.id}&album_name={quote(album.name)}"
                 )
             }
         )

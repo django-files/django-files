@@ -592,3 +592,9 @@
 .toolbar-glass-popover .popover-body .text-secondary {
     color: var(--bs-secondary-color) !important;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .gallery-outer {
+        transition: none;
+    }
+}

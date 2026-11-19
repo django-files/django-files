@@ -7,7 +7,7 @@ self.addEventListener('push', function(event) {
     data = JSON.parse(payload),
     head = data.head,
     body = data.body,
-    icon = data.icon;
+    icon = data.icon,
     // If no url was received, it opens the home page of the website that sent the notification
     // Whitout this, it would open undefined or the service worker file.
     url = data.url ? data.url: self.location.origin;

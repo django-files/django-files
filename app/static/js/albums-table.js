@@ -368,9 +368,8 @@ function renderActions(data, type, row, _meta) {
 function renderAlbumLink(data, type, row, _meta) {
     const albumLinkElem = albumLink.cloneNode(true)
     albumLinkElem.classList.add(`dj-album-link-${row.id}`)
-    albumLinkElem
-        .querySelector('.dj-album-link-clip')
-        .setAttribute('data-clipboard-text', row.url)
+    albumLinkElem.querySelector('.dj-album-link-clip').dataset.clipboardText =
+        row.url
     albumLinkElem.querySelector('.dj-album-link-ref').href = row.url
     albumLinkElem.querySelector('.dj-album-link-ref').ariaLabel = row.name
     const len = truncator.length

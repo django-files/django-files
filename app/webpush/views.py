@@ -43,7 +43,7 @@ def save_info(request):
             if status_type == "subscribe":
                 return HttpResponse(status=201)
             # Unsubscribe is made, means object is deleted. So return 202
-            elif "unsubscribe":
+            elif status_type == "unsubscribe":
                 return HttpResponse(status=202)
 
     return HttpResponse(status=400)

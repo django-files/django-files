@@ -104,7 +104,7 @@ document.getElementById('confirmOauthRegBtn')?.addEventListener('click', () => {
     ).hide()
     oauthRegCheckbox.checked = true
     const form = document.getElementById('settingsForm')
-    saveOptions({
+    void saveOptions({
         currentTarget: form,
         target: oauthRegCheckbox,
         type: 'change',

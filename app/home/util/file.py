@@ -7,7 +7,7 @@ import pathlib
 import shutil
 import tempfile
 import uuid
-from typing import BinaryIO, Optional, Union
+from typing import BinaryIO, Optional
 
 import magic
 from django.core.exceptions import ObjectDoesNotExist
@@ -89,7 +89,7 @@ def _replace_existing_avatar(user: CustomUser, kwargs: dict) -> None:
         pass
 
 
-def _stage_source(f: Union[BinaryIO, LocalFile], name: str, stack: contextlib.ExitStack) -> str:
+def _stage_source(f: BinaryIO | LocalFile, name: str, stack: contextlib.ExitStack) -> str:
     """
     Return a local filesystem path for the upload source. Reuses the on-disk
     file directly when we own it: a LocalFile from server-side code, or the
@@ -189,7 +189,7 @@ def _attach_pub_album(file: Files, user: CustomUser) -> None:
         file.save()
 
 
-def process_file(name: str, f: Union[BinaryIO, LocalFile], user_id: int, **kwargs) -> Files:
+def process_file(name: str, f: BinaryIO | LocalFile, user_id: int, **kwargs) -> Files:
     """
     Process File Uploads
     :param name: String: name of the file

@@ -993,3 +993,9 @@ body.navbar-snapping header {
 .upload-options-toggle[aria-expanded='true'] .upload-options-chevron {
     transform: rotate(180deg);
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .img-skeleton::after {
+        animation: none;
+    }
+}

@@ -11,7 +11,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from functools import reduce, wraps
-from typing import Any, BinaryIO, Callable, List, Optional, Union
+from typing import Any, BinaryIO, Callable, List, Optional
 from urllib.parse import parse_qs, urlparse
 
 import httpx
@@ -1210,44 +1210,13 @@ def file_view(request, idname):
     if not request.user.is_authenticated and (file.private or request.GET.get("password", "") != file.password):
         return JsonResponse({"error": "File not found."}, status=404)
     log.debug("file_view: %s: %s", request.method, file.name)
+    is_owner = request.user == file.user or request.user.is_superuser
     try:
-        if request.method == "DELETE" and (request.user == file.user or request.user.is_superuser):
+        if request.method == "DELETE" and is_owner:
             file.delete()
             return HttpResponse(status=204)
-        elif request.method == "POST" and (request.user == file.user or request.user.is_superuser):
-            log.debug(redact_log(request.POST))
-            data = get_json_body(request)
-            log.debug("data: %s", data)
-            if not data:
-                return JsonResponse({"error": json_error_message}, status=400)
-            if "expr" in data and not parse(data["expr"]):
-                data["expr"] = ""
-            # TODO: We should probably not use .update here and convert to a function, see below TODO
-            new_name = data.pop("name", None)
-            if new_name and (error := file_name_error(new_name)):
-                return JsonResponse({"error": error}, status=400)
-            queryset = Files.objects.filter(id=file.id)
-            if "albums" in data:
-                set_albums(queryset, data["albums"])
-                del data["albums"]
-            # drop any fields outside the editable allowlist before the ORM update
-            data = {k: v for k, v in data.items() if k in _EDITABLE_FILE_FIELDS}
-            queryset.update(**data)
-            if new_name and new_name != file.name:
-                if Files.objects.filter(name=new_name).exists():
-                    return JsonResponse({"error": "File name already in use."}, status=400)
-                file = file_rename(file, new_name)
-            else:
-                file = Files.objects.get(id=file.id)
-            response = extract_files([file])[0]
-            # TODO: Determine why we have to manually flush file cache here
-            #       The Website seems to flush, but not the api/recent/ endpoint
-            #       ANSWER: This is not called on .update(), you must call .save()
-            # clear_files_cache.delay()
-            # TODO: Calling .save after .update is redundant but fires a .save() method!
-            file.save(update_fields=list(data.keys()))
-            log.debug("response: %s" % response)
-            return JsonResponse(response, status=200)
+        elif request.method == "POST" and is_owner:
+            return _file_view_update(request, file)
         elif request.method == "GET":
             response = extract_files([file])[0]
             log.debug("response: %s" % response)
@@ -1255,6 +1224,43 @@ def file_view(request, idname):
     except Exception as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
+    return JsonResponse({"error": "File owned by another user."}, status=403)
+
+
+def _file_view_update(request, file):
+    log.debug(redact_log(request.POST))
+    data = get_json_body(request)
+    log.debug("data: %s", data)
+    if not data:
+        return JsonResponse({"error": json_error_message}, status=400)
+    if "expr" in data and not parse(data["expr"]):
+        data["expr"] = ""
+    # TODO: We should probably not use .update here and convert to a function, see below TODO
+    new_name = data.pop("name", None)
+    if new_name and (error := file_name_error(new_name)):
+        return JsonResponse({"error": error}, status=400)
+    queryset = Files.objects.filter(id=file.id)
+    if "albums" in data:
+        set_albums(queryset, data["albums"])
+        del data["albums"]
+    # drop any fields outside the editable allowlist before the ORM update
+    data = {k: v for k, v in data.items() if k in _EDITABLE_FILE_FIELDS}
+    queryset.update(**data)
+    if new_name and new_name != file.name:
+        if Files.objects.filter(name=new_name).exists():
+            return JsonResponse({"error": "File name already in use."}, status=400)
+        file = file_rename(file, new_name)
+    else:
+        file = Files.objects.get(id=file.id)
+    response = extract_files([file])[0]
+    # TODO: Determine why we have to manually flush file cache here
+    #       The Website seems to flush, but not the api/recent/ endpoint
+    #       ANSWER: This is not called on .update(), you must call .save()
+    # clear_files_cache.delay()
+    # TODO: Calling .save after .update is redundant but fires a .save() method!
+    file.save(update_fields=list(data.keys()))
+    log.debug("response: %s" % response)
+    return JsonResponse(response, status=200)
 
 
 @csrf_exempt
@@ -2062,8 +2068,9 @@ def stream_hls_token_view(request, name):
     sig, exp = sign_hls_cookie(stream.name)
     ttl = settings.HLS_SIGNED_URL_TTL_SECONDS
     response = JsonResponse({"exp": exp})
-    response.set_cookie("hls_sig", sig, max_age=ttl, path="/hls", httponly=True, samesite="Lax")
-    response.set_cookie("hls_exp", str(exp), max_age=ttl, path="/hls", httponly=True, samesite="Lax")
+    secure = request.is_secure()
+    response.set_cookie("hls_sig", sig, max_age=ttl, path="/hls", secure=secure, httponly=True, samesite="Lax")
+    response.set_cookie("hls_exp", str(exp), max_age=ttl, path="/hls", secure=secure, httponly=True, samesite="Lax")
     return response
 
 
@@ -2392,7 +2399,7 @@ def data_or_header(request, data: dict, value: str, default: Any = "", cast: Cal
     return cast(raw)
 
 
-def id_or_name(id_name: Union[str, int], name="name") -> dict:
+def id_or_name(id_name: str | int, name="name") -> dict:
     if id_name.isnumeric():
         return {"id": int(id_name)}
     else:
@@ -2593,34 +2600,8 @@ def user_view(request, user_id=None):
                 return JsonResponse({"error": "Access Denied"}, status=403)
             target_user = get_object_or_404(CustomUser, id=user_id)
 
-        if request.method == "PATCH":
-            data = get_json_body(request)
-            log.debug("update data: %s", data)
-            if not data:
-                return JsonResponse({"error": json_error_message}, status=400)
-
-            if "password" in data:
-                target_user.set_password(data.pop("password"))
-
-            if not request.user.is_superuser:
-                sensitive_fields = ["authorization", "is_superuser", "is_staff", "password"]
-                for field in sensitive_fields:
-                    data.pop(field, None)
-
-            if "storage_quota" in data:
-                quota_bytes = human_read_to_byte(str(data["storage_quota"]))
-                if not isinstance(quota_bytes, int):
-                    return JsonResponse({"error": "Invalid storage quota value."}, status=400)
-                data["storage_quota"] = quota_bytes
-
-            for key, value in data.items():
-                if hasattr(target_user, key):
-                    setattr(target_user, key, value)
-                else:
-                    log.warning("Attempted to update non-existent field: %s", key)
-
-            target_user.save()
-            log.debug("User updated successfully")
+        if request.method == "PATCH" and (error_response := _user_view_patch(request, target_user)):
+            return error_response
 
         return JsonResponse(serialize_user(target_user), safe=False)
 
@@ -2630,6 +2611,38 @@ def user_view(request, user_id=None):
     except Exception as error:
         log.debug(error)
         return JsonResponse({"error": f"{error}"}, status=400)
+
+
+def _user_view_patch(request, target_user):
+    """Apply a PATCH body to target_user; returns an error response or None."""
+    data = get_json_body(request)
+    log.debug("update data: %s", data)
+    if not data:
+        return JsonResponse({"error": json_error_message}, status=400)
+
+    if "password" in data:
+        target_user.set_password(data.pop("password"))
+
+    if not request.user.is_superuser:
+        sensitive_fields = ["authorization", "is_superuser", "is_staff", "password"]
+        for field in sensitive_fields:
+            data.pop(field, None)
+
+    if "storage_quota" in data:
+        quota_bytes = human_read_to_byte(str(data["storage_quota"]))
+        if not isinstance(quota_bytes, int):
+            return JsonResponse({"error": "Invalid storage quota value."}, status=400)
+        data["storage_quota"] = quota_bytes
+
+    for key, value in data.items():
+        if hasattr(target_user, key):
+            setattr(target_user, key, value)
+        else:
+            log.warning("Attempted to update non-existent field: %s", key)
+
+    target_user.save()
+    log.debug("User updated successfully")
+    return None
 
 
 @vary_on_cookie

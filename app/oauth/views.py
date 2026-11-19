@@ -1,7 +1,6 @@
 import base64
 import json
 import logging
-from typing import Union
 from urllib.parse import urlparse
 
 import duo_universal
@@ -83,7 +82,7 @@ def oauth_show(request):
         if not form.is_valid():
             log.debug(form.errors)
             return HttpResponse(status=400)
-        user: Union[AbstractBaseUser, CustomUser] = authenticate(
+        user: AbstractBaseUser | CustomUser = authenticate(
             request, username=form.cleaned_data["username"], password=form.cleaned_data["password"]
         )
         if not user or not site_settings.get_local_auth():
@@ -335,13 +334,25 @@ def oauth_callback(request, oauth_provider: str = ""):
         return HttpResponseRedirect(get_login_redirect_url(request))
 
 
-def pre_login(request, user: Union[AbstractBaseUser, CustomUser], site_settings):
+def pre_login(request, user: AbstractBaseUser | CustomUser, site_settings):
     log.debug("pre_login: user.username: %s", user.username)
     if site_settings.duo_auth:
         request.session["username"] = user.username
         url = duo_redirect(request, user.username)
         log.debug("pre_login: url: %s", url)
         return JsonResponse({"redirect": url})
+
+
+def _format_browser_agent(ua) -> str:
+    agent_list = []
+    if ua.os:
+        agent_list.append(ua.os.family)
+    if ua.user_agent:
+        if ua.user_agent.family:
+            agent_list.append(ua.user_agent.family)
+        if ua.user_agent.major:
+            agent_list.append(ua.user_agent.major)
+    return " ".join(agent_list)
 
 
 def post_login(request):
@@ -358,17 +369,8 @@ def post_login(request):
             client = mobile.get("name", state) if mobile else state
             log.debug("client: %s", client)
             request.session["user_agent"] = f"{client} Application"
-        else:
-            agent_list = []
-            if ua.os:
-                agent_list.append(ua.os.family)
-            if ua.user_agent:
-                if ua.user_agent.family:
-                    agent_list.append(ua.user_agent.family)
-                if ua.user_agent.major:
-                    agent_list.append(ua.user_agent.major)
-            if agent_list:
-                request.session["user_agent"] = " ".join(agent_list)
+        elif browser_agent := _format_browser_agent(ua):
+            request.session["user_agent"] = browser_agent
         if not request.session["user_agent"]:
             request.session["user_agent"] = "Unknown User Agent"
         user_agent = request.session["user_agent"]

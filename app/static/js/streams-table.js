@@ -202,7 +202,7 @@ function getStreamLink(data, type, row, _meta) {
         const linkClip = link.querySelector('.dj-stream-link-clip')
 
         // Set clipboard functionality
-        linkClip.setAttribute('data-clipboard-text', row.url)
+        linkClip.dataset.clipboardText = row.url
 
         // Create and insert the stream name link before the clipboard icon
         const nameLink = document.createElement('a')

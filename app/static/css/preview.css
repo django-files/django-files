@@ -108,7 +108,10 @@ body.no-top-navbar .preview-floating-hamburger {
     border: 1px solid var(--preview-border-color);
     border-radius: 999px;
     opacity: 0.7;
-    transition: all 0.2s ease;
+    transition:
+        opacity 0.2s ease,
+        color 0.2s ease,
+        background-color 0.2s ease;
     will-change: background-color, opacity;
 }
 
@@ -165,7 +168,10 @@ body.no-top-navbar .preview-floating-hamburger {
     -webkit-backdrop-filter: blur(6px);
     border: 1px solid var(--preview-border-color);
     opacity: 0.7;
-    transition: all 0.2s ease;
+    transition:
+        opacity 0.2s ease,
+        color 0.2s ease,
+        background-color 0.2s ease;
     will-change: opacity, background-color;
 }
 

@@ -186,8 +186,8 @@
                         </div>
                         <div id="chat-input-area" class="chat-input-area px-3 py-2 border-top"{% if not user.is_authenticated and not stream.anonymous_chat %} style="display:none"{% endif %}>
                             <form id="chat-form" class="d-flex gap-2" autocomplete="off">
-                                <input type="text" id="chat-input" class="form-control form-control-sm" placeholder="Send a message..." maxlength="500" />
-                                <button type="submit" class="btn btn-sm btn-primary"><i class="fa-solid fa-paper-plane"></i></button>
+                                <input type="text" id="chat-input" class="form-control form-control-sm" placeholder="Send a message..." maxlength="500" aria-label="Chat message" />
+                                <button type="submit" class="btn btn-sm btn-primary" aria-label="Send"><i class="fa-solid fa-paper-plane"></i></button>
                             </form>
                         </div>
                         <div id="chat-login-prompt" class="chat-input-area px-3 py-2 border-top text-center"{% if user.is_authenticated or stream.anonymous_chat %} style="display:none"{% endif %}>

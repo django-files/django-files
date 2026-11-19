@@ -4,7 +4,7 @@ ENV TZ=UTC
 ENV NODE_ENV=production
 WORKDIR /work
 COPY ["package.json", "package-lock.json", "gulpfile.js", "swagger.yaml", "/work/"]
-RUN npm install
+RUN npm ci --ignore-scripts  &&  ./node_modules/.bin/gulp
 
 
 FROM python:3.14-slim AS python
@@ -32,7 +32,7 @@ FROM alpine:3 AS tusd-base
 ARG TARGETARCH
 ARG TUSD_VERSION=v2.10.1
 RUN apk add --no-cache curl  &&\
-    curl -fsSL -o /tmp/tusd.tar.gz "https://github.com/tus/tusd/releases/download/${TUSD_VERSION}/tusd_linux_${TARGETARCH}.tar.gz"  &&\
+    curl -fsSL --proto "=https" --tlsv1.2 -o /tmp/tusd.tar.gz "https://github.com/tus/tusd/releases/download/${TUSD_VERSION}/tusd_linux_${TARGETARCH}.tar.gz"  &&\
     tar -xzf /tmp/tusd.tar.gz -C /tmp  &&\
     mv "/tmp/tusd_linux_${TARGETARCH}/tusd" /usr/local/bin/tusd
 
@@ -79,8 +79,8 @@ RUN groupadd -g 1000 app  &&  useradd -r -d /app -M -u 1000 -g 1000 -s /usr/sbin
     groupadd -g 101 nginx  &&  useradd -r -d /var/cache/nginx -M -u 101 -g 101 -s /usr/sbin/nologin nginx  &&\
     apt-get -y update  &&\
     apt-get -y install --no-install-recommends \
-        libmagic1 libmariadb3 \
-        redis-server supervisor libssl3 zlib1g libpcre2-8-0  &&\
+        libmagic1 libmariadb3 libpcre2-8-0 \
+        libssl3 redis-server supervisor zlib1g  &&\
     mkdir -p /app /data/media /data/static /logs  &&  touch /logs/nginx.access  &&\
     chown app:app /app /data/media /data/static /logs /logs/nginx.access  &&\
     mkdir -p /etc/nginx/conf.rtmp.d /opt/nginx /tmp/record /tmp/hls  &&\

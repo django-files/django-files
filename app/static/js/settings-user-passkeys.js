@@ -153,7 +153,7 @@ async function removePasskey(id, name) {
 }
 
 if (addBtn) {
-    loadList()
+    void loadList()
 }
 
 if (formEl) {

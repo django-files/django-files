@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from decouple import config
 from django import template
@@ -30,7 +30,7 @@ def get_config(value: str):
 
 
 @register.simple_tag(name="is_mobile")
-def is_mobile(request: HttpRequest, platform: Optional[Literal["android", "ios"]] = None) -> Union[dict, bool]:
+def is_mobile(request: HttpRequest, platform: Optional[Literal["android", "ios"]] = None) -> dict | bool:
     """
     Returns a Dictionary of Mobile Clients else False
     If the platform is specified, only a boolean is returned
@@ -38,25 +38,25 @@ def is_mobile(request: HttpRequest, platform: Optional[Literal["android", "ios"]
     :param platform: Literal: android|ios
     :return: bool|dict
     """
-    if request and isinstance(request.META, dict):
-        ua = request.META.get("HTTP_USER_AGENT", "")
-        if "DjangoFiles" in ua:
-            data = {
-                "android": "Android" in ua,
-                "ios": "iOS" in ua,
-                "name": "Unknown",
-            }
-            if data["ios"]:
-                data["name"] = "iOS"
-            if data["android"]:
-                data["name"] = "Android"
-            if platform:
-                if platform in data:
-                    return data[platform]
-                else:
-                    raise ValueError(f"Unknown platform: {platform}")
-            return data
-    return False
+    if not request or not isinstance(request.META, dict):
+        return False
+    ua = request.META.get("HTTP_USER_AGENT", "")
+    if "DjangoFiles" not in ua:
+        return False
+    data = {
+        "android": "Android" in ua,
+        "ios": "iOS" in ua,
+        "name": "Unknown",
+    }
+    if data["ios"]:
+        data["name"] = "iOS"
+    if data["android"]:
+        data["name"] = "Android"
+    if not platform:
+        return data
+    if platform not in data:
+        raise ValueError(f"Unknown platform: {platform}")
+    return data[platform]
 
 
 @register.simple_tag(name="is_ios_browser")

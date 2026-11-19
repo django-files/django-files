@@ -38,17 +38,15 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     console.log('player:', player)
     if (!checkInterval) {
-        // noinspection JSIgnoredPromiseFromCall
-        checkStream()
+        void checkStream()
         checkInterval = setInterval(checkStream, 1000 * 60)
     }
-    checkSubscribers()
+    void checkSubscribers()
     scheduleSubscriberCheck()
     scheduleHlsRefresh(HLS_REFRESH_FALLBACK_MS)
     player.on('play', () => {
         console.log('%c player.on: play', 'color: Lime')
-        // noinspection JSIgnoredPromiseFromCall
-        pingServer()
+        void pingServer()
     })
     player.on('stop', () => {
         console.log('%c player.on: stop', 'color: OrangeRed')
@@ -109,32 +107,38 @@ async function pingServer() {
 async function checkStream() {
     console.log(`checkStream: ${streamName}:`, player)
     const options = { headers: { Accept: 'application/json' } }
-    fetch(`/api/stream/viewers/${streamName}/`, options).then((response) => {
+    try {
+        const response = await fetch(
+            `/api/stream/viewers/${streamName}/`,
+            options
+        )
         console.log('response:', response)
-        if (response.ok) {
-            response.json().then((data) => {
-                console.log('data:', data)
-                viewCountText.textContent = data.count
-            })
-        }
-    })
+        if (!response.ok) return
+        const data = await response.json()
+        console.log('data:', data)
+        viewCountText.textContent = data.count
+    } catch (error) {
+        console.warn('checkStream failed:', error)
+    }
 }
 
-function checkSubscribers() {
+async function checkSubscribers() {
     const options = { headers: { Accept: 'application/json' } }
-    fetch(`/api/stream/subscribers/${streamName}/`, options).then(
-        (response) => {
-            if (response.ok) {
-                response.json().then((data) => {
-                    if (data.count !== lastSubscriberCount) {
-                        lastSubscriberCount = data.count
-                        if (subscriberCountText)
-                            subscriberCountText.textContent = data.count
-                    }
-                })
-            }
+    try {
+        const response = await fetch(
+            `/api/stream/subscribers/${streamName}/`,
+            options
+        )
+        if (!response.ok) return
+        const data = await response.json()
+        if (data.count !== lastSubscriberCount) {
+            lastSubscriberCount = data.count
+            if (subscriberCountText)
+                subscriberCountText.textContent = data.count
         }
-    )
+    } catch (error) {
+        console.warn('checkSubscribers failed:', error)
+    }
 }
 
 function scheduleSubscriberCheck() {
@@ -143,7 +147,7 @@ function scheduleSubscriberCheck() {
         `scheduleSubscriberCheck: next check in ${(delay / 1000).toFixed(0)}s`
     )
     setTimeout(() => {
-        checkSubscribers()
+        void checkSubscribers()
         scheduleSubscriberCheck()
     }, delay)
 }

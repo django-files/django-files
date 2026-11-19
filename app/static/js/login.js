@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
         '/static/config/tsparticles.json'
     console.debug('tsparticlesConfig:', tsparticlesConfig)
     if (tsparticlesEnabled) {
-        initParticles(tsparticlesConfig)
+        void initParticles(tsparticlesConfig)
     }
 })
 

@@ -250,7 +250,7 @@
                 <p class="mb-2 text-muted small">To confirm, type exactly:</p>
                 <p class="font-monospace small bg-body-tertiary border rounded p-2 mb-2 user-select-all" id="deleteAccountPhrase">delete {{ request.user.username }} and all associated data</p>
                 <input type="text" class="form-control" id="deleteAccountConfirmInput"
-                       placeholder="Type the phrase above to confirm"
+                       placeholder="Type the phrase above to confirm" aria-label="Confirmation phrase"
                        autocomplete="off" spellcheck="false">
                 <div id="deleteAccountConfirmFeedback" class="invalid-feedback"></div>
             </div>

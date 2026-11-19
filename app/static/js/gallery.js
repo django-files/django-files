@@ -116,7 +116,7 @@ function setupScrollObserver() {
     scrollObserver = new IntersectionObserver(
         ([entry]) => {
             if (entry.isIntersecting && nextPage && !fetchLock) {
-                addNodes()
+                void addNodes()
             }
         },
         { rootMargin: `0px 0px ${Math.round(scrollSpace / 4)}px 0px` }
@@ -674,7 +674,7 @@ async function initGallery() {
         const [col, dir] = filesDataTable.order()[0] || []
         const key = DT_ORDER_COLUMNS[col]
         if (!key) return
-        setGalleryOrdering(dir === 'desc' ? `-${key}` : key)
+        void setGalleryOrdering(dir === 'desc' ? `-${key}` : key)
     })
     initToolbar('files-toolbar', filesDataTable)
     if (activeUser) {
@@ -699,7 +699,7 @@ async function initGallery() {
                     const val = optBtn.dataset.privacy
                     activePrivacy = val === 'all' ? '' : val
                     syncPrivacyState(tip, val)
-                    applyPrivacyFilter()
+                    void applyPrivacyFilter()
                 })
             })
             tip.querySelectorAll('.files-filter-opt').forEach((optBtn) => {
@@ -709,7 +709,7 @@ async function initGallery() {
                     else if (activeTypes.has(t)) activeTypes.delete(t)
                     else activeTypes.add(t)
                     syncFilterPopoverState(tip)
-                    applyTypeFilter()
+                    void applyTypeFilter()
                 })
             })
             const userSelect = tip.querySelector('#user')
@@ -768,7 +768,7 @@ async function initGallery() {
         (tip, popover) => {
             tip.querySelectorAll('[data-ordering]').forEach((optBtn) => {
                 optBtn.addEventListener('click', () => {
-                    setGalleryOrdering(optBtn.dataset.ordering)
+                    void setGalleryOrdering(optBtn.dataset.ordering)
                     popover.hide()
                 })
             })
@@ -1407,7 +1407,7 @@ function changeView(event) {
                     window.scrollY <=
                     0
             ) {
-                addNodes() // addNodes calls setupScrollObserver on completion
+                void addNodes() // addNodes calls setupScrollObserver on completion
             } else {
                 setupScrollObserver() // content fills viewport; re-arm for future scrolls
             }
@@ -1530,7 +1530,7 @@ function handleAlbumChange(data, inGallery, inMap, currentAlbum) {
     if (isAdd) {
         Promise.all(
             fileIds.map((fileId) => addFileToViews(fileId, inGallery, inMap))
-        )
+        ).catch((error) => console.error('Failed to add files:', error))
     }
 }
 
@@ -1726,11 +1726,10 @@ function initMapView() {
                     L.DomEvent.on(btn, 'click', (e) => {
                         L.DomEvent.preventDefault(e)
                         L.DomEvent.stopPropagation(e)
-                        if (document.fullscreenElement) {
-                            document.exitFullscreen()
-                        } else {
-                            mapContainer.requestFullscreen()
-                        }
+                        const toggle = document.fullscreenElement
+                            ? document.exitFullscreen()
+                            : mapContainer.requestFullscreen()
+                        toggle.catch(console.warn)
                     })
                     document.addEventListener('fullscreenchange', () => {
                         btn.innerHTML =
@@ -1754,7 +1753,7 @@ function initMapView() {
                 )
             })
 
-            fetchAndPlotAllFiles(L)
+            void fetchAndPlotAllFiles(L)
         }
         // Re-append after Leaflet builds its pane DOM so the overlay
         // sits last in the container and renders above the tile layers.
