@@ -68,7 +68,7 @@ from home.util.misc import anytobool, human_read_to_byte, redact_log, sanitize_l
 from home.util.nginx import sign_hls_cookie, verify_hls_cookie
 from home.util.quota import process_storage_quotas, remaining_quota_bytes
 from home.util.rand import rand_string
-from home.util.storage import file_rename
+from home.util.storage import file_name_error, file_rename
 from home.util.stream_record import delete_recording_file
 from home.util.tags import add_entity_tag, clean_tag_names
 from home.util.urls import PublicOnlyTransport, remote_url_error
@@ -1223,11 +1223,13 @@ def file_view(request, idname):
             if "expr" in data and not parse(data["expr"]):
                 data["expr"] = ""
             # TODO: We should probably not use .update here and convert to a function, see below TODO
+            new_name = data.pop("name", None)
+            if new_name and (error := file_name_error(new_name)):
+                return JsonResponse({"error": error}, status=400)
             queryset = Files.objects.filter(id=file.id)
             if "albums" in data:
                 set_albums(queryset, data["albums"])
                 del data["albums"]
-            new_name = data.pop("name", None)
             # drop any fields outside the editable allowlist before the ORM update
             data = {k: v for k, v in data.items() if k in _EDITABLE_FILE_FIELDS}
             queryset.update(**data)
