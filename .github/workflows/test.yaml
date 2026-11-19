@@ -77,7 +77,7 @@ jobs:
 
       - name: "Node Install"
         run: |
-          npm install
+          npm ci
 
       - name: "Test Migrations"
         working-directory: app

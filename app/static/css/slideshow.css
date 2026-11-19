@@ -141,10 +141,19 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 999px;
     opacity: 0.65;
-    transition: all 0.2s ease;
+    transition:
+        opacity 0.2s ease,
+        background-color 0.2s ease;
 }
 
 #offcanvas-bottom .slideshow-close:hover {
     opacity: 1;
     background: rgba(70, 70, 78, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .slideshow-play-btn,
+    #offcanvas-bottom .slideshow-close {
+        transition: none;
+    }
 }

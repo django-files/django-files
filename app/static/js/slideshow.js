@@ -281,7 +281,7 @@ myOffcanvas.addEventListener('show.bs.offcanvas', initSlideshow)
 myOffcanvas.addEventListener('hide.bs.offcanvas', () => {
     if (document.fullscreenElement) {
         console.log(`Close Button: %c EXIT`, 'color: Yellow')
-        document.exitFullscreen()
+        document.exitFullscreen().catch(console.warn)
     }
 })
 
@@ -289,10 +289,10 @@ document.getElementById('toggle-show').addEventListener('click', (e) => {
     e.preventDefault()
     if (document.fullscreenElement) {
         console.log(`Full Screen Button: %c EXIT`, 'color: Yellow')
-        document.exitFullscreen()
+        document.exitFullscreen().catch(console.warn)
     } else {
         console.log(`Full Screen Button: %c ENTER`, 'color: Lime')
-        myOffcanvas.requestFullscreen()
+        myOffcanvas.requestFullscreen().catch(console.warn)
     }
 })
 

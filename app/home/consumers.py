@@ -38,6 +38,8 @@ _ERR_STREAM_NOT_FOUND = "Stream not found."
 _ERR_STREAM_OWNED_BY_OTHER = "Stream owned by another user."
 _ERR_SESSION_NOT_READY = "Session not ready."
 _ERR_ALBUM_NOT_FOUND = "Album not found."
+_ERR_FILE_NOT_FOUND = "File not found."
+_ERR_FILE_OWNED_BY_OTHER = "File owned by another user."
 _ERR_NO_TAG_SPECIFIED = "No tag specified."
 _WS_SEND = "websocket.send"
 
@@ -243,8 +245,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         return {"username": user.username, "first_name": user.first_name}
 
     def paste_text(self, *, user_id: int = None, text_data: str = None, **kwargs):
-        log.debug("paste_text")
-        log.debug("user_id: %s", user_id)
+        log.debug("paste_text user_id: %s", user_id)
         log.debug("text_data: %s", text_data)
         log.debug("kwargs: %s", kwargs)
         if not text_data:
@@ -265,15 +266,13 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param pks: List of Integers - File IDs
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("delete_files")
-        log.debug("user_id: %s", user_id)
-        log.debug("pks: %s", pks)
+        log.debug("delete_files user_id: %s pks: %s", user_id, pks)
         pks = pks[0]
         files = Files.objects.filter(**filter_kwargs(pks, user_id))
         if len(files) > 0:
             files.delete()
         else:
-            return self._error("File not found.", **kwargs)
+            return self._error(_ERR_FILE_NOT_FOUND, **kwargs)
 
     def delete_albums(self, *, user_id: int = None, pks: List[int] = None, **kwargs) -> Optional[dict]:
         """
@@ -281,9 +280,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param pks: List of Integers - Album IDs
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("delete_albums")
-        log.debug("user_id: %s", user_id)
-        log.debug("pks: %s", pks)
+        log.debug("delete_albums user_id: %s pks: %s", user_id, pks)
         albums = Albums.objects.filter(**filter_kwargs(pks, user_id))
         if len(albums) > 0:
             albums.delete()
@@ -333,19 +330,17 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param pk: Integer - File ID
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("toggle_private_file")
-        log.debug("user_id: %s", user_id)
-        log.debug("pk: %s", pk)
+        log.debug("toggle_private_file user_id: %s pk: %s", user_id, pk)
         if file := Files.objects.filter(pk=pk):
             if user_id and file[0].user.id != user_id:
-                return self._error("File owned by another user.", **kwargs)
+                return self._error(_ERR_FILE_OWNED_BY_OTHER, **kwargs)
             file[0].private = not file[0].private
             file[0].save(update_fields=["private"])
             response = model_to_dict(file[0], exclude=["file", "thumb", "albums"])
             response.update({"event": "toggle-private-file"})
-            log.debug("response: %s", response)
+            log.debug("toggle_private_file response: %s", response)
             return response
-        return self._error("File not found.", **kwargs)
+        return self._error(_ERR_FILE_NOT_FOUND, **kwargs)
 
     def private_files(self, *, user_id: int = None, pks: List[int] = None, private: bool, **kwargs) -> dict:
         """
@@ -354,9 +349,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param private: Bool, False Make Public, True Make Private
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("private_files")
-        log.debug("user_id: %s", user_id)
-        log.info("pks: %s", pks)
+        log.debug("private_files user_id: %s pks: %s", user_id, pks)
         files = list(Files.objects.filter(**filter_kwargs(pks, user_id)))
         if not files:
             return self._error("File(s) not found.", **kwargs)
@@ -375,9 +368,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param expr: String - File Expire String
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("set_expr_file")
-        log.debug("user_id: %s", user_id)
-        log.debug("pks: %s", pks)
+        log.debug("set_expr_file user_id: %s pks: %s", user_id, pks)
         log.debug("expr: %s", expr)
         log.debug("kwargs: %s", kwargs)
         if expr and not parse(expr):
@@ -392,7 +383,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
             "objects": [model_to_dict(f, exclude=["file", "thumb", "albums"]) for f in files],
             "event": "set-expr-file",
         }
-        log.debug("response: %s", response)
+        log.debug("set_expr_files response: %s", response)
         return response
 
     def set_password_file(self, *, user_id: int = None, pk: int = None, password: str = None, **kwargs) -> dict:
@@ -402,19 +393,17 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param password: String - File Password String
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("set_password_file")
-        log.debug("user_id: %s", user_id)
-        log.debug("pk: %s", pk)
+        log.debug("set_password_file user_id: %s pk: %s", user_id, pk)
         if file := Files.objects.filter(pk=pk):
             if user_id and file[0].user.id != user_id:
-                return self._error("File owned by another user.", **kwargs)
+                return self._error(_ERR_FILE_OWNED_BY_OTHER, **kwargs)
             file[0].password = password or ""
             file[0].save(update_fields=["password"])
             response = model_to_dict(file[0], exclude=["file", "thumb", "albums"])
             response.update({"event": "set-password-file"})
-            log.debug("response: %s", response)
+            log.debug("set_password_file response: %s", response)
             return response
-        return self._error("File not found.", **kwargs)
+        return self._error(_ERR_FILE_NOT_FOUND, **kwargs)
 
     def set_file_name(self, *, user_id: int = None, pk: int = None, name: str = None, **kwargs) -> dict:
         """
@@ -423,9 +412,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param name: String - File Name String
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("set_file_name")
-        log.debug("user_id: %s", user_id)
-        log.debug("pk: %s", pk)
+        log.debug("set_file_name user_id: %s pk: %s", user_id, pk)
         if not name:
             return self._error("No filename provided.", **kwargs)
         if len(Files.objects.filter(name=name)) != 0:
@@ -433,7 +420,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         if file := Files.objects.filter(pk=pk):
             file = file[0]
             if user_id and file.user.id != user_id:
-                return self._error("File owned by another user.", **kwargs)
+                return self._error(_ERR_FILE_OWNED_BY_OTHER, **kwargs)
             old_name = file.name
             if file := file_rename(file, name):
                 response = model_to_dict(file, exclude=["file", "thumb", "albums"])
@@ -446,7 +433,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
                     }
                 )
                 return response
-        return self._error("File not found.", **kwargs)
+        return self._error(_ERR_FILE_NOT_FOUND, **kwargs)
 
     def set_file_description(
         self, *, user_id: int = None, pk: int = None, description: str = None, **kwargs
@@ -457,9 +444,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param description: String - File Description String
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("set_file_description")
-        log.debug("user_id: %s", user_id)
-        log.debug("pk: %s", pk)
+        log.debug("set_file_description user_id: %s pk: %s", user_id, pk)
         if description is None:
             return self._error("No description provided.", **kwargs)
         file, err = self._check_file_permission(pk, user_id, **kwargs)
@@ -762,7 +747,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         }
         await self.channel_layer.group_send("home", {"type": _WS_SEND, "text": json.dumps(data)})
 
-    async def leave_stream_chat(self, *, user_id: int = None, name: str = None, **kwargs):
+    async def leave_stream_chat(self, **kwargs):
         log.debug("leave_stream_chat")
         if self._stream_chat_group:
             await self._leave_chat_group(hard=True)
@@ -876,7 +861,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         session = self.scope.get("session")
         display_name = custom_name
         if identity["user_id"] is None:
-            display_name, err = await self._build_anonymous_display_name(custom_name, session)
+            display_name, err = self._build_anonymous_display_name(custom_name, session)
             if err:
                 return self._error(err, **kwargs)
 
@@ -997,7 +982,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         qs = CustomUser.objects.filter(Q(username__iexact=custom_name) | Q(first_name__iexact=custom_name))
         return await database_sync_to_async(qs.exists)()
 
-    async def _build_anonymous_display_name(self, custom_name: str, session):
+    def _build_anonymous_display_name(self, custom_name: str, session):
         """Build a discriminated display name for an anonymous user. Returns (name, error) tuple."""
         session_key = session.session_key if session else None
         if not session_key:
@@ -1254,9 +1239,9 @@ class HomeConsumer(AsyncWebsocketConsumer):
         """Return (file_instance, error_dict). Exactly one will be non-None."""
         file = Files.objects.filter(pk=pk).first()
         if file is None:
-            return None, self._error("File not found.", **kwargs)
+            return None, self._error(_ERR_FILE_NOT_FOUND, **kwargs)
         if user_id and file.user.id != user_id and not self.scope["user"].is_superuser:
-            return None, self._error("File owned by another user.", **kwargs)
+            return None, self._error(_ERR_FILE_OWNED_BY_OTHER, **kwargs)
         return file, None
 
     def set_file_albums(
@@ -1268,9 +1253,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param albums: List - List of Album IDs
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("set_file_albums")
-        log.debug("user_id: %s", user_id)
-        log.debug("pk: %s", pk)
+        log.debug("set_file_albums user_id: %s pk: %s", user_id, pk)
         log.debug("albums: %s", albums)
         file, err = self._check_file_permission(pk, user_id, **kwargs)
         if err:
@@ -1312,9 +1295,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param album: Integer = Album ID
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("remove_file_album")
-        log.debug("user_id: %s", user_id)
-        log.debug("pk: %s", pk)
+        log.debug("remove_file_album user_id: %s pk: %s", user_id, pk)
         if not album:
             return self._error("No album specified.", **kwargs)
         file, err = self._check_file_permission(pk, user_id, **kwargs)
@@ -1346,9 +1327,7 @@ class HomeConsumer(AsyncWebsocketConsumer):
         :param create_if_absent: Bool = Bool if to create album if cannot find matching album with name.
         :return: Dictionary - With Key: 'success': bool
         """
-        log.debug("add_file_album")
-        log.debug("user_id: %s", user_id)
-        log.debug("pk: %s", pk)
+        log.debug("add_file_album user_id: %s pk: %s", user_id, pk)
         log.debug("name: %s", album_name)
         log.debug("create: %s", create_if_absent)
         if not album and not album_name:

@@ -497,11 +497,11 @@ function initPanelContent(container) {
                 )
 
                 if (render === 'text' || render === 'code') {
-                    initCodePreview(root)
+                    void initCodePreview(root)
                 }
 
                 if (render === 'markdown') {
-                    initMarkdownToggle(root)
+                    void initMarkdownToggle(root)
                 }
 
                 if (root.dataset.gpsLat && root.dataset.gpsLon) {
@@ -526,11 +526,11 @@ function initPanelContent(container) {
             const handleFileDescription = initFileEditables(container, socket)
 
             if (render === 'text' || render === 'code') {
-                initCodePreview(root)
+                void initCodePreview(root)
             }
 
             if (render === 'markdown') {
-                initMarkdownToggle(root)
+                void initMarkdownToggle(root)
             }
 
             if (root.dataset.gpsLat && root.dataset.gpsLon) {

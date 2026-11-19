@@ -84,7 +84,7 @@ function domLoaded() {
         }
     }
     initPreviewImage()
-    initMarkdownToggle()
+    void initMarkdownToggle()
 }
 
 const MD_SESSION_KEY = 'mdView'

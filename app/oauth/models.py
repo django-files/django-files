@@ -183,11 +183,10 @@ class UserInvites(models.Model):
         return reverse("home:invite", kwargs={"invite": self.invite})
 
     def get_url(self, site_url):
-        uri = reverse("home:invite", kwargs={"invite": self.invite})
-        return site_url + uri
+        return site_url + self.get_uri()
 
     def build_url(self):
-        uri = reverse("home:invite", kwargs={"invite": self.invite})
+        uri = self.get_uri()
         if SiteSettings.objects.settings().site_url:
             return SiteSettings.objects.settings().site_url + uri
         else:

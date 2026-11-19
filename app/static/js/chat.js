@@ -242,7 +242,7 @@ function applyChatSettings(data) {
 }
 
 initChat()
-fetchChatCommands()
+void fetchChatCommands()
 updateNotificationSoundButton(isNotificationSoundEnabled())
 
 const notificationSoundBtn = document.getElementById('toggleNotificationSound')

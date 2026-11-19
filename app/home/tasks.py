@@ -407,7 +407,7 @@ def new_file_websocket(pk):
         return
     log.debug("file: %s", file)
     data = extract_files([file])[0]
-    log.debug("data: %s", data)
+    log.debug("new_file_websocket data: %s", data)
     # TODO: Backwards Compatibility
     data["pk"] = pk
     data["event"] = "file-new"
@@ -418,8 +418,7 @@ def new_file_websocket(pk):
 
 @shared_task()
 def delete_file_websocket(data: dict, user_id):
-    log.debug("delete_file_websocket")
-    log.debug("data: %s", data)
+    log.debug("delete_file_websocket data: %s", data)
     log.debug("delete_file_websocket pk: %s user_id: %s", data["id"], user_id)
     data["event"] = "file-delete"
     data["pk"] = data["id"]
@@ -457,8 +456,7 @@ def new_album_websocket(album):
 
 @shared_task()
 def delete_album_websocket(data: dict, user_id):
-    log.debug("delete_album_websocket")
-    log.debug("data: %s", data)
+    log.debug("delete_album_websocket data: %s", data)
     log.debug("delete_album_websocket pk: %s user_id: %s", data["id"], user_id)
     data["event"] = "album-delete"
     data["pk"] = data["id"]

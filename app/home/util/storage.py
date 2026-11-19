@@ -11,6 +11,8 @@ from home.util.s3 import S3Bucket, use_s3
 
 log = logging.getLogger("app")
 
+THUMBS_PREFIX = "thumbs/"
+
 
 class DynamicStorageFieldFile(FieldFile):
     def __init__(self, instance, field, name):
@@ -38,7 +40,7 @@ def file_rename(file, new_file_name: str):
     file.name = new_file_name
     file.file.name = new_file_name
     if file.thumb:
-        file.thumb.name = "thumbs/" + new_file_name
+        file.thumb.name = THUMBS_PREFIX + new_file_name
     if use_s3():
         s3 = S3Bucket().connection
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, new_file_name).copy_from(
@@ -47,12 +49,12 @@ def file_rename(file, new_file_name: str):
         s3.Object(settings.AWS_STORAGE_BUCKET_NAME, current_file_name).delete()
         if file.thumb:
             try:
-                s3.Object(settings.AWS_STORAGE_BUCKET_NAME, "thumbs/" + new_file_name).copy_from(
+                s3.Object(settings.AWS_STORAGE_BUCKET_NAME, THUMBS_PREFIX + new_file_name).copy_from(
                     CopySource=f"{settings.AWS_STORAGE_BUCKET_NAME}/thumbs/{current_file_name}"
                 )
-                s3.Object(settings.AWS_STORAGE_BUCKET_NAME, "thumbs/" + current_file_name).delete()
-            except ClientError as e:
-                log.error(f"Failed to rename thumb for {current_file_name} to {new_file_name}: {e}")
+                s3.Object(settings.AWS_STORAGE_BUCKET_NAME, THUMBS_PREFIX + current_file_name).delete()
+            except ClientError:
+                log.exception(f"Failed to rename thumb for {current_file_name} to {new_file_name}")
     else:
         os.rename(f"{settings.MEDIA_ROOT}/{current_file_name}", f"{settings.MEDIA_ROOT}/{new_file_name}")
         if file.thumb:
@@ -62,7 +64,7 @@ def file_rename(file, new_file_name: str):
                     f"{settings.MEDIA_ROOT}/thumbs/{new_file_name}",
                 )
             except FileNotFoundError:
-                log.error(f"Failed to rename thumb for {current_file_name} to {new_file_name}: not found")
+                log.exception(f"Failed to rename thumb for {current_file_name} to {new_file_name}: not found")
     file.save(update_fields=["name", "file", "thumb"])
     cache.delete(f"file.urlcache.gallery.{file.pk}")
     cache.delete(f"file.urlcache.download.{file.pk}")

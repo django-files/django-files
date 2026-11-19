@@ -3,8 +3,13 @@
 /* Native CSS smooth scroll + scroll-padding-top is more reliable than
    Bootstrap's smoothScroll (which uses scrollTo and ignores scroll-padding-top).
    Scoped via :has() so it only applies on pages with the settings sidebar nav. */
+@media (prefers-reduced-motion: no-preference) {
+    html:has(#settings-nav) {
+        scroll-behavior: smooth;
+    }
+}
+
 html:has(#settings-nav) {
-    scroll-behavior: smooth;
     scroll-padding-top: calc(
         var(--navbar-h, 52px) + env(safe-area-inset-top, 0px) + 1rem
     );
@@ -89,4 +94,10 @@ html:has(#settings-nav) {
 
 .webhook-event-option .webhook-event-label {
     white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .settings-avatar {
+        transition: none;
+    }
 }

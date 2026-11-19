@@ -141,3 +141,9 @@
 #home-albums-card {
     overflow: clip visible;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .dash-stat-card {
+        transition: none;
+    }
+}

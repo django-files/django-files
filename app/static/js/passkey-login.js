@@ -80,5 +80,5 @@ if (
     button &&
     new URLSearchParams(window.location.search).get('autopasskey') === '1'
 ) {
-    authenticate()
+    void authenticate()
 }

@@ -356,7 +356,7 @@ $(document).on('click', '.updateStatsBtn', function () {
     }
 
     setupMimeClickDelegation()
-    loadStats()
+    void loadStats()
 
     document.addEventListener('stats:reload', () => {
         setTimeout(() => loadStats(true), 3000)

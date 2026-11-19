@@ -106,7 +106,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           echo "::group::Install"
-          npm install prettier
+          npm ci --ignore-scripts
           echo "::endgroup::"
           npx prettier --check .
 

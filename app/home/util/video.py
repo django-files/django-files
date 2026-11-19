@@ -369,13 +369,12 @@ def remux_to_mp4(input_path: str, output_path: str) -> None:
     and lossless; it only repackages the container so the file plays back like
     any other uploaded video (seekable, broadly compatible players).
     """
-    with av.open(input_path) as input_container:
-        with av.open(output_path, mode="w") as output_container:
-            stream_mapping = {
-                stream: output_container.add_stream_from_template(stream) for stream in input_container.streams
-            }
-            for packet in input_container.demux(list(stream_mapping)):
-                if packet.dts is None:
-                    continue
-                packet.stream = stream_mapping[packet.stream]
-                output_container.mux(packet)
+    with av.open(input_path) as input_container, av.open(output_path, mode="w") as output_container:
+        stream_mapping = {
+            stream: output_container.add_stream_from_template(stream) for stream in input_container.streams
+        }
+        for packet in input_container.demux(list(stream_mapping)):
+            if packet.dts is None:
+                continue
+            packet.stream = stream_mapping[packet.stream]
+            output_container.mux(packet)

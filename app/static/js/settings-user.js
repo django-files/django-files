@@ -140,8 +140,9 @@ async function showQrCode(event) {
     cameraIcon.classList.replace('fa-beat', 'fa-flip')
     console.log('link:', codeLink)
     console.log('codeLink.href:', codeLink.href)
-    fetch('/settings/user/signature').then((response) =>
-        response.json().then((data) => {
+    fetch('/settings/user/signature')
+        .then((response) => response.json())
+        .then((data) => {
             console.log('data:', data)
             codeLink.href = data.url
             console.log('codeLink.href:', codeLink.href)
@@ -174,7 +175,10 @@ async function showQrCode(event) {
             showCodeBtn.classList.add('d-none')
             hideCodeBtn.classList.remove('d-none')
         })
-    )
+        .catch((error) => {
+            console.error('Failed to fetch signature:', error)
+            cameraIcon.classList.remove('fa-beat', 'fa-flip')
+        })
 }
 
 function genQrCode(data) {
