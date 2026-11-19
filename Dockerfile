@@ -20,7 +20,7 @@ COPY app/requirements-build.txt /requirements.txt
 RUN uv pip install --system --no-cache -r /requirements.txt
 
 
-FROM ghcr.io/django-files/docker-nginx:1.31.2 AS nginx-base
+FROM ghcr.io/django-files/docker-nginx:1.31.9 AS nginx-base
 
 
 # The tusproject/tusd:v2 *image* is Alpine/musl-based; its binary needs
