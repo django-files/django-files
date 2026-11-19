@@ -1,10 +1,13 @@
 import logging
 import os
+from typing import Optional
 
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.storage import default_storage
+from django.core.files.utils import validate_file_name
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from home.util.s3 import S3Bucket, use_s3
@@ -35,7 +38,25 @@ class StoragesRouterFileField(models.FileField):
         return file
 
 
+def file_name_error(name: str) -> Optional[str]:
+    """
+    Returns an error unless name is a bare file name. The name is used as the
+    storage path, so separators or dot segments would write outside MEDIA_ROOT
+    or over other stored files (the database lives under MEDIA_ROOT/db).
+    """
+    # validate_file_name only splits on os.sep; other code treats backslash as a separator
+    if "\\" in name or "\x00" in name:
+        return f"File name '{name}' includes path elements"
+    try:
+        validate_file_name(name)
+    except SuspiciousFileOperation as error:
+        return str(error)
+    return None
+
+
 def file_rename(file, new_file_name: str):
+    if error := file_name_error(new_file_name):
+        raise SuspiciousFileOperation(error)
     current_file_name = file.file.name
     file.name = new_file_name
     file.file.name = new_file_name

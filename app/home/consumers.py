@@ -24,7 +24,7 @@ from home.tasks import (
 from home.util.auth import hash_token
 from home.util.file import process_file
 from home.util.misc import redact_log
-from home.util.storage import file_rename
+from home.util.storage import file_name_error, file_rename
 from home.util.tags import add_entity_tag, clean_tag_names, remove_entity_tag
 from home.util.webhooks import EVENT_ALBUM_UPDATED, build_album_payload
 from oauth.models import ApiToken, CustomUser
@@ -415,6 +415,8 @@ class HomeConsumer(AsyncWebsocketConsumer):
         log.debug("set_file_name user_id: %s pk: %s", user_id, pk)
         if not name:
             return self._error("No filename provided.", **kwargs)
+        if error := file_name_error(name):
+            return self._error(error, **kwargs)
         if len(Files.objects.filter(name=name)) != 0:
             return self._error("Filename already taken!", **kwargs)
         if file := Files.objects.filter(pk=pk):

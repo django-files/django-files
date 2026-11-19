@@ -1,16 +1,20 @@
 import json
 import logging
+import os
 import tempfile
 from datetime import timedelta
 
+from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils.timezone import now
 from djangofiles.test_utils import TEST_PASSWORD, WRONG_PASSWORD
+from home.consumers import HomeConsumer
 from home.models import Albums, Files, ShortURLs, Stream
 from home.util.auth import create_api_token, hash_token
+from home.util.storage import file_rename
 from home.util.urls import remote_url_error
 from oauth.models import ApiToken, CustomUser
 from settings.models import SiteSettings
@@ -1073,6 +1077,73 @@ class FileEditSecurityTestCase(TestCase):
         self.assertEqual(self.file.password, "secret")
         self.assertEqual(self.file.expr, "2d")
         self.assertEqual(self.file.maxv, 3)
+
+
+class FileRenameTraversalTestCase(TestCase):
+    """Renames must stay a bare file name inside MEDIA_ROOT (GHSA-6pj5-gq44-hgf7)."""
+
+    BAD_NAMES = ("../escaped.txt", "db/database.sqlite3", "thumbs/other.png", "..", "sub\\name.txt", "/etc/cron.d/x")
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command("loaddata", "settings/fixtures/sitesettings.json", verbosity=0)
+        cls.user = CustomUser.objects.create_user(
+            username="renameuser",
+            email="rename@test.com",
+            password=TEST_PASSWORD,  # nosec  # NOSONAR
+        )
+
+    def setUp(self):
+        media = tempfile.TemporaryDirectory()
+        self.addCleanup(media.cleanup)
+        self.media_root = media.name
+        override = override_settings(MEDIA_ROOT=self.media_root)
+        override.enable()
+        self.addCleanup(override.disable)
+        with open(os.path.join(self.media_root, "safe.txt"), "wb") as fh:
+            fh.write(b"payload")
+        self.file = Files.objects.create(user=self.user, name="safe.txt", file="safe.txt", mime="text/plain")
+        self.client.force_login(self.user)
+
+    def _assert_untouched(self):
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.name, "safe.txt")
+        self.assertEqual(sorted(os.listdir(self.media_root)), ["safe.txt"])
+        self.assertFalse(os.path.exists(os.path.join(os.path.dirname(self.media_root), "escaped.txt")))
+
+    def test_api_rejects_path_names(self):
+        for name in self.BAD_NAMES:
+            with self.subTest(name=name):
+                response = self.client.post(
+                    reverse("api:file", kwargs={"idname": self.file.id}),
+                    data=json.dumps({"name": name, "info": "changed"}),
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 400)
+                self._assert_untouched()
+                self.assertEqual(self.file.info, "")
+
+    def test_websocket_rejects_path_names(self):
+        for name in self.BAD_NAMES:
+            with self.subTest(name=name):
+                response = HomeConsumer.set_file_name(HomeConsumer(), user_id=self.user.id, pk=self.file.id, name=name)
+                self.assertFalse(response["success"])
+                self._assert_untouched()
+
+    def test_file_rename_rejects_path_names(self):
+        for name in self.BAD_NAMES:
+            with self.subTest(name=name), self.assertRaises(SuspiciousFileOperation):
+                file_rename(self.file, name)
+            self._assert_untouched()
+
+    def test_plain_rename_still_works(self):
+        response = self.client.post(
+            reverse("api:file", kwargs={"idname": self.file.id}),
+            data=json.dumps({"name": "renamed file.txt"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(os.listdir(self.media_root), ["renamed file.txt"])
 
 
 class PerAlbumPublicUploadTestCase(TestCase):
