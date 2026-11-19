@@ -76,37 +76,34 @@ window.addEventListener('load', function () {
         }
 
         // We need to get subscription state for push notifications and send the information to server
-        reg.pushManager.getSubscription().then(function (subscription) {
-            if (subscription) {
-                postSubscribeObj(
-                    'subscribe',
-                    subscription,
-                    function (response) {
-                        // Check the information is saved successfully into server
-                        if (response.status === 201) {
-                            // Show unsubscribe button instead
-                            subBtn.innerHTML =
-                                '<i class="fa-solid fa-bell-slash"></i>'
-                            subBtn.title = gettext(
-                                'Unsubscribe from Push Messaging'
-                            )
-                            subBtn.disabled = false
-                            isPushEnabled = true
-                            showMessage(
-                                gettext(
-                                    'Successfully subscribed to push notifications.'
-                                )
-                            )
-                        }
-                    }
-                )
-            }
-        })
-        .catch(function (error) {
-            console.log('Error getting push subscription.', error)
-        })
+        reg.pushManager
+            .getSubscription()
+            .then(function (subscription) {
+                if (subscription) {
+                    postSubscribeObj(
+                        'subscribe',
+                        subscription,
+                        onSubscribed
+                    )
+                }
+            })
+            .catch(function (error) {
+                console.log('Error getting push subscription.', error)
+            })
     }
 })
+
+function onSubscribed(response) {
+    // Check the information is saved successfully into server
+    if (response.status === 201) {
+        // Show unsubscribe button instead
+        subBtn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>'
+        subBtn.title = gettext('Unsubscribe from Push Messaging')
+        subBtn.disabled = false
+        isPushEnabled = true
+        showMessage(gettext('Successfully subscribed to push notifications.'))
+    }
+}
 
 function showMessage(message) {
     const messageBox = document.getElementById('webpush-message')
@@ -141,21 +138,7 @@ function subscribe(reg) {
             return reg.pushManager.subscribe(options)
         })
         .then(function (subscription) {
-            postSubscribeObj('subscribe', subscription, function (response) {
-                // Check the information is saved successfully into server
-                if (response.status === 201) {
-                    // Show unsubscribe button instead
-                    subBtn.innerHTML = '<i class="fa-solid fa-bell-slash"></i>'
-                    subBtn.title = gettext('Unsubscribe from Push Messaging')
-                    subBtn.disabled = false
-                    isPushEnabled = true
-                    showMessage(
-                        gettext(
-                            'Successfully subscribed to push notifications.'
-                        )
-                    )
-                }
-            })
+            postSubscribeObj('subscribe', subscription, onSubscribed)
         })
         .catch(function (error) {
             subBtn.disabled = false
