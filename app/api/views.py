@@ -71,7 +71,7 @@ from home.util.rand import rand_string
 from home.util.storage import file_rename
 from home.util.stream_record import delete_recording_file
 from home.util.tags import add_entity_tag, clean_tag_names
-from home.util.urls import remote_url_error
+from home.util.urls import PublicOnlyTransport, remote_url_error
 from home.util.webhooks import (
     EVENT_STREAM_LIVE,
     EVENT_STREAM_OFFLINE,
@@ -1323,7 +1323,7 @@ def download_remote_file(user: CustomUser, url: str, fp: BinaryIO) -> Optional[s
     cap = min(remaining_quota_bytes(user) or REMOTE_MAX_BYTES, REMOTE_MAX_BYTES)
     start = time.monotonic()
     try:
-        with httpx.Client(follow_redirects=False, timeout=REMOTE_TIMEOUT) as client:
+        with httpx.Client(follow_redirects=False, timeout=REMOTE_TIMEOUT, transport=PublicOnlyTransport()) as client:
             for _ in range(REMOTE_MAX_REDIRECTS + 1):
                 if error := remote_url_error(url):
                     return error

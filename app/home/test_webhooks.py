@@ -3,11 +3,16 @@ import hmac
 import json
 import logging
 import socket
+import tempfile
+import threading
 from datetime import datetime, timedelta
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import httpcore
 import httpx
+from api.views import download_remote_file
 from celery.exceptions import Retry
 from django.core.management import call_command
 from django.test import SimpleTestCase, TestCase
@@ -17,7 +22,7 @@ from home.models import Albums, AlbumTag, ShortURLs, Stream, StreamTag, Tag, Web
 from home.tasks import dispatch_webhook_event, fire_webhook
 from home.util.auth import create_api_token
 from home.util.file import process_file
-from home.util.urls import remote_url_error
+from home.util.urls import public_post, remote_url_error
 from home.util.webhooks import (
     EVENT_ALBUM_CREATED,
     EVENT_ALBUM_UPDATED,
@@ -323,7 +328,7 @@ class SendWebhookTests(WebhookBaseTestCase):
         resolver.start()
         self.addCleanup(resolver.stop)
 
-    @patch("home.util.webhooks.httpx.post")
+    @patch("home.util.webhooks.public_post")
     def test_custom_payload_and_signature(self, mock_post):
         mock_post.return_value = _mock_response()
         webhook = self.create_webhook(secret="topsecret")  # nosec  # NOSONAR
@@ -344,7 +349,7 @@ class SendWebhookTests(WebhookBaseTestCase):
         expected = "sha256=" + hmac.new(b"topsecret", body, hashlib.sha256).hexdigest()
         self.assertEqual(headers["X-Webhook-Signature"], expected)
 
-    @patch("home.util.webhooks.httpx.post")
+    @patch("home.util.webhooks.public_post")
     def test_custom_no_secret_no_signature(self, mock_post):
         mock_post.return_value = _mock_response()
         webhook = self.create_webhook()
@@ -352,7 +357,7 @@ class SendWebhookTests(WebhookBaseTestCase):
         headers = mock_post.call_args.kwargs["headers"]
         self.assertNotIn("X-Webhook-Signature", headers)
 
-    @patch("home.util.webhooks.httpx.post")
+    @patch("home.util.webhooks.public_post")
     def test_discord_sends_embed(self, mock_post):
         mock_post.return_value = _mock_response()
         webhook = self.create_webhook(webhook_type=Webhook.WEBHOOK_TYPE_DISCORD, url=DISCORD_URL)
@@ -880,7 +885,7 @@ class WebhookSSRFTests(WebhookBaseTestCase):
     def setUp(self):
         self.client.force_login(self.user)
 
-    @patch("home.util.webhooks.httpx.post")
+    @patch("home.util.webhooks.public_post")
     def test_create_and_update_reject_internal_destinations(self, mock_post):
         webhook = self.create_webhook()
         for url in (
@@ -906,7 +911,7 @@ class WebhookSSRFTests(WebhookBaseTestCase):
         self.assertEqual(Webhook.objects.count(), 1)
         mock_post.assert_not_called()
 
-    @patch("home.util.webhooks.httpx.post")
+    @patch("home.util.webhooks.public_post")
     def test_stored_internal_webhooks_blocked_on_test_and_task(self, mock_post):
         for hook_type in (Webhook.WEBHOOK_TYPE_CUSTOM, Webhook.WEBHOOK_TYPE_DISCORD):
             with self.subTest(hook_type=hook_type):
@@ -916,7 +921,7 @@ class WebhookSSRFTests(WebhookBaseTestCase):
                 self.assertIsNone(fire_webhook.run(webhook.pk, EVENT_TEST, {}))
         mock_post.assert_not_called()
 
-    @patch("home.util.webhooks.httpx.post")
+    @patch("home.util.webhooks.public_post")
     def test_dns_change_after_save_blocks_send(self, mock_post):
         with patch("home.util.urls.socket.getaddrinfo", return_value=_addresses("1.1.1.1")):
             response = self.client.post(
@@ -931,7 +936,7 @@ class WebhookSSRFTests(WebhookBaseTestCase):
                 send_webhook(webhook, EVENT_TEST, {})
         mock_post.assert_not_called()
 
-    @patch("home.util.webhooks.httpx.post")
+    @patch("home.util.webhooks.public_post")
     def test_delivery_errors_do_not_expose_network_details(self, mock_post):
         webhook = self.create_webhook()
         for message in ("Connection refused", "Server disconnected without sending a response."):
@@ -939,3 +944,63 @@ class WebhookSSRFTests(WebhookBaseTestCase):
             with patch("home.util.urls.socket.getaddrinfo", return_value=_addresses("1.1.1.1")):
                 response = self.client.post(reverse("api:webhook-test", kwargs={"webhook_id": webhook.pk}))
             self.assertEqual(response.json(), {"success": False, "error": "Webhook delivery failed."})
+
+
+class _RecordingHandler(BaseHTTPRequestHandler):
+    hits = []
+
+    def _record(self):
+        self.hits.append(self.path)
+        self.send_response(200)
+        self.end_headers()
+
+    do_GET = do_POST = _record
+
+    def log_message(self, *args):
+        pass
+
+
+class DNSRebindingTests(WebhookBaseTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.server = HTTPServer(("127.0.0.1", 0), _RecordingHandler)
+        threading.Thread(target=cls.server.serve_forever, daemon=True).start()
+        cls.url = f"http://rebind.example.com:{cls.server.server_address[1]}/"
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+        cls.server.server_close()
+        super().tearDownClass()
+
+    def setUp(self):
+        _RecordingHandler.hits.clear()
+        # first lookup (remote_url_error) sees a public address, the connect-time lookup sees loopback
+        rebind = patch(
+            "home.util.urls.socket.getaddrinfo",
+            side_effect=[_addresses("1.1.1.1")] + [_addresses("127.0.0.1")] * 5,
+        )
+        rebind.start()
+        self.addCleanup(rebind.stop)
+
+    def test_webhook_send_blocks_rebound_address(self):
+        webhook = self.create_webhook(url=self.url)
+        with self.assertRaisesMessage(httpx.ConnectError, "non-public"):
+            send_webhook(webhook, EVENT_TEST, {})
+        self.assertEqual(_RecordingHandler.hits, [])
+
+    def test_remote_download_blocks_rebound_address(self):
+        with tempfile.TemporaryFile() as fp:
+            error = download_remote_file(self.user, self.url, fp)
+        self.assertIn("non-public", error)
+        self.assertEqual(_RecordingHandler.hits, [])
+
+
+class PublicTransportTests(SimpleTestCase):
+    @patch("home.util.urls.socket.getaddrinfo", return_value=_addresses("1.1.1.1"))
+    @patch.object(httpcore.SyncBackend, "connect_tcp", side_effect=httpcore.ConnectError("stop"))
+    def test_dials_vetted_address_not_hostname(self, mock_connect, _mock_dns):
+        with self.assertRaises(httpx.ConnectError):
+            public_post(CUSTOM_URL)
+        self.assertEqual(mock_connect.call_args.args[0], "1.1.1.1")
