@@ -4,7 +4,7 @@ ENV TZ=UTC
 ENV NODE_ENV=production
 WORKDIR /work
 COPY ["package.json", "package-lock.json", "gulpfile.js", "swagger.yaml", "/work/"]
-RUN npm ci --ignore-scripts  &&  npx gulp
+RUN npm ci --ignore-scripts  &&  ./node_modules/.bin/gulp
 
 
 FROM python:3.14-alpine AS python

@@ -1729,9 +1729,7 @@ function initMapView() {
                         const toggle = document.fullscreenElement
                             ? document.exitFullscreen()
                             : mapContainer.requestFullscreen()
-                        toggle.catch((error) =>
-                            console.warn('Fullscreen toggle failed:', error)
-                        )
+                        toggle.catch(console.warn)
                     })
                     document.addEventListener('fullscreenchange', () => {
                         btn.innerHTML =
